@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.util.Try
+import se.lu.nateko.cp.meta.api.RdfLens.CollConn
 
 
 trait CpmetaReader:
@@ -31,6 +32,15 @@ trait CpmetaReader:
 
 	def getPlainDocObject(dobj: IRI)(using DocConn): Validated[PlainStaticObject] =
 		getPlainStaticObject(dobj)
+
+	def getPlainStaticCollection(coll: IRI)(using CollConn): Validated[PlainStaticCollection] =
+		for
+			hashsum <- getHashsum(coll, metaVocab.hasSha256sum)
+			fileName <- getOptionalString(coll, metaVocab.dcterms.title).flatMap:
+				case None => getSingleString(coll, metaVocab.hasName)
+				case Some(title) => Validated.ok(title)
+		yield
+			PlainStaticCollection(coll.toJava, hashsum, fileName)
 
 	private def getPlainStaticObject(dobj: IRI)(using TSC): Validated[PlainStaticObject] =
 		for

@@ -54,7 +54,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 
 		val membersV = Validated.sequence:
 			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
-				if collectionExists(item) then getExistingStaticColl(item)
+				if collectionExists(item) then getPlainStaticCollection(item)(using RdfLens.global(using collConn))
 				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 		for
@@ -70,10 +70,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			val init = StaticCollection(
 				res = coll.toJava,
 				hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
-				members = members.sortBy:
-					case coll: StaticCollection => coll.title
-					case dobj: PlainStaticObject => dobj.name
-				,
+				members = members.sortBy(_.name),
 				creator = creator,
 				title = title,
 				description = description,

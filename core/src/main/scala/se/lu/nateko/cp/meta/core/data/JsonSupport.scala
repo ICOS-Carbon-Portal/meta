@@ -16,6 +16,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
 	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
+	given RootJsonFormat[PlainStaticCollection] = jsonFormat3(PlainStaticCollection.apply)
 	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
 	private val vanillaObjectFormatFormat = jsonFormat2(ObjectFormat.apply)
@@ -238,6 +239,7 @@ object JsonSupport extends CommonJsonSupport:
 		def write(sdi: StaticDataItem): JsValue = sdi match{
 			case pdo: PlainStaticObject => pdo.toJson
 			case sc: StaticCollection => sc.toJson
+			case pso: PlainStaticCollection => pso.toJson
 		}
 
 		def read(value: JsValue): StaticDataItem = value match {

@@ -7,10 +7,14 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 sealed trait StaticDataItem extends DataItem:
 	def res: URI
 	def hash: Sha256Sum
+	def name: String
 
 final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem{
 	def asUriResource = UriResource(res, Some(name), Nil)
 }
+
+final case class PlainStaticCollection(res: URI, hash: Sha256Sum, name: String) extends StaticDataItem:
+	def asUriResource = UriResource(res, Some(name), Nil)
 
 sealed trait DataItemCollection extends DataItem {
 	type M <: DataItem
@@ -42,6 +46,8 @@ final case class StaticCollection(
 	def coverage: Option[GeoFeature] = references.doi
 		.flatMap(_.geoLocations)
 		.flatMap(DataCite.geosToCp)
+
+	def name = title
 
 trait CitableItem{
 	def hash: Sha256Sum

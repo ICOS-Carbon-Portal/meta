@@ -43,6 +43,7 @@ README.html
 *.*~
 src/test/resources/startTimes.csv
 src/main/resources/gcmdkeywords.json
+__pycache__/
 
 #Environment-specific config
 /application.conf

@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://gaw.kishou.go.jp/static/json/schema/organization.json",
+    "title": "organization",
+    "description": "Indicates the information of contributior and collaborator organization.",
+    "type": "array",
+    "items": {
+       "type": "object",
+       "properties": {
+         "or_organization_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 3,
+           "pattern": "^[0-9]+?$",
+           "description": "Represents Contributor's number shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+         },
+         "or_acronym": {
+           "type": "string",
+           "required": true,
+           "description": "Represents organization's acronym."
+         },
+         "or_name": {
+           "type": "string",
+           "required": true,
+           "description": "Represents organization's name."
+         },
+         "na_nation_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 2,
+           "maxLength": 2,
+           "pattern": "^[A-Z]{2}$",
+           "description": "Represents ISO 3166-1 alpha-2 code of country/territory which the organizaion belongs to."
+         },
+         "or_address_1": {
+           "type": "string",
+           "description": "Represents the address of the organizaion."
+         },
+         "or_address_2": {
+           "type": "string",
+           "description": "Represents the address of the organizaion."
+         },
+         "or_address_3": {
+           "type": "string",
+           "description": "Represents the address of the organizaion."
+         },
+         "or_website": {
+           "type": "string",
+           "description": "Represents the URL of the organizaion website."
+         }
+       }
+     }
+}

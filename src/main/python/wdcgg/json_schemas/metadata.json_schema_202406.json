@@ -1,0 +1,557 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://gaw.kishou.go.jp/static/json/schema/metadata.json",
+    "title": "metadata",
+    "description": "Indicates the metadata of the submitted data.",
+    "type": "array",
+    "items": {
+       "type": "object",
+       "properties": {
+         "Contributor": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 3,
+           "pattern": "^[0-9]+?$",
+           "description": "Represents the number of Contributor organization shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+         },
+         "Submission_date": {
+           "type": "string",
+           "required": true,
+           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$",
+           "description": "Represents the submission date formatted in 'YYYY-MM-DD hh:mm:ss'."
+         },
+         "md_editor_name": {
+           "type": "string",
+           "required": true,
+           "description": "Represents submitter's name."
+         },
+         "md_editor_email": {
+           "type": "string",
+           "format": "email",
+           "required": true,
+           "description": "Represents the email of submitter."
+         },
+         "Option": {
+           "type": "string",
+           "required": true,
+           "pattern": "^[1-3]$",
+           "description": "Represents the number of submission type. 1: data & metadata submission, 2: Update Contributor(Metadata only), 3: Update Contact(Metadata only)"
+         },
+         "Update": {
+           "type": "array",
+           "items": {
+             "type": "string",
+             "enum": [
+                 "or_organization",
+                 "jl_joint_laboratory",
+                 "pg_person_group",
+                 "ao_aim_of_observation",
+                 "tz_time_zone",
+                 "un_unit",
+                 "sh_scale_history",
+                 "ih_instrument_history",
+                 "sh_sampling_height_history",
+                 "sf_sampling_frequency",
+                 "md_measurement_calibration",
+                 "md_data_processing",
+                 "md_hr_mean_processing",
+                 "md_da_mean_processing",
+                 "md_mo_mean_processing",
+                 "md_original_data_flag",
+                 "dg_data_flag_group",
+                 "rg_reference_group",
+                 "st_status",
+                 "md_description",
+                 "dc_doi_category"
+             ]
+           },
+           "required": true,
+           "uniqueItems": true,
+           "description": "Represents the updated metadata from the list."
+         },
+         "wc_wdcgg_catalogue_id": {
+           "type": "string",
+           "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}$",
+           "required": true,
+           "description": "Represents wdcgg_catalogue_id of the updated data. The wdcgg_catalogue_id is shown in the first 25 characters of 'Version' on 'Data Update Information' tab of https://gaw.kishou.go.jp/contributor ."
+         },
+         "or_organization_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 3,
+           "pattern": "^[0-9]+?$",
+           "description": "Represents Contributor's number shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+         },
+         "or_organization": {
+           "type": "string",
+           "required": true,
+           "description": "Represents organization's name."
+         },
+         "jl_joint_laboratory": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "or_organization_code":{
+                 "type": "string",
+                 "minLength": 1,
+                 "maxLength": 3,
+                 "pattern": "^[0-9]+?$",
+                 "description": "Represents Collaborator's organization number shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+               }
+             }
+           },
+           "uniqueItems": true,
+           "description": "Represents the collaborator of the observation."
+         },
+         "pg_person_group": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "ps_person_id":{
+                 "type": "string",
+                 "description": "Represents the id of the contact of the observation which indicated in contact.json."
+               }
+             }
+           },
+           "uniqueItems": true,
+           "required": true,
+           "description": "Represents the contact of the observation."
+         },
+         "jp_joint_person": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "or_organization_code":{
+                 "type": "string",
+                 "minLength": 1,
+                 "maxLength": 3,
+                 "pattern": "^[0-9]+?$",
+                 "description": "Represents the number of organization which the individual collaborator belongs to shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+               },
+               "ps_person_id":{
+                 "type": "string",
+                 "description": "Represents the id of the individual collaborator of the observation which indicated in contact.json."
+               }
+             }
+           },
+           "uniqueItems": true,
+           "description": "Represents the individual collaboratorss who should not receive inquiries, requests or other forms of contact regarding the observation."
+         },
+         "ao_aim_of_observation_code": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "1",
+               "2",
+               "3",
+               "4",
+               "5",
+               "88"
+           ],
+           "description": "Represents the number shown in https://gaw.kishou.go.jp/documents/db_list/aim_of_observation depending on the aim of the observation."
+         },
+         "ao_aim_of_observation": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "Background observation",
+               "Air Pollution monitoring",
+               "Biosphere monitoring",
+               "Atmospheric tracer",
+               "Monitoring background conditions, and the influence of air pollution",
+               "Unknown"
+           ],
+           "description": "Represents the aim of the observation."
+         },
+         "tz_time_zone_code": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "1",
+               "2",
+               "3",
+               "4",
+               "5",
+               "6",
+               "7",
+               "8",
+               "9",
+               "10",
+               "11",
+               "12",
+               "13",
+               "14",
+               "15",
+               "16",
+               "17",
+               "18",
+               "19",
+               "20",
+               "21",
+               "22",
+               "23",
+               "24",
+               "25",
+               "26",
+               "27",
+               "28",
+               "29",
+               "30",
+               "31",
+               "32",
+               "33",
+               "34",
+               "35",
+               "36",
+               "37",
+               "38",
+               "39",
+               "40"
+           ],
+           "description": "Represents the number shown in the followings depending on the time zone for the timestamp of the data:\n1: UTC,\n2: UTC+14:00,\n3: UTC+13:00,\n4: UTC+12:45,\n5: UTC+12:00,\n6: UTC+11:30,\n7: UTC+11:00,\n8: UTC+10:30,\n9: UTC+10:00,\n10: UTC+09:30,\n11: UTC+09:00,\n12: UTC+08:45,\n13: UTC+08:00,\n14: UTC+07:00,\n15: UTC+06:30,\n16: UTC+06:00,\n17: UTC+05:45,\n18: UTC+05:30,\n19: UTC+05:00,\n20: UTC+04:30,\n21: UTC+04:00,\n22: UTC+03:30,\n23: UTC+03:00,\n24: UTC+02:00,\n25: UTC+01:00,\n26: UTC-01:00,\n27: UTC-02:00,\n28: UTC-03:00,\n29: UTC-03:30,\n30: UTC-04:00,\n31: UTC-04:30,\n32: UTC-05:00,\n33: UTC-06:00,\n34: UTC-07:00,\n35: UTC-08:00,\n36: UTC-09:00,\n37: UTC-09:30,\n38: UTC-10:00,\n39: UTC-11:00,\n40: UTC-12:00"
+         },
+         "tz_time_zone": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "UTC",
+               "UTC+14:00",
+               "UTC+13:00",
+               "UTC+12:45",
+               "UTC+12:00",
+               "UTC+11:30",
+               "UTC+11:00",
+               "UTC+10:30",
+               "UTC+10:00",
+               "UTC+09:30",
+               "UTC+09:00",
+               "UTC+08:45",
+               "UTC+08:00",
+               "UTC+07:00",
+               "UTC+06:30",
+               "UTC+06:00",
+               "UTC+05:45",
+               "UTC+05:30",
+               "UTC+05:00",
+               "UTC+04:30",
+               "UTC+04:00",
+               "UTC+03:30",
+               "UTC+03:00",
+               "UTC+02:00",
+               "UTC+01:00",
+               "UTC-01:00",
+               "UTC-02:00",
+               "UTC-03:00",
+               "UTC-03:30",
+               "UTC-04:00",
+               "UTC-04:30",
+               "UTC-05:00",
+               "UTC-06:00",
+               "UTC-07:00",
+               "UTC-08:00",
+               "UTC-09:00",
+               "UTC-09:30",
+               "UTC-10:00",
+               "UTC-11:00",
+               "UTC-12:00"
+           ],
+           "description": "Represents the time zone for the timestamp of the data."
+         },
+         "un_unit_code": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "1",
+               "2",
+               "3",
+               "4",
+               "5",
+               "6",
+               "7",
+               "8",
+               "9",
+               "10",
+               "11",
+               "12",
+               "13",
+               "14",
+               "15"
+           ],
+           "description": "Represents the number shown in https://gaw.kishou.go.jp/documents/db_list/unit depending on the unit of the data."
+         },
+         "un_unit": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "ppm",
+               "ppb",
+               "ppt",
+               "permil",
+               "Bq/m3",
+               "umol/kg",
+               "umol/l",
+               "mBq/m3",
+               "pmol/kg",
+               "nmol/kg",
+               "ug/m3-20C",
+               "mg/m3-25C",
+               "ug/m3-25C",
+               "fmol/kg",
+               "per meg"
+           ],
+           "description": "Represents the unit of the data."
+         },
+         "sh_scale_history": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "sh_start_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the start date of the usage of the scale formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "sh_end_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the end date of the usage of the scale formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "sc_scale_code":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the number shown in https://gaw.kishou.go.jp/documents/db_list/scale depending on the calibration scales used for data and Gas Species."
+               },
+               "sc_scale":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the calibration scales used for data."
+               }
+             }
+           }
+         },
+         "ih_instrument_history": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "ih_start_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the start date of the usage of the instrument formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "ih_end_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the end date of the usage of the instrument formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "ih_instrument":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the manufacturer, the product name and the model number of the instrument used for the measurement."
+               },
+               "mm_measurement_method_code":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the number shown in https://gaw.kishou.go.jp/documents/db_list/measurement_method depending on the measurement method of the instrument."
+               },
+               "mm_measurement_method":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the measurement method of the instrument."
+               }
+             }
+           }
+         },
+         "sh_sampling_height_history": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "sh_start_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the start date of the usage of the sampling height formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "sh_end_date_time":{
+                 "type": "string",
+                 "required": true,
+                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+                 "description": "Represents the end date of the usage of the sampling height formatted in 'YYYY-MM-DDThh:mm:ss' which time zone is same as the data time zone."
+               },
+               "sh_sampling_height":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the height (depth) of air (seawater) sampling above the ground (below sea level) in meters: positive for height and negative for depth, except for mobiles (3D) whose altitudes are included in the observation data."
+               }
+             }
+           }
+         },
+         "sf_sampling_frequency_code": {
+           "type": "string",
+           "enum": [
+               "1",
+               "2",
+               "3",
+               "4",
+               "5",
+               "6",
+               "7",
+               "8",
+               "9",
+               "10",
+               "11",
+               "12",
+               "13",
+               "14",
+               "15",
+               "16",
+               "17",
+               "18",
+               "19",
+               "20",
+               "21",
+               "22",
+               "23",
+               "24",
+               "25",
+               "26",
+               "27",
+               "28",
+               "29",
+               "30",
+               "33",
+               "34",
+               "35",
+               "36",
+	       "37",
+               "88",
+               "99"
+           ],
+           "description": "Represents the number shown in the followings depending on the sampling frequency of the current observation:\n1: event,\n2: weekly,\n3: daily,\n4: hourly,\n5: 30 minutes,\n6: 5 minutes,\n7: 1 minute,\n8: 30 seconds,\n9: 15 seconds,\n10: 10 minutes,\n11: 10 seconds,\n12: 1 second,\n13: fortnightly,\n14: 5 seconds,\n15: 9 seconds,\n16: monthly,\n17: 24 minutes,\n18: 6 hours,\n19: 6 minutes,\n20: 7.5 minutes,\n21: 3 hours,\n22: 3 weeks,\n23: 4 measurements each hour,\n24: 6.5 minutes,\n25: 2 hours,\n26: 2 seconds,\n27: 4 seconds,\n28: 2 minutes,\n29: 15 minutes,\n30: 12 seconds,\n33: 20 minutes,\n34: twice a week,\n35: 0.333 seconds,\n36: 2 months,\n37: 8 minutes,\n88: Unknown,\n99: Other"
+         },
+         "sf_sampling_frequency": {
+           "type": "string", 
+           "description": "Represents the sampling frequency of the current observation if sf_sampling_frequency_code is 99."
+         },
+         "md_measurement_calibration": {
+           "type": "string",
+           "description": "Represents calibration for determining mole fractions along with procedures for analysis such as the order of introduction (sequence) for sample and standard gases (or zero gases) to the instrument, the relevant time period and the number of calibration points."
+         },
+         "md_data_processing": {
+           "type": "string",
+           "description": "Represents details of instrumental data processing and averaging. Criteria used in selection for data processing should also be described."
+         },
+         "md_hr_mean_processing": {
+           "type": "string",
+           "description": "Represents detailed processes on hourly data or data selections on qualities."
+         },
+         "md_da_mean_processing": {
+           "type": "string",
+           "description": "Represents detailed processes on daily data or data selections on qualities."
+         },
+         "md_mo_mean_processing": {
+           "type": "string",
+           "description": "Represents detailed processes on monthly data or data selections on qualities."
+         },
+         "md_original_data_flag": {
+           "type": "string",
+           "description": "Represents the criteria for data flagging. If data have already been flagged with WDCGG data quality flags, Original Data Flag metadata do not need to be added."
+         },
+         "dg_data_flag_group": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "df_data_flag_code":{
+                 "type": "string",
+                 "required": true,
+                 "enum": [
+                     "1",
+                     "2",
+                     "3"
+                 ],
+                 "description": "Represents the number of the data flag shown in https://gaw.kishou.go.jp/documents/db_list/data_flag which suit to dg_data_flag."
+               },
+               "df_data_flag":{
+                 "type": "string",
+                 "required": true,
+                 "enum": [
+                     "Valid (background)",
+                     "Valid",
+                     "Invalid"
+                 ],
+                 "description": "Represents the data flag shown in https://gaw.kishou.go.jp/documents/db_list/data_flag which suit to dg_data_flag."
+               },
+               "dg_data_flag":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents the original data flag."
+               }
+             }
+           }
+         },
+         "rg_reference_group": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "properties": {
+               "rg_reference":{
+                 "type": "string",
+                 "required": true,
+                 "description": "Represents references to observations (such as instruments, data processing and calibration) in literature or URLs."
+               }
+             }
+           }
+         },
+         "st_status_code": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "1",
+               "2",
+               "3"
+           ],
+           "description": "Represents the number shown in https://gaw.kishou.go.jp/documents/db_list/status depending on the observation situation for current conditions."
+         },
+         "st_status": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "Operational/Reporting",
+               "Temporarily suspended",
+               "Terminated"
+           ],
+           "description": "Represents the most appropriate observation situation for current conditions."
+         },
+         "dc_doi_category_code": {
+           "type": "string",
+           "required": true,
+           "enum": [
+               "1",
+               "2",
+               "9"
+           ],
+           "description": "Represents the number shown in the followings depending on the DOI status of the data:\n 1: Request for WDCGG DOI issuance,\n 2: Original DOI already present,\n 9: Undecided"
+         },
+         "dc_doi_category": {
+           "type": "string",
+           "required": true,
+           "description": "Represents the original DOI of the data if dc_doi_category_code is 2."
+         },
+         "md_description": {
+           "type": "string",
+           "description": "Represents any other information on observations or data."
+         }
+       }
+     }
+}

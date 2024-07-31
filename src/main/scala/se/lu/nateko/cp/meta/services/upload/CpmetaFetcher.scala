@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import scala.util.Try
 import se.lu.nateko.cp.meta.api.RdfLens.CollConn
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 trait CpmetaReader:
@@ -33,9 +34,15 @@ trait CpmetaReader:
 	def getPlainDocObject(dobj: IRI)(using DocConn): Validated[PlainStaticObject] =
 		getPlainStaticObject(dobj)
 
+	def getHashFromIri(iri: IRI): Validated[Sha256Sum] =
+		val hashSegment = iri.toString.split("/").last
+		val sha256Sum = Sha256Sum.fromString(hashSegment)
+
+		Validated.fromTry(sha256Sum)
+
 	def getPlainStaticCollection(coll: IRI)(using CollConn): Validated[PlainStaticCollection] =
 		for
-			hashsum <- getHashsum(coll, metaVocab.hasSha256sum)
+			hashsum <- getHashFromIri(coll)
 			fileName <- getOptionalString(coll, metaVocab.dcterms.title).flatMap:
 				case None => getSingleString(coll, metaVocab.hasName)
 				case Some(title) => Validated.ok(title)

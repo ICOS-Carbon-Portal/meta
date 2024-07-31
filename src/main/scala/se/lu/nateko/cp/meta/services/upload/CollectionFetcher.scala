@@ -54,7 +54,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 
 		val membersV = Validated.sequence:
 			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
-				if collectionExists(item) then getPlainStaticCollection(item)(using RdfLens.global(using collConn))
+				if collectionExists(item) then getPlainStaticCollection(item)
 				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 		for

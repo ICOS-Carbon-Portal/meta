@@ -1,9 +1,11 @@
+from datetime import datetime
 import warnings
 from typing import TypeAlias
 from dataclasses import dataclass
-from icoscp_core.icos import meta
+from icoscp_core.icos import meta, data
 from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Agent
 import sparql
+from obspack_netcdf import ObspackNetcdf
 
 
 WdcggMetadataDict: TypeAlias = dict[str, str | int | list[str] | list[dict[str, str]]]
@@ -13,6 +15,16 @@ CONTRIBUTOR = "159"
 WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", None: ""}
 SCALES = {"CO2": "WMO CO2 X2019", "CH4": "WMO CH4 X2004A", None: ""}
 WDCGG_SCALE_CODES = {"WMO CO2 X2019": "158", "WMO CH4 X2004A": "3", None: ""}
+WDCGG_METHODS = {
+	"Picarro": {"method": "CRDS", "code": "18"},
+	"LI-COR": {"method": "NDIR", "code": "9"},
+	"Los Gatos Research": {"method": "off-axis integrated cavity output spectroscopy (OA-ICOS)", "code": "25"},
+	"Siemens, ULTRAMAT": {"method": "NDIR", "code": "9"},
+	"Maihak": {"method": "NDIR", "code": "9"},
+	"Ecotech, Spectronus": {"method": "Fourier Transform Spectrometer", "code": "50"},
+	"ABB, URAS": {"method": "NDIR", "code": "9"},
+	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": {"method": "NDIR", "code": "9"}
+}
 WDCGG_PLATFORMS = {
 	"surface": "01", "tower": "02", "balloon": "03", "aircraft": "05",
 	"ship": "06", "buoy": "07", "satellite": "08", "human": "09"
@@ -38,61 +50,11 @@ class DobjInfo:
 	instruments: UriResource | list[UriResource] | None
 
 
-def get_dobj_meta_and_filter(dobj_url: str) -> DobjInfo | None:
-	"""
-	"""
-
-	dobj_meta = meta.get_dobj_meta(dobj_url)
-
-	if isinstance(dobj_meta.specificInfo, StationTimeSeriesMeta):
-		# Sources
-		sources: list[PlainStaticObject] | None
-		if dobj_meta.specificInfo.productionInfo is None:
-			sources = None
-		else:
-			sources = dobj_meta.specificInfo.productionInfo.sources
-		# Gas species
-		gas_species: str | None
-		keywords = dobj_meta.specification.keywords
-		if keywords is None:
-			warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined for lack of keyword.")
-			gas_species = None
-		else:
-			dobj_gas_species = set(keywords).intersection(WDCGG_GAS_SPECIES_CODES.keys())
-			if len(dobj_gas_species) == 0:
-				warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined.")
-				gas_species = None
-			elif len(dobj_gas_species) == 1:
-				gas_species = list(dobj_gas_species)[0]
-			else:
-				warnings.warn(f"More than one gas species was found for data object {dobj_url}.")
-				gas_species = None
-
-		return DobjInfo(
-			url=dobj_url,
-			fileName=dobj_meta.fileName,
-			doi=dobj_meta.doi,
-			pid=dobj_meta.pid,
-			citationString=dobj_meta.references.citationString,
-			station=dobj_meta.specificInfo.acquisition.station.org.self.label,
-			samplingHeight=dobj_meta.specificInfo.acquisition.samplingHeight,
-			sources=sources,
-			authors=dobj_meta.references.authors,
-			gasSpecies=gas_species,
-			instruments=dobj_meta.specificInfo.acquisition.instrument
-		)
-	else:
-		warnings.warn(
-			f"Data object {dobj_url} is skipped because its 'specificInfo' field is not "
-			f"of type 'StationTimeSeriesMeta' but of type '{type(dobj_meta.specificInfo)}'."
-		)
-		return None
-
-
 class WdcggMetadata:
 	def __init__(self, dobj_info: DobjInfo, gawsis_to_wdcgg_station_id: dict[str, str]):
 		self.dobj_info = dobj_info
 		self.gawsis_to_wdcgg_station_id = gawsis_to_wdcgg_station_id
+		self.instruments: dict[int, str] = {}
 
 	def dobj_metadata(self) -> WdcggMetadataDict:
 		"""Fill information in a JSON object according to WDCGG template for metadata.
@@ -320,7 +282,7 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 		return {}
 
 	def wdcgg_catalog_id(self) -> str:
-		"""Combine metadata to form the data object's catalog ID.
+		"""Produce a string containing the data object's catalog ID.
 
 		Returns
 		-------
@@ -374,26 +336,109 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 			sampling_type_id,
 			"9999"
 		])
-	
+
 	def instrument_history(self) -> list[dict[str, str]]:
-		"""Combine information about instruments used for the measurements.
+		"""Format the instrument history according to WDCGG requirements.
 
 		Returns
 		-------
 		A list of dictionaries where each dictionary contains information
-		about one instrument's deployment.
+		about one instrument's deployment according to WDCGG requirements.
 		"""
 
-		if self.dobj_info.sources is None:
-			instruments = self.dobj_info.instruments
-		else:
-			for source in self.dobj_info.sources:
-				source_info = get_dobj_meta_and_filter(source.res)
+		buffer = data.get_file_stream(self.dobj_info.url)
+		obspack_nc = ObspackNetcdf(self.dobj_info.fileName, buffer[1].read())
+		instr_hist = obspack_nc.instrument_history("time", "instrument")
+		if len(instr_hist) == 0 or len(instr_hist) > 5:
+			return []
+		instr_hist_wdcgg: list[dict[str, str]] = []
+		for deployment in instr_hist:
+			instr_label: str
+			if deployment.atc_id in self.instruments.keys():
+				instr_label = self.instruments[deployment.atc_id]
+			else:
+				instr_query = sparql.instrument_query(deployment.atc_id)
+				instr_label = sparql.run_query(instr_query)[0]
+				self.instruments[deployment.atc_id] = instr_label
+			for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
+				if instr_label.startswith(vendor_or_model):
+					wdcgg_method = wdcgg_method_info["method"]
+					wdcgg_method_code = wdcgg_method_info["code"]
+					break
+			else:
+				wdcgg_method = ""
+				wdcgg_method_code = ""
+			instr_hist_wdcgg.append({
+				"ih_start_date_time": timestamp_to_str(deployment.time_period.start_time, "%Y-%m-%dT%H:%M:%S"),
+				"ih_end_date_time": timestamp_to_str(deployment.time_period.end_time, "%Y-%m-%dT%H:%M:%S"),
+				"ih_instrument": instr_label,
+				"mm_measurement_method_code": wdcgg_method_code,
+				"mm_measurement_method": wdcgg_method
+			})
+		instr_hist_wdcgg[0]["ih_start_date_time"] = "9999-12-31T00:00:00"
+		instr_hist_wdcgg[-1]["ih_end_date_time"] = "9999-12-31T23:59:59"
 
-		if isinstance(self.dobj_info.instruments, UriResource):
-			instruments = [self.dobj_info.instruments]
-		else:
-			instruments = self.dobj_info.instruments
+		return instr_hist_wdcgg
 
-		for instrument in instruments:
-			instrument_info = sparql.run_query(sparql.instrument_query(instrument.uri))
+
+def get_dobj_info(dobj_url: str) -> DobjInfo | None:
+	"""Extract relevant information from ICOS metadata.
+
+	Parameters
+	----------
+	dobj_url : str
+		Data object's URL.
+
+	Returns
+	-------
+	A DobjInfo object containing metadata about the data object.
+	If the data object is not a 'StationTimeSeries', returns None.
+	"""
+
+	dobj_meta = meta.get_dobj_meta(dobj_url)
+
+	if isinstance(dobj_meta.specificInfo, StationTimeSeriesMeta):
+		# Sources
+		sources: list[PlainStaticObject] | None
+		if dobj_meta.specificInfo.productionInfo is None: sources = None
+		else: sources = dobj_meta.specificInfo.productionInfo.sources
+		# Gas species
+		gas_species: str | None
+		keywords = dobj_meta.specification.keywords
+		if keywords is None:
+			warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined for lack of keyword.")
+			gas_species = None
+		else:
+			dobj_gas_species = set(keywords).intersection(WDCGG_GAS_SPECIES_CODES.keys())
+			if len(dobj_gas_species) == 0:
+				warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined.")
+				gas_species = None
+			elif len(dobj_gas_species) == 1:
+				gas_species = list(dobj_gas_species)[0]
+			else:
+				warnings.warn(f"More than one gas species was found for data object {dobj_url}.")
+				gas_species = None
+
+		return DobjInfo(
+			url=dobj_url,
+			fileName=dobj_meta.fileName,
+			doi=dobj_meta.doi,
+			pid=dobj_meta.pid,
+			citationString=dobj_meta.references.citationString,
+			station=dobj_meta.specificInfo.acquisition.station.org.self.label,
+			samplingHeight=dobj_meta.specificInfo.acquisition.samplingHeight,
+			sources=sources,
+			authors=dobj_meta.references.authors,
+			gasSpecies=gas_species,
+			instruments=dobj_meta.specificInfo.acquisition.instrument
+		)
+	else:
+		warnings.warn(
+			f"Data object {dobj_url} is skipped because its 'specificInfo' field is not "
+			f"of type 'StationTimeSeriesMeta' but of type '{type(dobj_meta.specificInfo)}'."
+		)
+		return None
+
+
+def timestamp_to_str(timestamp: float, fmt: str) -> str:
+	return datetime.fromtimestamp(timestamp).strftime(fmt)

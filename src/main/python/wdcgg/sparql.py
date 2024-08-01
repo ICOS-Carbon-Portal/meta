@@ -1,6 +1,15 @@
 import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import requests
 import warnings
+from dataclasses import dataclass
+
+
+@dataclass
+class SubmissionWindow:
+	start: datetime
+	end: datetime
 
 
 def run_query(query: str) -> list[str | int | float] | dict[str, list[str | int | float]]:
@@ -13,9 +22,9 @@ def run_query(query: str) -> list[str | int | float] | dict[str, list[str | int 
 	
 	Returns
 	-------
-		A dictionary containing the results of the query in the form
-		of a dictionary where each key corresponds to a parameter and
-		each value contains the list of values for the parameter.
+		The results of the query in the form of a dictionary where each key
+		corresponds to a parameter and each value contains the list of values
+		for the parameter.
 		If the result of the query contains only one parameter, returns
 		the list of values for that parameter.
 		If the HTTP response's status code is not 200, returns an empty list.
@@ -47,42 +56,50 @@ def run_query(query: str) -> list[str | int | float] | dict[str, list[str | int 
 		return []
 
 
-def collection_query(collection_pid: str) -> str:
-	
+def obspack_time_series_query(submission_window: SubmissionWindow) -> str:
+	fmt = "%Y-%m-%dT%H:%M:%SZ"
+	utc = ZoneInfo("UTC")
+	earliest = submission_window.start.astimezone(utc).strftime(fmt)
+	latest = submission_window.end.astimezone(utc).strftime(fmt)
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-SELECT ?dobj_url WHERE {
-	VALUES ?collection { <https://meta.icos-cp.eu/collections/%s> }
-	?collection dcterms:hasPart ?dobj_url .
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?dobj WHERE {
+	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> }
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	FILTER( ?submTime >= '%s'^^xsd:dateTime && ?submTime <= '%s'^^xsd:dateTime )
 }
-	""" % collection_pid
+	""" % (earliest, latest)
 
 
-def instrument_query(instrument_url: str) -> str:
-	
+def instrument_query(instrument_atc_id: int) -> str:
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-SELECT ?instrument ?vendorName ?model ?serialNumber WHERE {
-	VALUES ?instrument { <%s> }
+SELECT ?instrumentInfo WHERE {
+	VALUES ?instrument { <http://meta.icos-cp.eu/resources/instruments/ATC_%s> }
 	?instrument cpmeta:hasModel ?model .
 	?instrument cpmeta:hasSerialNumber ?serialNumber .
 	?instrument cpmeta:hasVendor ?vendor .
 	?vendor cpmeta:hasName ?vendorName .
+	BIND(concat(?vendorName, ", ", ?model, ", ", ?serialNumber) AS ?instrumentInfo)
 }
-	""" % instrument_url
+	""" % instrument_atc_id
 
 
 def contributors_query(dataset_url: str) -> str:
-	
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-SELECT ?contributor ?organizationLabel ?roleLabel WHERE {
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?contributor ?email ?organizationLabel ?roleLabel WHERE {
 	VALUES ?ds { <%s> }
 	?ds cpmeta:wasProducedBy ?prod .
 	?prod cpmeta:wasParticipatedInBy ?prodContrib .
 	?prodContrib rdf:_1|rdf:_2|rdf:_3|rdf:_4|rdf:_5|rdf:_6|rdf:_7|rdf:_8|rdf:_9|rdf:_10 ?contributor .
 	?contributor cpmeta:hasMembership ?membership .
+	?contributor cpmeta:hasEmail ?email .
 	?membership cpmeta:atOrganization ?organization .
 	?membership cpmeta:hasRole ?role .
 	?organization rdfs:label ?organizationLabel .

@@ -3,9 +3,11 @@
 import sys
 import os
 from pathlib import Path
+from datetime import datetime
+import re
 import json
 import warnings
-from wdcgg_metadata import WdcggMetadata, WdcggMetadataDict, get_dobj_meta_and_filter
+from wdcgg_metadata import WdcggMetadata, WdcggMetadataDict, get_dobj_info
 import sparql
 
 
@@ -27,30 +29,39 @@ def parse_wdcgg_station_file() -> dict[str, str]:
 
 
 def prepare_wdcgg_metadata(dobj_urls: list[str | int | float] | dict[str, list[str | int | float]]) -> list[WdcggMetadataDict]:
-	"""
-	"""
-
 	gawsis_to_wdcgg_station_id = parse_wdcgg_station_file()
 	metadata: list[WdcggMetadataDict] = []
 	for dobj_url in dobj_urls:
 		if not isinstance(dobj_url, str):
 			warnings.warn(f"Dataset's URL ({dobj_url}) should be a string.")
 			continue
-		dobj_meta = get_dobj_meta_and_filter(dobj_url)
-		if dobj_meta is None:
-			continue
+		dobj_meta = get_dobj_info(dobj_url)
+		if dobj_meta is None: continue
 		wdcgg_metadata = WdcggMetadata(dobj_meta, gawsis_to_wdcgg_station_id)
 		metadata.append(wdcgg_metadata.dobj_metadata())
 	return metadata
 
 
+def str_to_datetime(dt: str) -> datetime:
+	if re.match(r"\d{4}-\d{2}-\d{2}", dt):
+		return datetime.strptime(dt, "%Y-%m-%d")
+	elif re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", dt):
+		return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")
+	else:
+		raise ValueError(
+			f"Date {dt} does not follow either of the two formats YYYY-MM-DD"
+			"or YYYY-MM-DDThh:mm:ss"
+		)
+
+
 if __name__ == "__main__":
-	collection_pid: str = sys.argv[1]
-	output_dir = Path(sys.argv[2])
-	if not output_dir.exists():
-		output_dir.mkdir(parents=True)
-	dobj_urls = sparql.run_query(sparql.collection_query(collection_pid))
-	wdcgg_md_json = json.dumps(prepare_wdcgg_metadata(dobj_urls))
+	start = str_to_datetime(sys.argv[1])
+	end = str_to_datetime(sys.argv[2])
+	output_dir = Path(sys.argv[3])
+	submission_window = sparql.SubmissionWindow(start, end)
+	if not output_dir.exists(): output_dir.mkdir(parents=True)
+	dobj_urls = sparql.run_query(sparql.obspack_time_series_query(submission_window))
+	wdcgg_metadata_json = json.dumps(prepare_wdcgg_metadata(dobj_urls))
 	filename = "wdcgg_all_datasets.json"
 	with open(os.path.join(output_dir, filename), "w") as json_file:
-		json_file.write(wdcgg_md_json)
+		json_file.write(wdcgg_metadata_json)

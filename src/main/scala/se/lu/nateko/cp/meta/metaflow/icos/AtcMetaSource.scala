@@ -6,8 +6,12 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.Validated
 
+import java.io.BufferedInputStream
+import java.io.FileInputStream
+import java.io.InputStreamReader
 import java.net.URI
 import java.nio.file.Path
 import java.time.Instant
@@ -224,7 +228,16 @@ object AtcMetaSource{
 		import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 		import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-		val tryRes = Using(java.io.FileReader(path.toFile)): reader =>
+		val tryRes = Using.Manager: use =>
+			val is = use(BufferedInputStream(FileInputStream(path.toFile)))
+
+			// Skip possible byte-order mark in the file
+			if is.markSupported() then
+				is.mark(3)
+				if Seq(0xEF, 0xBB, 0xBF).exists(_ != is.read())
+				then is.reset()
+
+			val reader = use(InputStreamReader(is))
 			val parser = CSVParserBuilder().withSeparator(sep).build()
 			val csvReader = CSVReaderBuilder(reader).withCSVParser(parser).build()
 			val lines = csvReader.iterator().asScala

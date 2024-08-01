@@ -1,0 +1,67 @@
+﻿site;site_name;latitude;longitude;elevation;site_type;installation_classification;height_of_building;responsible_party
+TUMR;TUM Zentralgelände Nord Maxvorstadt;48.150733;11.569168;511.39;city;rooftop;31.06;tum:environmental_sensing and_modeling
+FELR;Rathaus Gemeinde Feldkirchen;48.147752;11.730560;524.00;background;rooftop;15.73;tum:environmental_sensing and_modeling
+TAUR;Walter-Klingenbeck-Realschule Taufkirchen;48.046658;11.608449;562.55;background;rooftop;17.89;tum:environmental_sensing and_modeling
+DLRR;DLR Oberpfaffenhofen;48.086712;11.278840;576.17;background;rooftop;22.92;tum:environmental_sensing and_modeling
+SENR;Klenze-Gymnasium Sendling;48.115438;11.544260;526.33;city;rooftop;15.33;tum:environmental_sensing and_modeling
+RDIR;TUM Klinikum rechts der Isar Haidhausen;48.139313;11.600133;523.24;city;rooftop;20.13;tum:environmental_sensing and_modeling
+SCHR;Städt. Willi-Graf-Gymnasium Schwabing-West;48.169493;11.571583;510.48;city;rooftop;17.14;tum:environmental_sensing and_modeling
+FINR;Rathaus Gemeinde Finsing;48.220508;11.801911;493.90;background;rooftop;15.21;tum:environmental_sensing and_modeling
+SWMR;Stadtwerke München Zentrale Moosach;48.171895;11.532824;508.37;city;rooftop;27.69;tum:environmental_sensing and_modeling
+MAIR;Mittelschule Maisach;48.220476;11.257392;511.93;background;rooftop;15.08;tum:environmental_sensing and_modeling
+PASR;Städt. Bertolt-Brecht-Gymnasium Pasing;48.141191;11.447062;528.07;city;rooftop;17.96;tum:environmental_sensing and_modeling
+GROR;LMU Klinikum Campus Großhadern;48.114039;11.466741;542.07;city;rooftop;30.40;tum:environmental_sensing and_modeling
+BLUT;Fernmeldeturm Blutenburgstraße;48.147532;11.549808;518.61;city;tower;101.6;tum:environmental_sensing and_modeling
+NPLR;München Klinik Neuperlach;48.094790;11.656115;539.87;city;rooftop;31.43;tum:environmental_sensing and_modeling
+BOGR;München Klinik Bogenhausen;48.155391;11.625420;511.96;city;rooftop;39.46;tum:environmental_sensing and_modeling
+HARR;München Klinik Harlaching;48.086350;11.556439;553.1;city;rooftop;29.30;tum:environmental_sensing and_modeling
+LOTC;Co-Location LfU Lothstraße;48.154566;11.554620;519.0;lfu_colocation;streetlevel;;tum:environmental_sensing and_modeling
+HANV;Hanauer Straße;48.172732;11.528536;510.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+DOMV;Dom-Pedro-Straße;48.159655;11.537629;520.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+LANC;Co-Location LfU Landshuter Allee;48.14957;11.536546;524.0;lfu_colocation;streetlevel;;tum:environmental_sensing and_modeling
+FRIV;Friedensbrücke;48.143002;11.519285;523.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+TUEV;B2R Abfahrt Tübinger Straße;48.128459;11.525532;531.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+SONC;Co-Location LfU Stachus;48.137248;11.564823;524.0;lfu_colocation;streetlevel;;tum:environmental_sensing and_modeling
+LINV;Lindwurmstraße;48.130120;11.559456;526.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+ERHV;Erhardtstraße;48.128864;11.578359;514.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+TOEV;Töginger Straße;48.138670;11.626897;528.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+ROSV;Rosenheimer Straße;48.125051;11.600239;531.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+PRIV;Prinzregentenstraße;48.143034;11.589154;516.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+FREV;Münchner Freiheit;48.161559;11.586038;514.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+SCHV;Schenkdorfstraße;48.176214;11.591642;503.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+MOSV;Moosacher Straße;48.187043;11.562270;508.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+PETV;Petuelring;48.176205;11.564156;513.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+NUSC;Co-Location LfU Johanneskirchen;48.173241;11.648013;511.0;lfu_colocation;streetlevel;;tum:environmental_sensing and_modeling
+COSP;Cosimastraße;48.175567;11.633845;511.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+LEIP;Leinthalerstraße;48.184036;11.629237;495.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+SMIA;Schmidbartlanger;48.208863;11.598966;497.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+ALLC;Co-Location LfU Allach;48.181709;11.464480;511.0;lfu_colocation;streetlevel;;tum:environmental_sensing and_modeling
+TUMR;TUM Zentralgelände Nord Maxvorstadt;48.150733;11.569168;511.39;reference_colocation;rooftop;31.06;tum:environmental_sensing and_modeling
+TETP;Tetoburger Straße;48.116531;11.565189;518.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+FLAV;B2R am Flaucher;48.112614;11.556869;530.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+SAEV;Schäftlarnstraße;48.107075;11.549842;524.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+WOLV;Wolfratshauser Straße;48.090755;11.538558;555.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+LITA;Littmannstraße;48.077187;11.503160;567.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+LHGA;Ludwig-Hunger-Straße;48.117875;11.467358;543.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+ASAA;Asamstraße;48.132606;11.428535;540.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+PIPV;Pippinger Straße;48.153126;11.456421;527.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+ASHA;Aschenbrennerstraße;48.220029;11.560161;495.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+NYMC;Nymphenburger Str.;48.150889;11.541806;523.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+LORC;Loristraße;48.149137;11.55058;523.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+STIC;Stiglmaierplatz;48.147345;11.559613;520.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+OVMC;Oskar-von-Miller Ring;48.145862;11.575468;519.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+DACC;Dachauer Straße Co-Location;48.150575;11.557802;523.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+TERC;Theresienstraße;48.149061;11.571424;516.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+BARC;Barer Straße;48.144070;11.568717;520.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+KOEC;Königsplatz;48.146386;11.563499;522.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+LMUM;LMU Rooftoop Meteorologie Station;48.14776;11.57345;520.0;reference_colocation;rooftop;30;tum:environmental_sensing and_modeling
+MASC;Maßmannstraße;48.15208;11.55986;520.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+SPAC;Nyphenburger Straße vor Sparkasse;48.14968;11.54788;523.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+ELIC;Elisenstraße;48.14164;11.56302;527.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+HSMC;Dachauer Straße vor Hochschule München;48.1527;11.55608;524.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+NEPC;Elisenstraße vor Neptunbrunnen;48.14114;11.56477;525.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling
+AYIV;Ayinger Straße;48.11815;11.61854;535.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+MKWA;Münchner-Kindl-Weg;48.09342;11.5839;549.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+KARV;Karpfenstraße;48.12253;11.66223;526.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+MARA;Markgrafenstraße;48.1057;11.67778;541.0;individual;streetlevel;;tum:environmental_sensing and_modeling
+HEDC;Nyphenburger Straße bei Hedwigstraße;48.151206;11.540195;523.0;lc_aq_colocation;streetlevel;;tum:environmental_sensing and_modeling

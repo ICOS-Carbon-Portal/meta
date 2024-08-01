@@ -18,10 +18,22 @@ class MidLowCostMetaSource[T <: CitiesTC : TcConf](
 	import MidLowCostMetaSource.*
 
 	override def readState: Validated[State] =
-		for sites <- parseFromCsv(getTableFile(StationsTableName))(parseStation)
+		for sites <- parseFromCsv(getTableFile(StationsTableName))(parseStation(countryCode))
 		yield TcState(sites, Nil, Nil)
 
-	def parseStation(using Lookup): Validated[TcStation[T]] =
+
+object MidLowCostMetaSource:
+	val StationsTableName = "sites"
+	val StationIdCol = "site"
+	val StationNameCol = "site_name"
+	val LatCol = "latitude"
+	val LonCol = "longitude"
+	val AltCol = "elevation"
+
+	extension(s: String)
+		def commaToDot: String = s.replace(',', '.')
+
+	def parseStation[T <: CitiesTC : TcConf](countryCode: CountryCode)(using Lookup): Validated[TcStation[T]] =
 		val demand = lookUpMandatory(StationsTableName) _
 		for(
 			stIdStr <- demand(StationIdCol);
@@ -53,15 +65,5 @@ class MidLowCostMetaSource[T <: CitiesTC : TcConf](
 			funding = Nil
 		)
 	end parseStation
+
 end MidLowCostMetaSource
-
-object MidLowCostMetaSource:
-	val StationsTableName = "sites"
-	val StationIdCol = "site"
-	val StationNameCol = "site_name"
-	val LatCol = "latitude"
-	val LonCol = "longitude"
-	val AltCol = "elevation"
-
-	extension(s: String)
-		def commaToDot: String = s.replace(',', '.')

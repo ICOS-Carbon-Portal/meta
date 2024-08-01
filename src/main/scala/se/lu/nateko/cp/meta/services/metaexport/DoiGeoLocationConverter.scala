@@ -57,12 +57,12 @@ object DoiGeoLocationConverter:
 		)
 	}
 
-	def toDoiGeoLocationWithPoint(pos: Position): GeoLocation =
+	private def fromPosition(pos: Position): GeoLocation =
 		GeoLocation(Some(
 			GeoLocationPoint(Some(Longitude(pos.lon)), Some(Latitude(pos.lat)))
 		), None, pos.label)
 
-	private def toDoiGeoLocationWithBox(box: LatLonBox): GeoLocation =
+	private def fromBox(box: LatLonBox): GeoLocation =
 		GeoLocation(None, Some(
 			GeoLocationBox(
 				Some(Longitude(box.min.lon)), Some(Longitude(box.max.lon)), 
@@ -71,48 +71,52 @@ object DoiGeoLocationConverter:
 		)
 
 	// Not yet supported by DataCite
-	// def toDoiGeoLocationWithPolygon(polygon: Polygon): GeoLocation =
+	// def fromPolygon(polygon: Polygon): GeoLocation =
 	// 	GeoLocation(None, None, Some(
 	// 		Seq(GeoLocationPolygon(
 	// 			polygon.vertices.map(v => GeoLocationPoint(Some(Longitude(v.lon)), Some(Latitude(v.lat))))))
 	// 		), polygon.label
 	// 	)
 
-	def toDoiGeoLocation(geoCoverage: GeoFeature): Seq[GeoLocation] =
-		geoCoverage match {
-			case p: Position => Seq(toDoiGeoLocationWithPoint(p))
-			case Pin(position, _) => Seq(toDoiGeoLocationWithPoint(position))
-			case b: LatLonBox => Seq(toDoiGeoLocationWithBox(b))
-			case c: Circle => Seq(toDoiGeoLocationWithBox(toLatLonBox(c)))
-			case GeoTrack(points, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(points, label)))
-			case Polygon(vertices, label, _) => Seq(toDoiGeoLocationWithBox(toLatLonBox(vertices, label)))
-			case fc: FeatureCollection => fc.features.flatMap(toDoiGeoLocation)
-		}
+	def fromGeoFeature(geoCoverage: GeoFeature): Seq[GeoLocation] =
+		geoCoverage match
+			case p: Position => Seq(fromPosition(p))
+			case Pin(position, _) => Seq(fromPosition(position))
+			case b: LatLonBox => Seq(fromBox(b))
+			case c: Circle => Seq(fromBox(toLatLonBox(c)))
+			case GeoTrack(points, label, _) => Seq(fromBox(toLatLonBox(points, label)))
+			case Polygon(vertices, label, _) => Seq(fromBox(toLatLonBox(vertices, label)))
+			case fc: FeatureCollection => fc.features.flatMap(fromGeoFeature)
 
-	def jtsPolygonToDoiBox(polygon: LabeledJtsGeo): GeoLocation =
-		val envelope = polygon.geom.getEnvelopeInternal
 
-		GeoLocation(None, Some(
-			GeoLocationBox(
-				Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
-				Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
-			)), mergeLabels(polygon.labels)
-		)
+	// def jtsPolygonToDoiBox(polygon: LabeledJtsGeo): GeoLocation =
+	// 	val envelope = polygon.geom.getEnvelopeInternal
 
-	def fromJtsToDoiGeoLocation(geometry: LabeledJtsGeo): GeoLocation =
-		geometry.geom match
-			case point: JtsPoint => toDoiGeoLocationWithPoint:
-				Position.ofLatLon(point.getY(), point.getX()).withOptLabel:
-					mergeLabels(geometry.labels)
-			//TODO Handle polygons as polygons in DataCite, when they support them in their REST API
-			case g => jtsPolygonToDoiBox(geometry)
-	
+	// 	GeoLocation(None, Some(
+	// 		GeoLocationBox(
+	// 			Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
+	// 			Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
+	// 		)), mergeLabels(polygon.labels)
+	// 	)
+
 	// TODO uri for geoFeatures?
 	def fromJtsToGeoFeature(geometry: LabeledJtsGeo): Option[GeoFeature] =
 		geometry.geom match
 			case point: JtsPoint => Some(Position.ofLatLon(point.getY, point.getX))
-			case polygon: JtsPolygon => Some(Polygon(vertices = polygon.getCoordinates().map(c => Position.ofLatLon(c.getY, c.getX)), label = mergeLabels(geometry.labels), None))
-			case ls: LineString => Some(GeoTrack(ls.getCoordinates().map(c => Position.ofLatLon(c.getY, c.getX)), label = mergeLabels(geometry.labels), None))
+			case polygon: JtsPolygon => Some(
+				Polygon(
+					vertices = polygon.getCoordinates().toIndexedSeq.map(c => Position.ofLatLon(c.getY, c.getX)),
+					label = mergeLabels(geometry.labels),
+					uri = None
+				)
+			)
+			case ls: LineString => Some(
+				GeoTrack(
+					points = ls.getCoordinates().toIndexedSeq.map(c => Position.ofLatLon(c.getY, c.getX)),
+					label = mergeLabels(geometry.labels),
+					uri = None
+				)
+			)
 			case gc: GeometryCollection =>
 				var fcSeq: Seq[GeoFeature] = Seq.empty
 				for (i <- 0 until gc.getNumGeometries)

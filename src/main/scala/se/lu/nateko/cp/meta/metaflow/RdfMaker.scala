@@ -109,7 +109,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
 				s.core.location.toSeq.flatMap(positionTriples(_, uri)) ++:
-				coverageTriples(uri, s.core.coverage) ++:
+				s.core.coverage.toSeq.flatMap(coverageTriples(_, uri)) ++:
 				s.core.countryCode.map{ cc =>
 					(uri, meta.countryCode, vocab.lit(cc.code))
 				} ++:
@@ -252,9 +252,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			(iri, meta.hasElevation, vocab.lit(alt))
 		}.toSeq
 
-	def coverageTriples(iri: IRI, covOpt: Option[GeoFeature]): Seq[Triple] = covOpt match{
-		case None => Seq.empty
-		case Some(box: LatLonBox) =>
+	def coverageTriples(cov: GeoFeature, iri: IRI): Seq[Triple] = cov match
+		case box: LatLonBox =>
 			val spcovUri = box.uri.map(_.toRdf).getOrElse(vocab.getSpatialCoverage(UriId(iri)))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::
 			(spcovUri, RDF.TYPE, meta.latLonBoxClass) ::
@@ -265,7 +264,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			box.label.toList.map{lbl =>
 				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
 			}
-		case Some(cov) =>
+		case cov =>
 			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
 			(iri, meta.hasSpatialCoverage, spcovUri) ::
 			(spcovUri, RDF.TYPE, meta.spatialCoverageClass) ::
@@ -273,7 +272,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			cov.label.toList.map{lbl =>
 				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
 			}
-	}
+
 
 	private def plainIcosStationSpecTriples(iri: IRI, s: IcosStationSpecifics): Seq[Triple] = {
 		s.stationClass.map{ stClass =>

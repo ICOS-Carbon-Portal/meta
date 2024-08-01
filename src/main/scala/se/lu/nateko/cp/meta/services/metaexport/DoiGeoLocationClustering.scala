@@ -34,7 +34,7 @@ object DoiGeoLocationClustering:
 
 	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo], epsilon: Option[Double]): Seq[LabeledJtsGeo] =
 
-		val sortedGeoms = gs.map(hull => (hull, -hull.getArea())).sortBy(_._2).map(_._1)
+		val sortedGeoms = gs.sortBy(hull => -hull.getArea()) // largest first
 		var res: ArrayBuffer[LabeledJtsGeo] = ArrayBuffer.empty
 
 		for labeledGeom <- sortedGeoms do

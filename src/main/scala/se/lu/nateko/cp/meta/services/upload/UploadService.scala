@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -31,6 +32,9 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
+import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.meta.utils.Validated
+import scala.util.Success
 
 class AccessUri(val uri: URI)
 
@@ -75,19 +79,24 @@ class UploadService(
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		yield accessUri
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId, collCoverages: Seq[GeoFeature])(using Envri): Try[AccessUri] =
-		val collWithCoverage = StaticCollectionDto(
-			coll.submitterId, coll.members, coll.title, coll.description, coll.isNextVersionOf, coll.preExistingDoi, coll.documentation,
-			{
-				val gfs = DoiGeoLocationCreator.representativeCoverage(collCoverages, 100).map(fromJtsToGeoFeature)
-				Some(FeatureCollection(gfs.flatten, None, None))
-			}
-		)
-		UploadService.collectionHash(collWithCoverage.members).flatMap: collHash =>
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
+
+		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.vanillaGlobal.access: conn ?=>
 					given GlobConn = RdfLens.global(using conn)
+					val collWithCoverageTry = coll.coverage match
+						case Some(_) => Success(coll)
+						case None =>
+							getCollCoverages(coll.members).toTry(new MetadataException(_)).map: covs =>
+								val gfs = DoiGeoLocationCreator.representativeCoverage(covs, 100).flatMap(fromJtsToGeoFeature)
+								val cov = gfs.toList match
+									case Nil => None
+									case feature :: Nil => Some(Left(feature))
+									case many => Some(Left(FeatureCollection(many, None, None)))
+								coll.copy(coverage = cov)
 					for
+						collWithCoverage <- collWithCoverageTry;
 						_ <- validator.validateCollection(collWithCoverage, collHash, uploader);
 						submitterConf <- validator.getSubmitterConfig(collWithCoverage);
 						submittingOrg = submitterConf.submittingOrganization;
@@ -130,6 +139,20 @@ class UploadService(
 				yield
 					log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 					new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
+
+	private def getCollCoverages(members: Seq[URI])(using Envri, GlobConn): Validated[Seq[GeoFeature]] = Validated
+		.sequence:
+			members.map: uri =>
+				Uri(uri.toString).path match
+					case Hash.Object(_) =>
+						metaReader.fetchStaticObject(uri.toRdf).map:
+							case dobj: DataObject => dobj.coverage
+							case docObj: DocObject => None
+
+					case Hash.Collection(collHash) =>
+						metaReader.fetchStaticColl(uri.toRdf, Some(collHash)).map(_.coverage)
+					case _ => Validated.ok(None)
+		.map(_.flatten)
 
 
 	def checkPermissions(submitter: URI, userId: String)(using envri: Envri): Boolean =

@@ -54,7 +54,7 @@ case class StaticCollectionDto(
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[Doi],
 	documentation: Option[Sha256Sum],
-	coverage: Option[GeoFeature]
+	coverage: Option[Either[GeoFeature, URI]]
 ) extends UploadDto
 
 case class StationTimeSeriesDto(

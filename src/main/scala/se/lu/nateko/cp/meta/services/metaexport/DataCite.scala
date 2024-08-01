@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.toDoiGeoLocation
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.time.Instant
@@ -70,7 +69,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			descriptions =
 				dobj.specificInfo.left.toSeq.flatMap(_.description).map(d => Description(d, DescriptionType.Abstract, None)) ++
 				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
-			geoLocations = dobj.coverage.map(DoiGeoLocationConverter.toDoiGeoLocation),
+			geoLocations = dobj.coverage.map(DoiGeoLocationConverter.fromGeoFeature),
 			fundingReferences = Option(
 				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
@@ -125,7 +124,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = coll.coverage.flatMap(toDoiGeoLocation).toSeq
+		val geoLocations = coll.coverage.map(DoiGeoLocationConverter.fromGeoFeature)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
@@ -142,7 +141,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
 			fundingReferences = Option(funders).filterNot(_.isEmpty),
-			geoLocations = Option(geoLocations).filterNot(_.isEmpty)
+			geoLocations = geoLocations.filterNot(_.isEmpty)
 		)
 	end makeCollectionDoi
 

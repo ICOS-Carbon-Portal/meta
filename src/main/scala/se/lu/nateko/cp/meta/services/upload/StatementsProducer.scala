@@ -137,9 +137,13 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++ moratoriumStatements
 	end getDobjStatements
 
-	def getCollectionCoverageStatements(coll: StaticCollectionDto, collIri: IRI)(using Envri) =
-		val rdfMaker = RdfMaker(vocab, metaVocab)
-		rdfMaker.coverageTriples(collIri, coll.coverage)
+	def getCollectionCoverageStatements(coll: StaticCollectionDto, collIri: IRI)(using Envri) = coll.coverage match
+		case None => Nil
+		case Some(Right(covUri)) =>
+			Seq((collIri, metaVocab.hasSpatialCoverage, covUri.toRdf))
+
+		case Some(Left(feature)) =>
+			RdfMaker(vocab, metaVocab).coverageTriples(feature, collIri)
 
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms

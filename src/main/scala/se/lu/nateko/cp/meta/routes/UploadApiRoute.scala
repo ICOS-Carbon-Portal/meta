@@ -25,8 +25,6 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
 import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services.*
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
@@ -34,6 +32,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.Try
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -67,29 +66,11 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		service: UploadService,
 		authRouting: AuthenticationRouting,
 		metaFlows: Seq[MetaUploadService],
-		coreConf: MetaCoreConfig,
-		fetcher: UriSerializer
-	)(implicit mat: Materializer): Route = handleExceptions(errHandler):
+		coreConf: MetaCoreConfig
+	)(using Materializer): Route = handleExceptions(errHandler):
 
-		implicit val configs = coreConf.envriConfigs
+		given EnvriConfigs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
-
-		// TODO should this be here? 
-		def getCollCoverages(members: Seq[URI]): Seq[GeoFeature] = members.flatMap{ uri =>
-				val otherUri = Uri(uri.toString)
-				otherUri.path match{
-				case Hash.Object(_) =>
-					val staticObj = fetcher.fetchStaticObject(otherUri).result
-					staticObj.flatMap: obj =>
-						obj match
-							case dobj: DataObject => dobj.coverage
-							case docObj: DocObject => None
-
-				case Hash.Collection(_) =>
-					fetcher.fetchStaticCollection(otherUri).result.flatMap(_.coverage)
-				case _ => None
-			}
-		}
 
 		pathPrefix("upload"){
 			pathPrefix(Segment){uplServiceId =>
@@ -126,8 +107,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 									reportAccessUri(service.registerUpload(uploadMeta, uploader))
 								} ~
 								entity(as[StaticCollectionDto]){collMeta =>
-									val collCoverages = getCollCoverages(collMeta.members)
-									reportAccessUri(service.registerStaticCollection(collMeta, uploader, collCoverages))
+									reportAccessUri(service.registerStaticCollection(collMeta, uploader))
 								}
 							}
 						}

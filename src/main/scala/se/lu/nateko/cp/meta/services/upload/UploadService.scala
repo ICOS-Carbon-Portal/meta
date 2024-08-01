@@ -30,7 +30,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.meta.utils.Validated
@@ -89,7 +89,7 @@ class UploadService(
 						case Some(_) => Success(coll)
 						case None =>
 							getCollCoverages(coll.members).toTry(new MetadataException(_)).map: covs =>
-								val gfs = DoiGeoLocationCreator.representativeCoverage(covs, 100).flatMap(fromJtsToGeoFeature)
+								val gfs = GeoCovMerger.representativeCoverage(covs, 100).flatMap(fromJtsToGeoFeature)
 								val cov = gfs.toList match
 									case Nil => None
 									case feature :: Nil => Some(Left(feature))

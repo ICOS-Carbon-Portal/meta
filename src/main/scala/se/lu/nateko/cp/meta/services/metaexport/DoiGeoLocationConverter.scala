@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.core.data.Pin
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
@@ -88,16 +88,6 @@ object DoiGeoLocationConverter:
 			case Polygon(vertices, label, _) => Seq(fromBox(toLatLonBox(vertices, label)))
 			case fc: FeatureCollection => fc.features.flatMap(fromGeoFeature)
 
-
-	// def jtsPolygonToDoiBox(polygon: LabeledJtsGeo): GeoLocation =
-	// 	val envelope = polygon.geom.getEnvelopeInternal
-
-	// 	GeoLocation(None, Some(
-	// 		GeoLocationBox(
-	// 			Some(Longitude(envelope.getMinX())), Some(Longitude(envelope.getMaxX())), 
-	// 			Some(Latitude(envelope.getMinY())), Some(Latitude(envelope.getMaxY()))
-	// 		)), mergeLabels(polygon.labels)
-	// 	)
 
 	// TODO uri for geoFeatures?
 	def fromJtsToGeoFeature(geometry: LabeledJtsGeo): Option[GeoFeature] =

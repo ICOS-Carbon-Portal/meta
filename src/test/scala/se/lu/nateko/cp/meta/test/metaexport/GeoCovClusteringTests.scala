@@ -5,15 +5,16 @@ import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.locationtech.jts.io.geojson.GeoJsonWriter
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationClustering
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
-import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.makeCollection
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovClustering
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.makeCollection
 
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.mutable.ArrayBuffer
 
-class DoiGeoLocationClusteringTests extends AnyFunSpec:
+// TODO Move to an appropriate test package
+class GeoCovClusteringTests extends AnyFunSpec:
 
 	def labeledToGeoJson(geos: Seq[LabeledJtsGeo]) =
 		val writer = new GeoJsonWriter()
@@ -22,7 +23,7 @@ class DoiGeoLocationClusteringTests extends AnyFunSpec:
 
 		json
 
-	describe("DoiGeoLocationClustering"):
+	describe("GeoCovClustering"):
 
 		val reader = GeoJsonReader()
 		def geoJsonToGeometry(jsonStr: String): Geometry = reader.read(jsonStr)
@@ -47,9 +48,9 @@ class DoiGeoLocationClusteringTests extends AnyFunSpec:
 
 			// println("geometries before: " + geometries.length)
 
-			val secondPass = DoiGeoLocationClustering.runSecondPass(geometries)
+			val secondPass = GeoCovClustering.runSecondPass(geometries)
 
 			// println("second pass: " + secondPass.length)
 			// println("second pass: " + labeledToGeoJson(secondPass))
 			assert(true)
-end DoiGeoLocationClusteringTests
+end GeoCovClusteringTests

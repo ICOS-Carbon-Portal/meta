@@ -4,14 +4,14 @@ import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.meta.GeoLocationBox
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationClustering.*
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.*
-import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.toSimpleGeometries
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovClustering.*
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.*
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.toSimpleGeometries
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.*
 
-
-class DoiGeoLocationCreatorTests extends AnyFunSpec:
+// TODO Move to an appropriate test package
+class GeoCovMergerTests extends AnyFunSpec:
 	describe("DoiGeoLocationCreator"):
 		def convertStringsToJTS(geomStrings: String*): Seq[Geometry] =
 			val wktReader = new WKTReader(JtsGeoFactory)
@@ -102,4 +102,4 @@ class DoiGeoLocationCreatorTests extends AnyFunSpec:
 
 			assert(merged == expected)
 
-end DoiGeoLocationCreatorTests
+end GeoCovMergerTests

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
 import scala.collection.mutable.ArrayBuffer
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.io.WKTReader
@@ -10,10 +10,12 @@ import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Point
-import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.concaveHull
-import se.lu.nateko.cp.meta.services.metaexport.JtsGeoFeatureConverter.makeCollection
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.concaveHull
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.makeCollection
 import se.lu.nateko.cp.meta.core.data.PositionUtil.average
 
+
+//TODO Get rid of copy-pasted code duplication, move this file to test code
 object ClusteringExample:
 	// copied from DoiGeoLocationCreator
 	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):

@@ -19,15 +19,15 @@ import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 
 
-object DoiGeoLocationCreator:
-	import JtsGeoFeatureConverter.*
-	case class StationLabel(label: String)
+// TODO Move to the "upload" package
+object GeoCovMerger:
+
 	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 		export geom.getArea
 
 		def mergeIfIntersects(other: LabeledJtsGeo, epsilon: Option[Double]): Option[LabeledJtsGeo] =
 			inline def mergedLabels = labels ++ other.labels.filterNot(labels.contains)
-			inline def isCloserThanEpsilon = epsilon.map(DoiGeoLocationClustering.getMinGeometryDistance(geom, other.geom) < _).getOrElse(false)
+			inline def isCloserThanEpsilon = epsilon.map(GeoCovClustering.getMinGeometryDistance(geom, other.geom) < _).getOrElse(false)
 
 			if geom.contains(other.geom) then
 				Some(this.copy(labels = mergedLabels))
@@ -40,19 +40,14 @@ object DoiGeoLocationCreator:
 			else None
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[LabeledJtsGeo] =
-		val merged = DoiGeoLocationClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+		val merged = GeoCovClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
 			else
-				val secondPass = DoiGeoLocationClustering.runSecondPass(merged)
-				val finalMerge = DoiGeoLocationClustering.mergeSimpleGeoms(secondPass, None)
+				val secondPass = GeoCovClustering.runSecondPass(merged)
+				val finalMerge = GeoCovClustering.mergeSimpleGeoms(secondPass, None)
 				finalMerge
 		resGeoms
-
-end DoiGeoLocationCreator
-
-object JtsGeoFeatureConverter:
-	import DoiGeoLocationCreator.*
 
 	def toPoint(p: Position): LabeledJtsGeo =
 		LabeledJtsGeo(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label.toSeq)
@@ -81,3 +76,5 @@ object JtsGeoFeatureConverter:
 		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
 		case fc: FeatureCollection =>
 			fc.features.flatMap(toSimpleGeometries)
+
+end GeoCovMerger

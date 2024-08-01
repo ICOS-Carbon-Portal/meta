@@ -5,13 +5,13 @@ import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.Point
 import se.lu.nateko.cp.meta.core.data.PositionUtil
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoLocationCreator.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-
-object DoiGeoLocationClustering:
+// TODO Move to the "upload" package
+object GeoCovClustering:
 
 	def getMinGeometryDistance(g1: Geometry, g2: Geometry): Double =
 		val coordinates1 = g1.getCoordinates()
@@ -26,7 +26,7 @@ object DoiGeoLocationClustering:
 		distances.min
 	end getMinGeometryDistance
 
-	def getDistance(p1: Coordinate, p2: Coordinate): Double =
+	private def getDistance(p1: Coordinate, p2: Coordinate): Double =
 		val p1LatLon = (p1.getY, p1.getX)
 		val p2LatLon = (p2.getY, p2.getX)
 
@@ -57,16 +57,14 @@ object DoiGeoLocationClustering:
 		res.toSeq
 	end mergeSimpleGeoms
 
-	def calculateEpsilon(geometries: Seq[Geometry]): Double =
+	private def calculateEpsilon(geometries: Seq[Geometry]): Double =
 		val centroids: Array[Geometry] = geometries.map(_.getCentroid()).toArray
 		val geoColl = GeometryCollection(centroids, JtsGeoFactory)
 		val centroid = geoColl.getCentroid()
 
-		val distancesToCentroid = geometries.map(g => 
-			g match
-				case p: Point => getDistance(p.getCoordinate(), centroid.getCoordinate())
-				case _ => getMinGeometryDistance(centroid, g)
-		)
+		val distancesToCentroid = geometries.map:
+			case p: Point => getDistance(p.getCoordinate(), centroid.getCoordinate())
+			case g => getMinGeometryDistance(centroid, g)
 
 		val averageDistToCentroid = if (distancesToCentroid.nonEmpty) distancesToCentroid.sum.toDouble / distancesToCentroid.size else 0.0
 		val geometryDiameter = averageDistToCentroid * 2

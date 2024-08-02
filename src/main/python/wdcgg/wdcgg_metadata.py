@@ -1,14 +1,11 @@
 from datetime import datetime
 import warnings
-from typing import TypeAlias
+from typing import Optional
 from dataclasses import dataclass
 from icoscp_core.icos import meta, data
 from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Agent
 import sparql
 from obspack_netcdf import ObspackNetcdf
-
-
-WdcggMetadataDict: TypeAlias = dict[str, str | int | list[str] | list[dict[str, str]]]
 
 
 CONTRIBUTOR = "159"
@@ -39,225 +36,208 @@ WDCGG_SAMPLING_TYPES = {
 class DobjInfo:
 	url: str
 	fileName: str
-	doi: str | None
-	pid: str | None
-	citationString: str | None
-	station: str | None
-	samplingHeight: float | None
-	sources: list[PlainStaticObject] | None
-	authors: list[Agent] | None
-	gasSpecies: str | None
-	instruments: UriResource | list[UriResource] | None
+	doi: Optional[str]
+	pid: Optional[str]
+	citationString: Optional[str]
+	station: Optional[str]
+	samplingHeight: Optional[float]
+	sources: Optional[list[PlainStaticObject]]
+	authors: Optional[list[Agent]]
+	gasSpecies: Optional[str]
+	instruments: Optional[UriResource | list[UriResource]]
 
-
+@dataclass
 class WdcggMetadata:
+	"""
+	Parameters
+	----------
+	Contributor :               Contributor organization's three-digit number assigned by WDCGG. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	Submission_date :           Submission date in format 'YYYY-MM-DD hh:mm:ss'.
+	md_editor_name :            Name of the person submitting data/metadata.
+	md_editor_email :           Email of the person submitting data/metadata.
+	Option :                    Type of submission. 1: data & metadata submission, 2: Update Contributor(Metadata only), 3: Update Contact(Metadata only)
+	Update :                    List of updated metadata items.
+	wc_wdcgg_catalogue_id :     Catalog ID of the updated data. The catalog ID is shown in the first 25 characters of 'Version' on 'Data Update Information' tab at https://gaw.kishou.go.jp/contributor .
+	or_organization_code :      Same Contributor organization's number as above. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	or_organization :           Contributor organization's name. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	jl_joint_laboratory :       [OPTIONAL] Organization's number of organizations that are collaborators. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	pg_person_group :           IDs of the contacts for the observation. The IDs should match those provided in the separate contact metadata.
+	jp_joint_person :           [OPTIONAL] Individual collaborators who should not receive inquiries, requests or other forms of contact regarding the observation.
+	ao_aim_of_observation_code: WDCGG code for the aim of observation. Full list at https://gaw.kishou.go.jp/documents/db_list/aim_of_observation .
+	ao_aim_of_observation:      Aim of observation. Full list at https://gaw.kishou.go.jp/documents/db_list/aim_of_observation .
+	tz_time_zone_code:          WDCGG code for the time zone of the timestamps in the dataset. Full list in the JSON schema file.
+	tz_time_zone:               Time zone for the timestamps of the data. Full list in the JSON schema file.
+	un_unit_code:               WDCGG code for the unit of the data. Full list at https://gaw.kishou.go.jp/documents/db_list/unit .
+	un_unit:                    Unit of the data. Full list at https://gaw.kishou.go.jp/documents/db_list/unit .
+	sh_scale_history:           [OPTIONAL] History of calibration scales used for the data. It must include the scale's name and its corresponding WDCGG code, as well as the time period when it was used. Full list of WDCGG scale codes at https://gaw.kishou.go.jp/documents/db_list/scale .
+	ih_instrument_history:      [OPTIONAL] Instrument history. It must include the instrument's method and its corresponding WDCGG code, the time period when it was used, and the instrument's manufacturer product name and model number. Full list of instrument methods at https://gaw.kishou.go.jp/documents/db_list/measurement_method .
+	sh_sampling_height_history: [OPTIONAL] Sampling height history. It must include the height and the corresponding time period.
+	sf_sampling_frequency_code: [OPTIONAL] WDCGG code for the sampling frequency. Some examples are 1: event, 2: weekly, 3: daily, 4: hourly, 5: 30 minutes, 6: 5 minutes, ... 99: Other. Full list in the JSON schema file.
+	sf_sampling_frequency:      [OPTIONAL] The name of the sampling frequency must only be provided if code "99" is used.
+	md_measurement_calibration: [OPTIONAL] Text description of the measurement calibration procedure. Describe calibration procedure for determining mole fractions along with procedures for analysis such as the order of introduction (sequence) for sample and standard gases (or zero gases) to the instrument, the relevant time period and the number of calibration points.
+	md_data_processing:         [OPTIONAL] Text description of the data processing procedure. Describe details of instrumental data processing and averaging. Criteria used in selection for data processing should also be described.
+	md_hr_mean_processing:      [OPTIONAL] Text description of average hourly data processing. Describe detailed processes on hourly data or data selections on qualities.
+	md_da_mean_processing:      [OPTIONAL] Text description of average daily data processing. Describe detailed processes on daily data or data selections on qualities.
+	md_mo_mean_processing:      [OPTIONAL] Text description of average monthly data processing. Describe detailed processes on monthly data or data selections on qualities.
+	md_original_data_flag:      [OPTIONAL] Text description of the data flags used. Describe the criteria for data flagging. If data have already been flagged with WDCGG data quality flags, Original Data Flag metadata do not need to be added.
+	dg_data_flag_group:         [OPTIONAL] Correspondance between original data flags and WDCGG data flags. It must include the WDCGG data flag code, WDCGG data flag name and the original data flag. Full list of WDCGG data flags at https://gaw.kishou.go.jp/documents/db_list/data_flag .
+	rg_reference_group:         [OPTIONAL] References. Can be references to observations (such as instruments, data processing and calibration) in literature or URLs.
+	st_status_code:             WDCGG code for the status of the measurements (operational or not). Full list at https://gaw.kishou.go.jp/documents/db_list/status .
+	st_status:                  Status of the measurements (operational or not). Full list at https://gaw.kishou.go.jp/documents/db_list/status .
+	md_description:             [OPTIONAL] Any additional information that cannot be provided elsewhere.
+	dc_doi_category_code:       WDCGG code of the DOI status of the data. 1: Request for WDCGG DOI issuance, 2: Original DOI already present, 9: Undecided
+	dc_doi_category:            If code "2" is selected, the original DOI must be provided.
+	"""
+	Contributor: str
+	Submission_date: str
+	md_editor_name: str
+	md_editor_email: str
+	Option: str
+	Update: list[str]
+	wc_wdcgg_catalogue_id: str
+	or_organization_code: str
+	or_organization: str
+	jl_joint_laboratory: list[dict[str, str]]
+	pg_person_group: list[dict[str, str]]
+	jp_joint_person: list[dict[str, str]]
+	ao_aim_of_observation_code: str
+	ao_aim_of_observation: str
+	tz_time_zone_code: str
+	tz_time_zone: str
+	un_unit_code: str
+	un_unit: str
+	sh_scale_history: list[dict[str, str]]
+	ih_instrument_history: list[dict[str, str]]
+	sh_sampling_height_history: list[dict[str, str]]
+	sf_sampling_frequency_code: str
+	sf_sampling_frequency: str
+	md_measurement_calibration: str
+	md_data_processing: str
+	md_hr_mean_processing: str
+	md_da_mean_processing: str
+	md_mo_mean_processing: str
+	md_original_data_flag: str
+	dg_data_flag_group: list[dict[str, str]]
+	rg_reference_group: list[dict[str, str]]
+	st_status_code: str
+	st_status: str
+	md_description: str
+	dc_doi_category_code: str
+	dc_doi_category: str
+
+
+class WdcggMetadataClient:
 	def __init__(self, dobj_info: DobjInfo, gawsis_to_wdcgg_station_id: dict[str, str]):
 		self.dobj_info = dobj_info
 		self.gawsis_to_wdcgg_station_id = gawsis_to_wdcgg_station_id
 		self.instruments: dict[int, str] = {}
 
-	def dobj_metadata(self) -> WdcggMetadataDict:
+	def dobj_metadata(self) -> WdcggMetadata:
 		"""Fill information in a JSON object according to WDCGG template for metadata.
 
 		Returns
 		-------
-		Dictionary matching the WDCGG JSON template for metadata.
+		WdcggMetadata object containing metadata about the data object
+		according to the WDCGG JSON template.
 		"""
 
-		metadata: dict[str, str | int | list[str] | list[dict[str, str]]] = {}
-
-		# Contributor organization's three-digit number assigned by WDCGG.
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
-		metadata["Contributor"] = CONTRIBUTOR
-
-		# To be changed to the actual submission date.
-		# Format must be 'YYYY-MM-DD hh:mm:ss'.
-		metadata["Submission_date"] = "2024-08-01 12:00:00"
-
-		metadata["md_editor_name"] = "Jonathan Schenk"
-		metadata["md_editor_email"] = "jonathan.schenk@nateko.lu.se"
-
-		# Represents the submission type.
-		# 1: data & metadata submission
-		# 2: Update Contributor(Metadata only)
-		# 3: Update Contact(Metadata only)
-		metadata["Option"] = "1"
-
-		# List of updated metadata items.
-		metadata["Update"] = [
-			"or_organization",
-			"jl_joint_laboratory",
-			"pg_person_group",
-			"ao_aim_of_observation",
-			"tz_time_zone",
-			"un_unit",
-			"sh_scale_history",
-			"ih_instrument_history",
-			"sh_sampling_height_history",
-			"sf_sampling_frequency",
-			"md_measurement_calibration",
-			"md_data_processing",
-			"md_hr_mean_processing",
-			"md_da_mean_processing",
-			"md_mo_mean_processing",
-			"md_original_data_flag",
-			"dg_data_flag_group",
-			"rg_reference_group",
-			"st_status",
-			"md_description",
-			"dc_doi_category"
-		]
-
-		# Catalog ID of the updated data. The wdcgg_catalogue_id is shown in
-		# the first 25 characters of 'Version' on 'Data Update Information' tab
-		# at https://gaw.kishou.go.jp/contributor .
-		metadata["wc_wdcgg_catalogue_id"] = self.wdcgg_catalog_id()
-
-		# Same Contributor organization's number as above.
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
-		metadata["or_organization_code"] = CONTRIBUTOR
-
-		# Name of the Contributor organization.
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
-		metadata["or_organization"] = "ICOS"
-
-		# Organization IDs of collaborators, if any (OPTIONAL).
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
-		metadata["jl_joint_laboratory"] = []
-
-		# IDs of the contacts for the observation as given in the contact metadata.
-		metadata["pg_person_group"] = []
-
-		# Individual collaborators who should not receive inquiries, requests
-		# or other forms of contact regarding the observation (OPTIONAL).
-		#metadata["jp_joint_person"] = []
-
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/aim_of_observation .
-		metadata["ao_aim_of_observation_code"] = "1"
-		metadata["ao_aim_of_observation"] = "Background observation"
-
-		# Time zone for the timestamps of the data.
-		metadata["tz_time_zone_code"] = "1"
-		metadata["tz_time_zone"] = "UTC"
-
-		# Unit of the data.
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/unit .
-		metadata["un_unit_code"] = "99"
-		metadata["un_unit"] = "mol mol-1"
-
-		# History of calibration scales used for the data (OPTIONAL).
-		# It must include the scale's name and its corresponding WDCGG code,
-		# as well as the time period when it was used.
-		# Full list of WDCGG scale codes at https://gaw.kishou.go.jp/documents/db_list/scale .
 		scale = SCALES[self.dobj_info.gasSpecies]
-		metadata["sh_scale_history"] = [{
-			"sh_start_date_time": "9999-12-31T00:00:00",
-			"sh_end_date_time": "9999-12-31T23:59:59",
-			"sc_scale_code": scale,
-			"sc_scale": WDCGG_SCALE_CODES[scale]
-		}]
-
-		# Instrument history (OPTIONAL).
-		# It must include the instrument's method and its corresponding WDCGG code,
-		# the time period when it was used, and the instrument's manufacturer
-		# product name and model number.
-		# Full list of instrument methods at https://gaw.kishou.go.jp/documents/db_list/measurement_method .
-		metadata["ih_instrument_history"] = self.instrument_history()
-
-		# Sampling height history (OPTIONAL).
-		# It must include the height and the corresponding time period.
 		if self.dobj_info.samplingHeight is None:
 			warnings.warn(f"No sampling height provided for data object {self.dobj_info.url}.")
 			sampling_height = ""
 		else:
 			sampling_height = str(self.dobj_info.samplingHeight)
-		metadata["sh_sampling_height_history"] = [{
-			"sh_start_date_time": "9999-12-31T00:00:00",
-			"sh_end_date_time": "9999-12-31T23:59:59",
-			"sh_sampling_height": sampling_height
-		}]
+		if self.dobj_info.doi is None:
+			dc_doi_category_code = "9"
+			dc_doi_category = ""
+		else:
+			dc_doi_category_code = "2"
+			dc_doi_category = self.dobj_info.doi
 
-		# Sampling frequency (OPTIONAL).
-		# 1: event, 2: weekly, 3: daily, 4: hourly, 5: 30 minutes, 6: 5 minutes,
-		# ... 99: Other
-		# The name of the sampling frequency must only be provided if code "99"
-		# is used.
-		metadata["sf_sampling_frequency_code"] = "6"
-		#metadata["sf_sampling_frequency"] = ""
-
-		# Text description of the measurement calibration procedure (OPTIONAL).
-		# Includes calibration procedure for determining mole fractions along
-		# with procedures for analysis such as the order of introduction (sequence)
-		# for sample and standard gases (or zero gases) to the instrument,
-		# the relevant time period and the number of calibration points.
-		metadata["md_measurement_calibration"] = """Calibration sequence every 15 days with three calibration tanks
+		return WdcggMetadata(
+			Contributor = CONTRIBUTOR,
+			Submission_date = "2024-08-01 12:00:00",
+			md_editor_name = "Jonathan Schenk",
+			md_editor_email = "jonathan.schenk@nateko.lu.se",
+			Option = "1",
+			Update = [
+				"or_organization",
+				"jl_joint_laboratory",
+				"pg_person_group",
+				"ao_aim_of_observation",
+				"tz_time_zone",
+				"un_unit",
+				"sh_scale_history",
+				"ih_instrument_history",
+				"sh_sampling_height_history",
+				"sf_sampling_frequency",
+				"md_measurement_calibration",
+				"md_data_processing",
+				"md_hr_mean_processing",
+				"md_da_mean_processing",
+				"md_mo_mean_processing",
+				"md_original_data_flag",
+				"dg_data_flag_group",
+				"rg_reference_group",
+				"st_status",
+				"md_description",
+				"dc_doi_category"
+			],
+			wc_wdcgg_catalogue_id = self.wdcgg_catalog_id(),
+			or_organization_code = CONTRIBUTOR,
+			or_organization = "ICOS",
+			jl_joint_laboratory = [],
+			pg_person_group = [],
+			jp_joint_person = [],
+			ao_aim_of_observation_code = "1",
+			ao_aim_of_observation = "Background observation",
+			tz_time_zone_code = "1",
+			tz_time_zone = "UTC",
+			un_unit_code = "99",
+			un_unit = "mol mol-1",
+			sh_scale_history = [{
+				"sh_start_date_time": "9999-12-31T00:00:00",
+				"sh_end_date_time": "9999-12-31T23:59:59",
+				"sc_scale_code": scale,
+				"sc_scale": WDCGG_SCALE_CODES[scale]
+			}],
+			ih_instrument_history = self.instrument_history(),
+			sh_sampling_height_history = [{
+				"sh_start_date_time": "9999-12-31T00:00:00",
+				"sh_end_date_time": "9999-12-31T23:59:59",
+				"sh_sampling_height": sampling_height
+			}],
+			sf_sampling_frequency_code = "6",
+			sf_sampling_frequency = "",
+			md_measurement_calibration = """Calibration sequence every 15 days with three calibration tanks
 Gas injection duration: 30 min
 Number of cycles (tank analysis) during a calibration: 4
 Performance target frequency: every 7 hours
-Archive target frequency: every 15 days"""
-
-		# Text description of the data processing procedure (OPTIONAL).
-		# Includes details of instrumental data processing and averaging.
-		# Criteria used in selection for data processing should also be described.
-		metadata["md_data_processing"] = "Data processing at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016"
-
-		# Text description of average hourly data processing (OPTIONAL).
-		# Describe detailed processes on hourly data or data selections on qualities.
-		metadata["md_hr_mean_processing"] = "Time-averaged values are reported at the beginning of the averaging interval."
-
-		# Text description of average daily data processing (OPTIONAL).
-		# Describe detailed processes on daily data or data selections on qualities.
-		#metadata["md_da_mean_processing"] = ""
-
-		# Text description of average monthly data processing (OPTIONAL).
-		# Describe detailed processes on monthly data or data selections on qualities.
-		#metadata["md_mo_mean_processing"] = ""
-
-		# Text description of the data flags used (OPTIONAL).
-		# Describe the criteria for data flagging. If data have already been flagged
-		# with WDCGG data quality flags, Original Data Flag metadata do not need to be added.
-		metadata["md_original_data_flag"] = """- Flag 'U' = data correct before manual quality control
+Archive target frequency: every 15 days""",
+			md_data_processing = "Data processing at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
+			md_hr_mean_processing = "Time-averaged values are reported at the beginning of the averaging interval.",
+			md_da_mean_processing = "",
+			md_mo_mean_processing = "",
+			md_original_data_flag = """- Flag 'U' = data correct before manual quality control
 - Flag 'N' = data incorrect before manual quality control
 - Flag 'O' = data correct after manual quality control
 - Flag 'K' = data incorrect after manual quality control
 - Flag 'R' = data correct after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data
-- Flag 'H' = data incorrect after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data"""
-
-		# Correspondance between original data flags and WDCGG data flags (OPTIONAL).
-		# Includes WDCGG data flag code, WDCGG data flag name and the original data flag.
-		# Full list of WDCGG data flags at https://gaw.kishou.go.jp/documents/db_list/data_flag .
-		metadata["dg_data_flag_group"] = [
-			{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "U"},
-			{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "O"},
-			{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "R"},
-			{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "N"},
-			{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "K"},
-			{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "H"},
-		]
-
-		# References (OPTIONAL).
-		# Can be references to observations (such as instruments, data processing
-		# and calibration) in literature or URLs.
-		metadata["rg_reference_group"] = [
-			{"rg_reference": "Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016."}
-		]
-
-		# Status of the measurements (operational or not).
-		# Full list at https://gaw.kishou.go.jp/documents/db_list/status .
-		metadata["st_status_code"] = "1"
-		metadata["st_status"] = "Operational/Reporting"
-
-		# DOI status of the data.
-		# 1: Request for WDCGG DOI issuance, 2: Original DOI already present, 9: Undecided
-		# If code "2" is selected, the original DOI must be provided.
-		if self.dobj_info.doi is None:
-			metadata["dc_doi_category_code"] = "9"
-		else:
-			metadata["dc_doi_category_code"] = "2"
-			metadata["dc_doi_category"] = self.dobj_info.doi
-
-		# Additional information in the form of text (OPTIONAL).
-		metadata["md_description"] = f"""ICOS atmospheric station
+- Flag 'H' = data incorrect after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data""",
+			dg_data_flag_group = [
+				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "U"},
+				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "O"},
+				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "R"},
+				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "N"},
+				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "K"},
+				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "H"},
+			],
+			rg_reference_group = [
+				{"rg_reference": "Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016."}
+			],
+			st_status_code = "1",
+			st_status = "Operational/Reporting",
+			md_description = f"""ICOS atmospheric station
 Observational timeseries of ambient mole fraction of {self.dobj_info.gasSpecies} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.
 
 PID: {self.dobj_info.pid}
@@ -266,12 +246,11 @@ Citation:
 {self.dobj_info.citationString}
 
 DATA POLICY:
-ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.
-"""
+ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.""",
+			dc_doi_category_code=dc_doi_category_code,
+			dc_doi_category=dc_doi_category)
 
-		return metadata
-
-	def contact_metadata(self) -> WdcggMetadataDict:
+	def contact_metadata(self) -> WdcggMetadata:
 		"""Fill information in a JSON object according to WDCGG template for contacts metadata.
 
 		Returns
@@ -358,7 +337,7 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 				instr_label = self.instruments[deployment.atc_id]
 			else:
 				instr_query = sparql.instrument_query(deployment.atc_id)
-				instr_label = sparql.run_query(instr_query)[0]
+				instr_label = sparql.run_sparql_select_query_single_param(instr_query)[0]
 				self.instruments[deployment.atc_id] = instr_label
 			for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
 				if instr_label.startswith(vendor_or_model):

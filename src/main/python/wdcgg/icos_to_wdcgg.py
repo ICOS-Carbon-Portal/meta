@@ -6,9 +6,10 @@ from pathlib import Path
 from datetime import datetime
 import re
 import json
-import warnings
-from wdcgg_metadata import WdcggMetadata, WdcggMetadataDict, get_dobj_info
-import sparql
+from typing import Any
+from dataclasses import asdict
+from wdcgg_metadata import WdcggMetadataClient, get_dobj_info
+from sparql import SubmissionWindow, run_sparql_select_query_single_param, obspack_time_series_query
 
 
 def parse_wdcgg_station_file() -> dict[str, str]:
@@ -28,17 +29,14 @@ def parse_wdcgg_station_file() -> dict[str, str]:
 	return {line[1]: line[0] for line in lines}
 
 
-def prepare_wdcgg_metadata(dobj_urls: list[str | int | float] | dict[str, list[str | int | float]]) -> list[WdcggMetadataDict]:
+def prepare_wdcgg_metadata(dobj_urls: list[str]) -> list[dict[str, Any]]:
 	gawsis_to_wdcgg_station_id = parse_wdcgg_station_file()
-	metadata: list[WdcggMetadataDict] = []
+	metadata: list[dict[str, str]] = []
 	for dobj_url in dobj_urls:
-		if not isinstance(dobj_url, str):
-			warnings.warn(f"Dataset's URL ({dobj_url}) should be a string.")
-			continue
 		dobj_meta = get_dobj_info(dobj_url)
 		if dobj_meta is None: continue
-		wdcgg_metadata = WdcggMetadata(dobj_meta, gawsis_to_wdcgg_station_id)
-		metadata.append(wdcgg_metadata.dobj_metadata())
+		wdcgg_md_client = WdcggMetadataClient(dobj_meta, gawsis_to_wdcgg_station_id)
+		metadata.append(asdict(wdcgg_md_client.dobj_metadata()))
 	return metadata
 
 
@@ -55,12 +53,13 @@ def str_to_datetime(dt: str) -> datetime:
 
 
 if __name__ == "__main__":
-	start = str_to_datetime(sys.argv[1])
-	end = str_to_datetime(sys.argv[2])
+	earliest_submission = str_to_datetime(sys.argv[1])
+	latest_submission = str_to_datetime(sys.argv[2])
 	output_dir = Path(sys.argv[3])
-	submission_window = sparql.SubmissionWindow(start, end)
+	submission_window = SubmissionWindow(earliest_submission, latest_submission)
 	if not output_dir.exists(): output_dir.mkdir(parents=True)
-	dobj_urls = sparql.run_query(sparql.obspack_time_series_query(submission_window))
+	sparql_query = obspack_time_series_query(submission_window)
+	dobj_urls = run_sparql_select_query_single_param(sparql_query, str)
 	wdcgg_metadata_json = json.dumps(prepare_wdcgg_metadata(dobj_urls))
 	filename = "wdcgg_all_datasets.json"
 	with open(os.path.join(output_dir, filename), "w") as json_file:

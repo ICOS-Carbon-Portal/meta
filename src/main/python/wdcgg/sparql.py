@@ -2,8 +2,11 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests
-import warnings
 from dataclasses import dataclass
+from typing import Optional, Any
+
+
+SPARQL_ENDPOINT = "https://meta.icos-cp.eu/sparql"
 
 
 @dataclass
@@ -11,8 +14,13 @@ class SubmissionWindow:
 	start: datetime
 	end: datetime
 
+@dataclass
+class SparqlResults:
+	params: list[str]
+	bindings: list[dict[str, dict[str, str | int | float]]]
 
-def run_query(query: str) -> list[str | int | float] | dict[str, list[str | int | float]]:
+
+def run_sparql_select_query(query: str) -> Optional[SparqlResults]:
 	"""Run a SPARQL SELECT query on the ICOS Carbon Portal SPARQL endpoint.
 	
 	Parameters
@@ -22,38 +30,73 @@ def run_query(query: str) -> list[str | int | float] | dict[str, list[str | int 
 	
 	Returns
 	-------
-		The results of the query in the form of a dictionary where each key
-		corresponds to a parameter and each value contains the list of values
-		for the parameter.
-		If the result of the query contains only one parameter, returns
-		the list of values for that parameter.
-		If the HTTP response's status code is not 200, returns an empty list.
+		The results of the query in the form of a SparqlResults object containing
+		the list of parameters and the list of bindings.
+		If the HTTP response's status code is not 200, returns an HTTPError.
 	"""
-	
-	sparql_endpoint = "https://meta.icos-cp.eu/sparql"
-	resp = requests.get(sparql_endpoint, params={"query": query})
+
+	resp = requests.get(SPARQL_ENDPOINT, params={"query": query})
 	if resp.status_code == 200:
 		content = json.loads(resp.text)
-		params = content["head"]["vars"]
-		bindings = content["results"]["bindings"]
-		results: list[str | int | float] | dict[str, list[str | int | float]]
-		if len(params) == 1:
-			results = []
-			for binding in bindings:
-				results.append(binding[params[0]]["value"])
-		else:
-			results = {}
-			for param in params:
-				results[param] = []
-				for binding in bindings:
-					results[param].append(binding[param]["value"])
+		return SparqlResults(
+			params=content["head"]["vars"],
+			bindings=content["results"]["bindings"]
+		)
+	elif not resp.ok:
+		raise requests.HTTPError(
+			f"Error {resp.status_code} when running SPARQL query\n{query}\n"
+			f"at SPARQL endpoint {SPARQL_ENDPOINT}.\nReason: {resp.reason}"
+		)
+	else:
+		raise requests.HTTPError(
+			f"HTTP status code {resp.status_code} when running SPARQL query"
+			f"\n{query}\n at SPARQL endpoint {SPARQL_ENDPOINT}.\nReason: {resp.reason}"
+		)
+
+
+def run_sparql_select_query_single_param(query: str, result_type: Optional[type]=None) -> list[Any]:
+	sparql_results = run_sparql_select_query(query)
+	if sparql_results is None:
+		return []
+	if len(sparql_results.params) == 1:
+		param = sparql_results.params[0]
+		results: list[str | int | float] = []
+		for binding in sparql_results.bindings:
+			value = check_value_type(binding[param]["value"], result_type, query)
+			results.append(value)
 		return results
 	else:
-		warnings.warn(
-			f"Error 404 when running SPARQL query\n{query}\n"
-			f"at SPARQL endpoint {sparql_endpoint}."
+		raise TypeError(
+			"Only one parameter is expected as a result of SPARQL query"
+			f"\n{query}\nbut zero or more than one were returned."
 		)
-		return []
+
+
+def run_sparql_select_query_multi_params(query: str, result_type: Optional[type]=None) -> Optional[dict[str, list[str | int | float]]]:
+	sparql_results = run_sparql_select_query(query)
+	if sparql_results is None:
+		return {}
+	if len(sparql_results.params) > 1:
+		results: dict[str, list[str | int | float]] = {}
+		for param in sparql_results.params:
+			results[param] = []
+			for binding in sparql_results.bindings:
+				value = check_value_type(binding[param]["value"], result_type, query)
+				results[param].append(value)
+	else:
+		raise TypeError(
+			"More than one parameters were expected as a result of SPARQL query"
+			f"\n{query}\nbut zero or one was returned."
+		)
+
+
+def check_value_type(value: Any, expected_type: Optional[type], query: str) -> Any:
+	if expected_type is not None and not isinstance(value, expected_type):
+		raise TypeError(
+			f"Results of SPARQL query\n{query}\nare expected to be of type"
+			f"{expected_type} but type {type(value)} was returned."
+		)
+	else: return value
 
 
 def obspack_time_series_query(submission_window: SubmissionWindow) -> str:

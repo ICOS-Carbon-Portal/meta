@@ -1,11 +1,11 @@
 from datetime import datetime
 import warnings
-from typing import Optional
+from typing import Optional, Tuple
 from dataclasses import dataclass
 from icoscp_core.icos import meta, data
 from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Agent
 import sparql
-from obspack_netcdf import ObspackNetcdf
+from obspack_netcdf import ObspackNetcdf, InstrumentDeployment
 
 
 CONTRIBUTOR = "159"
@@ -30,6 +30,7 @@ WDCGG_SAMPLING_TYPES = {
 	"insitu": "01", "flask": "02", "filter": "03", "bottle": "05",
 	"bag": "06", "PFP": "07", "remote": "08"
 }
+MAX_INSTRUMENTS = 5
 
 
 @dataclass
@@ -45,6 +46,14 @@ class DobjInfo:
 	authors: Optional[list[Agent]]
 	gasSpecies: Optional[str]
 	instruments: Optional[UriResource | list[UriResource]]
+
+@dataclass
+class InstrumentDeploymentWdcgg:
+	ih_start_date_time : str
+	ih_end_date_time : str
+	ih_instrument : str
+	mm_measurement_method_code : str
+	mm_measurement_method: str
 
 @dataclass
 class WdcggMetadata:
@@ -107,7 +116,7 @@ class WdcggMetadata:
 	un_unit_code: str
 	un_unit: str
 	sh_scale_history: list[dict[str, str]]
-	ih_instrument_history: list[dict[str, str]]
+	ih_instrument_history: list[InstrumentDeploymentWdcgg]
 	sh_sampling_height_history: list[dict[str, str]]
 	sf_sampling_frequency_code: str
 	sf_sampling_frequency: str
@@ -316,48 +325,52 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 			"9999"
 		])
 
-	def instrument_history(self) -> list[dict[str, str]]:
+	def instrument_history(self) -> list[InstrumentDeploymentWdcgg]:
 		"""Format the instrument history according to WDCGG requirements.
 
 		Returns
 		-------
 		A list of dictionaries where each dictionary contains information
 		about one instrument's deployment according to WDCGG requirements.
+		Do not return anything for observations where instruments have been
+		changed more than a predefined number of times.
 		"""
 
-		buffer = data.get_file_stream(self.dobj_info.url)
-		obspack_nc = ObspackNetcdf(self.dobj_info.fileName, buffer[1].read())
+		file_name, buffer = data.get_file_stream(self.dobj_info.url)
+		obspack_nc = ObspackNetcdf(file_name, buffer.read())
 		instr_hist = obspack_nc.instrument_history("time", "instrument")
-		if len(instr_hist) == 0 or len(instr_hist) > 5:
+		if len(instr_hist) == 0 or len(instr_hist) > MAX_INSTRUMENTS:
 			return []
-		instr_hist_wdcgg: list[dict[str, str]] = []
+		instr_hist_wdcgg: list[InstrumentDeploymentWdcgg] = []
 		for deployment in instr_hist:
-			instr_label: str
-			if deployment.atc_id in self.instruments.keys():
-				instr_label = self.instruments[deployment.atc_id]
-			else:
-				instr_query = sparql.instrument_query(deployment.atc_id)
-				instr_label = sparql.run_sparql_select_query_single_param(instr_query)[0]
-				self.instruments[deployment.atc_id] = instr_label
-			for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
-				if instr_label.startswith(vendor_or_model):
-					wdcgg_method = wdcgg_method_info["method"]
-					wdcgg_method_code = wdcgg_method_info["code"]
-					break
-			else:
-				wdcgg_method = ""
-				wdcgg_method_code = ""
-			instr_hist_wdcgg.append({
-				"ih_start_date_time": timestamp_to_str(deployment.time_period.start_time, "%Y-%m-%dT%H:%M:%S"),
-				"ih_end_date_time": timestamp_to_str(deployment.time_period.end_time, "%Y-%m-%dT%H:%M:%S"),
-				"ih_instrument": instr_label,
-				"mm_measurement_method_code": wdcgg_method_code,
-				"mm_measurement_method": wdcgg_method
-			})
-		instr_hist_wdcgg[0]["ih_start_date_time"] = "9999-12-31T00:00:00"
-		instr_hist_wdcgg[-1]["ih_end_date_time"] = "9999-12-31T23:59:59"
+			instr_hist_wdcgg.append(self.instrument_deployment_to_wdcgg_format(deployment))
+		instr_hist_wdcgg[0].ih_start_date_time = "9999-12-31T00:00:00"
+		instr_hist_wdcgg[-1].ih_end_date_time = "9999-12-31T23:59:59"
 
 		return instr_hist_wdcgg
+
+	def instrument_deployment_to_wdcgg_format(self, deployment: InstrumentDeployment) -> InstrumentDeploymentWdcgg:
+		if deployment.atc_id in self.instruments.keys():
+			instr_label = self.instruments[deployment.atc_id]
+		else:
+			instr_query = sparql.instrument_query(deployment.atc_id)
+			instr_label = sparql.run_sparql_select_query_single_param(instr_query)[0]
+			self.instruments[deployment.atc_id] = instr_label
+		wdcgg_method_code, wdcgg_method = self.get_wdcgg_instrument_method(instr_label)
+		return InstrumentDeploymentWdcgg(
+			ih_start_date_time=timestamp_to_str(deployment.time_period.start_time, "%Y-%m-%dT%H:%M:%S"),
+			ih_end_date_time=timestamp_to_str(deployment.time_period.end_time, "%Y-%m-%dT%H:%M:%S"),
+			ih_instrument=instr_label,
+			mm_measurement_method_code=wdcgg_method_code,
+			mm_measurement_method=wdcgg_method
+		)
+
+	def get_wdcgg_instrument_method(self, instr_label: str) -> Tuple[str, str]:
+		for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
+			if instr_label.startswith(vendor_or_model):
+				return wdcgg_method_info["method"], wdcgg_method_info["code"]
+		else:
+			return "", ""
 
 
 def get_dobj_info(dobj_url: str) -> DobjInfo | None:

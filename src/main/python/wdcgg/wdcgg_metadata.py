@@ -31,6 +31,7 @@ WDCGG_SAMPLING_TYPES = {
 	"bag": "06", "PFP": "07", "remote": "08"
 }
 MAX_INSTRUMENTS = 5
+OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o", None: ""}
 
 
 @dataclass
@@ -49,27 +50,65 @@ class DobjInfo:
 
 @dataclass
 class InstrumentDeploymentWdcgg:
-	ih_start_date_time : str
-	ih_end_date_time : str
-	ih_instrument : str
-	mm_measurement_method_code : str
+	ih_start_date_time: str
+	ih_end_date_time: str
+	ih_instrument: str
+	mm_measurement_method_code: str
 	mm_measurement_method: str
+
+@dataclass
+class DoiInfo:
+	doi: str
+	doi_category_code: str
+
+@dataclass
+class ContactPerson:
+	"""
+	Parameters
+	----------
+	ps_person_id         : Existing WDCGG ID of the person if known, otherwise 'NEW' + the sequential number.
+	ps_name              : Name of the contact.
+	ps_email             : Email address of the contact.
+	pc_person_class_code : WDCGG code for the type of contact/collaborator. 1: Contact Person, 2: Principal Investigator (PI), 3: Contact Person and Principal Investigator (PI), 5: Partner. '5: Partner' is available for individual collaborators.
+	pc_person_class      : Type of contact/collaborator. See list above.
+	or_organization_code : WDCGG code for the organization to which the contact belongs. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	ps_prefix            : [OPTIONAL] Prefix to use when addressing the contact person.
+	na_nation_code       : ISO 3166-1 alpha-2 code of country/territory to which the contact's organization belongs to.
+	ps_address_1         : [OPTIONAL] First line of the contact's address.
+	ps_address_2         : [OPTIONAL] Second line of the contact's address.
+	ps_address_3         : [OPTIONAL] Third line of the contact's address.
+	ps_phone             : [OPTIONAL] Phone number of the contact.
+	ps_fax               : [OPTIONAL] Fax number of the contact.
+	"""
+	ps_person_id: str
+	ps_name: str
+	ps_email: str
+	pc_person_class_code: str
+	pc_person_class: str
+	or_organization_code: str
+	ps_prefix: str
+	na_nation_code: str
+	ps_address_1: str
+	ps_address_2: str
+	ps_address_3: str
+	ps_phone: str
+	ps_fax: str
 
 @dataclass
 class WdcggMetadata:
 	"""
 	Parameters
 	----------
-	Contributor :               Contributor organization's three-digit number assigned by WDCGG. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	Contributor :               WDCGG code for the Contributor organization. It is a three-digit number assigned by WDCGG. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
 	Submission_date :           Submission date in format 'YYYY-MM-DD hh:mm:ss'.
 	md_editor_name :            Name of the person submitting data/metadata.
 	md_editor_email :           Email of the person submitting data/metadata.
 	Option :                    Type of submission. 1: data & metadata submission, 2: Update Contributor(Metadata only), 3: Update Contact(Metadata only)
 	Update :                    List of updated metadata items.
 	wc_wdcgg_catalogue_id :     Catalog ID of the updated data. The catalog ID is shown in the first 25 characters of 'Version' on 'Data Update Information' tab at https://gaw.kishou.go.jp/contributor .
-	or_organization_code :      Same Contributor organization's number as above. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	or_organization_code :      WDCGG code for the Contributor organization. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
 	or_organization :           Contributor organization's name. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
-	jl_joint_laboratory :       [OPTIONAL] Organization's number of organizations that are collaborators. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	jl_joint_laboratory :       [OPTIONAL] WDCGG code for the organizations that have a role of collaborator on the observation. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
 	pg_person_group :           IDs of the contacts for the observation. The IDs should match those provided in the separate contact metadata.
 	jp_joint_person :           [OPTIONAL] Individual collaborators who should not receive inquiries, requests or other forms of contact regarding the observation.
 	ao_aim_of_observation_code: WDCGG code for the aim of observation. Full list at https://gaw.kishou.go.jp/documents/db_list/aim_of_observation .
@@ -93,9 +132,9 @@ class WdcggMetadata:
 	rg_reference_group:         [OPTIONAL] References. Can be references to observations (such as instruments, data processing and calibration) in literature or URLs.
 	st_status_code:             WDCGG code for the status of the measurements (operational or not). Full list at https://gaw.kishou.go.jp/documents/db_list/status .
 	st_status:                  Status of the measurements (operational or not). Full list at https://gaw.kishou.go.jp/documents/db_list/status .
-	md_description:             [OPTIONAL] Any additional information that cannot be provided elsewhere.
 	dc_doi_category_code:       WDCGG code of the DOI status of the data. 1: Request for WDCGG DOI issuance, 2: Original DOI already present, 9: Undecided
 	dc_doi_category:            If code "2" is selected, the original DOI must be provided.
+	md_description:             [OPTIONAL] Any additional information that cannot be provided elsewhere.
 	"""
 	Contributor: str
 	Submission_date: str
@@ -130,16 +169,18 @@ class WdcggMetadata:
 	rg_reference_group: list[dict[str, str]]
 	st_status_code: str
 	st_status: str
-	md_description: str
 	dc_doi_category_code: str
 	dc_doi_category: str
+	md_description: str
 
 
 class WdcggMetadataClient:
-	def __init__(self, dobj_info: DobjInfo, gawsis_to_wdcgg_station_id: dict[str, str]):
+	def __init__(self, dobj_info: DobjInfo, submission_window: sparql.SubmissionWindow, gawsis_to_wdcgg_station_id: dict[str, str]):
 		self.dobj_info = dobj_info
+		self.submission_window = submission_window
 		self.gawsis_to_wdcgg_station_id = gawsis_to_wdcgg_station_id
 		self.instruments: dict[int, str] = {}
+		self.contacts: dict[int, ContactPerson] = {}
 
 	def dobj_metadata(self) -> WdcggMetadata:
 		"""Fill information in a JSON object according to WDCGG template for metadata.
@@ -151,17 +192,14 @@ class WdcggMetadataClient:
 		"""
 
 		scale = SCALES[self.dobj_info.gasSpecies]
+
 		if self.dobj_info.samplingHeight is None:
 			warnings.warn(f"No sampling height provided for data object {self.dobj_info.url}.")
 			sampling_height = ""
 		else:
 			sampling_height = str(self.dobj_info.samplingHeight)
-		if self.dobj_info.doi is None:
-			dc_doi_category_code = "9"
-			dc_doi_category = ""
-		else:
-			dc_doi_category_code = "2"
-			dc_doi_category = self.dobj_info.doi
+
+		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[self.dobj_info.gasSpecies])
 
 		return WdcggMetadata(
 			Contributor = CONTRIBUTOR,
@@ -246,6 +284,8 @@ Archive target frequency: every 15 days""",
 			],
 			st_status_code = "1",
 			st_status = "Operational/Reporting",
+			dc_doi_category_code = doi_info.doi_category_code,
+			dc_doi_category = doi_info.doi,
 			md_description = f"""ICOS atmospheric station
 Observational timeseries of ambient mole fraction of {self.dobj_info.gasSpecies} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.
 
@@ -255,11 +295,9 @@ Citation:
 {self.dobj_info.citationString}
 
 DATA POLICY:
-ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.""",
-			dc_doi_category_code=dc_doi_category_code,
-			dc_doi_category=dc_doi_category)
+ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.""")
 
-	def contact_metadata(self) -> WdcggMetadata:
+	def contact_metadata(self) -> list[ContactPerson]:
 		"""Fill information in a JSON object according to WDCGG template for contacts metadata.
 
 		Returns
@@ -267,7 +305,7 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 		Dictionary matching the WDCGG JSON template for contacts metadata.
 		"""
 
-		return {}
+		return []
 
 	def wdcgg_catalog_id(self) -> str:
 		"""Produce a string containing the data object's catalog ID.
@@ -371,6 +409,24 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 				return wdcgg_method_info["method"], wdcgg_method_info["code"]
 		else:
 			return "", ""
+
+	def doi_obspack_release(self, object_spec: str) -> DoiInfo:
+		query = sparql.obspack_release_query(object_spec, self.submission_window)
+		dois = sparql.run_sparql_select_query_single_param(query)
+		earliest, latest = sparql.submission_window_to_utc_str(self.submission_window, "%Y-%m-%d")
+		if len(dois) > 1:
+			warnings.warn(
+				"More than one Obspack release was found in the time period "
+				f"{earliest} to {latest}. The latest was used."
+			)
+			return DoiInfo(doi=dois[0], doi_category_code="2")
+		elif len(dois) == 1:
+			return DoiInfo(doi=dois[0], doi_category_code="2")
+		else:
+			warnings.warn(
+				f"No Obspack release was found in the time period {earliest} to {latest}."
+			)
+			return DoiInfo(doi="", doi_category_code="9")
 
 
 def get_dobj_info(dobj_url: str) -> DobjInfo | None:

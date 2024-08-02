@@ -3,7 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional, Tuple, Any
 
 
 SPARQL_ENDPOINT = "https://meta.icos-cp.eu/sparql"
@@ -99,11 +99,17 @@ def check_value_type(value: Any, expected_type: Optional[type], query: str) -> A
 	else: return value
 
 
+def submission_window_to_str(submission_window: SubmissionWindow, fmt: str, tz: ZoneInfo) -> Tuple[str, str]:
+	earliest = submission_window.start.astimezone(tz).strftime(fmt)
+	latest = submission_window.end.astimezone(tz).strftime(fmt)
+	return earliest, latest
+
+
+def submission_window_to_utc_str(submission_window: SubmissionWindow, fmt: str) -> Tuple[str, str]:
+	return submission_window_to_str(submission_window, fmt, ZoneInfo("UTC"))
+
+
 def obspack_time_series_query(submission_window: SubmissionWindow) -> str:
-	fmt = "%Y-%m-%dT%H:%M:%SZ"
-	utc = ZoneInfo("UTC")
-	earliest = submission_window.start.astimezone(utc).strftime(fmt)
-	latest = submission_window.end.astimezone(utc).strftime(fmt)
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -114,7 +120,23 @@ SELECT ?dobj WHERE {
 	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 	FILTER( ?submTime >= '%s'^^xsd:dateTime && ?submTime <= '%s'^^xsd:dateTime )
 }
-	""" % (earliest, latest)
+	""" % submission_window_to_utc_str(submission_window, "%Y-%m-%dT%H:%M:%SZ")
+
+
+def obspack_release_query(object_spec: str, submission_window: SubmissionWindow) -> str:
+	return """
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?doi WHERE {
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/%s>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasDoi ?doi .
+	FILTER( ?submTime >= '%s'^^xsd:dateTime && ?submTime <= '%s'^^xsd:dateTime )
+}
+ORDER BY DESC(?submTime)
+	""" % (object_spec, *submission_window_to_utc_str(submission_window, "%Y-%m-%dT%H:%M:%SZ"))
 
 
 def instrument_query(instrument_atc_id: int) -> str:

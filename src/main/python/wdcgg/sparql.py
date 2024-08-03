@@ -83,6 +83,7 @@ def run_sparql_select_query_multi_params(query: str, result_type: Optional[type]
 			for binding in sparql_results.bindings:
 				value = check_value_type(binding[param]["value"], result_type, query)
 				results[param].append(value)
+		return results
 	else:
 		raise TypeError(
 			"More than one parameters were expected as a result of SPARQL query"
@@ -146,28 +147,23 @@ SELECT ?instrumentInfo WHERE {
 	VALUES ?instrument { <http://meta.icos-cp.eu/resources/instruments/ATC_%s> }
 	?instrument cpmeta:hasModel ?model .
 	?instrument cpmeta:hasSerialNumber ?serialNumber .
-	?instrument cpmeta:hasVendor ?vendor .
-	?vendor cpmeta:hasName ?vendorName .
+	?instrument cpmeta:hasVendor/cpmeta:hasName ?vendorName .
 	BIND(concat(?vendorName, ", ", ?model, ", ", ?serialNumber) AS ?instrumentInfo)
 }
 	""" % instrument_atc_id
 
 
-def contributors_query(dataset_url: str) -> str:
+def contributor_roles_query(contributor_uri: str, station_uri: str) -> str:
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?contributor ?email ?organizationLabel ?roleLabel WHERE {
-	VALUES ?ds { <%s> }
-	?ds cpmeta:wasProducedBy ?prod .
-	?prod cpmeta:wasParticipatedInBy ?prodContrib .
-	?prodContrib rdf:_1|rdf:_2|rdf:_3|rdf:_4|rdf:_5|rdf:_6|rdf:_7|rdf:_8|rdf:_9|rdf:_10 ?contributor .
+SELECT ?organizationLabel ?role WHERE {
+	VALUES ?contributor { <%s> }
+	VALUES ?organization { <%s> }
 	?contributor cpmeta:hasMembership ?membership .
-	?contributor cpmeta:hasEmail ?email .
 	?membership cpmeta:atOrganization ?organization .
-	?membership cpmeta:hasRole ?role .
 	?organization rdfs:label ?organizationLabel .
-	?role rdfs:label ?roleLabel .
+	?membership cpmeta:hasRole/rdfs:label ?role .
 }
-	""" % dataset_url
+	""" % (contributor_uri, station_uri)

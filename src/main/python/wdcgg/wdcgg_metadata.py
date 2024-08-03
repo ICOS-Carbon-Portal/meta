@@ -1,9 +1,9 @@
 from datetime import datetime
 import warnings
-from typing import Optional, Tuple
-from dataclasses import dataclass
+from typing import Optional, Tuple, Any
+from dataclasses import dataclass, asdict
 from icoscp_core.icos import meta, data
-from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Agent
+from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Organization, Station, Person, Agent
 import sparql
 from obspack_netcdf import ObspackNetcdf, InstrumentDeployment
 
@@ -41,12 +41,19 @@ class DobjInfo:
 	doi: Optional[str]
 	pid: Optional[str]
 	citationString: Optional[str]
-	station: Optional[str]
+	station: Station
 	samplingHeight: Optional[float]
 	sources: Optional[list[PlainStaticObject]]
 	authors: Optional[list[Agent]]
 	gasSpecies: Optional[str]
 	instruments: Optional[UriResource | list[UriResource]]
+
+@dataclass
+class ScaleHistoryItem:
+	sh_start_date_time: str
+	sh_end_date_time: str
+	sc_scale_code: str
+	sc_scale: str
 
 @dataclass
 class InstrumentDeploymentWdcgg:
@@ -57,9 +64,68 @@ class InstrumentDeploymentWdcgg:
 	mm_measurement_method: str
 
 @dataclass
+class SamplingHeightHistoryItem:
+	sh_start_date_time: str
+	sh_end_date_time: str
+	sh_sampling_height: str
+
+@dataclass
+class OrganizationId:
+	or_organization_code: str
+
+@dataclass
+class JointPerson:
+	or_organization_code: str
+	ps_person_id: str
+
+@dataclass
+class ContactPersonId:
+	ps_person_id: str
+
+@dataclass
+class ContactPersonDetails:
+	organization: str
+	role: str
+	role_code: str
+	country: str
+
+@dataclass
+class DataFlagItem:
+	df_data_flag_code: str
+	df_data_flag: str
+	dg_data_flag: str
+
+@dataclass
+class Reference:
+	rg_reference: str
+
+@dataclass
 class DoiInfo:
 	doi: str
 	doi_category_code: str
+
+@dataclass
+class WdcggOrganization:
+	"""
+	Parameters
+	----------
+	or_organization_code : WDCGG code for the organization. Full list at https://gaw.kishou.go.jp/documents/db_list/organization .
+	or_acronym :           Organization's acronym.
+	or_name :              Organization's name.
+	na_nation_code :       ISO 3166-1 alpha-2 code of country/territory to which the organization belongs to.
+	or_address_1 :         [OPTIONAL] First line of the organization's address.
+	or_address_2 :         [OPTIONAL] Second line of the organization's address.
+	or_address_3 :         [OPTIONAL] Third line of the organization's address.
+	or_website :           [OPTIONAL] URL of the organization's website.
+	"""
+	or_organization_code: str
+	or_acronym: str
+	or_name: str
+	na_nation_code: str
+	or_address_1: str
+	or_address_2: str
+	or_address_3: str
+	or_website: str
 
 @dataclass
 class ContactPerson:
@@ -145,18 +211,18 @@ class WdcggMetadata:
 	wc_wdcgg_catalogue_id: str
 	or_organization_code: str
 	or_organization: str
-	jl_joint_laboratory: list[dict[str, str]]
-	pg_person_group: list[dict[str, str]]
-	jp_joint_person: list[dict[str, str]]
+	jl_joint_laboratory: list[OrganizationId]
+	pg_person_group: list[ContactPersonId]
+	jp_joint_person: list[JointPerson]
 	ao_aim_of_observation_code: str
 	ao_aim_of_observation: str
 	tz_time_zone_code: str
 	tz_time_zone: str
 	un_unit_code: str
 	un_unit: str
-	sh_scale_history: list[dict[str, str]]
+	sh_scale_history: list[ScaleHistoryItem]
 	ih_instrument_history: list[InstrumentDeploymentWdcgg]
-	sh_sampling_height_history: list[dict[str, str]]
+	sh_sampling_height_history: list[SamplingHeightHistoryItem]
 	sf_sampling_frequency_code: str
 	sf_sampling_frequency: str
 	md_measurement_calibration: str
@@ -165,8 +231,8 @@ class WdcggMetadata:
 	md_da_mean_processing: str
 	md_mo_mean_processing: str
 	md_original_data_flag: str
-	dg_data_flag_group: list[dict[str, str]]
-	rg_reference_group: list[dict[str, str]]
+	dg_data_flag_group: list[DataFlagItem]
+	rg_reference_group: list[Reference]
 	st_status_code: str
 	st_status: str
 	dc_doi_category_code: str
@@ -175,15 +241,18 @@ class WdcggMetadata:
 
 
 class WdcggMetadataClient:
-	def __init__(self, dobj_info: DobjInfo, submission_window: sparql.SubmissionWindow, gawsis_to_wdcgg_station_id: dict[str, str]):
-		self.dobj_info = dobj_info
+	def __init__(self, submission_window: sparql.SubmissionWindow, gawsis_to_wdcgg_station_id: dict[str, str]):
 		self.submission_window = submission_window
 		self.gawsis_to_wdcgg_station_id = gawsis_to_wdcgg_station_id
+		self.metadata: list[dict[str, Any]] = []
+		self.contacts: list[dict[str, Any]] = []
+		self.contact_ids: dict[str, str] = {}
+		self.organizations: list[dict[str, Any]] = []
+		self.organization_ids: dict[str, str] = {}
 		self.instruments: dict[int, str] = {}
-		self.contacts: dict[int, ContactPerson] = {}
 
-	def dobj_metadata(self) -> WdcggMetadata:
-		"""Fill information in a JSON object according to WDCGG template for metadata.
+	def dobj_metadata(self, dobj_info: DobjInfo) -> None:
+		"""Structure metadata according to WDCGG template for dataset metadata.
 
 		Returns
 		-------
@@ -191,17 +260,19 @@ class WdcggMetadataClient:
 		according to the WDCGG JSON template.
 		"""
 
-		scale = SCALES[self.dobj_info.gasSpecies]
+		catalog_id = self.wdcgg_catalog_id(dobj_info.url, dobj_info.station, dobj_info.fileName, dobj_info.gasSpecies)
 
-		if self.dobj_info.samplingHeight is None:
-			warnings.warn(f"No sampling height provided for data object {self.dobj_info.url}.")
+		scale = SCALES[dobj_info.gasSpecies]
+
+		if dobj_info.samplingHeight is None:
+			warnings.warn(f"No sampling height provided for data object {dobj_info.url}.")
 			sampling_height = ""
 		else:
-			sampling_height = str(self.dobj_info.samplingHeight)
+			sampling_height = str(dobj_info.samplingHeight)
 
-		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[self.dobj_info.gasSpecies])
+		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[dobj_info.gasSpecies])
 
-		return WdcggMetadata(
+		self.metadata.append(asdict(WdcggMetadata(
 			Contributor = CONTRIBUTOR,
 			Submission_date = "2024-08-01 12:00:00",
 			md_editor_name = "Jonathan Schenk",
@@ -227,87 +298,154 @@ class WdcggMetadataClient:
 				"dg_data_flag_group",
 				"rg_reference_group",
 				"st_status",
-				"md_description",
-				"dc_doi_category"
+				"dc_doi_category",
+				"md_description"
 			],
-			wc_wdcgg_catalogue_id = self.wdcgg_catalog_id(),
+			wc_wdcgg_catalogue_id = catalog_id,
 			or_organization_code = CONTRIBUTOR,
 			or_organization = "ICOS",
 			jl_joint_laboratory = [],
-			pg_person_group = [],
+			pg_person_group = self.get_contacts_metadata(dobj_info.authors, dobj_info.station),
 			jp_joint_person = [],
 			ao_aim_of_observation_code = "1",
 			ao_aim_of_observation = "Background observation",
 			tz_time_zone_code = "1",
 			tz_time_zone = "UTC",
-			un_unit_code = "99",
-			un_unit = "mol mol-1",
-			sh_scale_history = [{
-				"sh_start_date_time": "9999-12-31T00:00:00",
-				"sh_end_date_time": "9999-12-31T23:59:59",
-				"sc_scale_code": scale,
-				"sc_scale": WDCGG_SCALE_CODES[scale]
-			}],
-			ih_instrument_history = self.instrument_history(),
-			sh_sampling_height_history = [{
-				"sh_start_date_time": "9999-12-31T00:00:00",
-				"sh_end_date_time": "9999-12-31T23:59:59",
-				"sh_sampling_height": sampling_height
-			}],
+			un_unit_code = "1", #"99"
+			un_unit = "ppm", #"mol mol-1"
+			sh_scale_history = [ScaleHistoryItem(
+				sh_start_date_time="9999-12-31T00:00:00",
+				sh_end_date_time="9999-12-31T23:59:59",
+				sc_scale_code=scale,
+				sc_scale=WDCGG_SCALE_CODES[scale]
+			)],
+			ih_instrument_history = self.instrument_history(dobj_info.url),
+			sh_sampling_height_history = [SamplingHeightHistoryItem(
+				sh_start_date_time="9999-12-31T00:00:00",
+				sh_end_date_time="9999-12-31T23:59:59",
+				sh_sampling_height=sampling_height
+			)],
 			sf_sampling_frequency_code = "6",
 			sf_sampling_frequency = "",
-			md_measurement_calibration = """Calibration sequence every 15 days with three calibration tanks
-Gas injection duration: 30 min
-Number of cycles (tank analysis) during a calibration: 4
-Performance target frequency: every 7 hours
-Archive target frequency: every 15 days""",
+			md_measurement_calibration = ("Calibration sequence every 15 days with three calibration tanks\n"
+				"Gas injection duration: 30 min\n"
+				"Number of cycles (tank analysis) during a calibration: 4\n"
+				"Performance target frequency: every 7 hours\n"
+				"Archive target frequency: every 15 days"),
 			md_data_processing = "Data processing at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
 			md_hr_mean_processing = "Time-averaged values are reported at the beginning of the averaging interval.",
 			md_da_mean_processing = "",
 			md_mo_mean_processing = "",
-			md_original_data_flag = """- Flag 'U' = data correct before manual quality control
-- Flag 'N' = data incorrect before manual quality control
-- Flag 'O' = data correct after manual quality control
-- Flag 'K' = data incorrect after manual quality control
-- Flag 'R' = data correct after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data
-- Flag 'H' = data incorrect after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data""",
+			md_original_data_flag = ("- Flag 'U' = data correct before manual quality control\n"
+				"- Flag 'N' = data incorrect before manual quality control\n"
+				"- Flag 'O' = data correct after manual quality control\n"
+				"- Flag 'K' = data incorrect after manual quality control\n"
+				"- Flag 'R' = data correct after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data\n"
+				"- Flag 'H' = data incorrect after manual quality control and backward propagation of manual quality control from hourly data to minutely and raw data"),
 			dg_data_flag_group = [
-				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "U"},
-				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "O"},
-				{"df_data_flag_code": "1", "df_data_flag": "Valid (background)", "dg_data_flag": "R"},
-				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "N"},
-				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "K"},
-				{"df_data_flag_code": "3", "df_data_flag": "Invalid", "dg_data_flag": "H"},
+				DataFlagItem(df_data_flag_code="1", df_data_flag="Valid (background)", dg_data_flag="U"),
+				DataFlagItem(df_data_flag_code="1", df_data_flag="Valid (background)", dg_data_flag="O"),
+				DataFlagItem(df_data_flag_code="1", df_data_flag="Valid (background)", dg_data_flag="R"),
+				DataFlagItem(df_data_flag_code="3", df_data_flag="Invalid", dg_data_flag="N"),
+				DataFlagItem(df_data_flag_code="3", df_data_flag="Invalid", dg_data_flag="K"),
+				DataFlagItem(df_data_flag_code="3", df_data_flag="Invalid", dg_data_flag="H"),
 			],
 			rg_reference_group = [
-				{"rg_reference": "Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016."}
+				Reference(rg_reference="Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016.")
 			],
 			st_status_code = "1",
 			st_status = "Operational/Reporting",
 			dc_doi_category_code = doi_info.doi_category_code,
 			dc_doi_category = doi_info.doi,
-			md_description = f"""ICOS atmospheric station
-Observational timeseries of ambient mole fraction of {self.dobj_info.gasSpecies} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.
+			md_description = ("ICOS atmospheric station\n"
+				f"Observational timeseries of ambient mole fraction of {dobj_info.gasSpecies} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.\n\n"
+				f"PID: {dobj_info.pid}\n\n"
+				"Citation:\n"
+				f"{dobj_info.citationString}\n\n"
+				"DATA POLICY:\n"
+				"ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.")
+		)))
 
-PID: {self.dobj_info.pid}
-
-Citation:
-{self.dobj_info.citationString}
-
-DATA POLICY:
-ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.""")
-
-	def contact_metadata(self) -> list[ContactPerson]:
-		"""Fill information in a JSON object according to WDCGG template for contacts metadata.
+	def get_contacts_metadata(self, authors: Optional[list[Person | Organization]], station: Station) -> list[ContactPersonId]:
+		"""Gather metadata about contact persons.
 
 		Returns
 		-------
-		Dictionary matching the WDCGG JSON template for contacts metadata.
+		A list of ContactPersonId objects to be used in the dataset metadata.
+		At the same time, fill in a contact persons list to be used for
+		producing the contact metadata file.
 		"""
 
-		return []
+		contacts: list[ContactPersonId] = []
+		for author in authors or []:
+			if isinstance(author, Person):
+				uri = author.self.uri
+				person_details = self.get_person_details(uri, station)
+				if uri in self.contact_ids.keys():
+					person_id = self.contact_ids[uri]
+				else:
+					person_id = f"NEW{len(self.contact_ids) + 1}"
+					self.contact_ids[uri] = person_id
+					self.contacts.append(asdict(ContactPerson(
+						ps_person_id=person_id,
+						ps_name=" ".join([author.firstName, author.lastName]),
+						ps_email=author.email or "",
+						pc_person_class_code=person_details.role_code,
+						pc_person_class=person_details.role,
+						or_organization_code=person_details.organization,
+						ps_prefix="",
+						na_nation_code=person_details.country,
+						ps_address_1="",
+						ps_address_2="",
+						ps_address_3="",
+						ps_phone="",
+						ps_fax=""
+					)))
+				contacts.append(ContactPersonId(ps_person_id=person_id))
+		return contacts
 
-	def wdcgg_catalog_id(self) -> str:
+	def get_person_details(self, person_uri: str, station: Station) -> ContactPersonDetails:
+		# Role labels in ICOS
+		# Administrator
+		# Principal Investigator
+		# Engineer
+		# Researcher
+		# Data Manager
+		query = sparql.contributor_roles_query(person_uri, station.org.self.uri)
+		results = sparql.run_sparql_select_query_multi_params(query)
+		if results is None:
+			warnings.warn(f"No personal details were found about {person_uri} using query {query}")
+			role = "Contact Person"
+			role_code = "1"
+		elif "Principal Investigator" not in results["organizationLabel"]:
+			role = "Contact Person"
+			role_code = "1"
+		else:
+			role = "Contact Person and Principal Investigator (PI)"
+			role_code = "3"
+		org = station.responsibleOrganization or station.org
+		org_label = org.self.label or org.self.uri.split("/")[-1]
+		country = station.countryCode or ""
+		if org_label in self.organization_ids.keys():
+			org_id = self.organization_ids[org_label]
+		else:
+			org_id = f"{len(self.organization_ids) + 1}"
+			self.organization_ids[org_label] = org_id
+			self.organizations.append(asdict(WdcggOrganization(
+				or_organization_code=org_id,
+				or_acronym=org_label,
+				or_name=org.name,
+				na_nation_code=country,
+				or_address_1="",
+				or_address_2="",
+				or_address_3="",
+				or_website=org.website or ""
+			)))
+
+		return ContactPersonDetails(role=role, role_code=role_code, organization=org_id, country=country)
+
+
+	def wdcgg_catalog_id(self, url: str, station: Station, file_name: str, gas_species: Optional[str]) -> str:
 		"""Produce a string containing the data object's catalog ID.
 
 		Returns
@@ -329,41 +467,39 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 		"""
 
 		# Station ID
-		if self.dobj_info.station is None:
-			warnings.warn(f"No station name for data object {self.dobj_info.url}")
-			wdcgg_station_id = ""
-		elif self.dobj_info.station not in self.gawsis_to_wdcgg_station_id.keys():
-			warnings.warn(f"Station {self.dobj_info.station} is not registered in GAWSIS.")
+		station_name = station.org.self.label or station.org.self.uri.split("/")[-1]
+		if station_name not in self.gawsis_to_wdcgg_station_id.keys():
+			warnings.warn(f"Station {station} is not registered in GAWSIS.")
 			wdcgg_station_id = ""
 		else:
-			wdcgg_station_id = self.gawsis_to_wdcgg_station_id[self.dobj_info.station]
+			wdcgg_station_id = self.gawsis_to_wdcgg_station_id[station_name]
 
 		# Observational platform ID and sampling type ID
-		platform = self.dobj_info.fileName.split("_")[2].split("-")[0]
-		sampling_type = self.dobj_info.fileName.split("_")[2].split("-")[1]
+		platform = file_name.split("_")[2].split("-")[0]
+		sampling_type = file_name.split("_")[2].split("-")[1]
 		if platform in WDCGG_PLATFORMS.keys():
 			platform_id = WDCGG_PLATFORMS[platform]
 		else:
-			warnings.warn(f"Unknow platform '{platform}' used for data object {self.dobj_info.url}.")
+			warnings.warn(f"Unknow platform '{platform}' used for data object {url}.")
 			platform_id = ""
 		if sampling_type in WDCGG_SAMPLING_TYPES.keys():
 			sampling_type_id = WDCGG_SAMPLING_TYPES[sampling_type]
 		else:
 			warnings.warn(
-				f"Unknown sampling type '{sampling_type}' used for data object {self.dobj_info.url}."
+				f"Unknown sampling type '{sampling_type}' used for data object {url}."
 			)
 			sampling_type_id = ""
 
 		return "-".join([
 			CONTRIBUTOR.zfill(4),
 			wdcgg_station_id.zfill(4),
-			WDCGG_GAS_SPECIES_CODES[self.dobj_info.gasSpecies],
+			WDCGG_GAS_SPECIES_CODES[gas_species],
 			platform_id,
 			sampling_type_id,
 			"9999"
 		])
 
-	def instrument_history(self) -> list[InstrumentDeploymentWdcgg]:
+	def instrument_history(self, url: str) -> list[InstrumentDeploymentWdcgg]:
 		"""Format the instrument history according to WDCGG requirements.
 
 		Returns
@@ -374,7 +510,7 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 		changed more than a predefined number of times.
 		"""
 
-		file_name, buffer = data.get_file_stream(self.dobj_info.url)
+		file_name, buffer = data.get_file_stream(url)
 		obspack_nc = ObspackNetcdf(file_name, buffer.read())
 		instr_hist = obspack_nc.instrument_history("time", "instrument")
 		if len(instr_hist) == 0 or len(instr_hist) > MAX_INSTRUMENTS:
@@ -384,7 +520,6 @@ ICOS data is licensed under a Creative Commons Attribution 4.0 international lic
 			instr_hist_wdcgg.append(self.instrument_deployment_to_wdcgg_format(deployment))
 		instr_hist_wdcgg[0].ih_start_date_time = "9999-12-31T00:00:00"
 		instr_hist_wdcgg[-1].ih_end_date_time = "9999-12-31T23:59:59"
-
 		return instr_hist_wdcgg
 
 	def instrument_deployment_to_wdcgg_format(self, deployment: InstrumentDeployment) -> InstrumentDeploymentWdcgg:
@@ -473,7 +608,7 @@ def get_dobj_info(dobj_url: str) -> DobjInfo | None:
 			doi=dobj_meta.doi,
 			pid=dobj_meta.pid,
 			citationString=dobj_meta.references.citationString,
-			station=dobj_meta.specificInfo.acquisition.station.org.self.label,
+			station=dobj_meta.specificInfo.acquisition.station,
 			samplingHeight=dobj_meta.specificInfo.acquisition.samplingHeight,
 			sources=sources,
 			authors=dobj_meta.references.authors,

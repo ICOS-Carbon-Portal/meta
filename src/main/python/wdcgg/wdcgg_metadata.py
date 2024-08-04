@@ -3,24 +3,37 @@ import warnings
 from typing import Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from icoscp_core.icos import meta, data
-from icoscp_core.metacore import StationTimeSeriesMeta, PlainStaticObject, UriResource, Organization, Station, Person, Agent
+from icoscp_core.metacore import StationTimeSeriesMeta, Station, Person
 import sparql
 from obspack_netcdf import ObspackNetcdf, InstrumentDeployment
 
 
+@dataclass
+class CalibrationScale:
+	name: str
+	wdcgg_code: str
+
+@dataclass
+class InstrumentMethod:
+	method: str
+	code: str
+
 CONTRIBUTOR = "159"
-WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", None: ""}
-SCALES = {"CO2": "WMO CO2 X2019", "CH4": "WMO CH4 X2004A", None: ""}
-WDCGG_SCALE_CODES = {"WMO CO2 X2019": "158", "WMO CH4 X2004A": "3", None: ""}
+WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003"}
+SCALES = {
+	"CO2": CalibrationScale(name="WMO CO2 X2019", wdcgg_code="158"),
+	"CH4": CalibrationScale(name="WMO CH4 X2004A", wdcgg_code="3"),
+	"N2O": CalibrationScale(name="NOAA-2006A", wdcgg_code="200")
+}
 WDCGG_METHODS = {
-	"Picarro": {"method": "CRDS", "code": "18"},
-	"LI-COR": {"method": "NDIR", "code": "9"},
-	"Los Gatos Research": {"method": "off-axis integrated cavity output spectroscopy (OA-ICOS)", "code": "25"},
-	"Siemens, ULTRAMAT": {"method": "NDIR", "code": "9"},
-	"Maihak": {"method": "NDIR", "code": "9"},
-	"Ecotech, Spectronus": {"method": "Fourier Transform Spectrometer", "code": "50"},
-	"ABB, URAS": {"method": "NDIR", "code": "9"},
-	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": {"method": "NDIR", "code": "9"}
+	"Picarro": InstrumentMethod(method="CRDS", code="18"),
+	"LI-COR": InstrumentMethod(method="NDIR", code="9"),
+	"Los Gatos Research": InstrumentMethod(method="off-axis integrated cavity output spectroscopy (OA-ICOS)", code="25"),
+	"Siemens, ULTRAMAT": InstrumentMethod(method="NDIR", code="9"),
+	"Maihak": InstrumentMethod(method="NDIR", code="9"),
+	"Ecotech, Spectronus": InstrumentMethod(method="Fourier Transform Spectrometer", code="50"),
+	"ABB, URAS": InstrumentMethod(method="NDIR", code="9"),
+	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": InstrumentMethod(method="NDIR", code="9")
 }
 WDCGG_PLATFORMS = {
 	"surface": "01", "tower": "02", "balloon": "03", "aircraft": "05",
@@ -31,22 +44,19 @@ WDCGG_SAMPLING_TYPES = {
 	"bag": "06", "PFP": "07", "remote": "08"
 }
 MAX_INSTRUMENTS = 5
-OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o", None: ""}
+OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o"}
 
 
 @dataclass
 class DobjInfo:
 	url: str
-	fileName: str
-	doi: Optional[str]
-	pid: Optional[str]
-	citationString: Optional[str]
+	file_name: str
+	pid: str
+	citation_string: str
 	station: Station
-	samplingHeight: Optional[float]
-	sources: Optional[list[PlainStaticObject]]
-	authors: Optional[list[Agent]]
-	gasSpecies: Optional[str]
-	instruments: Optional[UriResource | list[UriResource]]
+	sampling_height: str
+	authors: list[Person]
+	gas_species: str
 
 @dataclass
 class ScaleHistoryItem:
@@ -260,17 +270,8 @@ class WdcggMetadataClient:
 		according to the WDCGG JSON template.
 		"""
 
-		catalog_id = self.wdcgg_catalog_id(dobj_info.url, dobj_info.station, dobj_info.fileName, dobj_info.gasSpecies)
-
-		scale = SCALES[dobj_info.gasSpecies]
-
-		if dobj_info.samplingHeight is None:
-			warnings.warn(f"No sampling height provided for data object {dobj_info.url}.")
-			sampling_height = ""
-		else:
-			sampling_height = str(dobj_info.samplingHeight)
-
-		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[dobj_info.gasSpecies])
+		scale = SCALES[dobj_info.gas_species]
+		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[dobj_info.gas_species])
 
 		self.metadata.append(asdict(WdcggMetadata(
 			Contributor = CONTRIBUTOR,
@@ -301,7 +302,7 @@ class WdcggMetadataClient:
 				"dc_doi_category",
 				"md_description"
 			],
-			wc_wdcgg_catalogue_id = catalog_id,
+			wc_wdcgg_catalogue_id = self.wdcgg_catalog_id(dobj_info.url, dobj_info.station, dobj_info.file_name, dobj_info.gas_species),
 			or_organization_code = CONTRIBUTOR,
 			or_organization = "ICOS",
 			jl_joint_laboratory = [],
@@ -316,14 +317,14 @@ class WdcggMetadataClient:
 			sh_scale_history = [ScaleHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",
-				sc_scale_code=scale,
-				sc_scale=WDCGG_SCALE_CODES[scale]
+				sc_scale_code=scale.wdcgg_code,
+				sc_scale=scale.name
 			)],
 			ih_instrument_history = self.instrument_history(dobj_info.url),
 			sh_sampling_height_history = [SamplingHeightHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",
-				sh_sampling_height=sampling_height
+				sh_sampling_height=dobj_info.sampling_height
 			)],
 			sf_sampling_frequency_code = "6",
 			sf_sampling_frequency = "",
@@ -358,15 +359,15 @@ class WdcggMetadataClient:
 			dc_doi_category_code = doi_info.doi_category_code,
 			dc_doi_category = doi_info.doi,
 			md_description = ("ICOS atmospheric station\n"
-				f"Observational timeseries of ambient mole fraction of {dobj_info.gasSpecies} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.\n\n"
+				f"Observational timeseries of ambient mole fraction of {dobj_info.gas_species} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.\n\n"
 				f"PID: {dobj_info.pid}\n\n"
 				"Citation:\n"
-				f"{dobj_info.citationString}\n\n"
+				f"{dobj_info.citation_string}\n\n"
 				"DATA POLICY:\n"
 				"ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.")
 		)))
 
-	def get_contacts_metadata(self, authors: Optional[list[Person | Organization]], station: Station) -> list[ContactPersonId]:
+	def get_contacts_metadata(self, authors: list[Person], station: Station) -> list[ContactPersonId]:
 		"""Gather metadata about contact persons.
 
 		Returns
@@ -377,47 +378,40 @@ class WdcggMetadataClient:
 		"""
 
 		contacts: list[ContactPersonId] = []
-		for author in authors or []:
-			if isinstance(author, Person):
-				uri = author.self.uri
-				person_details = self.get_person_details(uri, station)
-				if uri in self.contact_ids.keys():
-					person_id = self.contact_ids[uri]
-				else:
-					person_id = f"NEW{len(self.contact_ids) + 1}"
-					self.contact_ids[uri] = person_id
-					self.contacts.append(asdict(ContactPerson(
-						ps_person_id=person_id,
-						ps_name=" ".join([author.firstName, author.lastName]),
-						ps_email=author.email or "",
-						pc_person_class_code=person_details.role_code,
-						pc_person_class=person_details.role,
-						or_organization_code=person_details.organization,
-						ps_prefix="",
-						na_nation_code=person_details.country,
-						ps_address_1="",
-						ps_address_2="",
-						ps_address_3="",
-						ps_phone="",
-						ps_fax=""
-					)))
-				contacts.append(ContactPersonId(ps_person_id=person_id))
+		for author in authors:
+			uri = author.self.uri
+			person_details = self.get_person_details(uri, station)
+			if uri in self.contact_ids.keys():
+				person_id = self.contact_ids[uri]
+			else:
+				person_id = f"NEW{len(self.contact_ids) + 1}"
+				self.contact_ids[uri] = person_id
+				self.contacts.append(asdict(ContactPerson(
+					ps_person_id=person_id,
+					ps_name=" ".join([author.firstName, author.lastName]),
+					ps_email=author.email or "",
+					pc_person_class_code=person_details.role_code,
+					pc_person_class=person_details.role,
+					or_organization_code=person_details.organization,
+					ps_prefix="",
+					na_nation_code=person_details.country,
+					ps_address_1="",
+					ps_address_2="",
+					ps_address_3="",
+					ps_phone="",
+					ps_fax=""
+				)))
+			contacts.append(ContactPersonId(ps_person_id=person_id))
 		return contacts
 
 	def get_person_details(self, person_uri: str, station: Station) -> ContactPersonDetails:
-		# Role labels in ICOS
-		# Administrator
-		# Principal Investigator
-		# Engineer
-		# Researcher
-		# Data Manager
 		query = sparql.contributor_roles_query(person_uri, station.org.self.uri)
-		results = sparql.run_sparql_select_query_multi_params(query)
-		if results is None:
-			warnings.warn(f"No personal details were found about {person_uri} using query {query}")
+		results = sparql.run_sparql_select_query_single_param(query)
+		if len(results) == 0:
+			warnings.warn(f"No role was found for {person_uri} at station {station.org.self.uri}.")
 			role = "Contact Person"
 			role_code = "1"
-		elif "Principal Investigator" not in results["organizationLabel"]:
+		elif "Principal Investigator" not in results:
 			role = "Contact Person"
 			role_code = "1"
 		else:
@@ -425,7 +419,9 @@ class WdcggMetadataClient:
 			role_code = "3"
 		org = station.responsibleOrganization or station.org
 		org_label = org.self.label or org.self.uri.split("/")[-1]
-		country = station.countryCode or ""
+		if org.website is None: country = ""
+		else: country = org.website[8:].split("/")[0].split(".")[-1].upper()
+		if country == "CAT": country = "ES"
 		if org_label in self.organization_ids.keys():
 			org_id = self.organization_ids[org_label]
 		else:
@@ -445,7 +441,7 @@ class WdcggMetadataClient:
 		return ContactPersonDetails(role=role, role_code=role_code, organization=org_id, country=country)
 
 
-	def wdcgg_catalog_id(self, url: str, station: Station, file_name: str, gas_species: Optional[str]) -> str:
+	def wdcgg_catalog_id(self, url: str, station: Station, file_name: str, gas_species: str) -> str:
 		"""Produce a string containing the data object's catalog ID.
 
 		Returns
@@ -469,7 +465,7 @@ class WdcggMetadataClient:
 		# Station ID
 		station_name = station.org.self.label or station.org.self.uri.split("/")[-1]
 		if station_name not in self.gawsis_to_wdcgg_station_id.keys():
-			warnings.warn(f"Station {station} is not registered in GAWSIS.")
+			warnings.warn(f"Station {station.org.self.label} is not registered in GAWSIS.")
 			wdcgg_station_id = ""
 		else:
 			wdcgg_station_id = self.gawsis_to_wdcgg_station_id[station_name]
@@ -527,7 +523,17 @@ class WdcggMetadataClient:
 			instr_label = self.instruments[deployment.atc_id]
 		else:
 			instr_query = sparql.instrument_query(deployment.atc_id)
-			instr_label = sparql.run_sparql_select_query_single_param(instr_query)[0]
+			instr_label = sparql.run_sparql_select_query_single_param(instr_query)
+			if len(instr_label) == 0:
+				warnings.warn(f"Instrument ATC_{deployment.atc_id} was not found.")
+				return InstrumentDeploymentWdcgg(
+					ih_start_date_time=timestamp_to_str(deployment.time_period.start_time, "%Y-%m-%dT%H:%M:%S"),
+					ih_end_date_time=timestamp_to_str(deployment.time_period.end_time, "%Y-%m-%dT%H:%M:%S"),
+					ih_instrument="",
+					mm_measurement_method_code="",
+					mm_measurement_method=""
+				)
+			instr_label = instr_label[0]
 			self.instruments[deployment.atc_id] = instr_label
 		wdcgg_method_code, wdcgg_method = self.get_wdcgg_instrument_method(instr_label)
 		return InstrumentDeploymentWdcgg(
@@ -541,7 +547,7 @@ class WdcggMetadataClient:
 	def get_wdcgg_instrument_method(self, instr_label: str) -> Tuple[str, str]:
 		for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
 			if instr_label.startswith(vendor_or_model):
-				return wdcgg_method_info["method"], wdcgg_method_info["code"]
+				return wdcgg_method_info.method, wdcgg_method_info.code
 		else:
 			return "", ""
 
@@ -564,7 +570,7 @@ class WdcggMetadataClient:
 			return DoiInfo(doi="", doi_category_code="9")
 
 
-def get_dobj_info(dobj_url: str) -> DobjInfo | None:
+def get_dobj_info(dobj_url: str) -> Optional[DobjInfo]:
 	"""Extract relevant information from ICOS metadata.
 
 	Parameters
@@ -581,39 +587,53 @@ def get_dobj_info(dobj_url: str) -> DobjInfo | None:
 	dobj_meta = meta.get_dobj_meta(dobj_url)
 
 	if isinstance(dobj_meta.specificInfo, StationTimeSeriesMeta):
-		# Sources
-		sources: list[PlainStaticObject] | None
-		if dobj_meta.specificInfo.productionInfo is None: sources = None
-		else: sources = dobj_meta.specificInfo.productionInfo.sources
+		# PID
+		if dobj_meta.pid is None:
+			warnings.warn(f"No PID provided for data object {dobj_url}.")
+			pid = ""
+		else:
+			pid = dobj_meta.pid
+		# Citation string
+		if dobj_meta.references.citationString is None:
+			warnings.warn(f"No citation string provided for data object {dobj_url}.")
+			citation_string = ""
+		else:
+			citation_string = dobj_meta.references.citationString
+		# Sampling height
+		if dobj_meta.specificInfo.acquisition.samplingHeight is None:
+			warnings.warn(f"No sampling height provided for data object {dobj_url}.")
+			sampling_height = ""
+		else:
+			sampling_height = str(dobj_meta.specificInfo.acquisition.samplingHeight)
+		# Authors
+		if dobj_meta.references.authors is None:
+			warnings.warn(f"No individual author is listed for data object {dobj_url}.")
+			authors = []
+		else:
+			authors = [author for author in dobj_meta.references.authors if isinstance(author, Person)]
 		# Gas species
-		gas_species: str | None
+		prefix_msg = f"The gas species covered by data object {dobj_url} cannot be determined"
 		keywords = dobj_meta.specification.keywords
 		if keywords is None:
-			warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined for lack of keyword.")
-			gas_species = None
+			raise ValueError(f"{prefix_msg} for lack of keyword.")
 		else:
 			dobj_gas_species = set(keywords).intersection(WDCGG_GAS_SPECIES_CODES.keys())
 			if len(dobj_gas_species) == 0:
-				warnings.warn(f"The gas species covered by data object {dobj_url} cannot be determined.")
-				gas_species = None
+				raise ValueError(f"{prefix_msg} because none of 'CO2', 'CH4' or 'N2O' appear in the keywords.")
 			elif len(dobj_gas_species) == 1:
 				gas_species = list(dobj_gas_species)[0]
 			else:
-				warnings.warn(f"More than one gas species was found for data object {dobj_url}.")
-				gas_species = None
+				raise ValueError(f"{prefix_msg} because more than one gas species were found in the keywords.")
 
 		return DobjInfo(
 			url=dobj_url,
-			fileName=dobj_meta.fileName,
-			doi=dobj_meta.doi,
-			pid=dobj_meta.pid,
-			citationString=dobj_meta.references.citationString,
+			file_name=dobj_meta.fileName,
+			pid=pid,
+			citation_string=citation_string,
 			station=dobj_meta.specificInfo.acquisition.station,
-			samplingHeight=dobj_meta.specificInfo.acquisition.samplingHeight,
-			sources=sources,
-			authors=dobj_meta.references.authors,
-			gasSpecies=gas_species,
-			instruments=dobj_meta.specificInfo.acquisition.instrument
+			sampling_height=sampling_height,
+			authors=authors,
+			gas_species=gas_species
 		)
 	else:
 		warnings.warn(

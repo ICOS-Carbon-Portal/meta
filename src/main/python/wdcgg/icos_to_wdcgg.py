@@ -40,26 +40,23 @@ def str_to_datetime(dt: str) -> datetime:
 		)
 
 
-def write_json_to_file(json_object: list[dict[str, Any]], file_path: str) -> None:
-	with open(file_path, "w") as file:
+def write_json_to_file(json_object: list[dict[str, Any]], out_dir: Path, file_path: str) -> None:
+	with open(os.path.join(out_dir, file_path), "w") as file:
 		file.write(json.dumps(json_object))
 
 
 if __name__ == "__main__":
 	submission_window = SubmissionWindow(str_to_datetime(sys.argv[1]), str_to_datetime(sys.argv[2]))
-	output_dir = Path(sys.argv[3])
-	if not output_dir.exists(): output_dir.mkdir(parents=True)
+	out_dir = Path(sys.argv[3])
+	if not out_dir.exists(): out_dir.mkdir(parents=True)
 	gawsis_to_wdcgg_station_id = parse_wdcgg_station_file()
+	wdcgg_metadata_client = WdcggMetadataClient(submission_window, gawsis_to_wdcgg_station_id)
 	sparql_query = obspack_time_series_query(submission_window)
 	dobj_urls = run_sparql_select_query_single_param(sparql_query, str)
-	wdcgg_metadata_client = WdcggMetadataClient(submission_window, gawsis_to_wdcgg_station_id)
 	for dobj_url in dobj_urls:
 		dobj_meta = get_dobj_info(dobj_url)
 		if dobj_meta is None: continue
 		wdcgg_metadata_client.dobj_metadata(dobj_meta)
-	metadata_file_path = os.path.join(output_dir, "wdcgg_metadata.json")
-	contacts_file_path = os.path.join(output_dir, "wdcgg_contacts.json")
-	orgs_file_path = os.path.join(output_dir, "wdcgg_organizations.json")
-	write_json_to_file(wdcgg_metadata_client.metadata, metadata_file_path)
-	write_json_to_file(wdcgg_metadata_client.contacts, contacts_file_path)
-	write_json_to_file(wdcgg_metadata_client.organizations, orgs_file_path)
+	write_json_to_file(wdcgg_metadata_client.metadata, out_dir, "wdcgg_metadata.json")
+	write_json_to_file(wdcgg_metadata_client.contacts, out_dir, "wdcgg_contacts.json")
+	write_json_to_file(wdcgg_metadata_client.organizations, out_dir, "wdcgg_organizations.json")

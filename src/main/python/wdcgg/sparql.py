@@ -158,12 +158,11 @@ def contributor_roles_query(contributor_uri: str, station_uri: str) -> str:
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?organizationLabel ?role WHERE {
+SELECT ?role WHERE {
 	VALUES ?contributor { <%s> }
 	VALUES ?organization { <%s> }
 	?contributor cpmeta:hasMembership ?membership .
 	?membership cpmeta:atOrganization ?organization .
-	?organization rdfs:label ?organizationLabel .
 	?membership cpmeta:hasRole/rdfs:label ?role .
 }
 	""" % (contributor_uri, station_uri)

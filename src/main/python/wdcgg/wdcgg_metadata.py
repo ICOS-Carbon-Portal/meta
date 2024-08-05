@@ -2,7 +2,7 @@ from datetime import datetime
 import warnings
 from typing import Optional, Tuple, Any
 from dataclasses import dataclass, asdict
-from icoscp_core.icos import meta, data
+from icoscp_core.icos import meta
 from icoscp_core.metacore import StationTimeSeriesMeta, Station, Person
 import sparql
 from obspack_netcdf import ObspackNetcdf, InstrumentDeployment
@@ -312,8 +312,8 @@ class WdcggMetadataClient:
 			ao_aim_of_observation = "Background observation",
 			tz_time_zone_code = "1",
 			tz_time_zone = "UTC",
-			un_unit_code = "1", #"99"
-			un_unit = "ppm", #"mol mol-1"
+			un_unit_code = "1" if dobj_info.gas_species == "CO2" else "2",
+			un_unit = "ppm" if dobj_info.gas_species == "CO2" else "ppb",
 			sh_scale_history = [ScaleHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",
@@ -506,8 +506,7 @@ class WdcggMetadataClient:
 		changed more than a predefined number of times.
 		"""
 
-		file_name, buffer = data.get_file_stream(url)
-		obspack_nc = ObspackNetcdf(file_name, buffer.read())
+		obspack_nc = ObspackNetcdf(url)
 		instr_hist = obspack_nc.instrument_history("time", "instrument")
 		if len(instr_hist) == 0 or len(instr_hist) > MAX_INSTRUMENTS:
 			return []

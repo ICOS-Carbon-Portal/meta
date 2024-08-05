@@ -8,6 +8,7 @@ import re
 import json
 from typing import Any
 from wdcgg_metadata import WdcggMetadataClient, get_dobj_info
+from obspack_netcdf import ObspackNetcdf
 from sparql import SubmissionWindow, run_sparql_select_query_single_param, obspack_time_series_query
 
 
@@ -57,6 +58,9 @@ if __name__ == "__main__":
 		dobj_meta = get_dobj_info(dobj_url)
 		if dobj_meta is None: continue
 		wdcgg_metadata_client.dobj_metadata(dobj_meta)
+		op = ObspackNetcdf(dobj_url)
+		data_file, data = op.wdcgg_data_table()
+		data.to_csv(os.path.join(out_dir, data_file), sep=" ", index=False)
 	write_json_to_file(wdcgg_metadata_client.metadata, out_dir, "wdcgg_metadata.json")
 	write_json_to_file(wdcgg_metadata_client.contacts, out_dir, "wdcgg_contacts.json")
 	write_json_to_file(wdcgg_metadata_client.organizations, out_dir, "wdcgg_organizations.json")

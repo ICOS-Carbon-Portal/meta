@@ -261,7 +261,7 @@ class WdcggMetadataClient:
 		self.organization_ids: dict[str, str] = {}
 		self.instruments: dict[int, str] = {}
 
-	def dobj_metadata(self, dobj_info: DobjInfo) -> None:
+	def dobj_metadata(self, dobj_info: DobjInfo, netcdf_data: ObspackNetcdf) -> None:
 		"""Structure metadata according to WDCGG template for dataset metadata.
 
 		Returns
@@ -320,7 +320,7 @@ class WdcggMetadataClient:
 				sc_scale_code=scale.wdcgg_code,
 				sc_scale=scale.name
 			)],
-			ih_instrument_history = self.instrument_history(dobj_info.url),
+			ih_instrument_history = self.instrument_history(dobj_info.url, netcdf_data),
 			sh_sampling_height_history = [SamplingHeightHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",
@@ -495,7 +495,7 @@ class WdcggMetadataClient:
 			"9999"
 		])
 
-	def instrument_history(self, url: str) -> list[InstrumentDeploymentWdcgg]:
+	def instrument_history(self, url: str, netcdf_data: ObspackNetcdf) -> list[InstrumentDeploymentWdcgg]:
 		"""Format the instrument history according to WDCGG requirements.
 
 		Returns
@@ -506,8 +506,7 @@ class WdcggMetadataClient:
 		changed more than a predefined number of times.
 		"""
 
-		obspack_nc = ObspackNetcdf(url)
-		instr_hist = obspack_nc.instrument_history("time", "instrument")
+		instr_hist = netcdf_data.instrument_history("time", "instrument")
 		if len(instr_hist) == 0 or len(instr_hist) > MAX_INSTRUMENTS:
 			return []
 		instr_hist_wdcgg: list[InstrumentDeploymentWdcgg] = []

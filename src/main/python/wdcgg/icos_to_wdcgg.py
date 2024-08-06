@@ -57,10 +57,10 @@ if __name__ == "__main__":
 	for dobj_url in dobj_urls:
 		dobj_meta = get_dobj_info(dobj_url)
 		if dobj_meta is None: continue
-		wdcgg_metadata_client.dobj_metadata(dobj_meta)
-		op = ObspackNetcdf(dobj_url)
-		data_file, data = op.wdcgg_data_table()
-		data.to_csv(os.path.join(out_dir, data_file), sep=" ", index=False)
+		netcdf_data = ObspackNetcdf(dobj_url)
+		data_file, data_table = netcdf_data.wdcgg_data_table()
+		data_table.to_csv(os.path.join(out_dir, data_file), sep=" ", index=False)
+		wdcgg_metadata_client.dobj_metadata(dobj_meta, netcdf_data)
 	write_json_to_file(wdcgg_metadata_client.metadata, out_dir, "wdcgg_metadata.json")
 	write_json_to_file(wdcgg_metadata_client.contacts, out_dir, "wdcgg_contacts.json")
 	write_json_to_file(wdcgg_metadata_client.organizations, out_dir, "wdcgg_organizations.json")

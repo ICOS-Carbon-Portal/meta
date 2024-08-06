@@ -20,9 +20,10 @@ import se.lu.nateko.cp.meta.core.data.Pin
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import geocov.GeoCovMerger
 
 object DoiGeoLocationConverter:
 

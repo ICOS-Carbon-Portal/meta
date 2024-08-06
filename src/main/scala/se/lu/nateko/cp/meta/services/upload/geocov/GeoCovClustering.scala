@@ -1,16 +1,15 @@
-package se.lu.nateko.cp.meta.services.metaexport
+package se.lu.nateko.cp.meta.services.upload.geocov
 
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.Point
 import se.lu.nateko.cp.meta.core.data.PositionUtil
-import se.lu.nateko.cp.meta.services.metaexport.GeoCovMerger.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-// TODO Move to the "upload" package
 object GeoCovClustering:
 
 	def getMinGeometryDistance(g1: Geometry, g2: Geometry): Double =
@@ -57,7 +56,7 @@ object GeoCovClustering:
 		res.toSeq
 	end mergeSimpleGeoms
 
-	private def calculateEpsilon(geometries: Seq[Geometry]): Double =
+	def calculateEpsilon(geometries: Seq[Geometry]): Double =
 		val centroids: Array[Geometry] = geometries.map(_.getCentroid()).toArray
 		val geoColl = GeometryCollection(centroids, JtsGeoFactory)
 		val centroid = geoColl.getCentroid()

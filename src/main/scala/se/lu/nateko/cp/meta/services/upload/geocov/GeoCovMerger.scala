@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.metaexport
+package se.lu.nateko.cp.meta.services.upload.geocov
 
 import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.algorithm.hull.ConcaveHull
@@ -17,9 +17,9 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.*
 
 
-// TODO Move to the "upload" package
 object GeoCovMerger:
 
 	case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
@@ -27,7 +27,7 @@ object GeoCovMerger:
 
 		def mergeIfIntersects(other: LabeledJtsGeo, epsilon: Option[Double]): Option[LabeledJtsGeo] =
 			inline def mergedLabels = labels ++ other.labels.filterNot(labels.contains)
-			inline def isCloserThanEpsilon = epsilon.map(GeoCovClustering.getMinGeometryDistance(geom, other.geom) < _).getOrElse(false)
+			inline def isCloserThanEpsilon = epsilon.map(getMinGeometryDistance(geom, other.geom) < _).getOrElse(false)
 
 			if geom.contains(other.geom) then
 				Some(this.copy(labels = mergedLabels))
@@ -40,12 +40,12 @@ object GeoCovMerger:
 			else None
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], maxNgeoms: Int): Seq[LabeledJtsGeo] =
-		val merged = GeoCovClustering.mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 		val resGeoms =
 			if merged.size <= maxNgeoms then merged
 			else
-				val secondPass = GeoCovClustering.runSecondPass(merged)
-				val finalMerge = GeoCovClustering.mergeSimpleGeoms(secondPass, None)
+				val secondPass = runSecondPass(merged)
+				val finalMerge = mergeSimpleGeoms(secondPass, None)
 				finalMerge
 		resGeoms
 

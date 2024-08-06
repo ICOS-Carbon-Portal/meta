@@ -28,7 +28,7 @@ class Form(
 	val dataPanel = new DataPanel(objSpecs, keyWords, () => aboutPanel.submitterOpt)
 	val statTsPanel = new StationTimeSeriesPanel
 	val prodPanel = new ProductionPanel
-	val collPanel = new CollectionPanel
+	val collPanel = new CollectionPanel(spatCovs)
 	val docPanel = new DocumentPanel
 	val spatTempPanel = new SpatioTemporalPanel(spatCovs)
 	val submitButton = new Button("submitbutton", submitAction)
@@ -179,7 +179,7 @@ class Form(
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
 		documentation = documentation,
-		coverage = None // Coverage for collection is created in UploadService
+		coverage = collPanel.coverage.toOption
 	)
 
 	def documentObjectDto: Try[DocObjectDto] = for(

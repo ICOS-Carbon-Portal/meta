@@ -48,7 +48,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val temporalResInput = new TextOptInput("l3tempres", notifyUpdate)
 	private val stationSelect = new Select[Station]("elabstationselect", s => s"${s.id} (${s.namedUri.name})")
 	private val samplingHeightInput = new FloatOptInput("elabsampleheight", notifyUpdate)
-	private val spatialCovSelect = new GeoCoverageSelector(covs)
+	private val spatialCovSelect = new GeoCoverageSelector(covs, "l3spatcover")
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 

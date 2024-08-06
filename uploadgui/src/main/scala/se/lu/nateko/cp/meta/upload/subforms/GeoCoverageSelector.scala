@@ -18,14 +18,13 @@ import scala.util.Success
 import scala.util.Try
 
 
-class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage])(using PubSubBus) extends PanelSubform(".l3spatcover-element"):
-
-	private val spatialCovSelect = new Select[SpatialCoverage]("l3spatcoverselect", _.label, autoselect = false, onSpatCoverSelected)
-	private val spatCoverElements = new HtmlElements(".l3spatcover-element")
+class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], elemLabel: String)(using PubSubBus) extends PanelSubform(s".$elemLabel-element"):
+	private val spatialCovSelect = new Select[SpatialCoverage](s"${elemLabel}select", _.label, autoselect = false, onSpatCoverSelected)
+	private val spatCoverElements = new HtmlElements(s".$elemLabel-element")
 
 	private var customSpatCovMeta: Option[GeoFeature] = None
 
-	private val spatCovLabel = new TextOptInput("l3spatcoverlabel", () => ())
+	private val spatCovLabel = new TextOptInput(s"${elemLabel}label", () => ())
 	private val minLatInput = new DoubleInput("l3minlat", notifyUpdate)
 	private val minLonInput = new DoubleInput("l3minlon", notifyUpdate)
 	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)

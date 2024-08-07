@@ -9,9 +9,10 @@ import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.*
 import ClusteringExample.convertStringsToJTS
+import se.lu.nateko.cp.meta.test.services.upload.geocov.TestGeometries.*
 
-class GeoCovMergerTests extends AnyFunSpec:
-	describe("DoiGeoLocationCreator"):
+class GeoCovTests extends AnyFunSpec:
+	describe("GeoCovClustering"):
 		it("calling mergeSimpleGeoms with empty seq does nothing"):
 			val hulls = mergeSimpleGeoms(Seq(), None)
 
@@ -26,6 +27,55 @@ class GeoCovMergerTests extends AnyFunSpec:
 			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)), None)
 
 			assert(merged(0) == expected)
+
+		it("epsilon for empty list of geometries"):
+			val epsilon = calculateEpsilon(Seq.empty)
+
+			assert(epsilon == 0.0)
+		
+		it("epsilon for same points should be 0.0"):
+			val epsilon = calculateEpsilon(Seq(jtsPoint, jtsPoint))
+
+			assert(epsilon == 0.0)
+
+		// it("calculate epsilon for two points"):
+		// 	val epsilon = calculateEpsilon(Seq(epsPoint1, epsPoint2))
+
+		// 	assert(epsilon == 1.0)
+
+		// it("calculate epsilon for two points far apart"):
+		// 	???
+
+	describe("GeoCovMerger"):
+		import TestGeometries.*
+
+		it("geometry contained in another will be merged"):
+			val merged = labeledPolygon1.mergeIfIntersects(labeledPoint, None)
+
+			assert(merged.isDefined)
+			assert(merged.get.labels.contains("point"))
+			assert(merged.get.labels.contains("polygon1"))
+
+		it("two intersecting geometries will be merged"):
+			val merged = labeledPolygon1.mergeIfIntersects(labeledPolygon2, None)
+
+			assert(merged.isDefined)
+			assert(merged.get.labels.contains("polygon1"))
+			assert(merged.get.labels.contains("polygon2"))
+
+		it("two non intersecting geometries within epsilon distance will be merged"):
+			val epsilon = 400
+			val merged = labeledPolygon1.mergeIfIntersects(labeledPolygon3, Some(epsilon))
+
+			assert(merged.isDefined)
+			assert(merged.get.labels.contains("polygon1"))
+			assert(merged.get.labels.contains("polygon3"))
+
+		it("two geometries further than epsilon dist from each other will not be merged"):
+			val epsilon = 1
+			val merged = labeledPolygon1.mergeIfIntersects(labeledPolygon3, Some(epsilon))
+
+			assert(!merged.isDefined)
 
 		it("data object with less than maximum allowed free points will remain points"):
 			val geoms = TestGeoFeatures.modisWithFewerPoints
@@ -87,7 +137,11 @@ class GeoCovMergerTests extends AnyFunSpec:
 				))
 
 			assert(merged.length == 1)
-
+		
+		// it("geometries that still have more than maxGeoms after 1st merge will be ran through second pass"):
+		// 	???
+		
+	describe("DoiGeoLocationConverter"):
 		it("mergeLabels"):
 			val polygon = convertStringsToJTS("POLYGON ((0 0, 0 0, 0 0, 0 0))")(0)
 			val labeledPolygon = LabeledJtsGeo(polygon, List("SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "CD-Ygb", "CH-Dav"))
@@ -97,4 +151,4 @@ class GeoCovMergerTests extends AnyFunSpec:
 
 			assert(merged == expected)
 
-end GeoCovMergerTests
+end GeoCovTests

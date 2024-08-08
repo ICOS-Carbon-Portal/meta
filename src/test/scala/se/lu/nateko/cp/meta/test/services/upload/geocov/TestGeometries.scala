@@ -4,7 +4,18 @@ import org.locationtech.jts.geom.Coordinate
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.getMinGeometryDistance
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
+import org.locationtech.jts.io.geojson.GeoJsonReader
+import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom.GeometryCollection
+import scala.collection.mutable.ArrayBuffer
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import java.nio.file.Files
+import java.nio.file.Paths
+import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
+import org.locationtech.jts.io.geojson.GeoJsonWriter
 
+
+// TODO Refactor
 object TestGeometries:
 	val jtsPoint = JtsGeoFactory.createPoint(new Coordinate(5.449391234467299, 48.61221138915232))
 	val labeledPoint = LabeledJtsGeo(jtsPoint, Seq("point"))
@@ -39,14 +50,39 @@ object TestGeometries:
 	val jtsPolygon2 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates2))
 	val jtsPolygon3 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates3))
 
-	// val epsDist = getMinGeometryDistance(jtsPolygon1, jtsPolygon3)
-
-	// println("eps dist: " + epsDist)
 	val labeledPolygon1 = LabeledJtsGeo(jtsPolygon1, Seq("polygon1"))
 	val labeledPolygon2 = LabeledJtsGeo(jtsPolygon2, Seq("polygon2"))
 	val labeledPolygon3 = LabeledJtsGeo(jtsPolygon3, Seq("polygon3"))
 
-	val epsPoint1 = JtsGeoFactory.createPoint(new Coordinate(0,0))
-	val epsPoint2 = JtsGeoFactory.createPoint(new Coordinate(3,4))
+	val reader = GeoJsonReader()
+	val writer = GeoJsonWriter()
+
+	def geoJsonToGeometry(jsonStr: String): Geometry = reader.read(jsonStr)
+
+	def geometriesToGeoJson(geometries: Seq[Geometry]) =
+		val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
+		writer.write(collection)
+
+	def extractGeometries(geometryCollection: GeometryCollection): Seq[Geometry] =
+		val numGeometries = geometryCollection.getNumGeometries
+		val geometriesBuffer = ArrayBuffer[Geometry]()
+
+		for (i <- 0 until numGeometries)
+			geometriesBuffer += geometryCollection.getGeometryN(i)
+
+		geometriesBuffer.toSeq
+	end extractGeometries
+
+	// Example geometries from first pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
+	val testDataPath = "src/test/resources/GeoCovTestData.json"
+	val testDataJson: String = new String(Files.readAllBytes(Paths.get(testDataPath)))
+	val exampleGeometryCollection: GeometryCollection = geoJsonToGeometry(testDataJson).asInstanceOf[GeometryCollection]
+	
+	// Example geometries from second pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
+	val testClusterPath = "src/test/resources/GeoCovTestClusters.json"
+	val testClusterJson: String = new String(Files.readAllBytes(Paths.get(testClusterPath)))
+	def getLabeledTestGeometries = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
+	def getTestGeometriesAsGeoFeatures = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty)).flatMap(fromJtsToGeoFeature)
+
 end TestGeometries
 

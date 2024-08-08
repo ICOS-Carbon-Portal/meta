@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.*
 import ClusteringExample.convertStringsToJTS
 import se.lu.nateko.cp.meta.test.services.upload.geocov.TestGeometries.*
+import org.locationtech.jts.geom.Coordinate
 
 class GeoCovTests extends AnyFunSpec:
 	describe("GeoCovClustering"):
@@ -38,13 +39,12 @@ class GeoCovTests extends AnyFunSpec:
 
 			assert(epsilon == 0.0)
 
-		// it("calculate epsilon for two points"):
-		// 	val epsilon = calculateEpsilon(Seq(epsPoint1, epsPoint2))
+		it("calculate epsilon for two points"):
+			val pt1 = JtsGeoFactory.createPoint(new Coordinate(0,0))
+			val pt2 = JtsGeoFactory.createPoint(new Coordinate(3,4))
+			val epsilon = calculateEpsilon(Seq(pt1, pt2))
 
-		// 	assert(epsilon == 1.0)
-
-		// it("calculate epsilon for two points far apart"):
-		// 	???
+			assert(epsilon > 0.0)
 
 	describe("GeoCovMerger"):
 		import TestGeometries.*
@@ -137,10 +137,29 @@ class GeoCovTests extends AnyFunSpec:
 				))
 
 			assert(merged.length == 1)
-		
-		// it("geometries that still have more than maxGeoms after 1st merge will be ran through second pass"):
-		// 	???
-		
+
+		it("second pass merge is not done when maxNGeom is larger"):
+			val geoFeatures = getTestGeometriesAsGeoFeatures
+
+			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+			val coverage = representativeCoverage(geoFeatures, 300)
+
+			assert(simpleMerge == coverage)
+			assert(coverage.length == simpleMerge.length)
+
+		it("second pass merge is done"):
+			val geoFeatures = getTestGeometriesAsGeoFeatures
+
+			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+			val coverage = representativeCoverage(geoFeatures, 100) // maxNGeoms like in production
+
+			val coverageJson = geometriesToGeoJson(coverage.map(_.geom)).replaceAll("\\s+", "")
+			val expectedGeometryJson = testClusterJson.replaceAll("\\s+", "")
+
+			assert(simpleMerge != coverage)
+			assert(coverage.length < simpleMerge.length)
+			assert(coverageJson == expectedGeometryJson)
+
 	describe("DoiGeoLocationConverter"):
 		it("mergeLabels"):
 			val polygon = convertStringsToJTS("POLYGON ((0 0, 0 0, 0 0, 0 0))")(0)

@@ -15,12 +15,11 @@ import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeo
 import org.locationtech.jts.io.geojson.GeoJsonWriter
 
 
-// TODO Refactor
 object TestGeometries:
 	val jtsPoint = JtsGeoFactory.createPoint(new Coordinate(5.449391234467299, 48.61221138915232))
 	val labeledPoint = LabeledJtsGeo(jtsPoint, Seq("point"))
 
-	val polygonCoordinates1: Array[Coordinate] = Array(
+	private val polygonCoordinates1: Array[Coordinate] = Array(
 		new Coordinate(5.4382483197915406, 48.617131177792345),
 		new Coordinate(5.44637989429566, 48.60593059652089),
 		new Coordinate(5.459932518468463, 48.61007510117048),
@@ -28,7 +27,7 @@ object TestGeometries:
 		new Coordinate(5.4382483197915406, 48.617131177792345)
 	)
 	
-	val polygonCoordinates2: Array[Coordinate] = Array(
+	private val polygonCoordinates2: Array[Coordinate] = Array(
 		new Coordinate(5.44083865788113, 48.607808086259695),
 		new Coordinate(5.443512411248605, 48.603907305494886),
 		new Coordinate(5.441645027944418, 48.60096047278162),
@@ -37,7 +36,7 @@ object TestGeometries:
 		new Coordinate(5.44083865788113, 48.607808086259695)
 	)
 
-	val polygonCoordinates3: Array[Coordinate] = Array(
+	private val polygonCoordinates3: Array[Coordinate] = Array(
 		new Coordinate(5.463743736552686, 48.60778949699633),
 		new Coordinate(5.461633648385572, 48.603437579496955),
 		new Coordinate(5.470475922608301, 48.605729857594014),
@@ -46,22 +45,23 @@ object TestGeometries:
 		new Coordinate(5.463743736552686, 48.60778949699633)
 	)
 
-	val jtsPolygon1 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates1))
-	val jtsPolygon2 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates2))
-	val jtsPolygon3 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates3))
+	private val jtsPolygon1 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates1))
+	private val jtsPolygon2 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates2))
+	private val jtsPolygon3 = JtsGeoFactory.createPolygon(JtsGeoFactory.createLinearRing(polygonCoordinates3))
 
-	val labeledPolygon1 = LabeledJtsGeo(jtsPolygon1, Seq("polygon1"))
-	val labeledPolygon2 = LabeledJtsGeo(jtsPolygon2, Seq("polygon2"))
-	val labeledPolygon3 = LabeledJtsGeo(jtsPolygon3, Seq("polygon3"))
+	
+	private val reader = GeoJsonReader()
+	private val writer = GeoJsonWriter()
 
-	val reader = GeoJsonReader()
-	val writer = GeoJsonWriter()
-
+	def labeledPolygon1 = LabeledJtsGeo(jtsPolygon1, Seq("polygon1"))
+	def labeledPolygon2 = LabeledJtsGeo(jtsPolygon2, Seq("polygon2"))
+	def labeledPolygon3 = LabeledJtsGeo(jtsPolygon3, Seq("polygon3"))
+	
 	def geoJsonToGeometry(jsonStr: String): Geometry = reader.read(jsonStr)
 
 	def geometriesToGeoJson(geometries: Seq[Geometry]) =
 		val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
-		writer.write(collection)
+		writer.write(collection).replaceAll("\\s+", "")
 
 	def extractGeometries(geometryCollection: GeometryCollection): Seq[Geometry] =
 		val numGeometries = geometryCollection.getNumGeometries
@@ -74,13 +74,14 @@ object TestGeometries:
 	end extractGeometries
 
 	// Example geometries from first pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
-	val testDataPath = "src/test/resources/GeoCovTestData.json"
-	val testDataJson: String = new String(Files.readAllBytes(Paths.get(testDataPath)))
-	val exampleGeometryCollection: GeometryCollection = geoJsonToGeometry(testDataJson).asInstanceOf[GeometryCollection]
+	private val testDataPath = "src/test/resources/GeoCovTestData.json"
+	private val testDataJson: String = new String(Files.readAllBytes(Paths.get(testDataPath)))
+	private val exampleGeometryCollection: GeometryCollection = geoJsonToGeometry(testDataJson).asInstanceOf[GeometryCollection]
 	
 	// Example geometries from second pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
-	val testClusterPath = "src/test/resources/GeoCovTestClusters.json"
-	val testClusterJson: String = new String(Files.readAllBytes(Paths.get(testClusterPath)))
+	private val testClusterPath = "src/test/resources/GeoCovTestClusters.json"
+	
+	def testClusterJson: String = new String(Files.readAllBytes(Paths.get(testClusterPath))).replaceAll("\\s+", "")
 	def getLabeledTestGeometries = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
 	def getTestGeometriesAsGeoFeatures = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty)).flatMap(fromJtsToGeoFeature)
 

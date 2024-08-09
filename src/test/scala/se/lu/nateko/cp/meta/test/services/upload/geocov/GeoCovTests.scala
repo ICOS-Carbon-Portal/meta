@@ -153,8 +153,8 @@ class GeoCovTests extends AnyFunSpec:
 			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 			val coverage = representativeCoverage(geoFeatures, 100) // maxNGeoms like in production
 
-			val coverageJson = geometriesToGeoJson(coverage.map(_.geom)).replaceAll("\\s+", "")
-			val expectedGeometryJson = testClusterJson.replaceAll("\\s+", "")
+			val coverageJson = geometriesToGeoJson(coverage.map(_.geom))
+			val expectedGeometryJson = testClusterJson
 
 			assert(simpleMerge != coverage)
 			assert(coverage.length < simpleMerge.length)

@@ -91,6 +91,9 @@
 		case PlainStaticObject(res, _, name) => {
 			<a target="_blank" href=@{res}>@{name}</a>
 		}
+		case psColl: PlainStaticCollection => {
+			<a target="_blank" href=@{psColl.res}>@{psColl.name}</a>
+		}
 		case coll: StaticCollection => {
 			<a target="_blank" href=@{coll.res}>@{coll.title}</a>
 		}

@@ -101,9 +101,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 	def collJson(coll: StaticCollection): JsObject =
 		val hasPart = asOptArray(coll.members){item =>
-			val name = item match
-				case obj: PlainStaticObject => obj.name
-				case coll: StaticCollection => coll.title
+			val name = item.name
 			val landingPage = JsString(item.res.toString)
 			JsObject(
 				"@id"   -> landingPage,

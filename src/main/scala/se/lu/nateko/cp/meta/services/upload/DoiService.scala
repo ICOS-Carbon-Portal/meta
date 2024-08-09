@@ -32,6 +32,7 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.core.data.PlainStaticCollection
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 
@@ -44,8 +45,12 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionCont
 	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[Validated[StaticObject]] =
 		coll.members.flatMap:
 			case plain: PlainStaticObject => Seq(fetcher.fetchStaticObject(Uri(plain.res.toString)))
+			case plainColl: PlainStaticCollection =>
+				val staticColl = fetcher.fetchStaticCollection(Uri(plainColl.res.toString)).result
+				staticColl match
+					case Some(sC) => fetchCollObjectsRecursively(sC)
+					case None => Seq.empty
 			case coll: StaticCollection => fetchCollObjectsRecursively(coll)
-
 
 	def createDraftDoi(dataItemLandingPage: URI)(using Envri): Future[Validated[Doi]] =
 		import UriSerializer.Hash

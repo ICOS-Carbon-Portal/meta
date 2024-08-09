@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.metaexport
+package se.lu.nateko.cp.meta.test.services.upload.geocov
 
 import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI

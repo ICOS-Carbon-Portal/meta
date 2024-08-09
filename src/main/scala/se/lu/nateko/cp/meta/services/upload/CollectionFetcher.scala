@@ -66,6 +66,8 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
 			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
+			coverageUri <- getOptionalUri(coll, metaVocab.hasSpatialCoverage)(using collConn)
+			coverage <- coverageUri.map(uri => getCoverage(uri)(using collConn)).sinkOption
 		yield
 			val init = StaticCollection(
 				res = coll.toJava,
@@ -82,6 +84,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				previousVersion = getPreviousVersions(coll)(using collConn).headOption.map(_.toJava),
 				doi = doi,
 				documentation = documentation,
+				coverage = coverage,
 				references = References.empty
 			)
 			//TODO Consider adding collection-specific logic for licence information

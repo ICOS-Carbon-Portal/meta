@@ -187,10 +187,11 @@ Carbon Portal supports creation of static collections with constant lists of imm
 	"members": ["https://meta.icos-cp.eu/objects/G6PjIjYC6Ka_nummSJ5lO8SV", "https://meta.icos-cp.eu/objects/sdfRNhhI5EN_BckuQQfGpdvE"],
 	"isNextVersionOf": "CkSE78VzQ3bmHBtkMLt4ogJy",
 	"preExistingDoi": "10.18160/VG28-H2QA",
-	"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM"
+	"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM",
+	"coverage": "http://meta.icos-cp.eu/resources/latlonboxes/europeLatLonBoxIngos"
 }
 ```
-The fields are either self-explanatory, or have the same meaning as for the data object upload.
+The fields are either self-explanatory, or have the same meaning as for the data object upload. If no spatial coverage is provided, it will instead be calculated from the spatial coverage of the members of the collection.
 
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 

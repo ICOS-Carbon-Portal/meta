@@ -29,6 +29,7 @@
 	.acq-section,
 	.l3-section,
 	.l3spatcover-element,
+	.collspatcover-element,
 	.collection-section,
 	.document-section,
 	.production-section,
@@ -486,6 +487,30 @@
 							<div class="mb-3">
 								<label class="form-label" for="colldoc">Documentation @optional</label>
 								<input id="colldoc" type="text" placeholder="document object hashsum" class="form-control">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="collspatcoverselect">Spatial coverage</label>
+								<select class="form-select" id="collspatcoverselect"></select>
+							</div>
+							<div class="mb-3 collspatcover-element">
+								<label class="form-label" for="collspatcoverlabel">Label @optional</label>
+								<input id="collspatcoverlabel" type="text" class="form-control">
+							</div>
+							<div class="mb-3 collspatcover-element">
+								<label class="form-label" for="l3minlat">Min latitude</label>
+								<input id="l3minlat" type="text" class="form-control">
+							</div>
+							<div class="mb-3 collspatcover-element">
+								<label class="form-label" for="l3minlon">Min longitude</label>
+								<input id="l3minlon" type="text" class="form-control">
+							</div>
+							<div class="mb-3 collspatcover-element">
+								<label class="form-label" for="l3maxlat">Max latitude</label>
+								<input id="l3maxlat" type="text" class="form-control">
+							</div>
+							<div class="mb-3 collspatcover-element">
+								<label class="form-label" for="l3maxlon">Max longitude</label>
+								<input id="l3maxlon" type="text" class="form-control">
 							</div>
 						</div>
 					</div>

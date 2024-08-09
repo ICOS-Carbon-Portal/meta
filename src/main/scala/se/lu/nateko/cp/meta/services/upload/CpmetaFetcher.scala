@@ -220,7 +220,7 @@ trait CpmetaReader:
 				location = location
 			)
 
-	def getCoverage[C >: DobjConn <: MetaConn](covUri: IRI): C ?=> Validated[GeoFeature] =
+	def getCoverage[C <: MetaConn](covUri: IRI): C ?=> Validated[GeoFeature] =
 		getSingleUri(covUri, RDF.TYPE).flatMap: covClass =>
 			if covClass === metaVocab.latLonBoxClass then
 				getLatLonBox(covUri)

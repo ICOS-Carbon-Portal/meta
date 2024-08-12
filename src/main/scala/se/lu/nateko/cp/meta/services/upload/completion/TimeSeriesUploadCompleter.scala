@@ -38,10 +38,10 @@ private class TimeSeriesUploadCompleter(
 				tabularExtractUpdates(hash, ingestionExtract) ++ nRowsUpdates(hash, rowsInfo)
 
 			case SpatialTimeSeriesExtract(ingestionExtract, spatial) =>
-				val news = StatementsProducer(vocab, metaVocab).getGeoFeatureStatements(hash, spatial)
+				val objIri = vocab.getStaticObject(hash)
+				val news = StatementsProducer(vocab, metaVocab).getGeoFeatureStatements(objIri, spatial)
 
-				val objUri = vocab.getStaticObject(hash)
-				val oldCovs = getStatements(objUri, metaVocab.hasSpatialCoverage, null).toIndexedSeq
+				val oldCovs = getStatements(objIri, metaVocab.hasSpatialCoverage, null).toIndexedSeq
 
 				val olds = oldCovs ++ oldCovs.collect{
 					case Rdf4jStatement(_, _, coverage: IRI) =>

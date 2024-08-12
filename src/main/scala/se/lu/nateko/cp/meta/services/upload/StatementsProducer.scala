@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
+import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.GeoJson
@@ -24,6 +25,7 @@ import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.metaflow.RdfMaker
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
@@ -34,7 +36,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import java.time.Instant
 import scala.collection.mutable.Buffer
-import se.lu.nateko.cp.meta.metaflow.RdfMaker
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -137,14 +138,6 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(objectUri, metaVocab.hasKeywords, keywordsLit) ++ moratoriumStatements
 	end getDobjStatements
 
-	def getCollectionCoverageStatements(coll: StaticCollectionDto, collIri: IRI)(using Envri) = coll.coverage match
-		case None => Nil
-		case Some(Right(covUri)) =>
-			Seq((collIri, metaVocab.hasSpatialCoverage, covUri.toRdf))
-
-		case Some(Left(feature)) =>
-			RdfMaker(vocab, metaVocab).coverageTriples(feature, collIri)
-
 	def getCollStatements(coll: StaticCollectionDto, collIri: IRI, submittingOrg: URI)(using Envri): Seq[Statement] = {
 		val dct = metaVocab.dcterms
 		Seq(
@@ -155,16 +148,15 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(collIri, dct.description, coll.description.map(vocab.lit)) ++
 			makeSt(collIri, metaVocab.isNextVersionOf, coll.isNextVersionOf.flattenToSeq.map(vocab.getCollection)) ++
 			makeSt(collIri, metaVocab.hasDoi, coll.preExistingDoi.map(_.toString).map(vocab.lit)) ++
-			getCollectionCoverageStatements(coll, collIri).map(factory.tripleToStatement) ++
+			coll.coverage.toSeq.flatMap(getSpatialCoverageStatements(collIri, _)) ++
 			coll.members.map{elem =>
 				makeSt(collIri, dct.hasPart, elem.toRdf)
 			} ++
 			makeSt(collIri, RDFS.SEEALSO, coll.documentation.map(vocab.getStaticObject))
 	}
 
-	def getGeoFeatureStatements(hash: Sha256Sum, spatial: GeoFeature)(using Envri): Seq[Statement] =
-		val objectUri = vocab.getStaticObject(hash)
-		inline def defaultCovUri = spatial.uri.fold(vocab.getSpatialCoverage(hash))(_.toRdf)
+	def getGeoFeatureStatements(itemIri: IRI, spatial: GeoFeature)(using Envri): Seq[Statement] =
+		inline def defaultCovUri = spatial.uri.fold(vocab.getSpatialCoverage(UriId(itemIri)))(_.toRdf)
 
 		val (covUri, specificStatements) = spatial match
 			case p: Position => getPositionStatements(p)
@@ -181,7 +173,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				val covUri = defaultCovUri
 				covUri -> Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
 
-		makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri) +:
+		makeSt(itemIri, metaVocab.hasSpatialCoverage, covUri) +:
 		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
 		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
 		specificStatements
@@ -214,7 +206,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		} ++
 		makeSt(objUri, metaVocab.dcterms.description, meta.description.map(vocab.lit)) ++
 		getProductionStatements(hash, meta.production) ++
-		getSpatialCoverageStatements(hash, meta.spatial) ++
+		getSpatialCoverageStatements(objUri, meta.spatial) ++
 		makeSt(objUri, metaVocab.wasAcquiredBy, meta.forStation.orElse(meta.samplingHeight).map(_ => acq)) ++
 		makeSt(acq, metaVocab.prov.wasAssociatedWith, meta.forStation.map(_.toRdf)) ++
 		makeSt(acq, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
@@ -272,12 +264,11 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(hash: Sha256Sum, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
+	private def getSpatialCoverageStatements(itemIri: IRI, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
 		spatial match
-			case Left(feature) => getGeoFeatureStatements(hash, feature)
+			case Left(feature) => getGeoFeatureStatements(itemIri, feature)
 			case Right(covUri) =>
-				val objectUri = vocab.getStaticObject(hash)
-				Seq(makeSt(objectUri, metaVocab.hasSpatialCoverage, covUri.toRdf))
+				Seq(makeSt(itemIri, metaVocab.hasSpatialCoverage, covUri.toRdf))
 
 
 	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {

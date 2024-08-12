@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.metaflow
 
-import java.time.Instant
-
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
@@ -10,13 +9,14 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.XSD
-
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
+import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment as _, *}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import eu.icoscp.envri.Envri
+
+import java.time.Instant
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
@@ -252,27 +252,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			(iri, meta.hasElevation, vocab.lit(alt))
 		}.toSeq
 
-	def coverageTriples(cov: GeoFeature, iri: IRI): Seq[Triple] = cov match
-		case box: LatLonBox =>
-			val spcovUri = box.uri.map(_.toRdf).getOrElse(vocab.getSpatialCoverage(UriId(iri)))
-			(iri, meta.hasSpatialCoverage, spcovUri) ::
-			(spcovUri, RDF.TYPE, meta.latLonBoxClass) ::
-			(spcovUri, meta.hasNorthernBound, vocab.lit(box.max.lat)) ::
-			(spcovUri, meta.hasEasternBound, vocab.lit(box.max.lon)) ::
-			(spcovUri, meta.hasSouthernBound, vocab.lit(box.min.lat)) ::
-			(spcovUri, meta.hasWesternBound, vocab.lit(box.min.lon)) ::
-			box.label.toList.map{lbl =>
-				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
-			}
-		case cov =>
-			val spcovUri = vocab.getSpatialCoverage(UriId(iri))
-			(iri, meta.hasSpatialCoverage, spcovUri) ::
-			(spcovUri, RDF.TYPE, meta.spatialCoverageClass) ::
-			(spcovUri, meta.asGeoJSON, vocab.lit(GeoJson.fromFeature(cov).compactPrint)) ::
-			cov.label.toList.map{lbl =>
-				(spcovUri, RDFS.LABEL, vocab.lit(lbl))
-			}
-
+	private def coverageTriples(cov: GeoFeature, iri: IRI): Seq[Triple] =
+		StatementsProducer(vocab, meta).getGeoFeatureStatements(iri, cov).collect:
+			case Rdf4jStatement(s, p, o) => (s, p, o)
 
 	private def plainIcosStationSpecTriples(iri: IRI, s: IcosStationSpecifics): Seq[Triple] = {
 		s.stationClass.map{ stClass =>

@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.*
 
 
@@ -60,21 +59,39 @@ object GeoCovMerger:
 	def concaveHull(geom: Geometry) =
 		ConcaveHull.concaveHullByLengthRatio(geom, ConcaveHullLengthRatio)
 
-	def toPolygon(polygon: Polygon): LabeledJtsGeo =
+	private def polygonToJts(polygon: Polygon): LabeledJtsGeo =
 		val firstPoint = polygon.vertices.headOption.toArray
 		val vertices = (polygon.vertices.toArray ++ firstPoint).map(v => Coordinate(v.lon, v.lat))
 		LabeledJtsGeo(JtsGeoFactory.createPolygon(vertices), polygon.label.toSeq)
 
 	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledJtsGeo] = gf match
-		case b: LatLonBox => Seq(toPolygon(b.asPolygon))
+		case b: LatLonBox => Seq(polygonToJts(b.asPolygon))
 		case c: Circle =>
-			val box = DoiGeoLocationConverter.toLatLonBox(c)
-			Seq(toPolygon(box.asPolygon))
-		case poly: Polygon => Seq(toPolygon(poly))
+			Seq(polygonToJts(circleToBox(c).asPolygon))
+		case poly: Polygon => Seq(polygonToJts(poly))
 		case p: Position => Seq(toPoint(p))
 		case pin: Pin => Seq(toPoint(pin.position))
 		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
 		case fc: FeatureCollection =>
 			fc.features.flatMap(toSimpleGeometries)
+
+	def circleToBox(circle: Circle): LatLonBox =
+		val metersPerDegree = 111111
+		val center = circle.center
+		val latRadius = circle.radius / metersPerDegree
+		val factor = Math.cos(center.lat.toRadians)
+
+		val minLat = center.lat - latRadius
+		val maxLat = center.lat + latRadius
+		val minLon = center.lon - latRadius / factor
+		val maxLon = center.lon + latRadius / factor
+
+		LatLonBox(
+			Position(minLat, minLon, center.alt, None, None),
+			Position(maxLat, maxLon, center.alt, None, None),
+			circle.label,
+			None
+		)
+	end circleToBox
 
 end GeoCovMerger

@@ -15,7 +15,6 @@ import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.time.Instant
@@ -69,7 +68,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			descriptions =
 				dobj.specificInfo.left.toSeq.flatMap(_.description).map(d => Description(d, DescriptionType.Abstract, None)) ++
 				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
-			geoLocations = dobj.coverage.map(DoiGeoLocationConverter.fromGeoFeature),
+			geoLocations = dobj.coverage.map(DoiGeoCovConverter.fromGeoFeature),
 			fundingReferences = Option(
 				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
@@ -124,7 +123,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = coll.coverage.map(DoiGeoLocationConverter.fromGeoFeature)
+		val geoLocations = coll.coverage.map(DoiGeoCovConverter.fromGeoFeature)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),

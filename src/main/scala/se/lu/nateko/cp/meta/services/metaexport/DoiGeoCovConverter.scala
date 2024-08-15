@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.upload
+package se.lu.nateko.cp.meta.services.metaexport
 
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.Geometry
@@ -20,12 +20,11 @@ import se.lu.nateko.cp.meta.core.data.Pin
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.{LabeledJtsGeo, circleToBox}
 import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import geocov.GeoCovMerger
 
-object DoiGeoLocationConverter:
+object DoiGeoCovConverter:
 
 	private def toLatLonBox(shape: Seq[Position], label: Option[String]) = {
 		val latitudes = shape.map(_.lat)
@@ -35,25 +34,6 @@ object DoiGeoLocationConverter:
 			Position.ofLatLon(latitudes.min, longitudes.min),
 			Position.ofLatLon(latitudes.max, longitudes.max),
 			label,
-			None
-		)
-	}
-
-	def toLatLonBox(circle: Circle) = {
-		val metersPerDegree = 111111
-		val center = circle.center
-		val latRadius = circle.radius / metersPerDegree
-		val factor = Math.cos(center.lat.toRadians)
-
-		val minLat = center.lat - latRadius
-		val maxLat = center.lat + latRadius
-		val minLon = center.lon - latRadius / factor
-		val maxLon = center.lon + latRadius / factor
-
-		LatLonBox(
-			Position(minLat, minLon, center.alt, None, None),
-			Position(maxLat, maxLon, center.alt, None, None),
-			circle.label, 
 			None
 		)
 	}
@@ -84,7 +64,7 @@ object DoiGeoLocationConverter:
 			case p: Position => Seq(fromPosition(p))
 			case Pin(position, _) => Seq(fromPosition(position))
 			case b: LatLonBox => Seq(fromBox(b))
-			case c: Circle => Seq(fromBox(toLatLonBox(c)))
+			case c: Circle => Seq(fromBox(circleToBox(c)))
 			case GeoTrack(points, label, _) => Seq(fromBox(toLatLonBox(points, label)))
 			case Polygon(vertices, label, _) => Seq(fromBox(toLatLonBox(vertices, label)))
 			case fc: FeatureCollection => fc.features.flatMap(fromGeoFeature)
@@ -143,4 +123,4 @@ object DoiGeoLocationConverter:
 				.mkString(", ")
 		).filterNot(_.isEmpty)
 
-end DoiGeoLocationConverter
+end DoiGeoCovConverter

@@ -30,7 +30,7 @@ import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoCovConverter.fromJtsToGeoFeature
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.meta.utils.Validated
 import scala.util.Success

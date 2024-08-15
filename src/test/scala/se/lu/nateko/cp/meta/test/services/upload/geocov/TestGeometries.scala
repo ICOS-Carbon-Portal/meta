@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import java.nio.file.Files
 import java.nio.file.Paths
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.fromJtsToGeoFeature
+import se.lu.nateko.cp.meta.services.metaexport.DoiGeoCovConverter.fromJtsToGeoFeature
 import org.locationtech.jts.io.geojson.GeoJsonWriter
 
 

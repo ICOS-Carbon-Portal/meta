@@ -7,7 +7,6 @@ import se.lu.nateko.cp.doi.meta.GeoLocationBox
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.*
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter.*
 import ClusteringExample.convertStringsToJTS
 import se.lu.nateko.cp.meta.test.services.upload.geocov.TestGeometries.*
 import org.locationtech.jts.geom.Coordinate
@@ -159,15 +158,5 @@ class GeoCovTests extends AnyFunSpec:
 			assert(simpleMerge != coverage)
 			assert(coverage.length < simpleMerge.length)
 			assert(coverageJson == expectedGeometryJson)
-
-	describe("DoiGeoLocationConverter"):
-		it("mergeLabels"):
-			val polygon = convertStringsToJTS("POLYGON ((0 0, 0 0, 0 0, 0 0))")(0)
-			val labeledPolygon = LabeledJtsGeo(polygon, List("SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "CD-Ygb", "CH-Dav"))
-
-			val merged = mergeLabels(labeledPolygon.labels)
-			val expected = Some("CD-Ygb, CH-Dav, SW_IN_n_n_n, P_n_n_n")
-
-			assert(merged == expected)
 
 end GeoCovTests

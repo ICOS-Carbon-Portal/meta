@@ -141,10 +141,11 @@ class GeoCovTests extends AnyFunSpec:
 			val geoFeatures = getTestGeometriesAsGeoFeatures
 
 			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+				.flatMap(fromJtsToGeoFeature)
 			val coverage = representativeCoverage(geoFeatures, 300)
 
-			assert(simpleMerge == coverage)
-			assert(coverage.length == simpleMerge.length)
+			assert(coverage.length === simpleMerge.length)
+			assert(simpleMerge === coverage)
 
 		it("second pass merge is done"):
 			val geoFeatures = getTestGeometriesAsGeoFeatures
@@ -152,11 +153,18 @@ class GeoCovTests extends AnyFunSpec:
 			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
 			val coverage = representativeCoverage(geoFeatures, 100) // maxNGeoms like in production
 
-			val coverageJson = geometriesToGeoJson(coverage.map(_.geom))
+			val coverageJson = geometriesToGeoJson(coverage.flatMap(toSimpleGeometries).map(_.geom))
 			val expectedGeometryJson = testClusterJson
 
-			assert(simpleMerge != coverage)
 			assert(coverage.length < simpleMerge.length)
-			assert(coverageJson == expectedGeometryJson)
+			assert(coverageJson === expectedGeometryJson)
 
+		describe("mergeLabels"):
+			it("reduces numerical variable indices, sorts the labels"):
+				val labels = List("SW_IN_3_1_1 / SW_IN_3_1_1 / SW_IN_3_1_1", "P_2_1_1", "CD-Ygb", "CH-Dav")
+
+				val merged = mergeLabels(labels)
+				val expected = Some("CD-Ygb, CH-Dav, SW_IN_n_n_n, P_n_n_n")
+
+				assert(merged == expected)
 end GeoCovTests

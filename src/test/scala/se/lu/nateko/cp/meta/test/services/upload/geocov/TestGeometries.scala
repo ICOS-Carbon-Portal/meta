@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import java.nio.file.Files
 import java.nio.file.Paths
-import se.lu.nateko.cp.meta.services.metaexport.DoiGeoCovConverter.fromJtsToGeoFeature
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.fromJtsToGeoFeature
 import org.locationtech.jts.io.geojson.GeoJsonWriter
 
 
@@ -57,11 +57,9 @@ object TestGeometries:
 	def labeledPolygon2 = LabeledJtsGeo(jtsPolygon2, Seq("polygon2"))
 	def labeledPolygon3 = LabeledJtsGeo(jtsPolygon3, Seq("polygon3"))
 	
-	def geoJsonToGeometry(jsonStr: String): Geometry = reader.read(jsonStr)
-
-	def geometriesToGeoJson(geometries: Seq[Geometry]) =
-		val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
-		writer.write(collection).replaceAll("\\s+", "")
+	// def geometriesToGeoJson(geometries: Seq[Geometry]) =
+	// 	val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
+	// 	writer.write(collection).replaceAll("\\s+", "")
 
 	def extractGeometries(geometryCollection: GeometryCollection): Seq[Geometry] =
 		val numGeometries = geometryCollection.getNumGeometries
@@ -76,14 +74,14 @@ object TestGeometries:
 	// Example geometries from first pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
 	private val testDataPath = "src/test/resources/GeoCovTestData.json"
 	private val testDataJson: String = new String(Files.readAllBytes(Paths.get(testDataPath)))
-	private val exampleGeometryCollection: GeometryCollection = geoJsonToGeometry(testDataJson).asInstanceOf[GeometryCollection]
+	private val exampleGeometryCollection: GeometryCollection = reader.read(testDataJson).asInstanceOf[GeometryCollection]
 	
 	// Example geometries from second pass on collection: https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y
 	private val testClusterPath = "src/test/resources/GeoCovTestClusters.json"
 	
 	def testClusterJson: String = new String(Files.readAllBytes(Paths.get(testClusterPath))).replaceAll("\\s+", "")
 	def getLabeledTestGeometries = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
-	def getTestGeometriesAsGeoFeatures = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty)).flatMap(fromJtsToGeoFeature)
+	def getTestGeometriesAsGeoFeatures = getLabeledTestGeometries.flatMap(fromJtsToGeoFeature)
 
 end TestGeometries
 

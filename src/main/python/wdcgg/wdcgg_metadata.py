@@ -326,15 +326,11 @@ class WdcggMetadataClient:
 				sh_end_date_time="9999-12-31T23:59:59",
 				sh_sampling_height=dobj_info.sampling_height
 			)],
-			sf_sampling_frequency_code = "6",
+			sf_sampling_frequency_code = "88",
 			sf_sampling_frequency = "",
-			md_measurement_calibration = ("Calibration sequence every 15 days with three calibration tanks\n"
-				"Gas injection duration: 30 min\n"
-				"Number of cycles (tank analysis) during a calibration: 4\n"
-				"Performance target frequency: every 7 hours\n"
-				"Archive target frequency: every 15 days"),
+			md_measurement_calibration = "Measurement calibration at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
 			md_data_processing = "Data processing at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
-			md_hr_mean_processing = "Time-averaged values are reported at the beginning of the averaging interval.",
+			md_hr_mean_processing = "Time-averaged values are reported at the middle time of the averaging interval. The document 'ICOS Atmospheric Station specifications' (doi:10.18160/GK28-2188) provides more detailed explanations about the sampling frequency.",
 			md_da_mean_processing = "",
 			md_mo_mean_processing = "",
 			md_original_data_flag = ("- Flag 'U' = data correct before manual quality control\n"

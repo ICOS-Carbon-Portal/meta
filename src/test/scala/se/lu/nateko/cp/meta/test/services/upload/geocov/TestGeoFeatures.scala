@@ -2,6 +2,11 @@ package se.lu.nateko.cp.meta.test.services.upload.geocov
 
 import se.lu.nateko.cp.meta.core.data.*
 import java.net.URI
+import spray.json.{RootJsonFormat, given}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.cpauth.core.JsonSupport.immSeqFormat
+import java.nio.file.Files
+import java.nio.file.Paths
 
 object TestGeoFeatures:
 
@@ -172,3 +177,59 @@ object TestGeoFeatures:
 					Position(51.45,-1.266667,None,Some("UK-PL3"),None),
 					Position(51.2071,-2.82864,None,Some("UK-Tad"),None)),None,None)
 				)
+
+	private val exampleCollUri = "https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y"
+	private val inputGeosJsonPath = Paths.get("./src/test/resources/GeoCovTestInput.json")
+
+	//fetch geo coverage for an example collection, save to a JSON file to be versioned
+	def prepareTestInput(): Unit =
+		import akka.http.scaladsl.Http
+		import akka.http.scaladsl.model.HttpRequest
+		import akka.http.scaladsl.model.headers.Accept
+		import akka.http.scaladsl.model.MediaTypes
+		import akka.http.scaladsl.unmarshalling.Unmarshal
+		import scala.concurrent.Future
+		import akka.actor.ActorSystem
+		import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+		import scala.concurrent.ExecutionContext.Implicits.global
+		import se.lu.nateko.cp.meta.core.data.DataObject
+		import se.lu.nateko.cp.meta.core.data.StaticCollection
+		import se.lu.nateko.cp.meta.core.data.PlainStaticObject
+		import java.nio.file.StandardOpenOption.{WRITE, TRUNCATE_EXISTING, CREATE}
+		import se.lu.nateko.cp.meta.utils.async.traverseFut
+		given sys: ActorSystem = ActorSystem("geo_cov_test_data")
+
+		def getJson[T: RootJsonFormat](url: String): Future[T] = Http()
+			.singleRequest(
+				HttpRequest(uri = url, headers = Seq(Accept(MediaTypes.`application/json`)))
+			)
+			.flatMap(Unmarshal(_).to[T])
+
+			getJson[StaticCollection](exampleCollUri)
+				.flatMap: coll =>
+					traverseFut(
+						coll.members.collect:
+							case pso: PlainStaticObject => pso.res
+						//.take(2)
+					): dobjUri =>
+						getJson[DataObject](dobjUri.toString)
+
+				.map: dobjs =>
+					val geosJson = dobjs.flatMap(_.coverage).toSeq.toJson.prettyPrint
+					Files.writeString(inputGeosJsonPath, geosJson, WRITE, CREATE, TRUNCATE_EXISTING)
+					println(s"Written json to ${inputGeosJsonPath.toAbsolutePath}")
+					akka.Done
+				.onComplete: doneTry =>
+					sys.terminate()
+					doneTry.failed.foreach(_.printStackTrace())
+
+	end prepareTestInput
+
+
+	def readTestInput(): Seq[GeoFeature] =
+		if !Files.exists(inputGeosJsonPath) then
+			println("Input not found, fetching and preparing, make take a minute...")
+			prepareTestInput()
+		Files.readString(inputGeosJsonPath).parseJson.convertTo[Seq[GeoFeature]]
+
+end TestGeoFeatures

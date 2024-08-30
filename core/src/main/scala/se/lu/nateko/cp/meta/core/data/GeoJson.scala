@@ -94,7 +94,7 @@ object GeoJson {
 	private def wrapGeoInFeature(geo: JsObject, labelOpt: Option[String]) = JsObject(
 		"type" -> JsString("Feature"),
 		"geometry" -> geo,
-		"properties" -> labelOpt.fold[JsValue](JsNull)(lbl => JsObject("label" -> JsString(lbl)))
+		"properties" -> labelOpt.fold(JsObject.empty)(lbl => JsObject("label" -> JsString(lbl)))
 	)
 
 	def toFeature(geoJs: String): Try[GeoFeature] =

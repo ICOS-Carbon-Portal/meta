@@ -1,21 +1,25 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
-import scala.collection.mutable.ArrayBuffer
-import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.io.WKTReader
-import org.locationtech.jts.geom.Geometry
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom.GeometryCollection
+import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.concaveHull
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.makeCollection
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.getMinGeometryDistance
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.mergeSimpleGeoms
+import org.locationtech.jts.geom.Polygon
+import org.locationtech.jts.io.WKTReader
 import se.lu.nateko.cp.meta.core.data.PositionUtil.average
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.runSecondPass
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.mergeSimpleGeoms
+//import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.runSecondPass
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.representativeCoverage
+
+import scala.collection.mutable.ArrayBuffer
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.FeatureCollection
+import se.lu.nateko.cp.meta.core.data.GeoJson
+import java.nio.file.Files
+import java.nio.file.Paths
 
 
 object ClusteringExample:
@@ -23,7 +27,7 @@ object ClusteringExample:
 		val wktReader = new WKTReader(JtsGeoFactory)
 		geomStrings.map(wktReader.read)
 
-	@main def runClusteringExample() =
+	def experimentalExample(): Unit =
 
 		val testData = convertStringsToJTS(
 			"POINT (13.1574379 55.2027581)",
@@ -52,7 +56,22 @@ object ClusteringExample:
 
 		initMerge.foreach(g => println(g.geom))
 
-		val secondMerge = runSecondPass(initMerge)
+		//val secondMerge = runSecondPass(initMerge)
 
 		// println("epsilon: " + epsilon)
-		secondMerge.foreach(g => println(g.geom))
+		//secondMerge.foreach(g => println(g.geom))
+	end experimentalExample
+
+	@main def collectionExample(): Unit =
+		val collFeatures = TestGeoFeatures.readTestInput()
+		//Files.writeString(Paths.get("./collGeoJsonAllFeatures.json"), toGeoJson(collFeatures))
+		val clusteredFeatures = representativeCoverage(collFeatures, 100)
+		Files.writeString(Paths.get("./collGeoJsonClustered.json"), toGeoJson(clusteredFeatures))
+		println(s"Clustered from ${collFeatures.size} to ${clusteredFeatures.size}")
+
+
+	def toGeoJson(geos: Seq[GeoFeature]): String =
+		val coll = FeatureCollection(geos, None, None)
+		GeoJson.fromFeatureWithLabels(coll).prettyPrint
+
+end ClusteringExample

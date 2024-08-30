@@ -2,8 +2,7 @@ package se.lu.nateko.cp.meta.test.services.upload.geocov
 
 import org.locationtech.jts.geom.Coordinate
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovClustering.getMinGeometryDistance
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.LabeledJtsGeo
+import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
@@ -56,12 +55,12 @@ object TestGeometries:
 	def labeledPolygon1 = LabeledJtsGeo(jtsPolygon1, Seq("polygon1"))
 	def labeledPolygon2 = LabeledJtsGeo(jtsPolygon2, Seq("polygon2"))
 	def labeledPolygon3 = LabeledJtsGeo(jtsPolygon3, Seq("polygon3"))
-	
-	// def geometriesToGeoJson(geometries: Seq[Geometry]) =
-	// 	val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
-	// 	writer.write(collection).replaceAll("\\s+", "")
 
-	def extractGeometries(geometryCollection: GeometryCollection): Seq[Geometry] =
+	def geometriesToGeoJson(geometries: Seq[Geometry]) =
+		val collection = GeometryCollection(geometries.toArray, JtsGeoFactory)
+		writer.write(collection).replaceAll("\\s+", "")
+
+	private def extractGeometries(geometryCollection: GeometryCollection): Seq[Geometry] =
 		val numGeometries = geometryCollection.getNumGeometries
 		val geometriesBuffer = ArrayBuffer[Geometry]()
 
@@ -80,8 +79,7 @@ object TestGeometries:
 	private val testClusterPath = "src/test/resources/GeoCovTestClusters.json"
 	
 	def testClusterJson: String = new String(Files.readAllBytes(Paths.get(testClusterPath))).replaceAll("\\s+", "")
-	def getLabeledTestGeometries = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
+	private def getLabeledTestGeometries = extractGeometries(exampleGeometryCollection).map(LabeledJtsGeo(_, Seq.empty))
 	def getTestGeometriesAsGeoFeatures = getLabeledTestGeometries.flatMap(fromJtsToGeoFeature)
 
 end TestGeometries
-

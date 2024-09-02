@@ -3,63 +3,90 @@ package se.lu.nateko.cp.meta.services.upload.geocov
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.algorithm.ConvexHull
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import org.locationtech.jts.simplify.TopologyPreservingSimplifier
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier
+import scala.collection.mutable
 
-trait GeoCluster:
-	def mergeIfContains(geo: LabeledJtsGeo): Option[GeoCluster]
-	def mergeIfIntersects(geo: LabeledJtsGeo): Option[GeoCluster]
-	def merge(geo: LabeledJtsGeo): GeoCluster
-	def distanceTo(geo: LabeledJtsGeo): Double
-	def fuse: Seq[LabeledJtsGeo]
+object GeoCluster:
+	val MaxGeoDigestSize = 15
 
-case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]) extends GeoCluster:
+	def fuse(geos: Seq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
+		if geos.size <= 1 then geos else
+			val coordinates = geos.flatMap(_.geom.getCoordinates())
+			val hull = new ConvexHull(coordinates.toArray, JtsGeoFactory).getConvexHull()
+
+			if geos.size <= 3 && isVeryThin(hull) then geos else
+				val labels = geos.flatMap(_.labels).distinct
+				Seq(LabeledJtsGeo(hull, labels).fuse)
+
+	private def isVeryThin(geo: Geometry): Boolean =
+		val diam = geo.getEnvelopeInternal.getDiameter
+		geo.getArea < 0.05 * diam * diam
+
+	def reducePointsTo(n: Int, geo: Geometry): Geometry =
+		assert(n >= 3, "only reduce to polygons")
+
+		def reduceInner(fromTol: Double, tol: Double, toTol: Double): Geometry =
+			val attempt = DouglasPeuckerSimplifier.simplify(geo, tol)
+			val gotPoints = attempt.getNumPoints
+			if gotPoints == n then attempt
+			else if gotPoints < n then reduceInner(fromTol, (fromTol + tol) / 2, tol)
+			else reduceInner(tol, (tol + toTol) / 2, toTol)
+
+		if geo.getNumPoints <= n then geo else
+			val diam = geo.getEnvelopeInternal.getDiameter
+			reduceInner(0, 0.01 * diam, diam)
+
+case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 	export geom.getArea
 
-	def mergeIfContains(geo: LabeledJtsGeo):  Option[GeoCluster] =
-		if geom.contains(geo.geom) then
-			Some(this.copy(labels = mergedLabels(geo)))
-		else None
-
-	def mergeIfIntersects(geo: LabeledJtsGeo):  Option[GeoCluster] =
+	def mergeIfIntersects(geo: LabeledJtsGeo):  Option[LabeledJtsGeo] =
 		if geom.intersects(geo.geom) then
 			Some(LabeledJtsGeo(geom.union(geo.geom), mergedLabels(geo)))
 		else None
 
-	def merge(geo: LabeledJtsGeo): GeoCluster = ProperCluster(IndexedSeq(this, geo))
-
-	def distanceTo(geo: LabeledJtsGeo): Double = geom.distance(geo.geom)
+	//def distanceTo(geo: LabeledJtsGeo): Double = geom.distance(geo.geom)
+	def isWithinDistance(geo: LabeledJtsGeo, maxDistance: Double): Boolean =
+		geom.isWithinDistance(geo.geom, maxDistance)
 
 	private def mergedLabels(geo: LabeledJtsGeo): Seq[String] =
 		labels ++ geo.labels.filterNot(labels.contains)
 
-	def fuse: Seq[LabeledJtsGeo] =
-		if geom.getNumPoints > 15 then
-			val env = geom.getEnvelopeInternal
-			val charactSize = Math.sqrt(env.getHeight * env.getHeight + env.getWidth * env.getWidth)
-			val simple = TopologyPreservingSimplifier.simplify(geom, charactSize / 50)
-			val res = if simple.getNumPoints > 0 then simple else geom.getCentroid
-			Seq(LabeledJtsGeo(res, labels))
+	def fuse: LabeledJtsGeo =
+		if geom.getNumPoints > GeoCluster.MaxGeoDigestSize then
+			copy(geom = GeoCluster.reducePointsTo(GeoCluster.MaxGeoDigestSize, geom))
 		else
-			Seq(this)
+			this
+end LabeledJtsGeo
 
-class ProperCluster(geos: IndexedSeq[LabeledJtsGeo]) extends GeoCluster:
-	private val coordinates = geos.flatMap(_.geom.getCoordinates())
-	private val hull = new ConvexHull(coordinates.toArray, JtsGeoFactory).getConvexHull()
 
-	def mergeIfContains(geo: LabeledJtsGeo):  Option[GeoCluster] =
-		if hull.contains(geo.geom) then Some(addGeo(geo)) else None
+class ClusterRegistry:
+	private type Cluster = mutable.Set[Int]
+	private val clusters = mutable.ArrayBuffer.empty[Cluster]
+	private val lookup = mutable.HashMap.empty[Int, Cluster]
 
-	def mergeIfIntersects(geo: LabeledJtsGeo):  Option[GeoCluster] =
-		if hull.intersects(geo.geom) then Some(addGeo(geo)) else None
+	def addIndexPair(i: Int, j: Int): Unit = if i != j then
+		lookup.get(i) match
+			case Some(clusterI) => lookup.get(j) match
+				case Some(clusterJ) =>
+					if clusterI ne clusterJ then // cluster merge scenario
+						clusterJ.foreach: jidx =>
+							clusterI.add(jidx)
+							lookup.update(jidx, clusterI)
+						clusterJ.clear()
+				case None =>
+					clusterI.add(j)
+					lookup.update(j, clusterI)
+			case None => lookup.get(j) match
+				case Some(cluster) =>
+					cluster.add(i)
+					lookup.update(i, cluster)
+				case None =>
+					val cluster = mutable.Set(i, j)
+					clusters += cluster
+					lookup.update(i, cluster)
+					lookup.update(j, cluster)
+	end addIndexPair
 
-	def merge(geo: LabeledJtsGeo): GeoCluster = addGeo(geo)
+	def isClustered(index: Int): Boolean = lookup.contains(index)
 
-	def distanceTo(geo: LabeledJtsGeo): Double = hull.distance(geo.geom)
-
-	private def addGeo(geo: LabeledJtsGeo) = ProperCluster(geos :+ geo)
-
-	def fuse: Seq[LabeledJtsGeo] =
-		if coordinates.size <= 2 then geos // meaningless to make a hull, keeping two points
-		else
-			val labels = geos.flatMap(_.labels).distinct
-			LabeledJtsGeo(hull, labels).fuse
+	def enumerateClusters: Iterator[collection.Set[Int]] = clusters.iterator.filterNot(_.isEmpty)

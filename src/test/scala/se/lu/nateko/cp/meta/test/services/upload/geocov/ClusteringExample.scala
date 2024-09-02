@@ -7,19 +7,19 @@ import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
 import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.io.WKTReader
+import se.lu.nateko.cp.meta.core.data.FeatureCollection
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.GeoJson
 import se.lu.nateko.cp.meta.core.data.PositionUtil.average
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.mergeSimpleGeoms
-//import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.runSecondPass
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.mergeIntersecting
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.representativeCoverage
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.toSimpleGeometries
+import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 
-import scala.collection.mutable.ArrayBuffer
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
-import se.lu.nateko.cp.meta.core.data.GeoJson
 import java.nio.file.Files
 import java.nio.file.Paths
+import scala.collection.mutable.ArrayBuffer
 
 
 object ClusteringExample:
@@ -52,7 +52,7 @@ object ClusteringExample:
 		// println("the polygon centroid: " + polygonCentroid)
 
 		val labeledTestData = testData.map(LabeledJtsGeo(_, Seq.empty))
-		val initMerge = mergeSimpleGeoms(labeledTestData, None)
+		val initMerge = mergeIntersecting(labeledTestData)
 
 		initMerge.foreach(g => println(g.geom))
 

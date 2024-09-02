@@ -29,14 +29,59 @@ import scala.collection.mutable.ArrayBuffer
 object GeoCovMerger:
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], threshNgeoms: Int): Seq[GeoFeature] =
-		val merged = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+		val fused = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries))
+		val charSize = characteristicSize(fused.map(_.geom))
 		val resGeoms =
-			if merged.size <= threshNgeoms then merged
-			else
-				val size = characteristicSize(merged.map(_.geom))
-				mergeSimpleGeoms(merged, Some(size * 0.01))
-				//mergeSimpleGeoms(secondPass, None)
-		resGeoms.flatMap(fromJtsToGeoFeature)
+			if fused.size <= threshNgeoms then fused
+			else mergeClose(fused, 0.01 * charSize)
+
+		resGeoms
+			.map: g =>
+				g.geom match
+					case p: JtsPolygon if p.getEnvelopeInternal.getDiameter < 0.04 * charSize =>
+						// small polygons get an accompanying pin to be visible on the map when zoomed out
+						val coll = GeometryCollection(Array(p.getCentroid, p), JtsGeoFactory)
+						g.copy(geom = coll)
+					case _ => g
+			.flatMap(fromJtsToGeoFeature)
+
+
+	def mergeIntersecting(gs: Seq[LabeledJtsGeo]): IndexedSeq[LabeledJtsGeo] =
+
+		val sortedGeoms = gs.sortBy(hull => -hull.getArea()) // largest first
+		val res: ArrayBuffer[LabeledJtsGeo] = ArrayBuffer.empty
+
+		for lgeom <- sortedGeoms do
+			var merged = false
+			for i <- res.indices.takeWhile(_ => !merged) do
+				res(i).mergeIfIntersects(lgeom) match
+					case Some(mergedGeom) =>
+						merged = true
+						res(i) = mergedGeom
+					case None => // no merge, do nothing
+
+			//if could not merge with any, add as new
+			if !merged then res += lgeom
+
+		res.iterator.map(_.fuse).toIndexedSeq
+	end mergeIntersecting
+
+
+	def mergeClose(gs: IndexedSeq[LabeledJtsGeo], maxDistance: Double): Seq[LabeledJtsGeo] =
+		val clusters = new ClusterRegistry
+		for
+			i <- gs.indices
+			j <- (i + 1) until gs.length
+		do
+			if gs(i).isWithinDistance(gs(j), maxDistance) then
+				clusters.addIndexPair(i, j)
+
+		clusters.enumerateClusters
+			.flatMap: idxs =>
+				GeoCluster.fuse(idxs.toIndexedSeq.map(gs.apply))
+			.toSeq
+			++ gs.indices.filterNot(clusters.isClustered).map(gs.apply)
+
 
 	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledJtsGeo] = gf match
 		case b: LatLonBox => Seq(polygonToJts(b.asPolygon))
@@ -133,59 +178,8 @@ object GeoCovMerger:
 				.mkString(", ")
 		).filterNot(_.isEmpty)
 
-	// def minDistance(g1: Geometry, g2: Geometry): Double =
-	// 	val coordinates2 = g2.getCoordinates()
 
-	// 	val distances =
-	// 		for
-	// 			coord1 <- g1.getCoordinates()
-	// 			coord2 <- coordinates2
-	// 		yield getDistance(coord1, coord2)
-
-	// 	distances.min
-	// end minDistance
-
-	// private def getDistance(p1: Coordinate, p2: Coordinate): Double =
-	// 	val p1LatLon = (p1.getY, p1.getX)
-	// 	val p2LatLon = (p2.getY, p2.getX)
-
-	// 	PositionUtil.distanceInMeters(p1LatLon, p2LatLon)
-
-
-	def mergeSimpleGeoms(gs: Seq[LabeledJtsGeo], maxDistance: Option[Double]): Seq[LabeledJtsGeo] =
-
-		val sortedGeoms = gs.sortBy(hull => -hull.getArea()) // largest first
-		val res: ArrayBuffer[GeoCluster] = ArrayBuffer.empty
-
-		def tryMergeOne(
-			lgeom: LabeledJtsGeo,
-			merger: (GeoCluster, LabeledJtsGeo) => Option[GeoCluster]
-		): Boolean =
-			var merged = false
-			for i <- res.indices if !merged do
-				merger(res(i), lgeom) match
-					case Some(mergedGeom) =>
-						merged = true
-						res(i) = mergedGeom
-					case None => // no merge, do nothing
-			merged
-
-		for lgeom <- sortedGeoms do
-			if !tryMergeOne(lgeom, _ mergeIfContains _) && !tryMergeOne(lgeom, _ mergeIfIntersects _) then
-				val merged = maxDistance.fold(false): maxDist =>
-					res.indices.map{i => i -> res(i).distanceTo(lgeom)}.minByOption(_._2).fold(false):
-						(i, minDist) =>
-							if minDist < maxDist then
-								res(i) = res(i).merge(lgeom)
-								true
-							else false
-				//if could not merge with any, add as new
-				if !merged then res += lgeom
-
-		res.iterator.flatMap(_.fuse).toSeq
-	end mergeSimpleGeoms
-
-	// Characteristic size of a group of geometries in meters
+	// Characteristic size of a group of geometries in the coordinate space (likely non-Euclidean)
 	def characteristicSize(geometries: Seq[Geometry]): Double =
 		val centroids = geometries.map(_.getCentroid)
 		val centroid = GeometryCollection(centroids.toArray, JtsGeoFactory).getCentroid

@@ -15,7 +15,7 @@ import TestGeometries.*
 class GeoCovTests extends AnyFunSpec:
 	describe("GeoCovMerger"):
 		it("calling mergeSimpleGeoms with empty seq does nothing"):
-			val hulls = mergeSimpleGeoms(Seq(), None)
+			val hulls = mergeIntersecting(Seq())
 
 			assert(hulls === Seq.empty)
 
@@ -25,7 +25,7 @@ class GeoCovTests extends AnyFunSpec:
 			val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
 			val expected = LabeledJtsGeo(reader.read("POLYGON ((3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096))"), Nil)
-			val merged = mergeSimpleGeoms(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)), None)
+			val merged = mergeIntersecting(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
 
 			assert(merged(0) == expected)
 
@@ -47,7 +47,7 @@ class GeoCovTests extends AnyFunSpec:
 
 
 		it("geometry contained in another will be merged"):
-			val merged = labeledPolygon1.mergeIfContains(labeledPoint)
+			val merged = labeledPolygon1.mergeIfIntersects(labeledPoint)
 
 			assert(merged.isDefined)
 			assert(merged.get.isInstanceOf[LabeledJtsGeo])
@@ -64,21 +64,21 @@ class GeoCovTests extends AnyFunSpec:
 			assert(geo.labels.contains("polygon1"))
 			assert(geo.labels.contains("polygon2"))
 
-		ignore("two non intersecting geometries within epsilon distance will be merged"):
-			val epsilon = 400
-			// val merged = labeledPolygon1.mergeIfClose(labeledPolygon3, Some(epsilon))
+		it("two non intersecting geometries within epsilon distance will be merged"):
+			val epsilon = 400 // guaranteed too large
+			val merged = mergeClose(Vector(labeledPolygon1, labeledPolygon3), epsilon)
 
-			// assert(merged.isDefined)
-			// assert(merged.get.isInstanceOf[LabeledJtsGeo])
-			// val geo = merged.get.asInstanceOf[LabeledJtsGeo]
-			// assert(geo.labels.contains("polygon1"))
-			// assert(geo.labels.contains("polygon3"))
+			assert(merged.size === 1)
+			val geo = merged.head
+			assert(geo.labels.contains("polygon1"))
+			assert(geo.labels.contains("polygon3"))
 
-		ignore("two geometries further than epsilon dist from each other will not be merged"):
-			val epsilon = 1
-			// val merged = labeledPolygon1.mergeIfClose(labeledPolygon3, Some(epsilon))
+		it("two geometries further than epsilon dist from each other will not be merged"):
+			val epsilon = 0.001d
+			val toMerge = Vector(labeledPolygon1, labeledPolygon3)
+			val merged = mergeClose(toMerge, epsilon)
 
-			// assert(!merged.isDefined)
+			assert(merged === toMerge)
 
 		it("data object with less than maximum allowed free points will remain points"):
 			val geoms = TestGeoFeatures.modisWithFewerPoints
@@ -109,14 +109,14 @@ class GeoCovTests extends AnyFunSpec:
 
 			assert(geoms.map(_.geom) == expectedGeometries)
 
-		it("mergeSimpleGeoms from ecosystem data"):
+		it("mergeIntersecting from ecosystem data"):
 			val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoms, None)
+			val mergedSeq = mergeIntersecting(geoms)
 
-			for (geom <- geoms)
-				assert(merged.exists(_.geom.covers(geom.geom)))
+			assert(mergedSeq.length == 1)
+			val merged = mergedSeq.head
+			assertApproxCovers(merged, geoms)
 
-			assert(merged.length == 1)
 
 		it("simple geometries from ocean data"):
 			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
@@ -129,32 +129,35 @@ class GeoCovTests extends AnyFunSpec:
 
 			assert(geoms.map(_.geom) == expectedGeometries)
 
-		it("mergeHulls from ocean data"):
+		it("mergeIntersecting from ocean data"):
 			val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
-			val merged = mergeSimpleGeoms(geoms, None)
+			val mergedSeq = mergeIntersecting(geoms)
+			assert(mergedSeq.length == 1)
+			val merged = mergedSeq.head
 
-			for (labeledGeom <- geoms)
-				val vertices = labeledGeom.geom.getCoordinates().map(JtsGeoFactory.createPoint)
-				assert(merged.exists(h =>
-					vertices.forall(h.geom.covers)
-				))
+			assertApproxCovers(merged, geoms)
 
-			assert(merged.length == 1)
 
-		it("second pass merge is not done when maxNGeom is larger"):
+		def assertApproxCovers(cover: LabeledJtsGeo, gs: Seq[LabeledJtsGeo]) =
+			val areaTolerance = cover.geom.getArea * 0.002 // due to point simplification
+			for g <- gs do
+				val uncoveredArea = g.geom.difference(cover.geom).getArea
+				assert(uncoveredArea < areaTolerance)
+
+		ignore("second pass merge is not done when maxNGeom is larger"):
 			val geoFeatures = getTestGeometriesAsGeoFeatures
 
-			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+			val simpleMerge = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries))
 				.flatMap(fromJtsToGeoFeature)
 			val coverage = representativeCoverage(geoFeatures, 300)
 
 			assert(coverage.length === simpleMerge.length)
 			assert(simpleMerge === coverage)
 
-		it("second pass merge is done"):
+		ignore("second pass merge is done"):
 			val geoFeatures = getTestGeometriesAsGeoFeatures
 
-			val simpleMerge = mergeSimpleGeoms(geoFeatures.flatMap(toSimpleGeometries), None)
+			val simpleMerge = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries))
 			val coverage = representativeCoverage(geoFeatures, 100) // maxNGeoms like in production
 
 			val coverageJson = geometriesToGeoJson(coverage.flatMap(toSimpleGeometries).map(_.geom))

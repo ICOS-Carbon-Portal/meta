@@ -34,8 +34,7 @@ object SparqlQueries {
 	private def cityStations(orgFilter: String) = s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|SELECT *
 		|FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|FROM <https://citymeta.icos-cp.eu/resources/cpmeta/>
-		|FROM <https://citymeta.icos-cp.eu/resources/citymeta/>
+		|${expandFrom(citiesMetaInstGraphs)}
 		|WHERE {
 		|	$orgFilter
 		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
@@ -128,7 +127,7 @@ object SparqlQueries {
 
 	private def peopleQuery(from: Seq[String]) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select *
-		|${from.map(graph => s"""FROM <$graph>""").mkString("\n")}
+		|${expandFrom(from)}
 		|where{
 		|	?pers a cpmeta:Person ;
 		|	cpmeta:hasFirstName ?fname ;
@@ -136,17 +135,25 @@ object SparqlQueries {
 		|	optional {?pers cpmeta:hasEmail ?email}
 		|}""".stripMargin
 
+	private val citiesMetaInstGraphs = Seq(
+		"https://citymeta.icos-cp.eu/resources/cpmeta/",
+		"https://citymeta.icos-cp.eu/resources/citymeta/"
+	)
+
+	private def expandFrom(from: Seq[String]): String =
+		from.map(graph => s"""FROM <$graph>""").mkString("\n")
+
 	def people(using envri: Envri): String = envri match
 		case Envri.SITES => peopleQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
 		case Envri.ICOS => peopleQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"))
-		case Envri.ICOSCities => peopleQuery(Seq("https://citymeta.icos-cp.eu/resources/cpmeta/"))
+		case Envri.ICOSCities => peopleQuery(citiesMetaInstGraphs)
 
 	def toPerson(b: Binding) = NamedUri(new URI(b("pers")), s"""${b("fname")} ${b("lname")}""")
 
-	def organizationsQuery(from: Seq[String]) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+	private def organizationsQuery(from: Seq[String]) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?org ?orgName ?label
-		|${from.map(graph => s"""FROM <$graph>""").mkString("\n")}
+		|${expandFrom(from)}
 		|where{
 		|	values ?orgClass {cpmeta:Organization cpmeta:CentralFacility cpmeta:ThematicCenter}
 		|	?org a ?orgClass ; cpmeta:hasName ?orgName .
@@ -158,7 +165,7 @@ object SparqlQueries {
 		case Envri.ICOS => organizationsQuery(Seq(
 			"http://meta.icos-cp.eu/ontologies/cpmeta/", "http://meta.icos-cp.eu/resources/cpmeta/", "http://meta.icos-cp.eu/resources/icos/"
 		))
-		case Envri.ICOSCities => organizationsQuery(Seq("https://citymeta.icos-cp.eu/resources/cpmeta/"))
+		case Envri.ICOSCities => organizationsQuery(citiesMetaInstGraphs)
 
 	def toOrganization(b: Binding) = NamedUri(new URI(b("org")), b("orgName"))
 

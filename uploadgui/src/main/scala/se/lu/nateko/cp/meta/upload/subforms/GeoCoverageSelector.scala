@@ -18,21 +18,21 @@ import scala.util.Success
 import scala.util.Try
 
 
-class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], elemLabel: String)(using PubSubBus) extends PanelSubform(s".$elemLabel-element"):
-	private val spatialCovSelect = new Select[SpatialCoverage](s"${elemLabel}select", _.label, autoselect = false, onSpatCoverSelected)
-	private val spatCoverElements = new HtmlElements(s".$elemLabel-element")
+class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using PubSubBus) extends PanelSubform(s".geocov-element"):
+	private val spatialCovSelect = new Select[SpatialCoverage](s"${lbl}geoselect", _.label, autoselect = false, onSpatCoverSelected)
+	private val spatCoverElements = new HtmlElements(s".geocov-element")
 
 	private var customSpatCovMeta: Option[GeoFeature] = None
 
-	private val spatCovLabel = new TextOptInput(s"${elemLabel}label", () => ())
-	private val minLatInput = new DoubleInput("l3minlat", notifyUpdate)
-	private val minLonInput = new DoubleInput("l3minlon", notifyUpdate)
-	private val maxLatInput = new DoubleInput("l3maxlat", notifyUpdate)
-	private val maxLonInput = new DoubleInput("l3maxlon", notifyUpdate)
+	private val spatCovLabel = new TextOptInput(s"${lbl}geolbl", () => ())
+	private val minLatInput = new DoubleInput(s"${lbl}geominlat", notifyUpdate)
+	private val minLonInput = new DoubleInput(s"${lbl}geominlon", notifyUpdate)
+	private val maxLatInput = new DoubleInput(s"${lbl}geomaxlat", notifyUpdate)
+	private val maxLonInput = new DoubleInput(s"${lbl}geomaxlon", notifyUpdate)
 
 	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
 	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
-	private val customSpatCovWarningMsg = "The data object has custom spatial coverage which cannot be updated in UploadGUI. All other metadata can be updated."
+	private val customSpatCovWarningMsg = "This item has a custom spatial coverage, which cannot be updated in UploadGUI"
 
 	def spatialCoverage: Try[Either[GeoFeature, URI]] = spatialCovSelect
 		.value.withMissingError("spatial coverage").flatMap{spCov =>
@@ -44,7 +44,8 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], elemLabel: String)(
 					maxLon <- maxLonInput.value;
 					label <- spatCovLabel.value
 				) yield Left(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
-			else if (spCov eq customSpatCov) customSpatCovMeta.map(c => Success(Left(c))).getOrElse(Failure(new NoSuchElementException))
+			else if (spCov eq customSpatCov) Try(customSpatCovMeta.get).map: gf =>
+				gf.uri.fold(Left(gf))(Right(_))
 			else Success(Right(spCov.uri))
 		}
 

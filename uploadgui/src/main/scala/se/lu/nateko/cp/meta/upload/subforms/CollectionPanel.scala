@@ -17,7 +17,7 @@ class CollectionPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus
 	private val collectionDescription = new DescriptionInput("collectiondescription", notifyUpdate)
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
 	private val collectionDoc = new HashOptInput("colldoc", notifyUpdate)
-	private val spatialCovSelect = new GeoCoverageSelector(covs, "collspatcover")
+	private val spatialCovSelect = new GeoCoverageSelector(covs, "coll")
 
 	def resetForm(): Unit =
 		collectionTitle.reset()

@@ -48,6 +48,10 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
 		else getExistingStaticColl(collUri, hashOpt)
 
+	def fetchCollCoverage(collUri: IRI)(using CollConn): Validated[Option[GeoFeature]] =
+		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap: covUriOpt =>
+			covUriOpt.map(covUri => getCoverage(covUri)).sinkOption
+
 	private def getExistingStaticColl(
 		coll: IRI, hashOpt: Option[Sha256Sum] = None
 	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
@@ -66,8 +70,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
 			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
-			coverageUri <- getOptionalUri(coll, metaVocab.hasSpatialCoverage)(using collConn)
-			coverage <- coverageUri.map(uri => getCoverage(uri)(using collConn)).sinkOption
+			coverage <- fetchCollCoverage(coll)
 		yield
 			val init = StaticCollection(
 				res = coll.toJava,

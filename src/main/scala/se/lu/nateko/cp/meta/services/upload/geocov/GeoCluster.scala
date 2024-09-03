@@ -36,6 +36,9 @@ object GeoCluster:
 			val diam = geo.getEnvelopeInternal.getDiameter
 			reduceInner(0, 0.01 * diam, diam)
 
+end GeoCluster
+
+
 case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 	export geom.getArea
 
@@ -90,3 +93,5 @@ class ClusterRegistry:
 	def isClustered(index: Int): Boolean = lookup.contains(index)
 
 	def enumerateClusters: Iterator[collection.Set[Int]] = clusters.iterator.filterNot(_.isEmpty)
+
+end ClusterRegistry

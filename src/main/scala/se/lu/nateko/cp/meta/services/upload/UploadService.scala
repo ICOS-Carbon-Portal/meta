@@ -148,7 +148,7 @@ class UploadService(
 							case docObj: DocObject => None
 
 					case Hash.Collection(collHash) =>
-						metaReader.fetchStaticColl(uri.toRdf, Some(collHash)).map(_.coverage)
+						metaReader.fetchCollCoverage(uri.toRdf)
 					case _ => Validated.ok(None)
 		.map(_.flatten)
 

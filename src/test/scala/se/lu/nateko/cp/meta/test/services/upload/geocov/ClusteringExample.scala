@@ -65,7 +65,7 @@ object ClusteringExample:
 	@main def collectionExample(): Unit =
 		val collFeatures = TestGeoFeatures.readTestInput()
 		//Files.writeString(Paths.get("./collGeoJsonAllFeatures.json"), toGeoJson(collFeatures))
-		val clusteredFeatures = representativeCoverage(collFeatures, 100)
+		val clusteredFeatures = representativeCoverage(collFeatures, 500)
 		Files.writeString(Paths.get("./collGeoJsonClustered.json"), toGeoJson(clusteredFeatures))
 		println(s"Clustered from ${collFeatures.size} to ${clusteredFeatures.size}")
 

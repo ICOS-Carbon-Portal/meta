@@ -25,16 +25,26 @@ object GeoCluster:
 	def reducePointsTo(n: Int, geo: Geometry): Geometry =
 		assert(n >= 3, "only reduce to polygons")
 
-		def reduceInner(fromTol: Double, tol: Double, toTol: Double): Geometry =
+		def reduceInner(fromTol: Double, tol: Double, toTolOpt: Option[Double]): Geometry =
 			val attempt = DouglasPeuckerSimplifier.simplify(geo, tol)
 			val gotPoints = attempt.getNumPoints
-			if gotPoints == n then attempt
-			else if gotPoints < n then reduceInner(fromTol, (fromTol + tol) / 2, tol)
-			else reduceInner(tol, (tol + toTol) / 2, toTol)
+
+			if gotPoints == n || (tol - fromTol) / tol < 0.001 then
+				attempt // got exact result or converged
+			else if gotPoints < n then
+				// too strong reduction, reduce tolerance
+				reduceInner(fromTol, (fromTol + tol) / 2, Some(tol))
+			else toTolOpt match
+				case Some(toTol) =>
+					// too weak reduction, go half way to the known upper limit of tolerance
+					reduceInner(tol, (tol + toTol) / 2, Some(toTol))
+				case None =>
+					// too weak reduction, no known upper limit, so double the tolerance
+					reduceInner(tol, tol * 2, None)
 
 		if geo.getNumPoints <= n then geo else
-			val diam = geo.getEnvelopeInternal.getDiameter
-			reduceInner(0, 0.01 * diam, diam)
+			reduceInner(0, 0.01 * geo.getEnvelopeInternal.getDiameter, None)
+	end reducePointsTo
 
 end GeoCluster
 
@@ -47,7 +57,6 @@ case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 			Some(LabeledJtsGeo(geom.union(geo.geom), mergedLabels(geo)))
 		else None
 
-	//def distanceTo(geo: LabeledJtsGeo): Double = geom.distance(geo.geom)
 	def isWithinDistance(geo: LabeledJtsGeo, maxDistance: Double): Boolean =
 		geom.isWithinDistance(geo.geom, maxDistance)
 

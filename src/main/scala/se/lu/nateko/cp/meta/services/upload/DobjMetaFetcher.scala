@@ -106,11 +106,13 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			countryCode <- getOptionalString(stat, metaVocab.countryCode)
 			funding <- getFundings(stat)
 		yield
+			val labeledCov = coverage.map: cov =>
+				if cov.label.isDefined then cov else cov.withLabel(org.name)
 			Station(
 				org = org,
 				id = id,
 				location = locationOpt,
-				coverage = coverage,
+				coverage = labeledCov,
 				responsibleOrganization = responsibleOrganization,
 				specificInfo = specificInfo,
 				pictures = getUriLiteralValues(stat, metaVocab.hasDepiction),

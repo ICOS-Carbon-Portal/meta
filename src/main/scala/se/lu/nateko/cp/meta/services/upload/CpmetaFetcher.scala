@@ -203,9 +203,9 @@ trait CpmetaReader:
 			posLat <- getSingleDouble(stat, metaVocab.hasLatitude)
 			posLon <- getSingleDouble(stat, metaVocab.hasLongitude)
 			altOpt <- getOptionalFloat(stat, metaVocab.hasElevation)
-			stLabelOpt <- getOptionalString(stat, RDFS.LABEL).orElse(labelOpt)
+			stLabelOpt <- getOptionalString(stat, RDFS.LABEL)
 		yield
-			Position(posLat, posLon, altOpt, stLabelOpt, None)
+			Position(posLat, posLon, altOpt, stLabelOpt.orElse(labelOpt), None)
 
 	def getSite(site: IRI): MetaConn ?=> Validated[Site] =
 		for

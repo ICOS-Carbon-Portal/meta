@@ -144,7 +144,8 @@ object AtcCollMaker{
 		),
 		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi),
-		documentation = None
+		documentation = None,
+		coverage = None
 	)
 
 	def parseStationObjs(spRes: SparqlSelectResult): Map[URI, SpecDobjs] =

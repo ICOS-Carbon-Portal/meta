@@ -16,7 +16,7 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.18",
+		version := "0.7.19",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
@@ -189,12 +189,12 @@ lazy val meta = (project in file("."))
 
 		reStart / aggregate := false,
 
-		Test / console / initialCommands := {
-			"""import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}"""
+		// Test / console / initialCommands := {
+		// 	"""import se.lu.nateko.cp.meta.upload.UploadWorkbench.{given, *}"""
 			//"""import se.lu.nateko.cp.meta.test.Playground.{given, *}"""
-		},
+		// },
 
-		Test / console / cleanupCommands := "system.terminate()"
+		//Test / console / cleanupCommands := "system.terminate()"
 	)
 
 lazy val uploadgui = (project in file("uploadgui"))

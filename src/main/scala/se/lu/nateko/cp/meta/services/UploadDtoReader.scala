@@ -32,7 +32,7 @@ class UploadDtoReader(uriSer: UriSerializer){
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
 
-		case _ => Validated.error(s"URI $uri does lookes like neither object nor collection")
+		case _ => Validated.error(s"URI $uri looks like neither object nor collection")
 	}
 }
 
@@ -125,7 +125,11 @@ object UploadDtoReader{
 		preExistingDoi = coll.doi.map(Doi.parse).collect{
 			case Success(doi) => doi
 		},
-		documentation = coll.documentation.map(_.hash)
+		documentation = coll.documentation.map(_.hash),
+		coverage = coll.coverage.map: feature =>
+			feature.uri match
+				case None => Left(feature)
+				case Some(uri) => Right(uri)
 	)
 
 	private def dataProductionToDto(prod: DataProduction) = DataProductionDto(

@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -29,6 +30,9 @@ import org.eclipse.rdf4j.model.ValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.RdfLens
+import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.meta.utils.Validated
+import scala.util.Success
 
 class AccessUri(val uri: URI)
 
@@ -45,7 +49,7 @@ class UploadService(
 
 	private val uploadLock = new UploadLock
 
-	private given ValueFactory = vocab.factory
+	private given vf: ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
@@ -73,20 +77,31 @@ class UploadService(
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		yield accessUri
 
-
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
+
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.vanillaGlobal.access: conn ?=>
 					given GlobConn = RdfLens.global(using conn)
+					val collWithCoverageTry = coll.coverage match
+						case Some(_) => Success(coll)
+						case None =>
+							getCollCoverages(coll.members).toTry(new MetadataException(_)).map: covs =>
+								val gfs = geocov.GeoCovMerger.representativeCoverage(covs, 100)
+								val cov = gfs.toList match
+									case Nil => None
+									case feature :: Nil => Some(Left(feature))
+									case many => Some(Left(FeatureCollection(many, None, None)))
+								coll.copy(coverage = cov)
 					for
-						_ <- validator.validateCollection(coll, collHash, uploader);
-						submitterConf <- validator.getSubmitterConfig(coll);
+						collWithCoverage <- collWithCoverageTry;
+						_ <- validator.validateCollection(collWithCoverage, collHash, uploader);
+						submitterConf <- validator.getSubmitterConfig(collWithCoverage);
 						submittingOrg = submitterConf.submittingOrganization;
 						collIri = vocab.getCollection(collHash);
 						server <- servers.collectionServer.toTry(new MetadataException(_))
 						updates = server.access:
-							val newStatements = statementProd.getCollStatements(coll, collIri, submittingOrg)
+							val newStatements = statementProd.getCollStatements(collWithCoverage, collIri, submittingOrg)
 							val oldStatements = getStatements(collIri)
 							staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
 						_ <- server.applyAll(updates)()
@@ -122,6 +137,20 @@ class UploadService(
 				yield
 					log.debug(s"Updates for object ${dto.hashSum.id} have been applied successfully")
 					new AccessUri(vocab.getStaticObjectAccessUrl(dto.hashSum))
+
+	private def getCollCoverages(members: Seq[URI])(using Envri, GlobConn): Validated[Seq[GeoFeature]] = Validated
+		.sequence:
+			members.map: uri =>
+				Uri(uri.toString).path match
+					case Hash.Object(_) =>
+						metaReader.fetchStaticObject(uri.toRdf).map:
+							case dobj: DataObject => dobj.coverage
+							case docObj: DocObject => None
+
+					case Hash.Collection(collHash) =>
+						metaReader.fetchCollCoverage(uri.toRdf)
+					case _ => Validated.ok(None)
+		.map(_.flatten)
 
 
 	def checkPermissions(submitter: URI, userId: String)(using envri: Envri): Boolean =

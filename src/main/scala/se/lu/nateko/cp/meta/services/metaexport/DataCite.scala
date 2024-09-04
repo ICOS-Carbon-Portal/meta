@@ -15,11 +15,10 @@ import se.lu.nateko.cp.meta.core.data.PlainStaticObject
 import se.lu.nateko.cp.meta.core.data.StaticCollection
 import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.upload.DoiGeoLocationConverter
+import se.lu.nateko.cp.meta.utils.Validated
 
 import java.time.Instant
 import java.time.Year
-import se.lu.nateko.cp.meta.utils.Validated
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
@@ -69,7 +68,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			descriptions =
 				dobj.specificInfo.left.toSeq.flatMap(_.description).map(d => Description(d, DescriptionType.Abstract, None)) ++
 				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
-			geoLocations = dobj.coverage.map(DoiGeoLocationConverter.toDoiGeoLocation),
+			geoLocations = dobj.coverage.map(DoiGeoCovConverter.fromGeoFeature),
 			fundingReferences = Option(
 				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
@@ -124,7 +123,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.distinct
 			.map(toFundingReference)
 
-		val geoLocations = DoiGeoLocationCreator.representativeCoverage(dataObjs.flatMap(_.coverage), 100)
+		val geoLocations = coll.coverage.map(DoiGeoCovConverter.fromGeoFeature)
 
 		DoiMeta(
 			doi = doiMaker(CoolDoi.makeRandom),
@@ -141,7 +140,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			rightsList = Some(Seq(ccby4)),
 			descriptions = coll.description.map(d => Description(d, DescriptionType.Abstract, None)).toSeq,
 			fundingReferences = Option(funders).filterNot(_.isEmpty),
-			geoLocations = Option(geoLocations).filterNot(_.isEmpty)
+			geoLocations = geoLocations.filterNot(_.isEmpty)
 		)
 	end makeCollectionDoi
 

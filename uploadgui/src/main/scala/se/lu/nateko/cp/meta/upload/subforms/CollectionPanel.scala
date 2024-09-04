@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
+import org.scalajs.dom.html
+
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, StaticCollectionDto}
 
@@ -18,6 +20,11 @@ class CollectionPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus
 	private val collectionMembers = new NonEmptyUriListInput("collectionmembers", notifyUpdate)
 	private val collectionDoc = new HashOptInput("colldoc", notifyUpdate)
 	private val spatialCovSelect = new GeoCoverageSelector(covs, "coll")
+
+	getElementById[html.Button]("rmCollGeoSelection").foreach: button =>
+		button.onclick = event =>
+			event.preventDefault()
+			spatialCovSelect.resetForm()
 
 	def resetForm(): Unit =
 		collectionTitle.reset()

@@ -91,6 +91,13 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				references = References.empty
 			)
 			//TODO Consider adding collection-specific logic for licence information
-			init.copy(references = citer(init).copy(title = Some(init.title)))
+			val refs = citer(init).copy(title = Some(init.title))
+			val bestGeoCov = init.coverage.orElse:
+				for
+					doi <- refs.doi
+					geos <- doi.geoLocations
+					cov <- DataCite.geosToCp(geos)
+				yield cov
+			init.copy(coverage = bestGeoCov, references = refs)
 
 end CollectionReader

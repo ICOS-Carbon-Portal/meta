@@ -29,11 +29,11 @@ import scala.collection.mutable.ArrayBuffer
 object GeoCovMerger:
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], threshNgeoms: Int): Seq[GeoFeature] =
-		val fused = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries))
+		val fused = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries).toIndexedSeq)
 		val charSize = characteristicSize(fused.map(_.geom))
 		val resGeoms =
 			if fused.size <= threshNgeoms then fused
-			else mergeClose(fused, 0.01 * charSize)
+			else mergeClose(fused.toIndexedSeq, 0.01 * charSize)
 
 		resGeoms
 			.map: g =>
@@ -46,39 +46,29 @@ object GeoCovMerger:
 			.flatMap(fromJtsToGeoFeature)
 
 
-	def mergeIntersecting(gs: Seq[LabeledJtsGeo]): IndexedSeq[LabeledJtsGeo] =
-
-		val sortedGeoms = gs.sortBy(hull => -hull.getArea()) // largest first
-		val res: ArrayBuffer[LabeledJtsGeo] = ArrayBuffer.empty
-
-		for lgeom <- sortedGeoms do
-			var merged = false
-			for i <- res.indices.takeWhile(_ => !merged) do
-				res(i).mergeIfIntersects(lgeom) match
-					case Some(mergedGeom) =>
-						merged = true
-						res(i) = mergedGeom
-					case None => // no merge, do nothing
-
-			//if could not merge with any, add as new
-			if !merged then res += lgeom
-
-		res.iterator.map(_.fuse).toIndexedSeq
-	end mergeIntersecting
-
+	def mergeIntersecting(gs: IndexedSeq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
+		mergeGeos(gs, (g1, g2) => g1.geom.intersects(g2.geom), gs => Seq(GeoCluster.join(gs).fuse))
 
 	def mergeClose(gs: IndexedSeq[LabeledJtsGeo], maxDistance: Double): Seq[LabeledJtsGeo] =
+		mergeGeos(gs, _.isWithinDistance(_, maxDistance), GeoCluster.fuse)
+
+	// TODO Consider using an STRtree index for overlapping and proximity detection
+	// instead of the nested loop
+	private def mergeGeos(
+		gs: IndexedSeq[LabeledJtsGeo],
+		criterion: (LabeledJtsGeo, LabeledJtsGeo) => Boolean,
+		fuser: IndexedSeq[LabeledJtsGeo] => Seq[LabeledJtsGeo]
+	): Seq[LabeledJtsGeo] =
 		val clusters = new ClusterRegistry
 		for
 			i <- gs.indices
 			j <- (i + 1) until gs.length
 		do
-			if gs(i).isWithinDistance(gs(j), maxDistance) then
-				clusters.addIndexPair(i, j)
+			if criterion(gs(i), gs(j)) then clusters.addIndexPair(i, j)
 
 		clusters.enumerateClusters
 			.flatMap: idxs =>
-				GeoCluster.fuse(idxs.toIndexedSeq.map(gs.apply))
+				fuser(idxs.toIndexedSeq.map(gs.apply))
 			.toSeq
 			++ gs.indices.filterNot(clusters.isClustered).map(gs.apply)
 

@@ -52,7 +52,7 @@ object ClusteringExample:
 		// println("the polygon centroid: " + polygonCentroid)
 
 		val labeledTestData = testData.map(LabeledJtsGeo(_, Seq.empty))
-		val initMerge = mergeIntersecting(labeledTestData)
+		val initMerge = mergeIntersecting(labeledTestData.toIndexedSeq)
 
 		initMerge.foreach(g => println(g.geom))
 
@@ -65,9 +65,11 @@ object ClusteringExample:
 	@main def collectionExample(): Unit =
 		val collFeatures = TestGeoFeatures.readTestInput()
 		//Files.writeString(Paths.get("./collGeoJsonAllFeatures.json"), toGeoJson(collFeatures))
-		val clusteredFeatures = representativeCoverage(collFeatures, 500)
+		val start = System.nanoTime()
+		val clusteredFeatures = representativeCoverage(collFeatures, 100)
+		val elapsed = (System.nanoTime() - start) / 1e6
+		println(s"Clustered from ${collFeatures.size} to ${clusteredFeatures.size} in $elapsed ms")
 		Files.writeString(Paths.get("./collGeoJsonClustered.json"), toGeoJson(clusteredFeatures))
-		println(s"Clustered from ${collFeatures.size} to ${clusteredFeatures.size}")
 
 
 	def toGeoJson(geos: Seq[GeoFeature]): String =

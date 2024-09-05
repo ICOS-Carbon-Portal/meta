@@ -5,6 +5,7 @@ import org.locationtech.jts.algorithm.ConvexHull
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import org.locationtech.jts.simplify.DouglasPeuckerSimplifier
 import scala.collection.mutable
+import org.locationtech.jts.operation.union.UnaryUnionOp
 
 object GeoCluster:
 	val MaxGeoDigestSize = 15
@@ -46,22 +47,19 @@ object GeoCluster:
 			reduceInner(0, 0.01 * geo.getEnvelopeInternal.getDiameter, None)
 	end reducePointsTo
 
+	def join(geos: Seq[LabeledJtsGeo]): LabeledJtsGeo =
+		import scala.jdk.CollectionConverters.SeqHasAsJava
+		val jGeom = UnaryUnionOp.union(geos.map(_.geom).asJava)
+		LabeledJtsGeo(jGeom, geos.flatMap(_.labels).distinct)
+
 end GeoCluster
 
 
 case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 	export geom.getArea
 
-	def mergeIfIntersects(geo: LabeledJtsGeo):  Option[LabeledJtsGeo] =
-		if geom.intersects(geo.geom) then
-			Some(LabeledJtsGeo(geom.union(geo.geom), mergedLabels(geo)))
-		else None
-
 	def isWithinDistance(geo: LabeledJtsGeo, maxDistance: Double): Boolean =
 		geom.isWithinDistance(geo.geom, maxDistance)
-
-	private def mergedLabels(geo: LabeledJtsGeo): Seq[String] =
-		labels ++ geo.labels.filterNot(labels.contains)
 
 	def fuse: LabeledJtsGeo =
 		if geom.getNumPoints > GeoCluster.MaxGeoDigestSize then

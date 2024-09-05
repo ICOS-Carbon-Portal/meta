@@ -14,7 +14,7 @@ import TestGeometries.*
 
 class GeoCovMergerTests extends AnyFunSpec:
 	it("calling mergeSimpleGeoms with empty seq does nothing"):
-		val hulls = mergeIntersecting(Seq())
+		val hulls = mergeIntersecting(IndexedSeq.empty)
 
 		assert(hulls === Seq.empty)
 
@@ -24,7 +24,7 @@ class GeoCovMergerTests extends AnyFunSpec:
 		val p2 = reader.read("POLYGON ((-0.9711764 60.7988811, -2.5092624 59.0598, 4.0825345 57.8880297, 5.3569486 60.345468, -0.9711764 60.7988811))")
 
 		val expected = LabeledJtsGeo(reader.read("POLYGON ((3.7641313758810773 60.459594095063096, 5.3569486 60.345468, 4.0825345 57.8880297, -2.5092624 59.0598, -0.9711764 60.7988811, 0.8087268766290889 60.671350202244895, 0.9624173 62.2648867, 0.918472 62.5498498, 5.0493314 62.8722139, 2.456558 61.603294, 6.4995267 61.2882154, 3.7641313758810773 60.459594095063096))"), Nil)
-		val merged = mergeIntersecting(Seq(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
+		val merged = mergeIntersecting(Vector(LabeledJtsGeo(p1, Nil), LabeledJtsGeo(p2, Nil)))
 
 		assert(merged(0) == expected)
 
@@ -46,20 +46,18 @@ class GeoCovMergerTests extends AnyFunSpec:
 
 
 	it("geometry contained in another will be merged"):
-		val merged = labeledPolygon1.mergeIfIntersects(labeledPoint)
+		val merged = mergeIntersecting(Vector(labeledPolygon1, labeledPoint))
 
-		assert(merged.isDefined)
-		assert(merged.get.isInstanceOf[LabeledJtsGeo])
-		val geo = merged.get.asInstanceOf[LabeledJtsGeo]
+		assert(merged.size === 1)
+		val geo = merged.head
 		assert(geo.labels.contains("point"))
 		assert(geo.labels.contains("polygon1"))
 
 	it("two intersecting geometries will be merged"):
-		val merged = labeledPolygon1.mergeIfIntersects(labeledPolygon2)
+		val merged = mergeIntersecting(Vector(labeledPolygon1, labeledPolygon2))
 
-		assert(merged.isDefined)
-		assert(merged.get.isInstanceOf[LabeledJtsGeo])
-		val geo = merged.get.asInstanceOf[LabeledJtsGeo]
+		assert(merged.size === 1)
+		val geo = merged.head
 		assert(geo.labels.contains("polygon1"))
 		assert(geo.labels.contains("polygon2"))
 

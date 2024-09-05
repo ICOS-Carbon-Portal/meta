@@ -35,7 +35,9 @@ import scala.util.Using
 
 object TestGeoFeatures:
 
-	private val exampleCollUri = "https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y"
+	//private val exampleCollUri = "https://meta.icos-cp.eu/collections/TqzkW2nUzbufj_6pnJzzq7o5" // OTC release
+	//private val inputGeosJsonPath = Paths.get("./src/test/resources/GeoCovOceanTestInput.json.gz")
+	private val exampleCollUri = "https://meta.icos-cp.eu/collections/rOZ8Ehl3i0VZp8nqJQR2PB3y" //ETC release
 	private val inputGeosJsonPath = Paths.get("./src/test/resources/GeoCovTestInput.json.gz")
 
 	def readTestInput(): Seq[GeoFeature] =

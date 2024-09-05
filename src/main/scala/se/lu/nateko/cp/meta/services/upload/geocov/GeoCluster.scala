@@ -25,26 +25,28 @@ object GeoCluster:
 
 	def reducePointsTo(n: Int, geo: Geometry): Geometry =
 		assert(n >= 3, "only reduce to polygons")
+		val diam = geo.getEnvelopeInternal.getDiameter
 
 		def reduceInner(fromTol: Double, tol: Double, toTolOpt: Option[Double]): Geometry =
-			val attempt = DouglasPeuckerSimplifier.simplify(geo, tol)
-			val gotPoints = attempt.getNumPoints
+			if tol > diam * 10 then geo // failed to reduce the points despite huge tolerance
+			else
+				val attempt = DouglasPeuckerSimplifier.simplify(geo, tol)
+				val gotPoints = attempt.getNumPoints
 
-			if gotPoints == n || (tol - fromTol) / tol < 0.001 then
-				attempt // got exact result or converged
-			else if gotPoints < n then
-				// too strong reduction, reduce tolerance
-				reduceInner(fromTol, (fromTol + tol) / 2, Some(tol))
-			else toTolOpt match
-				case Some(toTol) =>
-					// too weak reduction, go half way to the known upper limit of tolerance
-					reduceInner(tol, (tol + toTol) / 2, Some(toTol))
-				case None =>
-					// too weak reduction, no known upper limit, so double the tolerance
-					reduceInner(tol, tol * 2, None)
+				if gotPoints == n || (tol - fromTol) / tol < 0.001 then
+					attempt // got exact result or converged
+				else if gotPoints < n then
+					// too strong reduction, reduce tolerance
+					reduceInner(fromTol, (fromTol + tol) / 2, Some(tol))
+				else toTolOpt match
+					case Some(toTol) =>
+						// too weak reduction, go half way to the known upper limit of tolerance
+						reduceInner(tol, (tol + toTol) / 2, Some(toTol))
+					case None =>
+						// too weak reduction, no known upper limit, so double the tolerance
+						reduceInner(tol, tol * 2, None)
 
-		if geo.getNumPoints <= n then geo else
-			reduceInner(0, 0.01 * geo.getEnvelopeInternal.getDiameter, None)
+		if geo.getNumPoints <= n then geo else reduceInner(0, 0.01 * diam, None)
 	end reducePointsTo
 
 	def join(geos: Seq[LabeledJtsGeo]): LabeledJtsGeo =

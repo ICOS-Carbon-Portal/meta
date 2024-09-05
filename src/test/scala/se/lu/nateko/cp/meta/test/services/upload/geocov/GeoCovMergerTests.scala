@@ -13,10 +13,8 @@ import ClusteringExample.convertStringsToJTS
 import TestGeometries.*
 
 class GeoCovMergerTests extends AnyFunSpec:
-	it("calling mergeSimpleGeoms with empty seq does nothing"):
-		val hulls = mergeIntersecting(IndexedSeq.empty)
-
-		assert(hulls === Seq.empty)
+	it("calling mergeIntersecting with empty seq does nothing"):
+		assert(mergeIntersecting(IndexedSeq.empty) === Seq.empty)
 
 	it("two polygons that overlap get merged correctly"):
 		val reader = WKTReader()
@@ -86,14 +84,13 @@ class GeoCovMergerTests extends AnyFunSpec:
 		assert(featureCollection.size == merged.size)
 
 	it("data object with more than maximum allowed free points will cluster the points"):
-		val geoms = toSimpleGeometries(TestGeoFeatures.modisWithMorePoints)
-		val merged = representativeCoverage(Seq(TestGeoFeatures.modisWithMorePoints), 30)
+		val init = TestGeoFeatures.modisWithMorePoints.features
+		val merged = representativeCoverage(init, 30)
 
-		assert(geoms.toSeq != merged)
-		assert(merged.length < geoms.length)
+		assert(merged.length < init.length)
 
 	it("simple geometries from ecosystem data"):
-		val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
+		val geoms = TestGeoFeatures.geoFeatures.map(toLabeledJts)
 
 		val expectedGeometries = convertStringsToJTS(
 			"POINT (2.780096 48.476357)",
@@ -107,7 +104,7 @@ class GeoCovMergerTests extends AnyFunSpec:
 		assert(geoms.map(_.geom) == expectedGeometries)
 
 	it("mergeIntersecting from ecosystem data"):
-		val geoms = TestGeoFeatures.geoFeatures.flatMap(toSimpleGeometries)
+		val geoms = TestGeoFeatures.geoFeatures.map(toLabeledJts)
 		val mergedSeq = mergeIntersecting(geoms)
 
 		assert(mergedSeq.length == 1)
@@ -116,7 +113,7 @@ class GeoCovMergerTests extends AnyFunSpec:
 
 
 	it("simple geometries from ocean data"):
-		val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
+		val geoms = TestGeoFeatures.oceanGeoTracks.map(toLabeledJts)
 
 		val expectedGeometries = convertStringsToJTS(
 			"POLYGON ((-52.267 63.864, -52.275 63.996, -51.726 64.159, -22.047 64.188, -6.766 62, 11.164 57.669, 11.364 57.49, 12.654 56.036, 10.852 56.056, -1.746 59.746, -43.881 59.562, -52.267 63.864))",
@@ -127,7 +124,7 @@ class GeoCovMergerTests extends AnyFunSpec:
 		assert(geoms.map(_.geom) == expectedGeometries)
 
 	it("mergeIntersecting from ocean data"):
-		val geoms = TestGeoFeatures.oceanGeoTracks.flatMap(toSimpleGeometries)
+		val geoms = TestGeoFeatures.oceanGeoTracks.map(toLabeledJts)
 		val mergedSeq = mergeIntersecting(geoms)
 		assert(mergedSeq.length == 1)
 		val merged = mergedSeq.head

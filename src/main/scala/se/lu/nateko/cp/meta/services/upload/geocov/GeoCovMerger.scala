@@ -23,13 +23,15 @@ import se.lu.nateko.cp.meta.services.sparql.magic.ConcaveHullLengthRatio
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.core.data.PositionUtil
 import scala.collection.mutable.ArrayBuffer
+import org.locationtech.jts.index.strtree.STRtree
+import org.locationtech.jts.geom.Envelope
 
 
 
 object GeoCovMerger:
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], threshNgeoms: Int): Seq[GeoFeature] =
-		val fused = mergeIntersecting(geoFeatures.flatMap(toSimpleGeometries).toIndexedSeq)
+		val fused = mergeIntersecting(geoFeatures.map(toLabeledJts).toIndexedSeq)
 		val charSize = characteristicSize(fused.map(_.geom))
 		val resGeoms =
 			if fused.size <= threshNgeoms then fused
@@ -47,24 +49,36 @@ object GeoCovMerger:
 
 
 	def mergeIntersecting(gs: IndexedSeq[LabeledJtsGeo]): Seq[LabeledJtsGeo] =
-		mergeGeos(gs, (g1, g2) => g1.geom.intersects(g2.geom), gs => Seq(GeoCluster.join(gs).fuse))
+		mergeGeos(gs, (g1, g2) => g1.geom.intersects(g2.geom), None, gs => Seq(GeoCluster.join(gs).fuse))
 
 	def mergeClose(gs: IndexedSeq[LabeledJtsGeo], maxDistance: Double): Seq[LabeledJtsGeo] =
-		mergeGeos(gs, _.isWithinDistance(_, maxDistance), GeoCluster.fuse)
+		mergeGeos(gs, _.isWithinDistance(_, maxDistance), Some(maxDistance), GeoCluster.fuse)
 
-	// TODO Consider using an STRtree index for overlapping and proximity detection
-	// instead of the nested loop
 	private def mergeGeos(
 		gs: IndexedSeq[LabeledJtsGeo],
 		criterion: (LabeledJtsGeo, LabeledJtsGeo) => Boolean,
+		padding: Option[Double],
 		fuser: IndexedSeq[LabeledJtsGeo] => Seq[LabeledJtsGeo]
 	): Seq[LabeledJtsGeo] =
+
+		val rtree = STRtree()
+
+		def envelope(g: LabeledJtsGeo): Envelope =
+			val base = g.geom.getEnvelopeInternal
+			padding.foreach(dist => base.expandBy(dist))
+			base
+
+		gs.zipWithIndex.foreach((g, i) => rtree.insert(envelope(g), i))
+
 		val clusters = new ClusterRegistry
-		for
-			i <- gs.indices
-			j <- (i + 1) until gs.length
-		do
-			if criterion(gs(i), gs(j)) then clusters.addIndexPair(i, j)
+
+		for i <- gs.indices do
+			val currEnv = gs(i).geom.getEnvelopeInternal
+			val jList = rtree.query(currEnv)
+			//println(s"Got ${jList.size} for $i")
+			jList.forEach: idx =>
+				val j = idx.asInstanceOf[Integer]
+				if i != j && criterion(gs(i), gs(j)) then clusters.addIndexPair(i, j)
 
 		clusters.enumerateClusters
 			.flatMap: idxs =>
@@ -73,16 +87,18 @@ object GeoCovMerger:
 			++ gs.indices.filterNot(clusters.isClustered).map(gs.apply)
 
 
-	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledJtsGeo] = gf match
-		case b: LatLonBox => Seq(polygonToJts(b.asPolygon))
-		case c: Circle =>
-			Seq(polygonToJts(circleToBox(c).asPolygon))
-		case poly: Polygon => Seq(polygonToJts(poly))
-		case p: Position => Seq(toPoint(p))
-		case pin: Pin => Seq(toPoint(pin.position))
-		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
+	def toLabeledJts(gf: GeoFeature): LabeledJtsGeo = gf match
+		case b: LatLonBox => polygonToJts(b.asPolygon)
+		case c: Circle => polygonToJts(circleToBox(c).asPolygon)
+		case poly: Polygon => polygonToJts(poly)
+		case p: Position => toPoint(p)
+		case pin: Pin => toPoint(pin.position)
+		case gt: GeoTrack => LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq)
 		case fc: FeatureCollection =>
-			fc.features.flatMap(toSimpleGeometries)
+			val lblGeos = fc.features.map(toLabeledJts)
+			val geom = GeometryCollection(lblGeos.map(_.geom).toArray, JtsGeoFactory)
+			val labels = lblGeos.flatMap(_.labels).distinct
+			LabeledJtsGeo(geom, labels)
 
 	private def toPoint(p: Position): LabeledJtsGeo =
 		LabeledJtsGeo(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label.toSeq)

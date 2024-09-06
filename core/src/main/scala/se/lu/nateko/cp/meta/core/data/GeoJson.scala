@@ -43,7 +43,7 @@ object GeoJson {
 		case Polygon(vertices, _, _) => Right(JsObject(
 			"type"        -> JsString("Polygon"),
 			"coordinates" -> JsArray(
-				JsArray((vertices ++ vertices.headOption).map(coordinates).toVector)
+				JsArray(shortCircuit(vertices.map(coordinates)).toVector)
 			)
 		))
 
@@ -90,6 +90,11 @@ object GeoJson {
 				))
 			}
 	}
+
+	private def shortCircuit(vertices: Seq[JsArray]): Seq[JsArray] =
+		if vertices.size < 3 then vertices else
+			if vertices.head.elements == vertices.last.elements then vertices
+			else vertices :+ vertices.head
 
 	private def wrapGeoInFeature(geo: JsObject, labelOpt: Option[String]) = JsObject(
 		"type" -> JsString("Feature"),

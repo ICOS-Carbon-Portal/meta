@@ -22,7 +22,7 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 	private val spatialCovSelect = new Select[SpatialCoverage](s"${lbl}geoselect", _.label, autoselect = false, onSpatCoverSelected)
 	private val spatCoverElements = new HtmlElements(s".geocov-element")
 
-	private var customSpatCovMeta: Option[GeoFeature] = None
+	private var originalSpatCov: Option[Either[GeoFeature, URI]] = None
 
 	private val spatCovLabel = new TextOptInput(s"${lbl}geolbl", () => ())
 	private val minLatInput = new DoubleInput(s"${lbl}geominlat", notifyUpdate)
@@ -32,22 +32,26 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 
 	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
 	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
-	private val customSpatCovWarningMsg = "This item has a custom spatial coverage, which cannot be updated in UploadGUI"
+	private val customSpatCovWarningMsg = "This item has a custom spatial coverage, which cannot be edited in UploadGUI" +
+		" (but can be reset to be automatically regenerated)"
 
-	def spatialCoverage: Try[Either[GeoFeature, URI]] = spatialCovSelect
-		.value.withMissingError("spatial coverage").flatMap{spCov =>
-			if(spCov eq customLatLonBox)
-				for(
-					minLat <- minLatInput.value;
-					minLon <- minLonInput.value;
-					maxLat <- maxLatInput.value;
-					maxLon <- maxLonInput.value;
+	def spatialCoverage: Try[Either[GeoFeature, URI]] = spatialCovSelect.value
+		.withMissingError("spatial coverage")
+		.flatMap:
+			case `customLatLonBox` =>
+				for
+					minLat <- minLatInput.value
+					minLon <- minLonInput.value
+					maxLat <- maxLatInput.value
+					maxLon <- maxLonInput.value
 					label <- spatCovLabel.value
-				) yield Left(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
-			else if (spCov eq customSpatCov) Try(customSpatCovMeta.get).map: gf =>
-				gf.uri.fold(Left(gf))(Right(_))
-			else Success(Right(spCov.uri))
-		}
+				yield Left:
+					LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None)
+
+			case `customSpatCov` =>
+				originalSpatCov.withMissingError("custom spatial coverage")
+			case spCov => Success(Right(spCov.uri))
+
 
 	def resetSpatialCovOptions(): Unit = spatialCovSelect.setOptions(customLatLonBox +: covs)
 
@@ -63,33 +67,41 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 			UploadApp.hideAlert()
 		notifyUpdate()
 
-	def handleReceivedSpatialCoverage(spatCov: Either[GeoFeature, URI]): Unit = spatCov match
-		case Left(cov) =>
-			cov match
-				case b: LatLonBox =>
-					resetSpatialCovOptions()
-					minLatInput.value = b.min.lat
-					minLonInput.value = b.min.lon
-					maxLatInput.value = b.max.lat
-					maxLonInput.value = b.max.lon
-					spatialCovSelect.value = customLatLonBox
-					spatCoverElements.show()
-					spatialCovSelect.enable()
-				case cov: GeoFeature =>
-					spatialCovSelect.setOptions(IndexedSeq(customSpatCov))
-					customSpatCovMeta = Some(cov)
-					spatCoverElements.hide()
-					spatialCovSelect.value = customSpatCov
-					spatialCovSelect.disable()
-					UploadApp.showAlert(customSpatCovWarningMsg, "alert alert-warning")
-			spatCovLabel.value = cov.label
-		case Right(covUri) =>
-			resetLatLonBox()
-			spatCoverElements.hide()
-			resetSpatialCovOptions()
-			covs.find(_.uri == covUri).fold(spatialCovSelect.reset()){
-				cov => spatialCovSelect.value = cov
-			}
+	def handleReceivedSpatialCoverage(spatCov: Option[Either[GeoFeature, URI]]): Unit =
+		originalSpatCov = spatCov
+		spatCov match
+			case None =>
+				resetForm()
+			case Some(Left(cov)) =>
+				cov match
+					case b: LatLonBox =>
+						resetSpatialCovOptions()
+						minLatInput.value = b.min.lat
+						minLonInput.value = b.min.lon
+						maxLatInput.value = b.max.lat
+						maxLonInput.value = b.max.lon
+						spatialCovSelect.value = customLatLonBox
+						spatCoverElements.show()
+						spatialCovSelect.enable()
+					case cov: GeoFeature =>
+						spatCoverElements.hide()
+						switchToCustomCovMode()
+				spatCovLabel.value = cov.label
+			case Some(Right(covUri)) =>
+				resetLatLonBox()
+				spatCoverElements.hide()
+				covs.find(_.uri == covUri) match
+					case None => switchToCustomCovMode()
+					case Some(stockCov) =>
+						resetSpatialCovOptions()
+						spatialCovSelect.value = stockCov
+
+	private def switchToCustomCovMode(): Unit =
+		spatialCovSelect.setOptions(IndexedSeq(customSpatCov))
+		spatialCovSelect.value = customSpatCov
+		spatialCovSelect.disable()
+		UploadApp.showAlert(customSpatCovWarningMsg, "alert alert-warning")
+
 
 	private def resetLatLonBox(): Unit =
 		spatCovLabel.reset()

@@ -40,7 +40,6 @@ import scala.util.Using
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
-import se.lu.nateko.cp.meta.api.RdfLenses
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 

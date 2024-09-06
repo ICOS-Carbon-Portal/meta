@@ -85,7 +85,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				samplingHeightInput.value = spatTemp.samplingHeight
 				externalPageInput.value = spatTemp.customLandingPage
 				varInfoForm.setValues(spatTemp.variables)
-				spatialCovSelect.handleReceivedSpatialCoverage(spatTemp.spatial)
+				spatialCovSelect.handleReceivedSpatialCoverage(Some(spatTemp.spatial))
 				show()
 			case _ =>
 				hide()

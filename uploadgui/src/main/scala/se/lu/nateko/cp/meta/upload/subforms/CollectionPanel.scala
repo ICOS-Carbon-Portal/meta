@@ -42,7 +42,7 @@ class CollectionPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus
 			collectionMembers.value = dto.members
 			collectionDescription.value = dto.description
 			collectionDoc.value = dto.documentation
-			dto.coverage.foreach(spatialCovSelect.handleReceivedSpatialCoverage)
+			spatialCovSelect.handleReceivedSpatialCoverage(dto.coverage)
 			notifyUpdate()
 			show()
 		case _ =>

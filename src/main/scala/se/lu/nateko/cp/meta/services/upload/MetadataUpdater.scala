@@ -1,27 +1,32 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.IRI
-
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import se.lu.nateko.cp.meta.api.RdfLens.CollConn
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getOptionalUri
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getStatements
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getUriValues
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.hasStatement
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.eclipse.rdf4j.model.ValueFactory
-import eu.icoscp.envri.Envri
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import scala.util.Using
 
 abstract class MetadataUpdater(vocab: CpVocab):
 	import MetadataUpdater.*
@@ -60,16 +65,27 @@ abstract class MetadataUpdater(vocab: CpVocab):
 	end calculateUpdates
 end MetadataUpdater
 
-class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab) {
+class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab):
 	import MetadataUpdater.*
 	import StatementStability.*
 
-	override protected def stability(sp: SubjPred, hash: Sha256Sum)(implicit envri: Envri): StatementStability = {
-		val pred = sp._2
-		if(pred === metaVocab.dcterms.hasPart) Fixed
+	override protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability =
+		val (subj, pred) = sp
+		def subjIsSpatCov = subj match
+			case s: IRI if s === vocab.getSpatialCoverage(hash) => true
+			case _ => false
+
+		if pred === metaVocab.dcterms.hasPart then Fixed
+		else if subjIsSpatCov then Sticky
 		else Plain
-	}
-}
+
+	def getCurrentStatements(collIri: IRI)(using CollConn): IndexedSeq[Statement] =
+		getStatements(collIri, null, null).toIndexedSeq ++
+		getUriValues(collIri, metaVocab.hasSpatialCoverage).flatMap: covIri =>
+			getStatements(covIri, null, null)
+
+end StaticCollMetadataUpdater
+
 
 class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends MetadataUpdater(vocab):
 	import MetadataUpdater.*

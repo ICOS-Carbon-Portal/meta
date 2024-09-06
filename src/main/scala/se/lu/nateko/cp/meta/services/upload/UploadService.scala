@@ -77,16 +77,15 @@ class UploadService(
 			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
 		yield accessUri
 
-	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using Envri): Try[AccessUri] =
+	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Try[AccessUri] =
 
 		UploadService.collectionHash(coll.members).flatMap: collHash =>
 			uploadLock.wrapTry(collHash):
 				servers.vanillaGlobal.access: conn ?=>
-					given GlobConn = RdfLens.global(using conn)
 					val collWithCoverageTry = coll.coverage match
 						case Some(_) => Success(coll)
 						case None =>
-							getCollCoverages(coll.members).toTry(new MetadataException(_)).map: covs =>
+							getCollCoverages(coll.members)(using envri, RdfLens.global).toTry(new MetadataException(_)).map: covs =>
 								val gfs = geocov.GeoCovMerger.representativeCoverage(covs, 100)
 								val cov = gfs.toList match
 									case Nil => None
@@ -95,14 +94,16 @@ class UploadService(
 								coll.copy(coverage = cov)
 					for
 						collWithCoverage <- collWithCoverageTry;
-						_ <- validator.validateCollection(collWithCoverage, collHash, uploader);
+						_ <- validator.validateCollection(collWithCoverage, collHash, uploader)(using envri, RdfLens.global);
 						submitterConf <- validator.getSubmitterConfig(collWithCoverage);
 						submittingOrg = submitterConf.submittingOrganization;
 						collIri = vocab.getCollection(collHash);
 						server <- servers.collectionServer.toTry(new MetadataException(_))
+						collGraphUri = server.writeContext.toJava
+						collLens = RdfLens.collLens(collGraphUri, Seq(collGraphUri))
 						updates = server.access:
 							val newStatements = statementProd.getCollStatements(collWithCoverage, collIri, submittingOrg)
-							val oldStatements = getStatements(collIri)
+							val oldStatements = staticCollUpdater.getCurrentStatements(collIri)(using collLens)
 							staticCollUpdater.calculateUpdates(collHash, oldStatements, newStatements)
 						_ <- server.applyAll(updates)()
 					yield

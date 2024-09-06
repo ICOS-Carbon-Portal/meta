@@ -31,7 +31,17 @@ import org.locationtech.jts.geom.Envelope
 object GeoCovMerger:
 
 	def representativeCoverage(geoFeatures: Seq[GeoFeature], threshNgeoms: Int): Seq[GeoFeature] =
-		val fused = mergeIntersecting(geoFeatures.map(toLabeledJts).toIndexedSeq)
+		// pre-merging top-level feature collections
+		val withMergedColls = geoFeatures.flatMap:
+			case FeatureCollection(features, lblOpt, _) =>
+				val merged = mergeIntersecting(features.flatMap(toSimpleGeometries).toIndexedSeq)
+				lblOpt.fold(merged): collLbl =>
+					merged.map: lGeom => // preserve the feature collection label
+						lGeom.copy(labels = (collLbl +: lGeom.labels).distinct)
+			case other =>
+				toSimpleGeometries(other)
+
+		val fused = mergeIntersecting(withMergedColls.toIndexedSeq)
 		val charSize = characteristicSize(fused.map(_.geom))
 		val resGeoms =
 			if fused.size <= threshNgeoms then fused
@@ -85,20 +95,18 @@ object GeoCovMerger:
 				fuser(idxs.toIndexedSeq.map(gs.apply))
 			.toSeq
 			++ gs.indices.filterNot(clusters.isClustered).map(gs.apply)
+	end mergeGeos
 
-
-	def toLabeledJts(gf: GeoFeature): LabeledJtsGeo = gf match
-		case b: LatLonBox => polygonToJts(b.asPolygon)
-		case c: Circle => polygonToJts(circleToBox(c).asPolygon)
-		case poly: Polygon => polygonToJts(poly)
-		case p: Position => toPoint(p)
-		case pin: Pin => toPoint(pin.position)
-		case gt: GeoTrack => LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq)
+	def toSimpleGeometries(gf: GeoFeature): Seq[LabeledJtsGeo] = gf match
+		case b: LatLonBox => Seq(polygonToJts(b.asPolygon))
+		case c: Circle =>
+				Seq(polygonToJts(circleToBox(c).asPolygon))
+		case poly: Polygon => Seq(polygonToJts(poly))
+		case p: Position => Seq(toPoint(p))
+		case pin: Pin => Seq(toPoint(pin.position))
+		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
 		case fc: FeatureCollection =>
-			val lblGeos = fc.features.map(toLabeledJts)
-			val geom = GeometryCollection(lblGeos.map(_.geom).toArray, JtsGeoFactory)
-			val labels = lblGeos.flatMap(_.labels).distinct
-			LabeledJtsGeo(geom, labels)
+			fc.features.flatMap(toSimpleGeometries)
 
 	private def toPoint(p: Position): LabeledJtsGeo =
 		LabeledJtsGeo(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label.toSeq)

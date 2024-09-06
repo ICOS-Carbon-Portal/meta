@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.core.data.PositionUtil.average
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.mergeIntersecting
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.representativeCoverage
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.toLabeledJts
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 
 import java.nio.file.Files

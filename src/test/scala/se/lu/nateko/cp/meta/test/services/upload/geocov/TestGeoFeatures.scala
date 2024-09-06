@@ -42,7 +42,7 @@ object TestGeoFeatures:
 
 	def readTestInput(): Seq[GeoFeature] =
 		if !Files.exists(inputGeosJsonPath) then
-			println("Input not found, fetching and preparing, make take a minute...")
+			println("Input not found, fetching and preparing, may take a minute...")
 			prepareTestInput()
 			Nil
 		else
@@ -93,7 +93,7 @@ object TestGeoFeatures:
 					): writer =>
 						writer.write:
 							dobjs.flatMap(_.coverage).toSeq.toJson.prettyPrint
-						println(s"Written json to ${inputGeosJsonPath.toAbsolutePath}")
+						println(s"Written compressed json to ${inputGeosJsonPath.toAbsolutePath}")
 						akka.Done
 			.onComplete: doneTry =>
 				sys.terminate()

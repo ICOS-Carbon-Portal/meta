@@ -258,6 +258,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				samplingPoint = samplingPoint,
 				samplingHeight = samplingHeight
 			)
+
+			val lblCoverage = coverage.map: cov =>
+				if cov.label.isDefined then cov else cov.withLabel(station.org.name)
+
 			val columnsOptV = columnNames.flatMap(parseJsonStringArray)
 				.map:
 					_.flatMap(vtLookup.lookup).toIndexedSeq
@@ -270,7 +274,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 						case Some(interval) =>
 							addInstrDeplInfo(stationUri, interval, columns)
 			columnsOptV.sinkOption.map: columnsOpt =>
-				StationTimeSeriesMeta(acq, prod, nRows, coverage, columnsOpt)
+				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt)
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 

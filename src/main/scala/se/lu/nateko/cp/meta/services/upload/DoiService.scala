@@ -42,20 +42,21 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionCont
 
 	private def saveDoi(meta: DoiMeta)(using Envri): Future[Unit] = client.putMetadata(meta)
 
-	private def fetchCollObjectsRecursively(coll: StaticCollection): Seq[Validated[StaticObject]] =
-		coll.members.flatMap:
-			case plain: PlainStaticObject => Seq(fetcher.fetchStaticObject(Uri(plain.res.toString)))
-			case plainColl: PlainStaticCollection =>
-				val staticColl = fetcher.fetchStaticCollection(Uri(plainColl.res.toString)).result
-				staticColl match
-					case Some(sC) => fetchCollObjectsRecursively(sC)
-					case None => Seq.empty
-			case coll: StaticCollection => fetchCollObjectsRecursively(coll)
+	private def fetchCollObjectsRecursively(coll: StaticCollection): Validated[Seq[StaticObject]] =
+		Validated.sequence:
+			coll.members.map:
+				case dobj: PlainStaticObject =>
+					fetcher.fetchStaticObject(Uri(dobj.res.toString))
+						.map(Seq(_))
+				case coll: PlainStaticCollection =>
+					fetcher.fetchStaticCollection(Uri(coll.res.toString))
+						.flatMap(fetchCollObjectsRecursively)
+		.map(_.flatten)
 
 	def createDraftDoi(dataItemLandingPage: URI)(using Envri): Future[Validated[Doi]] =
 		import UriSerializer.Hash
 		val uri = Uri(dataItemLandingPage.toString)
-		val dataCite = DataCite(s => client.doi(s), coll => Validated.sequence(fetchCollObjectsRecursively(coll)))
+		val dataCite = DataCite(s => client.doi(s), fetchCollObjectsRecursively)
 
 		val doiMetaV: Validated[DoiMeta] =
 			(uri.path match

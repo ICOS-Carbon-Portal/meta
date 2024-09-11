@@ -34,21 +34,6 @@ trait CpmetaReader:
 	def getPlainDocObject(dobj: IRI)(using DocConn): Validated[PlainStaticObject] =
 		getPlainStaticObject(dobj)
 
-	def getHashFromIri(iri: IRI): Validated[Sha256Sum] =
-		val hashSegment = iri.toString.split("/").last
-		val sha256Sum = Sha256Sum.fromString(hashSegment)
-
-		Validated.fromTry(sha256Sum)
-
-	def getPlainStaticCollection(coll: IRI)(using CollConn): Validated[PlainStaticCollection] =
-		for
-			hashsum <- getHashFromIri(coll)
-			fileName <- getOptionalString(coll, metaVocab.dcterms.title).flatMap:
-				case None => getSingleString(coll, metaVocab.hasName)
-				case Some(title) => Validated.ok(title)
-		yield
-			PlainStaticCollection(coll.toJava, hashsum, fileName)
-
 	private def getPlainStaticObject(dobj: IRI)(using TSC): Validated[PlainStaticObject] =
 		for
 			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)

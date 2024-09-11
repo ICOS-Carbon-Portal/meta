@@ -84,16 +84,23 @@ trait CommonJsonSupport:
 				vanilla.fields + ("errors" -> JsArray(obj.errors.map(JsString(_))*))
 			)
 
+	extension (js: JsObject)
+		def +(field: (String, JsValue)): JsObject =
+			JsObject(js.fields + field)
+	extension (js: JsValue)
+		def pluss(field: (String, String)): JsObject =
+			js.asJsObject + (field._1 -> JsString(field._2))
 
 end CommonJsonSupport
 
-extension [T: RootJsonWriter](v: T){
-	def toTypedJson(typ: String) = JsObject(
-		v.toJson.asJsObject.fields + (CommonJsonSupport.TypeField -> JsString(typ))
-	)
-}
+extension [T: RootJsonWriter](v: T)
+	def toTypedJson(typ: String): JsObject =
+		import CommonJsonSupport.{pluss, TypeField}
+		v.toJson.pluss(TypeField -> typ)
 
-object CommonJsonSupport:
+
+object CommonJsonSupport extends CommonJsonSupport:
 	val TypeField = "_type"
 
 	class WithErrors[T](val value: T, val errors: Seq[String])
+

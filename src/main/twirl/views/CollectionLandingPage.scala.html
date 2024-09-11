@@ -40,7 +40,7 @@
 					@htmlProperty{
 						@if(i == 0) {Items} else {}
 					}{
-						@staticDataItemLink(item)
+						<a target="_blank" href=@{item.res}>@{item.name}</a>
 					}
 				}
 
@@ -84,18 +84,4 @@
 	<script type="application/ld+json">
 		@Html(SchemaOrg(handleProxies).collJson(coll).prettyPrint)
 	</script>
-}
-
-@staticDataItemLink(item: StaticDataItem) = {
-	@item match {
-		case PlainStaticObject(res, _, name) => {
-			<a target="_blank" href=@{res}>@{name}</a>
-		}
-		case psColl: PlainStaticCollection => {
-			<a target="_blank" href=@{psColl.res}>@{psColl.name}</a>
-		}
-		case coll: StaticCollection => {
-			<a target="_blank" href=@{coll.res}>@{coll.title}</a>
-		}
-	}
 }

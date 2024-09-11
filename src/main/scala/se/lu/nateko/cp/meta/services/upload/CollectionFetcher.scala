@@ -58,6 +58,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 		for
+			hash <- hashOpt.fold(hashFromIri(coll))(Validated.ok)
 			creatorUri <- getSingleUri[CollConn](coll, dct.creator)
 			members <- membersV
 			creator <- getOrganization(creatorUri)(using collConn)
@@ -69,7 +70,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		yield
 			val init = StaticCollection(
 				res = coll.toJava,
-				hash = hashOpt.getOrElse(Sha256Sum.fromBase64Url(coll.getLocalName).get),
+				hash = hash,
 				members = members.sortBy(_.name),
 				creator = creator,
 				title = title,
@@ -83,5 +84,15 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			)
 			//TODO Consider adding collection-specific logic for licence information
 			init.copy(references = citer(init).copy(title = Some(init.title)))
+
+	private def hashFromIri(iri: IRI): Validated[Sha256Sum] = Validated.fromTry:
+		Sha256Sum.fromBase64Url(iri.getLocalName)
+
+	private def getPlainStaticCollection(coll: IRI)(using CollConn): Validated[PlainStaticCollection] =
+		for
+			hashsum <- hashFromIri(coll)
+			title <- getCollTitle(coll)
+		yield
+			PlainStaticCollection(coll.toJava, hashsum, title)
 
 end CollectionReader

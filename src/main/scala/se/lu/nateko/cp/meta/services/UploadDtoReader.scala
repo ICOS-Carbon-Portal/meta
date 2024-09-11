@@ -110,10 +110,7 @@ object UploadDtoReader{
 
 	def collToDto(coll: StaticCollection) = StaticCollectionDto(
 		submitterId = "",
-		members = coll.members.map(_ match {
-			case pso: PlainStaticObject=> pso.res
-			case sc: StaticCollection => sc.res
-		}),
+		members = coll.members.map(_.res),
 		title = coll.title,
 		description = coll.description,
 		isNextVersionOf = coll.previousVersion.flatMap{uri =>

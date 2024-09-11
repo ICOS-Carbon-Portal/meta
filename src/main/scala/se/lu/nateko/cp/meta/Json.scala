@@ -17,12 +17,6 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpEntity
 
-extension (js: JsValue)
-	def +(kv: (String, String)): JsObject =
-		val jsKv: (String, JsValue) = (kv._1, JsString(kv._2))
-		JsObject(js.asJsObject.fields + jsKv)
-
-
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import DefaultJsonProtocol.*
 
@@ -50,19 +44,19 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[OneOfRestrictionDto] = jsonFormat1(OneOfRestrictionDto.apply)
 
 	given JsonFormat[ValueDto] with{
-		override def write(dto: ValueDto) = dto match{
-			case dto: LiteralValueDto => dto.toJson + ("type" -> "literal")
-			case dto: ObjectValueDto => dto.toJson + ("type" -> "object")
-		}
+		override def write(dto: ValueDto) = dto match
+			case dto: LiteralValueDto => dto.toJson.pluss("type" -> "literal")
+			case dto: ObjectValueDto => dto.toJson.pluss("type" -> "object")
+
 		override def read(value: JsValue) = ???
 	}
 
 	given JsonFormat[DataRestrictionDto] with{
 		override def write(dto: DataRestrictionDto) = dto match{
-			case dto: MinRestrictionDto => dto.toJson + ("type" -> "minValue")
-			case dto: MaxRestrictionDto => dto.toJson + ("type" -> "maxValue")
-			case dto: RegexpRestrictionDto => dto.toJson + ("type" -> "regExp")
-			case dto: OneOfRestrictionDto => dto.toJson + ("type" -> "oneOf")
+			case dto: MinRestrictionDto => dto.toJson.pluss("type" -> "minValue")
+			case dto: MaxRestrictionDto => dto.toJson.pluss("type" -> "maxValue")
+			case dto: RegexpRestrictionDto => dto.toJson.pluss("type" -> "regExp")
+			case dto: OneOfRestrictionDto => dto.toJson.pluss("type" -> "oneOf")
 		}
 		override def read(value: JsValue) = ???
 	}
@@ -74,8 +68,8 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 
 	given JsonFormat[PropertyDto] with{
 		override def write(dto: PropertyDto) = dto match{
-			case dto: DataPropertyDto => dto.toJson + ("type" -> "dataProperty")
-			case dto: ObjectPropertyDto => dto.toJson + ("type" -> "objectProperty")
+			case dto: DataPropertyDto => dto.toJson.pluss("type" -> "dataProperty")
+			case dto: ObjectPropertyDto => dto.toJson.pluss("type" -> "objectProperty")
 		}
 		override def read(value: JsValue) = ???
 	}

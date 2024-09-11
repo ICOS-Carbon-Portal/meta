@@ -16,6 +16,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[Project] = jsonFormat2(Project.apply)
 	given RootJsonFormat[DataTheme] = jsonFormat3(DataTheme.apply)
 	given RootJsonFormat[PlainStaticObject] = jsonFormat3(PlainStaticObject.apply)
+	given RootJsonFormat[PlainStaticCollection] = jsonFormat3(PlainStaticCollection.apply)
 	given JsonFormat[DatasetType] = enumFormat(DatasetType.valueOf, DatasetType.values)
 	given RootJsonFormat[DatasetSpec] = jsonFormat2(DatasetSpec.apply)
 	private val vanillaObjectFormatFormat = jsonFormat2(ObjectFormat.apply)
@@ -25,7 +26,7 @@ object JsonSupport extends CommonJsonSupport:
 			val vanilla = vanillaObjectFormatFormat.write(obj).asJsObject
 			// extra field for backwards compatibility with the older version of the JSON
 			// (needed by icoscp pylib version 0.1.19 and below)
-			JsObject(vanilla.fields + ("uri" -> obj.self.uri.toJson))
+			vanilla + ("uri" -> obj.self.uri.toJson)
 
 	given RootJsonFormat[DataObjectSpec] = jsonFormat10(DataObjectSpec.apply)
 
@@ -70,8 +71,7 @@ object JsonSupport extends CommonJsonSupport:
 				case geocol: FeatureCollection => geocol.toJson
 				case c: Circle => c.toJson
 				case p: Pin => p.toJson
-			val allFields = vanilla.asJsObject.fields + (TypeField -> JsString(geo.getClass.getSimpleName))
-			JsObject(allFields)
+			vanilla.pluss(TypeField -> geo.getClass.getSimpleName)
 
 		def read(value: JsValue): GeoFeature = value match
 			case JsObject(fields) =>
@@ -91,8 +91,7 @@ object JsonSupport extends CommonJsonSupport:
 		def write(geo: GeoFeature): JsValue =
 			val base = vanillaGeoFeatureFormat.write(geo)
 			val geoJson = GeoJson.fromFeatureWithLabels(geo)
-			val allFields = base.asJsObject.fields + ("geo" -> geoJson)
-			JsObject(allFields)
+			base.asJsObject + ("geo" -> geoJson)
 
 		def read(value: JsValue): GeoFeature = vanillaGeoFeatureFormat.read(value)
 
@@ -194,16 +193,14 @@ object JsonSupport extends CommonJsonSupport:
 
 		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
 
-		def write(dobj: DataObject): JsValue = {
+		def write(dobj: DataObject): JsValue =
 			val plain = dobj.toJson(defFormat).asJsObject
-			dobj.coverage.fold(plain) { geo =>
-				JsObject(plain.fields + (GeoJsonField -> GeoJson.fromFeatureWithLabels(geo)))
-			}
-		}
+			dobj.coverage.fold(plain): geo =>
+				plain + (GeoJsonField -> GeoJson.fromFeatureWithLabels(geo))
 	}
 
 	given RootJsonFormat[StaticObject] with{
-		override def read(value: JsValue): StaticObject = value match {
+		override def read(value: JsValue): StaticObject = value match
 			case JsObject(fields)  =>
 				if(fields.contains("specification"))
 					value.convertTo[DataObject]
@@ -211,11 +208,10 @@ object JsonSupport extends CommonJsonSupport:
 					value.convertTo[DocObject]
 			case _ =>
 				deserializationError("Expected JS object representing a data/doc object")
-		}
-		override def write(so: StaticObject): JsValue = so match{
+
+		override def write(so: StaticObject): JsValue = so match
 			case dobj: DataObject => dobj.toJson
 			case doc: DocObject => doc.toJson
-		}
 	}
 
 	given RootJsonFormat[StaticCollection] with
@@ -229,26 +225,26 @@ object JsonSupport extends CommonJsonSupport:
 
 			coll.coverage.fold(plain): feature =>
 				val geoJson = GeoJson.fromFeatureWithLabels(feature)
-				JsObject(plain.fields + (GeoJsonField -> geoJson))
+				plain + (GeoJsonField -> geoJson)
 
 
 
-	given RootJsonFormat[StaticDataItem] with{
+	given RootJsonFormat[PlainStaticItem] with{
 
-		def write(sdi: StaticDataItem): JsValue = sdi match{
-			case pdo: PlainStaticObject => pdo.toJson
-			case sc: StaticCollection => sc.toJson
-		}
+		def write(psi: PlainStaticItem): JsValue = psi match
+			case pso: PlainStaticObject => pso.toJson
+			case psc: PlainStaticCollection =>
+				// extra field to prevent breakage of Python using icoscp_core 0.3.5 or older
+				psc.toJson.pluss("name" -> psc.name)
 
-		def read(value: JsValue): StaticDataItem = value match {
+		def read(value: JsValue): PlainStaticItem = value match
 			case JsObject(fields) =>
-				if(fields.contains("title"))
-					value.convertTo[StaticCollection]
+				if fields.contains("title") then
+					value.convertTo[PlainStaticCollection]
 				else
 					value.convertTo[PlainStaticObject]
 			case _ =>
-				deserializationError("Expected JS object representing static collection or a plain data object")
-		}
+				deserializationError("Expected JS object representing a plain static collection or a plain data object")
 	}
 
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)

@@ -18,6 +18,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.util.Try
+import se.lu.nateko.cp.meta.api.RdfLens.CollConn
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 trait CpmetaReader:

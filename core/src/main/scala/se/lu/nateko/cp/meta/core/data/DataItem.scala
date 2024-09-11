@@ -4,9 +4,6 @@ import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
-sealed trait DataItem:
-	def res: URI
-
 sealed trait PlainStaticItem extends DataItem:
 	def hash: Sha256Sum
 	def name: String
@@ -23,6 +20,11 @@ sealed trait DataItemCollection extends DataItem:
 	def title: String
 	def description: Option[String]
 	def doi: Option[String]
+
+// DataItem declaration is placed here to produce correct Python type declarations
+// (Python type checker is sensitive to the order)
+sealed trait DataItem:
+	def res: URI
 
 final case class StaticCollection(
 	res: URI,

@@ -200,7 +200,7 @@ function getGeoJson(queryParams) {
 
 function getItemLocations(itemUrl){
 	return getJson(itemUrl).then(res => {
-		return [{geoJson: res.coverageGeo}];
+		return [{geoJson: res.coverage ? res.coverage.geo : res.coverageGeo}];
 	});
 }
 

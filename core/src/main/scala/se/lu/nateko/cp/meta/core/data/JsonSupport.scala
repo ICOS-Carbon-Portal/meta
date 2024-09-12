@@ -214,20 +214,7 @@ object JsonSupport extends CommonJsonSupport:
 			case doc: DocObject => doc.toJson
 	}
 
-	given RootJsonFormat[StaticCollection] with
-
-		private val defFormat = jsonFormat14(StaticCollection.apply)
-
-		def read(value: JsValue): StaticCollection = value.convertTo(defFormat)
-
-		def write(coll: StaticCollection): JsValue =
-			val plain = coll.toJson(defFormat).asJsObject
-
-			coll.coverage.fold(plain): feature =>
-				val geoJson = GeoJson.fromFeatureWithLabels(feature)
-				plain + (GeoJsonField -> geoJson)
-
-
+	given RootJsonFormat[StaticCollection] = jsonFormat14(StaticCollection.apply)
 
 	given RootJsonFormat[PlainStaticItem] with{
 

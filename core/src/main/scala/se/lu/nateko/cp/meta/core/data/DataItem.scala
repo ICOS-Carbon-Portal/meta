@@ -40,6 +40,7 @@ final case class StaticCollection(
 	previousVersion: Option[URI],
 	nextVersion: OptionalOneOrSeq[URI],
 	latestVersion: OneOrSeq[URI],
+	parentCollections: Seq[UriResource],
 	doi: Option[String],
 	coverage: Option[GeoFeature],
 	documentation: Option[PlainStaticObject],

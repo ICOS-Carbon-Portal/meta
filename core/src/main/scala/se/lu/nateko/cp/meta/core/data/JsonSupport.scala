@@ -216,7 +216,7 @@ object JsonSupport extends CommonJsonSupport:
 
 	given RootJsonFormat[StaticCollection] with
 
-		private val defFormat = jsonFormat13(StaticCollection.apply)
+		private val defFormat = jsonFormat14(StaticCollection.apply)
 
 		def read(value: JsValue): StaticCollection = value.convertTo(defFormat)
 

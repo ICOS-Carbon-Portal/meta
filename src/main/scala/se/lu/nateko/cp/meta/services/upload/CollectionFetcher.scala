@@ -37,8 +37,8 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				UriResource(collUri.toJava, Some(title), Nil)
 		else Validated.error("collection does not exist")
 
-	def getParentCollections(dobj: IRI)(using CollConn): Validated[Seq[UriResource]] =
-		val allParentColls = getPropValueHolders(dct.hasPart, dobj).toIndexedSeq
+	def getParentCollections(item: IRI)(using CollConn): Validated[Seq[UriResource]] =
+		val allParentColls = getPropValueHolders(dct.hasPart, item).toIndexedSeq
 
 		val deprecatedSet = allParentColls.flatMap(getPreviousVersions).toSet
 
@@ -68,6 +68,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			creator <- getOrganization(creatorUri)(using collConn)
 			title <- getCollTitle(coll)
 			description <- getOptionalString[CollConn](coll, dct.description)
+			parentColls <- getParentCollections(coll)
 			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
 			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
 			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
@@ -83,6 +84,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				nextVersion = getNextVersionAsUri(coll)(using collConn),
 				latestVersion = getLatestVersion(coll)(using collConn),
 				previousVersion = getPreviousVersions(coll)(using collConn).headOption.map(_.toJava),
+				parentCollections = parentColls,
 				doi = doi,
 				documentation = documentation,
 				coverage = coverage,

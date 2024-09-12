@@ -18,6 +18,9 @@
 			<div class="row gy-2">
 				@doiProperty(coll.doi, handleProxies.doi)
 				@doiMetaProperties(coll, coll.description)
+				@for(parent <- coll.parentCollections){
+					@htmlProperty{Part of}{@resourceLink(parent)}
+				}
 				@htmlProperty{Collection creator}{
 					@agentLink(coll.creator)
 				}

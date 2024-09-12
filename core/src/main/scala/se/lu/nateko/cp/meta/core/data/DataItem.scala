@@ -9,9 +9,13 @@ sealed trait PlainStaticItem extends DataItem:
 	def name: String
 	def asUriResource = UriResource(res, Some(name), Nil)
 
-final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends PlainStaticItem
+// collection class should be declared first for the sake of Python parsing,
+// because it needs to be tried first (otherwise all PlainStatiItems will parse as PlainStaticObjects)
+// because in serialization 'name' property is added to collection members for backwards compatibility
 final case class PlainStaticCollection(res: URI, hash: Sha256Sum, title: String) extends PlainStaticItem:
 	def name: String = title
+
+final case class PlainStaticObject(res: URI, hash: Sha256Sum, name: String) extends PlainStaticItem
 
 sealed trait DataItemCollection extends DataItem:
 	type M <: DataItem

@@ -45,7 +45,7 @@ object MainRoute {
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
-		val doiRoute = DoiRoute(doiService, authRouting, db.store.getCitationClient, config.core, sys.log)
+		val doiRoute = DoiRoute(doiService, authRouting, db.citer.doiCiter, config.core, sys.log)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab, sys.log)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
@@ -58,7 +58,7 @@ object MainRoute {
 		val dtoDlRoute = DtoDownloadRoute(db.uriSerializer)
 		val sitemapRoute = SitemapRoute(sparqler)
 
-		val adminRoute = new AdminRouting(db.magicRepo, db.instanceServers, authRouting, db.store.makeReadonly, config.sparql).route
+		val adminRoute = new AdminRouting(db.magicRepo, db.instanceServers, authRouting, db.makeReadonly, config.sparql).route
 
 		handleExceptions(exceptionHandler){
 			sparqlRoute ~

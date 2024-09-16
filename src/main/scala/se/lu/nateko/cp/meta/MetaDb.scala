@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
@@ -33,20 +34,21 @@ import se.lu.nateko.cp.meta.services.ServiceException
 import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationClient.DoiCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
+import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.io.Closeable
@@ -64,18 +66,31 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val magicRepo: Repository,
-	val store: CpNativeStore,
+	val magicRepo: SailRepository,
+	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable:
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
-	def metaReader: StaticObjectReader = store.getCitationProvider.metaReader
-	def vanillaRepo: Repository = store.getCitationProvider.repo
-	def vanillaGlob: InstanceServer = store.getCitationProvider.server
+	def metaReader: StaticObjectReader = citer.metaReader
+	def vanillaRepo: Repository = citer.repo
+	def vanillaGlob: InstanceServer = citer.server
 
 	val uriSerializer: UriSerializer =
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, store.getCitationClient, config)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
+
+	def makeReadonly(msg: String): Future[String] =
+		magicRepo.getSail match
+			case cp: CpNotifyingSail => cp.makeReadonly(msg)(using summon[ActorSystem].dispatcher)
+			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
+
+	def initSparqlMagicIndex(idxData: Option[CpIndex.IndexData]): Future[Done] =
+		magicRepo.getSail match
+			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
+			case _ =>
+				summon[ActorSystem].log.info("Magic SPARQL index is disabled")
+				ok
+
 
 	override def close(): Unit =
 		sparql.shutdown()
@@ -142,28 +157,33 @@ object MetaDb:
 	end getLenses
 end MetaDb
 
-class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
+class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	import MetaDb.*
 
 	private val log = system.log
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] = {
+	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
 
 		validateConfig(config0)
 
-		val lenses = getLenses(config0.instanceServers, config0.dataUploadService)
-		val citerFactory = CitationProviderFactory(citCache, metaCache, config0)
-		val indexHandler = IndexHandler(system.scheduler)
-		val geoProvider = new GeoIndexProvider(log)(using ExecutionContext.global)
-		val native = new CpNativeStore(config0.rdfStorage, indexHandler, geoProvider, citerFactory, log)
+		val (isFreshInit, baseSail) = CpNativeStore.apply(config0.rdfStorage, log)
+		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
 
-		val repo = new SailRepository(native)
+		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
+
+		val idxFactories = if noMagic then None else
+			val indexHandler = IndexHandler(system.scheduler)
+			val geoProvider = new GeoIndexProvider(log)(using ExecutionContext.global)
+			Some(indexHandler -> geoProvider)
+
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, log)
+		val repo = new SailRepository(sail)
 		repo.init()
-		val vanillaRepo = native.getCitationProvider.repo
+		val vanillaRepo = citer.repo
 
-		val config: CpmetaConfig = if(native.isFreshInit)
-				config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
+		val config: CpmetaConfig = if isFreshInit
+			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}
@@ -188,21 +208,21 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(native.getCitationProvider, instanceServers, config)
+			val uploadService = makeUploadService(citer, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
-				val metaVocab = native.getCitationProvider.metaVocab
+				val metaVocab = citer.metaVocab
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, log)
 			}
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, native, config)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		}
-	}
+	end apply
 
 	private def makeUploadService(
 		citationProvider: CitationProvider,
@@ -321,7 +341,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 		repo: Repository,
 		providersFactory: => Map[String, StatementProvider],
 		config: CpmetaConfig
-	)(using ExecutionContext): Future[Map[String, InstanceServer]] = {
+	)(using ExecutionContext): Future[Map[String, InstanceServer]] =
 
 		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
 		val valueFactory = repo.getValueFactory
@@ -377,6 +397,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer) {
 
 		val futures: ServerFutures = instServerConfs.keys.foldLeft[ServerFutures](Map.empty)(makeNextServer)
 		Future.sequence(futures.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)
-	}
+	end makeInstanceServers
 
-}
+end MetaDbFactory

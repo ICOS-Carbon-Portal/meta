@@ -26,10 +26,10 @@ import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
@@ -39,6 +39,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 
 class TestDb {
 
@@ -59,8 +60,6 @@ class TestDb {
 			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
-		val citerFactory: CitationProviderFactory =
-			sail => CitationProvider(sail, dois => CitationClientDummy, metaConf)
 
 		val rdfConf = RdfStorageConfig(
 			path = dir.toString,
@@ -73,7 +72,13 @@ class TestDb {
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
 		val geoFactory = GeoIndexProvider(log)
 
-		def makeSail = new CpNativeStore(rdfConf, indexUpdaterFactory, geoFactory, citerFactory, log)
+		def makeSail =
+			val (freshInit, base) = CpNativeStore.apply(rdfConf, log)
+			val idxFactories = if freshInit then None else
+				Some(indexUpdaterFactory -> geoFactory)
+
+			val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
+			CpNotifyingSail(base, idxFactories, citer, log)
 
 		/**
 		The repo is created three times:
@@ -97,7 +102,7 @@ class TestDb {
 			repo0 <- repo0Fut
 			repo1 = {
 				repo0.shutDown()
-				val repo1 = makeSail
+				val repo1 = makeSail.asInstanceOf[CpNotifyingSail]
 				repo1.init()
 				repo1.initSparqlMagicIndex(None)
 				repo1
@@ -105,7 +110,7 @@ class TestDb {
 			_ <- repo1.makeReadonly("Test")
 			_ = repo1.shutDown()
 			idxData <- IndexHandler.restore()
-			repo2 = makeSail
+			repo2 = makeSail.asInstanceOf[CpNotifyingSail]
 			_ <- {
 				repo2.init()
 				repo2.initSparqlMagicIndex(Some(idxData))

@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-//import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import akka.Done
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
@@ -74,7 +73,10 @@ class CpNotifyingSail(
 			setupQueryEvaluation()
 			geoFut.map(_ => Done)(using ExecutionContext.parasitic)
 
-	def makeReadonly(errorMessage: String)(using ExecutionContext): Future[String] =
+	def makeReadonly(errorMessage: String): Unit =
+		readonlyErrMessage = Some(errorMessage)
+
+	def makeReadonlyDumpIndexAndCaches(errorMessage: String)(using ExecutionContext): Future[String] =
 		if readonlyErrMessage.isDefined then
 			readonlyErrMessage = Some(errorMessage)
 			Future.successful("Triple store already in read-only mode")

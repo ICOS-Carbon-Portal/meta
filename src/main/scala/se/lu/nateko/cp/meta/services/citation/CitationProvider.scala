@@ -64,6 +64,7 @@ class CitationProvider(
 	import TriplestoreConnection.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
 	val repo = new SailRepository(sail)
+	repo.init()
 	val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)

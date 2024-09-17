@@ -107,7 +107,7 @@ class TestDb {
 				repo1.initSparqlMagicIndex(None)
 				repo1
 			}
-			_ <- repo1.makeReadonly("Test")
+			_ <- repo1.makeReadonlyDumpIndexAndCaches("Test")
 			_ = repo1.shutDown()
 			idxData <- IndexHandler.restore()
 			repo2 = makeSail.asInstanceOf[CpNotifyingSail]

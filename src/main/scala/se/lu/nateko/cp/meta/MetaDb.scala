@@ -79,16 +79,18 @@ class MetaDb (
 	val uriSerializer: UriSerializer =
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
-	def makeReadonly(msg: String): Future[String] =
+	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		magicRepo.getSail match
-			case cp: CpNotifyingSail => cp.makeReadonly(msg)(using summon[ActorSystem].dispatcher)
+			case cp: CpNotifyingSail =>
+				val exe = summon[ActorSystem].dispatcher
+				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
 			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
 
 	def initSparqlMagicIndex(idxData: Option[CpIndex.IndexData]): Future[Done] =
 		magicRepo.getSail match
 			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
 			case _ =>
-				summon[ActorSystem].log.info("Magic SPARQL index is disabled")
+				summon[ActorSystem].log.info("Magic SPARQL index is disabled, skipping its initialization")
 				ok
 
 
@@ -220,7 +222,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
+				"readonly mode; restart the server for proper operation")
+			db
 		}
 	end apply
 

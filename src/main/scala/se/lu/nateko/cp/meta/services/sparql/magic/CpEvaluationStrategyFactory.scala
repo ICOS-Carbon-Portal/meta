@@ -4,6 +4,7 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.algebra.TupleExpr
@@ -87,7 +88,7 @@ class CpEvaluationStrategyFactory(
 		}
 		statEntries.iterator.map{se =>
 			val bs = new QueryBindingSet
-			bs.setBinding(countVarName, index.factory.createLiteral(se.count))
+			bs.setBinding(countVarName, index.factory.createLiteral(se.count.toString, XSD.INTEGER))
 			bs.setBinding(group.submitterVar, se.key.submitter)
 			bs.setBinding(group.specVar, se.key.spec)
 			for(station <- se.key.station) bs.setBinding(group.stationVar, station)

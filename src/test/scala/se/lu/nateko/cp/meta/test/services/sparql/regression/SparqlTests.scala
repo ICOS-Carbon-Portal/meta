@@ -94,7 +94,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject"),
 				"countryCode" -> f.createLiteral("IT"),
 				"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ATC"),
-				"count" -> f.createLiteral("1", XSD.INT),
+				"count" -> f.createLiteral("1", XSD.INTEGER),
 				"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/AS_LMP"),
 				"stationclass" -> f.createLiteral("ICOS")
 			)
@@ -518,7 +518,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 			"dataType" -> f.createLiteral("ETC NRT Fluxes"),
 			"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/ES_SE-Sto"),
 			"dataLevel" -> f.createLiteral("1", XSD.INTEGER),
-			"count" -> f.createLiteral("1", XSD.INT),
+			"count" -> f.createLiteral("1", XSD.INTEGER),
 			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
 	}

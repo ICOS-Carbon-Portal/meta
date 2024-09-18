@@ -28,7 +28,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
@@ -40,6 +40,7 @@ import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
+import se.lu.nateko.cp.meta.LmdbConfig
 
 class TestDb {
 
@@ -62,6 +63,7 @@ class TestDb {
 		}
 
 		val rdfConf = RdfStorageConfig(
+			lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 			path = dir.toString,
 			recreateAtStartup = false,
 			indices = metaConf.rdfStorage.indices,
@@ -73,7 +75,7 @@ class TestDb {
 		val geoFactory = GeoIndexProvider(log)
 
 		def makeSail =
-			val (freshInit, base) = CpNativeStore.apply(rdfConf, log)
+			val (freshInit, base) = StorageSail.apply(rdfConf, log)
 			val idxFactories = if freshInit then None else
 				Some(indexUpdaterFactory -> geoFactory)
 
@@ -120,13 +122,13 @@ class TestDb {
 
 	}
 
-	def cleanup(): Unit = {
-		repo.onComplete{repoTry =>
-			repoTry.foreach(_.shutDown())
+	def cleanup(): Unit =
+		import scala.concurrent.ExecutionContext.Implicits.global
+		repo.flatMap: repo =>
+			repo.shutDown()
+			system.terminate()
+		.onComplete: _ =>
 			FileUtils.deleteDirectory(dir.toFile)
-		}(scala.concurrent.ExecutionContext.Implicits.global)
-		system.terminate()
-	}
 }
 
 object TestDb:

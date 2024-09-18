@@ -52,7 +52,6 @@ class CpNotifyingSail(
 		readonlyErrMessage.fold(enriched)(ReadonlyConnectionWrapper(enriched, _))
 
 	override def init(): Unit =
-		log.info("Initializing triple store...")
 		inner.init()
 		setupQueryEvaluation()
 

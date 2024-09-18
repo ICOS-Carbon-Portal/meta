@@ -39,7 +39,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNativeStore
+import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
@@ -169,7 +169,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config0)
 
-		val (isFreshInit, baseSail) = CpNativeStore.apply(config0.rdfStorage, log)
+		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage, log)
 		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
 
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex

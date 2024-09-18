@@ -28,8 +28,6 @@ object RdfUpdateLogIngester:
 						conn.add(update.statement, contexts*)
 					else
 						conn.remove(update.statement, contexts*)
-			,
-			Some(IsolationLevels.NONE)
 		)
 
 		if(cleanFirst) repo

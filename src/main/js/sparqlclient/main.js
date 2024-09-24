@@ -228,7 +228,7 @@ $(function () {
 
 	const yasqeConf = {
 		editorHeight: "auto",
-		autocapitalize: true,
+		autocapitalize: false,
 		indentWithTabs: true,
 		indentUnit: 4,
 		requestConfig: {

@@ -109,11 +109,16 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 			val sparqlEntityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val conn = repo.getConnection()
+				var q: Option[Q] = None
 
 				val sparqlFut = CompletableFuture.runAsync(
 					() => {
 						try
 							val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+							q = Some(query)
+							query.setMaxExecutionTime(config.maxQueryRuntimeSec)
+							val thread = Thread.currentThread.getName
+							log.info(s"starting query ${qquoter.qid} with response type ${protocolOption.responseType} on thread $thread")
 							protocolOption.evaluator.evaluate(query, outStr)
 						catch case err =>
 							outStr.flush()
@@ -127,12 +132,14 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 						if(qquoter.keepRunningIndefinitely)
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
 						else{
-							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
-							errPromise.tryFailure(CancellationException())
-							sparqlFut.cancel(true)
+							q.foreach: query =>
+								log.info(s" NOT Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+								query.setMaxExecutionTime(-1)
+							//errPromise.tryFailure(CancellationException())
+							//sparqlFut.cancel(true)
 						}
 					}
-				canceller.schedule(cancelling, config.maxQueryRuntimeSec.toLong, TimeUnit.SECONDS)
+				canceller.schedule(cancelling, config.maxQueryRuntimeSec.toLong - 5, TimeUnit.SECONDS)
 
 				sparqlFut.whenCompleteAsync((_, err) =>
 					try{outStr.flush(); outStr.close()} finally{

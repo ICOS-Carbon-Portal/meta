@@ -98,20 +98,24 @@ object Ingestion {
 	private def ingest[T <: StatementProvider](
 			target: InstanceServer,
 			provider: T, stFactory: T => Statements
-	)(implicit ctxt: ExecutionContext): Future[Unit] = stFactory(provider).map{newStatements =>
-		Using.Manager{use =>
-			use.acquire(newStatements)
-			if(provider.isAppendOnly){
-				val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
-				target.applyAll(toAdd)()
-			} else {
-				val newRepo = Loading.fromStatements(newStatements)
-				val source = use(new Rdf4jInstanceServer(newRepo))
-				val updates = computeDiff(target.writeContextsView, source)
-				target.applyAll(updates)()
-			}
+	)(using ExecutionContext): Future[Unit] =
+		println(s"${target.writeContext}: producing new statements to provision...")
+		stFactory(provider).map{newStatements =>
+			println(s"${target.writeContext}: got new statements")
+			Using.Manager: use =>
+				use.acquire(newStatements)
+				if provider.isAppendOnly then
+					val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
+					target.applyAll(toAdd)()
+				else
+					val newRepo = Loading.fromStatements(newStatements)
+					val source = use(new Rdf4jInstanceServer(newRepo))
+					println(s"${target.writeContext}: computing RDF updates to write...")
+					val updates = computeDiff(target.writeContextsView, source)
+					println(s"${target.writeContext}: computed ${updates.length} updates, applying...")
+					target.applyAll(updates)()
+					println(s"${target.writeContext}: applied all updates")
 		}
-	}
 
 	private def computeDiff(from: InstanceServer, to: InstanceServer): IndexedSeq[RdfUpdate] = {
 		val toRemove = to.filterNotContainedStatements(from.getStatements(None, None, None))

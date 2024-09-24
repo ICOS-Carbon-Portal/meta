@@ -51,6 +51,7 @@ src/main/resources/gcmdkeywords.json
 #Local file storage
 /fileStorage/
 /rdfStorage/
+/.lwjgl/
 /ssl/
 /metaflowUploads/
 /sparqlMagicIndex.bin

@@ -359,7 +359,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 		)
 	}
 	
-	describeQ(TestQueries.stationLabelingList, "Labeling status for stations", expectRows = 200, sampleIndex = 100, sortColumn = "owlClass") {
+	describeQ(TestQueries.stationLabelingList, "Labeling status for stations", expectRows = 200, sampleIndex = 122) {
 		f => Map(
 			"s" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/ES/FR-MON"), 
 			"provLongName" -> f.createLiteral("Estrees-Mons A28"), 

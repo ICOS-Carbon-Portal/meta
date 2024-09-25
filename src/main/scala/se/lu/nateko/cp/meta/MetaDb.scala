@@ -162,7 +162,7 @@ end MetaDb
 class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	import MetaDb.*
 
-	private val log = system.log
+	import system.{log, scheduler}
 	private given ExecutionContext = system.dispatcher
 
 	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
@@ -220,7 +220,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, log)
 			}
 
-			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log)
+			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log, scheduler)
 
 			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +

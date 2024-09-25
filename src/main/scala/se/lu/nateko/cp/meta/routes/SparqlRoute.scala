@@ -152,12 +152,7 @@ object SparqlRoute:
 				resp.withEntity(HttpEntity(resp.entity.contentType, data))
 			.recover:
 				case _: CancellationException =>
-					println("Cancellation detected, responding with timeout")
-					HttpResponse(
-						StatusCodes.RequestTimeout,
-						entity = "SPARQL execution timeout",
-						headers = Seq(Connection("close"))
-					)
+					HttpResponse(StatusCodes.BadRequest, entity = "SPARQL execution timeout")
 				case err: Throwable =>
 					HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
 

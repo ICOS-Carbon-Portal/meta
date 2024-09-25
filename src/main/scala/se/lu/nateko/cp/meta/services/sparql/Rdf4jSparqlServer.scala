@@ -1,32 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql
 
-import java.time.Instant
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-
-import org.eclipse.rdf4j.query.BooleanQuery
-import org.eclipse.rdf4j.query.GraphQuery
-import org.eclipse.rdf4j.query.MalformedQueryException
-import org.eclipse.rdf4j.query.Query
-import org.eclipse.rdf4j.query.TupleQuery
-import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
-import org.eclipse.rdf4j.query.parser.ParsedGraphQuery
-import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery
-import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
-import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
-import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
-import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
-import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
-import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
-import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.rio.RDFWriterFactory
-import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
-import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
-
+import akka.Done
+import akka.NotUsed
+import akka.actor.Scheduler
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
@@ -44,29 +20,53 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
+import org.eclipse.rdf4j.query.BooleanQuery
+import org.eclipse.rdf4j.query.GraphQuery
+import org.eclipse.rdf4j.query.MalformedQueryException
+import org.eclipse.rdf4j.query.Query
+import org.eclipse.rdf4j.query.TupleQuery
+import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery
+import org.eclipse.rdf4j.query.parser.ParsedGraphQuery
+import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
+import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
+import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
+import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
+import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
+import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
+import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.rio.RDFWriterFactory
+import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
+import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import scala.concurrent.Promise
+
+import java.time.Instant
 import java.util.concurrent.CancellationException
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.util.Failure
+import scala.util.Try
 
 
-class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: LoggingAdapter) extends SparqlServer{
+class Rdf4jSparqlServer(
+	repo: Repository, config: SparqlServerConfig, log: LoggingAdapter, sch: Scheduler
+)(using ExecutionContext) extends SparqlServer:
 	import Rdf4jSparqlServer.*
 
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
-	private val canceller = Executors.newSingleThreadScheduledExecutor()
-	private val scalaCanceller = scala.concurrent.ExecutionContext.fromExecutorService(canceller)
 	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
-	canceller.scheduleWithFixedDelay(() => quoter.cleanup(), 1, 1, TimeUnit.HOURS)
+	sch.scheduleWithFixedDelay(1.hour, 1.hour)(() => quoter.cleanup())
 
 	def shutdown(): Unit = {
 		sparqlExe.shutdown()
-		scalaCanceller.shutdown()
-		canceller.shutdown()
 	}
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
@@ -80,7 +80,6 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by sparqlExe thread pool)
 	)
 
-	//TODO Re-design to prevent executing the query multiple times concurrently for each content-negotiation option
 	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = try{
 			new SPARQLParser().parseQuery(query.query, CpmetaVocab.MetaPrefix) match {
 				case _: ParsedTupleQuery =>
@@ -106,70 +105,64 @@ class Rdf4jSparqlServer(repo: Repository, config: SparqlServerConfig, log: Loggi
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
 			val errPromise = Promise[ByteString]()
-			val sparqlEntityBytes: Source[ByteString, Future[Any]] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
+			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val conn = repo.getConnection()
-				var q: Option[Q] = None
 
-				val sparqlFut = CompletableFuture.runAsync(
-					() => {
-						try
-							val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
-							q = Some(query)
-							query.setMaxExecutionTime(config.maxQueryRuntimeSec)
-							val thread = Thread.currentThread.getName
-							log.info(s"starting query ${qquoter.qid} with response type ${protocolOption.responseType} on thread $thread")
-							protocolOption.evaluator.evaluate(query, outStr)
-						catch case err =>
-							outStr.flush()
-							errPromise.tryFailure(err)
-					},
-					qquoter
-				)
+				val (closer, sparqlFut) = Try:
+						conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+					.flatMap: query =>
+						val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
+						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)
+					.fold(
+						err =>
+							val nopCloser = new AutoCloseable:
+								def close(): Unit = ()
 
-				val cancelling: Runnable = () =>
-					if(!sparqlFut.isDone){
-						if(qquoter.keepRunningIndefinitely)
-							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						else{
-							q.foreach: query =>
-								log.info(s" NOT Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
-								query.setMaxExecutionTime(-1)
-							//errPromise.tryFailure(CancellationException())
-							//sparqlFut.cancel(true)
-						}
-					}
-				canceller.schedule(cancelling, config.maxQueryRuntimeSec.toLong - 5, TimeUnit.SECONDS)
+							nopCloser -> Future.failed[Done](err)
+						,
+						(closer, doneFut) =>
+							sch.scheduleOnce(config.maxQueryRuntimeSec.seconds):
+								if !doneFut.isCompleted then
+									if qquoter.keepRunningIndefinitely then
+										log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
+									else
+										log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+										errPromise.tryFailure(CancellationException())
+										closer.close()
+							closer -> doneFut
+					)
 
-				sparqlFut.whenCompleteAsync((_, err) =>
-					try{outStr.flush(); outStr.close()} finally{
+				sparqlFut.onComplete: tryDone =>
+					errPromise.tryComplete(tryDone.map(_ => ByteString.empty))
+					try
+						outStr.flush()
+						outStr.close()
+					catch case _: Throwable =>
+						log.debug("SPARQL stream was closed/detached")
+					finally
 						qquoter.logQueryFinish()
 						conn.close()
-						if err == null then errPromise.trySuccess(ByteString.empty)
-						else errPromise.tryFailure(err)
-					},
-					sparqlExe
-				)
-				sparqlFut
-			}.wireTap(
+
+				closer
+			}.wireTap:
 				Sink.head[ByteString].mapMaterializedValue(
-					_.foreach(_ => qquoter.logQueryStreamingStart())(scalaCanceller)
+					_.foreach(_ => qquoter.logQueryStreamingStart())
 				)
-			).watchTermination(){(sparqlFut, doneFut) =>
-				doneFut.onComplete{_ =>
-					sparqlFut.cancel(true)
-				}(scalaCanceller)
-				scala.compat.java8.FutureConverters.toScala(sparqlFut)
-			}
-			val errSource = Source.future(errPromise.future)
-			val entityBytes = errSource.merge(sparqlEntityBytes)
+			.watchTermination(): (closer, doneFut) =>
+				doneFut.onComplete(doneTry =>
+					closer.close()
+				)
+				NotUsed
+
+			val entityBytes = sparqlEntityBytes.merge(Source.future(errPromise.future))
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}
 	)
-}
+end Rdf4jSparqlServer
 
-object Rdf4jSparqlServer{
+object Rdf4jSparqlServer:
 
 	private val utf8 = HttpCharsets.`UTF-8`
 	private val xml = ContentType(MediaTypes.`application/xml`, utf8)
@@ -228,4 +221,4 @@ object Rdf4jSparqlServer{
 			() => HttpResponse(status = status, entity = responseText)
 		) :: Nil
 
-}
+end Rdf4jSparqlServer

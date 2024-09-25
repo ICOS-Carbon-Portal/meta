@@ -33,7 +33,7 @@ object Loading {
 		repo
 	}
 
-	private val chunkSize = 1000
+	private val chunkSize = 10000
 
 	def fromStatements(statements: Iterator[Statement], contexts: IRI*): Repository = {
 

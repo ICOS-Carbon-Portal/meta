@@ -689,6 +689,7 @@ object TestQueries {
 		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasAppStatusComment ?hasAppStatusComment. } }
 		OPTIONAL { GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> { ?s cpst:hasAppStatusDate ?hasAppStatusDate. } }
 		}
+		order by ?owlClass ?s ?pi
 	"""
 
 	//from labeling app

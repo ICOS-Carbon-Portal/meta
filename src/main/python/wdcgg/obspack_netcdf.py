@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, TypeAlias, Tuple
+import numpy as np
 import netCDF4
 import pandas as pd
 from icoscp_core.icos import data
@@ -96,4 +97,10 @@ class ObspackNetcdf:
 			"ORG_QCflag": [flag.decode() for flag in self.dataset.variables["qc_flag"][:].tolist()],
 			"QCflag": -9
 		})
+		table["value"] = table["value"].replace(np.nan, -999.999)
+		table["value_unc"] = table["value_unc"].replace(np.nan, -999.999)
+		table["nvalue"] = table["nvalue"].replace(np.nan, -9)
+		table = table.astype({"value": np.float64, "value_unc": np.float64})
+		table.loc[table["nvalue"] == 0, "value"] = -999.999
+		table.loc[np.logical_or(table["nvalue"] == 0, table["nvalue"] == 1), "value_unc"] = -999.999
 		return filename, table

@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.api.RdfLenses
 import se.lu.nateko.cp.meta.api.SparqlServer
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
+import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
 import se.lu.nateko.cp.meta.ingestion.Extractor
 import se.lu.nateko.cp.meta.ingestion.Ingester
 import se.lu.nateko.cp.meta.ingestion.Ingestion
@@ -39,10 +40,10 @@ import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -55,6 +56,7 @@ import java.io.Closeable
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -193,7 +195,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		given EnvriConfigs = config.core.envriConfigs
 
 		val serversFut = {
-			val exeServ = java.util.concurrent.Executors.newSingleThreadExecutor
+			val exeServ = Executors.newSingleThreadExecutor
 			val ctxt = ExecutionContext.fromExecutorService(exeServ)
 			makeInstanceServers(repo, Ingestion.allProviders, config)(using ctxt).andThen{
 				case _ =>
@@ -261,20 +263,22 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer = {
+	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer =
 
 		given factory: ValueFactory = initRepo.getValueFactory
 
 		val writeContext = conf.writeContext.toRdf
 		val readContexts = conf.readContexts.fold(Seq(writeContext))(_.map(_.toRdf))
 
-		conf.logName match{
+		conf.logName match
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo = if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-					then initRepo
-					else {
+				val repo =
+					if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
+					then
+						initRepo
+					else
 						val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
 						val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
 						log.info(s"Ingesting from RDF log $logName $msgDetail...")
@@ -282,16 +286,15 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
 						log.info(s"Ingesting from RDF log $logName done!")
 						res
-					}
 
 				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 
 			case None =>
 				new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
-		}
+		end match
 
-	}
+	end makeInstanceServer
 
 	private def makeOntos(confs: Seq[SchemaOntologyConfig]): Map[String, Onto] = {
 		val owlManager = OWLManager.createOWLOntologyManager
@@ -348,6 +351,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		config: CpmetaConfig
 	)(using ExecutionContext): Future[Map[String, InstanceServer]] =
 
+		given BnodeStabilizers = new BnodeStabilizers
 		val instServerConfs = getAllInstanceServerConfigs(config.instanceServers)
 		val valueFactory = repo.getValueFactory
 		lazy val providers = providersFactory

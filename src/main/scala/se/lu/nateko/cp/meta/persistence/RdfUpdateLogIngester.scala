@@ -30,9 +30,7 @@ object RdfUpdateLogIngester:
 						conn.remove(update.statement, contexts*)
 		)
 
-		if(cleanFirst) repo
-			.transact(_.remove(null, null, null, contexts*), Some(IsolationLevels.NONE))
-			.get //throw exception if failed to clean
+		if cleanFirst then clean(repo, contexts*).get //throw exception if failed to clean
 
 		try
 			updates.sliding(ChunkSize, ChunkSize).foreach(commitChunk(_).get)
@@ -41,5 +39,8 @@ object RdfUpdateLogIngester:
 			updates.close()
 
 	end ingest
+
+	def clean(repo: Repository, contexts: IRI*): Try[Unit] = repo
+		.transact(_.remove(null, null, null, contexts*))
 
 end RdfUpdateLogIngester

@@ -72,7 +72,7 @@ extension [T](res: CloseableIteration[T])
 extension (repo: Repository)
 
 	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
-	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
+	private def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
 		Using(repo.getConnection){conn =>
 			isoLevel.fold(conn.begin)(conn.begin)
 			try

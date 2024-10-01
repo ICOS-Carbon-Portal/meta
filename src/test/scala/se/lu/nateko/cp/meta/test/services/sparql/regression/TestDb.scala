@@ -14,11 +14,13 @@ import org.scalatest.Suite
 import org.scalatest.fixture
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
+import se.lu.nateko.cp.meta.LmdbConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig.apply
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
 import se.lu.nateko.cp.meta.ingestion.Ingestion
 import se.lu.nateko.cp.meta.ingestion.RdfXmlFileIngester
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -28,19 +30,18 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
+import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.utils.asOptInstanceOf
-import se.lu.nateko.cp.meta.LmdbConfig
 
 class TestDb {
 
@@ -92,6 +93,7 @@ class TestDb {
 		val repo0Fut: Future[Repository] =
 			val repo0 = SailRepository(makeSail)
 			val factory = repo0.getValueFactory
+			given BnodeStabilizers = new BnodeStabilizers
 
 			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
 				val graphIri = factory.createIRI(uriStr)

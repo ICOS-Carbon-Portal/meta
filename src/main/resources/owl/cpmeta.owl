@@ -3321,9 +3321,9 @@
     
 
 
-    <!-- http://meta.fieldsites.se/ontologies/sites/communityProjects -->
+    <!-- https://meta.fieldsites.se/ontologies/sites/communityProjects -->
 
-    <owl:NamedIndividual rdf:about="http://meta.fieldsites.se/ontologies/sites/communityProjects">
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/communityProjects">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
         <rdfs:label>SITES projects</rdfs:label>
     </owl:NamedIndividual>

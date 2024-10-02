@@ -9,11 +9,12 @@ import scala.util.Failure
 
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.persistence.postgres.ResultSetIterator.chunkSize
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 
 object RdfUpdateLogIngester:
+
+	val ChunkSize = 100000
 
 	def ingestIntoMemory(updates: CloseableIterator[RdfUpdate], contexts: IRI*): Repository =
 		ingest(updates, Loading.emptyInMemory, false, contexts*)
@@ -27,20 +28,19 @@ object RdfUpdateLogIngester:
 						conn.add(update.statement, contexts*)
 					else
 						conn.remove(update.statement, contexts*)
-			,
-			Some(IsolationLevels.NONE)
 		)
 
-		if(cleanFirst) repo
-			.transact(_.remove(null, null, null, contexts*), Some(IsolationLevels.NONE))
-			.get //throw exception if failed to clean
+		if cleanFirst then clean(repo, contexts*).get //throw exception if failed to clean
 
 		try
-			updates.sliding(chunkSize, chunkSize).foreach(commitChunk(_).get)
+			updates.sliding(ChunkSize, ChunkSize).foreach(commitChunk(_).get)
 			repo
 		finally
 			updates.close()
 
 	end ingest
+
+	def clean(repo: Repository, contexts: IRI*): Try[Unit] = repo
+		.transact(_.remove(null, null, null, contexts*))
 
 end RdfUpdateLogIngester

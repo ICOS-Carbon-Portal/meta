@@ -66,4 +66,3 @@ construct{
 	bind (concat(?specLabel, ", station ", ?stationName, ". ", coalesce(?specComment, "")) as ?description)
 	bind (iri(replace(str(?dobj), "/objects/", "/dcat/objects/")) as ?ds)
 }
-#offset 0 limit 500

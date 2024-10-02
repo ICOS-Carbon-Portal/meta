@@ -4,9 +4,9 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
-import org.eclipse.rdf4j.query.QueryEvaluationException
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
@@ -28,41 +28,43 @@ import scala.jdk.CollectionConverters.IteratorHasAsJava
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
 	index: CpIndex,
-	enricher: StatementsEnricher
-) extends StrictEvaluationStrategyFactory(fedResolver){
+	enricher: StatementsEnricher,
+	indexEnabled: Boolean
+) extends DefaultEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
 		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
-		new StrictEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
+		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
 
-			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match{
+			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match
 
-				case doFetch: DataObjectFetchNode =>
+				case doFetch: DataObjectFetchNode if indexEnabled =>
 					qEvalStep(bindingsForObjectFetch(doFetch, _))
 
-				case statsFetch: StatsFetchNode =>
+				case statsFetch: StatsFetchNode if indexEnabled =>
 					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 					qEvalStep(_ => statsBindings.iterator)
 
 				case _ => super.precompile(expr, context)
-			}
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
 				logger.debug("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-				val dofps = new DofPatternSearch(metaVocab)
-				val fuser = new DofPatternFusion(metaVocab)
 
-				val pattern = dofps.find(queryExpr)
-				val fusions = fuser.findFusions(pattern)
-				DofPatternRewrite.rewrite(queryExpr, fusions)
+				if indexEnabled then
+					val dofps = new DofPatternSearch(metaVocab)
+					val fuser = new DofPatternFusion(metaVocab)
 
-				logger.debug("Fused query model:\n{}", queryExpr)
+					val pattern = dofps.find(queryExpr)
+					val fusions = fuser.findFusions(pattern)
+					DofPatternRewrite.rewrite(queryExpr, fusions)
+
+					logger.debug("Fused query model:\n{}", queryExpr)
 
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
@@ -86,7 +88,7 @@ class CpEvaluationStrategyFactory(
 		}
 		statEntries.iterator.map{se =>
 			val bs = new QueryBindingSet
-			bs.setBinding(countVarName, index.factory.createLiteral(se.count))
+			bs.setBinding(countVarName, index.factory.createLiteral(se.count.toString, XSD.INTEGER))
 			bs.setBinding(group.submitterVar, se.key.submitter)
 			bs.setBinding(group.specVar, se.key.spec)
 			for(station <- se.key.station) bs.setBinding(group.stationVar, station)
@@ -136,7 +138,7 @@ class CpEvaluationStrategyFactory(
 
 	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
 		override def evaluate(bindings: BindingSet) =
-			new CloseableIteratorIteration[BindingSet, QueryEvaluationException](eval(bindings).asJava)
+			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}
 
 }

@@ -108,6 +108,7 @@ object SparqlRoute:
 					)(complete(StatusCodes.OK))
 				~
 				extractRequestContext: ctxt =>
+					//system.log.info(s"Got a SPARQL request with entity ${ctxt.request.entity}")
 					spCache.makeKey(ctxt).fold(bypass): key =>
 						cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
 							respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)): _ =>
@@ -151,7 +152,7 @@ object SparqlRoute:
 				resp.withEntity(HttpEntity(resp.entity.contentType, data))
 			.recover:
 				case _: CancellationException =>
-					HttpResponse(StatusCodes.RequestTimeout, entity = "SPARQL execution timeout")
+					HttpResponse(StatusCodes.BadRequest, entity = "SPARQL execution timeout")
 				case err: Throwable =>
 					HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))
 

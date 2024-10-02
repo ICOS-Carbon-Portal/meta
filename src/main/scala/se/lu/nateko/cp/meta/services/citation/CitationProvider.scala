@@ -13,9 +13,12 @@ import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.HandleNetClientConfig
+import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLens.{GlobConn, MetaConn}
+import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
+import se.lu.nateko.cp.meta.api.RdfLenses
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
@@ -28,6 +31,7 @@ import se.lu.nateko.cp.meta.core.data.StaticObject
 import se.lu.nateko.cp.meta.core.data.collectionPrefix
 import se.lu.nateko.cp.meta.core.data.objectPrefix
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.DoiService
@@ -40,15 +44,15 @@ import scala.util.Using
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 
 
-type CitationProviderFactory = Sail => CitationProvider
-object CitationProviderFactory:
-	def apply(citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProviderFactory =
-		val citClientFactory: List[Doi] => CitationClient = dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		sail => CitationProvider(sail, citClientFactory, conf)
+object CitationProvider:
+	def apply(
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+	)(using ActorSystem, Materializer): CitationProvider =
+		val citClientFactory: List[Doi] => CitationClient =
+			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
+		new CitationProvider(sail, citClientFactory, conf)
 
 
 class CitationProvider(
@@ -59,7 +63,13 @@ class CitationProvider(
 	import system.log
 	import TriplestoreConnection.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
+
 	val repo = new SailRepository(sail)
+	private val sailName = sail.getClass.getSimpleName
+	log.info(s"Initializing $sailName SailRepository...")
+	repo.init()
+	log.info(s"$sailName initialized")
+
 	val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)

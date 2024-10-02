@@ -36,11 +36,11 @@ trait  Extractor extends StatementProvider{ self =>
 	}
 }
 
-object Ingestion {
+object Ingestion:
 
 	type Statements = Future[CloseableIterator[Statement]]
 
-	def allProviders(using system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] = {
+	def allProviders(using system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] =
 		import system.dispatcher
 		Map(
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
@@ -87,31 +87,58 @@ object Ingestion {
 			},
 			"emptySource" -> EmptyIngester
 		)
-	}
+	end allProviders
 
-	def ingest(target: InstanceServer, ingester: Ingester, factory: ValueFactory)(implicit ctxt: ExecutionContext): Future[Unit] =
+	def ingest(
+		target: InstanceServer, ingester: Ingester, factory: ValueFactory
+	)(using ExecutionContext, BnodeStabilizers): Future[Int] =
 		ingest[Ingester](target, ingester, _.getStatements(factory))
 
-	def ingest(target: InstanceServer, extractor: Extractor, repo: Repository)(implicit ctxt: ExecutionContext): Future[Unit] =
+	def ingest(
+		target: InstanceServer, extractor: Extractor, repo: Repository
+	)(using ExecutionContext, BnodeStabilizers): Future[Int] =
 		ingest[Extractor](target, extractor, _.getStatements(repo))
 
+	/**
+	  * Ingests statements from a provider into an InstanceServer. Blank nodes are
+	  * "stabilized", i.e. converted to IRIs, using BnodeStabilizers. The statements are
+	  * partitioned into IRI-subject ones and blank-node-subject ones. The former are
+	  * placed first and sorted by subject, for reproducible order of occurrence of
+	  * blank nodes in the object position. For stable minimal-change ingestions
+	  * (best startup performance), the statement providers should strive to be deterministic.
+	  *
+	  * @param target
+	  * @param provider
+	  * @param stFactory
+	  * @return `Future` with the number of updates applied (potentially including duplicate statements)
+	  */
 	private def ingest[T <: StatementProvider](
-			target: InstanceServer,
-			provider: T, stFactory: T => Statements
-	)(implicit ctxt: ExecutionContext): Future[Unit] = stFactory(provider).map{newStatements =>
-		Using.Manager{use =>
-			use.acquire(newStatements)
-			if(provider.isAppendOnly){
-				val toAdd = target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
-				target.applyAll(toAdd)()
-			} else {
-				val newRepo = Loading.fromStatements(newStatements)
-				val source = use(new Rdf4jInstanceServer(newRepo))
-				val updates = computeDiff(target.writeContextsView, source)
-				target.applyAll(updates)()
-			}
+		target: InstanceServer, provider: T, stFactory: T => Statements
+	)(using ExecutionContext, BnodeStabilizers): Future[Int] =
+		stFactory(provider).map{rawStatements =>
+			Using.Manager: use =>
+				use.acquire(rawStatements)
+
+				val rawStatsList = rawStatements.toIndexedSeq
+				val (iriSubjs, bnodeSubjs) = rawStatsList.partition(_.getSubject.isIRI)
+				val bnodeStabilizer = summon[BnodeStabilizers].getStabilizer(target.writeContext)
+				val newStatements = (iriSubjs.sorted(using bySubjThenPred) ++ bnodeSubjs)
+					.map(bnodeStabilizer.stabilizeBnodes(_, target.factory))
+
+				val updates = if provider.isAppendOnly then
+					target.filterNotContainedStatements(newStatements).map(RdfUpdate(_, true))
+				else
+					val newRepo = Loading.fromStatements(newStatements.iterator)
+					val source = use(new Rdf4jInstanceServer(newRepo))
+					computeDiff(target.writeContextsView, source)
+				val sortedUpdates = updates.sortBy(_.statement)(using bySubjThenPred)
+				target.applyAll(sortedUpdates)()
+				sortedUpdates.length
+			.get
 		}
-	}
+
+	val bySubjThenPred: Ordering[Statement] = Ordering.by[Statement, String](_.getSubject.stringValue)
+		.orElseBy(_.getPredicate.stringValue)
 
 	private def computeDiff(from: InstanceServer, to: InstanceServer): IndexedSeq[RdfUpdate] = {
 		val toRemove = to.filterNotContainedStatements(from.getStatements(None, None, None))
@@ -124,4 +151,5 @@ object Ingestion {
 		override def getStatements(valueFactory: ValueFactory) = Future.successful(CloseableIterator.empty)
 	}
 
-}
+
+end Ingestion

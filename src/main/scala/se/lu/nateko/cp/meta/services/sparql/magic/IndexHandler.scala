@@ -15,6 +15,7 @@ import org.eclipse.rdf4j.model.impl.SimpleIRI
 import org.eclipse.rdf4j.model.util.Values
 import org.eclipse.rdf4j.sail.Sail
 import org.eclipse.rdf4j.sail.SailConnectionListener
+import org.eclipse.rdf4j.sail.lmdb.model.LmdbIRI
 import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import org.eclipse.rdf4j.sail.nativerdf.model.NativeIRI
 import org.roaringbitmap.buffer.MutableRoaringBitmap
@@ -236,6 +237,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 	private def registerIriSerializer(kryo: Kryo, serializer: Serializer[IRI]): Unit =
 		kryo.register(classOf[IRI], serializer)
+		kryo.register(classOf[LmdbIRI], serializer)
 		kryo.register(classOf[NativeIRI], serializer)
 		kryo.register(classOf[MemIRI], serializer)
 		kryo.register(classOf[SimpleIRI], serializer)

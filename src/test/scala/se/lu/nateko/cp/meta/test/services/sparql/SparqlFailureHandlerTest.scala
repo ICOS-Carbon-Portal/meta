@@ -58,9 +58,9 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 			val source = getFailureSource(20, Exception())
 			assertStatusCode(source, StatusCodes.OK)
 
-		it("CancellationException results in a RequestTimeout response"):
+		it("CancellationException results in a BadRequest response"):
 			val source = getFailureSource(2, new CancellationException())
-			assertStatusCode(source, StatusCodes.RequestTimeout)
+			assertStatusCode(source, StatusCodes.BadRequest)
 
 		it("Sending stream without error results in a 200"):
 			assertStatusCode(makeGoodSource(4), StatusCodes.OK)

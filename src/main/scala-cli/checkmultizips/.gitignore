@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 checkmultizips.jar
 checkmultizips.log
 checkmultizips_cache/
+=======
+checkmultizips_cache/
+checkmultizips.jar
+checkmultizips.log
+>>>>>>> rdf4j

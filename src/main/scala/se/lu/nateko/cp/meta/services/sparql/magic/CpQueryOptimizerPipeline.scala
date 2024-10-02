@@ -5,9 +5,9 @@ import org.eclipse.rdf4j.query.algebra.evaluation.QueryOptimizer
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryOptimizerPipeline
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.OrderLimitOptimizer
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.QueryJoinOptimizer
-import org.eclipse.rdf4j.query.algebra.evaluation.impl.StandardQueryOptimizerPipeline
+import org.eclipse.rdf4j.query.algebra.evaluation.optimizer.OrderLimitOptimizer
+import org.eclipse.rdf4j.query.algebra.evaluation.optimizer.QueryJoinOptimizer
+import org.eclipse.rdf4j.query.algebra.evaluation.optimizer.StandardQueryOptimizerPipeline
 
 class CpQueryOptimizerPipeline(
 	strat: EvaluationStrategy,

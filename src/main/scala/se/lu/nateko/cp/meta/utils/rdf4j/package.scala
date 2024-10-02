@@ -59,7 +59,7 @@ extension (uri: JavaUri){
 extension (uri: Uri)
 	def toRdf(using factory: ValueFactory): IRI = factory.createIRI(uri.toString)
 
-extension [T](res: CloseableIteration[T, _])
+extension [T](res: CloseableIteration[T])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
 		override def hasNext: Boolean = try res.hasNext() catch case _ => false
 
@@ -72,7 +72,7 @@ extension [T](res: CloseableIteration[T, _])
 extension (repo: Repository)
 
 	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
-	def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
+	private def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
 		Using(repo.getConnection){conn =>
 			isoLevel.fold(conn.begin)(conn.begin)
 			try
@@ -84,9 +84,9 @@ extension (repo: Repository)
 					throw err
 		}
 
-	def access[T](accessor: RepositoryConnection => CloseableIteration[T, _]): CloseableIterator[T] = access(accessor, () => ())
+	def access[T](accessor: RepositoryConnection => CloseableIteration[T]): CloseableIterator[T] = access(accessor, () => ())
 
-	def access[T](accessor: RepositoryConnection => CloseableIteration[T, _], extraCleanup: () => Unit): CloseableIterator[T] = {
+	def access[T](accessor: RepositoryConnection => CloseableIteration[T], extraCleanup: () => Unit): CloseableIterator[T] = {
 		val conn = repo.getConnection
 
 		val finalCleanup = () => {

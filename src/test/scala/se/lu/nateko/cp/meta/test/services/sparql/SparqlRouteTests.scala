@@ -40,7 +40,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 	val sparqlRoute: Future[Route] =
 		db.repo.map: repo =>
-			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig, log)
+			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig, log, system.scheduler)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
 			given EnvriConfigs = Map(
 				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
@@ -159,10 +159,10 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			limit 3
 		"""		
 
-		it("Long running query should result in timeout"):
+		it("Long running query should result in bad-request response"):
 			testRoute(longRunningQuery):
 				assertCORS()
-				assert(status == StatusCodes.RequestTimeout)
+				assert(status == StatusCodes.BadRequest)
 
 		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
@@ -170,16 +170,16 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 
 			val initRequests = Future.sequence(Seq(
 				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.RequestTimeout), 
+					assert(status == StatusCodes.BadRequest), 
 				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.RequestTimeout))
+					assert(status == StatusCodes.BadRequest))
 				)
 
 			initRequests.flatMap: res =>
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		it("Too many parallel queries result in timeout responses"):
+		it("Too many parallel queries result in bad-request responses"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
 
@@ -191,6 +191,6 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				after(100.millis): // to ensure that the third query gets started last
 					testRoute(query, ip):
 						assertCORS()
-						assert(status == StatusCodes.RequestTimeout)
+						assert(status == StatusCodes.BadRequest)
 
 end SparqlRouteTests

@@ -25,17 +25,17 @@ class StatementsEnricher(val citer: CitationProvider) {
 	import citer.metaVocab
 	private given factory: ValueFactory = metaVocab.factory
 
-	private def empty[E <: Exception]: StatIter[E] = new EmptyIteration
+	private def empty: StatIter = new EmptyIteration
 
-	def enrich[E <: Exception](base: StatIter[E], subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
+	def enrich(base: StatIter, subj: Resource, pred: IRI, obj: Value): StatIter = {
 		try
-			val extras = getExtras[E](subj, pred, obj)
+			val extras = getExtras(subj, pred, obj)
 			if(!extras.hasNext) base else UnionIteration(base, extras)
 		catch case err => 
 			throw SailException(err.getMessage, err)
 	}
 
-	private def getExtras[E <: Exception](subj: Resource, pred: IRI, obj: Value): StatIter[E] = {
+	private def getExtras(subj: Resource, pred: IRI, obj: Value): StatIter = {
 		if(subj == null || obj != null) empty //lookup by magic values/predicates not possible
 		else{
 			val magicFactories = magicPredValueFactories(subj)
@@ -74,5 +74,5 @@ class StatementsEnricher(val citer: CitationProvider) {
 }
 
 object StatementsEnricher{
-	type StatIter[E <: Exception] = CloseableIteration[? <: Statement, E]
+	type StatIter = CloseableIteration[? <: Statement]
 }

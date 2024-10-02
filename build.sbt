@@ -173,9 +173,9 @@ lazy val meta = (project in file("."))
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
 			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
-			case "application.conf" => MergeStrategy.concat
-			case "module-info.class" => MergeStrategy.discard
+			case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
 			case PathList(name) if name.contains("-fastopt.js") => MergeStrategy.discard
+			case "application.conf" => MergeStrategy.concat
 			case x => ((assembly / assemblyMergeStrategy).value)(x)
 			//case PathList(ps @ _*) if(ps.exists(_.contains("guava")) && ps.last == "pom.xml") => {println(ps); MergeStrategy.first}
 		},

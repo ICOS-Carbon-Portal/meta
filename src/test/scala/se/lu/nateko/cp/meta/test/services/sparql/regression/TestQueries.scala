@@ -45,6 +45,7 @@ object TestQueries {
 			OPTIONAL{?valType cpmeta:hasUnit ?unit }
 			OPTIONAL{?valType cpmeta:hasQuantityKind ?quantityKind }
 		}
+		order by ?spec ?variable
 	"""
 
 	//from portal front-end app from data project
@@ -698,6 +699,7 @@ object TestQueries {
 		SELECT * FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 		FROM NAMED <http://meta.icos-cp.eu/resources/stationentry/>
 		WHERE { GRAPH ?g { $station ?p ?o. } }
+		ORDER BY ?g ?p ?o
 	"""
 
 	//from labeling app

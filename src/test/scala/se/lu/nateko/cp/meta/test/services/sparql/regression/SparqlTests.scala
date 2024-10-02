@@ -32,10 +32,11 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 	}
 
 	type Rows = Future[IndexedSeq[BindingSet]]
+	type RowExpectation = ValueFactory => Map[String, Value | Function1[Value, Boolean]]
 
 	def describeQfull(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int
-	)(transformResult: CloseableIterator[BindingSet] => IndexedSeq[BindingSet])(sampleMaker: ValueFactory => Map[String, Value]) =
+	)(transformResult: CloseableIterator[BindingSet] => IndexedSeq[BindingSet])(sampleMaker: RowExpectation) =
 		describe(descr){
 			
 			given rows: Rows = for (
@@ -53,7 +54,28 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 				db.repo.flatMap(repo => {
 					for (r <- rows) yield {
 						val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
-						assert(sampleRow === sampleMaker(repo.getValueFactory()))
+						val expectations = sampleMaker(repo.getValueFactory)
+
+						assert (sampleRow.keySet === expectations.keySet, "variable lists did not match")
+
+						val plainExp: Map[String, Value] = expectations.collect:
+							case (varName, expectation: Value) => varName -> expectation
+						val samplePlainPart = sampleRow.filter:
+							case (varName, _) => plainExp.contains(varName)
+
+						assert(samplePlainPart === plainExp)
+
+						expectations.foreach:
+							case (varName, testThunk: Function1[Value, Boolean] @ unchecked) =>
+								val sampleValue = sampleRow(varName)
+								assert(
+									testThunk(sampleValue),
+									s"value $sampleValue for variable $varName was unexpected"
+								)
+
+							case _ =>
+
+						succeed
 					}
 				})
 			}
@@ -61,7 +83,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	def describeQ(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int, sortColumn: String = ""
-	)(sampleMaker: ValueFactory => Map[String, Value]) =
+	)(sampleMaker: RowExpectation) =
 		describeQfull(q, descr, expectRows, sampleIndex){
 			if (sortColumn.isEmpty) _.toIndexedSeq
 			else _.toIndexedSeq.sortBy(_.getValue(sortColumn).stringValue)
@@ -79,17 +101,18 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 			)
 	}
 
-	describeQ(TestQueries.variables, "Variable metadata and relation to data types", expectRows = 457, sampleIndex = 10, sortColumn = "spec") {
+	describeQ(TestQueries.variables, "Variable metadata and relation to data types", expectRows = 457, sampleIndex = 10) {
 		f => Map(
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject"),
-				"variable" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/timeStampColumn"),
-				"varTitle" -> f.createLiteral("TIMESTAMP"),
-				"valType" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/timeStamp"),
-				"quantityUnit" -> f.createLiteral("(not applicable)")
+				"variable" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/14C"),
+				"varTitle" -> f.createLiteral("14C"),
+				"valType" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/c14MixingRatioPpm"),
+				"quantityKind" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/portion"),
+				"quantityUnit" -> f.createLiteral("per mil")
 			)
 	}
 
-	describeQ(TestQueries.dataObjOriginStats, "Statistics of data object origins", expectRows = 797, sampleIndex = 100, sortColumn = "spec") {
+	describeQ(TestQueries.dataObjOriginStats, "Statistics of data object origins", expectRows = 797, sampleIndex = 100) {
 		f => Map(
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject"),
 				"countryCode" -> f.createLiteral("IT"),
@@ -148,7 +171,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	describeQ(TestQueries.productionStationMetadata, "Production station metadata", expectRows = 134, sampleIndex = 100, sortColumn = "Id") {
 		f => Map(
-				"PI_names" -> f.createLiteral("Lindauer;Müller-Williams;Kneuer"), 
+				"PI_names" -> ((v: Value) => v.stringValue.split(";").toSet == Set("Lindauer", "Müller-Williams", "Kneuer")),
 				"prodUri" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/AS_LIN"), 
 				"Name" -> f.createLiteral("Lindenberg"), 
 				"Country" -> f.createLiteral("DE"), 
@@ -163,7 +186,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 			)
 	}
 
-	describeQ(TestQueries.atmosphericCO2Level2, "Atmospheric CO2 for level 2 data objects", expectRows = 89, sampleIndex = 40, sortColumn = "spec") {
+	describeQ(TestQueries.atmosphericCO2Level2, "Atmospheric CO2 for level 2 data objects", expectRows = 89, sampleIndex = 40, sortColumn = "submTime") {
 		f => Map(
 				"timeEnd" -> f.createLiteral("2022-02-28T23:00:00Z", XSD.DATETIME),
 				"fileName" -> f.createLiteral("ICOS_ATC_L2_L2-2022.1_OPE_10.0_CTS_CO2.zip"), 
@@ -258,7 +281,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 			)
 	}
 
-	describeQ(TestQueries.ATCStationList("<http://meta.icos-cp.eu/resources/stations/AS_BIR>", "Ch4", "NrtGrowingDataObject"), "Atmospheric data objects for specified station", expectRows = 3, sampleIndex = 1, sortColumn = "spec") {
+	describeQ(TestQueries.ATCStationList("<http://meta.icos-cp.eu/resources/stations/AS_BIR>", "Ch4", "NrtGrowingDataObject"), "Atmospheric data objects for specified station", expectRows = 3, sampleIndex = 1, sortColumn = "submTime") {
 		f => Map(
 				"timeEnd" -> f.createLiteral("2022-08-10T23:00:00Z", XSD.DATETIME), 
 				"fileName" -> f.createLiteral("ICOS_ATC_NRT_BIR_2022-03-01_2022-08-10_50.0_547_CH4.zip"), 
@@ -374,7 +397,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 
 	describeQ(TestQueries.stationLabelingInfo("<http://meta.icos-cp.eu/ontologies/stationentry/AS/ATM-PAL>"), "Station labeling info", expectRows = 39, sampleIndex = 20, sortColumn = "g") {
 		f => Map(
-			"p" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/hasLon"), "g" -> f.createIRI("http://meta.icos-cp.eu/resources/stationlabeling/"), "o" -> f.createLiteral("24.1157", XSD.DOUBLE)
+			"p" -> f.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate"), "g" -> f.createIRI("http://meta.icos-cp.eu/resources/stationlabeling/"), "o" -> f.createLiteral("2018-11-30T12:00:00Z", XSD.DATETIME)
 		)
 	}
 

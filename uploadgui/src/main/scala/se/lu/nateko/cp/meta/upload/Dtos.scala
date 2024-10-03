@@ -5,6 +5,7 @@ import java.net.URI
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.DatasetType
+import se.lu.nateko.cp.meta.OntoConstants.FormatUris.*
 
 case class Station(namedUri: NamedUri, id: String)
 
@@ -21,6 +22,9 @@ case class ObjSpec(
 ){
 	def isSpatiotemporal = specificDatasetType == DatasetType.SpatioTemporal
 	def isStationTimeSer = specificDatasetType == DatasetType.StationTimeSeries
+	val isZip = format == zipArchive || format == excel
+	val isNetCDF = format == netCdf || format == netCdfTimeSeries
+	val isNonIngestableNetCDF = isNetCDF && dataset.isEmpty
 }
 
 case class InitAppInfo(userEmail: Option[String], envri: Envri, envriConfig: EnvriConfig)

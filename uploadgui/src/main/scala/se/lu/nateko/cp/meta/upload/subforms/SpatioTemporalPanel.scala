@@ -66,6 +66,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case LevelSelected(_) => hide()
 		case ObjSpecSelected(spec) =>
 			if(spec.isSpatiotemporal) show() else hide()
+			if(spec.isNetCDF) varInfoForm.show() else varInfoForm.hide()
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
 	}
 

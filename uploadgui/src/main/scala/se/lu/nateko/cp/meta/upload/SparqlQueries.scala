@@ -15,7 +15,7 @@ object SparqlQueries {
 		|FROM <https://meta.fieldsites.se/resources/sites/>
 		|WHERE {
 		|	$orgFilter
-		|	?station a sitesmeta:Station ; cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|	?station a sitesmeta:Station; cpmeta:hasStationId ?id; cpmeta:hasName ?name .
 		|}
 		|order by ?name""".stripMargin
 
@@ -27,7 +27,7 @@ object SparqlQueries {
 		|FROM <http://meta.icos-cp.eu/resources/extrastations/>
 		|WHERE {
 		|	$orgFilter
-		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|	?station cpmeta:hasStationId ?id; cpmeta:hasName ?name .
 		|}
 		|order by ?name""".stripMargin
 
@@ -37,7 +37,7 @@ object SparqlQueries {
 		|${expandFrom(citiesMetaInstGraphs)}
 		|WHERE {
 		|	$orgFilter
-		|	?station cpmeta:hasName ?name; cpmeta:hasStationId ?id .
+		|	?station cpmeta:hasStationId ?id; cpmeta:hasName ?name .
 		|}
 		|order by ?name""".stripMargin
 

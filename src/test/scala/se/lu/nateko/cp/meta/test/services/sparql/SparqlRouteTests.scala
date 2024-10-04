@@ -77,6 +77,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 				assert(firstResponse.contains(uri))
 			.flatMap: _ =>
 				val anotherOrigin = "https://blabla.com"
+				Thread.sleep(20) // to prevent hypothetically possible race condition in testing
 				testRoute(query, origin = anotherOrigin):
 					assert(status === StatusCodes.OK)
 					assertCORS(anotherOrigin) // CORS headers are not cached

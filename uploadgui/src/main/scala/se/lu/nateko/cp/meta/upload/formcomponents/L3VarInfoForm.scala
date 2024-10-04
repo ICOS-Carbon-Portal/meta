@@ -35,6 +35,14 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 		}
 	}
 
+	def show(): Unit = {
+		formDiv.style.display = "block"
+	}
+
+	def hide(): Unit = {
+		formDiv.style.display = "none"
+	}
+
 	private class L3VarInfoInput{
 
 		def varInfo: Try[String] = varNameInput.value

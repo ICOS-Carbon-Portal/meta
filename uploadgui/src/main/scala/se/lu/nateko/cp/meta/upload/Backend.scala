@@ -102,13 +102,9 @@ object Backend {
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
-		val firstVarName: Option[String] = varnames.flatMap(_.headOption).filter(_ => spec.isSpatiotemporal)
+		val hasVars: Boolean = varnames.flatMap(_.headOption).isDefined
 
-		val isZip = spec.format == zipArchive || spec.format == excel
-		val isNetCDF = spec.format == netCdf || spec.format == netCdfTimeSeries
-		val isNonIngestableNetCDF = isNetCDF && spec.dataset.isEmpty
-
-		if((spec.isStationTimeSer && spec.dataset.isDefined) || firstVarName.isDefined || isZip || isNetCDF){
+		if (spec.dataset.isDefined && (spec.isStationTimeSer || hasVars)) || spec.isZip || spec.isNetCDF then
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = varnames.fold(""){vns =>
@@ -118,12 +114,12 @@ object Backend {
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
 			fetchOk("validate data object", url, new RequestInit{
-				body = if isZip || isNonIngestableNetCDF then file.slice(0, 100) else file
+				body = if spec.isZip || spec.isNonIngestableNetCDF then file.slice(0, 100) else file
 				method = HttpMethod.PUT
 				headers = Dictionary("Content-Type" -> "application/octet-stream")
 				credentials = RequestCredentials.include
 			}).map(_ => ())
-		} else Future.successful(())
+		else Future.successful(())
 	}
 
 	def sparqlSelect(query: String): Future[IndexedSeq[Binding]] =

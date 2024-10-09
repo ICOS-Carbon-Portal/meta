@@ -15,7 +15,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">18.815833</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ans-data@polar.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/abisko-32652281"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ANS</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">385</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -58,7 +57,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">19.76646</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/svartberget-32652421"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SVB</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">230</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -101,7 +99,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">18.6110554</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/tarfala-32652440"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">TRS</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1130</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -140,7 +137,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">20.24199</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/r%C3%B6b%C3%A4cksdalen-32652380"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">RBD</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">12</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/agriculture"/>
@@ -169,7 +165,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">12.1648</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/skogaryd-32652394"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">SRC</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">79</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -205,7 +200,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">14.7827</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/asa-32652326"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ASA</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">182</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -234,7 +228,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">18.64212</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/erken-32652341"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">ERK</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">10</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/lakes-and-streams"/>
@@ -259,7 +252,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">15.47249</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/grims%C3%B6-32652353"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">GRI</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">118</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/forest"/>
@@ -283,7 +275,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.1027</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/l%C3%B6nnstorp-32652365"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">LON</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">18</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/agriculture"/>
@@ -1423,7 +1414,6 @@
 	<hasLongitude xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#double">13.641250</hasLongitude>
 	<hasEmail xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">data@fieldsites.se</hasEmail>
 	<rdfs:seeAlso rdf:resource="https://www.fieldsites.se/en-GB/research-stations/associated-station-bolmen-41053065"/>
-	<belongsToTheNetworkOf xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
 	<hasStationId xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/">BOL</hasStationId>
 	<hasElevation xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:datatype="http://www.w3.org/2001/XMLSchema#float">142</hasElevation>
 	<hasEcosystemType xmlns="http://meta.icos-cp.eu/ontologies/cpmeta/" rdf:resource="https://meta.fieldsites.se/resources/ecosystems/lakes-and-streams"/>

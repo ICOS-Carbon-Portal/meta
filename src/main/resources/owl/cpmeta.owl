@@ -242,17 +242,6 @@
     
 
 
-    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf -->
-
-    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf">
-        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
-        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter"/>
-        <rdfs:label>belongs to thematic center</rdfs:label>
-    </owl:ObjectProperty>
-    
-
-
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/broaderEcosystem -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/broaderEcosystem">
@@ -2264,12 +2253,6 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/AS">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/ATC"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:label>Atmospheric station</rdfs:label>
     </owl:Class>
     
@@ -2589,12 +2572,6 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/ES">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/ETC"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:label>Ecosystem station</rdfs:label>
     </owl:Class>
     
@@ -2791,12 +2768,6 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/OS">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="http://meta.icos-cp.eu/resources/organizations/OTC"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:label>Oceanic station</rdfs:label>
     </owl:Class>
     
@@ -3299,12 +3270,6 @@
 
     <owl:Class rdf:about="https://meta.fieldsites.se/ontologies/sites/Station">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToTheNetworkOf"/>
-                <owl:hasValue rdf:resource="https://meta.fieldsites.se/resources/organizations/SITES_SLU"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:label>SITES station</rdfs:label>
     </owl:Class>
     

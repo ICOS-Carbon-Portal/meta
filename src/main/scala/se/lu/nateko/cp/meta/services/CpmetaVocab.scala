@@ -173,6 +173,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasMunichId = getRelativeRaw("hasMunichId")
 	val hasParisId = getRelativeRaw("hasParisId")
 	val hasZurichId = getRelativeRaw("hasZurichId")
+	val belongsToNetwork = getRelativeRaw("belongsToNetwork")
 
 	val hasWigosId = getRelativeRaw("hasWigosId")
 

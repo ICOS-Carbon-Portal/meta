@@ -2,38 +2,31 @@ package se.lu.nateko.cp.meta.metaflow.cities
 
 import se.lu.nateko.cp.meta.metaflow.{TC, TcConf}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-
-sealed trait CitiesTC extends TC
-
-case object MunichMidLow extends CitiesTC
-case object ParisMidLow extends CitiesTC
-case object ZurichMidLow extends CitiesTC
-
-given MunichConf: TcConf[MunichMidLow.type] with
-	val tc = MunichMidLow
-	val stationPrefix = "Munich"
-	val tcPrefix = "Munich"
-
-	def stationClass(meta: CpmetaVocab) = meta.munichStationClass
-
-	def tcIdPredicate(meta: CpmetaVocab) = meta.hasMunichId
+import se.lu.nateko.cp.meta.core.data.CityNetwork
+import org.eclipse.rdf4j.model.IRI
 
 
-given ParisConf: TcConf[ParisMidLow.type] with
-	val tc = ParisMidLow
-	val stationPrefix = "Paris"
-	val tcPrefix = "Paris"
+sealed trait CitiesTC(val network: CityNetwork) extends TC
 
-	def stationClass(meta: CpmetaVocab) = meta.parisStationClass
+case object MunichMidLow extends CitiesTC("Munich")
+case object ParisMidLow extends CitiesTC("Paris")
+case object ZurichMidLow extends CitiesTC("Zurich")
 
-	def tcIdPredicate(meta: CpmetaVocab) = meta.hasParisId
+sealed class CityTcConf[CTC <: CitiesTC](
+	val tc: CTC,
+	classGetter: CpmetaVocab => IRI,
+	predGetter: CpmetaVocab => IRI
+) extends TcConf[CTC]:
+	val stationPrefix = tc.network
+	val tcPrefix = tc.network
+	def stationClass(meta: CpmetaVocab): IRI = classGetter(meta)
+	def tcIdPredicate(meta: CpmetaVocab): IRI = predGetter(meta)
 
+given MunichConf: TcConf[MunichMidLow.type] =
+	CityTcConf(MunichMidLow, _.munichStationClass, _.hasMunichId)
 
-given ZurichConf: TcConf[ZurichMidLow.type] with
-	val tc = ZurichMidLow
-	val stationPrefix = "Zurich"
-	val tcPrefix = "Zurich"
+given ParisConf: TcConf[ParisMidLow.type] =
+	CityTcConf(ParisMidLow, _.parisStationClass, _.hasParisId)
 
-	def stationClass(meta: CpmetaVocab) = meta.zurichStationClass
-
-	def tcIdPredicate(meta: CpmetaVocab) = meta.hasZurichId
+given ZurichConf: TcConf[ZurichMidLow.type] =
+	CityTcConf(ZurichMidLow, _.zurichStationClass, _.hasZurichId)

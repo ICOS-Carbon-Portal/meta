@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 import formcomponents.*
 import Utils.*
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.upload.UploadApp.whenDone
 
 
 class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".production-section"){
@@ -62,7 +63,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 	}
 
 	override def show(): Unit = {
-		super.getPeopleAndOrganizations()
+		whenDone(getPeopleAndOrganizations())(updateAgentsAndOrgs)
 		super.show()
 	}
 
@@ -75,13 +76,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			agentList.values = agentAgg.agents
 			organizationList.values = agentAgg.orgs
 		}
-		case GotAgentList(agents) =>
-			agentAgg.agents = agents
-			agentList.values = agentAgg.agents
-		case GotOrganizationList(orgs) =>
-			agentAgg.orgs = orgs
-			organizationList.values = agentAgg.orgs
-	}
+}
 
 	private def onSpecSelected(spec: ObjSpec): Unit = spec.dataLevel match {
 		case 0 =>
@@ -102,6 +97,13 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 		notifyUpdate()
 	}
 
+	private def updateAgentsAndOrgs(people: IndexedSeq[NamedUri], organizations: IndexedSeq[NamedUri]) = {
+		agentAgg.agents = organizations.concat(people)
+		agentList.values = agentAgg.agents
+		agentAgg.orgs = organizations
+		organizationList.values = agentAgg.orgs
+	}
+
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DataObjectDto => dto.specificInfo
 			.fold(
@@ -109,18 +111,14 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 				_.production
 			)
 			.fold(resetForm()){production =>
-				for(
-					people <- Backend.getPeople;
-					organizations <- Backend.getOrganizations
-				)
-				yield {
-					agentList.values = organizations.concat(people)
-					organizationList.values = organizations
+				whenDone(getPeopleAndOrganizations()) { (people, organizations) =>
+					updateAgentsAndOrgs(people, organizations)
 
 					agentList.values.find(_.uri == production.creator).map(agent => {
 						creatorInput.value = agent
 					})
-					contributorsInput.setValues(production.contributors.flatMap(agentUri => agentList.values.find(_.uri == agentUri)))
+
+					contributorsInput.setValues(production.contributors.flatMap(agentUri => agentAgg.agents.find(_.uri == agentUri)))
 					organizationList.values.find(org => production.hostOrganization.contains(org.uri)).map(org => {
 						hostOrganizationInput.value = org
 					})

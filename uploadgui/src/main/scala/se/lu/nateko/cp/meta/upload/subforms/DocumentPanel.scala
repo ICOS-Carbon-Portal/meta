@@ -12,6 +12,7 @@ import scala.util.Try
 
 import formcomponents.*
 import Utils.*
+import se.lu.nateko.cp.meta.upload.UploadApp.whenDone
 
 
 class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".document-section"){
@@ -35,7 +36,10 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 	}
 
 	override def show(): Unit = {
-		super.getPeopleAndOrganizations()
+		whenDone(getPeopleAndOrganizations()) { (people, organizations) =>
+			agentAgg.agents = organizations.concat(people)
+			agentList.values = agentAgg.agents
+		}
 		super.show()
 	}
 
@@ -45,9 +49,6 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 			agentAgg.stations = stations.map(_.namedUri)
 			agentList.values = agentAgg.agents
 		}
-		case GotAgentList(agents) =>
-			agentAgg.agents = agents
-			agentList.values = agentAgg.agents
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {

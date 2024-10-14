@@ -22,6 +22,7 @@ case class ObjSpec(
 ){
 	def isSpatiotemporal = specificDatasetType == DatasetType.SpatioTemporal
 	def isStationTimeSer = specificDatasetType == DatasetType.StationTimeSeries
+	def isSitesProjectData = project == URI("https://meta.fieldsites.se/resources/projects/community-projects")
 	val isZip = format == zipArchive || format == excel
 	val isNetCDF = format == netCdf || format == netCdfTimeSeries
 	val isNonIngestableNetCDF = isNetCDF && dataset.isEmpty

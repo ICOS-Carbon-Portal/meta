@@ -87,8 +87,8 @@ fetchGCMDKeywords := {
 	val jsonPath = "./src/main/resources/gcmdkeywords.json"
 	val tmpFile = file(jsonPath + "~")
 	val exitCode = (
-		url("https://gcmd.earthdata.nasa.gov/kms/concepts/concept_scheme/sciencekeywords/?format=json") #>
-		Seq("jq", ".concepts | map(.prefLabel)") #>
+		url("https://gcmd.earthdata.nasa.gov/kms/tree/concept_scheme/sciencekeywords") #>
+		Seq("jq", "[.tree.treeData[].children[].children[] | .. | objects | .title]") #>
 		tmpFile
 	).!
 	if(exitCode == 0) {

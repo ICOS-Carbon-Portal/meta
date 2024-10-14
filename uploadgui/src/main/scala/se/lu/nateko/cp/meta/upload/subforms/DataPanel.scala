@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.SubmitterProfile
 import UploadApp.whenDone
 import java.net.URI
 import java.time.Instant
+import org.scalajs.dom.html
 
 
 class DataPanel(
@@ -33,6 +34,7 @@ class DataPanel(
 	keywordList.values = gcmdKeywords
 	private val licenceUrl = new UriOptInput("licenceselect", notifyUpdate)
 	private val moratoriumInput = new InstantOptInput("moratoriuminput", notifyUpdate)
+	private val extraKeywordsDiv = new HtmlElements(".keywords-block")
 	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
@@ -79,6 +81,7 @@ class DataPanel(
 			val isNotWdcgg = objFormat != "asciiWdcggTimeSer"
 			val isNotNetCDF = objFormat != "netcdfTimeSeries"
 
+			if(objSpec.isSitesProjectData) extraKeywordsDiv.show() else extraKeywordsDiv.hide()
 			if(objSpec.isStationTimeSer && isNotAtcTimeSeries && isNotWdcgg && isNotNetCDF) nRowsInput.enable() else nRowsInput.disable()
 			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)

@@ -170,10 +170,8 @@ object Backend {
 		.flatMap(parseTo[Doi])
 
 	def getKeywordList(using envri: Envri): Future[IndexedSeq[String]] =
-		if (envri == Envri.SITES) Future.successful(IndexedSeq.empty)
-		else
-			fetchOk("fetch keyword list", "/uploadgui/gcmdkeywords.json")
-				.flatMap(parseTo[IndexedSeq[String]])
+		fetchOk("fetch keyword list", "/uploadgui/gcmdkeywords.json")
+			.flatMap(parseTo[IndexedSeq[String]])
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{

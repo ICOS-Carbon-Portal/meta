@@ -1,6 +1,6 @@
-//> using toolkit default
+//> using toolkit 0.5.0
 //> using repository "https://repo.icos-cp.eu/content/groups/public"
-//> using dep "se.lu.nateko.cp::meta-core:0.7.18"
+//> using dep "se.lu.nateko.cp::meta-core:0.7.20"
 
 import sttp.model.Uri
 import sttp.model.Uri.UriContext

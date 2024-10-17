@@ -361,6 +361,7 @@ class QueryTests extends AsyncFunSpec with TestDbFixture {
 	describeQ(TestQueries.listKnownDataObjects("<https://meta.icos-cp.eu/objects/u9dwttNxsKTrHdQrMCpB18Rb>"), "Known data objects", expectRows = 1, sampleIndex = 0, sortColumn = "dobj") {
 		f => Map(
 			"hasNextVersion" -> f.createLiteral("false", XSD.BOOLEAN), 
+			"hasVarInfo" -> f.createLiteral("false", XSD.BOOLEAN),
 			"timeEnd" -> f.createLiteral("2022-02-28T23:00:00Z", XSD.DATETIME), 
 			"fileName" -> f.createLiteral("ICOS_ATC_L2_L2-2022.1_TRN_100.0_CTS_CH4.zip"), 
 			"timeStart" -> f.createLiteral("2016-08-11T00:00:00Z", XSD.DATETIME), 

@@ -1,0 +1,30 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?station ?spec ?dobj ?fileName ?size ?submTime where{
+	{
+		select ?spec ?station (count(?dobj) as ?count) where{
+			{
+				select ?dobj ?spec ?station
+				where {
+					VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
+					?dobj cpmeta:hasObjectSpec ?spec .
+					?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+					?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+					FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+				}
+			}
+		}
+		group by ?spec ?station
+		having (?count > 1)
+	}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+}
+order by ?station ?spec ?submTime
+

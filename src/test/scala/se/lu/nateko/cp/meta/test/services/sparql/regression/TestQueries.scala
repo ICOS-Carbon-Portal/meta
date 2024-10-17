@@ -619,7 +619,7 @@ object TestQueries {
 			optional{?column cpmeta:isRegexColumn ?isRegex}
 			optional{
 				?flagCol cpmeta:isQualityFlagFor ?column ; cpmeta:hasColumnTitle ?flagColName .
-				filter exists { ?dset cpmeta:hasColumn ?flagCol }
+				?dset cpmeta:hasColumn ?flagCol .
 			}
 			?valType rdfs:label ?valueType .
 			optional{?valType rdfs:comment ?colTip }
@@ -644,10 +644,7 @@ object TestQueries {
 		?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 		?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 		BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
-		OPTIONAL {
-			BIND ("true"^^xsd:boolean as ?hasVarInfo)
-			filter exists{?dobj cpmeta:hasActualVariable [] }
-		}
+		BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
 		}
 	"""
 

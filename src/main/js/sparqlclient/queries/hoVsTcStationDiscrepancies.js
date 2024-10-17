@@ -16,7 +16,8 @@ WHERE {
 			optional{
 				?memb cpmeta:atOrganization ?tcS .
 				?memb cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
-				filter not exists{?memb cpmeta:hasEndTime ?end}
+				optional{?memb cpmeta:hasEndTime ?end}
+				filter(!bound(?end))
 				?pi cpmeta:hasMembership ?memb ; cpmeta:hasLastName ?lname .
 			}
 		}

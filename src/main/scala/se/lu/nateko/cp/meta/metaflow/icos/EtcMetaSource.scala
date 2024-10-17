@@ -364,7 +364,7 @@ object EtcMetaSource{
 	): Validated[Map[String, Seq[TcFunding[ETC.type]]]] = {
 		val tcIdToFundingVs = lookups.map{lookup =>
 			given Lookup = lookup
-			for(
+			for
 				stationTcId <- lookUp(Vars.stationTcId).require("missing ETC technical station id in funding table");
 				funderName <- lookUp(Vars.fundingOrgName).require(s"missing funder name for funding of station $stationTcId");
 				awardTitle <- lookUp(Vars.fundingAwardTitle).optional;
@@ -374,8 +374,12 @@ object EtcMetaSource{
 				comment <- lookUp(Vars.fundingComment).optional;
 				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr)).filter(_.isAbsolute).optional;
 				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
-			) yield {
-				val cpId = UriId.escaped(s"${stationTcId}_$awardNumber")
+			yield
+				val idComps: Seq[String] = stationTcId +:
+					awardNumber.map(Seq(_)).getOrElse:
+						val funderId: String = tcFunder.tcIdOpt.fold(tcFunder.cpId.toString)(_.id)
+						funderId +: Seq(fStart, fEnd).flatten.map(_.toString)
+				val cpId = UriId.escaped(idComps.mkString("_"))
 				val core = Funding(
 					self = UriResource(
 						uri = vocab.getFunding(cpId).toJava,
@@ -390,7 +394,6 @@ object EtcMetaSource{
 					stop = fEnd
 				)
 				stationTcId -> TcFunding[ETC.type](cpId, tcFunder, core)
-			}
 		}
 		Validated.sequence(tcIdToFundingVs).map{tcToFundings =>
 			tcToFundings.distinctBy(_._2.cpId).groupMap(_._1)(_._2)

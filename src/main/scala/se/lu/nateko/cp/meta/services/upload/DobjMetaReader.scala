@@ -117,7 +117,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				specificInfo = specificInfo,
 				pictures = getUriLiteralValues(stat, metaVocab.hasDepiction),
 				countryCode = countryCode.flatMap(CountryCode.unapply),
-				funding = Option(funding).filterNot(_.isEmpty)
+				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder))
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>
@@ -415,3 +415,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			)
 
 end DobjMetaReader
+
+given fundingOrder: Ordering[Funding] = Ordering
+	.by[Funding, LocalDate](_.stop.getOrElse(LocalDate.MAX))
+	.orElseBy(_.start.getOrElse(LocalDate.MIN))
+	.orElseBy(_.funder.org.name)

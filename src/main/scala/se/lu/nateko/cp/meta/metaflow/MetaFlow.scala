@@ -43,7 +43,7 @@ object MetaFlow:
 	end initiate
 
 
-	def join(flows: Seq[MetaFlow]) = flows match
+	def join(flows: Seq[MetaFlow]): MetaFlow = flows match
 		case Seq(single) => single
 		case _ => MetaFlow(
 				uploadServices = flows.flatMap(_.uploadServices),

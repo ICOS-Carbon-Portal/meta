@@ -125,10 +125,10 @@ case class EtcStationSpecifics(
 }
 
 //TODO Consider removing "Unspecified" option later
-type CityNetwork = "Munich" | "Paris" | "Zurich" | "Unspecified"
+type CityNetwork = "Munich" | "Paris" | "Zurich" | "Barcelona" | "Unspecified"
 
 def cityNetworkFromStr(s: String): CityNetwork = s match
-	case city: ("Munich" | "Paris" | "Zurich") => city
+	case city: ("Munich" | "Paris" | "Zurich" | "Barcelona") => city
 	case _ => "Unspecified"
 
 

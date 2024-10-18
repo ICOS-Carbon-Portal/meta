@@ -124,7 +124,19 @@ case class EtcStationSpecifics(
 	override def ecosystems = ecosystemType.toSeq
 }
 
-case class IcosCitiesStationSpecifics(timeZoneOffset: Option[Int]) extends StationSpecifics
+//TODO Consider removing "Unspecified" option later
+type CityNetwork = "Munich" | "Paris" | "Zurich" | "Barcelona" | "Unspecified"
+
+def cityNetworkFromStr(s: String): CityNetwork = s match
+	case city: ("Munich" | "Paris" | "Zurich" | "Barcelona") => city
+	case _ => "Unspecified"
+
+
+
+case class IcosCitiesStationSpecifics(
+	timeZoneOffset: Option[Int],
+	network: CityNetwork
+) extends StationSpecifics
 
 object EtcStationSpecifics{
 	def apply(base: IcosStationSpecifics): EtcStationSpecifics = EtcStationSpecifics(

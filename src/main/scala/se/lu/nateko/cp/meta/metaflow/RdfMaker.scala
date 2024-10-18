@@ -214,7 +214,11 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			plainIcosStationSpecTriples(iri, atc)
 		case icos: IcosStationSpecifics =>
 			plainIcosStationSpecTriples(iri, icos)
-		case _ => Seq.empty
+		case cities: IcosCitiesStationSpecifics =>
+			(iri, meta.belongsToNetwork, vocab.lit(cities.network)) +:
+			cities.timeZoneOffset.toSeq.map: tzoff =>
+				(iri, meta.hasTimeZoneOffset, vocab.lit(tzoff))
+		case other: (SitesStationSpecifics | NoStationSpecifics.type) => Seq.empty
 	}
 
 	private def getInstrDeploymentTriples[T <: TC](depl: InstrumentDeployment[T], deplIri: IRI): Seq[Triple] = {

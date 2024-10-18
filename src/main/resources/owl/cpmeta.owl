@@ -24,13 +24,13 @@
         <dc:creator rdf:resource="http://meta.icos-cp.eu/resources/people/Oleg%20Mirzov"/>
         <dc:description xml:lang="en">OWL vocabulary describing metadata of two environmental research infrastructures: ICOS and SITES, as well as of spin-off project ICOS Cities</dc:description>
         <dc:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2015-05-18</dc:issued>
-        <dc:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-19</dc:modified>
+        <dc:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-10-09</dc:modified>
         <dc:publisher rdf:resource="http://meta.icos-cp.eu/resources/organizations/CP"/>
         <dc:rights>Copyright © 2024 ICOS ERIC</dc:rights>
         <dc:title xml:lang="en">Ontology of Integrated Carbon Observation System (ICOS)</dc:title>
         <vann:preferredNamespacePrefix>cpmeta</vann:preferredNamespacePrefix>
         <vann:preferredNamespaceUri>http://meta.icos-cp.eu/ontologies/cpmeta/</vann:preferredNamespaceUri>
-        <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.1</owl:versionInfo>
+        <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.2</owl:versionInfo>
     </owl:Ontology>
     
 
@@ -959,6 +959,46 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Funding"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
         <rdfs:label>award URI</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/belongsToNetwork -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToNetwork">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasStationSpecificParam"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosCitiesStation"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first>Barcelona</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first>Munich</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first>Paris</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first>Zurich</rdf:first>
+                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+        <rdfs:label>station network</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -2619,6 +2659,12 @@
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/IcosCitiesStation">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/belongsToNetwork"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:label>ICOS Cities station</rdfs:label>
     </owl:Class>
     
@@ -3283,15 +3329,6 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
-
-
-    <!-- https://meta.fieldsites.se/ontologies/sites/communityProjects -->
-
-    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/communityProjects">
-        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
-        <rdfs:label>SITES projects</rdfs:label>
-    </owl:NamedIndividual>
     
 
 
@@ -4109,6 +4146,15 @@
     
 
 
+    <!-- https://meta.fieldsites.se/ontologies/sites/communityProjects -->
+
+    <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/communityProjects">
+        <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <rdfs:label>SITES projects</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://meta.fieldsites.se/ontologies/sites/delimitedHeaderCsv -->
 
     <owl:NamedIndividual rdf:about="https://meta.fieldsites.se/ontologies/sites/delimitedHeaderCsv">
@@ -4167,5 +4213,5 @@
 
 
 
-<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+<!-- Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi -->
 

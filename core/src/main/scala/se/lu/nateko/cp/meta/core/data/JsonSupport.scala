@@ -239,7 +239,13 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
 	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
-	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat1(IcosCitiesStationSpecifics.apply)
+	given JsonFormat[CityNetwork] with
+		def write(cn: CityNetwork): JsValue = JsString(cn)
+		def read(js: JsValue): CityNetwork = js match
+			case JsString(s) => cityNetworkFromStr(s)
+			case _ => "Unspecified"
+
+	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat2(IcosCitiesStationSpecifics.apply)
 
 	private val AtcSpec = "atc"
 	private val EtcSpec = "etc"
@@ -249,9 +255,9 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[StationSpecifics] with{
 		def write(ss: StationSpecifics): JsValue = ss match{
 			case NoStationSpecifics => JsObject.empty
-			case etc: AtcStationSpecifics => etc.toTypedJson(AtcSpec)
+			case atc: AtcStationSpecifics => atc.toTypedJson(AtcSpec)
 			case etc: EtcStationSpecifics => etc.toTypedJson(EtcSpec)
-			case etc: OtcStationSpecifics => etc.toTypedJson(OtcSpec)
+			case otc: OtcStationSpecifics => otc.toTypedJson(OtcSpec)
 			case sites: SitesStationSpecifics => sites.toTypedJson(SitesSpec)
 			case cities: IcosCitiesStationSpecifics => cities.toTypedJson(CitiesSpec)
 		}

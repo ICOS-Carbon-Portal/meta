@@ -173,8 +173,13 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		else if resourceHasType(stat, metaVocab.oceStationClass) then
 			getBasicIcosSpecifics(stat, vocab.otc)
 		else if resourceHasType(stat, metaVocab.cityStationClass) then
-			for timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
-			yield IcosCitiesStationSpecifics(timeZoneOffset = timeZoneOffset)
+			for
+				timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
+				networkStr <- getOptionalString(stat, metaVocab.belongsToNetwork)
+			yield IcosCitiesStationSpecifics(
+				timeZoneOffset,
+				networkStr.fold("Unspecified")(cityNetworkFromStr)
+			)
 		else Validated.ok(NoStationSpecifics)
 	end getStationSpecifics
 

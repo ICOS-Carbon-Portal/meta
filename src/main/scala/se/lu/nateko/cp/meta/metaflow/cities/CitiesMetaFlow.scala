@@ -8,12 +8,15 @@ import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.MetaUploadConf
+import se.lu.nateko.cp.meta.core.data.AtcStationSpecifics
 import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.IcosCitiesStationSpecifics
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.metaflow.icos.ATC
 import se.lu.nateko.cp.meta.metaflow.icos.AtcConf
 import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
+import se.lu.nateko.cp.meta.services.MetadataException
 
 object CitiesMetaFlow:
 	def init(
@@ -37,8 +40,17 @@ object CitiesMetaFlow:
 				startFlow[MunichMidLow.type](flowConf.munichUpload, de),
 				startFlow[ParisMidLow.type](flowConf.parisUpload, fr),
 				startFlow[ZurichMidLow.type](flowConf.zurichUpload, ch),
-				MetaFlow(Seq(atcSource), atcSource.state.to(Sink.foreach(diff.apply[ATC.type])).run())
+				MetaFlow(Seq(atcSource), atcSource.state.map(injectNetworkInfo).to(Sink.foreach(diff.apply[ATC.type])).run())
 			)
 		)
 	end init
+
+	def injectNetworkInfo(state: TcState[ATC.type]): TcState[ATC.type] =
+		val stations = state.stations.map: s =>
+			val citySpec = s.core.specificInfo match
+				case atc: AtcStationSpecifics => IcosCitiesStationSpecifics(atc.timeZoneOffset, "Paris")
+				case _ => throw MetadataException("Unexpected station-specific info, must be AtcStationSpecifics")
+			s.copy(core = s.core.copy(specificInfo = citySpec))
+		TcState(stations, state.roles, state.instruments)
+
 end CitiesMetaFlow

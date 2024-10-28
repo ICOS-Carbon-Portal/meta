@@ -1,0 +1,10 @@
+instance:
+    index: false
+
+repository:
+    type: 2
+    native:
+        dir: /fdp/rdfdata
+
+ping:
+    enabled: false

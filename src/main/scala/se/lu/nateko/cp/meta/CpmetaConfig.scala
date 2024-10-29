@@ -27,10 +27,13 @@ import scala.collection.mutable.WeakHashMap
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
+enum IngestionMode:
+	case EAGER, BACKGROUND, OFF
+
 case class IngestionConfig(
 	ingesterId: String,
 	waitFor: Option[Seq[String]],
-	ingestAtStartup: Option[Boolean]
+	mode: IngestionMode
 )
 
 case class InstanceServerConfig(
@@ -198,6 +201,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	private val IcosFlow = "icos"
 	private val CitiesFlow = "cities"
 
+	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
 	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)

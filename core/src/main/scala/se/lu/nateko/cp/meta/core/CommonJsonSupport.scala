@@ -59,22 +59,22 @@ trait CommonJsonSupport:
 
 	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
-	//TODO use analoguos function from cpauthCore
-	def enumFormat[T <: reflect.Enum](valueOf: String => T, values: Array[T]) = new RootJsonFormat[T] {
-		def write(v: T) = JsString(v.toString)
+	export se.lu.nateko.cp.cpauth.core.JsonSupport.enumFormat
+	// def enumFormat[T <: reflect.Enum](valueOf: String => T, values: Array[T]) = new RootJsonFormat[T] {
+	// 	def write(v: T) = JsString(v.toString)
 
-		def read(value: JsValue): T = value match{
-			case JsString(s) =>
-				try{
-					valueOf(s)
-				}catch{
-					case _: IllegalArgumentException => deserializationError(
-						"Expected one of: " + values.mkString("'", "', '", "'")
-					)
-				}
-			case _ => deserializationError("Expected a JSON string")
-		}
-	}
+	// 	def read(value: JsValue): T = value match{
+	// 		case JsString(s) =>
+	// 			try{
+	// 				valueOf(s)
+	// 			}catch{
+	// 				case _: IllegalArgumentException => deserializationError(
+	// 					"Expected one of: " + values.mkString("'", "', '", "'")
+	// 				)
+	// 			}
+	// 		case _ => deserializationError("Expected a JSON string")
+	// 	}
+	// }
 
 	given [T] (using JsonWriter[T]): RootJsonFormat[WithErrors[T]] with
 		def read(json: JsValue): WithErrors[T] = ??? // should not be needed
@@ -103,4 +103,3 @@ object CommonJsonSupport extends CommonJsonSupport:
 	val TypeField = "_type"
 
 	class WithErrors[T](val value: T, val errors: Seq[String])
-

@@ -154,9 +154,10 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			l2 => optJs(l2.acquisition.interval)(fromTimeInt)
 		)
 
-		val stationCreator = optJs(dobj.specificInfo.toOption)(
-			l2 => fromOrganization(l2.acquisition.station.org, l2.acquisition.station.responsibleOrganization)
-		)
+		val stationCreator = dobj.specificInfo.fold(
+			st => st.station,
+			ts => Some(ts.acquisition.station)
+		).fold(JsNull)(st => fromOrganization(st.org, st.responsibleOrganization))
 
 		val creator = envri match
 			case Envri.SITES => stationCreator

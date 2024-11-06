@@ -51,7 +51,7 @@ object UploadApp {
 	private def setupForm(implicit envri: Envri, envriConf: EnvriConfig) = {
 		val submsFut = Backend.submitterIds
 		val specsFut = Backend.getObjSpecs
-		val spatCovsFut = Backend.getL3SpatialCoverages
+		val spatCovsFut = Backend.getSpatioTemporalCoverages
 		val gcmdKeywordsFut = Backend.getKeywordList
 
 		val formFut = for(

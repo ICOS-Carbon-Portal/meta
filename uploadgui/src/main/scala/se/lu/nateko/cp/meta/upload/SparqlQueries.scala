@@ -113,15 +113,18 @@ object SparqlQueries {
 		)
 	}
 
-	//Only for ICOS for now
-	def l3spatialCoverages = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	private def spatioTemporalCoveragesQuery(from: Seq[String]) = s"""|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select *
-		|from <http://meta.icos-cp.eu/resources/cpmeta/>
+		|${expandFrom(from)}
 		|where{
 		|	{{?cov a cpmeta:SpatialCoverage } union {?cov a cpmeta:LatLonBox}}
 		|	?cov rdfs:label ?label
 		|}
 		|""".stripMargin
+
+	def spatioTemporalCoverages(using envri: Envri): String = envri match
+		case Envri.SITES => spatioTemporalCoveragesQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
+		case Envri.ICOS | Envri.ICOSCities => spatioTemporalCoveragesQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/"))
 
 	def toSpatialCoverage(b: Binding) = new SpatialCoverage(new URI(b("cov")), b("label"))
 

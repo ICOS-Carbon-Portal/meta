@@ -1,24 +1,29 @@
-# docker-compose.yml
 version: '3'
 services:
 
     fdp:
-        container_name: fdp17
-        image: fairdata/fairdatapoint:1.17.2
+        container_name: fdp
+        image: fairdata/fairdatapoint:develop
         volumes:
             - ./application.yml:/fdp/application.yml:ro
             - ./rdfdata:/fdp/rdfdata
 
     fdp-client:
-        container_name: fdp_client17
+        container_name: fdp_client
         image: fairdata/fairdatapoint-client:1.17.0
         ports:
             - 127.0.0.1:8085:80
         environment:
-            - FDP_HOST=fdp
+            FDP_HOST: fdp
 
-    mongo:
-        container_name: fdp_mongo17
-        image: mongo:4.2.24
+
+
+    postgres:
+        container_name: fdp_postgres
+        image: postgres:15.8
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: fdp
         volumes:
-            - ./mongodata:/data/db
+            - ./pgdata:/var/lib/postgresql/data

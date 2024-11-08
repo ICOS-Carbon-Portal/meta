@@ -1,13 +1,6 @@
 version: '3'
 services:
 
-    fdp:
-        container_name: fdp
-        image: fairdata/fairdatapoint:develop
-        volumes:
-            - ./application.yml:/fdp/application.yml:ro
-            - ./rdfdata:/fdp/rdfdata
-
     fdp-client:
         container_name: fdp_client
         image: fairdata/fairdatapoint-client:1.17.0
@@ -16,14 +9,24 @@ services:
         environment:
             FDP_HOST: fdp
 
-
+    fdp:
+        container_name: fdp
+        image: fairdatapoint:local
+        volumes:
+            - ./application.yml:/fdp/application.yml:ro
+            - ./rdfdata:/fdp/rdfdata
+        environment:
+            FDP_POSTGRES_USERNAME: fdp
+            FDP_POSTGRES_PASSWORD: fdp
 
     postgres:
         container_name: fdp_postgres
         image: postgres:15.8
+        ports:
+            - 127.0.0.1:54321:5432
         environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: password
+            POSTGRES_USER: fdp
+            POSTGRES_PASSWORD: fdp
             POSTGRES_DB: fdp
         volumes:
             - ./pgdata:/var/lib/postgresql/data

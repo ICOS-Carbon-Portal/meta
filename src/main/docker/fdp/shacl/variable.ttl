@@ -1,0 +1,36 @@
+@prefix :         <http://fairdatapoint.org/> .
+@prefix dash:     <http://datashapes.org/dash#> .
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dct:      <http://purl.org/dc/terms/> .
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iadopt:   <https://w3id.org/iadopt/ont/> .
+
+:IAdoptVariableShape a sh:NodeShape ;
+  sh:targetClass iadopt:Variable ;
+  sh:property [
+    sh:path rdfs:label ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:minCount 1 ;
+    dash:editor dash:TextFieldEditor ;
+    dash:viewer dash:LiteralViewer ;
+    sh:order 20 ;
+  ],[
+    sh:path iadopt:hasProperty ;
+    sh:class iadopt:Property ;
+    sh:maxCount 1 ;
+    sh:minCount 1 ;
+    dash:editor dash:InstancesSelectEditor ;
+    dash:viewer dash:DetailsViewer ;
+    sh:order 21 ;
+  ],[
+    sh:path iadopt:hasObjectOfInterest ;
+    sh:class iadopt:Entity ;
+    sh:maxCount 1 ;
+    sh:minCount 1 ;
+    dash:editor dash:InstancesSelectEditor ;
+    dash:viewer dash:DetailsViewer ;
+    sh:order 22 ;
+  ] .

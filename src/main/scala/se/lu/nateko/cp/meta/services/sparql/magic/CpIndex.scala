@@ -303,7 +303,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 		def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int): Unit = {
 			val bm = set.getOrElseUpdate(categ, emptyBitmap)
-			if(isAssertion) bm.add(idx) else bm.remove(idx)
+			if isAssertion then bm.add(idx) else
+				bm.remove(idx)
+				if bm.isEmpty then set.remove(categ)
 		}
 
 		def updateStrArrayProp(prop: StringCategProp, parser: String => Option[Array[String]], idx: Int): Unit = obj
@@ -515,7 +517,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		)
 
 	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
-		stats.get(key).foreach(_.remove(obj.idx))
+		stats.get(key).foreach: bm =>
+			bm.remove(obj.idx)
+			if bm.isEmpty then stats.remove(key) // to prevent "orphan" URIs from lingering
 		initOk.remove(obj.idx)
 	}
 

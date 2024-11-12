@@ -103,35 +103,38 @@ object IndexHandler{
 	def storagePath = Paths.get("./sparqlMagicIndex.bin")
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
-	val kryo = Kryo()
-	kryo.setRegistrationRequired(true)
-	kryo.setReferences(false)
-	kryo.register(classOf[Array[Object]])
-	kryo.register(classOf[Array[Array[Object]]])
-	kryo.register(classOf[Array[IRI]])
-	kryo.register(classOf[Array[ObjEntry]])
-	kryo.register(classOf[Array[String]])
-	kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
-	kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
-	kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
-	kryo.register(classOf[StatKey], StatKeySerializer)
-	kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
-	kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
-	kryo.register(classOf[IndexData], IndexDataSerializer)
-	OrderingSerializer.register(kryo)
-	OptionSerializer.register(kryo)
+	def makeKryo: Kryo =
+		val kryo = Kryo()
+		kryo.setRegistrationRequired(true)
+		kryo.setReferences(false)
+		kryo.register(classOf[Array[Object]])
+		kryo.register(classOf[Array[Array[Object]]])
+		kryo.register(classOf[Array[IRI]])
+		kryo.register(classOf[Array[ObjEntry]])
+		kryo.register(classOf[Array[String]])
+		kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
+		kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
+		kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
+		kryo.register(classOf[StatKey], StatKeySerializer)
+		kryo.register(classOf[MutableRoaringBitmap], RoaringSerializer)
+		kryo.register(classOf[HierarchicalBitmap[?]], HierarchicalBitmapSerializer)
+		kryo.register(classOf[IndexData], IndexDataSerializer)
+		OrderingSerializer.register(kryo)
+		OptionSerializer.register(kryo)
+		Property.allConcrete.foreach: prop =>
+			kryo.register(prop.getClass, SingletonSerializer(prop))
+		kryo
 
-	Property.allConcrete.foreach: prop =>
-		kryo.register(prop.getClass, SingletonSerializer(prop))
 
 	def store(idx: CpIndex): Future[Done] = Future{
+		given Kryo = makeKryo
 		dropStorage()
 		val fos = FileOutputStream(storagePath.toFile)
 		val gzos = new GZIPOutputStream(fos)
 		storeToStream(idx, gzos)
 	}.flatten
 
-	def storeToStream(idx: CpIndex, os: OutputStream): Future[Done] = Future{
+	def storeToStream(idx: CpIndex, os: OutputStream)(using kryo: Kryo): Future[Done] = Future{
 		val output = Output(os)
 		kryo.writeObject(output, idx.serializableData)
 		output.close()
@@ -141,6 +144,7 @@ object IndexHandler{
 	}
 
 	def restore(): Future[IndexData] = Future{
+		given Kryo = makeKryo
 		val fis = FileInputStream(storagePath.toFile)
 		val is = new GZIPInputStream(fis)
 		restoreFromStream(is).andThen{
@@ -148,7 +152,7 @@ object IndexHandler{
 		}
 	}.flatten
 
-	def restoreFromStream(is: InputStream): Future[IndexData] = Future{
+	def restoreFromStream(is: InputStream)(using kryo: Kryo): Future[IndexData] = Future{
 		val input = Input(is)
 		val data = kryo.readObject(input, classOf[IndexData])
 		input.close()

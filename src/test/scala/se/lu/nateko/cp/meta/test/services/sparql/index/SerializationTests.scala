@@ -1,18 +1,31 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import akka.actor.Cancellable
+import akka.actor.Scheduler
 import akka.event.NoLogging
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
+import org.eclipse.rdf4j.common.transaction.TransactionSetting
 import org.eclipse.rdf4j.model.util.Values
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
+import org.eclipse.rdf4j.sail.NotifyingSail
+import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.eclipse.rdf4j.sail.Sail
+import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
+import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.DataObjectSpec
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.All
 import se.lu.nateko.cp.meta.services.sparql.index.CategFilter
 import se.lu.nateko.cp.meta.services.sparql.index.ContFilter
 import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.services.sparql.index.Property
 import se.lu.nateko.cp.meta.services.sparql.index.Station
 import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd
@@ -20,23 +33,23 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.time.Instant
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Using
-import com.esotericsoftware.kryo.io.{Output, Input}
-import org.roaringbitmap.buffer.MutableRoaringBitmap
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 
 class SerializationTests extends AsyncFunSpec{
 
 	def printToBytesAndParseBack[T](obj: T): T =
 		val os = ByteArrayOutputStream()
 		val output = new Output(os)
-		IndexHandler.kryo.writeClassAndObject(output, obj)
+		val kryo = IndexHandler.makeKryo
+		kryo.writeClassAndObject(output, obj)
 		output.close()
 		val bytes = os.toByteArray()
 		val hexdump = bytes
@@ -49,29 +62,56 @@ class SerializationTests extends AsyncFunSpec{
 		println(hexdump)
 		val is = ByteArrayInputStream(bytes)
 		val input = Input(is)
-		IndexHandler.kryo.readClassAndObject(input).asInstanceOf[T]
+		kryo.readClassAndObject(input).asInstanceOf[T]
 
 
-	def saveToBytes(idx: CpIndex): Future[Array[Byte]] = {
+	def saveToBytes(idx: CpIndex)(using Kryo): Future[Array[Byte]] = {
 		val os = ByteArrayOutputStream()
 		IndexHandler.storeToStream(idx, os).map{_ => os.toByteArray}
 	}
 
-	def loadFromBytes(arr: Array[Byte]): Future[IndexData] = {
+	def loadFromBytes(arr: Array[Byte])(using Kryo): Future[IndexData] = {
 		val is = ByteArrayInputStream(arr)
 		IndexHandler.restoreFromStream(is)
 	}
 
-	def roundTrip(sail: Sail) = //: Future[(CpIndex, CpIndex)] =
+	def roundTrip(sail: Sail)(using Kryo) = //: Future[(CpIndex, CpIndex)] =
 		for(
 			idx <- Future(CpIndex(sail, Future.never, 5)(NoLogging));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
 		) yield idx -> CpIndex(sail, Future.never, data)(NoLogging)
 
+	def smallRepo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
+
+
+	describe("Small index created, object deleted, leaving orphan data type"):
+		it("successfully performs serialization/deserialization round trip"):
+			given Kryo = IndexHandler.makeKryo
+			val repo = smallRepo
+			val idx = CpIndex(repo.getSail, Future.never, 5)(NoLogging)
+			val cpmeta = CpmetaVocab(repo.getValueFactory)
+			val idxHandler = IndexHandler(DummyScheduler)
+			val listener = idxHandler.getListener(repo.getSail, cpmeta, idx, Future.never)
+
+			Using(repo.getSail.getConnection): baseconn =>
+				val conn = baseconn.asInstanceOf[NotifyingSailConnection]
+				conn.addConnectionListener(listener)
+				//deleting an object, leaving one data type "an orphan"
+				val delObj = repo.getValueFactory.createIRI("https://meta.icos-cp.eu/objects/hoidzqcaqmCU3mOZ435r2crG")
+				val toRemove = conn.getStatements(delObj, null, null, false).stream().toArray()
+				conn.begin()
+				conn.removeStatements(delObj, null, null)
+				conn.commit()
+			repo.shutDown()
+
+			for arr <- saveToBytes(idx); _ <- loadFromBytes(arr)
+				yield succeed
+
 
 	describe("CpIndex created from test RDF in a turtle file, and round-tripped"){
-		val repo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
+		val repo = smallRepo
+		given Kryo = IndexHandler.makeKryo
 		val idxFut = roundTrip(repo.getSail).andThen{_ =>
 			repo.shutDown()
 		}
@@ -129,3 +169,13 @@ class SerializationTests extends AsyncFunSpec{
 		)
 	}
 }
+
+object DummyScheduler extends Scheduler:
+	def maxFrequency: Double = 1000d
+	def schedule(initialDelay: FiniteDuration, interval: FiniteDuration, runnable: Runnable)(using ExecutionContext): Cancellable =
+		runnable.run()
+		Cancellable.alreadyCancelled
+
+	def scheduleOnce(delay: FiniteDuration, runnable: Runnable)(using ExecutionContext): Cancellable =
+		runnable.run()
+		Cancellable.alreadyCancelled

@@ -1,14 +1,15 @@
 @import se.lu.nateko.cp.meta.core.data.CitableItem
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.renderMarkdown
 
 @(item: CitableItem, fallbackDescription: Option[String])
 
 @if(item.references.doi.toSeq.flatMap(_.descriptions).isEmpty){
 	@for(description <- fallbackDescription){
-		@property("Description", description)
+		@htmlProperty{Description}{@Html(renderMarkdown(description))}
 	}
 }
 @for(doiMeta <- item.references.doi){
 	@for(descr <- doiMeta.descriptions){
-		@property(s"Description (${descr.descriptionType})", descr.description)
+		@htmlProperty{Description (${descr.descriptionType})}{@Html(renderMarkdown(descr.description))}
 	}
 }

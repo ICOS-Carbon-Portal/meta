@@ -5,11 +5,16 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import spray.json.*
+import org.commonmark.node.*
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
+import org.commonmark.ext.autolink.AutolinkExtension
 
 import java.net.URI
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import scala.jdk.CollectionConverters.IterableHasAsJava
 import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.urlEncode
@@ -93,6 +98,14 @@ object LandingPageHelpers:
 		val params = urlEncode(s"""{"route":"preview","preview":["${hash.id}"]${yAxis}}""")
 
 		s"""https://${conf.dataHost}/portal/#${params}"""
+	}
+
+	def renderMarkdown(md: String): String = {
+		val extensions = Iterable(AutolinkExtension.create()).asJava
+		val parser: Parser = Parser.builder().extensions(extensions).build()
+		val document: Node = parser.parse(md)
+		val renderer: HtmlRenderer = HtmlRenderer.builder().extensions(extensions).build()
+		renderer.render(document)
 	}
 
 	extension(station: Station)

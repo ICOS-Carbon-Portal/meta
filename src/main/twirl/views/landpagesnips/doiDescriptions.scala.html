@@ -5,11 +5,15 @@
 
 @if(item.references.doi.toSeq.flatMap(_.descriptions).isEmpty){
 	@for(description <- fallbackDescription){
-		@htmlProperty{Description}{@Html(renderMarkdown(description))}
+		@htmlProperty{
+			Description
+		}(Html(renderMarkdown(description)))
 	}
 }
 @for(doiMeta <- item.references.doi){
 	@for(descr <- doiMeta.descriptions){
-		@htmlProperty{Description (${descr.descriptionType})}{@Html(renderMarkdown(descr.description))}
+		@htmlProperty{
+			Description (@{descr.descriptionType})
+		}(Html(renderMarkdown(descr.description)))
 	}
 }

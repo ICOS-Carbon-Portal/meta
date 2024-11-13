@@ -38,7 +38,7 @@
 				@pidProperty(dobj.pid, handleProxies.basic)
 			}
 			@for(specComm <- dobj.specification.self.comments){
-				@htmlProperty{Description}{@Html(renderMarkdown(specComm))}
+				@htmlProperty{Description}(Html(renderMarkdown(specComm)))
 			}
 			@doiDescriptions(dobj, dobj.specificInfo.left.toOption.flatMap(_.description))
 			@for(l3meta <- dobj.specificInfo.left.toOption){

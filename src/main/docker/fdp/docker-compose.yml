@@ -11,7 +11,7 @@ services:
 
     fdp-client:
         container_name: fdp_client
-        image: fairdata/fairdatapoint-client:1.17.0
+        image: fairdata/fairdatapoint-client:1.16.3
         ports:
             - 127.0.0.1:8085:80
         environment:

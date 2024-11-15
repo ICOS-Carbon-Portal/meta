@@ -16,21 +16,33 @@
     sh:minCount 1 ;
     dash:editor dash:TextFieldEditor ;
     dash:viewer dash:LiteralViewer ;
-    sh:order 20 ;
   ],[
     sh:path iadopt:hasProperty ;
     sh:class iadopt:Property ;
     sh:maxCount 1 ;
     sh:minCount 1 ;
-    dash:editor dash:InstancesSelectEditor ;
-    dash:viewer dash:DetailsViewer ;
-    sh:order 21 ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
   ],[
     sh:path iadopt:hasObjectOfInterest ;
     sh:class iadopt:Entity ;
     sh:maxCount 1 ;
     sh:minCount 1 ;
-    dash:editor dash:InstancesSelectEditor ;
-    dash:viewer dash:DetailsViewer ;
-    sh:order 22 ;
-  ] .
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ],[
+    sh:path iadopt:hasContextObject ;
+    sh:class iadopt:Entity ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ],[
+    sh:path iadopt:hasMatrix ;
+    sh:class iadopt:Entity ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ],[
+    sh:path iadopt:hasConstraint ;
+    sh:class iadopt:Constraint ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ]   .

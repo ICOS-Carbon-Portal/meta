@@ -6,10 +6,8 @@
 //> using dep org.eclipse.rdf4j:rdf4j-repository-sail:4.3.8
 //> using dep com.github.scopt::scopt:4.1.0
 //> using file "FDPClient.scala"
-import scala.util.Using
 
 import java.io.{StringReader,StringWriter}
-import os.*
 import sttp.client4.quick.*
 import sttp.model.Uri
 import sttp.client4.Response
@@ -17,9 +15,11 @@ import org.eclipse.rdf4j.model.Model
 import org.eclipse.rdf4j.model.util.Values.iri
 import org.eclipse.rdf4j.model.vocabulary.{RDF,DCAT,LDP}
 import org.eclipse.rdf4j.rio.{Rio,RDFFormat}
+import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import scopt.OParser
+import scala.util.Using
 
 
 val ShowMetadata = "showMetadata"
@@ -28,7 +28,7 @@ val UploadDatasetFromFile = "uploadDatasetFromFile"
 val DeleteAllDatasets = "deleteAllDatasets"
 
 val sparqlEndpoint: Uri = uri"https://meta.icos-cp.eu/sparql"
-val ConstructQueryFile = os.pwd / "resources" / "icosImport.rq"
+val ConstructQueryFile = os.pwd / "resources" / "firstEcvDemoImport.rq"// "icosImport.rq"
 
 case class Config(
 	host: String = "",
@@ -37,38 +37,65 @@ case class Config(
 	catalog: String = "",
 	nDatasets: Int = -1,
 	inputTtlFile: String = "",
-	queryFile: String = ""
+	queryFile: String = "",
+	dryRun: Boolean = false,
+	username: Option[String] = None,
+	password: Option[String] = None
 )
-val builder = OParser.builder[Config]
-import builder.*
-val hostParser = opt[String]("host").required().action((x, c) => c.copy(host = x)).text("URL of the FAIR Data Point")
-val pathParser = opt[String]("path").required().action((x, c) => c.copy(path = x)).text("Path to the resource on the FAIR Data Point")
-val catalogParser = opt[String]("catalog").required().action((x, c) => c.copy(catalog = x)).text("Catalog ID")
-val nDatasetsParser = opt[Int]("nDatasets").action((x, c) => c.copy(nDatasets = x)).text("Number of datasets to upload")
-val queryFileParser = opt[String]("inputTtlFile").action((x, c) => c.copy(inputTtlFile = x)).text("Path to the input Turtle file")
-val parser = {
+val parser =
+	val builder = OParser.builder[Config]
+	import builder.*
+	val hostParser = opt[String]("host")
+		.text("URL of the FAIR Data Point")
+		.action((x, c) => c.copy(host = x))
+		.required()
+	val userParser = opt[String]("user")
+		.text("Username for an account with needed permissions")
+		.action((u, c) => c.copy(username = Some(u)))
+	val passwordParser = opt[String]("password")
+		.text("Password that goes with the username")
+		.action((p, c) => c.copy(password = Some(p)))
+	val pathParser = opt[String]("path")
+		.text("Path to the resource on the FAIR Data Point")
+		.action((x, c) => c.copy(path = x))
+		.required()
+	val catalogParser = opt[String]("catalog")
+		.text("Catalog ID")
+		.required()
+		.action((x, c) => c.copy(catalog = x))
+	val nDatasetsParser = opt[Int]("limit")
+		.text("Max number of datasets to upload")
+		.action((x, c) => c.copy(nDatasets = x))
+	val dryRunParser = opt[Boolean]("dry-run")
+		.text("Print metadata instead of publishing")
+		.action((dr, c) => c.copy(dryRun = dr))
+	val ttlFileParser = opt[String]("inputTtlFile")
+		.text("Path to the input Turtle file")
+		.action((x, c) => c.copy(inputTtlFile = x))
 	OParser.sequence(
 		programName("fdp"),
 		help("help").text("Print this help text"),
 		hostParser,
+		userParser,
+		passwordParser,
 		cmd(ShowMetadata)
-			.action((_, c) => c.copy(command = ShowMetadata))
 			.text("Print the metadata of a resource")
+			.action((_, c) => c.copy(command = ShowMetadata))
 			.children(pathParser),
 		cmd(UploadL2Icos)
-			.action((_, c) => c.copy(command = UploadL2Icos))
 			.text("Upload metadata of ICOS L2 objects to a catalog")
-			.children(catalogParser, nDatasetsParser),
+			.action((_, c) => c.copy(command = UploadL2Icos))
+			.children(catalogParser, nDatasetsParser, dryRunParser),
 		cmd(UploadDatasetFromFile)
-			.action((_, c) => c.copy(command = UploadDatasetFromFile))
 			.text("Upload metadata from a Turtle file")
-			.children(catalogParser, queryFileParser),
+			.action((_, c) => c.copy(command = UploadDatasetFromFile))
+			.children(catalogParser, ttlFileParser),
 		cmd(DeleteAllDatasets)
-			.action((_, c) => c.copy(command = DeleteAllDatasets))
 			.text("Delete all datasets from a catalog")
+			.action((_, c) => c.copy(command = DeleteAllDatasets))
 			.children(catalogParser)
 	)
-}
+end parser
 
 OParser.parse(parser, args, Config()) match
 	case Some(config) =>
@@ -81,7 +108,12 @@ OParser.parse(parser, args, Config()) match
 	case _ =>
 
 def initFdp(config: Config): FDPClient =
-	FDPClient.interactiveInit(uri"${config.host}")
+	val hostUri = uri"${config.host}"
+	val fromOptions =
+		for user <- config.username; pass <- config.password
+		yield FDPClient(hostUri, User(user, pass))
+	fromOptions.getOrElse:
+		FDPClient.interactiveInit(hostUri)
 
 def showMetadata(config: Config) =
 	val uri = s"${config.host.toString()}${config.path.toString()}"
@@ -102,11 +134,11 @@ def uploadL2ICOS(config: Config) =
 		datasetsResult.forEach: bindings =>
 			val dataset = uri"${bindings.getValue("subj").toString}"
 			val fdpInputQuery = constructDatasetSparqlQuery(catalogUri, dataset)
-			val writer = new StringWriter
-			val turtleWriter = Rio.createWriter(RDFFormat.TURTLE, writer)
-			val preparedQuery = conn.prepareGraphQuery(fdpInputQuery)
-			preparedQuery.evaluate(turtleWriter)
-			fdp.postAndPublishDatasets(writer.toString())
+			val dsTurtle: String = evaluateGraphQuery(conn, fdpInputQuery)
+			if config.dryRun then
+				println(dsTurtle)
+			else
+				fdp.postAndPublishDatasets(dsTurtle)
 
 def uploadDatasetFromFile(config: Config) =
 	val fdp = initFdp(config)
@@ -124,6 +156,12 @@ def deleteAllDatasets(config: Config): Unit =
 		val dataset = st.getObject().toString()
 		fdp.deleteDataset(uri"$dataset")
 
+def evaluateGraphQuery(conn: RepositoryConnection, query: String): String =
+	val writer = new StringWriter
+	val turtleWriter = Rio.createWriter(RDFFormat.TURTLE, writer)
+	val preparedQuery = conn.prepareGraphQuery(query)
+	preparedQuery.evaluate(turtleWriter)
+	writer.toString
 
 def stringToPath(path: String): os.Path =
 	if path.startsWith("/") then os.Path(path)
@@ -159,23 +197,23 @@ def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 		|CONSTRUCT{
 		|	?ds ?pred ?obj .
 		|	?ds dcterms:isPartOf <$catalog> .
-		|	?ds dcterms:publisher <http://www.icos-cp.eu/> .
-		|	<http://www.icos-cp.eu/> a foaf:Agent .
-		|	<http://www.icos-cp.eu/> foaf:name "ICOS"^^xsd:string .
+		|	?ds dcterms:publisher <https://www.icos-cp.eu/> .
+		|	<https://www.icos-cp.eu/> a foaf:Agent .
+		|	<https://www.icos-cp.eu/> foaf:name "ICOS"^^xsd:string .
 		|	?ds dcterms:hasVersion "1.0"^^xsd:string .
 		|	?ds dcterms:temporal ?tempo .
 		|	?tempo ?tempoPred ?tempoV .
-		|	?ds dcat:distribution ?distro .
-		|	?distro ?distroPred ?distroV .
-		|	?distro dcat:mediaType "application/octet-stream"^^xsd:string .
+		|	#?ds dcat:distribution ?distro .
+		|	#?distro ?distroPred ?distroV .
+		|	#?distro dcat:mediaType "application/octet-stream"^^xsd:string .
 		|}
 		|WHERE {
 		|	VALUES ?ds {<$dataset>}
 		|	?ds ?pred ?obj .
-		|	filter (?pred not in (dcterms:temporal, dcat:distribution))
+		|	filter (?pred not in (dcterms:temporal, dcat:distribution, dcterms:isPartOf))
 		|	?ds dcterms:temporal ?tempo .
 		|	?tempo ?tempoPred ?tempoV .
-		|	?ds dcat:distribution ?distro .
-		|	?distro ?distroPred ?distroV .
+		|	#?ds dcat:distribution ?distro .
+		|	#?distro ?distroPred ?distroV .
 		|}
 	""".stripMargin

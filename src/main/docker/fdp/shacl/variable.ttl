@@ -6,6 +6,7 @@
 @prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
 @prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix iadopt:   <https://w3id.org/iadopt/ont/> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
 
 :IAdoptVariableShape a sh:NodeShape ;
   sh:targetClass iadopt:Variable ;
@@ -43,6 +44,14 @@
   ],[
     sh:path iadopt:hasConstraint ;
     sh:class iadopt:Constraint ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ],[
+    sh:path skos:exactMatch ;
+    dash:editor dash:URIEditor ;
+    dash:viewer dash:URIViewer ;
+  ],[
+    sh:path skos:closeMatch ;
     dash:editor dash:URIEditor ;
     dash:viewer dash:URIViewer ;
   ]   .

@@ -20,6 +20,14 @@ select ?station ?stationId ?lat ?lon ?stationName ?speciesList ?heightsList ?spe
 					cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?height .
 			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 			?col cpmeta:hasColumnTitle ?varName .
+			{
+				{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?actVar}}
+				UNION
+				{
+					?dobj cpmeta:hasVariableName ?actVar
+					filter(?actVar = ?varName)
+				}
+			}
 			bind(concat(?varName, '/', str(?height)) as ?speciesHeight)
 		}
 		group by ?station

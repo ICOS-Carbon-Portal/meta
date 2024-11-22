@@ -259,9 +259,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
-			val oe = new ObjEntry(hash, objs.length, "")
+			val canonicalHash = hash.truncate
+			val oe = new ObjEntry(canonicalHash, objs.length, "")
 			objs += oe
-			idLookup += hash -> oe.idx
+			idLookup += canonicalHash -> oe.idx
 			oe
 		}(objs.apply)
 

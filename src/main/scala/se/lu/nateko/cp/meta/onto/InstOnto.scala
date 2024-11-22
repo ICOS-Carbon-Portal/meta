@@ -102,7 +102,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	end getIndividual
 
 	def hasIndividual(uriStr: String): Boolean = instServer.access: conn ?=>
-		conn.hasStatement(factory.createIRI(uriStr), null, null)
+		conn.hasStatement(factory.createIRI(uriStr), RDF.TYPE, null)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)

@@ -196,15 +196,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val serversFut = {
-			//val exeServ = Executors.newSingleThreadExecutor
-			//val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen{
+		val serversFut =
+			given ExecutionContext = ExecutionContext.global
+			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
 				case _ =>
-					//ctxt.shutdown()
 					log.info("instance servers created")
-			}
-		}
+
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield
 			log.info("both instance servers and onto servers created")
@@ -277,20 +274,16 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo =
-					if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-					then
-						initRepo
-					else
-						val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
-						val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
-						log.info(s"Ingesting from RDF log $logName $msgDetail...")
-						val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
-						log.info(s"Ingesting from RDF log $logName done!")
-						res
+				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
+				then
+					val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
+					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
+					log.info(s"Ingesting from RDF log $logName $msgDetail...")
+					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
+					RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
+					log.info(s"Ingesting from RDF log $logName done!")
 
-				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContext)
+				val rdf4jServer = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 
 			case None =>
@@ -361,12 +354,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		type ServerFutures = Map[String, Future[InstanceServer]]
 
-		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else {
+		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else
 			val servConf: InstanceServerConfig = instServerConfs(id)
 			import IngestionMode.{EAGER, BACKGROUND}
 
-			val basicInit = {
-				val init = Future{makeInstanceServer(repo, servConf, config)}
+			val basicInit: Future[InstanceServer] =
+				val init = Future(makeInstanceServer(repo, servConf, config))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{
@@ -374,7 +367,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 					}.contains(id)
 				then init.map(new WriteNotifyingInstanceServer(_))
 				else init
-			}
 
 			servConf.ingestion match{
 
@@ -412,7 +404,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				case _ =>
 					acc + (id -> basicInit)
 			}
-		}
+		end makeNextServer
 
 		val futures: ServerFutures = instServerConfs.keys.foldLeft[ServerFutures](Map.empty)(makeNextServer)
 		Future.sequence(futures.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)

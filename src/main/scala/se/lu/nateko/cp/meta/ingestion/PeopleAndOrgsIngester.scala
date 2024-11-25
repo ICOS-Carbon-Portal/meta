@@ -19,7 +19,7 @@ import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import scala.concurrent.ExecutionContext
 
-class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriConfigs, exe: ExecutionContext) extends Ingester{
+class PeopleAndOrgsIngester(pathToTextRes: String)(using EnvriConfigs, ExecutionContext) extends Ingester{
 
 	override def isAppendOnly = true
 
@@ -31,8 +31,8 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(implicit envriConfs: EnvriCon
 
 	def getStatements(factory: ValueFactory): Ingestion.Statements = Future{
 
-		implicit val f = factory
-		implicit val envri = Envri.ICOS
+		given ValueFactory = factory
+		given Envri = Envri.ICOS
 		val vocab = new CpVocab(factory)
 		val metaVocab = new CpmetaVocab(factory)
 		val role = Researcher

@@ -40,8 +40,7 @@ object Ingestion:
 
 	type Statements = Future[CloseableIterator[Statement]]
 
-	def allProviders(using system: ActorSystem, mat: Materializer, envries: EnvriConfigs): Map[String, StatementProvider] =
-		import system.dispatcher
+	def allProviders(using ActorSystem, ExecutionContext, Materializer, EnvriConfigs): Map[String, StatementProvider] =
 		Map(
 			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
 			"otcMetaOnto" -> new RdfXmlFileIngester("/owl/otcmeta.owl"),

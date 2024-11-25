@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import eu.icoscp.envri.Envri
 
-class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionContext, envriConfs: EnvriConfigs) extends Ingester{
+class ExtraStationsIngester(extraStationsPath: String)(using ExecutionContext, EnvriConfigs) extends Ingester{
 	import IcosStationsIngester.*
 
 	def getStatements(vf: ValueFactory): Ingestion.Statements = Future{
@@ -29,12 +29,12 @@ class ExtraStationsIngester(extraStationsPath: String)(implicit ctxt: ExecutionC
 			.collect{
 				case line if !line.trim.isEmpty => Station.parse(line.trim)
 			}
-			.flatMap(makeStationStatements(vf))
+			.flatMap(makeStationStatements(using vf))
 		new CloseableIterator.Wrap(iter, src.close)
 	}
 
 
-	private def makeStationStatements(implicit vf: ValueFactory): Station => Iterator[Statement] = {
+	private def makeStationStatements(using vf: ValueFactory): Station => Iterator[Statement] = {
 		val vocab = new CpVocab(vf)
 		val metaVocab = new CpmetaVocab(vf)
 		val projToClass = Map(

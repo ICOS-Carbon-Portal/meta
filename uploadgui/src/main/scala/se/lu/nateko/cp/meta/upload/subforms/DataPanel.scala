@@ -12,13 +12,14 @@ import UploadApp.whenDone
 import java.net.URI
 import java.time.Instant
 import org.scalajs.dom.html
+import eu.icoscp.envri.Envri
 
 
 class DataPanel(
 	objSpecs: IndexedSeq[ObjSpec],
 	gcmdKeywords: IndexedSeq[String],
 	submitter: () => Option[SubmitterProfile]
-)(implicit bus: PubSubBus) extends PanelSubform(".data-section"){
+)(using bus: PubSubBus, envri: Envri) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
 	def objSpec: Try[ObjSpec] = objSpecSelect.value.withMissingError("Data type not set")
 	def keywords: Try[Seq[String]] = extraKeywords.values
@@ -81,7 +82,7 @@ class DataPanel(
 			val isNotWdcgg = objFormat != "asciiWdcggTimeSer"
 			val isNotNetCDF = objFormat != "netcdfTimeSeries"
 
-			if(objSpec.isSitesProjectData) extraKeywordsDiv.show() else extraKeywordsDiv.hide()
+			if(envri == Envri.SITES && !objSpec.isSitesProjectData) extraKeywordsDiv.hide() else extraKeywordsDiv.show()
 			if(objSpec.isStationTimeSer && isNotAtcTimeSeries && isNotWdcgg && isNotNetCDF) nRowsInput.enable() else nRowsInput.disable()
 			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)

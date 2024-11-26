@@ -59,6 +59,7 @@ import java.nio.file.Paths
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.{Success, Failure}
 
 
 class MetaDb (
@@ -190,21 +191,29 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
 
-		val ontosFut = Future{makeOntos(config.onto.ontologies)}
+		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
+			case _ => log.info("ontology servers created")
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val serversFut = {
-			val exeServ = Executors.newSingleThreadExecutor
-			val ctxt = ExecutionContext.fromExecutorService(exeServ)
-			makeInstanceServers(repo, Ingestion.allProviders, config)(using ctxt).andThen{
-				case _ =>
-					ctxt.shutdown()
-					log.info("instance servers created")
-			}
-		}
+		val serversFut =
+			//NativeStore crashes under unrestrained parallel write conditions
+			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty then
+				val ctxt = Executors.newSingleThreadExecutor()
+				Some(ExecutionContext.fromExecutorService(ctxt))
+			else None
 
-		for(instanceServers <- serversFut; ontos <-ontosFut) yield{
+			// LMDB seems to work fine under fully parallel write conditions
+			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
+
+			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
+				case _ =>
+					log.info("instance servers created")
+					singleThreadExe.foreach(_.shutdown())
+
+
+		for instanceServers <- serversFut; ontos <- ontosFut yield
+			log.info("both instance servers and onto servers created")
 			val instOntos = config.onto.instOntoServers.map{
 				case (servId, servConf) =>
 					val instServer = instanceServers(servConf.instanceServerId)
@@ -228,7 +237,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
 				"readonly mode; restart the server for proper operation")
 			db
-		}
+		end for
 	end apply
 
 	private def makeUploadService(
@@ -274,20 +283,16 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				val repo =
-					if conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-					then
-						initRepo
-					else
-						val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
-						val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
-						log.info(s"Ingesting from RDF log $logName $msgDetail...")
-						val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-						val res = RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
-						log.info(s"Ingesting from RDF log $logName done!")
-						res
+				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
+				then
+					val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
+					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
+					log.info(s"Ingesting from RDF log $logName $msgDetail...")
+					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
+					RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
+					log.info(s"Ingesting from RDF log $logName done!")
 
-				val rdf4jServer = new Rdf4jInstanceServer(repo, readContexts, writeContext)
+				val rdf4jServer = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 
 			case None =>
@@ -358,11 +363,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		type ServerFutures = Map[String, Future[InstanceServer]]
 
-		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else {
+		def makeNextServer(acc: ServerFutures, id: String): ServerFutures = if(acc.contains(id)) acc else
 			val servConf: InstanceServerConfig = instServerConfs(id)
+			import IngestionMode.{EAGER, BACKGROUND}
 
-			val basicInit = {
-				val init = Future{makeInstanceServer(repo, servConf, config)}
+			val basicInit: Future[InstanceServer] =
+				val init = Future(makeInstanceServer(repo, servConf, config))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{
@@ -370,11 +376,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 					}.contains(id)
 				then init.map(new WriteNotifyingInstanceServer(_))
 				else init
-			}
 
 			servConf.ingestion match{
 
-				case Some(IngestionConfig(ingesterId, waitFor, Some(true))) =>
+				case Some(IngestionConfig(ingesterId, waitFor, mode @ (EAGER | BACKGROUND))) =>
 
 					val (withDependencies, dependenciesDone): (ServerFutures, Future[Unit]) = waitFor match {
 						case None =>
@@ -385,24 +390,30 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 							(withDeps, done)
 					}
 
-					val afterIngestion = for(
-						server <- basicInit;
-						_ <- dependenciesDone;
-						_ <- providers(ingesterId) match {
-							case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
-							case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
-						}
-					) yield {
-						log.info("all ingestion done for " + id)
-						server
-					}
+					val afterIngestion = for
+						server <- basicInit
+						_ <- dependenciesDone
+						_ <- {
+							val ingestFut = (providers(ingesterId) match
+								case ingester: Ingester => Ingestion.ingest(server, ingester, valueFactory)
+								case extractor: Extractor => Ingestion.ingest(server, extractor, repo)
+							).andThen:
+								case Success(_) => log.info("ingestion done for " + id)
+								case Failure(err) => log.error(s"error while ingesting for $id", err)
 
-					log.info("ingestion scheduled for " + id)
+							if mode == EAGER then ingestFut else
+								log.info(s"ingestion for $id has been started in the background")
+								Future.successful(0)
+						}
+					yield server
+
+					if mode == EAGER || !dependenciesDone.isCompleted then
+						log.info("ingestion scheduled for " + id)
 					withDependencies + (id -> afterIngestion)
 				case _ =>
 					acc + (id -> basicInit)
 			}
-		}
+		end makeNextServer
 
 		val futures: ServerFutures = instServerConfs.keys.foldLeft[ServerFutures](Map.empty)(makeNextServer)
 		Future.sequence(futures.map{case (id, fut) => fut.map((id, _))}).map(_.toMap)

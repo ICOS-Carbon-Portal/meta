@@ -21,10 +21,11 @@ import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import scala.concurrent.ExecutionContext
 
-class RemoteRdfGraphIngester(endpoint: URI, rdfGraph: URI)(implicit system: ActorSystem, m: Materializer) extends Ingester{
-
-	import system.dispatcher
+class RemoteRdfGraphIngester(
+	endpoint: URI, rdfGraph: URI
+)(using ActorSystem, Materializer, ExecutionContext) extends Ingester{
 
 	override def getStatements(using factory: ValueFactory): Ingestion.Statements = {
 		makeQuery().flatMap(

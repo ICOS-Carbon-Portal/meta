@@ -197,10 +197,19 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		given EnvriConfigs = config.core.envriConfigs
 
 		val serversFut =
-			given ExecutionContext = ExecutionContext.global
+			//NativeStore crashes under unrestrained parallel write conditions
+			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty then
+				val ctxt = Executors.newSingleThreadExecutor()
+				Some(ExecutionContext.fromExecutorService(ctxt))
+			else None
+
+			// LMDB seems to work fine under fully parallel write conditions
+			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
+
 			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
 				case _ =>
 					log.info("instance servers created")
+					singleThreadExe.foreach(_.shutdown())
 
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield

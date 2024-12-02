@@ -1,0 +1,112 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://gaw.kishou.go.jp/static/json/schema/request.json",
+    "title": "request",
+    "description": "Indicates the summary of the submission.",
+    "type": "array",
+    "items": {
+      "type": "object",
+      "properties": {
+        "Contributor": {
+          "type": "string",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 3,
+          "pattern": "^[0-9]+?$",
+          "description": "Represents Contributor's number shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+        },
+        "Submission_date": {
+          "type": "string",
+          "required": true,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$",
+          "description": "Represents the submission date formatted in 'YYYY-MM-DD hh:mm:ss'."
+        },
+        "Submitter": {
+          "type": "string",
+          "required": true,
+          "description": "Represents submitter's name."
+        },
+        "Submitter_email": {
+          "type": "string",
+          "format": "email",
+          "required": true,
+          "description": "Represents the email of submitter."
+        },
+        "Option": {
+          "type": "string",
+          "required": true,
+          "pattern": "^[1-4]$",
+          "description": "Represents the number of submission type. 1: data & metadata submission, 2: Update Contributor(Metadata only), 3: Update Contact(Metadata only), 4: Update Mobile(Metadata only)"
+        },
+        "Update": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+                "or_organization",
+                "jl_joint_laboratory",
+                "pg_person_group",
+                "ao_aim_of_observation",
+                "tz_time_zone",
+                "un_unit",
+                "sh_scale_history",
+                "ih_instrument_history",
+                "sh_sampling_height_history",
+                "sf_sampling_frequency",
+                "md_measurement_calibration",
+                "md_data_processing",
+                "md_hr_mean_processing",
+                "md_da_mean_processing",
+                "md_mo_mean_processing",
+                "md_original_data_flag",
+                "dg_data_flag_group",
+                "rg_reference_group",
+                "st_status",
+                "md_description",
+                "dc_doi_category"
+            ]
+          },
+          "required": true,
+          "uniqueItems": true,
+          "description": "Represents the updated metadata from the list."
+        },
+        "wc_wdcgg_catalogue_id": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}$"
+          },
+          "required": true,
+          "uniqueItems": true,
+          "description": "Represents wdcgg_catalogue_id of the updated data. The wdcgg_catalogue_id is shown in the first 25 characters of 'Version' on 'Data Update Information' tab of https://gaw.kishou.go.jp/contributor ."
+        },
+        "Upfile": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Represents the file name if you send the data files with this request."
+        },
+        "Ftp": {
+          "type": "string",
+          "description": "Represents the URL of your FTP site if you submit via FTP."
+        },
+        "Comment": {
+          "type": "string",
+          "description": "Represents comments on the submission."
+        },
+        "Submission": {
+          "const": "1"
+        },
+        "st_station_code": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^8[0-9]{3}$"
+          },
+          "description": "Represents station's number when you submit the mobile station data. The station's number is shown in https://gaw.kishou.go.jp/documents/db_list/station ."
+        }
+      }
+    }
+}

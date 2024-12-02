@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://gaw.kishou.go.jp/static/json/schema/mobile.json",
+    "title": "mobile",
+    "description": "Indicates the information of mobile station when you submit the mobile station data.",
+    "type": "array",
+    "items": {
+       "type": "object",
+       "properties": {
+         "st_station_code": {
+           "type": "array",
+           "items": {
+             "type": "string",
+             "pattern": "^8[0-9]{3}$"
+           },
+           "description": "Represents station's number shown in https://gaw.kishou.go.jp/documents/db_list/station ."
+         },
+         "na_nation_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 2,
+           "maxLength": 2,
+           "pattern": "^[A-Z]{2}$",
+           "description": "Represents ISO 3166-1 alpha-2 code of country/territory which the organizaion belongs to."
+         },
+         "st_time_zone": {
+           "type": "string",
+           "pattern": "^UTC*$",
+           "maxLength": 9,
+           "description": "Represents station's time zone like 'UTC+09:00'."
+         },
+         "st_status_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 1,
+           "pattern": "^[1-3]$",
+           "description": "Represents the number of the station status. 1: Operational, 2: Non-reporting, 3: Closed"
+         }
+       }
+     }
+}

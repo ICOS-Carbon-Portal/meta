@@ -1,0 +1,86 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://gaw.kishou.go.jp/static/json/schema/contact.json",
+    "title": "contact",
+    "description": "Indicates the information of contacts and individual collaborators.",
+    "type": "array",
+    "items": {
+       "type": "object",
+       "properties": {
+         "ps_person_id": {
+           "type": "string",
+           "required": true,
+           "description": "Represent 'NEW' + the sequential number."
+         },
+         "ps_name": {
+           "type": "string",
+           "required": true,
+           "description": "Represents contact's/individual collaborator's name."
+         },
+         "ps_email": {
+           "type": "string",
+           "required": true,
+           "format": "email",
+           "description": "Represents contact's/individual collaborator's email."
+         },
+         "pc_person_class_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 1,
+           "pattern": "^[1-3]$",
+           "description": "Represents the type of contact/individual collaborator. 1: Contact Person, 2: Principal Investigator (PI), 3: Contact Person and Principal Investigator (PI), 5: Partner. '5: Pertner' is available for individual collaborators."
+         },
+         "pc_person_class": {
+           "type": "string",
+           "enum": [
+              "Contact Person",
+              "Principal Investigator (PI)",
+              "Contact Person and Principal Investigator (PI)"
+           ],
+           "required": true,
+           "description": "Represents the type of contact/individual collaborator. 1: Contact Person, 2: Principal Investigator (PI), 3: Contact Person and Principal Investigator (PI), 5: Partner. '5: Pertner' is available for individual collaborators."
+         },
+         "or_organization_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 1,
+           "maxLength": 3,
+           "pattern": "^[0-9]+?$",
+           "description": "Represents the number of organization which the contact/individual collaborator belongs to shown in https://gaw.kishou.go.jp/documents/db_list/organization ."
+         },
+         "ps_prefix": {
+           "type": "string",
+           "description": "Represents the prefix of the contact/individual collaborator."
+         },
+         "na_nation_code": {
+           "type": "string",
+           "required": true,
+           "minLength": 2,
+           "maxLength": 2,
+           "pattern": "^[A-Z]{2}$",
+           "description": "Represents ISO 3166-1 alpha-2 code of country/territory which the organizaion belongs to."
+         },
+         "ps_address_1": {
+           "type": "string",
+           "description": "Represents the address of the contact/individual collaborator."
+         },
+         "ps_address_2": {
+           "type": "string",
+           "description": "Represents the address of the contact/individual collaborator."
+         },
+         "ps_address_3": {
+           "type": "string",
+           "description": "Represents the address of the contact/individual collaborator."
+         },
+         "ps_phone": {
+           "type": "string",
+           "description": "Represents the phone number of the contact/individual collaborator."
+         },
+         "ps_fax": {
+           "type": "string",
+           "description": "Represents the fax number of the contact/individual collaborator."
+         }
+       }
+     }
+}

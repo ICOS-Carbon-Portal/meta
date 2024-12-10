@@ -59,6 +59,13 @@
 		border-top-left-radius: 0;
 		border-bottom-left-radius: 0;
 	}
+	.draggable {
+		cursor: move;
+		transition: padding 0.5s;
+	}
+	.dropzone * {
+		pointer-events: none;
+	}
 	#header-buttons > button {
 		width: 100%;
 	}
@@ -268,7 +275,8 @@
 							<div class="mb-3 keywords-block">
 								<label class="form-label" for="keywords">Extra keywords @optional</label>
 								<div id="extra-keywords">
-									<div class="input-group data-list" style="display: none;">
+									<div draggable="true" class="input-group data-list draggable" style="display: none;">
+										<span class="input-group-text"><i class="fas fa-grip-lines"></i></span>
 										<input type="text" id="keywords" list="keyword-list" class="form-control data-list-input">
 										<datalist id="keyword-list"></datalist>
 										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove keyword"><i
@@ -407,7 +415,8 @@
 								<div class="mb-3">
 									<label class="form-label" for="contributors">Contributors</label>
 									<div id="contributors">
-										<div class="input-group data-list" style="display: none;">
+										<div draggable="true" class="input-group data-list draggable" style="display: none;">
+											<span class="input-group-text"><i class="fas fa-grip-lines"></i></span>
 											<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
 											<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove contributor"><i class="fas fa-times"></i></button>
 										</div>
@@ -493,7 +502,8 @@
 							<div class="mb-3">
 								<label class="form-label" for="document-authors">Authors</label>
 								<div id="document-authors">
-									<div class="input-group data-list" style="display: none;">
+									<div draggable="true" class="input-group data-list draggable" style="display: none;">
+										<span class="input-group-text"><i class="fas fa-grip-lines"></i></span>
 										<input list="agent-list" class="form-control data-list-input" placeholder="(type to search)">
 										<button type="button" class="btn btn-secondary remove-data-list-input" aria-label="Remove author"><i
 												class="fas fa-times"></i></button>

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
-import org.scalajs.dom.{html, document}
+import org.scalajs.dom.{html, document, DragEvent, DataTransferEffectAllowedKind}
 import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.util.Success
 import scala.util.Try
@@ -68,14 +68,16 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 	private var _ordId: Long = 0L
 	private val addButton = querySelector[html.Button](formDiv, "#add-element").get
 
-	private val elems = mutable.Buffer.empty[DataListEditableInput[T]]
+	private val elems = mutable.Buffer.empty[DataListEditableInput]
 
 	addButton.onclick = _ => {
 		elems.append(new DataListEditableInput(list)).foreach(_.focus())
 		notifyUpdate()
 	}
 
-	private class DataListEditableInput[T](list: DataList[T]) {
+	private var draggedElement: DataListEditableInput = null
+
+	private class DataListEditableInput(list: DataList[T]) {
 
 		def value: Try[T] = dataListInput.value
 		def isEmpty: Boolean = dataListInput.isEmpty
@@ -107,6 +109,37 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 
 		Seq("data-list-input").foreach{inputClass =>
 			querySelector[html.Input](div, s".$inputClass").foreach{_.id = s"${inputClass}-$elemId-$id"}
+
+			div.addEventListener("dragstart", { (e: DragEvent) =>
+				draggedElement = this
+				elems.foreach(_.div.classList.add("dropzone"))
+				e.dataTransfer.effectAllowed = DataTransferEffectAllowedKind.move
+				e.dataTransfer.setData("text/html", div.innerHTML)
+			})
+
+			div.addEventListener("dragend", { _ =>
+				elems.foreach(_.div.classList.remove("dropzone"))
+			})
+
+			div.addEventListener("dragover", { (e: DragEvent) =>
+				e.preventDefault()
+				if (draggedElement != this) {
+					var rect = this.div.getBoundingClientRect()
+					var yPositionRelativeToElement  = e.clientY - this.div.getBoundingClientRect().top;
+					val position = if yPositionRelativeToElement < this.div.clientHeight / 2 then "beforebegin" else "afterend"
+
+					this.div.insertAdjacentElement(position, draggedElement.div)
+				}
+			})
+
+			div.addEventListener("drop", { (e: DragEvent) =>
+				e.stopPropagation()
+				val oldPosition = elems.indexOf(draggedElement)
+				val newPosition	 = draggedElement.div.parentElement.children.indexOf(draggedElement.div) - 1
+				elems.remove(oldPosition)
+				elems.insert(newPosition, draggedElement)
+				false
+			})
 		}
 
 		private val dataListInput = new DataListInput[T](s"data-list-input-$elemId-$id", list, notifyUpdate)

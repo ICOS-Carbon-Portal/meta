@@ -239,7 +239,7 @@ To demonstrate some of the possibilities that are accessible via SPARQL, we refe
 
 ---
 
-## Metadata flow (for ICOS ATC and ICOS Cities mid- and low cost sernsor networks)
+## Metadata flow (for ICOS ATC and ICOS Cities mid- and low cost sensor networks)
 
 Authentication with a pre-configured data portal account is required. The authentication mechanism is the same as for data object upload.
 

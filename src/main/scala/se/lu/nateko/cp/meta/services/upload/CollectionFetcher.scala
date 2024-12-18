@@ -49,8 +49,9 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		else getExistingStaticColl(collUri, hashOpt)
 
 	def fetchCollCoverage(collUri: IRI)(using CollConn): Validated[Option[GeoFeature]] =
-		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap: covUriOpt =>
-			covUriOpt.map(covUri => getCoverage(covUri)).sinkOption
+		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap:
+			case None => Validated.ok(None)
+			case Some(covUri) => getCoverage(covUri).map(Option(_)).orElse(None)
 
 	private def getExistingStaticColl(
 		coll: IRI, hashOpt: Option[Sha256Sum] = None

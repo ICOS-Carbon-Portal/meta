@@ -42,6 +42,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.api.UriId
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -357,8 +358,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 					if(subm.submittingOrganization === vocab.atc){
 						val instruments = stationMeta.instruments
-						if(instruments.exists(uri => !isAtcInstrument(uri)))
-							errors += s"Instrument URL is expected to start with '$atcInstrumentPrefix'"
+						errors ++= instruments.flatMap(atcInstrumentError)
 						if(instruments.isEmpty)
 							errors += "Instrument URL(s) expected for ATC time series"
 						if(stationMeta.samplingHeight.isEmpty && spec.dataLevel > 0) errors += "Must provide sampling height"
@@ -370,8 +370,10 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		new Validated(Some(NotUsed).filter(_ => errors.isEmpty), errors.toSeq)
 	end validateForFormat
 
-	private val atcInstrumentPrefix = "http://meta.icos-cp.eu/resources/instruments/ATC_"
-	private def isAtcInstrument(uri: URI): Boolean = uri.toString.startsWith(atcInstrumentPrefix)
+	private def atcInstrumentError(uri: URI)(using Envri): Option[String] =
+		val base = vocab.getInstrument(UriId("ATC_"))
+		if uri.toString.startsWith(base.toString) then None
+		else Some(s"ATC instrument URL is expected to start with $base")
 
 
 	private def validatePreviousCollectionVersion(prevVers: OptionalOneOrSeq[Sha256Sum], newCollHash: Sha256Sum)(using Envri, CollConn): Try[NotUsed] =

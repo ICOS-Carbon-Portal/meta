@@ -154,11 +154,13 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbF
 			select ?sumb2 where{
 				?subm1 a cpmeta:DataSubmission .
 				?sumb2 a cpmeta:DataSubmission .
-				filter (?subm1 = ?sumb2)
+				?dobj1 cpmeta:wasSubmittedBy ?subm1 .
+				?dobj2 cpmeta:wasSubmittedBy ?subm2 .
+				filter (?dobj1 = ?dobj2)
 			}
 			order by ?subm1
-			limit 3
-		"""		
+			offset 1000 limit 3
+		"""
 
 		it("Long running query should result in bad-request response"):
 			testRoute(longRunningQuery):

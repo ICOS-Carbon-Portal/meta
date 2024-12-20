@@ -34,7 +34,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
-import se.lu.nateko.cp.meta.test.services.sparql.SparqlRouteTests
 import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.utils.async.executeSequentially

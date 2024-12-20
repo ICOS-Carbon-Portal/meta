@@ -11,7 +11,6 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.pattern.after
 import eu.icoscp.envri.Envri
-import org.scalatest.DoNotDiscover
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
@@ -20,19 +19,18 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.test.services.sparql.TestDbFixture
 
 import java.net.URI
-import scala.concurrent.Await
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
+import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 
-@DoNotDiscover
-class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with TestDbFixture:
+class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	import system.{log}
 
+	val db = new TestDb()
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))

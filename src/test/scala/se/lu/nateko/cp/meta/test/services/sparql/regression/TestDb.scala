@@ -143,5 +143,3 @@ object TestDb:
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
 		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
-
-	lazy val instance = new TestDb

@@ -41,26 +41,23 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 class TestDb(name: String) {
-
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
-	val akkaConf = ConfigFactory.defaultReference()
-		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
-	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	import system.{dispatcher, log}
 
+	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
+	private val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
+	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+	private val akkaConf = ConfigFactory.defaultReference()
+																			.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
+	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	val dir = Files.createTempDirectory(name).toAbsolutePath
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
-	val repo: Future[Repository] = {
-		object CitationClientDummy extends CitationClient{
-			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
-		}
-
+	private def makeSail() =
 		val rdfConf = RdfStorageConfig(
 			lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 			path = dir.toString,
@@ -70,55 +67,63 @@ class TestDb(name: String) {
 			recreateCpIndexAtStartup = true
 		)
 
+		object CitationClientDummy extends CitationClient{
+			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
+			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
+		}
+
+		val (freshInit, base) = StorageSail.apply(rdfConf, log)
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
 		val geoFactory = GeoIndexProvider(log)
+		val idxFactories = if freshInit then None else
+			Some(indexUpdaterFactory -> geoFactory)
 
-		def makeSail =
-			val (freshInit, base) = StorageSail.apply(rdfConf, log)
-			val idxFactories = if freshInit then None else
-				Some(indexUpdaterFactory -> geoFactory)
+		val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
+		CpNotifyingSail(base, idxFactories, citer, log)
 
-			val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
-			CpNotifyingSail(base, idxFactories, citer, log)
 
-		/**
-		The repo is created three times:
-			0) to ingest the test RDF file into a fresh new triplestore
-			1) to restart the triplestore to create the magic SPARQL index
-			2) to dump the SPARQL index to disk, re-start, read the index
-			data structure, and initialize the index from it
-		**/
-		val repo0Fut: Future[Repository] =
-			val repo0 = SailRepository(makeSail)
-			val factory = repo0.getValueFactory
+	private def ingestTriplestore(): Future[Unit] =
+			val repo = SailRepository(makeSail())
+			val factory = repo.getValueFactory
 			given BnodeStabilizers = new BnodeStabilizers
 
 			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
 				val graphIri = factory.createIRI(uriStr)
-				val server = Rdf4jInstanceServer(repo0, graphIri)
+				val server = Rdf4jInstanceServer(repo, graphIri)
 				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
 				Ingestion.ingest(server, ingester, factory).map(_ => Done)
-			.map: _ =>
-				repo0
+			.map(_ => repo.shutDown())
+
+	private def createIndex() : Future[IndexData] = {
+		val sail = makeSail()
+		sail.init()
 		for
-			repo0 <- repo0Fut
-			repo1 = {
-				repo0.shutDown()
-				val repo1 = makeSail.asInstanceOf[CpNotifyingSail]
-				repo1.init()
-				repo1.initSparqlMagicIndex(None)
-				repo1
-			}
-			_ <- repo1.makeReadonlyDumpIndexAndCaches("Test")
-			_ = repo1.shutDown()
+			_ <- sail.initSparqlMagicIndex(None)
+			_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
+			_ = sail.shutDown()
 			idxData <- IndexHandler.restore()
-			repo2 = makeSail.asInstanceOf[CpNotifyingSail]
-			_ <- {
-				repo2.init()
-				repo2.initSparqlMagicIndex(Some(idxData))
-			}
 		yield
-			SailRepository(repo2)
+		  idxData
+	}
+
+	/**
+	The repo is created three times:
+		0) to ingest the test RDF file into a fresh new triplestore
+		1) to restart the triplestore to create the magic SPARQL index
+		2) to dump the SPARQL index to disk, re-start, read the index
+		data structure, and initialize the index from it
+	**/
+	val repo: Future[Repository] = {
+		for
+			_ <- ingestTriplestore()
+			idxData <- createIndex()
+		yield
+			SailRepository({
+				val sail = makeSail()
+				sail.init()
+				sail.initSparqlMagicIndex(Some(idxData))
+				sail
+			})
 
 	}
 

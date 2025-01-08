@@ -84,15 +84,17 @@ class TestDb(name: String) {
 
 	private def ingestTriplestore(): Future[Unit] =
 		val repo = SailRepository(makeSail())
-		val factory = repo.getValueFactory
-		given BnodeStabilizers = new BnodeStabilizers
 
-		executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
-			val graphIri = factory.createIRI(uriStr)
-			val server = Rdf4jInstanceServer(repo, graphIri)
-			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-			Ingestion.ingest(server, ingester, factory).map(_ => Done)
-		.map(_ => repo.shutDown())
+		val ingestion =
+			given BnodeStabilizers = new BnodeStabilizers
+			val factory = repo.getValueFactory
+			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+				val graphIri = factory.createIRI(uriStr)
+				val server = Rdf4jInstanceServer(repo, graphIri)
+				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+				Ingestion.ingest(server, ingester, factory).map(_ => Done)
+
+		ingestion.map(_ -> repo.shutDown())
 
 	private def createIndex(): Future[IndexData] = {
 		val sail = makeSail()

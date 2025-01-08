@@ -49,8 +49,8 @@ class TestDb(name: String) {
 	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
 	private val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
-	private val akkaConf = ConfigFactory.defaultReference()
-																			.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
+	private val akkaConf =
+		ConfigFactory.defaultReference().withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
 	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	val dir = Files.createTempDirectory(name).toAbsolutePath
 
@@ -67,7 +67,7 @@ class TestDb(name: String) {
 			recreateCpIndexAtStartup = true
 		)
 
-		object CitationClientDummy extends CitationClient{
+		object CitationClientDummy extends CitationClient {
 			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 		}
@@ -75,26 +75,26 @@ class TestDb(name: String) {
 		val (freshInit, base) = StorageSail.apply(rdfConf, log)
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
 		val geoFactory = GeoIndexProvider(log)
-		val idxFactories = if freshInit then None else
+		val idxFactories = if freshInit then None
+		else
 			Some(indexUpdaterFactory -> geoFactory)
 
 		val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
 		CpNotifyingSail(base, idxFactories, citer, log)
 
-
 	private def ingestTriplestore(): Future[Unit] =
-			val repo = SailRepository(makeSail())
-			val factory = repo.getValueFactory
-			given BnodeStabilizers = new BnodeStabilizers
+		val repo = SailRepository(makeSail())
+		val factory = repo.getValueFactory
+		given BnodeStabilizers = new BnodeStabilizers
 
-			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
-				val graphIri = factory.createIRI(uriStr)
-				val server = Rdf4jInstanceServer(repo, graphIri)
-				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-				Ingestion.ingest(server, ingester, factory).map(_ => Done)
-			.map(_ => repo.shutDown())
+		executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+			val graphIri = factory.createIRI(uriStr)
+			val server = Rdf4jInstanceServer(repo, graphIri)
+			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+			Ingestion.ingest(server, ingester, factory).map(_ => Done)
+		.map(_ => repo.shutDown())
 
-	private def createIndex() : Future[IndexData] = {
+	private def createIndex(): Future[IndexData] = {
 		val sail = makeSail()
 		sail.init()
 		for
@@ -102,8 +102,7 @@ class TestDb(name: String) {
 			_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
 			_ = sail.shutDown()
 			idxData <- IndexHandler.restore()
-		yield
-		  idxData
+		yield idxData
 	}
 
 	/**
@@ -117,14 +116,10 @@ class TestDb(name: String) {
 		for
 			_ <- ingestTriplestore()
 			idxData <- createIndex()
-		yield
-			SailRepository({
-				val sail = makeSail()
-				sail.init()
-				sail.initSparqlMagicIndex(Some(idxData))
-				sail
-			})
-
+			sail = makeSail()
+			_ = sail.init()
+			_ = sail.initSparqlMagicIndex(Some(idxData))
+		yield SailRepository(sail)
 	}
 
 	def cleanup(): Unit =
@@ -138,11 +133,20 @@ class TestDb(name: String) {
 
 object TestDb:
 	val graphIriToFile = Seq(
-			"atmprodcsv", "cpmeta", "ecocsv", "etcbin", "etcprodcsv", "excel",
-			"extrastations", "icos", "netcdf", "stationentry", "stationlabeling"
-		).map{id =>
-			s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
-		}.toMap +
+		"atmprodcsv",
+		"cpmeta",
+		"ecocsv",
+		"etcbin",
+		"etcprodcsv",
+		"excel",
+		"extrastations",
+		"icos",
+		"netcdf",
+		"stationentry",
+		"stationlabeling"
+	).map { id =>
+		s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
+	}.toMap +
 		("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
 		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +

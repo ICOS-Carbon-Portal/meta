@@ -46,7 +46,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 class TestDb(name: String) {
 	import system.{dispatcher, log}
 
-	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
+	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	private val akkaConf =

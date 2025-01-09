@@ -54,12 +54,7 @@ class TestDb(name: String) {
 	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	val dir = Files.createTempDirectory(name).toAbsolutePath
 
-	val repo: Future[Repository] = createRepo()
-
-	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
-
-	private def createRepo(): Future[SailRepository] =
+	val repo: Future[Repository] =
 		/**
 		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
@@ -74,6 +69,9 @@ class TestDb(name: String) {
 			_ = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
 		yield SailRepository(sail)
+
+	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
+		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
 	private def ingestTriplestore(): Future[Unit] =
 		val repo = SailRepository(makeSail())

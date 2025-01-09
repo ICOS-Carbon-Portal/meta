@@ -54,19 +54,19 @@ class TestDb(name: String) {
 	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	val dir = Files.createTempDirectory(name).toAbsolutePath
 
-	/**
-	The repo is created three times:
-		0) to ingest the test RDF file into a fresh new triplestore
-		1) to restart the triplestore to create the magic SPARQL index
-		2) to dump the SPARQL index to disk, re-start, read the index
-		data structure, and initialize the index from it
-	**/
 	val repo: Future[Repository] = createRepo()
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
 	private def createRepo(): Future[SailRepository] =
+		/**
+		The repo is created three times:
+			1) to ingest the test RDF file into a fresh new triplestore
+			2) to restart the triplestore to create the magic SPARQL index
+			3) to dump the SPARQL index to disk, re-start, read the index
+			data structure, and initialize the index from it
+		**/
 		for
 			_ <- ingestTriplestore()
 			idxData <- createIndex()

@@ -47,12 +47,10 @@ class TestDb(name: String) {
 	import system.{dispatcher, log}
 
 	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
-	private val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
+	private val dir = Files.createTempDirectory(name).toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	private val akkaConf =
 		ConfigFactory.defaultReference().withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
-	private given system: ActorSystem = ActorSystem(name, akkaConf)
-	val dir = Files.createTempDirectory(name).toAbsolutePath
 
 	val repo: Future[Repository] =
 		/**

@@ -28,7 +28,7 @@ val UploadDatasetFromFile = "uploadDatasetFromFile"
 val DeleteAllDatasets = "deleteAllDatasets"
 
 val sparqlEndpoint: Uri = uri"https://meta.icos-cp.eu/sparql"
-val ConstructQueryFile = os.pwd / "resources" / "firstEcvDemoImport.rq"// "icosImport.rq"
+val ConstructQueryFile = os.pwd / os.RelPath("src/main/scala-cli/fdp/resources/secondEcvDemoImport.rq")
 
 case class Config(
 	host: String = "",
@@ -129,16 +129,19 @@ def uploadL2ICOS(config: Config) =
 	Using.Manager: use =>
 		val conn = use(repo.getConnection())
 		val limit = if config.nDatasets > 0 then s" LIMIT ${config.nDatasets}" else ""
-		val datasetsQuery = s"SELECT ?subj WHERE { ?subj a <${DCAT.DATASET}> }$limit"
+		val datasetsQuery = s"SELECT ?dataset WHERE { ?dataset a <${DCAT.DATASET}> }$limit"
 		val datasetsResult = use(conn.prepareTupleQuery(datasetsQuery).evaluate())
 		datasetsResult.forEach: bindings =>
-			val dataset = uri"${bindings.getValue("subj").toString}"
-			val fdpInputQuery = constructDatasetSparqlQuery(catalogUri, dataset)
-			val dsTurtle: String = evaluateGraphQuery(conn, fdpInputQuery)
+			val dataset = uri"${bindings.getValue("dataset").toString}"
+			val datasetQuery = constructDatasetSparqlQuery(catalogUri, dataset)
+			val dsTurtle: String = evaluateGraphQuery(conn, datasetQuery)
+			val distributionQuery = constructDistributionSparqlQuery(dataset)
+			val distTurtle: String = evaluateGraphQuery(conn, distributionQuery)
 			if config.dryRun then
-				println(dsTurtle)
+				println(s"Dataset:\n$dsTurtle\n\nDistribution:\n$distTurtle\n\n\n")
 			else
 				fdp.postAndPublishDatasets(dsTurtle)
+				fdp.postAndPublishDistributions(distTurtle)
 
 def uploadDatasetFromFile(config: Config) =
 	val fdp = initFdp(config)
@@ -216,4 +219,8 @@ def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 		|	#?ds dcat:distribution ?distro .
 		|	#?distro ?distroPred ?distroV .
 		|}
+	""".stripMargin
+
+def constructDistributionSparqlQuery(dataset: Uri): String =
+	s"""
 	""".stripMargin

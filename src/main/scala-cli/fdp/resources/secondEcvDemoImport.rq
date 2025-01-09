@@ -1,0 +1,63 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix owl: <http://www.w3.org/2002/07/owl#>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix dcat: <http://www.w3.org/ns/dcat#>
+prefix dct: <http://purl.org/dc/terms/>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+
+CONSTRUCT {
+	?ds a dcat:Dataset .
+	?ds dcat:landingPage ?dobj .
+	?ds owl:sameAs ?dobj .
+	?ds dct:title ?fileName .
+	?ds dct:issued ?submEnd .
+	?ds dct:modified ?modified .
+	?ds dcat:theme ?ecv .
+	?ds dcat:version "1.0" .
+	?ds dct:description ?description .
+	?ds prov:wasAttributedTo ?station .
+	?ds dct:temporal [
+		a dct:PeriodOfTime ;
+		dcat:startDate ?timeStart ;
+		dcat:endDate ?timeEnd
+	].
+	?ds dcat:distribution [
+		a dcat:Distribution ;
+		dcat:accessURL ?dobj ;
+		dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+		dcat:byteSize ?size ;
+		dcat:downloadURL ?dlUri
+	]
+} WHERE {
+	{
+		SELECT ?dobjSpec ?ecv (group_concat(?dobjSpecComm; separator=". ") AS ?dobjSpecComment) WHERE {
+			VALUES (?dobjSpec ?ecv){
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <https://fdp.icos-cp.eu/variable/ad44593c-91b4-44b5-96df-efe94e7c49bb>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <https://fdp.icos-cp.eu/variable/d948ee13-c9e8-4acc-b198-0e6c1d3c6a99>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <https://fdp.icos-cp.eu/variable/69fafa11-7b3b-42e4-aebe-a1b95c201a64>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <https://fdp.icos-cp.eu/variable/4d6a10b6-7dee-45c5-9f61-2f11705bacfa>)
+			}
+			OPTIONAL{?dobjSpec rdfs:comment ?dobjSpecComm }
+		}
+		GROUP BY ?dobjSpec ?ecv
+	}
+	?dobj cpmeta:hasObjectSpec ?dobjSpec .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj} .
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submEnd .
+	?dobj cpmeta:wasSubmittedBy/prov:startedAtTime ?submStart .
+	?dobj cpmeta:wasAcquiredBy ?acq .
+	?acq prov:startedAtTime ?timeStart ;
+		prov:endedAtTime ?timeEnd ;
+		prov:wasAssociatedWith ?station .
+	?station cpmeta:hasName ?stationName .
+	?dobjSpec rdfs:label ?dobjSpecLabel .
+	OPTIONAL{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
+	BIND (coalesce(?prodTime, ?submStart) AS ?modified)
+	BIND (iri(replace(str(?dobj), "https://meta", "https://data")) AS ?dlUri)
+	BIND (concat(?dobjSpecLabel, ", station ", ?stationName, ". ", coalesce(?dobjSpecComment, "")) AS ?description)
+	BIND (iri(replace(str(?dobj), "/objects/", "/fdp/objects/")) AS ?ds)
+}
+ORDER BY ?fileName
+LIMIT 3

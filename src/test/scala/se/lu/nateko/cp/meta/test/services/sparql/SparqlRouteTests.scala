@@ -11,6 +11,7 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.pattern.after
 import eu.icoscp.envri.Envri
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
@@ -26,11 +27,14 @@ import scala.concurrent.Future
 import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 
-class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
+class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll:
 
 	import system.{log}
 
 	val db = new TestDb("sparqlRoutingTesting")
+
+	override protected def afterAll(): Unit = db.cleanup()
+
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))

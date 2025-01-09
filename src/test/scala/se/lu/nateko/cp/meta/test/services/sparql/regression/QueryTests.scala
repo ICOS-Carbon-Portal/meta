@@ -15,7 +15,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class QueryTests extends AsyncFunSpec {
-	val db = new TestDb()
+	val db = new TestDb("sparqlRegrTesting")
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()

@@ -42,15 +42,15 @@ import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
-class TestDb {
+class TestDb(name: String) {
 
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	val akkaConf = ConfigFactory.defaultReference()
 		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
-	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
+	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	import system.{dispatcher, log}
 
-	val dir = Files.createTempDirectory("sparqlRegrTesting").toAbsolutePath
+	val dir = Files.createTempDirectory(name).toAbsolutePath
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))

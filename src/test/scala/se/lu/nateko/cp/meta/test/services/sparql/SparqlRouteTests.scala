@@ -30,7 +30,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	import system.{log}
 
-	val db = new TestDb()
+	val db = new TestDb("sparqlRoutingTesting")
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))

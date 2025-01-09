@@ -41,26 +41,62 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
 class TestDb(name: String) {
-
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
-	val akkaConf = ConfigFactory.defaultReference()
-		.withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
-	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	import system.{dispatcher, log}
 
-	val dir = Files.createTempDirectory(name).toAbsolutePath
+	private given system: ActorSystem = ActorSystem("sparqlRegrTesting", akkaConf)
+	private val dir = Files.createTempDirectory(name).toAbsolutePath
+	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+	private val akkaConf =
+		ConfigFactory.defaultReference().withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
+
+	val repo: Future[Repository] =
+		/**
+		The repo is created three times:
+			1) to ingest the test RDF file into a fresh new triplestore
+			2) to restart the triplestore to create the magic SPARQL index
+			3) to dump the SPARQL index to disk, re-start, read the index
+			data structure, and initialize the index from it
+		**/
+		for
+			_ <- ingestTriplestore()
+			idxData <- createIndex()
+			sail = makeSail()
+			_ = sail.init()
+			_ = sail.initSparqlMagicIndex(Some(idxData))
+		yield SailRepository(sail)
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
-	val repo: Future[Repository] = {
-		object CitationClientDummy extends CitationClient{
-			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
-		}
+	private def ingestTriplestore(): Future[Unit] =
+		val repo = SailRepository(makeSail())
 
+		val ingestion =
+			given BnodeStabilizers = new BnodeStabilizers
+			val factory = repo.getValueFactory
+			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+				val graphIri = factory.createIRI(uriStr)
+				val server = Rdf4jInstanceServer(repo, graphIri)
+				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+				Ingestion.ingest(server, ingester, factory).map(_ => Done)
+
+		ingestion.map(_ -> repo.shutDown())
+
+	private def createIndex(): Future[IndexData] = {
+		val sail = makeSail()
+		sail.init()
+		for
+			_ <- sail.initSparqlMagicIndex(None)
+			_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
+			_ = sail.shutDown()
+			idxData <- IndexHandler.restore()
+		yield idxData
+	}
+
+	private def makeSail() =
 		val rdfConf = RdfStorageConfig(
 			lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 			path = dir.toString,
@@ -70,57 +106,20 @@ class TestDb(name: String) {
 			recreateCpIndexAtStartup = true
 		)
 
+		object CitationClientDummy extends CitationClient {
+			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
+			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
+		}
+
+		val (freshInit, base) = StorageSail.apply(rdfConf, log)
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
 		val geoFactory = GeoIndexProvider(log)
+		val idxFactories = if freshInit then None
+		else
+			Some(indexUpdaterFactory -> geoFactory)
 
-		def makeSail =
-			val (freshInit, base) = StorageSail.apply(rdfConf, log)
-			val idxFactories = if freshInit then None else
-				Some(indexUpdaterFactory -> geoFactory)
-
-			val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
-			CpNotifyingSail(base, idxFactories, citer, log)
-
-		/**
-		The repo is created three times:
-			0) to ingest the test RDF file into a fresh new triplestore
-			1) to restart the triplestore to create the magic SPARQL index
-			2) to dump the SPARQL index to disk, re-start, read the index
-			data structure, and initialize the index from it
-		**/
-		val repo0Fut: Future[Repository] =
-			val repo0 = SailRepository(makeSail)
-			val factory = repo0.getValueFactory
-			given BnodeStabilizers = new BnodeStabilizers
-
-			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
-				val graphIri = factory.createIRI(uriStr)
-				val server = Rdf4jInstanceServer(repo0, graphIri)
-				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-				Ingestion.ingest(server, ingester, factory).map(_ => Done)
-			.map: _ =>
-				repo0
-		for
-			repo0 <- repo0Fut
-			repo1 = {
-				repo0.shutDown()
-				val repo1 = makeSail.asInstanceOf[CpNotifyingSail]
-				repo1.init()
-				repo1.initSparqlMagicIndex(None)
-				repo1
-			}
-			_ <- repo1.makeReadonlyDumpIndexAndCaches("Test")
-			_ = repo1.shutDown()
-			idxData <- IndexHandler.restore()
-			repo2 = makeSail.asInstanceOf[CpNotifyingSail]
-			_ <- {
-				repo2.init()
-				repo2.initSparqlMagicIndex(Some(idxData))
-			}
-		yield
-			SailRepository(repo2)
-
-	}
+		val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
+		CpNotifyingSail(base, idxFactories, citer, log)
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global
@@ -133,11 +132,20 @@ class TestDb(name: String) {
 
 object TestDb:
 	val graphIriToFile = Seq(
-			"atmprodcsv", "cpmeta", "ecocsv", "etcbin", "etcprodcsv", "excel",
-			"extrastations", "icos", "netcdf", "stationentry", "stationlabeling"
-		).map{id =>
-			s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
-		}.toMap +
+		"atmprodcsv",
+		"cpmeta",
+		"ecocsv",
+		"etcbin",
+		"etcprodcsv",
+		"excel",
+		"extrastations",
+		"icos",
+		"netcdf",
+		"stationentry",
+		"stationlabeling"
+	).map { id =>
+		s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
+	}.toMap +
 		("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
 		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
 		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +

@@ -349,7 +349,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				Validated.sequence:
 					getStatements(contribSeq, null, null).toIndexedSeq
 						.filter(s => s.getPredicate.getLocalName.matches("^_\\d+$"))
-						.sortBy(s => s.getPredicate.getLocalName)
+						.sortBy(s => s.getPredicate.getLocalName.drop(1).toInt)
 						.map(_.getObject)
 						.collect:
 							case contrib: IRI => getAgent(contrib)

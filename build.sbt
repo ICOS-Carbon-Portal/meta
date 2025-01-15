@@ -22,7 +22,7 @@ lazy val metaCore = (project in file("core"))
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
-			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.9.0",
+			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),

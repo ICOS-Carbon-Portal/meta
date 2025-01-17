@@ -7,7 +7,7 @@ name: Scala CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "gh-workflow" ]
   pull_request:
     branches: [ "master" ]
 

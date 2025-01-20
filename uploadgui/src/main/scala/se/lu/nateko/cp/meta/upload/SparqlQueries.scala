@@ -126,7 +126,7 @@ object SparqlQueries {
 		case Envri.SITES => spatioTemporalCoveragesQuery(Seq("https://meta.fieldsites.se/resources/sites/"))
 		case Envri.ICOS | Envri.ICOSCities => spatioTemporalCoveragesQuery(Seq("http://meta.icos-cp.eu/resources/cpmeta/"))
 
-	def toSpatialCoverage(b: Binding) = new SpatialCoverage(new URI(b("cov")), b("label"))
+	def toSpatialCoverage(b: Binding) = new SpatialCoverage(Some(new URI(b("cov"))), b("label"))
 
 	private def peopleQuery(from: Seq[String]) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select *

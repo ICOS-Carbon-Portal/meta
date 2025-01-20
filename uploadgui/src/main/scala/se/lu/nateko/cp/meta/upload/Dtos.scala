@@ -34,6 +34,6 @@ case class NamedUri(uri: URI, name: String)
 
 case class SamplingPoint(uri: URI, latitude: Double, longitude: Double, name: String)
 
-class SpatialCoverage(val uri: URI, val label: String)
+class SpatialCoverage(val uri: Option[URI], val label: String)
 
 case class DatasetVar(label: String, title: String, valueType: String, unit: String, isOptional: Boolean, isRegex: Boolean)

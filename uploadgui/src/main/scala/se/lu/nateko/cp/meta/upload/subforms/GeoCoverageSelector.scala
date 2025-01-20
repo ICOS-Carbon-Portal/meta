@@ -19,7 +19,7 @@ import scala.util.Try
 
 
 class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using PubSubBus) extends PanelSubform(s".geocov-element"):
-	private val spatialCovSelect = new Select[SpatialCoverage](s"${lbl}geoselect", _.label, autoselect = false, onSpatCoverSelected)
+	private val spatialCovSelect = new Select[SpatialCoverage](s"${lbl}geoselect", _.label, _.uri.map(_.toString).getOrElse(""), autoselect = false, onSpatCoverSelected)
 	private val spatCoverElements = new HtmlElements(s".geocov-element")
 
 	private var originalSpatCov: Option[Either[GeoFeature, URI]] = None
@@ -30,8 +30,8 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 	private val maxLatInput = new DoubleInput(s"${lbl}geomaxlat", notifyUpdate)
 	private val maxLonInput = new DoubleInput(s"${lbl}geomaxlon", notifyUpdate)
 
-	private val customLatLonBox = new SpatialCoverage(null, "Custom spatial coverage (Lat/lon box)")
-	private val customSpatCov = new SpatialCoverage(null, "Custom spatial coverage")
+	private val customLatLonBox = new SpatialCoverage(None, "Custom spatial coverage (Lat/lon box)")
+	private val customSpatCov = new SpatialCoverage(None, "Custom spatial coverage")
 	private val customSpatCovWarningMsg = "This item has a custom spatial coverage, which cannot be edited in UploadGUI" +
 		" (but can be reset to be automatically regenerated)"
 
@@ -50,7 +50,7 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 
 			case `customSpatCov` =>
 				originalSpatCov.withMissingError("custom spatial coverage")
-			case spCov => Success(Right(spCov.uri))
+			case spCov => spCov.uri.withMissingError("spatial coverage missing URI").map(Right(_))
 
 
 	def resetSpatialCovOptions(): Unit = spatialCovSelect.setOptions(customLatLonBox +: covs)

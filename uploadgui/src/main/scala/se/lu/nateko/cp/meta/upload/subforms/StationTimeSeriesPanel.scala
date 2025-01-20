@@ -40,14 +40,14 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 	}
 
 	private val positionElements = new HtmlElements(".position-element")
-	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.namedUri.name})", autoselect = true, cb = onStationSelected)
-	private val siteSelect = new Select[Option[NamedUri]]("siteselect", _.map(_.name).getOrElse(""), cb = onSiteSelected)
+	private val stationSelect = new Select[Station]("stationselect", s => s"${s.id} (${s.namedUri.name})", _.namedUri.uri.toString, autoselect = true, cb = onStationSelected)
+	private val siteSelect = new Select[Option[NamedUri]]("siteselect", _.map(_.name).getOrElse(""), _.map(_.uri.toString).getOrElse(""), cb = onSiteSelected)
 	private val acqStartInput = new InstantInput("acqstartinput", notifyUpdate)
 	private val acqStopInput = new InstantInput("acqstopinput", notifyUpdate)
 	private val timeIntevalInput = new TimeIntevalInput(acqStartInput, acqStopInput)
 	private val samplingHeightInput = new FloatOptInput("sampleheight", notifyUpdate)
 	private val instrUriInput = new UriOptionalOneOrSeqInput("instrumenturi", notifyUpdate)
-	private val samplingPointSelect = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), autoselect = false, onSamplingPointSelected)
+	private val samplingPointSelect = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), _.map(_.uri.toString).getOrElse(""), autoselect = false, onSamplingPointSelected)
 	private val latitudeInput = new DoubleOptInput("latitude", notifyUpdate)
 	private val longitudeInput = new DoubleOptInput("longitude", notifyUpdate)
 

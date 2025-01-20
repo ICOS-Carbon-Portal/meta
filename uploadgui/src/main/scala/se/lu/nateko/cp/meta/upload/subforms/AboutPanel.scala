@@ -45,7 +45,7 @@ class AboutPanel(subms: IndexedSeq[SubmitterProfile])(using bus: PubSubBus, envr
 	def refreshFileHash(): Future[Unit] = if (fileInput.hasBeenModified) fileInput.rehash() else Future.successful(())
 
 	private val modeControl = new ModeRadio("new-update-radio", onModeSelected)
-	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, autoselect = true, onSubmitterSelected)
+	private val submitterIdSelect = new Select[SubmitterProfile]("submitteridselect", _.id, _ => "", autoselect = true, onSubmitterSelected)
 	private val typeControl = new ItemTypeRadio("file-type-radio", onItemTypeSelected)
 	private val fileElement = new HtmlElements("#file-element")
 	private val fileNameElement = new HtmlElements("#filename-element")

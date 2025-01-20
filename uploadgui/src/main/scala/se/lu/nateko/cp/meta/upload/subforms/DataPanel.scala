@@ -27,7 +27,7 @@ class DataPanel(
 	def moratorium: Try[Option[Instant]] = moratoriumInput.value.withErrorContext("Delayed publication instant (moratorium)")
 
 	private val levelControl = new Radio[Int]("level-radio", onLevelSelected, s => Try(s.toInt).toOption, _.toString)
-	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, cb = onSpecSelected)
+	private val objSpecSelect = new Select[ObjSpec]("objspecselect", _.name, _.uri.toString, cb = onSpecSelected)
 	private val nRowsInput = new IntOptInput("nrows", notifyUpdate)
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")

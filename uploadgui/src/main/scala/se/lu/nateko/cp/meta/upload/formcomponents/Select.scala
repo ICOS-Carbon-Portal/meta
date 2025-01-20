@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 import org.scalajs.dom.{html, document}
 import se.lu.nateko.cp.meta.upload.Utils.*
 
-class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = false, cb: () => Unit = () => ()){
+class Select[T](elemId: String, labeller: T => String, titleMaker: T => String, autoselect: Boolean = false, cb: () => Unit = () => ()){
 	private val select = getElementById[html.Select](elemId).get
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
 
@@ -29,6 +29,7 @@ class Select[T](elemId: String, labeller: T => String, autoselect: Boolean = fal
 		values.foreach{value =>
 			val opt = document.createElement("option")
 			opt.appendChild(document.createTextNode(labeller(value)))
+			opt.setAttribute("title", titleMaker(value))
 			select.appendChild(opt)
 		}
 

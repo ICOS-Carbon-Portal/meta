@@ -18,15 +18,15 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection;
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseJsonStringArray, parseCommaSepList}
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
-import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, Rdf4jStatement, asString, ===, toJava};
 
 import java.io.Serializable
 import java.time.Instant
@@ -69,7 +69,6 @@ trait ObjInfo extends ObjSpecific{
 }
 
 final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter):
-
 	import data.{contMap, stats, objs, categMaps, boolMap, initOk, idLookup}
 
 	given factory: ValueFactory = sail.getValueFactory
@@ -83,7 +82,7 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
-			getStatements(null, null, null)
+			TriplestoreConnection.getStatements(null, null, null)
 			.foreach: s =>
 				put(RdfUpdate(s, true))
 				statementCount += 1
@@ -439,7 +438,7 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 									case _ =>
 					else if
 						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!hasStatement(null, isNextVersionOf, obj)
+						!TriplestoreConnection.hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -533,7 +532,7 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 	}
 
 	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
-		getStatements(obj, vocab.dcterms.hasPart, null)
+		TriplestoreConnection.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
 					oe.isNextVersion = true
@@ -544,13 +543,13 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 			.exists(identity)
 
 	private def getIdxsOfDirectPrevVers(deprecator: IRI)(using GlobConn): IndexedSeq[Int] =
-		getStatements(deprecator, vocab.isNextVersionOf, null)
+		TriplestoreConnection.getStatements(deprecator, vocab.isNextVersionOf, null)
 			.flatMap:
 				st => modForDobj(st.getObject)(_.idx)
 			.toIndexedSeq
 
 	private def getIdxsOfPrevVersThroughColl(deprecator: IRI)(using GlobConn): Option[Int] =
-		getStatements(null, vocab.dcterms.hasPart, deprecator)
+		TriplestoreConnection.getStatements(null, vocab.dcterms.hasPart, deprecator)
 		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
 		.toIndexedSeq
 		.headOption

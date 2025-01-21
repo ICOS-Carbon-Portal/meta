@@ -70,7 +70,7 @@ trait ObjInfo extends ObjSpecific{
 
 final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter):
 
-	import data.*
+	import data.{contMap, stats, objs, categMaps, boolMap, initOk, idLookup}
 
 	given factory: ValueFactory = sail.getValueFactory
 	val rwLock = ReadWriteLocking();

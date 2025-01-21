@@ -68,7 +68,9 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
+final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter):
+
+	val rwLock = ReadWriteLocking();
 
 	import data.*
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
@@ -128,7 +130,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		case SubmissionEnd =>   data.submEndBm
 	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
+	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = rwLock.readLocked{
 		//val start = System.currentTimeMillis
 
 		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
@@ -239,7 +241,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
-	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
+	def statEntries(filter: Filter): Iterable[StatEntry] = rwLock.readLocked{
 		log.debug(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
 		filterOpt match
@@ -271,7 +273,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		if(q.remainingCapacity == 0) flush()
 	}
 
-	def flush(): Unit = if !q.isEmpty then writeLocked:
+	def flush(): Unit = if !q.isEmpty then rwLock.writeLocked:
 		if !q.isEmpty then
 			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
 			q.drainTo(list)

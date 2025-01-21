@@ -70,9 +70,14 @@ trait ObjInfo extends ObjSpecific{
 
 final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter):
 
-	val rwLock = ReadWriteLocking();
-
 	import data.*
+
+	given factory: ValueFactory = sail.getValueFactory
+	val rwLock = ReadWriteLocking();
+	val vocab = new CpmetaVocab(factory)
+
+	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
+
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
 		this(sail, geo, IndexData(nObjects)())(log)
 		//Mass-import of the statistics data
@@ -90,6 +95,7 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
 		reportDebugInfo()
 	}
+
 	private def reportDebugInfo(): Unit =
 		log.debug(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
 		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
@@ -104,11 +110,6 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 	if stats.nonEmpty then
 		log.info("CpIndex got initialized with non-empty index data to use")
 		reportDebugInfo()
-
-	given factory: ValueFactory = sail.getValueFactory
-	val vocab = new CpmetaVocab(factory)
-
-	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data

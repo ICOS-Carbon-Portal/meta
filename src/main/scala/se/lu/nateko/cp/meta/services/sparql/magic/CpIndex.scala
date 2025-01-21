@@ -44,6 +44,7 @@ import scala.util.Success
 import CpIndex.*
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
@@ -80,19 +81,32 @@ final class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: Log
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
 		this(sail, geo, IndexData(nObjects)())(log)
 		//Mass-import of the statistics data
-		var statementCount = 0
+
+
+		var statementCount = 0;
 		sail.accessEagerly:
-			TriplestoreConnection.getStatements(null, null, null)
-			.foreach: s =>
-				put(RdfUpdate(s, true))
-				statementCount += 1
-				if statementCount % 1000000 == 0 then
-					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
+			statementCount = importStatements(TriplestoreConnection.getStatements(null, null, null))
+
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
 		reportDebugInfo()
+	}
+
+	private def importStatements(statements: CloseableIterator[Statement]) : Int = {
+		var statementCount = 0
+
+		statements.foreach(statement => 
+			statementCount += 1
+			if statementCount % 1000000 == 0 then {
+				log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
+			}
+
+			put(RdfUpdate(statement, true))
+		)
+
+		return statementCount;
 	}
 
 	private def reportDebugInfo(): Unit =

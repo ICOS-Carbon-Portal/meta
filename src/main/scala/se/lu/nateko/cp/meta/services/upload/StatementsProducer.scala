@@ -160,11 +160,12 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		val gf: Option[GeoFeature] = spatial match
 			case gf: GeoFeature => Some(gf)
 			case _ => None
+
 		inline def defaultCovUri = gf.flatMap(_.uri).fold(vocab.getSpatialCoverage(UriId(itemIri)))(_.toRdf)
 
-		val geoJson: GeoJsonString = spatial match
-			case feature: GeoFeature => GeoJsonString.unsafe(GeoJson.fromFeature(feature).compactPrint)
-			case str: GeoJsonString @unchecked => str
+		val geoJson: String = spatial match
+			case feature: GeoFeature => GeoJson.fromFeature(feature).compactPrint
+			case str: String => str
 
 		val (covUri, specificStatements) = spatial match
 			case p: Position => getPositionStatements(p)

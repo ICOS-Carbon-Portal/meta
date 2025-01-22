@@ -67,6 +67,11 @@ class InstantOptInput(elemId: String, cb: () => Unit) extends GenericTextInput[O
 class TextInput(elemId: String, cb: () => Unit, hint: String) extends GenericTextInput[String](elemId, cb, fail(s"Missing $hint"))(s => Try(s), s => s)
 
 
+class JsonInput(elemId: String, cb: () => Unit, hint: String) extends GenericTextInput[String](elemId, cb, fail(s"Missing $hint"))(
+	s => Try(scala.scalajs.js.JSON.parse(s)).map(_ => s),
+	s => s
+)
+
 class HashOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[Sha256Sum](elemId, cb)(
 	s =>
 		if(s.trim.isEmpty) Success(None)

@@ -306,13 +306,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			if(isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 		}
 
+		val processTriple = data.processTriple(log)
+
 		pred match{
-			case `hasName` => modForDobj(subj){oe =>
-				val fName = obj.stringValue
-				if(isAssertion) oe.fName = fName
-				else if(oe.fName == fName) oe.fileName == null
-				handleContinuousPropUpdate(FileName, fName, oe.idx)
-			}
 
 			case `wasAssociatedWith` => subj match{
 				case CpVocab.Submission(hash) =>
@@ -471,7 +467,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			}
 
 			case _ =>
-				data.processTriple(subj, pred, obj, vocab, isAssertion)
+				val _ = processTriple(subj, pred, obj, vocab, isAssertion)
 		}
 	}
 

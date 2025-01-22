@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.Strin
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import org.eclipse.rdf4j.model.Value
+import akka.event.LoggingAdapter
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -60,7 +61,13 @@ class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def processTriple(subj: IRI, pred: IRI, obj: Value, vocab: CpmetaVocab, isAssertion: Boolean): Boolean = {
+	def processTriple(log: LoggingAdapter)(
+		subj: IRI,
+		pred: IRI,
+		obj: Value,
+		vocab: CpmetaVocab,
+		isAssertion: Boolean
+	): Boolean = {
 		import vocab.{hasObjectSpec, hasName}
 
 		pred match {
@@ -81,9 +88,36 @@ class IndexData(nObjects: Int)(
 
 						true
 					}
+
 				}
 
+			case `hasName` =>
+				modForDobj(subj, idLookup, objs) { oe =>
+					val fName = obj.stringValue
+					if (isAssertion) oe.fName = fName
+					else if (oe.fName == fName) oe.fileName == null
+					handleContinuousPropUpdate(log)(FileName, fName, oe.idx, isAssertion)
+				}
+
+				true
+
 			case _ => false
+		}
+	}
+
+	private def handleContinuousPropUpdate(log: LoggingAdapter)(
+		prop: ContProp,
+		key: prop.ValueType,
+		idx: Int,
+		isAssertion: Boolean
+	): Unit = {
+		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
+		if (isAssertion) {
+			if (!bitmap(prop).add(key, idx)) {
+				log.warning(s"Value already existed: asserted $helpTxt")
+			}
+		} else if (!bitmap(prop).remove(key, idx)) {
+			log.warning(s"Value was not present: tried to retract $helpTxt")
 		}
 	}
 }

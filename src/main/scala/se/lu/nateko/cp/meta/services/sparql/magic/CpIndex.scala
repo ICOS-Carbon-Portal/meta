@@ -307,22 +307,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		}
 
 		pred match{
-
-			case `hasObjectSpec` => obj match{
-				case spec: IRI =>
-					modForDobj(subj){oe =>
-						updateCategSet(categMap(Spec), spec, oe.idx)
-						if(isAssertion) {
-							if(oe.spec != null) removeStat(oe)
-							oe.spec = spec
-							addStat(oe)
-						} else if(spec === oe.spec) {
-							removeStat(oe)
-							oe.spec = null
-						}
-					}
-			}
-
 			case `hasName` => modForDobj(subj){oe =>
 				val fName = obj.stringValue
 				if(isAssertion) oe.fName = fName
@@ -487,6 +471,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			}
 
 			case _ =>
+				data.processTriple(subj, pred, obj, vocab, isAssertion)
 		}
 	}
 

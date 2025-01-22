@@ -48,10 +48,14 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
 		else getExistingStaticColl(collUri, hashOpt)
 
-	def fetchCollCoverage(collUri: IRI)(using CollConn): Validated[Option[GeoFeature]] =
+	def fetchCollCoverage(collUri: IRI)(using conn: CollConn): Validated[Option[GeoFeature]] =
 		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap:
 			case None => Validated.ok(None)
-			case Some(covUri) => getCoverage(covUri).map(Option(_)).orElse(None)
+			case Some(covIri) =>
+				val isCustomCoverage = conn.primaryContextView.hasStatement(covIri, RDF.TYPE, null)
+				getCoverage(covIri).map: cov =>
+					Option(if isCustomCoverage then cov.withOptUri(None) else cov)
+				.orElse(None)
 
 	private def getExistingStaticColl(
 		coll: IRI, hashOpt: Option[Sha256Sum] = None

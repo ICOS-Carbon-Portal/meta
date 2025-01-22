@@ -142,5 +142,5 @@ object UploadDtoReader{
 		case None      => gf match
 			case box: LatLonBox => box
 			case _ => GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
-		case Some(uri) => gf.uri.get
+		case Some(uri) => uri
 }

@@ -40,4 +40,19 @@ class IndexData(nObjects: Int)(
 	def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
 	def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
+
+	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
+		contMap.getOrElseUpdate(
+			prop,
+			prop match {
+				/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
+				case FileName        => fileNameBm
+				case FileSize        => FileSizeHierarchicalBitmap(objs)
+				case SamplingHeight  => SamplingHeightHierarchicalBitmap(objs)
+				case DataStart       => dataStartBm
+				case DataEnd         => dataEndBm
+				case SubmissionStart => submStartBm
+				case SubmissionEnd   => submEndBm
+			}
+		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 }

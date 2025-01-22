@@ -115,17 +115,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	private def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] = contMap.getOrElseUpdate(prop, prop match {
-		/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-		case FileName =>        data.fileNameBm
-		case FileSize =>        FileSizeHierarchicalBitmap(objs)
-		case SamplingHeight =>  SamplingHeightHierarchicalBitmap(objs)
-		case DataStart =>       data.dataStartBm
-		case DataEnd =>         data.dataEndBm
-		case SubmissionStart => data.submStartBm
-		case SubmissionEnd =>   data.submEndBm
-	}).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
-
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
@@ -135,7 +124,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			case None =>
 				filter.iterator.asScala.drop(req.offset).map(_.intValue)
 			case Some(SortBy(prop, descending)) =>
-				bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
+				data.bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
 		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
 		idxIter.map(objs.apply)
@@ -159,7 +148,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		}
 
 		case Exists(prop) => prop match{
-			case cp: ContProp => Some(bitmap(cp).all)
+			case cp: ContProp => Some(data.bitmap(cp).all)
 			case cp: CategProp => cp match{
 				case optUriProp: OptUriProperty => categMap(optUriProp).get(None) match{
 					case None => None

@@ -68,14 +68,15 @@ class IndexData(nObjects: Int)(
 		vocab: CpmetaVocab,
 		isAssertion: Boolean
 	): Boolean = {
-		import vocab.{hasObjectSpec, hasName}
+		import vocab.*
+		import vocab.prov.wasAssociatedWith
 
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
 					case spec: IRI => {
 						modForDobj(subj, idLookup, objs) { oe =>
-							updateCategSet(categMap(Spec, categMaps), isAssertion, spec, oe.idx)
+							updateCategSet(categMap(Spec, categMaps), spec, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, stats, initOk)
 								oe.spec = spec
@@ -98,8 +99,32 @@ class IndexData(nObjects: Int)(
 					else if (oe.fName == fName) oe.fileName == null
 					handleContinuousPropUpdate(log)(FileName, fName, oe.idx, isAssertion)
 				}
-
 				true
+
+			case `wasAssociatedWith` =>
+				subj match {
+					case CpVocab.Submission(hash) =>
+						val oe = getObjEntry(hash, idLookup, objs)
+						removeStat(oe, stats, initOk)
+						oe.submitter = targetUri(obj, isAssertion)
+						if (isAssertion) { addStat(oe, stats, initOk) }
+						obj match {
+							case subm: IRI => updateCategSet(categMap(Submitter, categMaps), subm, oe.idx, isAssertion)
+						}
+						true
+
+					case CpVocab.Acquisition(hash) =>
+						val oe = getObjEntry(hash, idLookup, objs)
+						removeStat(oe, stats, initOk)
+						oe.station = targetUri(obj, isAssertion)
+						if (isAssertion) { addStat(oe, stats, initOk) }
+						obj match {
+							case stat: IRI => updateCategSet(categMap(Station, categMaps), Some(stat), oe.idx, isAssertion)
+						}
+						true
+
+					case _ => false
+				}
 
 			case _ => false
 		}
@@ -122,6 +147,11 @@ class IndexData(nObjects: Int)(
 	}
 }
 
+private def targetUri(obj: Value, isAssertion: Boolean) =
+	if (isAssertion && obj.isInstanceOf[IRI]) {
+		obj.asInstanceOf[IRI]
+	} else { null }
+
 private def categMap(
 	prop: CategProp,
 	categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]
@@ -131,9 +161,9 @@ private def categMap(
 
 private def updateCategSet[T <: AnyRef](
 	set: AnyRefMap[T, MutableRoaringBitmap],
-	isAssertion: Boolean,
 	categ: T,
-	idx: Int
+	idx: Int,
+	isAssertion: Boolean
 ): Unit = {
 	val bm = set.getOrElseUpdate(categ, emptyBitmap)
 	if isAssertion then bm.add(idx)

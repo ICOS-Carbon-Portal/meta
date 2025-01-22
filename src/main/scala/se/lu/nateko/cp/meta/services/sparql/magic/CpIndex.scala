@@ -272,7 +272,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
 		import vocab.*
-		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
+		import vocab.prov.{startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
 
 
@@ -309,23 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-
-			case `wasAssociatedWith` => subj match{
-				case CpVocab.Submission(hash) =>
-					val oe = getObjEntry(hash)
-					removeStat(oe)
-					oe.submitter = targetUri
-					if(isAssertion) addStat(oe)
-					obj match{ case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx) }
-
-				case CpVocab.Acquisition(hash) =>
-					val oe = getObjEntry(hash)
-					removeStat(oe)
-					oe.station = targetUri
-					if(isAssertion) addStat(oe)
-					obj match{ case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx) }
-				case _ =>
-			}
 
 			case `wasPerformedAt` => subj match {
 				case CpVocab.Acquisition(hash) =>

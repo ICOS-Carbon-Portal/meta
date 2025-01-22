@@ -87,7 +87,7 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 			case Some(covUri: URI) =>
 				resetCustomCovElems()
 				geoCovElements.hide()
-				covs.find(_.uri == covUri) match
+				covs.find(_.uri.contains(covUri)) match
 					case None =>
 						UploadApp.showAlert(s"Unexpected coverage URI $covUri , it's not a 'stock' coverage", "alert alert-warning")
 					case Some(stockCov) =>

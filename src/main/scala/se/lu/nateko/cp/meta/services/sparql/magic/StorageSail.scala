@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import se.lu.nateko.cp.meta.RdfStorageConfig
 import se.lu.nateko.cp.meta.services.citation.*
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.utils.async.ok
 
 import java.io.File

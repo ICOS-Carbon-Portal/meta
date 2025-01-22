@@ -31,7 +31,7 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.nio.file.Files
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import akka.event.Logging
 import scala.concurrent.ExecutionContext
 

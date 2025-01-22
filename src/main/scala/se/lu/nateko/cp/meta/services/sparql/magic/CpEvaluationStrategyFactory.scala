@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import index.StatEntry
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 

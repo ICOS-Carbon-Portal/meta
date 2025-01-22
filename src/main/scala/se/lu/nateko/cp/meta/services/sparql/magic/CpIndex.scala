@@ -44,10 +44,8 @@ import scala.util.Success
 import CpIndex.*
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
-
-
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
-case class StatEntry(key: StatKey, count: Int)
+import se.lu.nateko.cp.meta.services.sparql.magic.index
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatKey, StatEntry, emptyBitmap}
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -557,24 +555,6 @@ end CpIndex
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
 
-	def emptyBitmap = MutableRoaringBitmap.bitmapOf()
-
-	class IndexData(nObjects: Int)(
-		val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-		val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-		val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
-		val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
-		val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
-		val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
-		val initOk: MutableRoaringBitmap = emptyBitmap
-	) extends Serializable{
-		def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
-		def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
-		def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
-		def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
-		def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
-	}
-
 	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
 		var spec: IRI = uninitialized
 		var submitter: IRI = uninitialized
@@ -603,12 +583,6 @@ object CpIndex:
 
 		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
 	}
-
-	final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
-	final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
-	final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionStart)
-	final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
-	final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
 
 	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 		case lit: Literal if lit.getDatatype === XSD.DATETIME =>

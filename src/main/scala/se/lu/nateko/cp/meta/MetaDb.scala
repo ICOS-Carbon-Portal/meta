@@ -39,7 +39,7 @@ import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
@@ -89,7 +89,7 @@ class MetaDb (
 				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
 			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
 
-	def initSparqlMagicIndex(idxData: Option[CpIndex.IndexData]): Future[Done] =
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
 		magicRepo.getSail match
 			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
 			case _ =>

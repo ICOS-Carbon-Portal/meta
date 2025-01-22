@@ -18,6 +18,7 @@ import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.utils.async.ok
+import index.IndexData
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -55,7 +56,7 @@ class CpNotifyingSail(
 		inner.init()
 		setupQueryEvaluation()
 
-	def initSparqlMagicIndex(idxData: Option[CpIndex.IndexData]): Future[Done] = indexFactories match
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] = indexFactories match
 		case None =>
 			log.info("Magic index is disabled")
 			ok
@@ -97,7 +98,7 @@ class CpNotifyingSail(
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:
-			CpIndex(inner, Future.never, CpIndex.IndexData(0)())(log)
+			CpIndex(inner, Future.never, IndexData(0)())(log)
 		inner.setEvaluationStrategyFactory:
 			CpEvaluationStrategyFactory(inner.getFederatedServiceResolver(), magicIdx, enricher, cpIndex.isDefined)
 

@@ -16,6 +16,8 @@ import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpEntity
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import java.net.URI
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import DefaultJsonProtocol.*
@@ -73,6 +75,18 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 		}
 		override def read(value: JsValue) = ???
 	}
+
+	given JsonFormat[GeoCoverage] with
+		def write(spatialObject: GeoCoverage) = spatialObject match
+			case feature: GeoFeature => feature.toJson
+			case uri: URI => uri.toJson
+			case jsonString: String => JsString(jsonString)
+		def read(json: JsValue): GeoCoverage = json match
+			case obj: JsObject => obj.convertTo[GeoFeature]
+			case JsString(str) =>
+				try new URI(str)
+				catch case _ => GeoJsonString.unsafe(str)
+			case _ => deserializationError(s"Error parsing GeoFeature from JSON, expected an object or a string ${json.getClass.getName}")
 
 	given RootJsonFormat[ClassDto] = jsonFormat2(ClassDto.apply)
 	given RootJsonFormat[ClassInfoDto] = jsonFormat3(ClassInfoDto.apply)

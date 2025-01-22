@@ -6,6 +6,7 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.doi.*
+import scala.util.Try
 
 sealed trait UploadDto{
 	def submitterId: String
@@ -46,6 +47,12 @@ case class DocObjectDto(
 ) extends ObjectUploadDto
 
 
+opaque type GeoJsonString <: String = String
+object GeoJsonString:
+	inline def unsafe(s: String): GeoJsonString = s
+
+type GeoCoverage = GeoFeature | URI | GeoJsonString
+
 case class StaticCollectionDto(
 	submitterId: String,
 	members: Seq[URI],
@@ -54,7 +61,7 @@ case class StaticCollectionDto(
 	isNextVersionOf: OptionalOneOrSeq[Sha256Sum],
 	preExistingDoi: Option[Doi],
 	documentation: Option[Sha256Sum],
-	coverage: Option[Either[GeoFeature, URI]]
+	coverage: Option[GeoCoverage]
 ) extends UploadDto
 
 case class StationTimeSeriesDto(
@@ -73,7 +80,7 @@ case class StationTimeSeriesDto(
 case class SpatioTemporalDto(
 	title: String,
 	description: Option[String],
-	spatial: Either[GeoFeature, URI],
+	spatial: GeoCoverage,
 	temporal: TemporalCoverage,
 	production: DataProductionDto,
 	forStation: Option[URI],

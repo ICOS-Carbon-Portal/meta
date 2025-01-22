@@ -7,7 +7,7 @@ import eu.icoscp.envri.Envri
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.Future
 
-abstract class PanelSubform(selector: String)(implicit bus: PubSubBus) {
+abstract class PanelSubform(selector: String)(using bus: PubSubBus) {
 	protected val htmlElements = new HtmlElements(selector)
 	protected def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
 	private type AgentList = IndexedSeq[NamedUri]

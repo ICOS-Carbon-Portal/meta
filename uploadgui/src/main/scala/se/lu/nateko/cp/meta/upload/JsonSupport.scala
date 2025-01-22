@@ -76,9 +76,16 @@ object JsonSupport:
 	given OFormat[TimeInterval] = Json.format[TimeInterval]
 	given OFormat[TemporalCoverage] = Json.format[TemporalCoverage]
 
-	given Format[URI] with
-		def writes(uri: URI) = JsString(uri.toASCIIString)
-		def reads(js: JsValue) = js.validate[String].map(new URI(_))
+	given Format[GeoCoverage] with
+		def writes(spatialObject: GeoCoverage) = spatialObject match
+			case feature: GeoFeature => Json.toJson(feature)
+			case uri: URI => Json.toJson(uri)
+			case jsonString: GeoJsonString @unchecked => JsString(jsonString)
+		def reads(json: JsValue) = json match
+			case obj: JsObject => Json.fromJson[GeoFeature](obj)
+			case str: JsString =>
+				str.validate[URI].orElse(str.validate[String].map(GeoJsonString.unsafe))
+			case _ => JsError(s"Error parsing GeoFeature from JSON ${json.getClass.getName}")
 
 	given Format[Sha256Sum] with
 		def writes(hash: Sha256Sum) = JsString(hash.base64Url)

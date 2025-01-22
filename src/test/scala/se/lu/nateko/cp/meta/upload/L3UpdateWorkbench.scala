@@ -40,7 +40,7 @@ object L3UpdateWorkbench extends CpmetaJsonProtocol{
 	def updateDto(dto: DataObjectDto): DataObjectDto = {
 		val l3 = dto.specificInfo.left.getOrElse(???)
 		val l3updated = l3.copy(
-			spatial = Right(new URI("http://meta.icos-cp.eu/resources/latlonboxes/globalLatLonBox")),
+			spatial = new URI("http://meta.icos-cp.eu/resources/latlonboxes/globalLatLonBox"),
 			variables = Some(Seq("emission")),
 		)
 		dto.copy(

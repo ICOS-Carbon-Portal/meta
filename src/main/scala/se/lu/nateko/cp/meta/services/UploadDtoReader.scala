@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
+import se.lu.nateko.cp.meta.GeoJsonString
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
@@ -21,6 +22,7 @@ import java.time.Instant
 import scala.util.Success
 
 import UriSerializer.Hash
+import se.lu.nateko.cp.meta.GeoCoverage
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*
@@ -123,10 +125,7 @@ object UploadDtoReader{
 			case Success(doi) => doi
 		},
 		documentation = coll.documentation.map(_.hash),
-		coverage = coll.coverage.map: feature =>
-			feature.uri match
-				case None => Left(feature)
-				case Some(uri) => Right(uri)
+		coverage = coll.coverage.map(readCoverage)
 	)
 
 	private def dataProductionToDto(prod: DataProduction) = DataProductionDto(
@@ -139,7 +138,9 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(gf: GeoFeature): Either[GeoFeature, URI] = gf.uri match
-		case None      => Left(gf)
-		case Some(uri) => Right(uri)
+	private def readCoverage(gf: GeoFeature): GeoCoverage = gf.uri match
+		case None      => gf match
+			case box: LatLonBox => box
+			case _ => GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
+		case Some(uri) => gf.uri.get
 }

@@ -89,8 +89,8 @@ class UploadService(
 								val gfs = geocov.GeoCovMerger.representativeCoverage(covs, 100)
 								val cov = gfs.toList match
 									case Nil => None
-									case feature :: Nil => Some(Left(feature))
-									case many => Some(Left(FeatureCollection(many, None, None)))
+									case feature :: Nil => Some(feature)
+									case many => Some(FeatureCollection(many, None, None))
 								coll.copy(coverage = cov)
 					for
 						collWithCoverage <- collWithCoverageTry;

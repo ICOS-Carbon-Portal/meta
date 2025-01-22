@@ -35,6 +35,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import java.time.Instant
 import scala.collection.mutable.Buffer
+import se.lu.nateko.cp.meta.GeoJsonString
+import se.lu.nateko.cp.meta.GeoCoverage
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 
@@ -154,8 +156,15 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(collIri, RDFS.SEEALSO, coll.documentation.map(vocab.getStaticObject))
 	}
 
-	def getGeoFeatureStatements(itemIri: IRI, spatial: GeoFeature)(using Envri): Seq[Statement] =
-		inline def defaultCovUri = spatial.uri.fold(vocab.getSpatialCoverage(UriId(itemIri)))(_.toRdf)
+	def getGeoFeatureStatements(itemIri: IRI, spatial: GeoFeature | GeoJsonString)(using Envri): Seq[Statement] =
+		val gf: Option[GeoFeature] = spatial match
+			case gf: GeoFeature => Some(gf)
+			case _ => None
+		inline def defaultCovUri = gf.flatMap(_.uri).fold(vocab.getSpatialCoverage(UriId(itemIri)))(_.toRdf)
+
+		val geoJson: GeoJsonString = spatial match
+			case feature: GeoFeature => GeoJsonString.unsafe(GeoJson.fromFeature(feature).compactPrint)
+			case str: GeoJsonString @unchecked => str
 
 		val (covUri, specificStatements) = spatial match
 			case p: Position => getPositionStatements(p)
@@ -173,8 +182,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				covUri -> Seq(makeSt(covUri, RDF.TYPE, metaVocab.spatialCoverageClass))
 
 		makeSt(itemIri, metaVocab.hasSpatialCoverage, covUri) +:
-		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(GeoJson.fromFeature(spatial).compactPrint)) +:
-		makeSt(covUri, RDFS.LABEL, spatial.label.map(vocab.lit)) ++:
+		makeSt(covUri, metaVocab.asGeoJSON, vocab.lit(geoJson)) +:
+		makeSt(covUri, RDFS.LABEL, gf.flatMap(_.label).map(vocab.lit)) ++:
 		specificStatements
 
 
@@ -263,10 +272,11 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		}
 	}
 
-	private def getSpatialCoverageStatements(itemIri: IRI, spatial: Either[GeoFeature, URI])(using Envri): Seq[Statement] =
+	private def getSpatialCoverageStatements(itemIri: IRI, spatial: GeoCoverage)(using Envri): Seq[Statement] =
 		spatial match
-			case Left(feature) => getGeoFeatureStatements(itemIri, feature)
-			case Right(covUri) =>
+			case feature: GeoFeature => getGeoFeatureStatements(itemIri, feature)
+			case str: GeoJsonString @unchecked => getGeoFeatureStatements(itemIri, str)
+			case covUri: URI =>
 				Seq(makeSt(itemIri, metaVocab.hasSpatialCoverage, covUri.toRdf))
 
 

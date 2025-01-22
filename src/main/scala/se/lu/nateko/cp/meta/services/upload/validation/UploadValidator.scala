@@ -43,6 +43,11 @@ import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data.GeoFeature
+import spray.json.JsonParser
+import se.lu.nateko.cp.meta.core.data.GeoJson
+import se.lu.nateko.cp.meta.GeoCoverage
+import se.lu.nateko.cp.meta.GeoJsonString
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -90,10 +95,10 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				_ <- scoped.growingIsGrowing(meta, spec, submConf)
 				_ <- validateActors(meta)
 				_ <- validateTemporalCoverage(meta, spec)
-				_ <- validateSpatialCoverage(meta)
 				_ <- noProductionProvenanceIfL0(meta, spec)
 				_ <- validateFormatsByFileExt(meta, spec)
-				amended <- scoped.validateFileName(meta)
+				amended0 <- validateSpatialCoverage(meta)
+				amended <- scoped.validateFileName(amended0)
 				_ <- scoped.validateMoratorium(amended)
 			yield amended
 		yield amended
@@ -273,7 +278,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			case Right(stationMeta) => stationMeta.acquisitionInterval.fold(ok)(validate)
 
 
-	private def validateSpatialCoverage(meta: DataObjectDto)(using conn: DobjConn): Try[NotUsed] =
+	private def validateSpatialCoverage(meta: DataObjectDto)(using conn: DobjConn): Try[DataObjectDto] =
 		def coverageExistsIn(covUri: URI)(using TriplestoreConnection): Boolean =
 			val cov = covUri.toRdf
 			hasStatement(cov, metaVocab.asGeoJSON, null) ||
@@ -284,24 +289,33 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 		meta.specificInfo match
 			case Left(spTemp) => spTemp.spatial match
-				case Left(geoFeature) => geoFeature.uri match
-					case None => ok
+				case geoFeature: GeoFeature => geoFeature.uri match
+					case None => Success(meta)
 					case Some(covUri) =>
-						if customCoverageExists(covUri) then ok
+						if customCoverageExists(covUri) then Success(meta)
 						else userFail(
 							"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
 							"instance appears to exist with this URL in the target RDF graph of this data object. " +
 							"If you intend to upload a custom spatial coverage for this object, do not use a URL. " +
 							"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
 						)
-				case Right(covUri) =>
-					if stockCoverageExists(covUri) then ok
+				case covUri: URI =>
+					if stockCoverageExists(covUri) then Success(meta)
 					else if customCoverageExists(covUri) then userFail(
 						s"There exists a custom spatial coverage with URI $covUri. Please use full GeoFeature object without URI " +
 						"inside the metadata upload package, rather than just the URI reference."
 					)
 					else userFail(s"No 'stock' spatial coverage with URI $covUri")
-			case Right(_) => ok
+				case jsonString: String =>
+					GeoJson.toFeature(jsonString) match
+						case Success(gf) =>
+							val canonicalCovStr = GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
+							val updatedDto = meta.copy(specificInfo = Left(spTemp.copy(spatial = canonicalCovStr)))
+							Success(updatedDto)
+						case Failure(err) => userFail:
+							s"Spatial coverage was not an acceptable GeoJSON string. Error message: ${err.getMessage}"
+
+			case Right(_) => Success(meta)
 
 
 	private def validateDescription(descr: Option[String]): Try[NotUsed] = descr.fold(ok)(

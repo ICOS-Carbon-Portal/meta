@@ -75,11 +75,14 @@ class IndexData(nObjects: Int)(
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime}
 
+		val getObjEntry = objEntryGetter(idLookup, objs)
+		val modForDobj = dobjModGetter(getObjEntry)
+
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
 					case spec: IRI => {
-						modForDobj(subj, idLookup, objs) { oe =>
+						modForDobj(subj) { oe =>
 							updateCategSet(categMap(Spec, categMaps), spec, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, stats, initOk)
@@ -97,7 +100,7 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `hasName` =>
-				modForDobj(subj, idLookup, objs) { oe =>
+				modForDobj(subj) { oe =>
 					val fName = obj.stringValue
 					if (isAssertion) oe.fName = fName
 					else if (oe.fName == fName) oe.fileName == null
@@ -108,7 +111,7 @@ class IndexData(nObjects: Int)(
 			case `wasAssociatedWith` =>
 				subj match {
 					case CpVocab.Submission(hash) =>
-						val oe = getObjEntry(hash, idLookup, objs)
+						val oe = getObjEntry(hash)
 						removeStat(oe, stats, initOk)
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) { addStat(oe, stats, initOk) }
@@ -118,7 +121,7 @@ class IndexData(nObjects: Int)(
 						true
 
 					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash, idLookup, objs)
+						val oe = getObjEntry(hash)
 						removeStat(oe, stats, initOk)
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) { addStat(oe, stats, initOk) }
@@ -132,7 +135,7 @@ class IndexData(nObjects: Int)(
 
 			case `wasPerformedAt` => subj match {
 					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash, idLookup, objs)
+						val oe = getObjEntry(hash)
 						removeStat(oe, stats, initOk)
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, stats, initOk)
@@ -146,7 +149,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasStartTime` =>
 				ifDateTime(obj) { dt =>
-					val _ = modForDobj(subj, idLookup, objs) { oe =>
+					val _ = modForDobj(subj) { oe =>
 						oe.dataStart = dt
 						handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
 					}
@@ -155,20 +158,21 @@ class IndexData(nObjects: Int)(
 
 			case `hasEndTime` =>
 				ifDateTime(obj) { dt =>
-					val _ = modForDobj(subj, idLookup, objs) { oe =>
+					val _ = modForDobj(subj) { oe =>
 						oe.dataEnd = dt
 						handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
 					}
 				}
 				true
-			case `startedAtTime` => ifDateTime(obj) { dt =>
+			case `startedAtTime` =>
+				ifDateTime(obj) { dt =>
 					subj match {
 						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash, idLookup, objs)
+							val oe = getObjEntry(hash)
 							oe.dataStart = dt
 							handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
 						case CpVocab.Submission(hash) =>
-							val oe = getObjEntry(hash, idLookup, objs)
+							val oe = getObjEntry(hash)
 							oe.submissionStart = dt
 							handleContinuousPropUpdate(log)(SubmissionStart, dt, oe.idx, isAssertion)
 						case _ =>
@@ -224,7 +228,7 @@ private def updateCategSet[T <: AnyRef](
 		}
 }
 
-def getObjEntry(hash: Sha256Sum, idLookup: AnyRefMap[Sha256Sum, Int], objs: ArrayBuffer[ObjEntry]): ObjEntry = {
+def objEntryGetter(idLookup: AnyRefMap[Sha256Sum, Int], objs: ArrayBuffer[ObjEntry])(hash: Sha256Sum): ObjEntry = {
 	idLookup.get(hash).fold {
 		val canonicalHash = hash.truncate
 		val oe = new ObjEntry(canonicalHash, objs.length, "")
@@ -261,18 +265,17 @@ private def removeStat(
 	initOk.remove(obj.idx)
 }
 
-private def modForDobj[T](
-	dobj: Value,
-	idLookup: AnyRefMap[Sha256Sum, Int],
-	objs: ArrayBuffer[ObjEntry]
-)(mod: ObjEntry => T): Option[T] = dobj match {
-	case CpVocab.DataObject(hash, prefix) =>
-		val entry = getObjEntry(hash, idLookup, objs)
-		if (entry.prefix == "") entry.prefix = prefix.intern()
-		Some(mod(entry))
+private def dobjModGetter[T](
+	getObjEntry: (Sha256Sum => ObjEntry)
+)(dobj: Value)(mod: ObjEntry => T): Option[T] =
+	dobj match {
+		case CpVocab.DataObject(hash, prefix) =>
+			val entry = getObjEntry(hash)
+			if (entry.prefix == "") entry.prefix = prefix.intern()
+			Some(mod(entry))
 
-	case _ => None
-}
+		case _ => None
+	}
 
 private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 	case lit: Literal if lit.getDatatype === XSD.DATETIME =>

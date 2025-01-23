@@ -127,40 +127,40 @@ class IndexData(nObjects: Int)(
 						}
 						true
 
-					case `wasPerformedAt` => subj match {
-							case CpVocab.Acquisition(hash) =>
-								val oe = getObjEntry(hash, idLookup, objs)
-								removeStat(oe, stats, initOk)
-								oe.site = targetUri(obj, isAssertion)
-								if (isAssertion) addStat(oe, stats, initOk)
-								obj match {
-									case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)
-								}
-								true
+					case _ => false
+				}
 
-							case _ => false
-						}
-
-					case `hasStartTime` =>
-						ifDateTime(obj) { dt =>
-							val _ = modForDobj(subj, idLookup, objs) { oe =>
-								oe.dataStart = dt
-								handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
-							}
-						}
-						true
-
-					case `hasEndTime` =>
-						ifDateTime(obj) { dt =>
-							val _ = modForDobj(subj, idLookup, objs) { oe =>
-								oe.dataEnd = dt
-								handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
-							}
+			case `wasPerformedAt` => subj match {
+					case CpVocab.Acquisition(hash) =>
+						val oe = getObjEntry(hash, idLookup, objs)
+						removeStat(oe, stats, initOk)
+						oe.site = targetUri(obj, isAssertion)
+						if (isAssertion) addStat(oe, stats, initOk)
+						obj match {
+							case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)
 						}
 						true
 
 					case _ => false
 				}
+
+			case `hasStartTime` =>
+				ifDateTime(obj) { dt =>
+					val _ = modForDobj(subj, idLookup, objs) { oe =>
+						oe.dataStart = dt
+						handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
+					}
+				}
+				true
+
+			case `hasEndTime` =>
+				ifDateTime(obj) { dt =>
+					val _ = modForDobj(subj, idLookup, objs) { oe =>
+						oe.dataEnd = dt
+						handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
+					}
+				}
+				true
 
 			case _ => false
 		}

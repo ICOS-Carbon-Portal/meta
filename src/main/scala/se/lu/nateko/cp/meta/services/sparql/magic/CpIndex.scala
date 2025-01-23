@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -74,7 +74,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
-			getStatements(null, null, null)
+			TriplestoreConnection.getStatements(null, null, null)
 			.foreach: s =>
 				put(RdfUpdate(s, true))
 				statementCount += 1
@@ -309,35 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-
-			case `isNextVersionOf` =>
-				modForDobj(obj){oe =>
-					val deprecated = boolBitmap(DeprecationFlag)
-					if isAssertion then
-						if !deprecated.contains(oe.idx) then //to prevent needless work
-							val subjIsDobj = modForDobj(subj){ deprecator =>
-								deprecator.isNextVersion = true
-								//only fully-uploaded deprecators can actually deprecate:
-								if deprecator.size > -1 then
-									deprecated.add(oe.idx)
-									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
-								else log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
-							}.isDefined
-							if !subjIsDobj then subj.toJava match
-								case Hash.Collection(_) =>
-									//proper collections are always fully uploaded
-									deprecated.add(oe.idx)
-								case _ => subj match
-									case CpVocab.NextVersColl(_) =>
-										if nextVersCollIsComplete(subj)
-										then deprecated.add(oe.idx)
-									case _ =>
-					else if
-						deprecated.contains(oe.idx) && //this was to prevent needless repo access
-						!hasStatement(null, isNextVersionOf, obj)
-					then deprecated.remove(oe.idx)
-				}
-
 			case `hasSizeInBytes` => ifLong(obj){size =>
 				modForDobj(subj){oe =>
 					inline def isRetraction = oe.size == size && !isAssertion
@@ -398,7 +369,16 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			}
 
 			case _ =>
-				val _ = processTriple(subj, pred, obj, vocab, isAssertion)
+				val _ = 
+					processTriple(
+						subj, 
+						pred, 
+						obj, 
+						vocab, 
+						isAssertion, 
+						TriplestoreConnection.hasStatement, 
+						nextVersCollIsComplete
+					)
 		}
 	}
 
@@ -429,7 +409,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 	}
 
 	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
-		getStatements(obj, vocab.dcterms.hasPart, null)
+		TriplestoreConnection.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
 					oe.isNextVersion = true
@@ -440,13 +420,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			.exists(identity)
 
 	private def getIdxsOfDirectPrevVers(deprecator: IRI)(using GlobConn): IndexedSeq[Int] =
-		getStatements(deprecator, vocab.isNextVersionOf, null)
+		TriplestoreConnection.getStatements(deprecator, vocab.isNextVersionOf, null)
 			.flatMap:
 				st => modForDobj(st.getObject)(_.idx)
 			.toIndexedSeq
 
 	private def getIdxsOfPrevVersThroughColl(deprecator: IRI)(using GlobConn): Option[Int] =
-		getStatements(null, vocab.dcterms.hasPart, deprecator)
+		TriplestoreConnection.getStatements(null, vocab.dcterms.hasPart, deprecator)
 		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
 		.toIndexedSeq
 		.headOption

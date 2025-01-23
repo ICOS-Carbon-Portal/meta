@@ -5,8 +5,7 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.{IndexedSeq => IndSeq}
 import java.time.Instant
 
-import se.lu.nateko.cp.meta.utils.rdf4j.===
-import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava}
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XSD
@@ -21,6 +20,7 @@ import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import org.eclipse.rdf4j.model.Value
 import akka.event.LoggingAdapter
 
@@ -50,6 +50,8 @@ class IndexData(nObjects: Int)(
 	def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
 
+	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
 			prop,
@@ -70,7 +72,9 @@ class IndexData(nObjects: Int)(
 		pred: IRI,
 		obj: Value,
 		vocab: CpmetaVocab,
-		isAssertion: Boolean
+		isAssertion: Boolean,
+		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean,
+		nextVersCollIsComplete: (obj: IRI) => Boolean
 	): Boolean = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
@@ -195,6 +199,36 @@ class IndexData(nObjects: Int)(
 				}
 				true
 
+			case `isNextVersionOf` =>
+				modForDobj(obj) { oe =>
+					val deprecated = boolBitmap(DeprecationFlag)
+					if isAssertion then
+						if !deprecated.contains(oe.idx) then // to prevent needless work
+							val subjIsDobj = modForDobj(subj) { deprecator =>
+								deprecator.isNextVersion = true
+								// only fully-uploaded deprecators can actually deprecate:
+								if deprecator.size > -1 then
+									deprecated.add(oe.idx)
+									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
+								else
+									log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
+							}.isDefined
+							if !subjIsDobj then
+								subj.toJava match
+									case Hash.Collection(_) =>
+										// proper collections are always fully uploaded
+										deprecated.add(oe.idx)
+									case _ => subj match
+											case CpVocab.NextVersColl(_) =>
+												if nextVersCollIsComplete(subj)
+												then deprecated.add(oe.idx)
+											case _ =>
+					else if
+						deprecated.contains(oe.idx) && // this was to prevent needless repo access
+						!hasStatement(null, isNextVersionOf, obj)
+					then deprecated.remove(oe.idx)
+				}
+				true
 			case _ => false
 		}
 	}
@@ -276,7 +310,7 @@ private def removeStat(
 ): Unit = for (key <- keyForDobj(obj)) {
 	stats.get(key).foreach: bm =>
 		bm.remove(obj.idx)
-		if bm.isEmpty then stats.remove(key) // to prevent "orphan" URIs from lingering
+		if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
 	initOk.remove(obj.idx)
 }
 

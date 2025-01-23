@@ -70,11 +70,6 @@ class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
-		val hasVarsBm = boolBitmap(HasVarList)
-		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
-	}
-
 	def processTriple(
 		subj: IRI,
 		pred: IRI,
@@ -335,6 +330,11 @@ class IndexData(nObjects: Int)(
 		} else if (!bitmap(prop).remove(key, idx)) {
 			log.warning(s"Value was not present: tried to retract $helpTxt")
 		}
+	}
+
+	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
+		val hasVarsBm = boolBitmap(HasVarList)
+		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
 	private def nextVersCollIsComplete(

@@ -231,11 +231,85 @@ Other supported content types are intended for fetching different serializations
 
 Same principles and approaches to metadata access apply to document objects, collections, organizations, people, data types, variables, etc. However, the list of supported content types and richness of the corresponding metadata representations and HTML landing pages may vary.
 
-### SPARQL
+---
 
-CP metadata service responds to arbitrary queries in W3C-standardized query language [SPARQL](https://www.w3.org/TR/sparql11-query/) sent to its SPARQL endpoint `https://meta.icos-cp.eu/sparql`. Writing the queries requires familiarity with [the query language](https://www.w3.org/TR/sparql11-query/) and with CP metadata model. The latter is [formally expressed](https://github.com/ICOS-Carbon-Portal/meta/blob/master/src/main/resources/owl/cpmeta.owl) using OWL &mdash; W3C-standard ontology language. We recognize that even for technical external users the threshold to writing SPARQL queries is rather high, and therefore invite them to get in touch with us, should they have metadata-query needs not covered by our user-friendly products.
+## Advanced metadata access with SPARQL
 
-To demonstrate some of the possibilities that are accessible via SPARQL, we refer to our (semi-) user-friendly [SPARQL client app](https://meta.icos-cp.eu/sparqlclient/?type=CSV) (has a list of pre-defined queries to choose from), and to a list of [under-the-hood queries](https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%2C%22tabs%22%3A%7B%22searchTab%22%3A1%7D%7D) used in the [portal app](https://data.icos-cp.eu/portal/). (Note that the panel-heading of the Search result contains a small button redirecting to the search query for the data object list.)
+CP metadata service responds to arbitrary queries in W3C-standardized RDF query language [SPARQL](https://www.w3.org/TR/sparql11-query/) sent to its SPARQL endpoint `https://meta.icos-cp.eu/sparql`. Interaction with the endpoint can either be done programmatically (using CP's [`icoscp_core` Python library](https://github.com/ICOS-Carbon-Portal/data/tree/master/src/main/python/icoscp_core#advanced-metadata-access-sparql) or any other programming language and library suitable for SPARQL or plain HTTPS access) or through our (semi-) user-friendly [SPARQL client app](https://meta.icos-cp.eu/sparqlclient/). Writing the queries requires familiarity with [the query language](https://www.w3.org/TR/sparql11-query/) and with the CP metadata model. The latter is [formally expressed](https://github.com/ICOS-Carbon-Portal/meta/blob/master/src/main/resources/owl/cpmeta.owl) using OWL &mdash; W3C-standard ontology language.
+
+The OWL ontology can be opened for convenient exploration by an editor such as [Protégé](https://protege.stanford.edu/), but for an introductory overview is it helpful to first inspect [the slides](https://github.com/ICOS-Carbon-Portal/infrastructure/wiki/Architecture-info#data-object-metadata) related to the data object metadata. Additionally, the OWL model can be discovered through SPARQL (because it is represented using RDF and is accessible through the SPARQL endpoint, too). Finally, it is possible to discover the metadata model empirically through the SPARQL endpoint, too, by examining various metadata entities with exploratory queries. However, one should keep in mind that metadata for data objects or stations of different types can have different "shape", and that some of the properties can be optional.
+
+### Examples of exploratory queries
+To discover direct metadata properties of a data object (or any other RDF resource), one can run a query of the form
+
+```sparql
+select * where{
+	<https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt> ?p ?o .
+}
+```
+The (arbitrary) variable names `p` and `o` stand for "property" and "object", the last two components of the subject-predicate-object triple that RDF consists of.
+The output from this query contains much less elements than the landing page of the data object, because many of the properties are themselves resources with properties, and can be explored further using the same type of query.
+
+The above query has an inverse, looking for metadata entities for whom a given resource is a value of a property:
+
+```sparql
+select * where{
+	?s ?p <https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt> .
+}
+```
+Running it reveals that our example object has a single (at the time of writing this) "user"&mdash;the collection it is a part of. (In the future, the object may get referenced by its new version, making the number of "users" two). In general, one should be conscious when running this type of query, as some of the resources have a very large number of "users".
+
+A possibility to obtain the results of both of the queries above in one go is to run a more concise query
+```sparql
+describe <https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt>
+```
+(make sure to switch the return type to "TSV or Turtle"!)
+
+To continue exploration of the data object metadata, we could for example examine its specification (called "data type" in our user interfaces):
+
+```sparql
+select * where{
+	<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> ?p ?o .
+}
+```
+or, alternatively, the data object specification can be looked up and described with a single query:
+```sparql
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select * where{
+	<https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt> cpmeta:hasObjectSpec ?spec .
+	?spec ?p ?o .
+}
+```
+
+We discover that our data object specification is related to project `http://meta.icos-cp.eu/resources/projects/icos` via predicate `cpmeta:hasAssociatedProject`. We may get interested in listing all the data object specifications associated with ICOS project, which we could achieve with the following query:
+
+```sparql
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select ?theme ?dataLevel ?icosSpec ?specLabel where{
+	?icosSpec cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> ;
+		rdfs:label ?specLabel ;
+		cpmeta:hasDataLevel ?dataLevel ;
+		cpmeta:hasDataTheme ?theme .
+}
+order by ?theme ?dataLevel ?specLabel
+```
+In this query we also extract a few interesting properties for the data object specifications, specify the order of columns in the result, and request specific sorting.
+
+### Queries used by the portal app
+
+The main data object search interface ([portal app](https://data.icos-cp.eu/portal/))
+uses a list of [queries under the hood](https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%2C%22tabs%22%3A%7B%22searchTab%22%3A1%7D%7D) (see the *SPARQL queries* panel and the panel-heading of the Search result list; the latter contains a small button redirecting to the search query for the data object list). The links/buttons will open a new browser window with a SPARQL client app with respective query pre-filled.
+
+Of particular interest are two queries: *Statistics of data object origins* and the data object list query (the small button). These two queries are dynamic, reflecting the state of the filters, selections, softing and paging (when applicable) of the portal app interface. They can be used as inspiration and a starting point for writing more customized queries.
+
+### Other queries
+To further demonstrate some of the possibilities that are accessible via SPARQL, the [client app](https://meta.icos-cp.eu/sparqlclient/) has a list of pre-defined queries to choose from.
+
+### Summary
+
+We recognize that even for technical external users the threshold to writing SPARQL queries can be rather high, and therefore invite them to get in touch with us, should they have metadata-query needs not covered by our user-friendly products.
+
 
 ---
 

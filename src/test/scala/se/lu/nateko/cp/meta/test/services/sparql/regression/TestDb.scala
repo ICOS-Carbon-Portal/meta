@@ -107,7 +107,7 @@ class TestDb(name: String) {
 			Some(indexUpdaterFactory -> geoFactory)
 
 		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-		CpNotifyingSail(base, idxFactories, citer, log)
+		CpNotifyingSail(base, idxFactories, citer)(using log)
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global

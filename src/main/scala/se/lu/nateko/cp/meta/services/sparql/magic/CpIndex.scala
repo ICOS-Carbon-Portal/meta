@@ -54,11 +54,11 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: LoggingAdapter) extends ReadWriteLocking:
 
 	import data.*
-	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
-		this(sail, geo, IndexData(nObjects)())(log)
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using log: LoggingAdapter) = {
+		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
@@ -259,7 +259,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
-		data.processTriple(log)(
+		data.processTriple(
 			subj,
 			pred,
 			obj,

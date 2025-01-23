@@ -77,10 +77,10 @@ class SerializationTests extends AsyncFunSpec{
 
 	def roundTrip(sail: Sail)(using Kryo) = //: Future[(CpIndex, CpIndex)] =
 		for(
-			idx <- Future(CpIndex(sail, Future.never, 5)(NoLogging));
+			idx <- Future(CpIndex(sail, Future.never, 5)(using NoLogging));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
-		) yield idx -> CpIndex(sail, Future.never, data)(NoLogging)
+		) yield idx -> CpIndex(sail, Future.never, data)(using NoLogging)
 
 	def smallRepo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
 
@@ -89,7 +89,7 @@ class SerializationTests extends AsyncFunSpec{
 		it("successfully performs serialization/deserialization round trip"):
 			given Kryo = IndexHandler.makeKryo
 			val repo = smallRepo
-			val idx = CpIndex(repo.getSail, Future.never, 5)(NoLogging)
+			val idx = CpIndex(repo.getSail, Future.never, 5)(using NoLogging)
 			val cpmeta = CpmetaVocab(repo.getValueFactory)
 			val idxHandler = IndexHandler(DummyScheduler)
 			val listener = idxHandler.getListener(repo.getSail, cpmeta, idx, Future.never)

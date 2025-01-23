@@ -35,9 +35,8 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
-	citer: CitationProvider,
-	log: LoggingAdapter
-) extends NotifyingSailWrapper(inner):
+	citer: CitationProvider
+)(using log: LoggingAdapter) extends NotifyingSailWrapper(inner):
 
 	private val enricher = StatementsEnricher(citer)
 	private var cpIndex: Option[CpIndex] = None
@@ -64,7 +63,7 @@ class CpNotifyingSail(
 			if idxData.isEmpty then log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
 			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
-			val idx = idxData.fold(new CpIndex(inner, geoFut)(log))(idx => new CpIndex(inner, geoFut, idx)(log))
+			val idx = idxData.fold(new CpIndex(inner, geoFut))(idx => new CpIndex(inner, geoFut, idx))
 			idx.flush()
 			listener = Some(listenerFactory.getListener(inner, metaVocab, idx, geoPromise.future))
 			geoPromise.completeWith(geoFactory.index(inner, idx, metaReader))
@@ -98,7 +97,7 @@ class CpNotifyingSail(
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:
-			CpIndex(inner, Future.never, IndexData(0)())(log)
+			CpIndex(inner, Future.never, IndexData(0)())
 		inner.setEvaluationStrategyFactory:
 			CpEvaluationStrategyFactory(inner.getFederatedServiceResolver(), magicIdx, enricher, cpIndex.isDefined)
 

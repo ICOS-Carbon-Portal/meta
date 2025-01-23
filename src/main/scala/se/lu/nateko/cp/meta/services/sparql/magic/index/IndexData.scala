@@ -75,7 +75,7 @@ class IndexData(nObjects: Int)(
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
-	def processTriple(log: LoggingAdapter)(
+	def processTriple(
 		subj: IRI,
 		pred: IRI,
 		obj: Value,
@@ -84,7 +84,7 @@ class IndexData(nObjects: Int)(
 		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
 		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean,
 		nextVersCollIsComplete: (obj: IRI) => Boolean
-	): Unit = {
+	)(using log: LoggingAdapter): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -125,7 +125,7 @@ class IndexData(nObjects: Int)(
 					val fName = obj.stringValue
 					if (isAssertion) oe.fName = fName
 					else if (oe.fName == fName) oe.fileName == null
-					handleContinuousPropUpdate(log)(FileName, fName, oe.idx, isAssertion)
+					handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
 				}
 
 			case `wasAssociatedWith` =>
@@ -168,7 +168,7 @@ class IndexData(nObjects: Int)(
 				ifDateTime(obj) { dt =>
 					val _ = modForDobj(subj) { oe =>
 						oe.dataStart = dt
-						handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
+						handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
 					}
 				}
 
@@ -176,7 +176,7 @@ class IndexData(nObjects: Int)(
 				ifDateTime(obj) { dt =>
 					val _ = modForDobj(subj) { oe =>
 						oe.dataEnd = dt
-						handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
+						handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
 					}
 				}
 
@@ -186,11 +186,11 @@ class IndexData(nObjects: Int)(
 						case CpVocab.Acquisition(hash) =>
 							val oe = getObjEntry(hash)
 							oe.dataStart = dt
-							handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
+							handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
 						case CpVocab.Submission(hash) =>
 							val oe = getObjEntry(hash)
 							oe.submissionStart = dt
-							handleContinuousPropUpdate(log)(SubmissionStart, dt, oe.idx, isAssertion)
+							handleContinuousPropUpdate(SubmissionStart, dt, oe.idx, isAssertion)
 						case _ =>
 					}
 				}
@@ -201,11 +201,11 @@ class IndexData(nObjects: Int)(
 						case CpVocab.Acquisition(hash) =>
 							val oe = getObjEntry(hash)
 							oe.dataEnd = dt
-							handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
+							handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
 						case CpVocab.Submission(hash) =>
 							val oe = getObjEntry(hash)
 							oe.submissionEnd = dt
-							handleContinuousPropUpdate(log)(SubmissionEnd, dt, oe.idx, isAssertion)
+							handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
 						case _ =>
 					}
 				}
@@ -267,7 +267,7 @@ class IndexData(nObjects: Int)(
 										log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
 									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
 
-						if (size >= 0) handleContinuousPropUpdate(log)(FileSize, size, oe.idx, isAssertion)
+						if (size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx, isAssertion)
 					}
 				}
 
@@ -286,7 +286,7 @@ class IndexData(nObjects: Int)(
 							val oe = getObjEntry(hash)
 							if (isAssertion) oe.samplingHeight = height
 							else if (oe.samplingHeight == height) oe.samplingHeight = Float.NaN
-							handleContinuousPropUpdate(log)(SamplingHeight, height, oe.idx, isAssertion)
+							handleContinuousPropUpdate(SamplingHeight, height, oe.idx, isAssertion)
 						case _ =>
 					}
 				}
@@ -312,12 +312,13 @@ class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def handleContinuousPropUpdate(log: LoggingAdapter)(
+	private def handleContinuousPropUpdate(
 		prop: ContProp,
 		key: prop.ValueType,
 		idx: Int,
 		isAssertion: Boolean
-	): Unit = {
+	)(using log: LoggingAdapter): Unit = {
+
 		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
 		if (isAssertion) {
 			if (!bitmap(prop).add(key, idx)) {

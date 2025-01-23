@@ -82,14 +82,12 @@ class IndexData(nObjects: Int)(
 		vocab: CpmetaVocab,
 		isAssertion: Boolean,
 		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
-		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean,
-		nextVersCollIsComplete: (obj: IRI) => Boolean
+		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean
 	)(using log: LoggingAdapter): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
 
-		val getObjEntry = objEntryGetter(idLookup, objs)
 		val modForDobj = dobjModGetter(getObjEntry)
 
 		def updateStrArrayProp(
@@ -231,7 +229,7 @@ class IndexData(nObjects: Int)(
 										deprecated.add(oe.idx)
 									case _ => subj match
 											case CpVocab.NextVersColl(_) =>
-												if nextVersCollIsComplete(subj)
+												if nextVersCollIsComplete(subj, getStatements, vocab)
 												then deprecated.add(oe.idx)
 											case _ =>
 					else if
@@ -312,6 +310,16 @@ class IndexData(nObjects: Int)(
 		}
 	}
 
+	private def getObjEntry(hash: Sha256Sum): ObjEntry = {
+		idLookup.get(hash).fold {
+			val canonicalHash = hash.truncate
+			val oe = new ObjEntry(canonicalHash, objs.length, "")
+			objs += oe
+			idLookup += canonicalHash -> oe.idx
+			oe
+		}(objs.apply)
+	}
+
 	private def handleContinuousPropUpdate(
 		prop: ContProp,
 		key: prop.ValueType,
@@ -328,6 +336,21 @@ class IndexData(nObjects: Int)(
 			log.warning(s"Value was not present: tried to retract $helpTxt")
 		}
 	}
+
+	private def nextVersCollIsComplete(
+		obj: IRI,
+		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
+		vocab: CpmetaVocab
+	): Boolean =
+		getStatements(obj, vocab.dcterms.hasPart, null)
+			.collect:
+				case Rdf4jStatement(_, _, member: IRI) => dobjModGetter(getObjEntry)(member) { oe =>
+						oe.isNextVersion = true
+						oe.size > -1
+					}
+			.flatten
+			.toIndexedSeq
+			.exists(identity)
 }
 
 private def getIdxsOfPrevVersThroughColl(
@@ -366,16 +389,6 @@ private def updateCategSet[T <: AnyRef](
 		if bm.isEmpty then {
 			val _ = set.remove(categ)
 		}
-}
-
-def objEntryGetter(idLookup: AnyRefMap[Sha256Sum, Int], objs: ArrayBuffer[ObjEntry])(hash: Sha256Sum): ObjEntry = {
-	idLookup.get(hash).fold {
-		val canonicalHash = hash.truncate
-		val oe = new ObjEntry(canonicalHash, objs.length, "")
-		objs += oe
-		idLookup += canonicalHash -> oe.idx
-		oe
-	}(objs.apply)
 }
 
 private def keyForDobj(obj: ObjEntry): Option[StatKey] =

@@ -266,29 +266,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 			vocab,
 			isAssertion,
 			TriplestoreConnection.getStatements,
-			TriplestoreConnection.hasStatement,
-			nextVersCollIsComplete
+			TriplestoreConnection.hasStatement
 		)
 	}
-
-	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
-		case CpVocab.DataObject(hash, prefix) =>
-			val entry = getObjEntry(hash)
-			if(entry.prefix == "") entry.prefix = prefix.intern()
-			Some(mod(entry))
-
-		case _ => None
-
-	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
-		TriplestoreConnection.getStatements(obj, vocab.dcterms.hasPart, null)
-			.collect:
-				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member){oe =>
-					oe.isNextVersion = true
-					oe.size > -1
-				}
-			.flatten
-			.toIndexedSeq
-			.exists(identity)
 
 end CpIndex
 

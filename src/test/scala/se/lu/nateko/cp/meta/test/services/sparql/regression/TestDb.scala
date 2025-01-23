@@ -8,25 +8,18 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.Outcome
-import org.scalatest.Suite
-import org.scalatest.fixture
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.LmdbConfig
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.RdfStorageConfig.apply
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
 import se.lu.nateko.cp.meta.ingestion.Ingestion
 import se.lu.nateko.cp.meta.ingestion.RdfXmlFileIngester
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationStyle
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
@@ -34,12 +27,9 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
-import se.lu.nateko.cp.meta.test.services.sparql.SparqlTests
-import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.nio.file.Files
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 
@@ -83,7 +73,7 @@ class TestDb(name: String) {
 				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
 				Ingestion.ingest(server, ingester, factory).map(_ => Done)
 
-		ingestion.map(_ -> repo.shutDown())
+		ingestion.map(Done => repo.shutDown())
 
 	private def createIndex(): Future[IndexData] = {
 		val sail = makeSail()
@@ -106,11 +96,6 @@ class TestDb(name: String) {
 			recreateCpIndexAtStartup = true
 		)
 
-		object CitationClientDummy extends CitationClient {
-			override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-			override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
-		}
-
 		val (freshInit, base) = StorageSail.apply(rdfConf, log)
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
 		val geoFactory = GeoIndexProvider(log)
@@ -118,7 +103,7 @@ class TestDb(name: String) {
 		else
 			Some(indexUpdaterFactory -> geoFactory)
 
-		val citer = new CitationProvider(base, dois => CitationClientDummy, metaConf)
+		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
 		CpNotifyingSail(base, idxFactories, citer, log)
 
 	def cleanup(): Unit =
@@ -128,6 +113,11 @@ class TestDb(name: String) {
 			system.terminate()
 		.onComplete: _ =>
 			FileUtils.deleteDirectory(dir.toFile)
+}
+
+object CitationClientDummy extends CitationClient {
+	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
+	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }
 
 object TestDb:

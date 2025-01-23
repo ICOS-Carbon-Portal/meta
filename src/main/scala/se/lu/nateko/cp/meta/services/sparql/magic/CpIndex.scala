@@ -309,11 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-			case `hasActualColumnNames` => modForDobj(subj){oe =>
-				updateStrArrayProp(VariableName, parseJsonStringArray, oe.idx)
-				updateHasVarList(oe.idx)
-			}
-
 			case `hasActualVariable` => obj match{
 				case CpVocab.VarInfo(hash, varName) =>
 					val oe = getObjEntry(hash)

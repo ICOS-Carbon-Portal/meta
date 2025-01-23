@@ -5,7 +5,8 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.{IndexedSeq => IndSeq}
 import java.time.Instant
 
-import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava, Rdf4jStatement}
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava, Rdf4jStatement, asString}
+import se.lu.nateko.cp.meta.utils.{parseJsonStringArray, asOptInstanceOf}
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XSD
@@ -71,6 +72,11 @@ class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
+	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
+		val hasVarsBm = boolBitmap(HasVarList)
+		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
+	}
+
 	def processTriple(log: LoggingAdapter)(
 		subj: IRI,
 		pred: IRI,
@@ -87,6 +93,16 @@ class IndexData(nObjects: Int)(
 
 		val getObjEntry = objEntryGetter(idLookup, objs)
 		val modForDobj = dobjModGetter(getObjEntry)
+
+		def updateStrArrayProp(
+			obj: Value,
+			prop: StringCategProp,
+			parser: String => Option[Array[String]],
+			idx: Int
+		): Unit =
+			obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
+				updateCategSet(categMap(prop, categMaps), strVal, idx, isAssertion)
+			}
 
 		pred match {
 			case `hasObjectSpec` =>
@@ -259,7 +275,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasPart` => if isAssertion then
 					subj match
-						case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj) { oe =>
+						case CpVocab.NextVersColl(hashOfOld) => val _ = modForDobj(obj) { oe =>
 								oe.isNextVersion = true
 								if oe.size > -1 then
 									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
@@ -275,6 +291,11 @@ class IndexData(nObjects: Int)(
 							handleContinuousPropUpdate(log)(SamplingHeight, height, oe.idx, isAssertion)
 						case _ =>
 					}
+				}
+
+			case `hasActualColumnNames` => val _ = modForDobj(subj) { oe =>
+					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx)
+					updateHasVarList(oe.idx, isAssertion)
 				}
 
 			case _ =>

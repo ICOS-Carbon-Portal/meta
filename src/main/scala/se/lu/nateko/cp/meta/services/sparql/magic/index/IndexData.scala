@@ -73,7 +73,7 @@ class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Boolean = {
 		import vocab.*
-		import vocab.prov.{wasAssociatedWith, startedAtTime}
+		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 
 		val getObjEntry = objEntryGetter(idLookup, objs)
 		val modForDobj = dobjModGetter(getObjEntry)
@@ -175,6 +175,21 @@ class IndexData(nObjects: Int)(
 							val oe = getObjEntry(hash)
 							oe.submissionStart = dt
 							handleContinuousPropUpdate(log)(SubmissionStart, dt, oe.idx, isAssertion)
+						case _ =>
+					}
+				}
+				true
+			case `endedAtTime` =>
+				ifDateTime(obj) { dt =>
+					subj match {
+						case CpVocab.Acquisition(hash) =>
+							val oe = getObjEntry(hash)
+							oe.dataEnd = dt
+							handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
+						case CpVocab.Submission(hash) =>
+							val oe = getObjEntry(hash)
+							oe.submissionEnd = dt
+							handleContinuousPropUpdate(log)(SubmissionEnd, dt, oe.idx, isAssertion)
 						case _ =>
 					}
 				}

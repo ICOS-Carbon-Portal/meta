@@ -309,19 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-			case `endedAtTime` => ifDateTime(obj){ dt =>
-				subj match{
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
-						oe.dataEnd = dt
-						handleContinuousPropUpdate(DataEnd, dt, oe.idx)
-					case CpVocab.Submission(hash) =>
-						val oe = getObjEntry(hash)
-						oe.submissionEnd = dt
-						handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx)
-					case _ =>
-				}
-			}
 
 			case `isNextVersionOf` =>
 				modForDobj(obj){oe =>

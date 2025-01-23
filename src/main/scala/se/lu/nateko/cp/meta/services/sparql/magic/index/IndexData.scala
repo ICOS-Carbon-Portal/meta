@@ -80,7 +80,7 @@ class IndexData(nObjects: Int)(
 		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
 		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean,
 		nextVersCollIsComplete: (obj: IRI) => Boolean
-	): Boolean = {
+	): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 
@@ -91,7 +91,7 @@ class IndexData(nObjects: Int)(
 			case `hasObjectSpec` =>
 				obj match {
 					case spec: IRI => {
-						modForDobj(subj) { oe =>
+						val _ = modForDobj(subj) { oe =>
 							updateCategSet(categMap(Spec, categMaps), spec, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, stats, initOk)
@@ -102,8 +102,6 @@ class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
-
-						true
 					}
 
 				}
@@ -115,7 +113,6 @@ class IndexData(nObjects: Int)(
 					else if (oe.fName == fName) oe.fileName == null
 					handleContinuousPropUpdate(log)(FileName, fName, oe.idx, isAssertion)
 				}
-				true
 
 			case `wasAssociatedWith` =>
 				subj match {
@@ -127,7 +124,6 @@ class IndexData(nObjects: Int)(
 						obj match {
 							case subm: IRI => updateCategSet(categMap(Submitter, categMaps), subm, oe.idx, isAssertion)
 						}
-						true
 
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
@@ -137,9 +133,8 @@ class IndexData(nObjects: Int)(
 						obj match {
 							case stat: IRI => updateCategSet(categMap(Station, categMaps), Some(stat), oe.idx, isAssertion)
 						}
-						true
 
-					case _ => false
+					case _ =>
 				}
 
 			case `wasPerformedAt` => subj match {
@@ -151,9 +146,8 @@ class IndexData(nObjects: Int)(
 						obj match {
 							case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)
 						}
-						true
 
-					case _ => false
+					case _ =>
 				}
 
 			case `hasStartTime` =>
@@ -163,7 +157,6 @@ class IndexData(nObjects: Int)(
 						handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
 					}
 				}
-				true
 
 			case `hasEndTime` =>
 				ifDateTime(obj) { dt =>
@@ -172,7 +165,7 @@ class IndexData(nObjects: Int)(
 						handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
 					}
 				}
-				true
+
 			case `startedAtTime` =>
 				ifDateTime(obj) { dt =>
 					subj match {
@@ -187,7 +180,7 @@ class IndexData(nObjects: Int)(
 						case _ =>
 					}
 				}
-				true
+
 			case `endedAtTime` =>
 				ifDateTime(obj) { dt =>
 					subj match {
@@ -202,10 +195,9 @@ class IndexData(nObjects: Int)(
 						case _ =>
 					}
 				}
-				true
 
 			case `isNextVersionOf` =>
-				modForDobj(obj) { oe =>
+				val _ = modForDobj(obj) { oe =>
 					val deprecated = boolBitmap(DeprecationFlag)
 					if isAssertion then
 						if !deprecated.contains(oe.idx) then // to prevent needless work
@@ -233,7 +225,7 @@ class IndexData(nObjects: Int)(
 						!hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
-				true
+
 			case `hasSizeInBytes` =>
 				ifLong(obj) { size =>
 					val _ = modForDobj(subj) { oe =>
@@ -264,8 +256,8 @@ class IndexData(nObjects: Int)(
 						if (size >= 0) handleContinuousPropUpdate(log)(FileSize, size, oe.idx, isAssertion)
 					}
 				}
-				true
-			case _ => false
+
+			case _ =>
 		}
 	}
 

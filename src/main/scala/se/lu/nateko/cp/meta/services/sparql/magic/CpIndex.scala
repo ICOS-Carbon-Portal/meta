@@ -2,50 +2,38 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.SailConnection
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+
 import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
-import scala.collection.{IndexedSeq => IndSeq}
 import scala.collection.mutable.AnyRefMap
-import scala.collection.mutable.ArrayBuffer
-import scala.compiletime.uninitialized
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Failure
 import scala.util.Success
 
 import CpIndex.*
-import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
-import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatKey, StatEntry, emptyBitmap}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, ObjEntry, StatEntry, emptyBitmap}
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -271,41 +259,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
-		import vocab.*
-		import vocab.prov.{startedAtTime, endedAtTime}
-		import vocab.dcterms.hasPart
-
-
-		def targetUri = if(isAssertion && obj.isInstanceOf[IRI]) obj.asInstanceOf[IRI] else null
-
-		def handleContinuousPropUpdate(prop: ContProp, key: prop.ValueType, idx: Int): Unit = {
-			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
-			if(isAssertion) {
-				if(!bitmap(prop).add(key, idx)){
-					log.warning(s"Value already existed: asserted $helpTxt")
-				}
-			} else if(!bitmap(prop).remove(key, idx)){
-					log.warning(s"Value was not present: tried to retract $helpTxt")
-			}
-		}
-
-		def updateCategSet[T <: AnyRef](set: AnyRefMap[T, MutableRoaringBitmap], categ: T, idx: Int): Unit = {
-			val bm = set.getOrElseUpdate(categ, emptyBitmap)
-			if isAssertion then bm.add(idx) else
-				bm.remove(idx)
-				if bm.isEmpty then set.remove(categ)
-		}
-
-		def updateStrArrayProp(prop: StringCategProp, parser: String => Option[Array[String]], idx: Int): Unit = obj
-			.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach{strVal =>
-				updateCategSet(categMap(prop), strVal, idx)
-			}
-
-		def updateHasVarList(idx: Int): Unit = {
-			val hasVarsBm = boolBitmap(HasVarList)
-			if(isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
-		}
-
 		data.processTriple(log)(
 			subj,
 			pred,
@@ -326,12 +279,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 
 		case _ => None
 
-	private def keyForDobj(obj: ObjEntry): Option[StatKey] =
-		if obj.spec == null || obj.submitter == null then None
-		else Some(
-			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
-		)
-
 	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
 		TriplestoreConnection.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
@@ -343,62 +290,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfDirectPrevVers(deprecator: IRI)(using GlobConn): IndexedSeq[Int] =
-		TriplestoreConnection.getStatements(deprecator, vocab.isNextVersionOf, null)
-			.flatMap:
-				st => modForDobj(st.getObject)(_.idx)
-			.toIndexedSeq
-
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI)(using GlobConn): Option[Int] =
-		TriplestoreConnection.getStatements(null, vocab.dcterms.hasPart, deprecator)
-		.collect{case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx}
-		.toIndexedSeq
-		.headOption
-
 end CpIndex
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
 
-	class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable{
-		var spec: IRI = uninitialized
-		var submitter: IRI = uninitialized
-		var station: IRI = uninitialized
-		var site: IRI = uninitialized
-		var size: Long = -1
-		var fName: String = ""
-		var samplingHeight: Float = Float.NaN
-		var dataStart: Long = Long.MinValue
-		var dataEnd: Long = Long.MinValue
-		var submissionStart: Long = Long.MinValue
-		var submissionEnd: Long = Long.MinValue
-		var isNextVersion: Boolean = false
-
-		private def dateTimeFromLong(dt: Long): Option[Instant] =
-			if(dt == Long.MinValue) None
-			else Some(Instant.ofEpochMilli(dt))
-
-		def sizeInBytes: Option[Long] = if(size >= 0) Some(size) else None
-		def fileName: Option[String] = Option(fName)
-		def samplingHeightMeters: Option[Float] = if(samplingHeight == Float.NaN) None else Some(samplingHeight)
-		def dataStartTime: Option[Instant] = dateTimeFromLong(dataStart)
-		def dataEndTime: Option[Instant] = dateTimeFromLong(dataEnd)
-		def submissionStartTime: Option[Instant] = dateTimeFromLong(submissionStart)
-		def submissionEndTime: Option[Instant] = dateTimeFromLong(submissionEnd)
-
-		def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
-	}
-
-	private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
-		case lit: Literal if lit.getDatatype === XSD.DATETIME =>
-			try mod(Instant.parse(lit.stringValue).toEpochMilli)
-			catch case _: Throwable => ()//ignoring wrong dateTimes
-		case _ =>
-
-	private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
-		case lit: Literal if lit.getDatatype === XSD.LONG =>
-			try mod(lit.longValue)
-			catch case _: Throwable => ()//ignoring wrong longs
-		case _ =>
 
 end CpIndex

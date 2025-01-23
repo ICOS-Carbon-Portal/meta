@@ -36,7 +36,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.DataEndGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.index.DataStartGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.index.FileNameGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.ObjEntry
+import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
 import se.lu.nateko.cp.meta.services.sparql.magic.index.SubmEndGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.index.SubmStartGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.index.StatKey

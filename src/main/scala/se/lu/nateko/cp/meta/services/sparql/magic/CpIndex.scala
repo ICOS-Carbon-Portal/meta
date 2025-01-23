@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.Sail
@@ -26,14 +25,13 @@ import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
-import scala.collection.mutable.AnyRefMap
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Failure
 import scala.util.Success
 
 import CpIndex.*
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, ObjEntry, StatEntry, emptyBitmap}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry, emptyBitmap}
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -97,12 +95,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 	def size: Int = objs.length
 	def serializableData: Serializable = data
 
-	private def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
-
-	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
-
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
@@ -118,7 +110,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 		idxIter.map(objs.apply)
 	}
 
-	def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
+	private def filtering(filter: Filter): Option[ImmutableRoaringBitmap] = filter match{
 		case And(filters) =>
 			val geoFilts = filters.collect{case gf: GeoFilter => gf}
 
@@ -138,14 +130,14 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 		case Exists(prop) => prop match{
 			case cp: ContProp => Some(data.bitmap(cp).all)
 			case cp: CategProp => cp match{
-				case optUriProp: OptUriProperty => categMap(optUriProp).get(None) match{
+				case optUriProp: OptUriProperty => data.categMap(optUriProp).get(None) match{
 					case None => None
 					case Some(deprived) if deprived.isEmpty => None
 					case Some(deprived) => Some(negate(deprived))
 				}
 				case _ => None
 			}
-			case boo: BoolProperty => Some(boolBitmap(boo))
+			case boo: BoolProperty => Some(data.boolBitmap(boo))
 			case _: GeoProp => None
 		}
 
@@ -160,11 +152,11 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>
-			val perValue = categMap(category)
+			val perValue = data.categMap(category)
 			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
 
 		case GeneralCategFilter(category, condition) => or(
-			categMap(category).collect{
+			data.categMap(category).collect{
 				case (cat, bm) if condition(cat) => bm
 			}.toSeq
 		)
@@ -233,13 +225,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	def getObjEntry(hash: Sha256Sum): ObjEntry = idLookup.get(hash).fold{
-			val canonicalHash = hash.truncate
-			val oe = new ObjEntry(canonicalHash, objs.length, "")
-			objs += oe
-			idLookup += canonicalHash -> oe.idx
-			oe
-		}(objs.apply)
+	val getObjEntry = data.getObjEntry
 
 	def put(st: RdfUpdate): Unit = {
 		q.put(st)

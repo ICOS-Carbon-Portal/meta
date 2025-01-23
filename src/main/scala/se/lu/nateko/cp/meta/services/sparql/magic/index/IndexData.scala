@@ -70,6 +70,10 @@ class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
+		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+
 	def processTriple(
 		subj: IRI,
 		pred: IRI,
@@ -92,7 +96,7 @@ class IndexData(nObjects: Int)(
 			idx: Int
 		): Unit =
 			obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-				updateCategSet(categMap(prop, categMaps), strVal, idx, isAssertion)
+				updateCategSet(categMap(prop), strVal, idx, isAssertion)
 			}
 
 		pred match {
@@ -100,7 +104,7 @@ class IndexData(nObjects: Int)(
 				obj match {
 					case spec: IRI => {
 						val _ = modForDobj(subj) { oe =>
-							updateCategSet(categMap(Spec, categMaps), spec, oe.idx, isAssertion)
+							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, stats, initOk)
 								oe.spec = spec
@@ -129,7 +133,7 @@ class IndexData(nObjects: Int)(
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) { addStat(oe, stats, initOk) }
 						obj match {
-							case subm: IRI => updateCategSet(categMap(Submitter, categMaps), subm, oe.idx, isAssertion)
+							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
 						}
 
 					case CpVocab.Acquisition(hash) =>
@@ -138,7 +142,7 @@ class IndexData(nObjects: Int)(
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) { addStat(oe, stats, initOk) }
 						obj match {
-							case stat: IRI => updateCategSet(categMap(Station, categMaps), Some(stat), oe.idx, isAssertion)
+							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
 						}
 
 					case _ =>
@@ -151,7 +155,7 @@ class IndexData(nObjects: Int)(
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, stats, initOk)
 						obj match {
-							case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)
+							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
 						}
 
 					case _ =>
@@ -292,7 +296,7 @@ class IndexData(nObjects: Int)(
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
 						val oe = getObjEntry(hash)
-						updateCategSet(categMap(VariableName, categMaps), varName, oe.idx, isAssertion)
+						updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
 						updateHasVarList(oe.idx, isAssertion)
 					case _ =>
 				}
@@ -305,7 +309,7 @@ class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def getObjEntry(hash: Sha256Sum): ObjEntry = {
+	def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
 			val canonicalHash = hash.truncate
 			val oe = new ObjEntry(canonicalHash, objs.length, "")
@@ -368,13 +372,6 @@ private def targetUri(obj: Value, isAssertion: Boolean) =
 	if (isAssertion && obj.isInstanceOf[IRI]) {
 		obj.asInstanceOf[IRI]
 	} else { null }
-
-private def categMap(
-	prop: CategProp,
-	categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]
-): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-	.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-	.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
 private def updateCategSet[T <: AnyRef](
 	set: AnyRefMap[T, MutableRoaringBitmap],

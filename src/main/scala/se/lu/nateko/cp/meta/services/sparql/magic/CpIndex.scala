@@ -309,14 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-			case `hasPart` => if isAssertion then subj match
-				case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj){oe =>
-					oe.isNextVersion = true
-					if oe.size > -1 then
-						boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
-				}
-				case _ =>
-
 			case `hasSamplingHeight` => ifFloat(obj){height =>
 				subj match{
 					case CpVocab.Acquisition(hash) =>

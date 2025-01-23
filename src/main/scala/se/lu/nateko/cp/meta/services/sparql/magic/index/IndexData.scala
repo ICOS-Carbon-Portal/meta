@@ -83,6 +83,7 @@ class IndexData(nObjects: Int)(
 	): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
+		import vocab.dcterms.hasPart
 
 		val getObjEntry = objEntryGetter(idLookup, objs)
 		val modForDobj = dobjModGetter(getObjEntry)
@@ -256,6 +257,15 @@ class IndexData(nObjects: Int)(
 						if (size >= 0) handleContinuousPropUpdate(log)(FileSize, size, oe.idx, isAssertion)
 					}
 				}
+
+			case `hasPart` => if isAssertion then
+					subj match
+						case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj) { oe =>
+								oe.isNextVersion = true
+								if oe.size > -1 then
+									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+							}
+						case _ =>
 
 			case _ =>
 		}

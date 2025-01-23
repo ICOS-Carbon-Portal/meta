@@ -306,34 +306,16 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			if(isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 		}
 
-		val processTriple = data.processTriple(log)
-
-		pred match{
-			case `hasActualVariable` => obj match{
-				case CpVocab.VarInfo(hash, varName) =>
-					val oe = getObjEntry(hash)
-					updateCategSet(categMap(VariableName), varName, oe.idx)
-					updateHasVarList(oe.idx)
-				case _ =>
-			}
-
-			case `hasKeywords` => modForDobj(subj){oe =>
-				updateStrArrayProp(Keyword, s => Some(parseCommaSepList(s)), oe.idx)
-			}
-
-			case _ =>
-				val _ = 
-					processTriple(
-						subj, 
-						pred, 
-						obj, 
-						vocab, 
-						isAssertion, 
-						TriplestoreConnection.getStatements, 
-						TriplestoreConnection.hasStatement,
-						nextVersCollIsComplete
-				)
-		}
+		data.processTriple(log)(
+			subj,
+			pred,
+			obj,
+			vocab,
+			isAssertion,
+			TriplestoreConnection.getStatements,
+			TriplestoreConnection.hasStatement,
+			nextVersCollIsComplete
+		)
 	}
 
 	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match

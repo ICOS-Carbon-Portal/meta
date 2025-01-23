@@ -6,7 +6,7 @@ import scala.collection.{IndexedSeq => IndSeq}
 import java.time.Instant
 
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava, Rdf4jStatement, asString}
-import se.lu.nateko.cp.meta.utils.{parseJsonStringArray, asOptInstanceOf}
+import se.lu.nateko.cp.meta.utils.{parseJsonStringArray, asOptInstanceOf, parseCommaSepList}
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XSD
@@ -296,6 +296,18 @@ class IndexData(nObjects: Int)(
 			case `hasActualColumnNames` => val _ = modForDobj(subj) { oe =>
 					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx)
 					updateHasVarList(oe.idx, isAssertion)
+				}
+
+			case `hasActualVariable` => obj match {
+					case CpVocab.VarInfo(hash, varName) =>
+						val oe = getObjEntry(hash)
+						updateCategSet(categMap(VariableName, categMaps), varName, oe.idx, isAssertion)
+						updateHasVarList(oe.idx, isAssertion)
+					case _ =>
+				}
+
+			case `hasKeywords` => val _ = modForDobj(subj) { oe =>
+					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx)
 				}
 
 			case _ =>

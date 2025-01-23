@@ -3,9 +3,13 @@ package se.lu.nateko.cp.meta.services.sparql.magic.index
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.{IndexedSeq => IndSeq}
+import java.time.Instant
 
 import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.*
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
 import se.lu.nateko.cp.meta.services.sparql.index.*
@@ -124,15 +128,36 @@ class IndexData(nObjects: Int)(
 						true
 
 					case `wasPerformedAt` => subj match {
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash, idLookup, objs)
-							removeStat(oe, stats, initOk)
-							oe.site = targetUri(obj, isAssertion)
-							if(isAssertion) addStat(oe, stats, initOk)
-							obj match{case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)}
-							true
-						case _ => false
-					}
+							case CpVocab.Acquisition(hash) =>
+								val oe = getObjEntry(hash, idLookup, objs)
+								removeStat(oe, stats, initOk)
+								oe.site = targetUri(obj, isAssertion)
+								if (isAssertion) addStat(oe, stats, initOk)
+								obj match {
+									case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)
+								}
+								true
+
+							case _ => false
+						}
+
+					case `hasStartTime` =>
+						ifDateTime(obj) { dt =>
+							val _ = modForDobj(subj, idLookup, objs) { oe =>
+								oe.dataStart = dt
+								handleContinuousPropUpdate(log)(DataStart, dt, oe.idx, isAssertion)
+							}
+						}
+						true
+
+					case `hasEndTime` =>
+						ifDateTime(obj) { dt =>
+							val _ = modForDobj(subj, idLookup, objs) { oe =>
+								oe.dataEnd = dt
+								handleContinuousPropUpdate(log)(DataEnd, dt, oe.idx, isAssertion)
+							}
+						}
+						true
 
 					case _ => false
 				}
@@ -234,3 +259,9 @@ private def modForDobj[T](
 
 	case _ => None
 }
+
+private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
+	case lit: Literal if lit.getDatatype === XSD.DATETIME =>
+		try mod(Instant.parse(lit.stringValue).toEpochMilli)
+		catch case _: Throwable => () // ignoring wrong dateTimes
+	case _ =>

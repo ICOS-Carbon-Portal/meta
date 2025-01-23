@@ -54,7 +54,7 @@ trait ObjInfo extends ObjSpecific{
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: LoggingAdapter) extends ReadWriteLocking:
 
-	import data.*
+	import data.{contMap, stats, objs, initOk, idLookup}
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using log: LoggingAdapter) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
@@ -142,7 +142,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 		}
 
 		case ContFilter(property, condition) =>
-			Some(bitmap(property).filter(condition))
+			Some(data.bitmap(property).filter(condition))
 
 		case CategFilter(category, values) if category == DobjUri =>
 			val objIndices: Seq[Int] = values

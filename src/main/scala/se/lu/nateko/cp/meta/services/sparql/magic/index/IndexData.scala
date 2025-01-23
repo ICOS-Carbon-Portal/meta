@@ -123,6 +123,17 @@ class IndexData(nObjects: Int)(
 						}
 						true
 
+					case `wasPerformedAt` => subj match {
+						case CpVocab.Acquisition(hash) =>
+							val oe = getObjEntry(hash, idLookup, objs)
+							removeStat(oe, stats, initOk)
+							oe.site = targetUri(obj, isAssertion)
+							if(isAssertion) addStat(oe, stats, initOk)
+							obj match{case site: IRI => updateCategSet(categMap(Site, categMaps), Some(site), oe.idx, isAssertion)}
+							true
+						case _ => false
+					}
+
 					case _ => false
 				}
 

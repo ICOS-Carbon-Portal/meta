@@ -374,18 +374,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 		)
 
-	private def removeStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
-		stats.get(key).foreach: bm =>
-			bm.remove(obj.idx)
-			if bm.isEmpty then stats.remove(key) // to prevent "orphan" URIs from lingering
-		initOk.remove(obj.idx)
-	}
-
-	private def addStat(obj: ObjEntry): Unit = for(key <- keyForDobj(obj)){
-		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
-		initOk.add(obj.idx)
-	}
-
 	private def nextVersCollIsComplete(obj: IRI)(using GlobConn): Boolean =
 		TriplestoreConnection.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:

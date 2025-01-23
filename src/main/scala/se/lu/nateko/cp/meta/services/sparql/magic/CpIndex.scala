@@ -309,17 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-			case `hasSamplingHeight` => ifFloat(obj){height =>
-				subj match{
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
-						if(isAssertion) oe.samplingHeight = height
-						else if(oe.samplingHeight == height) oe.samplingHeight = Float.NaN
-						handleContinuousPropUpdate(SamplingHeight, height, oe.idx)
-					case _ =>
-				}
-			}
-
 			case `hasActualColumnNames` => modForDobj(subj){oe =>
 				updateStrArrayProp(VariableName, parseJsonStringArray, oe.idx)
 				updateHasVarList(oe.idx)
@@ -433,12 +422,6 @@ object CpIndex:
 		case lit: Literal if lit.getDatatype === XSD.LONG =>
 			try mod(lit.longValue)
 			catch case _: Throwable => ()//ignoring wrong longs
-		case _ =>
-
-	private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
-		case lit: Literal if lit.getDatatype === XSD.FLOAT =>
-			try mod(lit.floatValue)
-			catch case _: Throwable => ()//ignoring wrong floats
 		case _ =>
 
 end CpIndex

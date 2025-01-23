@@ -5,7 +5,7 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.{IndexedSeq => IndSeq}
 import java.time.Instant
 
-import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava}
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava, Rdf4jStatement}
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.vocabulary.XSD
@@ -23,6 +23,10 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import org.eclipse.rdf4j.model.Value
 import akka.event.LoggingAdapter
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import org.eclipse.rdf4j.model.Statement
+
+type StatementGetter = (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement]
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -73,6 +77,7 @@ class IndexData(nObjects: Int)(
 		obj: Value,
 		vocab: CpmetaVocab,
 		isAssertion: Boolean,
+		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
 		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean,
 		nextVersCollIsComplete: (obj: IRI) => Boolean
 	): Boolean = {
@@ -229,6 +234,37 @@ class IndexData(nObjects: Int)(
 					then deprecated.remove(oe.idx)
 				}
 				true
+			case `hasSizeInBytes` =>
+				ifLong(obj) { size =>
+					val _ = modForDobj(subj) { oe =>
+						inline def isRetraction = oe.size == size && !isAssertion
+						if isAssertion then oe.size = size
+						else if isRetraction then oe.size = -1
+
+						if oe.isNextVersion then
+							log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+							val deprecated = boolBitmap(DeprecationFlag)
+
+							val directPrevVers: IndexedSeq[Int] =
+								getStatements(subj, isNextVersionOf, null)
+									.flatMap(st => dobjModGetter(getObjEntry)(st.getObject)(_.idx))
+									.toIndexedSeq
+
+							directPrevVers.foreach { oldIdx =>
+								if isAssertion then deprecated.add(oldIdx)
+								else if isRetraction then deprecated.remove(oldIdx)
+								log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
+							}
+							if directPrevVers.isEmpty then
+								getIdxsOfPrevVersThroughColl(subj, vocab, getObjEntry, getStatements) match
+									case None =>
+										log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
+
+						if (size >= 0) handleContinuousPropUpdate(log)(FileSize, size, oe.idx, isAssertion)
+					}
+				}
+				true
 			case _ => false
 		}
 	}
@@ -249,6 +285,17 @@ class IndexData(nObjects: Int)(
 		}
 	}
 }
+
+private def getIdxsOfPrevVersThroughColl(
+	deprecator: IRI,
+	vocab: CpmetaVocab,
+	getObjEntry: Sha256Sum => ObjEntry,
+	getStatements: StatementGetter
+): Option[Int] =
+	getStatements(null, vocab.dcterms.hasPart, deprecator)
+		.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
+		.toIndexedSeq
+		.headOption
 
 private def targetUri(obj: Value, isAssertion: Boolean) =
 	if (isAssertion && obj.isInstanceOf[IRI]) {
@@ -330,4 +377,10 @@ private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 	case lit: Literal if lit.getDatatype === XSD.DATETIME =>
 		try mod(Instant.parse(lit.stringValue).toEpochMilli)
 		catch case _: Throwable => () // ignoring wrong dateTimes
+	case _ =>
+
+private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
+	case lit: Literal if lit.getDatatype === XSD.LONG =>
+		try mod(lit.longValue)
+		catch case _: Throwable => () // ignoring wrong longs
 	case _ =>

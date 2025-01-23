@@ -309,29 +309,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 		val processTriple = data.processTriple(log)
 
 		pred match{
-			case `hasSizeInBytes` => ifLong(obj){size =>
-				modForDobj(subj){oe =>
-					inline def isRetraction = oe.size == size && !isAssertion
-					if isAssertion then oe.size = size
-					else if isRetraction then oe.size = -1
-
-					if oe.isNextVersion then
-						log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
-						val deprecated = boolBitmap(DeprecationFlag)
-						val directPrevVers = getIdxsOfDirectPrevVers(subj)
-						directPrevVers.foreach{oldIdx =>
-							if isAssertion then deprecated.add(oldIdx)
-							else if isRetraction then deprecated.remove(oldIdx)
-							log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
-						}
-						if directPrevVers.isEmpty then getIdxsOfPrevVersThroughColl(subj) match
-							case None => log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
-							case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
-
-					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)
-				}
-			}
-
 			case `hasPart` => if isAssertion then subj match
 				case CpVocab.NextVersColl(hashOfOld) => modForDobj(obj){oe =>
 					oe.isNextVersion = true
@@ -376,9 +353,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 						obj, 
 						vocab, 
 						isAssertion, 
-						TriplestoreConnection.hasStatement, 
+						TriplestoreConnection.getStatements, 
+						TriplestoreConnection.hasStatement,
 						nextVersCollIsComplete
-					)
+				)
 		}
 	}
 

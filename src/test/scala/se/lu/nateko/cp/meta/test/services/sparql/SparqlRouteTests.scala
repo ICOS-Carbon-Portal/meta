@@ -26,10 +26,11 @@ import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
+import akka.event.Logging
 
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll:
 
-	import system.{log}
+	private val log = Logging.getLogger(system, this)
 
 	val db = new TestDb("sparqlRoutingTesting")
 
@@ -42,7 +43,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 
 	val sparqlRoute: Future[Route] =
 		db.repo.map: repo =>
-			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig, log, system.scheduler)
+			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
 			given EnvriConfigs = Map(
 				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)

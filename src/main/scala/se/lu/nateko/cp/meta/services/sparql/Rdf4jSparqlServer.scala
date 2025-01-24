@@ -52,18 +52,20 @@ import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Try
+import akka.actor.ActorSystem
+import akka.event.Logging
 
 
 class Rdf4jSparqlServer(
-	repo: Repository, config: SparqlServerConfig, log: LoggingAdapter, sch: Scheduler
-)(using ExecutionContext) extends SparqlServer:
+	repo: Repository, config: SparqlServerConfig)(using ExecutionContext)(using system: ActorSystem) extends SparqlServer:
 	import Rdf4jSparqlServer.*
 
+	private val log = Logging.getLogger(system, this)
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
-	sch.scheduleWithFixedDelay(1.hour, 1.hour)(() => quoter.cleanup())
+	system.scheduler.scheduleWithFixedDelay(1.hour, 1.hour)(() => quoter.cleanup())
 
 	def shutdown(): Unit = {
 		sparqlExe.shutdown()
@@ -122,7 +124,7 @@ class Rdf4jSparqlServer(
 							nopCloser -> Future.failed[Done](err)
 						,
 						(closer, doneFut) =>
-							sch.scheduleOnce(config.maxQueryRuntimeSec.seconds):
+							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
 								if !doneFut.isCompleted then
 									if qquoter.keepRunningIndefinitely then
 										log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")

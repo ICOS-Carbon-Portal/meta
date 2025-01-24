@@ -247,7 +247,7 @@ select * where{
 	<https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt> ?p ?o .
 }
 ```
-The (arbitrary) variable names `p` and `o` stand for "property" and "object", the last two components of the subject-predicate-object triple that RDF consists of.
+The (arbitrary) variable names `p` and `o` stand for "property" and "object", the last two components of the subject-predicate-object triples that RDF consists of.
 The output from this query contains much less elements than the landing page of the data object, because many of the properties are themselves resources with properties, and can be explored further using the same type of query.
 
 The above query has an inverse, looking for metadata entities for whom a given resource is a value of a property:
@@ -272,7 +272,7 @@ select * where{
 	<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> ?p ?o .
 }
 ```
-or, alternatively, the data object specification can be looked up and described with a single query:
+or, alternatively, the data object specification can be looked up and examined with a single query:
 ```sparql
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 select * where{
@@ -301,7 +301,9 @@ In this query we also extract a few interesting properties for the data object s
 The main data object search interface ([portal app](https://data.icos-cp.eu/portal/))
 uses a list of [queries under the hood](https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22project%22%3A%5B%22icos%22%5D%2C%22level%22%3A%5B2%5D%7D%2C%22tabs%22%3A%7B%22searchTab%22%3A1%7D%7D) (see the *SPARQL queries* panel and the panel-heading of the Search result list; the latter contains a small button redirecting to the search query for the data object list). The links/buttons will open a new browser window with a SPARQL client app with respective query pre-filled.
 
-Of particular interest are two queries: *Statistics of data object origins* and the data object list query (the small button). These two queries are dynamic, reflecting the state of the filters, selections, softing and paging (when applicable) of the portal app interface. They can be used as inspiration and a starting point for writing more customized queries.
+Of particular interest are two queries: *Statistics of data object origins* and the data object list query (the small button).
+These two queries are dynamic, reflecting the state of the filters, selections, sorting, and paging (when applicable) of the portal app interface.
+They can be used as inspiration and a starting point for writing more customized queries.
 
 ### Other queries
 To further demonstrate some of the possibilities that are accessible via SPARQL, the [client app](https://meta.icos-cp.eu/sparqlclient/) has a list of pre-defined queries to choose from.

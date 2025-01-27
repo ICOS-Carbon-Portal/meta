@@ -1,26 +1,19 @@
 package se.lu.nateko.cp.meta.services.citation
 
 import akka.actor.ActorSystem
-import akka.event.LoggingAdapter
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
-import se.lu.nateko.cp.meta.api.RdfLenses
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.CitableItem
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.EnvriResolver
@@ -34,14 +27,8 @@ import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import scala.concurrent.Future
-import scala.util.Using
-
 import CitationClient.CitationCache
 import CitationClient.DoiCache
 import akka.event.Logging
@@ -84,7 +71,7 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, log)
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 

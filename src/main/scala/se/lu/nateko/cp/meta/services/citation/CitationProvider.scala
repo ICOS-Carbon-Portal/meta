@@ -47,7 +47,7 @@ class CitationProvider(
 	sail: Sail,
 	citClientFactory: List[Doi] => CitationClient,
 	conf: CpmetaConfig,
-)(using system: ActorSystem, mat: Materializer):
+)(using system: ActorSystem):
 	private val log = Logging.getLogger(system, this)
 	import TriplestoreConnection.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs

@@ -210,10 +210,10 @@ class Rdf4jUriSerializer(
 		)
 
 
-	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean = server.access:
+	private def isObjSpec(uri: Uri): Boolean = server.access:
 		hasStatement(uri.toRdf, metaVocab.hasDataLevel, null)
 
-	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean = server.access:
+	private def isLabeledRes(uri: Uri): Boolean = server.access:
 		hasStatement(uri.toRdf, RDFS.LABEL, null)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =

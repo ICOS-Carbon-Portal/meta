@@ -14,7 +14,7 @@ import akka.stream.ThrottleMode
 import se.lu.nateko.cp.meta.utils.Validated
 
 trait TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
-	def log: LoggingAdapter
+	def log: LoggingAdapter // TODO: Why does log need to be part of the trait?
 	def readState: Validated[State]
 
 	protected def registerListener(actor: ActorRef): Unit

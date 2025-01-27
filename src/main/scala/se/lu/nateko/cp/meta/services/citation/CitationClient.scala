@@ -15,7 +15,6 @@ import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
 import se.lu.nateko.cp.meta.CitationConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
 import se.lu.nateko.cp.meta.utils.Mergeable
 import se.lu.nateko.cp.meta.utils.Validated
@@ -28,7 +27,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeoutException
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
 import scala.concurrent._
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
@@ -37,6 +35,7 @@ import scala.util.Try
 import scala.util.control.NoStackTrace
 
 import CitationClient.*
+import akka.event.Logging
 
 
 enum CitationStyle:
@@ -65,7 +64,8 @@ trait CitationClient extends PlainDoiCiter:
 class CitationClientImpl (
 	knownDois: List[Doi], config: CitationConfig, initCitCache: CitationCache, initDoiCache: DoiCache
 )(using system: ActorSystem, mat: Materializer) extends CitationClient:
-	import system.{dispatcher, scheduler, log}
+	import system.{dispatcher, scheduler}
+	private val log = Logging.getLogger(system, this)
 
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache

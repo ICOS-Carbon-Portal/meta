@@ -1,33 +1,29 @@
 package se.lu.nateko.cp.meta.metaflow
 
-import akka.actor.ActorRef
-import akka.actor.ActorSystem
-import akka.actor.Status
+import akka.actor.{ActorRef, ActorSystem, Status}
+import akka.event.Logging
 import akka.stream.IOResult
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import se.lu.nateko.cp.meta.MetaUploadConf
+import scala.util.{Failure, Success, Try}
 
 trait FileDropMetaSource[T <: TC : TcConf](
 	conf: MetaUploadConf
 )(using system: ActorSystem) extends MetaUploadService with TriggeredMetaSource[T]:
 
+	private val logger = Logging.getLogger(system, this)
+	final override def log = logger
+
 	export conf.dirName
 	final override val directory: Path =
 		val dir = Paths.get("metaflowUploads", dirName).toAbsolutePath
 		Files.createDirectories(dir)
-	final override def log = system.log
 
 	import system.dispatcher
 	private var listener: ActorRef = system.deadLetters
@@ -42,7 +38,7 @@ trait FileDropMetaSource[T <: TC : TcConf](
 			FileIO.toPath(file).mapMaterializedValue:
 				_.andThen:
 					case Success(_) => listener ! 1
-					case Failure(exc) => system.log.error(exc, s"Error writing $tcName metadata table $tableId")
+					case Failure(exc) => logger.error(exc, s"Error writing $tcName metadata table $tableId")
 		else
 			Failure(new UnauthorizedUploadException(s"Only ${conf.uploader} is allowed to upload $tcName metadata"))
 

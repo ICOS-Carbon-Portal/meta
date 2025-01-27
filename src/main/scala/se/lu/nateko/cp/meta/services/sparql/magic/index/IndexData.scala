@@ -4,10 +4,10 @@ import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
-import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection => TSC}
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 import se.lu.nateko.cp.meta.services.sparql.index.{FileSizeHierarchicalBitmap, SamplingHeightHierarchicalBitmap, *}
@@ -18,8 +18,6 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
-
-type StatementGetter = (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement]
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -40,7 +38,10 @@ class IndexData(nObjects: Int)(
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
-) extends Serializable {
+) extends Serializable:
+
+	import TSC.{hasStatement, getStatements}
+
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
 	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
 	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
@@ -72,16 +73,12 @@ class IndexData(nObjects: Int)(
 		subj: IRI,
 		pred: IRI,
 		obj: Value,
-		vocab: CpmetaVocab,
 		isAssertion: Boolean,
-		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
-		hasStatement: (IRI | Null, IRI | Null, Value | Null) => Boolean
-	)(using log: LoggingAdapter): Unit = {
+		vocab: CpmetaVocab
+	)(using log: LoggingAdapter, tsc: TSC): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
-
-		val modForDobj = dobjModGetter(getObjEntry)
 
 		def updateStrArrayProp(
 			obj: Value,
@@ -100,11 +97,11 @@ class IndexData(nObjects: Int)(
 						val _ = modForDobj(subj) { oe =>
 							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
 							if (isAssertion) {
-								if (oe.spec != null) removeStat(oe, stats, initOk)
+								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
-								addStat(oe, stats, initOk)
+								addStat(oe, initOk)
 							} else if (spec === oe.spec) {
-								removeStat(oe, stats, initOk)
+								removeStat(oe, initOk)
 								oe.spec = null
 							}
 						}
@@ -123,21 +120,19 @@ class IndexData(nObjects: Int)(
 				subj match {
 					case CpVocab.Submission(hash) =>
 						val oe = getObjEntry(hash)
-						removeStat(oe, stats, initOk)
+						removeStat(oe, initOk)
 						oe.submitter = targetUri(obj, isAssertion)
-						if (isAssertion) { addStat(oe, stats, initOk) }
-						obj match {
+						if (isAssertion) addStat(oe, initOk)
+						obj match
 							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
-						}
 
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
-						removeStat(oe, stats, initOk)
+						removeStat(oe, initOk)
 						oe.station = targetUri(obj, isAssertion)
-						if (isAssertion) { addStat(oe, stats, initOk) }
-						obj match {
+						if (isAssertion) addStat(oe, initOk)
+						obj match
 							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
-						}
 
 					case _ =>
 				}
@@ -145,12 +140,11 @@ class IndexData(nObjects: Int)(
 			case `wasPerformedAt` => subj match {
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
-						removeStat(oe, stats, initOk)
+						removeStat(oe, initOk)
 						oe.site = targetUri(obj, isAssertion)
-						if (isAssertion) addStat(oe, stats, initOk)
-						obj match {
+						if (isAssertion) addStat(oe, initOk)
+						obj match
 							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
-						}
 
 					case _ =>
 				}
@@ -188,7 +182,7 @@ class IndexData(nObjects: Int)(
 
 			case `endedAtTime` =>
 				ifDateTime(obj) { dt =>
-					subj match {
+					subj match
 						case CpVocab.Acquisition(hash) =>
 							val oe = getObjEntry(hash)
 							oe.dataEnd = dt
@@ -198,7 +192,6 @@ class IndexData(nObjects: Int)(
 							oe.submissionEnd = dt
 							handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
 						case _ =>
-					}
 				}
 
 			case `isNextVersionOf` =>
@@ -222,7 +215,7 @@ class IndexData(nObjects: Int)(
 										deprecated.add(oe.idx)
 									case _ => subj match
 											case CpVocab.NextVersColl(_) =>
-												if nextVersCollIsComplete(subj, getStatements, vocab)
+												if nextVersCollIsComplete(subj, vocab)
 												then deprecated.add(oe.idx)
 											case _ =>
 					else if
@@ -244,7 +237,7 @@ class IndexData(nObjects: Int)(
 
 							val directPrevVers: IndexedSeq[Int] =
 								getStatements(subj, isNextVersionOf, null)
-									.flatMap(st => dobjModGetter(getObjEntry)(st.getObject)(_.idx))
+									.flatMap(st => modForDobj(st.getObject)(_.idx))
 									.toIndexedSeq
 
 							directPrevVers.foreach { oldIdx =>
@@ -253,7 +246,7 @@ class IndexData(nObjects: Int)(
 								log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
 							}
 							if directPrevVers.isEmpty then
-								getIdxsOfPrevVersThroughColl(subj, vocab, getObjEntry, getStatements) match
+								getIdxsOfPrevVersThroughColl(subj, vocab) match
 									case None =>
 										log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
 									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
@@ -301,7 +294,7 @@ class IndexData(nObjects: Int)(
 
 			case _ =>
 		}
-	}
+	end processTriple
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
@@ -335,37 +328,47 @@ class IndexData(nObjects: Int)(
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
-	private def nextVersCollIsComplete(
-		obj: IRI,
-		getStatements: (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement],
-		vocab: CpmetaVocab
-	): Boolean =
+	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using TSC): Boolean =
 		getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
-				case Rdf4jStatement(_, _, member: IRI) => dobjModGetter(getObjEntry)(member) { oe =>
-						oe.isNextVersion = true
-						oe.size > -1
-					}
+				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member): oe =>
+					oe.isNextVersion = true
+					oe.size > -1
 			.flatten
 			.toIndexedSeq
 			.exists(identity)
-}
 
-private def getIdxsOfPrevVersThroughColl(
-	deprecator: IRI,
-	vocab: CpmetaVocab,
-	getObjEntry: Sha256Sum => ObjEntry,
-	getStatements: StatementGetter
-): Option[Int] =
-	getStatements(null, vocab.dcterms.hasPart, deprecator)
-		.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
-		.toIndexedSeq
-		.headOption
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using TSC): Option[Int] =
+		getStatements(null, vocab.dcterms.hasPart, deprecator)
+			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
+			.toIndexedSeq
+			.headOption
+
+	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
+		case CpVocab.DataObject(hash, prefix) =>
+			val entry = getObjEntry(hash)
+			if (entry.prefix == "") entry.prefix = prefix.intern()
+			Some(mod(entry))
+
+		case _ => None
+
+	private def addStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
+		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
+		initOk.add(obj.idx)
+
+	private def removeStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
+		stats.get(key).foreach: bm =>
+			bm.remove(obj.idx)
+			if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
+		initOk.remove(obj.idx)
+
+end IndexData
+
 
 private def targetUri(obj: Value, isAssertion: Boolean) =
-	if (isAssertion && obj.isInstanceOf[IRI]) {
-		obj.asInstanceOf[IRI]
-	} else { null }
+	if isAssertion && obj.isInstanceOf[IRI]
+	then obj.asInstanceOf[IRI]
+	else null
 
 private def updateCategSet[T <: AnyRef](
 	set: AnyRefMap[T, MutableRoaringBitmap],
@@ -388,38 +391,6 @@ private def keyForDobj(obj: ObjEntry): Option[StatKey] =
 		Some(
 			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
 		)
-
-private def addStat(
-	obj: ObjEntry,
-	stats: AnyRefMap[StatKey, MutableRoaringBitmap],
-	initOk: MutableRoaringBitmap
-): Unit = for (key <- keyForDobj(obj)) {
-	stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
-	initOk.add(obj.idx)
-}
-
-private def removeStat(
-	obj: ObjEntry,
-	stats: AnyRefMap[StatKey, MutableRoaringBitmap],
-	initOk: MutableRoaringBitmap
-): Unit = for (key <- keyForDobj(obj)) {
-	stats.get(key).foreach: bm =>
-		bm.remove(obj.idx)
-		if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
-	initOk.remove(obj.idx)
-}
-
-private def dobjModGetter[T](
-	getObjEntry: (Sha256Sum => ObjEntry)
-)(dobj: Value)(mod: ObjEntry => T): Option[T] =
-	dobj match {
-		case CpVocab.DataObject(hash, prefix) =>
-			val entry = getObjEntry(hash)
-			if (entry.prefix == "") entry.prefix = prefix.intern()
-			Some(mod(entry))
-
-		case _ => None
-	}
 
 private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
 	case lit: Literal if lit.getDatatype === XSD.DATETIME =>

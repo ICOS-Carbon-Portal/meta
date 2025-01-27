@@ -244,22 +244,12 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 			list.clear()
 
 
-	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit = {
-		data.processTriple(
-			subj,
-			pred,
-			obj,
-			vocab,
-			isAssertion,
-			TriplestoreConnection.getStatements,
-			TriplestoreConnection.hasStatement
-		)
-	}
+	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit =
+		data.processTriple(subj, pred, obj, isAssertion, vocab)
 
 end CpIndex
+
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
 
-
-end CpIndex

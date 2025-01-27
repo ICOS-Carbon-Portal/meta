@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
@@ -11,11 +10,12 @@ import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Try
 import scala.util.Using
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.slf4j.LoggerFactory
 
-class GeoIndexProvider(log: LoggingAdapter)(using ExecutionContext):
+class GeoIndexProvider(using ExecutionContext):
+	private val log = LoggerFactory.getLogger(getClass())
 
 	def index(
 		sail: Sail, cpIndex: CpIndex, staticObjReader: StaticObjectReader

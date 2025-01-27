@@ -176,7 +176,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val idxFactories = if noMagic then None else
 			val indexHandler = IndexHandler(system.scheduler)
-			val geoProvider = new GeoIndexProvider(log)(using ExecutionContext.global)
+			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
 			Some(indexHandler -> geoProvider)
 
 		val sail = CpNotifyingSail(baseSail, idxFactories, citer, log)

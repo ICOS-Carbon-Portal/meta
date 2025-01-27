@@ -18,12 +18,13 @@ trait FileDropMetaSource[T <: TC : TcConf](
 )(using system: ActorSystem) extends MetaUploadService with TriggeredMetaSource[T]:
 
 	private val logger = Logging.getLogger(system, this)
-	final override def log = logger
 
 	export conf.dirName
 	final override val directory: Path =
 		val dir = Paths.get("metaflowUploads", dirName).toAbsolutePath
 		Files.createDirectories(dir)
+
+	final override def log = logger
 
 	import system.dispatcher
 	private var listener: ActorRef = system.deadLetters

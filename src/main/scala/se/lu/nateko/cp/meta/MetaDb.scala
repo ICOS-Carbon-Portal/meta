@@ -231,7 +231,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, log)
 			}
 
-			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql, log, scheduler)
+			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
 			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +

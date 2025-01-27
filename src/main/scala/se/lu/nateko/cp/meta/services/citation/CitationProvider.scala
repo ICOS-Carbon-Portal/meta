@@ -44,6 +44,7 @@ import scala.util.Using
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
+import akka.event.Logging
 
 
 object CitationProvider:
@@ -60,7 +61,7 @@ class CitationProvider(
 	citClientFactory: List[Doi] => CitationClient,
 	conf: CpmetaConfig,
 )(using system: ActorSystem, mat: Materializer):
-	import system.log
+	private val log = Logging.getLogger(system, this)
 	import TriplestoreConnection.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
 

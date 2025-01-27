@@ -32,11 +32,14 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import java.nio.file.Files
 import scala.concurrent.Future
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import akka.event.Logging
+import scala.concurrent.ExecutionContext
 
 class TestDb(name: String) {
-	import system.{dispatcher, log}
 
 	private given system: ActorSystem = ActorSystem(name, akkaConf)
+	private given ExecutionContext = system.dispatcher
+	private val log = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 	private val akkaConf =

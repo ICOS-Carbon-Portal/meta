@@ -1,29 +1,23 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.AnyRefMap
-import scala.collection.{IndexedSeq => IndSeq}
-import java.time.Instant
 import akka.event.LoggingAdapter
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
-import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava, Rdf4jStatement, asString}
-import se.lu.nateko.cp.meta.utils.{parseJsonStringArray, asOptInstanceOf, parseCommaSepList}
-import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
-import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
-import se.lu.nateko.cp.meta.services.sparql.index.{FileSizeHierarchicalBitmap, SamplingHeightHierarchicalBitmap}
-import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
+import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
+import se.lu.nateko.cp.meta.services.sparql.index.{FileSizeHierarchicalBitmap, SamplingHeightHierarchicalBitmap, *}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
+import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
+
+import java.time.Instant
+import scala.collection.IndexedSeq as IndSeq
+import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 
 type StatementGetter = (subject: IRI | Null, predicate: IRI | Null, obj: Value | Null) => CloseableIterator[Statement]
 

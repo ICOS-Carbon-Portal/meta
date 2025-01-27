@@ -4,28 +4,19 @@ import akka.Done
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolverClient
-import org.eclipse.rdf4j.sail.NotifyingSail
-import org.eclipse.rdf4j.sail.NotifyingSailConnection
-import org.eclipse.rdf4j.sail.SailConnectionListener
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
+import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.utils.async.ok
-import index.IndexData
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
+
+import index.IndexData
 
 
 type MainSail = FederatedServiceResolverClient & NotifyingSail:

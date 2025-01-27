@@ -113,7 +113,6 @@ trait LifecycleService:
 	def sendTestEmail(addr: Option[String]): Unit =
 		if config.mailSendingActive then
 			val subj = "labeling email test"
-			val allReceps = addr.toSeq ++ config.mailing.logBccAddress
 			val body = views.html.CpEmail(subj)(Html("<p>Test successful if you got this</p>"))
 			mailWithLogging(addr.toSeq, subj, body)
 		else

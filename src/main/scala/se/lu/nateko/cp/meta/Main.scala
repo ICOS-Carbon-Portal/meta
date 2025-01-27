@@ -47,7 +47,7 @@ object Main extends App with CpmetaJsonProtocol{
 		}
 
 	val startup = for(
-		(citCache, doiCache) <- readCitCache(log).zip(readDoiCache(log));
+		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
 		db <- metaFactory(citCache, doiCache, config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		idxOpt <- optIndexDataFut;
@@ -66,11 +66,11 @@ object Main extends App with CpmetaJsonProtocol{
 
 			println("meta service shutdown successful")
 		}
-		system.log.info(binding.toString)
+		log.info(binding.toString)
 	}
 
 	startup.failed.foreach{err =>
-		system.log.error(err, "Could not start meta service")
+		log.error(err, "Could not start meta service")
 		system.terminate()
 	}
 }

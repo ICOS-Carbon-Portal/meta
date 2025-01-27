@@ -99,15 +99,15 @@ class TestDb(name: String) {
 			recreateCpIndexAtStartup = true
 		)
 
-		val (freshInit, base) = StorageSail.apply(rdfConf, log)
+		val (freshInit, base) = StorageSail.apply(rdfConf)
 		val indexUpdaterFactory = IndexHandler(system.scheduler)
-		val geoFactory = GeoIndexProvider(log)
+		val geoFactory = GeoIndexProvider()
 		val idxFactories = if freshInit then None
 		else
 			Some(indexUpdaterFactory -> geoFactory)
 
 		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-		CpNotifyingSail(base, idxFactories, citer, log)
+		CpNotifyingSail(base, idxFactories, citer)
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global

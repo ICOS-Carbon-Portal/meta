@@ -116,13 +116,13 @@ def initFdp(config: Config): FDPClient =
 		FDPClient.interactiveInit(hostUri)
 
 def showMetadata(config: Config) =
-	val uri = s"${config.host.toString()}${config.path.toString()}"
+	val uri = s"${config.host}${config.path}"
 	val ttl = quickRequest.get(uri"$uri").send().body
 	println(ttl)
 
 def uploadL2ICOS(config: Config) =
 	val fdp = initFdp(config)
-	val catalogUri = uri"${config.host}/catalog/${config.catalog}"
+	val catalogUri = fdp.catalogUriInFdp(config.catalog)
 	val constructQuery = os.read(ConstructQueryFile)
 	val model = importFromIcos(constructQuery)
 	val repo = createRepo(model)
@@ -134,30 +134,33 @@ def uploadL2ICOS(config: Config) =
 		datasetsResult.forEach: bindings =>
 			val dataset = uri"${bindings.getValue("dataset").toString}"
 			val datasetQuery = constructDatasetSparqlQuery(catalogUri, dataset)
-			val dsTurtle: String = evaluateGraphQuery(conn, datasetQuery)
-			val distributionQuery = constructDistributionSparqlQuery(dataset)
-			val distTurtle: String = evaluateGraphQuery(conn, distributionQuery)
+			val datasetTurtle = evaluateGraphQuery(conn, datasetQuery)
 			if config.dryRun then
-				println(s"Dataset:\n$dsTurtle\n\nDistribution:\n$distTurtle\n\n\n")
+				println(datasetTurtle)
 			else
-				fdp.postAndPublishDatasets(dsTurtle)
-				fdp.postAndPublishDistributions(distTurtle)
+				val datasetsFdpUris = fdp.postAndPublishDatasets(datasetTurtle)
+				for datasetFdpUri <- datasetsFdpUris do
+					val distributionQuery = constructDistributionSparqlQuery(dataset, datasetFdpUri)
+					val distributionTurtle = evaluateGraphQuery(conn, distributionQuery)
+					fdp.postAndPublishDistributions(distributionTurtle)
 
 def uploadDatasetFromFile(config: Config) =
 	val fdp = initFdp(config)
-	val catalogUri = fdp.host.addPath(Seq("catalog", config.catalog))
+	val catalogUri = fdp.catalogUriInFdp(config.catalog)
 	val ttl = os.read(stringToPath(config.inputTtlFile))
 	fdp.postAndPublishDatasets(ttl)
 
 def deleteAllDatasets(config: Config): Unit =
 	val fdp = initFdp(config)
-	val uri = fdp.host.addPath(Seq("catalog", config.catalog)).addParam("format", "ttl")
+	val uri = fdp.host.addPath("catalog", config.catalog).withParam("format", "ttl")
 	val ttl = quickRequest.get(uri).send().body
-	val model = Rio.parse(StringReader(ttl), "", RDFFormat.TURTLE)
-	val subj = iri(fdp.host.addPath(Seq("dataset", "")).toString())
-	model.getStatements(subj, LDP.CONTAINS, null).forEach: st =>
-		val dataset = st.getObject().toString()
-		fdp.deleteDataset(uri"$dataset")
+	val statements = fdp.parseTurtleAndGetStatements(ttl, null, LDP.CONTAINS, null)
+	statements
+		.collect: st =>
+			val objectUri = uri"${st.getObject().toString()}"
+			if objectUri.path(0) == "dataset" then
+				val datasetUri = uri"${fdp.host}/${objectUri.path}"
+				fdp.deleteDataset(datasetUri)
 
 def evaluateGraphQuery(conn: RepositoryConnection, query: String): String =
 	val writer = new StringWriter
@@ -175,6 +178,7 @@ def sparqlConstruct(query: String): String = sparql(query, "text/turtle")
 def sparql(query: String, acceptType: String): String =
 	val headers = Map("Accept" -> acceptType, "Content-Type" -> "text/plain")
 	val resp: Response[String] = quickRequest.post(sparqlEndpoint).headers(headers).body(query).send()
+	if (!(resp.code.isSuccess)) println(s"\n\nQuery to SPARQL endpoint failed:\n$query\n\nResponse:\n${resp.body}")
 	resp.body
 
 def importFromIcos(query: String): Model =
@@ -191,36 +195,56 @@ def createRepo(model: Model): SailRepository =
 
 def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 	s"""
-		|PREFIX dcterms: <http://purl.org/dc/terms/>
+		|PREFIX dct: <http://purl.org/dc/terms/>
 		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
 		|PREFIX prov: <http://www.w3.org/ns/prov#>
 		|PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-		|PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 		|
-		|CONSTRUCT{
+		|CONSTRUCT {
+		|	?ds dct:isPartOf <$catalog> .
 		|	?ds ?pred ?obj .
-		|	?ds dcterms:isPartOf <$catalog> .
-		|	?ds dcterms:publisher <https://www.icos-cp.eu/> .
+		|	?ds dct:hasVersion "1.0" .
+		|	?ds dct:license <https://data.icos-cp.eu/licence> .
+		|	?ds dcat:contactPoint <https://www.icos-ri.eu> .
+		|	?ds dct:publisher <https://www.icos-cp.eu/> .
 		|	<https://www.icos-cp.eu/> a foaf:Agent .
 		|	<https://www.icos-cp.eu/> foaf:name "ICOS"^^xsd:string .
-		|	?ds dcterms:hasVersion "1.0"^^xsd:string .
-		|	?ds dcterms:temporal ?tempo .
-		|	?tempo ?tempoPred ?tempoV .
-		|	#?ds dcat:distribution ?distro .
-		|	#?distro ?distroPred ?distroV .
-		|	#?distro dcat:mediaType "application/octet-stream"^^xsd:string .
+		|	<https://www.icos-cp.eu/> dcat:landingPage <https://www.icos-cp.eu/> .
 		|}
 		|WHERE {
 		|	VALUES ?ds {<$dataset>}
 		|	?ds ?pred ?obj .
-		|	filter (?pred not in (dcterms:temporal, dcat:distribution, dcterms:isPartOf))
-		|	?ds dcterms:temporal ?tempo .
-		|	?tempo ?tempoPred ?tempoV .
-		|	#?ds dcat:distribution ?distro .
-		|	#?distro ?distroPred ?distroV .
 		|}
 	""".stripMargin
 
-def constructDistributionSparqlQuery(dataset: Uri): String =
+def constructDistributionSparqlQuery(dataset: Uri, datasetFdpUri: Uri): String =
 	s"""
+		|PREFIX dct: <http://purl.org/dc/terms/>
+		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
+		|PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+		|
+		|CONSTRUCT {
+		|	_:dist a dcat:Distribution .
+		|	_:dist dct:isPartOf <$datasetFdpUri> .
+		|	_:dist dct:title ?title .
+		|	_:dist dcat:accessURL ?dobj .
+		|	_:dist dcat:downloadURL ?dlUri .
+		|	_:dist dcat:byteSize ?size .
+		|	_:dist dct:hasVersion "1.0" .
+		|	_:dist dcat:mediaType ?media .
+		|	_:dist dct:license <https://data.icos-cp.eu/licence> .
+		|	_:dist dct:publisher <https://www.icos-cp.eu/> .
+		|	<https://www.icos-cp.eu/> a foaf:Agent .
+		|	<https://www.icos-cp.eu/> foaf:name "ICOS"^^xsd:string .
+		|	<https://www.icos-cp.eu/> dcat:landingPage <https://www.icos-cp.eu/> .
+		|}
+		|WHERE {
+		|	VALUES ?ds {<$dataset>}
+		|	?ds dct:title ?title .
+		|	?ds dcat:accessURL ?dobj .
+		|	?ds dcat:downloadURL ?dlUri .
+		|	?ds dcat:byteSize ?size .
+		|	?ds dcat:mediaType ?media .
+		|}
 	""".stripMargin

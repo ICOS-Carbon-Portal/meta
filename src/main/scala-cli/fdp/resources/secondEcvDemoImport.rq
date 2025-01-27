@@ -4,38 +4,32 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix dcat: <http://www.w3.org/ns/dcat#>
 prefix dct: <http://purl.org/dc/terms/>
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 
 CONSTRUCT {
 	?ds a dcat:Dataset .
+	#?ds owl:sameAs ?dobj .
 	?ds dcat:landingPage ?dobj .
-	?ds owl:sameAs ?dobj .
-	?ds dct:title ?fileName .
+	?ds dcat:accessURL ?dobj .
+	?ds dcat:downloadURL ?dlUri .
+	?ds dct:title ?title .
+	?ds dct:description ?description .
 	?ds dct:issued ?submEnd .
 	?ds dct:modified ?modified .
 	?ds dcat:theme ?ecv .
-	?ds dcat:version "1.0" .
-	?ds dct:description ?description .
 	?ds prov:wasAttributedTo ?station .
-	?ds dct:temporal [
-		a dct:PeriodOfTime ;
-		dcat:startDate ?timeStart ;
-		dcat:endDate ?timeEnd
-	].
-	?ds dcat:distribution [
-		a dcat:Distribution ;
-		dcat:accessURL ?dobj ;
-		dct:license <https://creativecommons.org/licenses/by/4.0/> ;
-		dcat:byteSize ?size ;
-		dcat:downloadURL ?dlUri
-	]
+	?ds dct:startDate ?timeStart .
+	?ds dct:endDate ?timeEnd .
+	?ds dcat:byteSize ?size .
+	?ds dcat:mediaType ?encodingLabel .
 } WHERE {
 	{
 		SELECT ?dobjSpec ?ecv (group_concat(?dobjSpecComm; separator=". ") AS ?dobjSpecComment) WHERE {
 			VALUES (?dobjSpec ?ecv){
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <https://fdp.icos-cp.eu/variable/ad44593c-91b4-44b5-96df-efe94e7c49bb>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <https://fdp.icos-cp.eu/variable/d948ee13-c9e8-4acc-b198-0e6c1d3c6a99>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <https://fdp.icos-cp.eu/variable/69fafa11-7b3b-42e4-aebe-a1b95c201a64>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <https://fdp.icos-cp.eu/variable/4d6a10b6-7dee-45c5-9f61-2f11705bacfa>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://fdpdemo.envri.eu/variable/6a43782b-13da-40a0-a65c-63480a940231>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://fdpdemo.envri.eu/variable/9150a404-40eb-41ae-b835-4077b989713f>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://fdpdemo.envri.eu/variable/c0b74231-0790-469b-9886-f8ff15eead5b>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://fdpdemo.envri.eu/variable/8b61fc50-1c1d-4c58-8934-7e3d236b7ef7>)
 			}
 			OPTIONAL{?dobjSpec rdfs:comment ?dobjSpecComm }
 		}
@@ -50,14 +44,19 @@ CONSTRUCT {
 	?dobj cpmeta:wasAcquiredBy ?acq .
 	?acq prov:startedAtTime ?timeStart ;
 		prov:endedAtTime ?timeEnd ;
-		prov:wasAssociatedWith ?station .
+		prov:wasAssociatedWith ?station ;
+		cpmeta:hasSamplingHeight ?samplingHeight .
 	?station cpmeta:hasName ?stationName .
 	?dobjSpec rdfs:label ?dobjSpecLabel .
+	?dobjSpec cpmeta:hasEncoding/rdfs:label ?encodingLabel .
+	?dobjSpec cpmeta:containsDataset ?dsSpec .
+	?dsSpec cpmeta:hasColumn ?column .
+	?column cpmeta:hasValueType ?valType .
 	OPTIONAL{?dobj cpmeta:wasProducedBy/cpmeta:hasEndTime ?prodTime} .
 	BIND (coalesce(?prodTime, ?submStart) AS ?modified)
 	BIND (iri(replace(str(?dobj), "https://meta", "https://data")) AS ?dlUri)
 	BIND (concat(?dobjSpecLabel, ", station ", ?stationName, ". ", coalesce(?dobjSpecComment, "")) AS ?description)
+	BIND (concat(?dobjSpecLabel, ", ", ?stationName, " (", str(?samplingHeight), " m)") AS ?title) .
 	BIND (iri(replace(str(?dobj), "/objects/", "/fdp/objects/")) AS ?ds)
 }
-ORDER BY ?fileName
-LIMIT 3
+ORDER BY ?dobjSpecLabel ?stationName ?samplingHeight

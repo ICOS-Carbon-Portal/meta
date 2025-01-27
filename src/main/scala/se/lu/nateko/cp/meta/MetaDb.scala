@@ -182,7 +182,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val sail = CpNotifyingSail(baseSail, idxFactories, citer, log)
 		val repo = new SailRepository(sail)
 		repo.init()
-		val vanillaRepo = citer.repo
 
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))

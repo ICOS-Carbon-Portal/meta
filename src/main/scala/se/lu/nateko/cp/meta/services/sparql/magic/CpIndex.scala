@@ -44,6 +44,7 @@ import scala.util.Success
 import CpIndex.*
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
+import org.slf4j.LoggerFactory
 
 
 case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
@@ -68,11 +69,12 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
 
+	private val log = LoggerFactory.getLogger(getClass())
 	import data.*
-	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(log: LoggingAdapter) = {
-		this(sail, geo, IndexData(nObjects)())(log)
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
+		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
@@ -295,10 +297,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 			def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
 			if(isAssertion) {
 				if(!bitmap(prop).add(key, idx)){
-					log.warning(s"Value already existed: asserted $helpTxt")
+					log.warn(s"Value already existed: asserted $helpTxt")
 				}
 			} else if(!bitmap(prop).remove(key, idx)){
-					log.warning(s"Value was not present: tried to retract $helpTxt")
+					log.warn(s"Value was not present: tried to retract $helpTxt")
 			}
 		}
 
@@ -456,7 +458,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(log: LoggingAd
 							log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
 						}
 						if directPrevVers.isEmpty then getIdxsOfPrevVersThroughColl(subj) match
-							case None => log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+							case None => log.warn(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
 							case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
 
 					if(size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx)

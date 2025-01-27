@@ -179,7 +179,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
 			Some(indexHandler -> geoProvider)
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer, log)
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
 		val repo = new SailRepository(sail)
 		repo.init()
 

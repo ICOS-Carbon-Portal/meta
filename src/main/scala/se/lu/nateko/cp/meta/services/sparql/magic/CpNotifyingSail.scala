@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
 import org.eclipse.rdf4j.model.IRI
@@ -25,6 +24,7 @@ import scala.concurrent.Promise
 import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.Failure
 import scala.util.Success
+import org.slf4j.LoggerFactory
 
 
 type MainSail = FederatedServiceResolverClient & NotifyingSail:
@@ -34,10 +34,10 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
-	citer: CitationProvider,
-	log: LoggingAdapter
+	citer: CitationProvider
 ) extends NotifyingSailWrapper(inner):
 
+	private val log = LoggerFactory.getLogger(getClass())
 	private val enricher = StatementsEnricher(citer)
 	private var cpIndex: Option[CpIndex] = None
 	private var listener: Option[SailConnectionListener] = None
@@ -63,7 +63,7 @@ class CpNotifyingSail(
 			if idxData.isEmpty then log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
 			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
-			val idx = idxData.fold(new CpIndex(inner, geoFut)(log))(idx => new CpIndex(inner, geoFut, idx)(log))
+			val idx = idxData.fold(new CpIndex(inner, geoFut))(idx => new CpIndex(inner, geoFut, idx))
 			idx.flush()
 			listener = Some(listenerFactory.getListener(inner, metaVocab, idx, geoPromise.future))
 			geoPromise.completeWith(geoFactory.index(inner, idx, metaReader))
@@ -92,12 +92,12 @@ class CpNotifyingSail(
 				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
 			).andThen{
 				case Success(msg) => log.info(msg)
-				case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
+				case Failure(err) => log.error("Fail while dumping SPARQL index or citations cache to disk", err)
 			}
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:
-			CpIndex(inner, Future.never, CpIndex.IndexData(0)())(log)
+			CpIndex(inner, Future.never, CpIndex.IndexData(0)())
 		inner.setEvaluationStrategyFactory:
 			CpEvaluationStrategyFactory(inner.getFederatedServiceResolver(), magicIdx, enricher, cpIndex.isDefined)
 

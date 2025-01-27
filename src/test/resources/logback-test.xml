@@ -2,7 +2,7 @@
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>[%level] [%r] [%logger{0}] \(%X{sourceActorSystem}\) %msg %n</pattern>
+			<pattern>[%level] [%replace(%r){'(.*)(\d\d\d)$', '$1.$2'}] [%logger{0}] \(%X{sourceActorSystem}\) %msg %n</pattern>
 		</encoder>
 	</appender>
 

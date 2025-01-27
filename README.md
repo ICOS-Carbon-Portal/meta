@@ -130,7 +130,7 @@ Clarifications:
 - `specificInfo` for spatiotemporal objects
 	- `title` is a required string.
 	- `description` is an optional string.
-	- `spatial` is the spacial coverage or a string with url to a reusable spacial coverage object.
+	- `spatial` is either a lat/lon bounding box, or a string with url reference to a reusable spacial coverage object, or a string with GeoJSON representation of the object-specific geo-coverage; in the first case, it's an object with the following properties:
 		- `min` containing numeric `lat` and `lon` (WGS84).
 		- `max` containing numeric `lat` and `lon` (WGS84).
 		- `label` is a optional string to describe the spacial coverage.
@@ -256,8 +256,11 @@ The above query has an inverse, looking for metadata entities for whom a given r
 select * where{
 	?s ?p <https://meta.icos-cp.eu/objects/r8V_G6LQHV5isDk0l9tyiVAt> .
 }
+limit 1000
 ```
-Running it reveals that our example object has a single (at the time of writing this) "user"&mdash;the collection it is a part of. (In the future, the object may get referenced by its new version, making the number of "users" two). In general, one should be conscious when running this type of query, as some of the resources have a very large number of "users".
+Running it reveals that our example object has a single (at the time of writing this) "user"&mdash;the collection it is a part of.
+(In the future, the object may get referenced by its new version, making the number of "users" two).
+In general, one should be conscious when running this type of query, as some of the resources have a very large number of "users" (hence the `limit` clause).
 
 A possibility to obtain the results of both of the queries above in one go is to run a more concise query
 ```sparql

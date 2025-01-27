@@ -35,9 +35,9 @@ import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
 import akka.event.Logging
 
 class TestDb(name: String) {
-	import system.dispatcher
 
 	private given system: ActorSystem = ActorSystem(name, akkaConf)
+	import system.dispatcher
 	private val log = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default

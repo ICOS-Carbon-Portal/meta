@@ -1,7 +1,6 @@
 <configuration>
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-		<filter class="se.lu.nateko.cp.meta.HttpApiEtagWarningFilter"/>
 		<encoder>
 			<pattern>[%level] [%r] [%logger{0}] \(%X{sourceActorSystem}\) %msg %n</pattern>
 		</encoder>

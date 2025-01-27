@@ -57,12 +57,13 @@ import akka.event.Logging
 
 
 class Rdf4jSparqlServer(
-	repo: Repository, config: SparqlServerConfig)(using ExecutionContext)(using system: ActorSystem) extends SparqlServer:
+	repo: Repository, config: SparqlServerConfig)(using system: ActorSystem) extends SparqlServer:
 	import Rdf4jSparqlServer.*
 
 	private val log = Logging.getLogger(system, this)
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
+	import system.dispatcher
 
 	//QuotaManager should be cleaned periodically to forget very old query runs
 	system.scheduler.scheduleWithFixedDelay(1.hour, 1.hour)(() => quoter.cleanup())

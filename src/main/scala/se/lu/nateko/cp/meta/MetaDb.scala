@@ -169,7 +169,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config0)
 
-		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage, log)
+		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
 		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
 
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex

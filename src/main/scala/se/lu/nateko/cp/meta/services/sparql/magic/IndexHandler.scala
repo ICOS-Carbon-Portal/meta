@@ -2,69 +2,54 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
 import akka.actor.Scheduler
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.Serializer
-import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.io.KryoDataInput
-import com.esotericsoftware.kryo.io.KryoDataOutput
-import com.esotericsoftware.kryo.io.Output
+import com.esotericsoftware.kryo.io.{Input, KryoDataInput, KryoDataOutput, Output}
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
+import com.esotericsoftware.kryo.{Kryo, Serializer}
 import org.eclipse.rdf4j.model.impl.SimpleIRI
 import org.eclipse.rdf4j.model.util.Values
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.SailConnectionListener
+import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.sail.lmdb.model.LmdbIRI
 import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import org.eclipse.rdf4j.sail.nativerdf.model.NativeIRI
+import org.eclipse.rdf4j.sail.{Sail, SailConnectionListener}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.BoolProperty
-import se.lu.nateko.cp.meta.services.sparql.index.CategProp
-import se.lu.nateko.cp.meta.services.sparql.index.ContProp
-import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap.LongGeo
-import se.lu.nateko.cp.meta.services.sparql.index.Property
-import se.lu.nateko.cp.meta.services.sparql.index.SamplingHeightHierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.magic.index.DataEndGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index.DataStartGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index.FileNameGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
-import se.lu.nateko.cp.meta.services.sparql.magic.index.SubmEndGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index.SubmStartGeo
-import se.lu.nateko.cp.meta.services.sparql.magic.index.StatKey
-import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
+import se.lu.nateko.cp.meta.services.sparql.index.{
+	BoolProperty,
+	CategProp,
+	ContProp,
+	FileSizeHierarchicalBitmap,
+	Property,
+	SamplingHeightHierarchicalBitmap,
+	StringHierarchicalBitmap
+}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{
+	DataEndGeo,
+	DataStartGeo,
+	FileNameGeo,
+	IndexData,
+	ObjEntry,
+	StatKey,
+	SubmEndGeo,
+	SubmStartGeo
+}
 import se.lu.nateko.cp.meta.utils.async.throttle
-import se.lu.nateko.cp.meta.utils.rdf4j.===
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, accessEagerly}
 
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
+import java.io.{FileInputStream, FileOutputStream, InputStream, OutputStream}
+import java.nio.file.{Files, Paths}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.collection.IndexedSeq
-import scala.collection.mutable.AnyRefMap
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.HashMap
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.collection.mutable.{AnyRefMap, ArrayBuffer, HashMap}
 import scala.concurrent.duration.DurationInt
-import scala.jdk.OptionConverters.*
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 

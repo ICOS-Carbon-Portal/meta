@@ -8,7 +8,6 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLenses
@@ -45,21 +44,18 @@ import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
-import java.io.Closeable
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.{Success, Failure}
+import akka.event.Logging
 
 
 class MetaDb (
@@ -72,9 +68,10 @@ class MetaDb (
 	val magicRepo: SailRepository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
-)(using Materializer, EnvriConfigs, ActorSystem) extends AutoCloseable:
+)(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
+	private val log = Logging.getLogger(system, this)
 	def metaReader: StaticObjectReader = citer.metaReader
 	def vanillaRepo: Repository = citer.repo
 	def vanillaGlob: InstanceServer = citer.server
@@ -93,7 +90,7 @@ class MetaDb (
 		magicRepo.getSail match
 			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
 			case _ =>
-				summon[ActorSystem].log.info("Magic SPARQL index is disabled, skipping its initialization")
+				log.info("Magic SPARQL index is disabled, skipping its initialization")
 				ok
 
 
@@ -165,7 +162,7 @@ end MetaDb
 class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	import MetaDb.*
 
-	import system.{log, scheduler}
+	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
 	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =

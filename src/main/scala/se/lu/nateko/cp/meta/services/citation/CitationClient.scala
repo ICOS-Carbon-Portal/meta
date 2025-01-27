@@ -207,7 +207,6 @@ object CitationClient:
 
 
 	def readCitCache(): Future[CitationCache] =
-		log.info("readCitCache")
 		readCache(citCacheDumpFile){cells =>
 			val toParse = cells.collect{case JsString(s) => s}
 			assert(toParse.length == 3, "Citation dump had an entry with a wrong number of values")

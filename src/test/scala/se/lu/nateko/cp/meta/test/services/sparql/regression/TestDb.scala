@@ -23,6 +23,27 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.nio.file.Path
 import akka.event.LoggingAdapter
 
+private val graphIriToFile = Seq(
+	"atmprodcsv",
+	"cpmeta",
+	"ecocsv",
+	"etcbin",
+	"etcprodcsv",
+	"excel",
+	"extrastations",
+	"icos",
+	"netcdf",
+	"stationentry",
+	"stationlabeling"
+).map { id =>
+	s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
+}.toMap +
+	("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
+	("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
+	("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
+	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
+	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
+
 private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
 class TestDb(name: String)(using system: ActorSystem) {
@@ -59,13 +80,14 @@ class TestDb(name: String)(using system: ActorSystem) {
 			FileUtils.deleteDirectory(dir.toFile)
 }
 
+
 private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[Unit] = {
 	val repo = SailRepository(makeSail(dir))
 
 	val ingestion =
 		given BnodeStabilizers = new BnodeStabilizers
 		val factory = repo.getValueFactory
-		executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+		executeSequentially(graphIriToFile): (uriStr, filename) =>
 			val graphIri = factory.createIRI(uriStr)
 			val server = Rdf4jInstanceServer(repo, graphIri)
 			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
@@ -111,24 +133,3 @@ object CitationClientDummy extends CitationClient {
 	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }
 
-object TestDb:
-	val graphIriToFile = Seq(
-		"atmprodcsv",
-		"cpmeta",
-		"ecocsv",
-		"etcbin",
-		"etcprodcsv",
-		"excel",
-		"extrastations",
-		"icos",
-		"netcdf",
-		"stationentry",
-		"stationlabeling"
-	).map { id =>
-		s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
-	}.toMap +
-		("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
-		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
-		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
-		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
-		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")

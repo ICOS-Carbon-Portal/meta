@@ -20,13 +20,16 @@ import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 import java.nio.file.Files
 import scala.concurrent.{ExecutionContext, Future}
+import java.nio.file.Path
+import akka.event.LoggingAdapter
+
+private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
 class TestDb(name: String)(using system: ActorSystem) {
 
 	private given ExecutionContext = system.dispatcher
-	private val log = Logging.getLogger(system, this)
+	private given LoggingAdapter = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
 	val repo: Future[Repository] =
 		/**
@@ -39,7 +42,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 		for
 			_ <- ingestTriplestore()
 			idxData <- createIndex()
-			sail = makeSail()
+			sail = makeSail(dir)
 			_ = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
 		yield SailRepository(sail)
@@ -48,7 +51,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
 	private def ingestTriplestore(): Future[Unit] =
-		val repo = SailRepository(makeSail())
+		val repo = SailRepository(makeSail(dir))
 
 		val ingestion =
 			given BnodeStabilizers = new BnodeStabilizers
@@ -62,7 +65,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 		ingestion.map(Done => repo.shutDown())
 
 	private def createIndex(): Future[IndexData] = {
-		val sail = makeSail()
+		val sail = makeSail(dir)
 		sail.init()
 		for
 			_ <- sail.initSparqlMagicIndex(None)
@@ -72,25 +75,6 @@ class TestDb(name: String)(using system: ActorSystem) {
 		yield idxData
 	}
 
-	private def makeSail() =
-		val rdfConf = RdfStorageConfig(
-			lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
-			path = dir.toString,
-			recreateAtStartup = false,
-			indices = metaConf.rdfStorage.indices,
-			disableCpIndex = false,
-			recreateCpIndexAtStartup = true
-		)
-
-		val (freshInit, base) = StorageSail.apply(rdfConf)
-		val indexUpdaterFactory = IndexHandler(system.scheduler)
-		val geoFactory = GeoIndexProvider()
-		val idxFactories = if freshInit then None
-		else
-			Some(indexUpdaterFactory -> geoFactory)
-
-		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-		CpNotifyingSail(base, idxFactories, citer)
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global
@@ -100,6 +84,28 @@ class TestDb(name: String)(using system: ActorSystem) {
 		.onComplete: _ =>
 			FileUtils.deleteDirectory(dir.toFile)
 }
+
+private def makeSail(dir: Path)(using system: ActorSystem, log: LoggingAdapter) =
+	given ExecutionContext = system.dispatcher
+
+	val rdfConf = RdfStorageConfig(
+		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
+		path = dir.toString,
+		recreateAtStartup = false,
+		indices = metaConf.rdfStorage.indices,
+		disableCpIndex = false,
+		recreateCpIndexAtStartup = true
+	)
+
+	val (freshInit, base) = StorageSail.apply(rdfConf, log)
+	val indexUpdaterFactory = IndexHandler(system.scheduler)
+	val geoFactory = GeoIndexProvider(log)
+	val idxFactories = if freshInit then None
+	else
+		Some(indexUpdaterFactory -> geoFactory)
+
+	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
+	CpNotifyingSail(base, idxFactories, citer, log)
 
 object CitationClientDummy extends CitationClient {
 	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")

@@ -90,7 +90,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
-	private val q = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
+	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -228,14 +228,14 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 	val getObjEntry = data.getObjEntry
 
 	def put(st: RdfUpdate): Unit = {
-		q.put(st)
-		if(q.remainingCapacity == 0) flush()
+		queue.put(st)
+		if(queue.remainingCapacity == 0) flush()
 	}
 
-	def flush(): Unit = if !q.isEmpty then writeLocked:
-		if !q.isEmpty then
+	def flush(): Unit = if !queue.isEmpty then writeLocked:
+		if !queue.isEmpty then
 			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
-			q.drainTo(list)
+			queue.drainTo(list)
 			sail.accessEagerly:
 				list.forEach:
 					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>

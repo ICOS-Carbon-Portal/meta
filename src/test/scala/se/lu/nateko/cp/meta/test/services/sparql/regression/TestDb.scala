@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.test.services.sparql.regression
 import akka.Done
 import akka.actor.ActorSystem
 import akka.event.Logging
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
@@ -129,7 +128,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-	CpNotifyingSail(base, idxFactories, citer, log)
+	CpNotifyingSail(base, idxFactories, citer)
 }
 
 object CitationClientDummy extends CitationClient {

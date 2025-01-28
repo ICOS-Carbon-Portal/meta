@@ -14,10 +14,12 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
+import akka.actor.ActorSystem
 
 class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 
-	val db = new TestDb("sparqlRegrTesting")
+	private given system: ActorSystem = ActorSystem("sparqlRegrTesting")
+	val db = new TestDb(system.name)
 
 	override protected def afterAll(): Unit = db.cleanup()
 

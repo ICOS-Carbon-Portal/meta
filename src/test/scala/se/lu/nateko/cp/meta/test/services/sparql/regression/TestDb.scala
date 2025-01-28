@@ -21,15 +21,12 @@ import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 import java.nio.file.Files
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestDb(name: String) {
+class TestDb(name: String)(using system: ActorSystem) {
 
-	private given system: ActorSystem = ActorSystem(name, akkaConf)
 	private given ExecutionContext = system.dispatcher
 	private val log = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
-	private val akkaConf =
-		ConfigFactory.defaultReference().withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
 
 	val repo: Future[Repository] =
 		/**

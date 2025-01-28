@@ -22,7 +22,7 @@ object Main extends App {
 	implicit val system = ActorSystem("cpmeta")
 	implicit val materializer = ActorMaterializer(namePrefix = Some("cpmeta_mat"))
 	import system.dispatcher
-	val log = system.log
+	private val log = Logging.getLogger(system, this)
 
 	val exceptionHandler = ExceptionHandler{
 		case ex =>

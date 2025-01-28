@@ -1,14 +1,19 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import akka.event.LoggingAdapter
+import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import java.nio.file.{FileVisitOption, Files, Paths}
+import java.nio.file.FileVisitOption
+import java.nio.file.Files
+import java.nio.file.Paths
+import org.slf4j.LoggerFactory
 
 object StorageSail:
-	def apply(conf: RdfStorageConfig, log: LoggingAdapter): (Boolean, MainSail) =
+	private val log = LoggerFactory.getLogger(getClass())
+
+	def apply(conf: RdfStorageConfig): (Boolean, MainSail) =
 		val subFolder = if conf.lmdb.isDefined then "lmdb" else "native"
 		val storageDir = Paths.get(conf.path).resolve(subFolder)
 		val didNotExist = !Files.exists(storageDir)
@@ -25,7 +30,7 @@ object StorageSail:
 
 		val isFreshInit = didNotExist || conf.recreateAtStartup || !storageFiles.findAny.isPresent
 
-		if(isFreshInit) log.warning(
+		if(isFreshInit) log.warn(
 			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
 		)
 

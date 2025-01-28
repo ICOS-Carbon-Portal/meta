@@ -1,12 +1,10 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Statement
 import play.twirl.api.Html
 import se.lu.nateko.cp.cpauth.core.EmailSender
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
 import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
@@ -18,6 +16,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import org.slf4j.LoggerFactory
 
 trait LifecycleService:
 	self: StationLabelingService =>
@@ -26,6 +25,7 @@ trait LifecycleService:
 	import LabelingDb.{ProvConn, LblAppConn}
 	import TriplestoreConnection.{getStringValues, getStatements}
 
+	private val log = LoggerFactory.getLogger(getClass())
 	private val mailer = EmailSender(config.mailing)
 
 	def updateStatus(

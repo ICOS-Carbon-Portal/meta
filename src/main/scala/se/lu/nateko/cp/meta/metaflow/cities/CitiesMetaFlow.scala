@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.core.data.AtcStationSpecifics
@@ -25,7 +24,7 @@ object CitiesMetaFlow:
 
 		given Envri = Envri.ICOSCities
 
-		val diff = StateDiffApplier(db, flowConf, summon[ActorSystem].log)
+		val diff = StateDiffApplier(db, flowConf)
 
 		def startFlow[TC <: CitiesTC : TcConf](uploadConf: MetaUploadConf, cc: CountryCode): MetaFlow =
 			val ms = MidLowCostMetaSource[TC](uploadConf, cc)

@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 
 import scala.concurrent.ExecutionContext
+import akka.event.LoggingBus
 
 object MainRoute {
 
@@ -34,6 +35,7 @@ object MainRoute {
 
 	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using sys: ActorSystem, ctxt: ExecutionContext): Route =
 
+		given LoggingBus = sys.eventStream
 		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs
 
@@ -45,8 +47,8 @@ object MainRoute {
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
-		val doiRoute = DoiRoute(doiService, authRouting, db.citer.doiCiter, config.core, sys.log)
-		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab, sys.log)
+		val doiRoute = DoiRoute(doiService, authRouting, db.citer.doiCiter, config.core)
+		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)

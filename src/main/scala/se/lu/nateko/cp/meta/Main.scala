@@ -11,17 +11,17 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.readCitCache
 import se.lu.nateko.cp.meta.services.citation.CitationClient.readDoiCache
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import akka.event.Logging
+import scala.concurrent.ExecutionContext
 
 object Main extends App with CpmetaJsonProtocol{
 
 	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
-	import system.log //force log initialization to avoid deadlocks at startup
-	import system.dispatcher
+	private val log = Logging.getLogger(system, this)
+	private given ExecutionContext = system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
 	given EnvriConfigs = config.core.envriConfigs
@@ -47,7 +47,7 @@ object Main extends App with CpmetaJsonProtocol{
 		}
 
 	val startup = for(
-		(citCache, doiCache) <- readCitCache(log).zip(readDoiCache(log));
+		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
 		db <- metaFactory(citCache, doiCache, config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		idxOpt <- optIndexDataFut;
@@ -66,11 +66,11 @@ object Main extends App with CpmetaJsonProtocol{
 
 			println("meta service shutdown successful")
 		}
-		system.log.info(binding.toString)
+		log.info(binding.toString)
 	}
 
 	startup.failed.foreach{err =>
-		system.log.error(err, "Could not start meta service")
+		log.error(err, "Could not start meta service")
 		system.terminate()
 	}
 }

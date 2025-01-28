@@ -1,11 +1,9 @@
 package se.lu.nateko.cp.meta.routes
 
 import scala.language.postfixOps
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.InstanceServersConfig
 import se.lu.nateko.cp.meta.MetaDb
@@ -18,10 +16,9 @@ import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
-import spray.json.DefaultJsonProtocol.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import eu.icoscp.envri.Envri
-import akka.event.LoggingAdapter
+import akka.event.{LoggingBus, Logging}
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -30,10 +27,10 @@ object LinkedDataRoute {
 		config: InstanceServersConfig,
 		uriSerializer: UriSerializer,
 		instanceServers: Map[String, InstanceServer],
-		vocab: CpVocab,
-		log: LoggingAdapter
-	)(using envriConfs: EnvriConfigs): Route = {
+		vocab: CpVocab
+	)(using envriConfs: EnvriConfigs, logBus : LoggingBus): Route = {
 
+		val log = Logging.getLogger(logBus, this)
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
 		given ToResponseMarshaller[Uri] = uriSerializer.marshaller
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective

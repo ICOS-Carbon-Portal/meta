@@ -1,8 +1,5 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
-import scala.util.Success
-import scala.util.Try
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
@@ -11,10 +8,7 @@ import se.lu.nateko.cp.meta.IcosMetaFlowConfig
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.cpauth.core.UserId
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
@@ -36,7 +30,7 @@ object IcosMetaFlow:
 
 		val sparql = Rdf4jSparqlRunner(db.vanillaRepo)
 
-		val diff = StateDiffApplier(db, flowConf, log)
+		val diff = StateDiffApplier(db, flowConf)
 
 		def startFlow[TC <: IcosTC: TcConf](src: TcMetaSource[TC]): () => Unit =
 			src.state.to(Sink.foreach(diff.apply[TC])).run()

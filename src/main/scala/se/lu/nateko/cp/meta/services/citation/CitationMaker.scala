@@ -1,27 +1,14 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import akka.event.LoggingAdapter
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.model.vocabulary.SKOS
-import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.doi.meta.Contributor
-import se.lu.nateko.cp.doi.meta.Creator
-import se.lu.nateko.cp.doi.meta.Description
-import se.lu.nateko.cp.doi.meta.DescriptionType
-import se.lu.nateko.cp.doi.meta.GenericName
-import se.lu.nateko.cp.doi.meta.Name
-import se.lu.nateko.cp.doi.meta.NameIdentifier
-import se.lu.nateko.cp.doi.meta.NameIdentifierScheme
-import se.lu.nateko.cp.doi.meta.Title
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -41,7 +28,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import CitationStyle.*
+import org.slf4j.LoggerFactory
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -56,9 +43,9 @@ class CitationMaker(
 	doiCiter: PlainDoiCiter,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	coreConf: MetaCoreConfig,
-	log: LoggingAdapter
+	coreConf: MetaCoreConfig
 ):
+	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
 	import Validated.getOrElseV
 	import TriplestoreConnection.*
@@ -172,7 +159,7 @@ class CitationMaker(
 				case None => Some(DoiMeta(doi))
 				case Some(Success(doiMeta)) => Some(doiMeta)
 				case Some(Failure(err)) =>
-					log.error(err, "Error fetching DOI citation")
+					log.error("Error fetching DOI citation", err)
 					None
 		yield doiMeta
 

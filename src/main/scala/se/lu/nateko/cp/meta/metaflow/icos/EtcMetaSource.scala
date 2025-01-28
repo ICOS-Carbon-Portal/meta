@@ -12,7 +12,6 @@ import scala.util.Failure
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.actor.Cancellable
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.Uri
@@ -24,11 +23,7 @@ import akka.util.ByteString
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.ingestion.badm.Badm
-import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
-import se.lu.nateko.cp.meta.ingestion.badm.BadmValue
-import se.lu.nateko.cp.meta.ingestion.badm.EtcEntriesFetcher
-import se.lu.nateko.cp.meta.ingestion.badm.Parser
 import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
 import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
 import se.lu.nateko.cp.meta.core.etcupload.DataType
@@ -38,18 +33,18 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.upload.etc.*
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.urlEncode
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
-import scala.collection.mutable.ListBuffer
 import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
 import eu.icoscp.envri.Envri
+import akka.event.Logging
 
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
 	import system.dispatcher
 
+	private val log = Logging.getLogger(system, this)
 	private val baseEtcApiUrl = Uri(conf.metaService.toString)
 
 	override def state: Source[State, () => Unit] = Source
@@ -57,13 +52,13 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		.mapAsync(1){_ =>
 			fetchFromEtc().andThen{
 				case Failure(err) =>
-					system.log.error(err, "ETC metadata fetching/parsing error")
+					log.error(err, "ETC metadata fetching/parsing error")
 			}
 		}
 		.withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
 		.mapConcat{validated =>
-			if(!validated.errors.isEmpty) system.log.warning("ETC metadata problem(s): " + validated.errors.distinct.mkString("\n"))
-			if(validated.result.isEmpty) system.log.error("ETC metadata parsing has failed, preceding warnings may give a clue")
+			if(!validated.errors.isEmpty) log.warning("ETC metadata problem(s): " + validated.errors.distinct.mkString("\n"))
+			if(validated.result.isEmpty) log.error("ETC metadata parsing has failed, preceding warnings may give a clue")
 			validated.result.toList
 		}
 		.mapMaterializedValue(c => () => {c.cancel(); ()})

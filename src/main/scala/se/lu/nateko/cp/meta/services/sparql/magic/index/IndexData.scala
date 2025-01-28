@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import org.slf4j.LoggerFactory
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -41,6 +42,7 @@ class IndexData(nObjects: Int)(
 ) extends Serializable:
 
 	import TSC.{hasStatement, getStatements}
+	private val log = LoggerFactory.getLogger(getClass())
 
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
 	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
@@ -75,7 +77,7 @@ class IndexData(nObjects: Int)(
 		obj: Value,
 		isAssertion: Boolean,
 		vocab: CpmetaVocab
-	)(using log: LoggingAdapter, tsc: TSC): Unit =
+	)(using tsc: TSC): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -248,7 +250,7 @@ class IndexData(nObjects: Int)(
 							if directPrevVers.isEmpty then
 								getIdxsOfPrevVersThroughColl(subj, vocab) match
 									case None =>
-										log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+										log.warn(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
 									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
 
 						if (size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx, isAssertion)
@@ -311,15 +313,15 @@ class IndexData(nObjects: Int)(
 		key: prop.ValueType,
 		idx: Int,
 		isAssertion: Boolean
-	)(using log: LoggingAdapter): Unit = {
+	): Unit = {
 
 		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
 		if (isAssertion) {
 			if (!bitmap(prop).add(key, idx)) {
-				log.warning(s"Value already existed: asserted $helpTxt")
+				log.warn(s"Value already existed: asserted $helpTxt")
 			}
 		} else if (!bitmap(prop).remove(key, idx)) {
-			log.warning(s"Value was not present: tried to retract $helpTxt")
+			log.warn(s"Value was not present: tried to retract $helpTxt")
 		}
 	}
 

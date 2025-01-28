@@ -1,12 +1,10 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingServiceConfig
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.onto.Onto
@@ -21,8 +19,7 @@ class StationLabelingService(
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
 	protected val metaVocab: CpmetaVocab,
-	protected val config: LabelingServiceConfig,
-	protected val log: LoggingAdapter
+	protected val config: LabelingServiceConfig
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService:
 	import LabelingDb.{LblAppConn, ProvConn}
 	import TriplestoreConnection.{getStringValues, getUriValues, getOptionalString, getSingleString}

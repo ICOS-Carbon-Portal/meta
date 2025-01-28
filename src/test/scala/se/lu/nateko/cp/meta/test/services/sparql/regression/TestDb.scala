@@ -54,7 +54,9 @@ class TestDb(name: String)(using system: ActorSystem) {
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 
-	val repo: Repository =
+	val repo: Repository = Await.result(initRepo(), Duration.Inf)
+
+	private def initRepo() : Future[Repository] = {
 		/**
 		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
@@ -62,18 +64,17 @@ class TestDb(name: String)(using system: ActorSystem) {
 			3) to dump the SPARQL index to disk, re-start, read the index
 			data structure, and initialize the index from it
 		**/
-		val fut =
-			val start = System.currentTimeMillis()
-			for
-				() <- ingestTriplestore(dir)
-				idxData <- createIndex(dir)
-				sail = makeSail(dir)
-				() = sail.init()
-				_ = sail.initSparqlMagicIndex(Some(idxData))
-				() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
-			yield SailRepository(sail)
 
-		Await.result(fut, Duration.Inf)
+		val start = System.currentTimeMillis()
+		for
+			() <- ingestTriplestore(dir)
+			idxData <- createIndex(dir)
+			sail = makeSail(dir)
+			() = sail.init()
+			_ = sail.initSparqlMagicIndex(Some(idxData))
+			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
+		yield SailRepository(sail)
+	}
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		Future.successful(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))

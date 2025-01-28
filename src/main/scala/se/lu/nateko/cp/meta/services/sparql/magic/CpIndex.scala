@@ -52,7 +52,9 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
+
+	private val log = LoggerFactory.getLogger(getClass())
 
 	import data.{contMap, stats, objs, initOk, idLookup}
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using log: LoggingAdapter) = {

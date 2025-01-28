@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.readCitCache
 import se.lu.nateko.cp.meta.services.citation.CitationClient.readDoiCache
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import scala.concurrent.Await
 import scala.concurrent.Future

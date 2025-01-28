@@ -81,7 +81,6 @@ class TestDb(name: String)(using system: ActorSystem) {
 
 	def cleanup(): Unit =
 		repo.shutDown()
-		system.terminate()
 		FileUtils.deleteDirectory(dir.toFile)
 }
 

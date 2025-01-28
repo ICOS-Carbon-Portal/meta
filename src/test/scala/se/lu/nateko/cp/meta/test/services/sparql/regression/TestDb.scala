@@ -64,6 +64,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 			data structure, and initialize the index from it
 		**/
 
+		log.info("Initializing.")
 		val start = System.currentTimeMillis()
 		for
 			() <- ingestTriplestore(dir)
@@ -79,6 +80,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
 	def cleanup(): Unit =
+		log.info("Cleaning up!")
 		repo.shutDown()
 		FileUtils.deleteDirectory(dir.toFile)
 }

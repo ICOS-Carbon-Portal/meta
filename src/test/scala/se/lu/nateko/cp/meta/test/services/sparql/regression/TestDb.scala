@@ -2,38 +2,24 @@ package se.lu.nateko.cp.meta.test.services.sparql.regression
 
 import akka.Done
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
+import akka.event.Logging
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.LmdbConfig
-import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
-import se.lu.nateko.cp.meta.ingestion.Ingestion
-import se.lu.nateko.cp.meta.ingestion.RdfXmlFileIngester
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.services.citation.CitationStyle
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
-
+import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 import java.nio.file.Files
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import akka.event.Logging
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestDb(name: String) {
 
@@ -107,7 +93,7 @@ class TestDb(name: String) {
 			Some(indexUpdaterFactory -> geoFactory)
 
 		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-		CpNotifyingSail(base, idxFactories, citer, log)
+		CpNotifyingSail(base, idxFactories, citer)(using log)
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global

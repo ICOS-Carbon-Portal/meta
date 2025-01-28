@@ -1,0 +1,411 @@
+package se.lu.nateko.cp.meta.services.sparql.magic.index
+
+import akka.event.LoggingAdapter
+import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
+import org.roaringbitmap.buffer.MutableRoaringBitmap
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
+import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection => TSC}
+import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
+import se.lu.nateko.cp.meta.services.sparql.index.{FileSizeHierarchicalBitmap, SamplingHeightHierarchicalBitmap, *}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
+import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
+
+import java.time.Instant
+import scala.collection.IndexedSeq as IndSeq
+import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+
+final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
+final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
+final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionStart)
+final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
+final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
+
+case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
+case class StatEntry(key: StatKey, count: Int)
+
+def emptyBitmap = MutableRoaringBitmap.bitmapOf()
+
+class IndexData(nObjects: Int)(
+	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
+	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
+	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
+	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
+	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
+	val initOk: MutableRoaringBitmap = emptyBitmap
+) extends Serializable:
+
+	import TSC.{hasStatement, getStatements}
+
+	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
+	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
+	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
+	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
+	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
+
+	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+
+	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
+		contMap.getOrElseUpdate(
+			prop,
+			prop match {
+				/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
+				case FileName        => fileNameBm
+				case FileSize        => FileSizeHierarchicalBitmap(objs)
+				case SamplingHeight  => SamplingHeightHierarchicalBitmap(objs)
+				case DataStart       => dataStartBm
+				case DataEnd         => dataEndBm
+				case SubmissionStart => submStartBm
+				case SubmissionEnd   => submEndBm
+			}
+		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
+
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
+		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+
+	def processTriple(
+		subj: IRI,
+		pred: IRI,
+		obj: Value,
+		isAssertion: Boolean,
+		vocab: CpmetaVocab
+	)(using log: LoggingAdapter, tsc: TSC): Unit =
+		import vocab.*
+		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
+		import vocab.dcterms.hasPart
+
+		def updateStrArrayProp(
+			obj: Value,
+			prop: StringCategProp,
+			parser: String => Option[Array[String]],
+			idx: Int
+		): Unit =
+			obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
+				updateCategSet(categMap(prop), strVal, idx, isAssertion)
+			}
+
+		pred match {
+			case `hasObjectSpec` =>
+				obj match {
+					case spec: IRI => {
+						val _ = modForDobj(subj) { oe =>
+							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+							if (isAssertion) {
+								if (oe.spec != null) removeStat(oe, initOk)
+								oe.spec = spec
+								addStat(oe, initOk)
+							} else if (spec === oe.spec) {
+								removeStat(oe, initOk)
+								oe.spec = null
+							}
+						}
+					}
+				}
+
+			case `hasName` =>
+				modForDobj(subj) { oe =>
+					val fName = obj.stringValue
+					if (isAssertion) oe.fName = fName
+					else if (oe.fName == fName) oe.fileName == null
+					handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
+				}
+
+			case `wasAssociatedWith` =>
+				subj match {
+					case CpVocab.Submission(hash) =>
+						val oe = getObjEntry(hash)
+						removeStat(oe, initOk)
+						oe.submitter = targetUri(obj, isAssertion)
+						if (isAssertion) addStat(oe, initOk)
+						obj match
+							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
+
+					case CpVocab.Acquisition(hash) =>
+						val oe = getObjEntry(hash)
+						removeStat(oe, initOk)
+						oe.station = targetUri(obj, isAssertion)
+						if (isAssertion) addStat(oe, initOk)
+						obj match
+							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
+
+					case _ =>
+				}
+
+			case `wasPerformedAt` => subj match {
+					case CpVocab.Acquisition(hash) =>
+						val oe = getObjEntry(hash)
+						removeStat(oe, initOk)
+						oe.site = targetUri(obj, isAssertion)
+						if (isAssertion) addStat(oe, initOk)
+						obj match
+							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
+
+					case _ =>
+				}
+
+			case `hasStartTime` =>
+				ifDateTime(obj) { dt =>
+					val _ = modForDobj(subj) { oe =>
+						oe.dataStart = dt
+						handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
+					}
+				}
+
+			case `hasEndTime` =>
+				ifDateTime(obj) { dt =>
+					val _ = modForDobj(subj) { oe =>
+						oe.dataEnd = dt
+						handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
+					}
+				}
+
+			case `startedAtTime` =>
+				ifDateTime(obj) { dt =>
+					subj match {
+						case CpVocab.Acquisition(hash) =>
+							val oe = getObjEntry(hash)
+							oe.dataStart = dt
+							handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
+						case CpVocab.Submission(hash) =>
+							val oe = getObjEntry(hash)
+							oe.submissionStart = dt
+							handleContinuousPropUpdate(SubmissionStart, dt, oe.idx, isAssertion)
+						case _ =>
+					}
+				}
+
+			case `endedAtTime` =>
+				ifDateTime(obj) { dt =>
+					subj match
+						case CpVocab.Acquisition(hash) =>
+							val oe = getObjEntry(hash)
+							oe.dataEnd = dt
+							handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
+						case CpVocab.Submission(hash) =>
+							val oe = getObjEntry(hash)
+							oe.submissionEnd = dt
+							handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
+						case _ =>
+				}
+
+			case `isNextVersionOf` =>
+				val _ = modForDobj(obj) { oe =>
+					val deprecated = boolBitmap(DeprecationFlag)
+					if isAssertion then
+						if !deprecated.contains(oe.idx) then // to prevent needless work
+							val subjIsDobj = modForDobj(subj) { deprecator =>
+								deprecator.isNextVersion = true
+								// only fully-uploaded deprecators can actually deprecate:
+								if deprecator.size > -1 then
+									deprecated.add(oe.idx)
+									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
+								else
+									log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
+							}.isDefined
+							if !subjIsDobj then
+								subj.toJava match
+									case Hash.Collection(_) =>
+										// proper collections are always fully uploaded
+										deprecated.add(oe.idx)
+									case _ => subj match
+											case CpVocab.NextVersColl(_) =>
+												if nextVersCollIsComplete(subj, vocab)
+												then deprecated.add(oe.idx)
+											case _ =>
+					else if
+						deprecated.contains(oe.idx) && // this was to prevent needless repo access
+						!hasStatement(null, isNextVersionOf, obj)
+					then deprecated.remove(oe.idx)
+				}
+
+			case `hasSizeInBytes` =>
+				ifLong(obj) { size =>
+					val _ = modForDobj(subj) { oe =>
+						inline def isRetraction = oe.size == size && !isAssertion
+						if isAssertion then oe.size = size
+						else if isRetraction then oe.size = -1
+
+						if oe.isNextVersion then
+							log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+							val deprecated = boolBitmap(DeprecationFlag)
+
+							val directPrevVers: IndexedSeq[Int] =
+								getStatements(subj, isNextVersionOf, null)
+									.flatMap(st => modForDobj(st.getObject)(_.idx))
+									.toIndexedSeq
+
+							directPrevVers.foreach { oldIdx =>
+								if isAssertion then deprecated.add(oldIdx)
+								else if isRetraction then deprecated.remove(oldIdx)
+								log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
+							}
+							if directPrevVers.isEmpty then
+								getIdxsOfPrevVersThroughColl(subj, vocab) match
+									case None =>
+										log.warning(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
+
+						if (size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx, isAssertion)
+					}
+				}
+
+			case `hasPart` => if isAssertion then
+					subj match
+						case CpVocab.NextVersColl(hashOfOld) => val _ = modForDobj(obj) { oe =>
+								oe.isNextVersion = true
+								if oe.size > -1 then
+									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+							}
+						case _ =>
+
+			case `hasSamplingHeight` => ifFloat(obj) { height =>
+					subj match {
+						case CpVocab.Acquisition(hash) =>
+							val oe = getObjEntry(hash)
+							if (isAssertion) oe.samplingHeight = height
+							else if (oe.samplingHeight == height) oe.samplingHeight = Float.NaN
+							handleContinuousPropUpdate(SamplingHeight, height, oe.idx, isAssertion)
+						case _ =>
+					}
+				}
+
+			case `hasActualColumnNames` => val _ = modForDobj(subj) { oe =>
+					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx)
+					updateHasVarList(oe.idx, isAssertion)
+				}
+
+			case `hasActualVariable` => obj match {
+					case CpVocab.VarInfo(hash, varName) =>
+						val oe = getObjEntry(hash)
+						updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
+						updateHasVarList(oe.idx, isAssertion)
+					case _ =>
+				}
+
+			case `hasKeywords` => val _ = modForDobj(subj) { oe =>
+					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx)
+				}
+
+			case _ =>
+		}
+	end processTriple
+
+	def getObjEntry(hash: Sha256Sum): ObjEntry = {
+		idLookup.get(hash).fold {
+			val canonicalHash = hash.truncate
+			val oe = new ObjEntry(canonicalHash, objs.length, "")
+			objs += oe
+			idLookup += canonicalHash -> oe.idx
+			oe
+		}(objs.apply)
+	}
+
+	private def handleContinuousPropUpdate(
+		prop: ContProp,
+		key: prop.ValueType,
+		idx: Int,
+		isAssertion: Boolean
+	)(using log: LoggingAdapter): Unit = {
+
+		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
+		if (isAssertion) {
+			if (!bitmap(prop).add(key, idx)) {
+				log.warning(s"Value already existed: asserted $helpTxt")
+			}
+		} else if (!bitmap(prop).remove(key, idx)) {
+			log.warning(s"Value was not present: tried to retract $helpTxt")
+		}
+	}
+
+	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
+		val hasVarsBm = boolBitmap(HasVarList)
+		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
+	}
+
+	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using TSC): Boolean =
+		getStatements(obj, vocab.dcterms.hasPart, null)
+			.collect:
+				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member): oe =>
+					oe.isNextVersion = true
+					oe.size > -1
+			.flatten
+			.toIndexedSeq
+			.exists(identity)
+
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using TSC): Option[Int] =
+		getStatements(null, vocab.dcterms.hasPart, deprecator)
+			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
+			.toIndexedSeq
+			.headOption
+
+	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
+		case CpVocab.DataObject(hash, prefix) =>
+			val entry = getObjEntry(hash)
+			if (entry.prefix == "") entry.prefix = prefix.intern()
+			Some(mod(entry))
+
+		case _ => None
+
+	private def addStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
+		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)
+		initOk.add(obj.idx)
+
+	private def removeStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
+		stats.get(key).foreach: bm =>
+			bm.remove(obj.idx)
+			if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
+		initOk.remove(obj.idx)
+
+end IndexData
+
+
+private def targetUri(obj: Value, isAssertion: Boolean) =
+	if isAssertion && obj.isInstanceOf[IRI]
+	then obj.asInstanceOf[IRI]
+	else null
+
+private def updateCategSet[T <: AnyRef](
+	set: AnyRefMap[T, MutableRoaringBitmap],
+	categ: T,
+	idx: Int,
+	isAssertion: Boolean
+): Unit = {
+	val bm = set.getOrElseUpdate(categ, emptyBitmap)
+	if isAssertion then bm.add(idx)
+	else
+		bm.remove(idx)
+		if bm.isEmpty then {
+			val _ = set.remove(categ)
+		}
+}
+
+private def keyForDobj(obj: ObjEntry): Option[StatKey] =
+	if obj.spec == null || obj.submitter == null then None
+	else
+		Some(
+			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
+		)
+
+private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
+	case lit: Literal if lit.getDatatype === XSD.DATETIME =>
+		try mod(Instant.parse(lit.stringValue).toEpochMilli)
+		catch case _: Throwable => () // ignoring wrong dateTimes
+	case _ =>
+
+private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
+	case lit: Literal if lit.getDatatype === XSD.LONG =>
+		try mod(lit.longValue)
+		catch case _: Throwable => () // ignoring wrong longs
+	case _ =>
+
+private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
+	case lit: Literal if lit.getDatatype === XSD.FLOAT =>
+		try mod(lit.floatValue)
+		catch case _: Throwable => () // ignoring wrong floats
+	case _ =>

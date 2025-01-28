@@ -1,25 +1,18 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.Dataset
+import org.eclipse.rdf4j.model.{IRI, Value}
 import org.eclipse.rdf4j.query.algebra.TupleExpr
-import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
-import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
-import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
-import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunctionRegistry
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
+import org.eclipse.rdf4j.query.algebra.evaluation.{QueryBindingSet, QueryEvaluationStep, TripleSource}
+import org.eclipse.rdf4j.query.{BindingSet, Dataset}
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.EqualsFilter
-import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava

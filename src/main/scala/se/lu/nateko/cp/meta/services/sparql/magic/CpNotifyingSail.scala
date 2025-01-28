@@ -4,27 +4,19 @@ import akka.Done
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolverClient
-import org.eclipse.rdf4j.sail.NotifyingSail
-import org.eclipse.rdf4j.sail.NotifyingSailConnection
-import org.eclipse.rdf4j.sail.SailConnectionListener
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailWrapper
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
+import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.utils.async.ok
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
+
+import index.IndexData
 
 
 type MainSail = FederatedServiceResolverClient & NotifyingSail:
@@ -34,9 +26,8 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
-	citer: CitationProvider,
-	log: LoggingAdapter
-) extends NotifyingSailWrapper(inner):
+	citer: CitationProvider
+)(using log: LoggingAdapter) extends NotifyingSailWrapper(inner):
 
 	private val enricher = StatementsEnricher(citer)
 	private var cpIndex: Option[CpIndex] = None
@@ -55,7 +46,7 @@ class CpNotifyingSail(
 		inner.init()
 		setupQueryEvaluation()
 
-	def initSparqlMagicIndex(idxData: Option[CpIndex.IndexData]): Future[Done] = indexFactories match
+	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] = indexFactories match
 		case None =>
 			log.info("Magic index is disabled")
 			ok
@@ -63,7 +54,7 @@ class CpNotifyingSail(
 			if idxData.isEmpty then log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
 			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
-			val idx = idxData.fold(new CpIndex(inner, geoFut)(log))(idx => new CpIndex(inner, geoFut, idx)(log))
+			val idx = idxData.fold(new CpIndex(inner, geoFut))(idx => new CpIndex(inner, geoFut, idx))
 			idx.flush()
 			listener = Some(listenerFactory.getListener(inner, metaVocab, idx, geoPromise.future))
 			geoPromise.completeWith(geoFactory.index(inner, idx, metaReader))
@@ -97,7 +88,7 @@ class CpNotifyingSail(
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:
-			CpIndex(inner, Future.never, CpIndex.IndexData(0)())(log)
+			CpIndex(inner, Future.never, IndexData(0)())
 		inner.setEvaluationStrategyFactory:
 			CpEvaluationStrategyFactory(inner.getFederatedServiceResolver(), magicIdx, enricher, cpIndex.isDefined)
 

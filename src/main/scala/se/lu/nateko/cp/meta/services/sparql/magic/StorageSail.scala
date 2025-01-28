@@ -1,29 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import akka.Done
 import akka.event.LoggingAdapter
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.SailConnection
-import org.eclipse.rdf4j.sail.SailConnectionListener
-import org.eclipse.rdf4j.sail.helpers.SailWrapper
-import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
+import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.services.citation.*
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import se.lu.nateko.cp.meta.utils.async.ok
-
-import java.io.File
-import java.io.IOException
-import java.nio.file.FileVisitOption
-import java.nio.file.Files
-import java.nio.file.Paths
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.util.Failure
-import scala.util.Success
+import java.nio.file.{FileVisitOption, Files, Paths}
 
 object StorageSail:
 	def apply(conf: RdfStorageConfig, log: LoggingAdapter): (Boolean, MainSail) =

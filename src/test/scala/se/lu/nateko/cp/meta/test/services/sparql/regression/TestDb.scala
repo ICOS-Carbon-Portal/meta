@@ -76,7 +76,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 	}
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		Future.successful(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
+		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
 	def cleanup(): Unit =
 		repo.shutDown()

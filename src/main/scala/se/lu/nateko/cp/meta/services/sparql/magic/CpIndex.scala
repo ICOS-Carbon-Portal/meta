@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
@@ -57,7 +56,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	private val log = LoggerFactory.getLogger(getClass())
 
 	import data.{contMap, stats, objs, initOk, idLookup}
-	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using log: LoggingAdapter) = {
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
 		var statementCount = 0

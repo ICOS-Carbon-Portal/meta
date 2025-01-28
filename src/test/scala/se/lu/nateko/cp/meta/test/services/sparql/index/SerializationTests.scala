@@ -21,7 +21,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
 import se.lu.nateko.cp.meta.services.sparql.index.Station
 import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd
 import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import java.io.ByteArrayInputStream

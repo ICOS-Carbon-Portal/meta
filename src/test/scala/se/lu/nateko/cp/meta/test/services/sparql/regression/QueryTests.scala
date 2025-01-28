@@ -51,33 +51,31 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			}
 
 			it("should return correct sample row") {
-				db.repo.flatMap(repo => {
-					for (r <- rows) yield {
-						val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
-						val expectations = sampleMaker(repo.getValueFactory)
+				for (r <- rows) yield {
+					val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
+					val expectations = sampleMaker(db.repo.getValueFactory)
 
-						assert (sampleRow.keySet === expectations.keySet, "variable lists did not match")
+					assert (sampleRow.keySet === expectations.keySet, "variable lists did not match")
 
-						val plainExp: Map[String, Value] = expectations.collect:
-							case (varName, expectation: Value) => varName -> expectation
-						val samplePlainPart = sampleRow.filter:
-							case (varName, _) => plainExp.contains(varName)
+					val plainExp: Map[String, Value] = expectations.collect:
+						case (varName, expectation: Value) => varName -> expectation
+					val samplePlainPart = sampleRow.filter:
+						case (varName, _) => plainExp.contains(varName)
 
-						assert(samplePlainPart === plainExp)
+					assert(samplePlainPart === plainExp)
 
-						expectations.foreach:
-							case (varName, testThunk: Function1[Value, Boolean] @ unchecked) =>
-								val sampleValue = sampleRow(varName)
-								assert(
-									testThunk(sampleValue),
-									s"value $sampleValue for variable $varName was unexpected"
-								)
+					expectations.foreach:
+						case (varName, testThunk: Function1[Value, Boolean] @ unchecked) =>
+							val sampleValue = sampleRow(varName)
+							assert(
+								testThunk(sampleValue),
+								s"value $sampleValue for variable $varName was unexpected"
+							)
 
-							case _ =>
+						case _ =>
 
-						succeed
-					}
-				})
+					succeed
+				}
 			}
 		}
 

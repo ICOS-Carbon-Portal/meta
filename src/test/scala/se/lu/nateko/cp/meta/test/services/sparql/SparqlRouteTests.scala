@@ -41,15 +41,18 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
 
+	// TODO: Changing this signature to just Route and updating tests accordingly breaks things.
+	//			 Tests can probably be rewritten so that doesn't happen.
 	val sparqlRoute: Future[Route] =
-		db.repo.map: repo =>
-			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig)
+		Future.successful {
+			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
 			given EnvriConfigs = Map(
 				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 			)
 
 			SparqlRoute.apply(sparqlConfig)
+		}
 
 	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin) =
 		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip), Origin(HttpOrigin(origin))) ++ additionalHeader

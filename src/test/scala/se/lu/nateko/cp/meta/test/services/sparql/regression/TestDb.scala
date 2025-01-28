@@ -22,6 +22,8 @@ import java.nio.file.Files
 import scala.concurrent.{ExecutionContext, Future}
 import java.nio.file.Path
 import akka.event.LoggingAdapter
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",
@@ -52,7 +54,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 
-	val repo: Future[Repository] =
+	val repo: Repository =
 		/**
 		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
@@ -60,26 +62,26 @@ class TestDb(name: String)(using system: ActorSystem) {
 			3) to dump the SPARQL index to disk, re-start, read the index
 			data structure, and initialize the index from it
 		**/
-		val start = System.currentTimeMillis()
-		for
-			() <- ingestTriplestore(dir)
-			idxData <- createIndex(dir)
-			sail = makeSail(dir)
-			() = sail.init()
-			_ = sail.initSparqlMagicIndex(Some(idxData))
-			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
-		yield SailRepository(sail)
+		val fut =
+			val start = System.currentTimeMillis()
+			for
+				() <- ingestTriplestore(dir)
+				idxData <- createIndex(dir)
+				sail = makeSail(dir)
+				() = sail.init()
+				_ = sail.initSparqlMagicIndex(Some(idxData))
+				() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
+			yield SailRepository(sail)
+
+		Await.result(fut, Duration.Inf)
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
+		Future.successful(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
 	def cleanup(): Unit =
-		import scala.concurrent.ExecutionContext.Implicits.global
-		repo.flatMap: repo =>
-			repo.shutDown()
-			system.terminate()
-		.onComplete: _ =>
-			FileUtils.deleteDirectory(dir.toFile)
+		repo.shutDown()
+		system.terminate()
+		FileUtils.deleteDirectory(dir.toFile)
 }
 
 

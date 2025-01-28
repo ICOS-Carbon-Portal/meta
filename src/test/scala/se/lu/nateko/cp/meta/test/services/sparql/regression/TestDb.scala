@@ -49,7 +49,7 @@ private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 class TestDb(name: String)(using system: ActorSystem) {
 
 	private given ExecutionContext = system.dispatcher
-	private given LoggingAdapter = Logging.getLogger(system, this)
+	private given log: LoggingAdapter = Logging.getLogger(system, this)
 	private val dir = Files.createTempDirectory(name).toAbsolutePath
 
 	val repo: Future[Repository] =
@@ -60,12 +60,14 @@ class TestDb(name: String)(using system: ActorSystem) {
 			3) to dump the SPARQL index to disk, re-start, read the index
 			data structure, and initialize the index from it
 		**/
+		val start = System.currentTimeMillis()
 		for
-			_ <- ingestTriplestore(dir)
+			() <- ingestTriplestore(dir)
 			idxData <- createIndex(dir)
 			sail = makeSail(dir)
-			_ = sail.init()
+			() = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
+			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 		yield SailRepository(sail)
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =

@@ -115,7 +115,7 @@ trait LifecycleService:
 			val subj = "labeling email test"
 			val allReceps = addr.toSeq ++ config.mailing.logBccAddress
 			val body = views.html.CpEmail(subj)(Html("<p>Test successful if you got this</p>"))
-			mailWithLogging(addr.toSeq, subj, body)
+			mailWithLogging(allReceps, subj, body)
 		else
 			log.info("Emailing test requested, but mail sending disabled, so not sending anything")
 

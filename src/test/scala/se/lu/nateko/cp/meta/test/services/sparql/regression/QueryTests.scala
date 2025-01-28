@@ -41,7 +41,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		describe(descr){
 			
 			given rows: Rows = for (
-				_ <- if(db.repo.isCompleted) db.repo else timedExecution(db.repo, "TestDb init", info);
 				r <- timedExecution(db.runSparql(q), descr, info)
 			) yield transformResult(r)
 

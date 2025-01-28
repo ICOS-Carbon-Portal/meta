@@ -41,7 +41,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 		**/
 		for
 			_ <- ingestTriplestore()
-			idxData <- createIndex()
+			idxData <- createIndex(dir)
 			sail = makeSail(dir)
 			_ = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
@@ -64,17 +64,6 @@ class TestDb(name: String)(using system: ActorSystem) {
 
 		ingestion.map(Done => repo.shutDown())
 
-	private def createIndex(): Future[IndexData] = {
-		val sail = makeSail(dir)
-		sail.init()
-		for
-			_ <- sail.initSparqlMagicIndex(None)
-			_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
-			_ = sail.shutDown()
-			idxData <- IndexHandler.restore()
-		yield idxData
-	}
-
 
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global
@@ -85,9 +74,18 @@ class TestDb(name: String)(using system: ActorSystem) {
 			FileUtils.deleteDirectory(dir.toFile)
 }
 
-private def makeSail(dir: Path)(using system: ActorSystem, log: LoggingAdapter) =
-	given ExecutionContext = system.dispatcher
+private def createIndex(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[IndexData] = {
+	val sail = makeSail(dir)
+	sail.init()
+	for
+		_ <- sail.initSparqlMagicIndex(None)
+		_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
+		_ = sail.shutDown()
+		idxData <- IndexHandler.restore()
+	yield idxData
+}
 
+private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem, log: LoggingAdapter) =
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,

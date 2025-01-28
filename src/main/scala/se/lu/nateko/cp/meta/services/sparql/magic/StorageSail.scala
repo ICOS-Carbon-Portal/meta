@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.RdfStorageConfig
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.slf4j.LoggerFactory
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())

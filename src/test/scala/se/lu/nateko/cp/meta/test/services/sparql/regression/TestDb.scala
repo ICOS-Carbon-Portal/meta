@@ -40,7 +40,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 			data structure, and initialize the index from it
 		**/
 		for
-			_ <- ingestTriplestore()
+			_ <- ingestTriplestore(dir)
 			idxData <- createIndex(dir)
 			sail = makeSail(dir)
 			_ = sail.init()
@@ -50,21 +50,6 @@ class TestDb(name: String)(using system: ActorSystem) {
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
 
-	private def ingestTriplestore(): Future[Unit] =
-		val repo = SailRepository(makeSail(dir))
-
-		val ingestion =
-			given BnodeStabilizers = new BnodeStabilizers
-			val factory = repo.getValueFactory
-			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
-				val graphIri = factory.createIRI(uriStr)
-				val server = Rdf4jInstanceServer(repo, graphIri)
-				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-				Ingestion.ingest(server, ingester, factory).map(_ => Done)
-
-		ingestion.map(Done => repo.shutDown())
-
-
 	def cleanup(): Unit =
 		import scala.concurrent.ExecutionContext.Implicits.global
 		repo.flatMap: repo =>
@@ -72,6 +57,21 @@ class TestDb(name: String)(using system: ActorSystem) {
 			system.terminate()
 		.onComplete: _ =>
 			FileUtils.deleteDirectory(dir.toFile)
+}
+
+private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[Unit] = {
+	val repo = SailRepository(makeSail(dir))
+
+	val ingestion =
+		given BnodeStabilizers = new BnodeStabilizers
+		val factory = repo.getValueFactory
+		executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
+			val graphIri = factory.createIRI(uriStr)
+			val server = Rdf4jInstanceServer(repo, graphIri)
+			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+			Ingestion.ingest(server, ingester, factory).map(_ => Done)
+
+	ingestion.map(Done => repo.shutDown())
 }
 
 private def createIndex(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[IndexData] = {
@@ -85,7 +85,7 @@ private def createIndex(dir: Path)(using ActorSystem, ExecutionContext, LoggingA
 	yield idxData
 }
 
-private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem, log: LoggingAdapter) =
+private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem, log: LoggingAdapter) = {
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
@@ -104,6 +104,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 
 	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
 	CpNotifyingSail(base, idxFactories, citer, log)
+}
 
 object CitationClientDummy extends CitationClient {
 	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")

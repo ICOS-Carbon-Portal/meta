@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.scalatest
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
@@ -15,10 +14,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
+class QueryTests extends AsyncFunSpec {
 
 	val db = TestDb()
-	override protected def afterAll(): Unit = db.cleanup()
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()

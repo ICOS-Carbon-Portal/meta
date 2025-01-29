@@ -54,7 +54,7 @@ class TestDb {
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		TestRepo.runSparql(query)
 
-	def cleanup(): Unit = {
+	override def finalize(): Unit = { 
 		TestRepo.close()
 	}
 }
@@ -69,7 +69,7 @@ private object TestRepo {
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
+		Future.successful(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
 	private def initRepo(): Future[Repository] = {
 

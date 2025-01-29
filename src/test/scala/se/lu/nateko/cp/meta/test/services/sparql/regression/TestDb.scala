@@ -1,8 +1,11 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
+import java.nio.file.{Files, Path}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import akka.Done
 import akka.actor.ActorSystem
-import akka.event.Logging
+import akka.event.{Logging, LoggingAdapter}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
@@ -17,12 +20,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
-import java.nio.file.Files
-import scala.concurrent.{ExecutionContext, Future}
-import java.nio.file.Path
-import akka.event.LoggingAdapter
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",
@@ -54,7 +51,7 @@ class TestDb {
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		TestRepo.runSparql(query)
 
-	override def finalize(): Unit = { 
+	override def finalize(): Unit = {
 		TestRepo.close()
 	}
 }
@@ -107,7 +104,7 @@ private object TestRepo {
 	}
 }
 
-private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[Unit] = {
+private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): Future[Unit] = {
 	val repo = SailRepository(makeSail(dir))
 
 	val ingestion =
@@ -122,7 +119,7 @@ private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext, Lo
 	ingestion.map(Done => repo.shutDown())
 }
 
-private def createIndex(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[IndexData] = {
+private def createIndex(dir: Path)(using ActorSystem, ExecutionContext): Future[IndexData] = {
 	val sail = makeSail(dir)
 	sail.init()
 	for
@@ -133,7 +130,7 @@ private def createIndex(dir: Path)(using ActorSystem, ExecutionContext, LoggingA
 	yield idxData
 }
 
-private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem, log: LoggingAdapter) = {
+private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem) = {
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
@@ -143,9 +140,9 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		recreateCpIndexAtStartup = true
 	)
 
-	val (freshInit, base) = StorageSail.apply(rdfConf, log)
+	val (freshInit, base) = StorageSail.apply(rdfConf)
 	val indexUpdaterFactory = IndexHandler(system.scheduler)
-	val geoFactory = GeoIndexProvider(log)
+	val geoFactory = GeoIndexProvider()
 	val idxFactories = if freshInit then None
 	else
 		Some(indexUpdaterFactory -> geoFactory)

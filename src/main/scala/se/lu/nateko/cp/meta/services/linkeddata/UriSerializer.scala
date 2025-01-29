@@ -28,14 +28,11 @@ import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -48,13 +45,10 @@ import spray.json.JsonWriter
 import java.net.{URI => JavaUri}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 import scala.util.Using
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.resourceHasType
 
 
 trait UriSerializer {
@@ -109,7 +103,7 @@ class Rdf4jUriSerializer(
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, system.log)
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 	private val pcm =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
@@ -216,10 +210,10 @@ class Rdf4jUriSerializer(
 		)
 
 
-	private def isObjSpec(uri: Uri)(using envri: Envri): Boolean = server.access:
+	private def isObjSpec(uri: Uri): Boolean = server.access:
 		hasStatement(uri.toRdf, metaVocab.hasDataLevel, null)
 
-	private def isLabeledRes(uri: Uri)(using envri: Envri): Boolean = server.access:
+	private def isLabeledRes(uri: Uri): Boolean = server.access:
 		hasStatement(uri.toRdf, RDFS.LABEL, null)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =

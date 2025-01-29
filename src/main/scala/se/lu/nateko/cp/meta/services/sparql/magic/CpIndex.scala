@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.ValueFactory
@@ -29,8 +28,8 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Failure
 import scala.util.Success
-
 import CpIndex.*
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry, emptyBitmap}
 
 trait ObjSpecific{
@@ -52,10 +51,12 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: LoggingAdapter) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
+
+	private val log = LoggerFactory.getLogger(getClass())
 
 	import data.{contMap, stats, objs, initOk, idLookup}
-	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using log: LoggingAdapter) = {
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
 		var statementCount = 0
@@ -242,7 +243,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using log: Log
 						processUpdate(subj, pred, obj, isAssertion)
 					case _ => ()
 			list.clear()
-
 
 	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit =
 		data.processTriple(subj, pred, obj, isAssertion, vocab)

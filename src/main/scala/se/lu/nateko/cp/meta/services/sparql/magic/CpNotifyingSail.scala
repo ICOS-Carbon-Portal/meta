@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import akka.Done
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
@@ -15,7 +14,7 @@ import se.lu.nateko.cp.meta.utils.async.ok
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
-
+import org.slf4j.LoggerFactory
 import index.IndexData
 
 
@@ -27,8 +26,9 @@ class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
 	citer: CitationProvider
-)(using log: LoggingAdapter) extends NotifyingSailWrapper(inner):
+) extends NotifyingSailWrapper(inner):
 
+	private val log = LoggerFactory.getLogger(getClass())
 	private val enricher = StatementsEnricher(citer)
 	private var cpIndex: Option[CpIndex] = None
 	private var listener: Option[SailConnectionListener] = None
@@ -83,7 +83,7 @@ class CpNotifyingSail(
 				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
 			).andThen{
 				case Success(msg) => log.info(msg)
-				case Failure(err) => log.error(err, "Fail while dumping SPARQL index or citations cache to disk")
+				case Failure(err) => log.error("Fail while dumping SPARQL index or citations cache to disk", err)
 			}
 
 	private def setupQueryEvaluation(): Unit =

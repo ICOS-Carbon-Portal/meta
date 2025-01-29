@@ -1,31 +1,23 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-import java.util.concurrent.ExecutionException
-
 import akka.http.scaladsl.marshalling.Marshalling.*
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model.*
+import eu.icoscp.envri.Envri
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
-import se.lu.nateko.cp.meta.utils.getStackTrace
-import se.lu.nateko.cp.meta.utils.Validated
 import spray.json.*
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
-
+import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import scala.util.Failure
-import scala.util.Try
-import scala.util.Success
-import eu.icoscp.envri.Envri
+
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
 

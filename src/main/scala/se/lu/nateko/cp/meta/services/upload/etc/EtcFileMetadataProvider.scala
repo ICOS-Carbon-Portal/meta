@@ -6,18 +6,17 @@ import scala.util.Success
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.core.etcupload.DataType
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
+import akka.event.Logging
 
 class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{
 
 	import system.dispatcher
 
+	private val log = Logging.getLogger(system, this)
 	private val metaSrc = new EtcMetaSource(conf, vocab)
 	private var inner: Option[EtcFileMetadataStore] = None
 	private var retryCount: Int = 0
@@ -35,18 +34,18 @@ class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: Act
 
 			case Success(storeV) =>
 				storeV.errors.foreach{err =>
-					system.log.warning("ETC logger/file metadata problem: " + err)
+					log.warning("ETC logger/file metadata problem: " + err)
 				}
 				storeV.result.fold{
-					system.log.error("ETC logger/file metadata was not (re-)initialized")
+					log.error("ETC logger/file metadata was not (re-)initialized")
 				}{store =>
 					inner = Some(store)
-					system.log.info(s"Fetched ETC logger/file metadata from ${conf.metaService}")
+					log.info(s"Fetched ETC logger/file metadata from ${conf.metaService}")
 					retryCount = 0
 				}
 
 			case Failure(err) =>
-				system.log.error(err, "Problem fetching/parsing ETC logger/file metadata")
+				log.error(err, "Problem fetching/parsing ETC logger/file metadata")
 				if(retryCount < 3){
 					system.scheduler.scheduleOnce(10.minutes){
 						retryCount += 1

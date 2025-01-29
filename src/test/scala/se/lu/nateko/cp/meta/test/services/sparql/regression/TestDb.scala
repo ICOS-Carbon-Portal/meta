@@ -1,51 +1,75 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
+import java.nio.file.{Files, Path}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import akka.Done
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
+import akka.event.{Logging, LoggingAdapter}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.meta.LmdbConfig
-import se.lu.nateko.cp.meta.RdfStorageConfig
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
-import se.lu.nateko.cp.meta.ingestion.Ingestion
-import se.lu.nateko.cp.meta.ingestion.RdfXmlFileIngester
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.services.citation.CitationStyle
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 
-import java.nio.file.Files
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import akka.event.Logging
-import scala.concurrent.ExecutionContext
+private val graphIriToFile = Seq(
+	"atmprodcsv",
+	"cpmeta",
+	"ecocsv",
+	"etcbin",
+	"etcprodcsv",
+	"excel",
+	"extrastations",
+	"icos",
+	"netcdf",
+	"stationentry",
+	"stationlabeling"
+).map { id =>
+	s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
+}.toMap +
+	("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
+	("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
+	("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
+	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
+	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-class TestDb(name: String) {
+private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
-	private given system: ActorSystem = ActorSystem(name, akkaConf)
+class TestDb {
+	TestRepo.checkout()
+
+	val repo: Repository = TestRepo.repo
+	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
+		TestRepo.runSparql(query)
+
+	override def finalize(): Unit = {
+		TestRepo.close()
+	}
+}
+
+private object TestRepo {
+	lazy val repo = Await.result(initRepo(), Duration.Inf)
+	private var reference_count = 0
+
+	private lazy val dir = Files.createTempDirectory("testdb").toAbsolutePath
+	private given system: ActorSystem = ActorSystem("TestDb")
 	private given ExecutionContext = system.dispatcher
-	private val log = Logging.getLogger(system, this)
-	private val dir = Files.createTempDirectory(name).toAbsolutePath
-	private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
-	private val akkaConf =
-		ConfigFactory.defaultReference().withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("INFO"))
+	private given log: LoggingAdapter = Logging.getLogger(system, this)
 
-	val repo: Future[Repository] =
+	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
+		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
+
+	private def initRepo(): Future[Repository] = {
+
 		/**
 		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
@@ -53,94 +77,81 @@ class TestDb(name: String) {
 			3) to dump the SPARQL index to disk, re-start, read the index
 			data structure, and initialize the index from it
 		**/
+
+		log.info("Initializing")
+		val start = System.currentTimeMillis()
 		for
-			_ <- ingestTriplestore()
-			idxData <- createIndex()
-			sail = makeSail()
-			_ = sail.init()
+			() <- ingestTriplestore(dir)
+			idxData <- createIndex(dir)
+			sail = makeSail(dir)
+			() = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
+			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 		yield SailRepository(sail)
-
-	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		repo.map(new Rdf4jSparqlRunner(_).evaluateTupleQuery(SparqlQuery(query)))
-
-	private def ingestTriplestore(): Future[Unit] =
-		val repo = SailRepository(makeSail())
-
-		val ingestion =
-			given BnodeStabilizers = new BnodeStabilizers
-			val factory = repo.getValueFactory
-			executeSequentially(TestDb.graphIriToFile): (uriStr, filename) =>
-				val graphIri = factory.createIRI(uriStr)
-				val server = Rdf4jInstanceServer(repo, graphIri)
-				val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-				Ingestion.ingest(server, ingester, factory).map(_ => Done)
-
-		ingestion.map(Done => repo.shutDown())
-
-	private def createIndex(): Future[IndexData] = {
-		val sail = makeSail()
-		sail.init()
-		for
-			_ <- sail.initSparqlMagicIndex(None)
-			_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
-			_ = sail.shutDown()
-			idxData <- IndexHandler.restore()
-		yield idxData
 	}
 
-	private def makeSail() =
-		val rdfConf = RdfStorageConfig(
-			lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
-			path = dir.toString,
-			recreateAtStartup = false,
-			indices = metaConf.rdfStorage.indices,
-			disableCpIndex = false,
-			recreateCpIndexAtStartup = true
-		)
+	def checkout() = {
+		reference_count += 1;
+	}
 
-		val (freshInit, base) = StorageSail.apply(rdfConf, log)
-		val indexUpdaterFactory = IndexHandler(system.scheduler)
-		val geoFactory = GeoIndexProvider(log)
-		val idxFactories = if freshInit then None
-		else
-			Some(indexUpdaterFactory -> geoFactory)
-
-		val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
-		CpNotifyingSail(base, idxFactories, citer, log)
-
-	def cleanup(): Unit =
-		import scala.concurrent.ExecutionContext.Implicits.global
-		repo.flatMap: repo =>
+	def close() = {
+		reference_count -= 1;
+		if (reference_count <= 0) {
+			log.info("Cleaning up!")
 			repo.shutDown()
-			system.terminate()
-		.onComplete: _ =>
 			FileUtils.deleteDirectory(dir.toFile)
+		}
+	}
+}
+
+private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): Future[Unit] = {
+	val repo = SailRepository(makeSail(dir))
+
+	val ingestion =
+		given BnodeStabilizers = new BnodeStabilizers
+		val factory = repo.getValueFactory
+		executeSequentially(graphIriToFile): (uriStr, filename) =>
+			val graphIri = factory.createIRI(uriStr)
+			val server = Rdf4jInstanceServer(repo, graphIri)
+			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+			Ingestion.ingest(server, ingester, factory).map(_ => Done)
+
+	ingestion.map(Done => repo.shutDown())
+}
+
+private def createIndex(dir: Path)(using ActorSystem, ExecutionContext): Future[IndexData] = {
+	val sail = makeSail(dir)
+	sail.init()
+	for
+		_ <- sail.initSparqlMagicIndex(None)
+		_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
+		_ = sail.shutDown()
+		idxData <- IndexHandler.restore()
+	yield idxData
+}
+
+private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem) = {
+	val rdfConf = RdfStorageConfig(
+		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
+		path = dir.toString,
+		recreateAtStartup = false,
+		indices = metaConf.rdfStorage.indices,
+		disableCpIndex = false,
+		recreateCpIndexAtStartup = true
+	)
+
+	val (freshInit, base) = StorageSail.apply(rdfConf)
+	val indexUpdaterFactory = IndexHandler(system.scheduler)
+	val geoFactory = GeoIndexProvider()
+	val idxFactories = if freshInit then None
+	else
+		Some(indexUpdaterFactory -> geoFactory)
+
+	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
+	CpNotifyingSail(base, idxFactories, citer)
 }
 
 object CitationClientDummy extends CitationClient {
 	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }
-
-object TestDb:
-	val graphIriToFile = Seq(
-		"atmprodcsv",
-		"cpmeta",
-		"ecocsv",
-		"etcbin",
-		"etcprodcsv",
-		"excel",
-		"extrastations",
-		"icos",
-		"netcdf",
-		"stationentry",
-		"stationlabeling"
-	).map { id =>
-		s"http://meta.icos-cp.eu/resources/$id/" -> s"$id.rdf"
-	}.toMap +
-		("https://meta.fieldsites.se/resources/sites/" -> "sites.rdf") +
-		("http://meta.icos-cp.eu/ontologies/cpmeta/" -> "cpmeta.owl") +
-		("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
-		("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
-		("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")

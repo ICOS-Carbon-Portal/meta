@@ -2,8 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql
 
 import akka.Done
 import akka.NotUsed
-import akka.actor.Scheduler
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -20,7 +18,6 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
-import org.eclipse.rdf4j.query.BooleanQuery
 import org.eclipse.rdf4j.query.GraphQuery
 import org.eclipse.rdf4j.query.MalformedQueryException
 import org.eclipse.rdf4j.query.Query
@@ -50,7 +47,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
-import scala.util.Failure
 import scala.util.Try
 import akka.actor.ActorSystem
 import akka.event.Logging

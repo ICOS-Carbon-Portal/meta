@@ -15,7 +15,6 @@ import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
 import se.lu.nateko.cp.meta.CitationConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
 import se.lu.nateko.cp.meta.utils.Mergeable
 import se.lu.nateko.cp.meta.utils.Validated
@@ -28,7 +27,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeoutException
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
 import scala.concurrent._
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
@@ -37,6 +35,8 @@ import scala.util.Try
 import scala.util.control.NoStackTrace
 
 import CitationClient.*
+import akka.event.Logging
+import org.slf4j.LoggerFactory
 
 
 enum CitationStyle:
@@ -65,7 +65,8 @@ trait CitationClient extends PlainDoiCiter:
 class CitationClientImpl (
 	knownDois: List[Doi], config: CitationConfig, initCitCache: CitationCache, initDoiCache: DoiCache
 )(using system: ActorSystem, mat: Materializer) extends CitationClient:
-	import system.{dispatcher, scheduler, log}
+	import system.{dispatcher, scheduler}
+	private val log = Logging.getLogger(system, this)
 
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache
@@ -196,6 +197,7 @@ end CitationClientImpl
 object CitationClient:
 	import spray.json.*
 	import scala.concurrent.ExecutionContext.Implicits.global
+	private val log = LoggerFactory.getLogger(getClass())
 	type Key = (Doi, CitationStyle)
 	type CitationCache = TrieMap[Key, Future[String]]
 	type DoiCache = TrieMap[Doi, Future[DoiMeta]]
@@ -203,8 +205,9 @@ object CitationClient:
 	val citCacheDumpFile = Paths.get("./citationsCacheDump.json")
 	val doiCacheDumpFile = Paths.get("./doiMetaCacheDump.json")
 
-	def readCitCache(log: LoggingAdapter): Future[CitationCache] =
-		readCache(log, citCacheDumpFile){cells =>
+
+	def readCitCache(): Future[CitationCache] =
+		readCache(citCacheDumpFile){cells =>
 			val toParse = cells.collect{case JsString(s) => s}
 			assert(toParse.length == 3, "Citation dump had an entry with a wrong number of values")
 			val doi = Doi.parse(toParse(0)).get
@@ -213,8 +216,8 @@ object CitationClient:
 			doi -> style -> cit
 		}
 
-	def readDoiCache(log: LoggingAdapter): Future[DoiCache] =
-		readCache(log, doiCacheDumpFile){cells =>
+	def readDoiCache(): Future[DoiCache] =
+		readCache(doiCacheDumpFile){cells =>
 			assert(cells.length == 2, "Doi dump had an entry with a wrong number of values")
 			val doi = cells(0).convertTo[Doi]
 			val doiMeta = cells(1).convertTo[DoiMeta]
@@ -231,9 +234,7 @@ object CitationClient:
 			(doi, doiMeta) => JsArray(doi.toJson, doiMeta.toJson)
 		)
 
-	private def readCache[K, V](
-		log: LoggingAdapter, file: Path
-	)(parser: Vector[JsValue] => (K, V)): Future[TrieMap[K, Future[V]]] =
+	private def readCache[K, V](file: Path)(parser: Vector[JsValue] => (K, V)): Future[TrieMap[K, Future[V]]] =
 		Future{
 			val dump = Files.readString(file).parseJson
 			val tuples = dump match
@@ -246,7 +247,7 @@ object CitationClient:
 			TrieMap.apply(tuples*)
 		}.recover{
 			case err: Throwable =>
-				log.error(err, "Could not read cache dump")
+				log.error("Could not read cache dump", err)
 				TrieMap.empty
 		}
 

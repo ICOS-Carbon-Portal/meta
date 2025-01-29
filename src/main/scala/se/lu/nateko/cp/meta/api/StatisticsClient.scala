@@ -17,10 +17,10 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.DefaultJsonProtocol
 import se.lu.nateko.cp.meta.core.data.StaticObject
-import se.lu.nateko.cp.meta.core.data.DocObject
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import spray.json.RootJsonFormat
 import eu.icoscp.envri.Envri
+import akka.event.Logging
 
 
 object StatisticsClient extends DefaultJsonProtocol {
@@ -33,6 +33,7 @@ object StatisticsClient extends DefaultJsonProtocol {
 class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {
 	import StatisticsClient.*
 	private val http = Http()
+	private val log = Logging.getLogger(system, this)
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
 	private def dbUri(using Envri) = {
@@ -62,7 +63,7 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 			}
 		}.recover{
 			case err: Throwable =>
-				system.log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
+				log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None
 		}
 

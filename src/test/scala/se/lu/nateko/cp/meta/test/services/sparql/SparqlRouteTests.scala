@@ -11,7 +11,6 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.pattern.after
 import eu.icoscp.envri.Envri
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
@@ -28,28 +27,29 @@ import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 import akka.event.Logging
 
-class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeAndAfterAll:
+class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	private val log = Logging.getLogger(system, this)
 
-	val db = new TestDb("sparqlRoutingTesting")
-
-	override protected def afterAll(): Unit = db.cleanup()
+	val db = TestDb()
 
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
 	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
 
+	// TODO: Changing this signature to just Route and updating tests accordingly breaks things.
+	//			 Tests can probably be rewritten so that doesn't happen.
 	val sparqlRoute: Future[Route] =
-		db.repo.map: repo =>
-			val rdf4jServer = Rdf4jSparqlServer(repo, sparqlConfig)
+		Future.apply {
+			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
 			given EnvriConfigs = Map(
 				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 			)
 
 			SparqlRoute.apply(sparqlConfig)
+		}
 
 	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin) =
 		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip), Origin(HttpOrigin(origin))) ++ additionalHeader

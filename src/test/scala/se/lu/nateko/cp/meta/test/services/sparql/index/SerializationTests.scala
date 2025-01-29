@@ -1,46 +1,34 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import akka.actor.Cancellable
-import akka.actor.Scheduler
-import akka.event.NoLogging
+import akka.actor.{Cancellable, Scheduler}
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.io.Output
-import org.eclipse.rdf4j.common.transaction.TransactionSetting
+import com.esotericsoftware.kryo.io.{Input, Output}
 import org.eclipse.rdf4j.model.util.Values
-import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
-import org.eclipse.rdf4j.sail.NotifyingSail
-import org.eclipse.rdf4j.sail.NotifyingSailConnection
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
-import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.eclipse.rdf4j.sail.{NotifyingSailConnection, Sail}
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.index.All
-import se.lu.nateko.cp.meta.services.sparql.index.CategFilter
-import se.lu.nateko.cp.meta.services.sparql.index.ContFilter
-import se.lu.nateko.cp.meta.services.sparql.index.DataObjectFetch
-import se.lu.nateko.cp.meta.services.sparql.index.Property
-import se.lu.nateko.cp.meta.services.sparql.index.Station
-import se.lu.nateko.cp.meta.services.sparql.index.SubmissionEnd
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.CpIndex.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
+import se.lu.nateko.cp.meta.services.sparql.index.{
+   CategFilter,
+   ContFilter,
+   DataObjectFetch,
+   Station,
+   SubmissionEnd,
+   And,
+   Exists,
+   SortBy,
+   FileName
+}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpIndex, IndexHandler}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
-
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time.Instant
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
 class SerializationTests extends AsyncFunSpec{
@@ -77,10 +65,10 @@ class SerializationTests extends AsyncFunSpec{
 
 	def roundTrip(sail: Sail)(using Kryo) = //: Future[(CpIndex, CpIndex)] =
 		for(
-			idx <- Future(CpIndex(sail, Future.never, 5)(NoLogging));
+			idx <- Future(CpIndex(sail, Future.never, 5));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
-		) yield idx -> CpIndex(sail, Future.never, data)(NoLogging)
+		) yield idx -> CpIndex(sail, Future.never, data)
 
 	def smallRepo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
 
@@ -89,7 +77,7 @@ class SerializationTests extends AsyncFunSpec{
 		it("successfully performs serialization/deserialization round trip"):
 			given Kryo = IndexHandler.makeKryo
 			val repo = smallRepo
-			val idx = CpIndex(repo.getSail, Future.never, 5)(NoLogging)
+			val idx = CpIndex(repo.getSail, Future.never, 5)
 			val cpmeta = CpmetaVocab(repo.getValueFactory)
 			val idxHandler = IndexHandler(DummyScheduler)
 			val listener = idxHandler.getListener(repo.getSail, cpmeta, idx, Future.never)
@@ -99,7 +87,6 @@ class SerializationTests extends AsyncFunSpec{
 				conn.addConnectionListener(listener)
 				//deleting an object, leaving one data type "an orphan"
 				val delObj = repo.getValueFactory.createIRI("https://meta.icos-cp.eu/objects/hoidzqcaqmCU3mOZ435r2crG")
-				val toRemove = conn.getStatements(delObj, null, null, false).stream().toArray()
 				conn.begin()
 				conn.removeStatements(delObj, null, null)
 				conn.commit()

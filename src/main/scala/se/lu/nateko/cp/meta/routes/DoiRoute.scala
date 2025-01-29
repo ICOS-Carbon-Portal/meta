@@ -1,34 +1,28 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
 import scala.language.implicitConversions
-import scala.util.Failure
-import scala.util.Success
-import akka.event.LoggingAdapter
+import akka.event.{Logging, LoggingBus}
 
 object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
 		doiCitClient: CitationClient,
-		coreConf: MetaCoreConfig,
-		log: LoggingAdapter
-	): Route = {
+		coreConf: MetaCoreConfig
+	)(using logBus : LoggingBus): Route = {
 
+		val log = Logging.getLogger(logBus, this)
 		given EnvriConfigs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 

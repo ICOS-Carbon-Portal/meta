@@ -47,15 +47,32 @@ private val graphIriToFile = Seq(
 
 private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
-class TestDb(name: String)(using system: ActorSystem) {
+class TestDb {
+	TestRepo.checkout()
 
+	val repo: Repository = TestRepo.repo
+	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
+		TestRepo.runSparql(query)
+
+	def cleanup(): Unit = {
+		TestRepo.close()
+	}
+}
+
+private object TestRepo {
+	lazy val repo = Await.result(initRepo(), Duration.Inf)
+	private var reference_count = 0
+
+	private lazy val dir = Files.createTempDirectory("testdb").toAbsolutePath
+	private given system: ActorSystem = ActorSystem("TestDb")
 	private given ExecutionContext = system.dispatcher
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
-	private val dir = Files.createTempDirectory(name).toAbsolutePath
 
-	val repo: Repository = Await.result(initRepo(), Duration.Inf)
+	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
+		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
-	private def initRepo() : Future[Repository] = {
+	private def initRepo(): Future[Repository] = {
+
 		/**
 		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
@@ -64,7 +81,7 @@ class TestDb(name: String)(using system: ActorSystem) {
 			data structure, and initialize the index from it
 		**/
 
-		log.info("Initializing.")
+		log.info("Initializing")
 		val start = System.currentTimeMillis()
 		for
 			() <- ingestTriplestore(dir)
@@ -76,15 +93,19 @@ class TestDb(name: String)(using system: ActorSystem) {
 		yield SailRepository(sail)
 	}
 
-	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
+	def checkout() = {
+		reference_count += 1;
+	}
 
-	def cleanup(): Unit =
-		log.info("Cleaning up!")
-		repo.shutDown()
-		FileUtils.deleteDirectory(dir.toFile)
+	def close() = {
+		reference_count -= 1;
+		if (reference_count <= 0) {
+			log.info("Cleaning up!")
+			repo.shutDown()
+			FileUtils.deleteDirectory(dir.toFile)
+		}
+	}
 }
-
 
 private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext, LoggingAdapter): Future[Unit] = {
 	val repo = SailRepository(makeSail(dir))
@@ -137,4 +158,3 @@ object CitationClientDummy extends CitationClient {
 	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }
-

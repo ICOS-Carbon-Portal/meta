@@ -14,13 +14,10 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
-import akka.actor.ActorSystem
 
 class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 
-	private given system: ActorSystem = ActorSystem("sparqlRegrTesting")
-	val db = new TestDb(system.name)
-
+	val db = TestDb()
 	override protected def afterAll(): Unit = db.cleanup()
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {

@@ -32,7 +32,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest with BeforeA
 
 	private val log = Logging.getLogger(system, this)
 
-	val db = new TestDb("sparqlRoutingTesting")
+	val db = TestDb()
 
 	override protected def afterAll(): Unit = db.cleanup()
 

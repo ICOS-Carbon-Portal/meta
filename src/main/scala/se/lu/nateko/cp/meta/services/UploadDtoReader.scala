@@ -65,7 +65,8 @@ object UploadDtoReader{
 					samplingHeight = l2.acquisition.samplingHeight,
 					acquisitionInterval = l2.acquisition.interval,
 					nRows = l2.nRows,
-					production = l2.productionInfo.map(dataProductionToDto(_))
+					production = l2.productionInfo.map(dataProductionToDto(_)),
+					spatial = l2.coverage.map(readCoverage)
 				))
 			},
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>
@@ -138,9 +139,7 @@ object UploadDtoReader{
 		creationDate = prod.dateTime
 	)
 
-	private def readCoverage(gf: GeoFeature): GeoCoverage = gf.uri match
-		case None      => gf match
-			case box: LatLonBox => box
-			case _ => GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
-		case Some(uri) => uri
+	private def readCoverage(gf: GeoFeature): GeoCoverage =
+		val geoJson = GeoJson.fromFeature(gf).compactPrint
+		FeatureWithGeoJson(gf, geoJson)
 }

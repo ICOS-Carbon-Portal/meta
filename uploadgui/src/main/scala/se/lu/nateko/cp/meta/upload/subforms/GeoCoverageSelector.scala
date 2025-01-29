@@ -19,6 +19,7 @@ import scala.util.Success
 import scala.util.Try
 import se.lu.nateko.cp.meta.GeoCoverage
 import se.lu.nateko.cp.meta.GeoJsonString
+import se.lu.nateko.cp.meta.core.data.FeatureWithGeoJson
 
 
 class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using PubSubBus) extends PanelSubform(s".geocov-element"):
@@ -38,22 +39,20 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 	private val customSpatCov = new SpatialCoverage(None, "Custom spatial coverage from GeoJson")
 	spatialCovSelect.setOptions(customLatLonBox +: customSpatCov +: covs)
 
-	def spatialCoverage: Try[GeoCoverage] = spatialCovSelect.value
-		.withMissingError("spatial coverage")
-		.flatMap:
-			case `customLatLonBox` =>
-				for
-					minLat <- minLatInput.value
-					minLon <- minLonInput.value
-					maxLat <- maxLatInput.value
-					maxLon <- maxLonInput.value
-					label <- spatCovLabel.value
-				yield LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None)
+	def spatialCoverage: Try[Option[GeoCoverage]] = spatialCovSelect.value match
+		case None  => Success(None)
+		case Some(`customLatLonBox`) =>
+			for
+				minLat <- minLatInput.value
+				minLon <- minLonInput.value
+				maxLat <- maxLatInput.value
+				maxLon <- maxLonInput.value
+				label <- spatCovLabel.value
+			yield Some(LatLonBox(Position.ofLatLon(minLat, minLon), Position.ofLatLon(maxLat, maxLon), label, None))
 
-			case `customSpatCov` =>
-				geoJsonInput.value.map(GeoJsonString.unsafe).withErrorContext("custom spatial coverage")
-			case spCov => spCov.uri.withMissingError("spatial coverage missing URI")
-
+		case Some(`customSpatCov`) =>
+			geoJsonInput.value.map(GeoJsonString.unsafe).map(Some.apply).withErrorContext("custom spatial coverage")
+		case Some(spCov) => Success(spCov.uri)
 
 
 	private def onSpatCoverSelected(): Unit =
@@ -67,12 +66,20 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 			geoCovElements.hide()
 		notifyUpdate()
 
-	def handleReceivedSpatialCoverage(spatCov: Option[GeoCoverage]): Unit =
-		spatCov match
-			case None =>
-				resetForm()
-			case Some(cov: GeoFeature) =>
-				cov match
+	def handleReceivedSpatialCoverage(spatCov: Option[GeoCoverage]): Unit = spatCov match
+		case None => resetForm()
+
+		case Some(FeatureWithGeoJson(cov, geoJson)) =>
+
+			resetCustomCovElems()
+			geoCovElements.hide()
+
+			covs.find(_.uri == cov.uri) match
+
+				case Some(stockCov) =>
+					spatialCovSelect.value = stockCov
+
+				case None => cov match
 					case b: LatLonBox =>
 						minLatInput.value = b.min.lat
 						minLonInput.value = b.min.lon
@@ -81,22 +88,14 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 						spatialCovSelect.value = customLatLonBox
 						geoJsonElements.hide()
 						latLonBoxElements.show()
-					case cov: GeoFeature =>
-						UploadApp.showAlert("Fetched metadata had an unexpected format", "alert alert-warning")
-				spatCovLabel.value = cov.label
-			case Some(covUri: URI) =>
-				resetCustomCovElems()
-				geoCovElements.hide()
-				covs.find(_.uri.contains(covUri)) match
-					case None =>
-						UploadApp.showAlert(s"Unexpected coverage URI $covUri , it's not a 'stock' coverage", "alert alert-warning")
-					case Some(stockCov) =>
-						spatialCovSelect.value = stockCov
-			case Some(jsonString: GeoJsonString @unchecked) =>
-				spatialCovSelect.value = customSpatCov
-				geoJsonInput.value = jsonString
-				latLonBoxElements.hide()
-				geoJsonElements.show()
+					case _ =>
+						spatialCovSelect.value = customSpatCov
+						geoJsonInput.value = geoJson
+						latLonBoxElements.hide()
+						geoJsonElements.show()
+						spatCovLabel.value = cov.label
+		case _ =>
+			UploadApp.showAlert("Fetched metadata had an unexpected format", "alert alert-warning")
 
 	private def resetCustomCovElems(): Unit =
 		spatCovLabel.reset()
@@ -107,4 +106,7 @@ class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using 
 		resetCustomCovElems()
 		geoCovElements.hide()
 
+	def unselect(): Unit =
+		spatialCovSelect.reset()
+		geoCovElements.hide()
 end GeoCoverageSelector

@@ -39,6 +39,7 @@ object JsonSupport:
 	given OFormat[GeoTrack] = Json.format[GeoTrack]
 	given OFormat[Polygon] = Json.format[Polygon]
 	given OFormat[Pin] = Json.format[Pin]
+	given OFormat[FeatureWithGeoJson] = Json.format[FeatureWithGeoJson]
 	given Format[PinKind] with
 		def writes(pk: PinKind): JsValue = JsString(pk.toString)
 		def reads(js: JsValue): JsResult[PinKind] = js.validate[String].map(PinKind.valueOf)
@@ -53,6 +54,7 @@ object JsonSupport:
 			case gpoly: Polygon            => Json.toJsObject(gpoly)
 			case p: Pin                    => Json.toJsObject(p)
 			case gt: GeoTrack              => Json.toJsObject(gt)
+			case jsgf: FeatureWithGeoJson  => Json.toJsObject(jsgf)
 
 		def typedReads(js: JsValue, typeName: String) = typeName match
 			case "Position"          => js.validate[Position]
@@ -62,6 +64,7 @@ object JsonSupport:
 			case "FeatureCollection" => js.validate[FeatureCollection]
 			case "Polygon"           => js.validate[Polygon]
 			case "Pin"               => js.validate[Pin]
+			case "FeatureWithGeoJson" => js.validate[FeatureWithGeoJson]
 			case _ => JsError(s"Unexpected GeoFeature type $typeName")
 	end geoFeatureFormatPrecursor
 

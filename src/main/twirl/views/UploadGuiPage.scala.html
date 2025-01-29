@@ -340,6 +340,12 @@
 								<label class="form-label" for="instrumenturi">Instrument (url) @optional</label>
 								<textarea class="form-control" name="instrumenturi" id="instrumenturi" rows="2" cols="80"></textarea>
 							</div>
+							@geoCovSelect("l2"){
+								<em class="text-muted">- click to reset:</em>
+								<button class="btn p-0 ms-1" id="rmL2GeoSelection" aria-label="Reset geo-coverage">
+									<i class="far fa-times-circle"></i>
+								</button>
+							}
 						</div>
 					</div>
 				</section>

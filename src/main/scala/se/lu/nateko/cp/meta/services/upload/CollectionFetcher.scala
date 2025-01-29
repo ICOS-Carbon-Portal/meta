@@ -52,10 +52,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap:
 			case None => Validated.ok(None)
 			case Some(covIri) =>
-				val isCustomCoverage = conn.primaryContextView.hasStatement(covIri, RDF.TYPE, null)
-				getCoverage(covIri).map: cov =>
-					Option(if isCustomCoverage then cov.withOptUri(None) else cov)
-				.orElse(None)
+				getCoverage(covIri).map(Option.apply).orElse(None)
 
 	private def getExistingStaticColl(
 		coll: IRI, hashOpt: Option[Sha256Sum] = None

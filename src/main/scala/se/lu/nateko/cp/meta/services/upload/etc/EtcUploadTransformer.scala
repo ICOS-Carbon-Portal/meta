@@ -57,7 +57,8 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 					samplingHeight = None,
 					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),
 					nRows = None,
-					production = None
+					production = None,
+					spatial = None
 				)
 			),
 			isNextVersionOf = getPrevVersion(meta.fileName, meta.hashSum).map(Left(_)),

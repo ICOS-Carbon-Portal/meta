@@ -24,6 +24,7 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 	def reset(): Unit = {
 		_value = init
 		input.value = ""
+		refreshAndNotify()
 	}
 
 	input.oninput = _ => refreshAndNotify()

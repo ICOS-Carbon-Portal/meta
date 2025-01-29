@@ -12,7 +12,6 @@ import se.lu.nateko.cp.meta.DataSubmitterConfig
 import se.lu.nateko.cp.meta.DocObjectDto
 import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.UploadServiceConfig
 import se.lu.nateko.cp.meta.api.RdfLens

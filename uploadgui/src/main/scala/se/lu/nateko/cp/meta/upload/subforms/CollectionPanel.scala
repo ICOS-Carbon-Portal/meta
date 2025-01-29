@@ -24,7 +24,7 @@ class CollectionPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus
 	getElementById[html.Button]("rmCollGeoSelection").foreach: button =>
 		button.onclick = event =>
 			event.preventDefault()
-			spatialCovSelect.resetForm()
+			spatialCovSelect.unselect()
 
 	def resetForm(): Unit =
 		collectionTitle.reset()

@@ -15,10 +15,11 @@ import Utils.*
 
 class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
-	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for(
+	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for
 		title <- titleInput.value;
 		descr <- descriptionInput.value;
-		spatCov <- spatialCovSelect.spatialCoverage;
+		spatCovOpt <- spatialCovSelect.spatialCoverage;
+		spatCov <- spatCovOpt.withMissingError("spatial coverage");
 		tempCovOpt <- timeIntevalInput.value;
 		tempCov <- tempCovOpt.withMissingError("time interval");
 		tempRes <- temporalResInput.value;
@@ -26,7 +27,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		customLanding <- externalPageInput.value;
 		height <- samplingHeightInput.value;
 		varInfo <- varInfoForm.varInfos
-	) yield SpatioTemporalDto(
+	yield SpatioTemporalDto(
 		title = title,
 		description = descr,
 		spatial = spatCov,

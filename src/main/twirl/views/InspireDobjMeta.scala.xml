@@ -269,6 +269,9 @@
 				}
 			}
 		}
+		case jsgf: FeatureWithGeoJson => {
+			@gmlObject(jsgf.feature)
+		}
 	}
 }
 

@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.Pin
 import se.lu.nateko.cp.meta.core.data.Polygon
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.circleToBox
+import se.lu.nateko.cp.meta.core.data.FeatureWithGeoJson
 
 object DoiGeoCovConverter:
 
@@ -23,6 +24,7 @@ object DoiGeoCovConverter:
 			case GeoTrack(points, label, _) => Seq(fromBox(toLatLonBox(points, label)))
 			case p: Polygon => Seq(fromPolygon(p))
 			case fc: FeatureCollection => fc.features.flatMap(fromGeoFeature)
+			case FeatureWithGeoJson(feature, _)  => fromGeoFeature(feature)
 
 	private def fromPolygon(polygon: Polygon): GeoLocation =
 		// TODO Use the following when polygons are supported by DataCite REST API

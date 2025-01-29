@@ -25,6 +25,7 @@ import se.lu.nateko.cp.meta.core.data.PositionUtil
 import scala.collection.mutable.ArrayBuffer
 import org.locationtech.jts.index.strtree.STRtree
 import org.locationtech.jts.geom.Envelope
+import se.lu.nateko.cp.meta.core.data.FeatureWithGeoJson
 
 
 
@@ -107,6 +108,7 @@ object GeoCovMerger:
 		case gt: GeoTrack => Seq(LabeledJtsGeo(concaveHull(toCollection(gt.points)), gt.label.toSeq))
 		case fc: FeatureCollection =>
 			fc.features.flatMap(toSimpleGeometries)
+		case FeatureWithGeoJson(feature, _) => toSimpleGeometries(feature)
 
 	private def toPoint(p: Position): LabeledJtsGeo =
 		LabeledJtsGeo(JtsGeoFactory.createPoint(Coordinate(p.lon, p.lat)), p.label.toSeq)

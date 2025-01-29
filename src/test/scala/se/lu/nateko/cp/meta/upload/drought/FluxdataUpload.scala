@@ -129,7 +129,8 @@ class FluxdataUpload(
 			samplingHeight = samplingHeightOpt(meta),
 			acquisitionInterval = timeIntervalOpt(meta),
 			nRows = meta.nPoints,
-			production = Some(productionDto)
+			production = Some(productionDto),
+			spatial = None
 		)
 
 		DataObjectDto(

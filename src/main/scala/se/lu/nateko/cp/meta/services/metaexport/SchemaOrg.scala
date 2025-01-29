@@ -374,6 +374,8 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		case Pin(position, kind) => fromGeoFeature(position)
 
+		case FeatureWithGeoJson(feature, _) => fromGeoFeature(feature)
+
 
 	private def fromOrganization(org: Organization, parent: Option[Organization]) = JsObject(
 		Map(

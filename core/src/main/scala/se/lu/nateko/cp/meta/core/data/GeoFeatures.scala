@@ -140,3 +140,14 @@ case class Pin(position: Position, kind: PinKind) extends GeoFeature:
 	def textSpecification: String = s"Pin ($kind): ${position.textSpecification}"
 	def withOptLabel(label: Option[String]) = copy(position = position.withOptLabel(label))
 	def withOptUri(uri: Option[URI]) = copy(position = position.withOptUri(uri))
+
+case class FeatureWithGeoJson(feature: GeoFeature, geoJson: String) extends GeoFeature:
+	type Self = FeatureWithGeoJson
+
+	export feature.{label, textSpecification, uri}
+
+	override def withOptLabel(label: Option[String]) =
+		copy(feature = feature.withOptLabel(label))
+
+	override def withOptUri(uri: Option[URI]) =
+		copy(feature = feature.withOptUri(uri))

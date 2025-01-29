@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.scalatest
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
@@ -15,11 +14,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
-class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
+class QueryTests extends AsyncFunSpec {
 
-	val db = new TestDb("sparqlRegrTesting")
-
-	override protected def afterAll(): Unit = db.cleanup()
+	val db = TestDb()
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -39,7 +36,6 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 		describe(descr){
 			
 			given rows: Rows = for (
-				_ <- if(db.repo.isCompleted) db.repo else timedExecution(db.repo, "TestDb init", info);
 				r <- timedExecution(db.runSparql(q), descr, info)
 			) yield transformResult(r)
 
@@ -50,33 +46,31 @@ class QueryTests extends AsyncFunSpec with BeforeAndAfterAll {
 			}
 
 			it("should return correct sample row") {
-				db.repo.flatMap(repo => {
-					for (r <- rows) yield {
-						val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
-						val expectations = sampleMaker(repo.getValueFactory)
+				for (r <- rows) yield {
+					val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
+					val expectations = sampleMaker(db.repo.getValueFactory)
 
-						assert (sampleRow.keySet === expectations.keySet, "variable lists did not match")
+					assert (sampleRow.keySet === expectations.keySet, "variable lists did not match")
 
-						val plainExp: Map[String, Value] = expectations.collect:
-							case (varName, expectation: Value) => varName -> expectation
-						val samplePlainPart = sampleRow.filter:
-							case (varName, _) => plainExp.contains(varName)
+					val plainExp: Map[String, Value] = expectations.collect:
+						case (varName, expectation: Value) => varName -> expectation
+					val samplePlainPart = sampleRow.filter:
+						case (varName, _) => plainExp.contains(varName)
 
-						assert(samplePlainPart === plainExp)
+					assert(samplePlainPart === plainExp)
 
-						expectations.foreach:
-							case (varName, testThunk: Function1[Value, Boolean] @ unchecked) =>
-								val sampleValue = sampleRow(varName)
-								assert(
-									testThunk(sampleValue),
-									s"value $sampleValue for variable $varName was unexpected"
-								)
+					expectations.foreach:
+						case (varName, testThunk: Function1[Value, Boolean] @ unchecked) =>
+							val sampleValue = sampleRow(varName)
+							assert(
+								testThunk(sampleValue),
+								s"value $sampleValue for variable $varName was unexpected"
+							)
 
-							case _ =>
+						case _ =>
 
-						succeed
-					}
-				})
+					succeed
+				}
 			}
 		}
 

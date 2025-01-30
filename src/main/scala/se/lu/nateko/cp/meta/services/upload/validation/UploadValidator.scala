@@ -286,48 +286,52 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri)(using conn.primaryContextView)
 		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri) && !customCoverageExists(covUri)
 
-		val spatial = meta.specificInfo match
+		val spatialOpt: Option[GeoCoverage] = meta.specificInfo match
 			case Left(spTemp) => Some(spTemp.spatial)
 			case Right(stationTimeSeries) => stationTimeSeries.spatial
 
-		if (spatial.isDefined)
-			spatial.get match
-				case geoFeature: GeoFeature => geoFeature.uri match
-					case None => Success(meta)
-					case Some(covUri) =>
-						if customCoverageExists(covUri) then Success(meta)
-						else userFail(
-							"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
-							"instance appears to exist with this URL in the target RDF graph of this data object. " +
-							"If you intend to upload a custom spatial coverage for this object, do not use a URL. " +
-							"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
-						)
-				case covUri: URI =>
-					if stockCoverageExists(covUri) then Success(meta)
-					else if customCoverageExists(covUri) then userFail(
-						s"There exists a custom spatial coverage with URI $covUri. Please use full GeoFeature object without URI " +
-						"inside the metadata upload package, rather than just the URI reference."
+		/**
+		  * Try represents validation errors, Option represents the canonicalized GeoCoverage
+		  * to be injected into the response.
+		  */
+		val canonical: Try[Option[GeoCoverage]] = spatialOpt.map:
+			case geoFeature: GeoFeature => geoFeature.uri match
+				case None => Success(None)
+				case Some(covUri) =>
+					if customCoverageExists(covUri) then Success(None)
+					else userFail(
+						"Spatial coverage was supplied with URI for metadata upload, but no prior spatial coverage " +
+						"instance appears to exist with this URL in the target RDF graph of this data object. " +
+						"If you intend to upload a custom spatial coverage for this object, do not use a URL. " +
+						"If you want to reuse a 'stock' spatial coverage, supply a URI only instead of GeoCoverage object."
 					)
-					else userFail(s"No 'stock' spatial coverage with URI $covUri")
-				case jsonString: String =>
-					GeoJson.toFeature(jsonString) match
-						case Success(gf) =>
-							val canonicalCovStr = GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
-							meta.specificInfo match
+			case covUri: URI =>
+				if stockCoverageExists(covUri) then Success(None)
+				else if customCoverageExists(covUri) then userFail(
+					s"There exists a custom spatial coverage with URI $covUri. Please use full GeoFeature object without URI " +
+					"inside the metadata upload package, rather than just the URI reference."
+				)
+				else userFail(s"No 'stock' spatial coverage with URI $covUri")
+			case jsonString: String =>
+				GeoJson.toFeature(jsonString) match
+					case Success(gf) =>
+						val canonicalCovStr = GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
+						Success(Some(canonicalCovStr))
+					case Failure(err) => userFail:
+						s"Spatial coverage was not an acceptable GeoJSON string. Error message: ${err.getMessage}"
+		.getOrElse(Success(None))
 
-								case Left(spTemp) =>
-									val updatedDto = meta.copy(specificInfo = Left(spTemp.copy(spatial = canonicalCovStr)))
-									Success(updatedDto)
+		canonical.map:
+			case Some(canonCov) =>
+				meta.specificInfo match
+					case Left(spTemp) =>
+						meta.copy(specificInfo = Left(spTemp.copy(spatial = canonCov)))
 
-								case Right(stationTimeSeries) =>
-									val updatedDto = meta.copy(specificInfo = Right(stationTimeSeries.copy(spatial = Some(canonicalCovStr))))
-									Success(updatedDto)
+					case Right(timeSer) =>
+						meta.copy(specificInfo = Right(timeSer.copy(spatial = Some(canonCov))))
+			case _ => meta
 
-						case Failure(err) => userFail:
-							s"Spatial coverage was not an acceptable GeoJSON string. Error message: ${err.getMessage}"
-		else
-			Success(meta)
-
+	end validateSpatialCoverage
 
 	private def validateDescription(descr: Option[String]): Try[NotUsed] = descr.fold(ok)(
 		doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters")

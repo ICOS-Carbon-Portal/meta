@@ -21,19 +21,17 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 		input.value = serializer(t)
 	}
 
-	def reset(): Unit = {
+	def reset(): Unit =
 		_value = init
 		input.value = ""
-	}
+		clearValidationVis()
 
 	input.oninput = _ => refreshAndNotify()
 
 	def refreshAndNotify(): Unit = {
 		_value = parser(input.value)
 
-		input.classList.remove("is-valid")
-		input.classList.remove("is-invalid")
-		input.setCustomValidity("")
+		clearValidationVis()
 
 		if (_value.isSuccess) {
 			input.classList.add("is-valid")
@@ -44,6 +42,11 @@ abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])
 
 		cb()
 	}
+
+	private def clearValidationVis(): Unit =
+		input.classList.remove("is-valid")
+		input.classList.remove("is-invalid")
+		input.setCustomValidity("")
 
 	def enable(): Unit = {
 		input.disabled = false

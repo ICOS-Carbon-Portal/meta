@@ -286,8 +286,12 @@ class UploadValidator(servers: DataObjectInstanceServers):
 		def customCoverageExists(covUri: URI) = coverageExistsIn(covUri)(using conn.primaryContextView)
 		def stockCoverageExists(covUri: URI) = coverageExistsIn(covUri) && !customCoverageExists(covUri)
 
-		meta.specificInfo match
-			case Left(spTemp) => spTemp.spatial match
+		val spatial = meta.specificInfo match
+			case Left(spTemp) => Some(spTemp.spatial)
+			case Right(stationTimeSeries) => stationTimeSeries.spatial
+
+		if (spatial.isDefined)
+			spatial.get match
 				case geoFeature: GeoFeature => geoFeature.uri match
 					case None => Success(meta)
 					case Some(covUri) =>
@@ -309,12 +313,20 @@ class UploadValidator(servers: DataObjectInstanceServers):
 					GeoJson.toFeature(jsonString) match
 						case Success(gf) =>
 							val canonicalCovStr = GeoJsonString.unsafe(GeoJson.fromFeature(gf).compactPrint)
-							val updatedDto = meta.copy(specificInfo = Left(spTemp.copy(spatial = canonicalCovStr)))
-							Success(updatedDto)
+							meta.specificInfo match
+
+								case Left(spTemp) =>
+									val updatedDto = meta.copy(specificInfo = Left(spTemp.copy(spatial = canonicalCovStr)))
+									Success(updatedDto)
+
+								case Right(stationTimeSeries) =>
+									val updatedDto = meta.copy(specificInfo = Right(stationTimeSeries.copy(spatial = Some(canonicalCovStr))))
+									Success(updatedDto)
+
 						case Failure(err) => userFail:
 							s"Spatial coverage was not an acceptable GeoJSON string. Error message: ${err.getMessage}"
-
-			case Right(_) => Success(meta)
+		else
+			Success(meta)
 
 
 	private def validateDescription(descr: Option[String]): Try[NotUsed] = descr.fold(ok)(

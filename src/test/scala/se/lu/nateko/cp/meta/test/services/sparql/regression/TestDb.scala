@@ -59,6 +59,7 @@ class TestDb {
 private object TestRepo {
 	lazy val repo = Await.result(initRepo(), Duration.Inf)
 	private var reference_count = 0
+	private var open = false
 
 	private lazy val dir = Files.createTempDirectory("testdb").toAbsolutePath
 	private given system: ActorSystem = ActorSystem("TestDb")
@@ -91,13 +92,16 @@ private object TestRepo {
 	}
 
 	def checkout() = {
+		log.info("Checkout")
+		open = true
 		reference_count += 1;
 	}
 
 	def close() = {
 		reference_count -= 1;
-		if (reference_count <= 0) {
+		if (open && reference_count <= 0) {
 			log.info("Cleaning up!")
+			open = false
 			repo.shutDown()
 			FileUtils.deleteDirectory(dir.toFile)
 		}

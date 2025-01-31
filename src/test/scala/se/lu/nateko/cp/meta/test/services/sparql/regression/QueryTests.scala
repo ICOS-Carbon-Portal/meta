@@ -9,6 +9,7 @@ import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.test.DbTest
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -16,7 +17,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class QueryTests extends AsyncFunSpec {
 
-	val db = TestDb()
+	lazy val db = TestDb()
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()
@@ -39,13 +40,13 @@ class QueryTests extends AsyncFunSpec {
 				r <- timedExecution(db.runSparql(q), descr, info)
 			) yield transformResult(r)
 
-			it(s"should return $expectRows rows") {
+			it(s"should return $expectRows rows", DbTest) {
 				rows map { r => {
 					assert(r.size === expectRows)
 				}}
 			}
 
-			it("should return correct sample row") {
+			it("should return correct sample row", DbTest) {
 				for (r <- rows) yield {
 					val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
 					val expectations = sampleMaker(db.repo.getValueFactory)

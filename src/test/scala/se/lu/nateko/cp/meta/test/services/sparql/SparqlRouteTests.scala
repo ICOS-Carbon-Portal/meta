@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.test.{DbTest, SlowRoute}
 
 import java.net.URI
 import scala.concurrent.Future
@@ -26,12 +27,13 @@ import scala.concurrent.Future
 import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 import akka.event.Logging
+import org.scalatest.Tag
 
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	private val log = Logging.getLogger(system, this)
 
-	val db = TestDb()
+	lazy val db = TestDb()
 
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
@@ -40,7 +42,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	// TODO: Changing this signature to just Route and updating tests accordingly breaks things.
 	//			 Tests can probably be rewritten so that doesn't happen.
-	val sparqlRoute: Future[Route] =
+	lazy val sparqlRoute: Future[Route] =
 		Future.apply {
 			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
@@ -65,7 +67,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 		assert(header(`Access-Control-Allow-Origin`.name).get.value() === expectedOrigin)
 
 	describe("SparqlRoute"):
-		it("Correct query should produce correct result and get cached"):
+		it("Correct query should produce correct result and get cached", DbTest):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val query = s"""select * where { 
 						VALUES ?s { <$uri> }
@@ -87,7 +89,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 					assert(responseAs[String] === firstResponse)
 					assert(header("x-cache-status").get == RawHeader("X-Cache-Status", "HIT"))
 
-		it("Request with cache disabled should update the cache"):
+		it("Request with cache disabled should update the cache", DbTest):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val query = s"""select * where { <$uri> ?p ?o } limit 30"""
 			var firstResponse: String = ""
@@ -100,7 +102,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 					assert(responseAs[String] === firstResponse)
 					assert(header("x-cache-status").get === RawHeader("X-Cache-Status", "HIT"))
 
-		it("Syntax error in query"):
+		it("Syntax error in query", DbTest):
 			val query = "selecct * where { ?s ?p ?o }"
 			
 			testRoute(query):
@@ -108,7 +110,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				assertCORS()
 				assert(responseAs[String].contains("selecct"))
 
-		it("'Biblioinfo' query on a broken object returns empty result list"):
+		it("'Biblioinfo' query on a broken object returns empty result list", DbTest):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -124,7 +126,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				assertCORS()
 				assert(responseAs[String].trim == "dobj,cit")
 
-		it("Broken object is excluded from a 'biblioinfo' query on multiple objects"):
+		it("Broken object is excluded from a 'biblioinfo' query on multiple objects", DbTest):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -165,12 +167,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 			offset 1000 limit 3
 		"""
 
-		it("Long running query should result in bad-request response"):
+		it("Long running query should result in bad-request response", DbTest, SlowRoute):
 			testRoute(longRunningQuery):
 				assertCORS()
 				assert(status == StatusCodes.BadRequest)
 
-		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
+		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries", DbTest, SlowRoute):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.1.1"
 
@@ -185,7 +187,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		it("Too many parallel queries result in bad-request responses"):
+		it("Too many parallel queries result in bad-request responses", DbTest, SlowRoute):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
 

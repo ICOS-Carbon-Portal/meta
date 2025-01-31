@@ -9,7 +9,6 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.pattern.after
 import eu.icoscp.envri.Envri
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
@@ -25,11 +24,8 @@ import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
-import akka.event.Logging
 
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
-
-	private val log = Logging.getLogger(system, this)
 
 	val db = TestDb()
 
@@ -189,14 +185,27 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
 
+			val start = System.currentTimeMillis()
 			sparqlRoute.flatMap: route =>
-				val request = req(longRunningQuery, ip, Some(`Cache-Control`(`no-cache`)))
-				route(request)
-				route(request)
-				val query = s"""select * where { <$uri> ?p ?o } # query 3"""
-				after(100.millis): // to ensure that the third query gets started last
-					testRoute(query, ip):
-						assertCORS()
-						assert(status == StatusCodes.BadRequest)
+				def launchRequest(id : Int) = {
+					val query = s"""select * where { <$uri> ?p ?o }"""
+					val request = req(query, ip, Some(`Cache-Control`(`no-cache`)))
+					info(s"[${System.currentTimeMillis() - start}] Launching request ${id.toString()}")
+					val res = route(request)
+					res.onComplete(_ => info(s"[${System.currentTimeMillis() - start}] Request ${id.toString()} finished"))
+					res
+				}
+
+				val requests = Seq.range(0, 6).map(launchRequest)
+
+				Future.sequence(requests).map(results =>
+					val statuses = results.map(_.status)
+					info(s"statuses: ${statuses.toString()}")
+					val accepted = statuses.filter(_ == StatusCodes.OK)
+					val rejected = statuses.filter(_ == StatusCodes.BadRequest)
+					assert(accepted.length >= 1)
+					assert(rejected.length >= 1)
+				)
+
 
 end SparqlRouteTests

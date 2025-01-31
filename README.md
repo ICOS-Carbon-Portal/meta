@@ -127,10 +127,11 @@ Clarifications:
 		- `sources` (optional) is an array of source data objects, that the current one was produced from, referred to as hashsums. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
 		- `documentation` (optional) hashsum of a document object containing information specific to production of this data object.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
+	- `spatial` (optional) &mdash; same as for spatiotemporal objects (see below)
 - `specificInfo` for spatiotemporal objects
 	- `title` is a required string.
 	- `description` is an optional string.
-	- `spatial` is either a lat/lon bounding box, or a string with url reference to a reusable spacial coverage object, or a string with GeoJSON representation of the object-specific geo-coverage; in the first case, it's an object with the following properties:
+	- `spatial` (required) is either a lat/lon bounding box, or a string with url reference to a reusable spacial coverage object, or a string with GeoJSON representation of the object-specific geo-coverage; in the first case, it's an object with the following properties:
 		- `min` containing numeric `lat` and `lon` (WGS84).
 		- `max` containing numeric `lat` and `lon` (WGS84).
 		- `label` is a optional string to describe the spacial coverage.
@@ -191,7 +192,9 @@ Carbon Portal supports creation of static collections with constant lists of imm
 	"coverage": "http://meta.icos-cp.eu/resources/latlonboxes/europeLatLonBoxIngos"
 }
 ```
-The fields are either self-explanatory, or have the same meaning as for the data object upload. If no spatial coverage is provided, it will instead be calculated from the spatial coverage of the members of the collection.
+The fields are either self-explanatory, or have the same meaning as for the data object upload.
+Spatial `coverage` is optional and has the same meaning as `spatial` for data objects (see above).
+If no spatial coverage is provided, it will be calculated from the spatial coverage of the members of the collection.
 
 As with data object uploads, this metadata package must be HTTP-POSTed to `https://meta.icos-cp.eu/upload` with `application/json` content type and the CP authentication cookie. The server will reply with landing page of the collection. The last segment of the landing page's URL is collections ID that is obtained by SHA-256-hashsumming of the alphabetically sorted list of members' hashsums (it is base64url representations of the hashsums that are sorted, but it is binary values that contribute to the collections' hashsum).
 
@@ -307,9 +310,14 @@ uses a list of [queries under the hood](https://data.icos-cp.eu/portal/#%7B%22fi
 Of particular interest are two queries: *Statistics of data object origins* and the data object list query (the small button).
 These two queries are dynamic, reflecting the state of the filters, selections, sorting, and paging (when applicable) of the portal app interface.
 They can be used as inspiration and a starting point for writing more customized queries.
+In the latter case, the starting query can often be substantially simplified by stripping down unneeded variables.
 
 ### Other queries
 To further demonstrate some of the possibilities that are accessible via SPARQL, the [client app](https://meta.icos-cp.eu/sparqlclient/) has a list of pre-defined queries to choose from.
+
+### Resources for learning SPARQL
+
+In addition to the [W3C recommendation document](https://www.w3.org/TR/sparql11-query/) that can serve as a reference, there is a recommended [quick-intro video](https://www.youtube.com/watch?v=FvGndkpa4K0) and [a book](https://a.co/d/gMw4IYm).
 
 ### Summary
 

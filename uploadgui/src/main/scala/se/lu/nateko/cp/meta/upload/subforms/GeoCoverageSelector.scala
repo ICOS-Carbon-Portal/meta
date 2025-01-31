@@ -24,9 +24,9 @@ import se.lu.nateko.cp.meta.core.data.FeatureWithGeoJson
 
 class GeoCoverageSelector(covs: IndexedSeq[SpatialCoverage], lbl: String)(using PubSubBus) extends PanelSubform(s".geocov-element"):
 	private val spatialCovSelect = new Select[SpatialCoverage](s"${lbl}geoselect", _.label, _.uri.map(_.toString).getOrElse(""), autoselect = false, onSpatCoverSelected)
-	private val geoCovElements = new HtmlElements(s".geocov-element")
-	private val latLonBoxElements = new HtmlElements(s".latlonbox-element")
-	private val geoJsonElements = new HtmlElements(s".customgeo-element")
+	private val geoCovElements = new HtmlElements(s".${lbl}geocov-element")
+	private val latLonBoxElements = new HtmlElements(s".${lbl}latlonbox-element")
+	private val geoJsonElements = new HtmlElements(s".${lbl}customgeo-element")
 
 	private val spatCovLabel = new TextOptInput(s"${lbl}geolbl", () => ())
 	private val geoJsonInput = new JsonInput(s"${lbl}geojson", notifyUpdate, "geocoverage")

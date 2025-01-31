@@ -610,7 +610,10 @@ write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscree
 	</div>
 	<div class="mb-3 geocov-element customgeo-element">
 		<label class="form-label" for="@{lbl}geojson">GeoJSON</label>
-		@helpButton("Supported geometry types are Point, LineString, Polygon, GeometryCollection, and FeatureCollection.")
+			@helpButton(
+				"Supported GeoJSON types are Point, LineString, Polygon, GeometryCollection, Feature " +
+				"(with 'label' and 'radius' properties recognized), and FeatureCollection."
+			)
 		<input id="@{lbl}geojson" type="text" class="form-control" placeholder="Paste GeoJSON here">
 	</div>
 	<div class="mb-3 geocov-element latlonbox-element">

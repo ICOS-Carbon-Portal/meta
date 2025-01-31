@@ -53,7 +53,7 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 	private val samplingPointSelect = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), _.map(_.uri.toString).getOrElse(""), autoselect = false, onSamplingPointSelected)
 	private val latitudeInput = new DoubleOptInput("latitude", notifyUpdate)
 	private val longitudeInput = new DoubleOptInput("longitude", notifyUpdate)
-	private val spatialCovSelect = new GeoCoverageSelector(covs, "l2")
+	private val spatialCovSelect = new GeoCoverageSelector(covs, "timeser")
 
 	private val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 

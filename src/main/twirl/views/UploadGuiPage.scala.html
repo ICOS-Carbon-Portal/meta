@@ -340,8 +340,8 @@
 								<label class="form-label" for="instrumenturi">Instrument (url) @optional</label>
 								<textarea class="form-control" name="instrumenturi" id="instrumenturi" rows="2" cols="80"></textarea>
 							</div>
-							@geoCovSelect("l2"){
-								<em class="text-muted">- click to reset:</em>
+							@geoCovSelect("timeser"){
+								<em class="text-muted">- optional - click to reset:</em>
 								<button class="btn p-0 ms-1" id="rmL2GeoSelection" aria-label="Reset geo-coverage">
 									<i class="far fa-times-circle"></i>
 								</button>
@@ -384,7 +384,7 @@
 								<label class="form-label" for="elabsampleheight">Sampling height (m) @optional</label>
 								<input id="elabsampleheight" type="text" class="form-control">
 							</div>
-							@geoCovSelect("l3"){
+							@geoCovSelect("spattemp"){
 							}
 							<div class="mb-3" id="l3varinfo-form">
 								<label class="form-label" for="l3varadd-button">Previewable variables</label>

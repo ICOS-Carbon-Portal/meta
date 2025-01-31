@@ -82,7 +82,8 @@ object DroughtUpload{
 			samplingHeight = None,
 			acquisitionInterval = if(isHh) None else Some(TimeInterval(meta.acqStart, meta.acqEnd)),
 			nRows = meta.nPoints,
-			production = Some(productionDto)
+			production = Some(productionDto),
+			spatial = None
 		)
 		DataObjectDto(
 			hashSum = meta.hash,

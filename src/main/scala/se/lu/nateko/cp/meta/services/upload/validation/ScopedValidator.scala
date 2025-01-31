@@ -164,7 +164,7 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 	)(using Envri, DobjConn): Try[NotUsed] = if(subm.submittingOrganization === vocab.atc) dto match {
 		case DataObjectDto(
 			_, _, _, _,
-			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _)),
+			Right(StationTimeSeriesDto(stationUri, _, _, _, _, Some(TimeInterval(_, acqStop)), _, _, _)),
 			Some(Left(prevHash)), _, _
 		) =>
 			if(spec.dataLevel == 1 && spec.format.self.uri === metaVocab.atcProductFormat && spec.project.self.uri === vocab.icosProject){

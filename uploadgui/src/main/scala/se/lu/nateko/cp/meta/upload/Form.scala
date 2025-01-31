@@ -26,7 +26,7 @@ class Form(
 
 	val aboutPanel = new AboutPanel(subms)
 	val dataPanel = new DataPanel(objSpecs, keyWords, () => aboutPanel.submitterOpt)
-	val statTsPanel = new StationTimeSeriesPanel
+	val statTsPanel = new StationTimeSeriesPanel(spatCovs)
 	val prodPanel = new ProductionPanel
 	val collPanel = new CollectionPanel(spatCovs)
 	val docPanel = new DocumentPanel
@@ -148,7 +148,8 @@ class Form(
 			samplingPoint <- statTsPanel.samplingPoint;
 			samplingHeight <- statTsPanel.samplingHeight;
 			instrumentUri <- statTsPanel.instrUri;
-			production <- prodPanel.dataProductionDtoOpt
+			production <- prodPanel.dataProductionDtoOpt;
+			spatial <- statTsPanel.spatial
 		) yield Right(
 			StationTimeSeriesDto(
 				station = station.namedUri.uri,
@@ -158,7 +159,8 @@ class Form(
 				samplingHeight = samplingHeight,
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
-				production = production
+				production = production,
+				spatial = spatial
 			)
 		)
 	}
@@ -179,7 +181,7 @@ class Form(
 		isNextVersionOf = previousVersion,
 		preExistingDoi = doi,
 		documentation = documentation,
-		coverage = collPanel.coverage.toOption
+		coverage = collPanel.coverage.toOption.flatten
 	)
 
 	def documentObjectDto: Try[DocObjectDto] = for(

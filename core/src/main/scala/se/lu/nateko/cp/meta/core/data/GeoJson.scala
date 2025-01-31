@@ -89,6 +89,7 @@ object GeoJson {
 					"features" -> JsArray(featuresJs)
 				))
 			}
+		case FeatureWithGeoJson(feature, _) => toGeometryOrFeature(feature)
 	}
 
 	private def shortCircuit(vertices: Seq[JsArray]): Seq[JsArray] =

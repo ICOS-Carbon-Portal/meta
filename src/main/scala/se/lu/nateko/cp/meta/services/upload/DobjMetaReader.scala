@@ -309,20 +309,13 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]
 	)(using dobjConn: DobjConn, docConn: DocConn): Validated[SpatioTemporalMeta] =
 
-		val coverageV: Validated[GeoFeature] =
-			for
-				covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)(using dobjConn)
-				cov0 <- getCoverage[DobjConn](covIri)
-			yield
-				val isCustomCoverage: Boolean = dobjConn.primaryContextView.hasStatement(covIri, RDF.TYPE, null)
-				if isCustomCoverage then cov0.withOptUri(None) else cov0
-
 		val prodV = new Validated(prodOpt)
 
 		for
 			title <- getSingleString[DobjConn](dobj, metaVocab.dcterms.title)
 			description <- getOptionalString[DobjConn](dobj, metaVocab.dcterms.description)
-			coverage <- coverageV
+			covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)(using dobjConn)
+			coverage <- getCoverage[DobjConn](covIri)
 			temporal <- getTemporalCoverage(dobj)
 			acqOpt <- getOptionalUri[DobjConn](dobj, metaVocab.wasAcquiredBy)
 			stationOpt <- acqOpt.map(getOptionalUri[DobjConn](_, metaVocab.prov.wasAssociatedWith)).sinkOption

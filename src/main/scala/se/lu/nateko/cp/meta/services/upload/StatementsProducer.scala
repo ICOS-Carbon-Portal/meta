@@ -245,7 +245,8 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		} ++
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
-		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty)
+		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty) ++
+		meta.spatial.toSeq.flatMap(getSpatialCoverageStatements(objectUri, _))
 	}
 
 	private def getProductionStatements(hash: Sha256Sum, prod: DataProductionDto)(using Envri): Seq[Statement] = {

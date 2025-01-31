@@ -340,6 +340,12 @@
 								<label class="form-label" for="instrumenturi">Instrument (url) @optional</label>
 								<textarea class="form-control" name="instrumenturi" id="instrumenturi" rows="2" cols="80"></textarea>
 							</div>
+							@geoCovSelect("timeser"){
+								<em class="text-muted">- optional - click to reset:</em>
+								<button class="btn p-0 ms-1" id="rmL2GeoSelection" aria-label="Reset geo-coverage">
+									<i class="far fa-times-circle"></i>
+								</button>
+							}
 						</div>
 					</div>
 				</section>
@@ -378,7 +384,7 @@
 								<label class="form-label" for="elabsampleheight">Sampling height (m) @optional</label>
 								<input id="elabsampleheight" type="text" class="form-control">
 							</div>
-							@geoCovSelect("l3"){
+							@geoCovSelect("spattemp"){
 							}
 							<div class="mb-3" id="l3varinfo-form">
 								<label class="form-label" for="l3varadd-button">Previewable variables</label>
@@ -598,27 +604,31 @@ write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscree
 		<select class="form-select" id="@{lbl}geoselect"></select>
 	</div>
 
-	<div class="mb-3 geocov-element latlonbox-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geolbl">Label @optional</label>
 		<input id="@{lbl}geolbl" type="text" class="form-control">
 	</div>
-	<div class="mb-3 geocov-element customgeo-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}customgeo-element">
 		<label class="form-label" for="@{lbl}geojson">GeoJSON</label>
+			@helpButton(
+				"Supported GeoJSON types are Point, LineString, Polygon, GeometryCollection, Feature " +
+				"(with 'label' and 'radius' properties recognized), and FeatureCollection."
+			)
 		<input id="@{lbl}geojson" type="text" class="form-control" placeholder="Paste GeoJSON here">
 	</div>
-	<div class="mb-3 geocov-element latlonbox-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geominlat">Min latitude</label>
 		<input id="@{lbl}geominlat" type="text" class="form-control">
 	</div>
-	<div class="mb-3 geocov-element latlonbox-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geominlon">Min longitude</label>
 		<input id="@{lbl}geominlon" type="text" class="form-control">
 	</div>
-	<div class="mb-3 geocov-element latlonbox-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geomaxlat">Max latitude</label>
 		<input id="@{lbl}geomaxlat" type="text" class="form-control">
 	</div>
-	<div class="mb-3 geocov-element latlonbox-element">
+	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geomaxlon">Max longitude</label>
 		<input id="@{lbl}geomaxlon" type="text" class="form-control">
 	</div>

@@ -72,7 +72,8 @@ case class StationTimeSeriesDto(
 	samplingHeight: Option[Float],
 	acquisitionInterval: Option[TimeInterval],
 	nRows: Option[Int],
-	production: Option[DataProductionDto]
+	production: Option[DataProductionDto],
+	spatial: Option[GeoCoverage]
 ){
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 }

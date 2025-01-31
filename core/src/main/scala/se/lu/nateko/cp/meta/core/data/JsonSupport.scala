@@ -37,6 +37,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[Circle] = jsonFormat4(Circle.apply)
 	given RootJsonFormat[PinKind] = enumFormat(PinKind.valueOf, PinKind.values)
 	given RootJsonFormat[Pin] = jsonFormat2(Pin.apply)
+	given RootJsonFormat[FeatureWithGeoJson] = jsonFormat2(FeatureWithGeoJson.apply)
 
 	given JsonFormat[CountryCode] with{
 		def write(cc: CountryCode): JsValue = JsString(cc.code)
@@ -59,7 +60,8 @@ object JsonSupport extends CommonJsonSupport:
 			subtypeEntry[Polygon],
 			subtypeEntry[FeatureCollection],
 			subtypeEntry[Circle],
-			subtypeEntry[Pin]
+			subtypeEntry[Pin],
+			subtypeEntry[FeatureWithGeoJson]
 		)
 
 		def write(geo: GeoFeature): JsValue =
@@ -71,6 +73,7 @@ object JsonSupport extends CommonJsonSupport:
 				case geocol: FeatureCollection => geocol.toJson
 				case c: Circle => c.toJson
 				case p: Pin => p.toJson
+				case jsgf: FeatureWithGeoJson => jsgf.toJson
 			vanilla.pluss(TypeField -> geo.getClass.getSimpleName)
 
 		def read(value: JsValue): GeoFeature = value match

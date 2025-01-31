@@ -18,14 +18,17 @@ import UploadApp.whenDone
 import Utils.*
 import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.StationTimeSeriesDto
+import se.lu.nateko.cp.meta.GeoCoverage
+import org.scalajs.dom.html
 
 
-class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".acq-section"){
+class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubSubBus, envri: Envri) extends PanelSubform(".acq-section"){
 	def station: Try[Station] = stationSelect.value.withMissingError("Station not chosen")
 	def site = siteSelect.value
 	def timeInterval: Try[Option[TimeInterval]] = timeIntevalInput.value.withErrorContext("Acqusition time interval")
 	def samplingHeight: Try[Option[Float]] = samplingHeightInput.value.withErrorContext("Sampling height")
 	def instrUri: Try[OptionalOneOrSeq[URI]] = instrUriInput.value.withErrorContext("Instrument URI");
+	def spatial: Try[Option[GeoCoverage]] = spatialCovSelect.spatialCoverage
 
 	def samplingPoint: Try[Option[Position]] = samplingPointSelect.value.flatten match {
 		case Some(`customSamplingPoint`) =>
@@ -50,8 +53,14 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 	private val samplingPointSelect = new Select[Option[SamplingPoint]]("samplingpointselect", _.map(_.name).getOrElse(""), _.map(_.uri.toString).getOrElse(""), autoselect = false, onSamplingPointSelected)
 	private val latitudeInput = new DoubleOptInput("latitude", notifyUpdate)
 	private val longitudeInput = new DoubleOptInput("longitude", notifyUpdate)
+	private val spatialCovSelect = new GeoCoverageSelector(covs, "timeser")
 
 	private val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
+
+	getElementById[html.Button]("rmL2GeoSelection").foreach: button =>
+		button.onclick = event =>
+			event.preventDefault()
+			spatialCovSelect.unselect()
 
 	def resetForm(): Unit = {
 		resetPlaceInfo()
@@ -59,6 +68,7 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 		acqStopInput.reset()
 		samplingHeightInput.value = None
 		instrUriInput.value = None
+		spatialCovSelect.resetForm()
 	}
 
 	bus.subscribe{
@@ -89,6 +99,7 @@ class StationTimeSeriesPanel(using bus: PubSubBus, envri: Envri) extends PanelSu
 					timeIntevalInput.value = l2.acquisitionInterval
 					samplingHeightInput.value = l2.samplingHeight
 					instrUriInput.value = l2.instrument
+					spatialCovSelect.handleReceivedSpatialCoverage(l2.spatial)
 
 					whenDone(StationTimeSeriesPanel.getStationInfo(l2, stationSelect.getOptions)){
 						case None =>

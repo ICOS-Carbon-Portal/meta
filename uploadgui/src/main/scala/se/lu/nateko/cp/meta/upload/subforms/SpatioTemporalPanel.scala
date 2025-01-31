@@ -15,10 +15,11 @@ import Utils.*
 
 class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
-	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for(
+	def meta(productionDto: => Try[DataProductionDto]): Try[SpatioTemporalDto] = for
 		title <- titleInput.value;
 		descr <- descriptionInput.value;
-		spatCov <- spatialCovSelect.spatialCoverage;
+		spatCovOpt <- spatialCovSelect.spatialCoverage;
+		spatCov <- spatCovOpt.withMissingError("spatial coverage");
 		tempCovOpt <- timeIntevalInput.value;
 		tempCov <- tempCovOpt.withMissingError("time interval");
 		tempRes <- temporalResInput.value;
@@ -26,7 +27,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		customLanding <- externalPageInput.value;
 		height <- samplingHeightInput.value;
 		varInfo <- varInfoForm.varInfos
-	) yield SpatioTemporalDto(
+	yield SpatioTemporalDto(
 		title = title,
 		description = descr,
 		spatial = spatCov,
@@ -48,7 +49,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val temporalResInput = new TextOptInput("l3tempres", notifyUpdate)
 	private val stationSelect = new Select[Station]("elabstationselect", s => s"${s.id} (${s.namedUri.name})", _.namedUri.uri.toString)
 	private val samplingHeightInput = new FloatOptInput("elabsampleheight", notifyUpdate)
-	private val spatialCovSelect = new GeoCoverageSelector(covs, "l3")
+	private val spatialCovSelect = new GeoCoverageSelector(covs, "spattemp")
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 

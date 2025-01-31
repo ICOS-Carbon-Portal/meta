@@ -9,12 +9,12 @@ import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.test.DbTest
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
+@tags.DbTest
 class QueryTests extends AsyncFunSpec {
 
 	lazy val db = TestDb()
@@ -40,13 +40,13 @@ class QueryTests extends AsyncFunSpec {
 				r <- timedExecution(db.runSparql(q), descr, info)
 			) yield transformResult(r)
 
-			it(s"should return $expectRows rows", DbTest) {
+			it(s"should return $expectRows rows") {
 				rows map { r => {
 					assert(r.size === expectRows)
 				}}
 			}
 
-			it("should return correct sample row", DbTest) {
+			it("should return correct sample row") {
 				for (r <- rows) yield {
 					val sampleRow = r(sampleIndex).asScala.map(b => b.getName -> b.getValue).toMap
 					val expectations = sampleMaker(db.repo.getValueFactory)

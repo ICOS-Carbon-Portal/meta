@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
@@ -77,7 +76,7 @@ class IndexData(nObjects: Int)(
 		obj: Value,
 		isAssertion: Boolean,
 		vocab: CpmetaVocab
-	)(using tsc: TSC): Unit =
+	)(using TSC): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart

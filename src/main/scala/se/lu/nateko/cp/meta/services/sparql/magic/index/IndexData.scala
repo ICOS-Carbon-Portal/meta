@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection as TSC
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
@@ -69,7 +69,7 @@ class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriple(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean, vocab: CpmetaVocab)(using TSC): Unit = {
+	def processTriple(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean, vocab: CpmetaVocab)(using statements: StatementSource): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -204,7 +204,7 @@ class IndexData(nObjects: Int)(
 											case _ =>
 					else if
 						deprecated.contains(oe.idx) && // this was to prevent needless repo access
-						!TSC.hasStatement(null, isNextVersionOf, obj)
+						!statements.hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -220,7 +220,7 @@ class IndexData(nObjects: Int)(
 							val deprecated = boolBitmap(DeprecationFlag)
 
 							val directPrevVers: IndexedSeq[Int] =
-								TSC.getStatements(subj, isNextVersionOf, null)
+								statements.getStatements(subj, isNextVersionOf, null)
 									.flatMap(st => modForDobj(st.getObject)(_.idx))
 									.toIndexedSeq
 
@@ -324,8 +324,8 @@ class IndexData(nObjects: Int)(
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
-	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using TSC): Boolean =
-		TSC.getStatements(obj, vocab.dcterms.hasPart, null)
+	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using statements: StatementSource): Boolean =
+		statements.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member): oe =>
 						oe.isNextVersion = true
@@ -334,8 +334,8 @@ class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using TSC): Option[Int] =
-		TSC.getStatements(null, vocab.dcterms.hasPart, deprecator)
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using statements: StatementSource): Option[Int] =
+		statements.getStatements(null, vocab.dcterms.hasPart, deprecator)
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq
 			.headOption

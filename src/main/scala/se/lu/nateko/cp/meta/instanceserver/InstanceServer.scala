@@ -64,13 +64,19 @@ trait InstanceServer extends AutoCloseable:
 
 end InstanceServer
 
-trait TriplestoreConnection extends AutoCloseable:
+trait StatementSource {
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
+	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
+
+	final def hasStatement(st: Statement): Boolean = st.getSubject() match
+		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
+		case _ => false
+}
+
+trait TriplestoreConnection extends AutoCloseable, StatementSource:
 	def primaryContext: IRI
 	def readContexts: Seq[IRI]
 	def factory: ValueFactory
-
-	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
-	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
 	def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection
 
 	final def withReadContexts(read: Seq[IRI]): TriplestoreConnection =
@@ -80,10 +86,6 @@ trait TriplestoreConnection extends AutoCloseable:
 	final def primaryContextView: TriplestoreConnection =
 		if readContexts.length == 1 && readContexts.head == primaryContext then this
 		else withContexts(primaryContext, Seq(primaryContext))
-
-	final def hasStatement(st: Statement): Boolean = st.getSubject() match
-		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
-		case _ => false
 
 
 object TriplestoreConnection:

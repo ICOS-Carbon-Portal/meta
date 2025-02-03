@@ -293,16 +293,13 @@ class IndexData(nObjects: Int)(
 	}
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {
-		idLookup.get(hash) match {
-			case None =>
-				val canonicalHash = hash.truncate
-				val oe = new ObjEntry(canonicalHash, objs.length, "")
-				objs += oe
-				idLookup += canonicalHash -> oe.idx
-				oe
-			case Some(obj) =>
-				objs.apply(obj)
-		}
+		idLookup.get(hash).fold {
+			val canonicalHash = hash.truncate
+			val oe = new ObjEntry(canonicalHash, objs.length, "")
+			objs += oe
+			idLookup += canonicalHash -> oe.idx
+			oe
+		}(objs.apply)
 	}
 
 	private def handleContinuousPropUpdate(

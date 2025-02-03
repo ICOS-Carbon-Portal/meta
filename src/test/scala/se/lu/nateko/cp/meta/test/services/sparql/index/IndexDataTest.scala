@@ -18,7 +18,7 @@ private class DummyStatements extends StatementSource {
 
 class IndexDataTest extends AnyFunSpec {
 	describe("processTriple") {
-		it("clears fName of ObjEntry when hasName tuple is deleted") {
+		it("clears fileName of ObjEntry when hasName tuple is deleted") {
 			val repo = Loading.emptyInMemory
 			val factory = repo.getValueFactory
 			val vocab = CpmetaVocab(factory)

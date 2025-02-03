@@ -1,22 +1,18 @@
 package se.lu.nateko.cp.meta.upload.drought
 
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.net.URI
-import java.nio.file.Path
-import se.lu.nateko.cp.meta.core.data.TimeInterval
 import akka.Done
-import java.io.InputStreamReader
 import com.opencsv.CSVReader
-import java.nio.file.Paths
-import scala.jdk.CollectionConverters.IteratorHasAsScala
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.doi.*
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, StaticCollectionDto, StationTimeSeriesDto}
+
+import java.io.InputStreamReader
+import java.net.URI
+import java.nio.file.{Path, Paths}
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 
 object DroughtUpload{

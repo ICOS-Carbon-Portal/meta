@@ -1,38 +1,24 @@
 package se.lu.nateko.cp.meta.routes
 
-import scala.language.implicitConversions
-
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.Multipart
-import akka.http.scaladsl.model.ResponseEntity
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, Multipart, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.ExceptionHandler
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.FileDeletionDto
-import se.lu.nateko.cp.meta.LabelingStatusUpdate
-import se.lu.nateko.cp.meta.LabelingUserDto
-import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
-import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
-import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
-import se.lu.nateko.cp.meta.services.labeling.StationLabelingHistory
-import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
-import spray.json.JsObject
+import se.lu.nateko.cp.meta.services.labeling.{StationLabelingHistory, StationLabelingService}
+import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException, UnauthorizedUserInfoUpdateException}
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, FileDeletionDto, LabelingStatusUpdate, LabelingUserDto}
+import spray.json.DefaultJsonProtocol.RootJsObjectFormat
+import spray.json.{JsObject, RootJsonReader}
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.language.implicitConversions
 import scala.util.Try
-import spray.json.RootJsonReader
-import spray.json.DefaultJsonProtocol.RootJsObjectFormat
 
 object LabelingApiRoute extends CpmetaJsonProtocol:
 

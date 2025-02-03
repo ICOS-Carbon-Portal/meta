@@ -1,17 +1,11 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingServiceConfig
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.onto.InstOnto
-import se.lu.nateko.cp.meta.onto.Onto
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.FileStorageService
-import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
-import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
+import se.lu.nateko.cp.meta.services.{CpmetaVocab, FileStorageService, MetadataException, UnauthorizedStationUpdateException}
 
 
 class StationLabelingService(

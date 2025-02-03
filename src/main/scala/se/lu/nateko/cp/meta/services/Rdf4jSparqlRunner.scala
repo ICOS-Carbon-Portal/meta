@@ -1,13 +1,9 @@
 package se.lu.nateko.cp.meta.services
 
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
-
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class Rdf4jSparqlRunner(repo: Repository) extends SparqlRunner {

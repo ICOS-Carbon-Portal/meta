@@ -1,8 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
 
 import scala.concurrent.Future
 

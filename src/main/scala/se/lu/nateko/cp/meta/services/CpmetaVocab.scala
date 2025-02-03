@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.services
 
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.api.CustomVocab
-import java.net.URI
 import se.lu.nateko.cp.meta.OntoConstants.*
+import se.lu.nateko.cp.meta.api.CustomVocab
+
+import java.net.URI
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 

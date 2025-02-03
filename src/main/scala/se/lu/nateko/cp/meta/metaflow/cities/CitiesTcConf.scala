@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.metaflow.cities
 
+import org.eclipse.rdf4j.model.IRI
+import se.lu.nateko.cp.meta.core.data.CityNetwork
 import se.lu.nateko.cp.meta.metaflow.{TC, TcConf}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.core.data.CityNetwork
-import org.eclipse.rdf4j.model.IRI
 
 
 sealed trait CitiesTC(val network: CityNetwork) extends TC

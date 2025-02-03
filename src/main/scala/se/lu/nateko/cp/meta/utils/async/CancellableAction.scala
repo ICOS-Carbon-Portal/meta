@@ -1,8 +1,9 @@
 package se.lu.nateko.cp.meta.utils.async
 
-import scala.concurrent.duration.*
 import akka.actor.Scheduler
+
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.*
 
 class CancellableAction(delay: FiniteDuration, scheduler: Scheduler)(action: => Unit)(implicit exe: ExecutionContext){
 

@@ -1,42 +1,31 @@
 package se.lu.nateko.cp.meta.services.citation
 
-import spray.json.RootJsonFormat
-
 import akka.Done
 import akka.actor.ActorSystem
-import akka.event.LoggingAdapter
+import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
-import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
+import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta], given RootJsonFormat[Doi]}
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.CitationConfig
 import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
-import se.lu.nateko.cp.meta.utils.Mergeable
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.async.errorLite
-import se.lu.nateko.cp.meta.utils.async.timeLimit
+import se.lu.nateko.cp.meta.utils.async.{errorLite, timeLimit}
+import se.lu.nateko.cp.meta.utils.{Mergeable, Validated}
+import spray.json.RootJsonFormat
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.util.concurrent.TimeoutException
 import scala.collection.concurrent.TrieMap
-import scala.concurrent._
+import scala.concurrent.*
 import scala.concurrent.duration.DurationInt
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 import scala.util.control.NoStackTrace
+import scala.util.{Failure, Success, Try}
 
 import CitationClient.*
-import akka.event.Logging
-import org.slf4j.LoggerFactory
 
 
 enum CitationStyle:

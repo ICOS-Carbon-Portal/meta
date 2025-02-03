@@ -1,8 +1,9 @@
 package se.lu.nateko.cp.meta.test.api
 
-import org.scalatest.funsuite.AsyncFunSuite
-import org.scalatest.BeforeAndAfterAll
 import akka.actor.ActorSystem
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AsyncFunSuite
+
 import scala.concurrent.Future
 
 class AkkaTests extends AsyncFunSuite with BeforeAndAfterAll:

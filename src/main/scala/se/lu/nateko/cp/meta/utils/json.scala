@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.utils.json
 
-import spray.json.JsObject
-import spray.json.JsValue
+import spray.json.{JsObject, JsValue}
 
 def merge(objs: JsObject*): JsObject = JsObject(objs.flatMap(_.fields)*)
 

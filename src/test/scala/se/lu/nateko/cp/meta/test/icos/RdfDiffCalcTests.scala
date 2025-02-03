@@ -1,25 +1,21 @@
 package se.lu.nateko.cp.meta.test.icos
 
-import java.net.URI
-
-import org.eclipse.rdf4j.model.Statement
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.{Statement, ValueFactory}
+import org.scalatest.GivenWhenThen
 import org.scalatest.funspec.AnyFunSpec
-
-import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.metaflow.icos.{ATC, AtcConf}
-import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
-import org.scalatest.GivenWhenThen
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import RdfDiffCalcTests.*
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.api.RdfLens
-import org.eclipse.rdf4j.model.ValueFactory
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
+
+import java.net.URI
+
+import RdfDiffCalcTests.*
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 

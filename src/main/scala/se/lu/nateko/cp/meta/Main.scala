@@ -1,21 +1,19 @@
 package se.lu.nateko.cp.meta
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
-import se.lu.nateko.cp.meta.services.citation.CitationClient.readCitCache
-import se.lu.nateko.cp.meta.services.citation.CitationClient.readDoiCache
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import scala.concurrent.Await
-import scala.concurrent.Future
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+
 import scala.concurrent.duration.DurationInt
-import akka.event.Logging
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 

@@ -1,8 +1,9 @@
 package se.lu.nateko.cp.meta.persistence
 
-import java.io.Closeable
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+
+import java.io.Closeable
 import java.time.Instant
 
 trait RdfUpdateLog extends Closeable{

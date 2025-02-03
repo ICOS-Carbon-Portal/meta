@@ -1,11 +1,12 @@
 package se.lu.nateko.cp.meta.services.upload.geocov
 
-import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.algorithm.ConvexHull
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import org.locationtech.jts.simplify.DouglasPeuckerSimplifier
-import scala.collection.mutable
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.operation.union.UnaryUnionOp
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier
+import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+
+import scala.collection.mutable
 
 object GeoCluster:
 	val MaxGeoDigestSize = 15

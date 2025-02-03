@@ -1,28 +1,16 @@
 package se.lu.nateko.cp.meta.services
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.api.CustomVocab
-import se.lu.nateko.cp.meta.api.UriId
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.IcosStationSpecifics
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.collectionPrefix
-import se.lu.nateko.cp.meta.core.data.objectPathPrefix
-import se.lu.nateko.cp.meta.core.data.objectPrefix
-import se.lu.nateko.cp.meta.core.data.staticCollLandingPage
-import se.lu.nateko.cp.meta.core.data.staticObjAccessUrl
-import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
-import se.lu.nateko.cp.meta.core.etcupload.{ StationId => EtcStationId }
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, collectionPrefix, objectPathPrefix, objectPrefix, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
+import se.lu.nateko.cp.meta.core.etcupload.StationId as EtcStationId
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
-import se.lu.nateko.cp.meta.metaflow.{TC, Role, TcConf, TcId}
+import se.lu.nateko.cp.meta.metaflow.{Role, TC, TcConf, TcId}
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.net.URI
-import eu.icoscp.envri.Envri
 
 class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab:
 	import CpVocab.*

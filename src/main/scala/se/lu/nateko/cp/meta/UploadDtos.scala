@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta
 
-import java.net.URI
-import java.time.Instant
-
+import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.doi.*
-import scala.util.Try
+
+import java.net.URI
+import java.time.Instant
 
 sealed trait UploadDto{
 	def submitterId: String

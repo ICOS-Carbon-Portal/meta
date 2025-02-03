@@ -1,22 +1,16 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.{IRI, Statement}
+import org.slf4j.LoggerFactory
 import play.twirl.api.Html
-import se.lu.nateko.cp.cpauth.core.EmailSender
-import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.cpauth.core.{EmailSender, UserId}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.IllegalLabelingStatusException
-import se.lu.nateko.cp.meta.services.UnauthorizedStationUpdateException
+import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import org.slf4j.LoggerFactory
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 trait LifecycleService:
 	self: StationLabelingService =>

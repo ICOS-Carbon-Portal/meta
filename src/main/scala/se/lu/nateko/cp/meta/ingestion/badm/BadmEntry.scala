@@ -1,12 +1,10 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import java.text.NumberFormat
+
+import java.text.{NumberFormat, ParseException}
+import java.time.{LocalDate, LocalDateTime}
 import java.util.Locale
-import java.text.ParseException
 
 sealed trait BadmDate
 case class BadmYear(year: Int) extends BadmDate

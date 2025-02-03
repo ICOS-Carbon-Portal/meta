@@ -1,13 +1,14 @@
 package se.lu.nateko.cp.meta.utils
 
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
+
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
-import scala.util.{Try, Success, Failure}
-import scala.reflect.ClassTag
-import java.nio.charset.StandardCharsets
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Path.{Segment, Slash, Empty}
 import scala.collection.mutable.Buffer
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 extension [T](inner: Option[T])
 	def toTry(error: => Throwable): Try[T] = inner.map(Success.apply)

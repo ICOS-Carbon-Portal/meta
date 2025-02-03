@@ -1,15 +1,13 @@
 package se.lu.nateko.cp.meta.utils.akkahttp
 
-import akka.stream.Materializer
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.ResponseEntity
-import akka.http.scaladsl.model.StatusCodes
 import akka.Done
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import akka.http.scaladsl.model.{HttpResponse, ResponseEntity, StatusCodes}
+import akka.stream.Materializer
+import se.lu.nateko.cp.meta.utils.async.{error, ok}
+
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
-import se.lu.nateko.cp.meta.utils.async.{ok, error}
 
 def responseToDone(errCtxt: String)(resp: HttpResponse)(implicit ctxt: ExecutionContext, mat: Materializer): Future[Done] =
 	if(resp.status.isSuccess) {

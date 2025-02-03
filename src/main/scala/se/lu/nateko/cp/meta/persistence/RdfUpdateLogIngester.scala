@@ -3,14 +3,11 @@ package se.lu.nateko.cp.meta.persistence
 import org.eclipse.rdf4j.common.transaction.IsolationLevels
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
-
-import scala.util.Try
-import scala.util.Failure
-
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import scala.util.Using
+
+import scala.util.{Failure, Try, Using}
 
 
 object RdfUpdateLogIngester:

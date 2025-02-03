@@ -40,6 +40,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.{
 }
 import se.lu.nateko.cp.meta.utils.async.throttle
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, accessEagerly}
+
 import java.io.{FileInputStream, FileOutputStream, InputStream, OutputStream}
 import java.nio.file.{Files, Paths}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}

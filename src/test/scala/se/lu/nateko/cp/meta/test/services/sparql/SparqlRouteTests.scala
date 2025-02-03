@@ -1,31 +1,28 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.CacheDirectives.*
 import akka.http.scaladsl.model.headers.*
+import akka.http.scaladsl.model.headers.CacheDirectives.*
+import akka.http.scaladsl.model.{HttpHeader, StatusCodes}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.RouteTestTimeout
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.pattern.after
 import eu.icoscp.envri.Envri
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 
 import java.net.URI
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
-import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
-import akka.event.Logging
 
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 

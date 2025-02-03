@@ -3,14 +3,12 @@ package se.lu.nateko.cp.meta.metaflow.icos
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.IcosMetaFlowConfig
-import se.lu.nateko.cp.meta.MetaDb
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.{EtcConfig, IcosMetaFlowConfig, MetaDb}
 
 
 object IcosMetaFlow:

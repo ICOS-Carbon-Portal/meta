@@ -1,31 +1,18 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
-import se.lu.nateko.cp.meta.api.RdfLens.CollConn
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, ValueFactory}
+import se.lu.nateko.cp.meta.api.RdfLens.{CollConn, GlobConn}
+import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getOptionalUri
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getStatements
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getUriValues
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.hasStatement
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{getOptionalUri, getStatements, getUriValues, hasStatement}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
 
 abstract class MetadataUpdater(vocab: CpVocab):

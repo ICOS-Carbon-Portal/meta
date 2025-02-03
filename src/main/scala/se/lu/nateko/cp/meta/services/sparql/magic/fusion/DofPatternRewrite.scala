@@ -1,15 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
+import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, BindingSetAssignment, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator}
 import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
-import org.eclipse.rdf4j.query.algebra.SingletonSet
-import org.eclipse.rdf4j.query.algebra.BinaryTupleOperator
-import org.eclipse.rdf4j.query.algebra.TupleExpr
-import org.eclipse.rdf4j.query.algebra.Slice
-import org.eclipse.rdf4j.query.algebra.Order
-import org.eclipse.rdf4j.query.algebra.Group
-import org.eclipse.rdf4j.query.algebra.Filter
-import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator
-import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
 
 object DofPatternRewrite{
 

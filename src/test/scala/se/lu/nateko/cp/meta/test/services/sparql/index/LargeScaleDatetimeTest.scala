@@ -1,10 +1,11 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
-import java.time.Instant
-import scala.io.Source
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
-import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.*
+
+import java.time.Instant
+import scala.io.Source
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 class LargeScaleDatetimeTest extends AnyFunSpec{

@@ -1,32 +1,21 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
-import akka.actor.ActorRef
-import akka.actor.Status
+import akka.actor.{ActorRef, Status}
 import akka.event.LoggingAdapter
-import akka.stream.OverflowStrategy
-import akka.stream.ThrottleMode
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Source
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
+import akka.stream.scaladsl.{Keep, Source}
+import akka.stream.{OverflowStrategy, ThrottleMode}
 import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
-import se.lu.nateko.cp.meta.api.CustomVocab
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.api.{CustomVocab, SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import java.time.Instant
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 

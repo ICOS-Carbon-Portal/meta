@@ -1,54 +1,36 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.Marshalling
-import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
-import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.Uri.Path.Empty
-import akka.http.scaladsl.model.Uri.Path.Segment
-import akka.http.scaladsl.model.Uri.Path.Slash
+import akka.http.scaladsl.marshalling.Marshalling.{WithFixedContentType, WithOpenCharset}
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, ValueFactory}
+import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
-import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
+import se.lu.nateko.cp.meta.{CpmetaConfig, api}
 import spray.json.JsonWriter
 
-import java.net.{URI => JavaUri}
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Try
-import scala.util.Using
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
+import java.net.URI as JavaUri
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Try, Using}
 
 
 trait UriSerializer {

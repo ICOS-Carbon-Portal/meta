@@ -1,25 +1,15 @@
 package se.lu.nateko.cp.meta.upload
 
+import akka.Done
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, DataObjectDto}
+
 import java.net.URI
 import scala.concurrent.Future
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.utils.async.{ok, error, executeSequentially}
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import scala.io.Source
-import scala.util.Success
-import scala.util.Failure
-import spray.json.*
-import akka.Done
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.RequestEntity
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import scala.util.{Failure, Success}
 
 object L3UpdateWorkbench extends CpmetaJsonProtocol{
 	given system: ActorSystem = ActorSystem("l3update_workbench")

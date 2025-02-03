@@ -1,16 +1,13 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import java.nio.file.{Files, Paths}
-
-import org.eclipse.rdf4j.repository.Repository
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.io.Source
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.api.CloseableIterator
 import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+
+import java.nio.file.{Files, Paths}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 
 class LocalSparqlConstructExtractor(queryRes: String, extras: String*)(using ExecutionContext) extends Extractor{
 

@@ -1,32 +1,21 @@
 package se.lu.nateko.cp.meta.test.services.upload
 
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.scalatest.GivenWhenThen
 import org.scalatest.funspec.AsyncFunSpec
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.services.upload.ObjMetadataUpdater
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.createStringLiteral
 
 import java.net.URI
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.vocabulary.RDF
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import org.scalatest.GivenWhenThen
 import java.time.Instant
-import se.lu.nateko.cp.meta.SubmittersConfig
-import se.lu.nateko.cp.meta.DataSubmitterConfig
 
 class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 	class Setup(

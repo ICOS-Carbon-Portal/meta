@@ -1,22 +1,15 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.io.Source
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.ValueFactory
-
-import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.api.CloseableIterator
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, UriId}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 
 class ExtraStationsIngester(extraStationsPath: String)(using ExecutionContext, EnvriConfigs) extends Ingester{
 	import IcosStationsIngester.*

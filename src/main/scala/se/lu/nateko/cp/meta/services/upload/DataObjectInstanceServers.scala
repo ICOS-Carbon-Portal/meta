@@ -1,32 +1,20 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.Station
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, EnvriConfigs, Station}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationProvider}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, ObjectUploadDto}
 
-import scala.util.Success
-import scala.util.Try
+import scala.util.{Success, Try}
 
 
 class DataObjectInstanceServers(

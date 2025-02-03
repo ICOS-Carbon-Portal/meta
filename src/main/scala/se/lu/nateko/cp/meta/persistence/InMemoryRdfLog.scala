@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.persistence
 
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class InMemoryRdfLog extends RdfUpdateLog{
 

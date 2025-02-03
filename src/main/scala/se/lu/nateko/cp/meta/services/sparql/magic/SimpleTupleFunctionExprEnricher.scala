@@ -1,10 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.query.algebra.StatementPattern
-import org.eclipse.rdf4j.query.algebra.TupleFunctionCall
-import org.eclipse.rdf4j.query.algebra.ValueConstant
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
+import org.eclipse.rdf4j.query.algebra.{StatementPattern, TupleFunctionCall, ValueConstant}
 import org.eclipse.rdf4j.sail.SailException
 
 class SimpleTupleFunctionExprEnricher(funcs: Map[String, TupleFunction]) extends AbstractQueryModelVisitor[SailException]{

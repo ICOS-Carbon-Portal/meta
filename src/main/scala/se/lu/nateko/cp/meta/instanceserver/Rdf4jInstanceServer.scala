@@ -1,22 +1,15 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
-import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.RepositoryConnection
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
+import org.eclipse.rdf4j.sail.SailConnection
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID
 import scala.util.Try
-import org.eclipse.rdf4j.sail.SailConnection
 
 class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
 

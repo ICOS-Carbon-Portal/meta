@@ -1,11 +1,9 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import scala.util.matching.Regex
+import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment, UriResource, ValueType, VarMeta}
+
 import java.net.URI
-import se.lu.nateko.cp.meta.core.data.ValueType
-import se.lu.nateko.cp.meta.core.data.VarMeta
-import se.lu.nateko.cp.meta.core.data.UriResource
-import se.lu.nateko.cp.meta.core.data.InstrumentDeployment
+import scala.util.matching.Regex
 
 class DatasetVariable(
 	val self: UriResource,

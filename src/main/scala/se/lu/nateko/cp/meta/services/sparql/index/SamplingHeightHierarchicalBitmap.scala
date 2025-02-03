@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
-import java.time.Instant
-import scala.annotation.tailrec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
+
+import java.time.Instant
+import scala.annotation.tailrec
 import scala.collection.IndexedSeq
 
 /**

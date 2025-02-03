@@ -1,24 +1,21 @@
 package se.lu.nateko.cp.meta.test
 
-import java.net.URI
-
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.EmailSender
+import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
-import se.lu.nateko.cp.meta.test.utils.SparqlClient
-import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
-import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
+import se.lu.nateko.cp.meta.test.utils.SparqlClient
+
+import java.net.URI
 import scala.collection.concurrent.TrieMap
-import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.cpauth.core.EmailSender
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 
 object Playground {

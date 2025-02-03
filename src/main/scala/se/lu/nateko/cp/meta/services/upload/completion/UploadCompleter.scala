@@ -1,27 +1,18 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.IngestionMetadataExtract
-import se.lu.nateko.cp.meta.core.data.NetCdfExtract
-import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
-import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.core.data.{IngestionMetadataExtract, NetCdfExtract, SpatialTimeSeriesExtract, TimeSeriesExtract, UploadCompletionInfo}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
 import java.time.Instant
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):

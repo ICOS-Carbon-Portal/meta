@@ -1,14 +1,10 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
-import scala.jdk.CollectionConverters.{IteratorHasAsScala, SeqHasAsJava}
-import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.model.parameters.Imports
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLClass
-import org.semanticweb.owlapi.model.OWLClassExpression
-import org.semanticweb.owlapi.model.OWLProperty
-import org.semanticweb.owlapi.model.OWLDataProperty
-import org.semanticweb.owlapi.model.OWLObjectProperty
+import org.semanticweb.owlapi.model.{OWLClass, OWLClassExpression, OWLDataProperty, OWLObjectProperty, OWLOntology, OWLProperty}
+import org.semanticweb.owlapi.search.EntitySearcher
+
+import scala.jdk.CollectionConverters.{IteratorHasAsScala, SeqHasAsJava}
 
 abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {
 

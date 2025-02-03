@@ -1,24 +1,12 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
-
-import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.Point
-import org.locationtech.jts.geom.Polygon
 import org.locationtech.jts.io.WKTReader
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import se.lu.nateko.cp.meta.core.data.PositionUtil.average
+import se.lu.nateko.cp.meta.core.data.{FeatureCollection, GeoFeature, GeoJson}
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.mergeIntersecting
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.representativeCoverage
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.{mergeIntersecting, representativeCoverage}
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 
-import java.nio.file.Files
-import java.nio.file.Paths
-import scala.collection.mutable.ArrayBuffer
+import java.nio.file.{Files, Paths}
 
 
 object ClusteringExample:

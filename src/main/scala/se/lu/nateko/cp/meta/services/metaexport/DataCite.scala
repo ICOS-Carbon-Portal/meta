@@ -1,24 +1,12 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import se.lu.nateko.cp.doi.CoolDoi
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.meta.*
-import se.lu.nateko.cp.meta.core.data.Agent
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.FunderIdType
-import se.lu.nateko.cp.meta.core.data.Funding
-import se.lu.nateko.cp.meta.core.data.Organization
-import se.lu.nateko.cp.meta.core.data.Person
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
+import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, PlainStaticObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.Validated
 
-import java.time.Instant
-import java.time.Year
+import java.time.{Instant, Year}
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):

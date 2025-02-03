@@ -1,7 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.annotation.tailrec
 import org.eclipse.rdf4j.query.algebra.*
+
+import scala.annotation.tailrec
 
 def splitTriple(sp: StatementPattern) = (sp.getSubjectVar, sp.getPredicateVar, sp.getObjectVar)
 

@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.test.api
 
-import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
+import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 
 class CustomVocabTests extends AnyFunSpec{
 

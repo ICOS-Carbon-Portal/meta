@@ -1,10 +1,11 @@
 package se.lu.nateko.cp.meta.test.utils.rdf4j
 
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.scalatest.funsuite.AnyFunSuite
-import java.net.URI
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.eclipse.rdf4j.model.ValueFactory
+
+import java.net.URI
 
 class EnrichedUriTests extends AnyFunSuite {
 

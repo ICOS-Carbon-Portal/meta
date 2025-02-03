@@ -3,18 +3,12 @@ package se.lu.nateko.cp.meta.services.upload.completion
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.api.RdfLens.DobjConn
-import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
+import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DobjLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.UploadCompletionException
-import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
-import se.lu.nateko.cp.meta.services.upload.StatementsProducer
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.services.upload.{MetadataUpdater, StatementsProducer}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadCompletionException}
 import se.lu.nateko.cp.meta.utils.printAsJsonArray
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 

@@ -1,12 +1,8 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
+import org.semanticweb.owlapi.model.{OWLClass, OWLClassExpression, OWLDataProperty, OWLObjectProperty, OWLOntology, OWLProperty}
+
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import org.semanticweb.owlapi.model.OWLClass
-import org.semanticweb.owlapi.model.OWLProperty
-import org.semanticweb.owlapi.model.OWLClassExpression
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLDataProperty
-import org.semanticweb.owlapi.model.OWLObjectProperty
 
 
 class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){

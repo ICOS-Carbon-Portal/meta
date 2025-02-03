@@ -5,20 +5,16 @@ import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 
-import java.io.BufferedInputStream
-import java.io.FileInputStream
-import java.io.InputStreamReader
+import java.io.{BufferedInputStream, FileInputStream, InputStreamReader}
 import java.net.URI
 import java.nio.file.Path
-import java.time.Instant
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
+import scala.util.Using
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
-import scala.util.Using
 
 class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMetaSource[ATC.type](conf):
 	import AtcMetaSource.*

@@ -1,55 +1,33 @@
 package se.lu.nateko.cp.meta.services.sparql
 
-import akka.Done
-import akka.NotUsed
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.Marshalling
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.StatusCodes
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.StreamConverters
+import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
+import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes, StatusCode, StatusCodes}
+import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import akka.util.ByteString
-import org.eclipse.rdf4j.query.GraphQuery
-import org.eclipse.rdf4j.query.MalformedQueryException
-import org.eclipse.rdf4j.query.Query
-import org.eclipse.rdf4j.query.TupleQuery
-import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery
-import org.eclipse.rdf4j.query.parser.ParsedGraphQuery
-import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
+import akka.{Done, NotUsed}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
+import org.eclipse.rdf4j.query.parser.{ParsedBooleanQuery, ParsedGraphQuery, ParsedTupleQuery}
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
+import org.eclipse.rdf4j.query.{GraphQuery, MalformedQueryException, Query, TupleQuery}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlServer
+import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 import java.time.Instant
-import java.util.concurrent.CancellationException
-import java.util.concurrent.Executors
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import java.util.concurrent.{CancellationException, Executors}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
-import akka.actor.ActorSystem
-import akka.event.Logging
 
 
 class Rdf4jSparqlServer(

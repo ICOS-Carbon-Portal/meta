@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.eclipse.rdf4j.model.IRI
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.GeometryCollection
+import org.locationtech.jts.geom.{Coordinate, GeometryCollection}
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
-import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.utils.Validated
 
 class GeoEventProducer(cpIndex: CpIndex, metaVocab: CpmetaVocab, geoLookup: GeoLookup):
 	private val geoJsonReader = GeoJsonReader()

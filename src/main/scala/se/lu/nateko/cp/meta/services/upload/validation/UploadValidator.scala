@@ -1,52 +1,28 @@
 package se.lu.nateko.cp.meta.services.upload.validation
 
 import akka.NotUsed
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.ConfigLoader
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.DataSubmitterConfig
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.UploadServiceConfig
-import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObjectSpec
-import se.lu.nateko.cp.meta.core.data.DatasetType
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.core.data.flattenToSeq
-import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, GeoFeature, GeoJson, OptionalOneOrSeq, TimeInterval, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException, UnauthorizedUploadException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, StaticCollectionDto, UploadDto, UploadServiceConfig}
+import spray.json.JsonParser
 
 import java.net.URI
 import java.time.Instant
 import java.util.Date
 import scala.collection.mutable.Buffer
 import scala.language.strictEquality
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import spray.json.JsonParser
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import se.lu.nateko.cp.meta.GeoCoverage
-import se.lu.nateko.cp.meta.GeoJsonString
+import scala.util.{Failure, Success, Try}
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived

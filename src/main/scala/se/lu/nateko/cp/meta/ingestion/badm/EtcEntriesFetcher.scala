@@ -1,22 +1,15 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import scala.concurrent.Future
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, RequestEntity, StatusCodes, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import spray.json.JsObject
-import spray.json.JsValue
-import scala.concurrent.ExecutionContext
+import spray.json.{JsObject, JsValue}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object EtcEntriesFetcher {
 

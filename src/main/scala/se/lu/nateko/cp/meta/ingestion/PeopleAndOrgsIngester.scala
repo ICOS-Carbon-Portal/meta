@@ -1,23 +1,17 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import scala.io.Source
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.api.UriId
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, UriId}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.Researcher
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import scala.concurrent.Future
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.util.Using
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import scala.concurrent.ExecutionContext
 
 class PeopleAndOrgsIngester(pathToTextRes: String)(using EnvriConfigs, ExecutionContext) extends Ingester{
 

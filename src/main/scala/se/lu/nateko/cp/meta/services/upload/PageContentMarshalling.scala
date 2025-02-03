@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
+
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 

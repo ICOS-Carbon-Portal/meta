@@ -1,18 +1,16 @@
 package se.lu.nateko.cp.meta.onto
 
-import java.net.URI
-
-import scala.collection.concurrent.TrieMap
-
 import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.search.EntitySearcher
 import org.semanticweb.owlapi.vocab.OWLFacet
-
 import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.onto.labeler.*
 import se.lu.nateko.cp.meta.onto.reasoner.*
 import se.lu.nateko.cp.meta.utils.owlapi.*
+
+import java.net.URI
+import scala.collection.concurrent.TrieMap
 
 
 class Onto (owlOntology: OWLOntology) extends java.io.Closeable{

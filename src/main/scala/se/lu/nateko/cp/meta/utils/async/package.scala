@@ -1,16 +1,13 @@
 package se.lu.nateko.cp.meta.utils.async
 
+import akka.Done
+import akka.actor.Scheduler
+
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
-
-import akka.actor.Scheduler
-import akka.Done
 
 def ok: Future[Done] = Future.successful(Done)
 

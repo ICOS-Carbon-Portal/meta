@@ -1,19 +1,14 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import akka.actor.ActorSystem
-import akka.stream.IOResult
-import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
+import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
-import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.IcosMetaFlowConfig
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.flattenToSeq
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.metaflow.cities.CitiesMetaFlow
 import se.lu.nateko.cp.meta.metaflow.icos.IcosMetaFlow
+import se.lu.nateko.cp.meta.{CitiesMetaFlowConfig, CpmetaConfig, IcosMetaFlowConfig, MetaDb}
 
 import java.nio.file.Path
 import scala.concurrent.Future

@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 
 object Rdf4jStatement {
 

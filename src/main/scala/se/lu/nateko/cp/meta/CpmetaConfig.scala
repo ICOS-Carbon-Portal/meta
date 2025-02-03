@@ -1,26 +1,16 @@
 package se.lu.nateko.cp.meta
-
-import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigRenderOptions
-import com.typesafe.config.ConfigValueFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
-import se.lu.nateko.cp.cpauth.core.EmailConfig
-import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
-import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.doi.core.DoiEndpointConfig
-import se.lu.nateko.cp.doi.core.DoiMemberConfig
+import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
+import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
-import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.core.toTypedJson
-import se.lu.nateko.cp.meta.persistence.postgres.DbCredentials
-import se.lu.nateko.cp.meta.persistence.postgres.DbServer
+import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
+import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
 import spray.json.*
 
 import java.net.URI
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap

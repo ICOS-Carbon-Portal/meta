@@ -3,28 +3,18 @@ package se.lu.nateko.cp.meta.utils.rdf4j
 import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.RepositoryConnection
-import org.eclipse.rdf4j.sail.Sail
-import org.eclipse.rdf4j.sail.SailConnection
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.RdfLens
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
+import org.eclipse.rdf4j.sail.{Sail, SailConnection}
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
 
-import java.net.{ URI => JavaUri }
+import java.net.URI as JavaUri
 import java.time.Instant
 import scala.collection.AbstractIterator
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import scala.util.Using
+import scala.util.{Failure, Success, Try, Using}
 
 
 

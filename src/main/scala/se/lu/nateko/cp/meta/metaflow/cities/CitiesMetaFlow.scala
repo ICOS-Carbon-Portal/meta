@@ -4,18 +4,11 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.MetaUploadConf
-import se.lu.nateko.cp.meta.core.data.AtcStationSpecifics
-import se.lu.nateko.cp.meta.core.data.CountryCode
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.IcosCitiesStationSpecifics
+import se.lu.nateko.cp.meta.core.data.{AtcStationSpecifics, CountryCode, EnvriConfigs, IcosCitiesStationSpecifics}
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.metaflow.icos.ATC
-import se.lu.nateko.cp.meta.metaflow.icos.AtcConf
-import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
+import se.lu.nateko.cp.meta.metaflow.icos.{ATC, AtcConf, AtcMetaSource}
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.{CitiesMetaFlowConfig, MetaDb, MetaUploadConf}
 
 object CitiesMetaFlow:
 	def init(

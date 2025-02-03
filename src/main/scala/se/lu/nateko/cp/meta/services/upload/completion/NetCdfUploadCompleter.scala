@@ -1,20 +1,15 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.NetCdfExtract
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
+import scala.concurrent.{ExecutionContext, Future}
 
 
 private class NetCdfUploadCompleter(

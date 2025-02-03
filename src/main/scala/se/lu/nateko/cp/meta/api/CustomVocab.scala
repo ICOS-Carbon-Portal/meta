@@ -1,17 +1,13 @@
 package se.lu.nateko.cp.meta.api
 
-import java.net.URI
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
+
+import java.net.URI
+import java.time.{Instant, LocalDate, LocalDateTime}
 
 trait CustomVocab {
-	import CustomVocab.urlEncode
+	
 	def factory: ValueFactory
 
 	protected class BaseUriProvider(val baseUri: String)

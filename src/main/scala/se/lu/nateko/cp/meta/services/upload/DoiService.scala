@@ -3,36 +3,21 @@ package se.lu.nateko.cp.meta.services.upload
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.{HttpRequest, MediaTypes, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import se.lu.nateko.cp.doi.CoolDoi
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
-import se.lu.nateko.cp.doi.core.DoiClient
-import se.lu.nateko.cp.doi.core.DoiClientConfig
-import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, PlainJavaDoiHttp}
+import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
 import se.lu.nateko.cp.meta.DoiConfig
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DataProduction
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
-import se.lu.nateko.cp.meta.core.data.StaticObject
+import se.lu.nateko.cp.meta.core.data.{DataObject, DataProduction, DocObject, FeatureCollection, PlainStaticCollection, PlainStaticObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import se.lu.nateko.cp.meta.services.metaexport.DataCite
+import se.lu.nateko.cp.meta.utils.Validated
 
 import java.net.URI
-import java.time.Year
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import java.time.Instant
-import se.lu.nateko.cp.meta.services.metaexport.DataCite
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.PlainStaticCollection
+import java.time.{Instant, Year}
+import scala.concurrent.{ExecutionContext, Future}
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 

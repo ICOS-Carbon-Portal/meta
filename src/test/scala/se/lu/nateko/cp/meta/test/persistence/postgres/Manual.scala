@@ -1,15 +1,10 @@
 package se.lu.nateko.cp.meta.test.persistence.postgres
-
-import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import se.lu.nateko.cp.meta.persistence.postgres.*
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.test.TestConfig
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
+import se.lu.nateko.cp.meta.persistence.postgres.*
+import se.lu.nateko.cp.meta.test.TestConfig
 
 object Manual {
 

@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
-import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
@@ -41,7 +40,6 @@ class IndexData(nObjects: Int)(
 	val initOk: MutableRoaringBitmap = emptyBitmap
 ) extends Serializable:
 
-	import TSC.{hasStatement, getStatements}
 	private val log = LoggerFactory.getLogger(getClass())
 
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
@@ -71,26 +69,10 @@ class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriple(
-		subj: IRI,
-		pred: IRI,
-		obj: Value,
-		isAssertion: Boolean,
-		vocab: CpmetaVocab
-	)(using tsc: TSC): Unit =
+	def processTriple(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean, vocab: CpmetaVocab)(using TSC): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
-
-		def updateStrArrayProp(
-			obj: Value,
-			prop: StringCategProp,
-			parser: String => Option[Array[String]],
-			idx: Int
-		): Unit =
-			obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-				updateCategSet(categMap(prop), strVal, idx, isAssertion)
-			}
 
 		pred match {
 			case `hasObjectSpec` =>
@@ -222,7 +204,7 @@ class IndexData(nObjects: Int)(
 											case _ =>
 					else if
 						deprecated.contains(oe.idx) && // this was to prevent needless repo access
-						!hasStatement(null, isNextVersionOf, obj)
+						!TSC.hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -238,7 +220,7 @@ class IndexData(nObjects: Int)(
 							val deprecated = boolBitmap(DeprecationFlag)
 
 							val directPrevVers: IndexedSeq[Int] =
-								getStatements(subj, isNextVersionOf, null)
+								TSC.getStatements(subj, isNextVersionOf, null)
 									.flatMap(st => modForDobj(st.getObject)(_.idx))
 									.toIndexedSeq
 
@@ -278,7 +260,7 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `hasActualColumnNames` => val _ = modForDobj(subj) { oe =>
-					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx)
+					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
 					updateHasVarList(oe.idx, isAssertion)
 				}
 
@@ -291,12 +273,24 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `hasKeywords` => val _ = modForDobj(subj) { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx)
+					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 				}
 
 			case _ =>
 		}
-	end processTriple
+	}
+
+	def updateStrArrayProp(
+		obj: Value,
+		prop: StringCategProp,
+		parser: String => Option[Array[String]],
+		idx: Int,
+		isAssertion: Boolean
+	): Unit = {
+		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
+			updateCategSet(categMap(prop), strVal, idx, isAssertion)
+		}
+	}
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
@@ -331,17 +325,17 @@ class IndexData(nObjects: Int)(
 	}
 
 	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using TSC): Boolean =
-		getStatements(obj, vocab.dcterms.hasPart, null)
+		TSC.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member): oe =>
-					oe.isNextVersion = true
-					oe.size > -1
+						oe.isNextVersion = true
+						oe.size > -1
 			.flatten
 			.toIndexedSeq
 			.exists(identity)
 
 	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using TSC): Option[Int] =
-		getStatements(null, vocab.dcterms.hasPart, deprecator)
+		TSC.getStatements(null, vocab.dcterms.hasPart, deprecator)
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq
 			.headOption
@@ -365,7 +359,6 @@ class IndexData(nObjects: Int)(
 		initOk.remove(obj.idx)
 
 end IndexData
-
 
 private def targetUri(obj: Value, isAssertion: Boolean) =
 	if isAssertion && obj.isInstanceOf[IRI]

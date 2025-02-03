@@ -9,7 +9,8 @@ val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
-	"-deprecation"
+	"-deprecation",
+	"-Wunused:imports"
 )
 
 lazy val metaCore = (project in file("core"))

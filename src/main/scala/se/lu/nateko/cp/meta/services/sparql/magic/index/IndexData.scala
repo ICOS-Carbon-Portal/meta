@@ -293,13 +293,16 @@ class IndexData(nObjects: Int)(
 	}
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {
-		idLookup.get(hash).fold {
-			val canonicalHash = hash.truncate
-			val oe = new ObjEntry(canonicalHash, objs.length, "")
-			objs += oe
-			idLookup += canonicalHash -> oe.idx
-			oe
-		}(objs.apply)
+		idLookup.get(hash) match {
+			case None =>
+				val canonicalHash = hash.truncate
+				val oe = new ObjEntry(canonicalHash, objs.length, "")
+				objs += oe
+				idLookup += canonicalHash -> oe.idx
+				oe
+			case Some(obj) =>
+				objs.apply(obj)
+		}
 	}
 
 	private def handleContinuousPropUpdate(
@@ -346,7 +349,9 @@ class IndexData(nObjects: Int)(
 			if (entry.prefix == "") entry.prefix = prefix.intern()
 			Some(mod(entry))
 
-		case _ => None
+		case _ => 
+			log.warn(s"Not a DataObject: ${dobj.toString()}")
+			None
 
 	private def addStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
 		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)

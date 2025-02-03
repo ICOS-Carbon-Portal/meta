@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import org.eclipse.rdf4j.model.{IRI, Value}
+import org.eclipse.rdf4j.model.IRI
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -30,10 +30,10 @@ class IndexDataTest extends AnyFunSpec {
 				// Insert hasName triple
 				data.processTriple(subject, vocab.hasName, factory.createIRI("test:name"), true, vocab)
 				assert(data.objs.length == 1)
-				assert(data.getObjEntry(hash).fName == "test:name")
+				assert(data.getObjEntry(hash).fileName == Some("test:name"))
 				// Remove it
 				data.processTriple(subject, vocab.hasName, factory.createIRI("test:name"), false, vocab)
-				assert(data.getObjEntry(hash).fName == null)
+				assert(data.getObjEntry(hash).fileName == None)
 			}
 		}
 	}

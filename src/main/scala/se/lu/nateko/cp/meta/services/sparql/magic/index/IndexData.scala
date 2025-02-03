@@ -93,10 +93,10 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `hasName` =>
-				modForDobj(subj) { oe =>
+				val _ = modForDobj(subj) { oe =>
 					val fName = obj.stringValue
 					if (isAssertion) oe.fName = fName
-					else if (oe.fName == fName) oe.fileName == null
+					else if (oe.fName == fName) { oe.fName = null }
 					handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
 				}
 
@@ -346,9 +346,7 @@ class IndexData(nObjects: Int)(
 			if (entry.prefix == "") entry.prefix = prefix.intern()
 			Some(mod(entry))
 
-		case _ => 
-			log.warn(s"Not a DataObject: ${dobj.toString()}")
-			None
+		case _ => None
 
 	private def addStat(obj: ObjEntry, initOk: MutableRoaringBitmap): Unit = for key <- keyForDobj(obj) do
 		stats.getOrElseUpdate(key, emptyBitmap).add(obj.idx)

@@ -296,8 +296,6 @@ class Rdf4jUriSerializer(
 	private def customJson[T : JsonWriter](fetchDto: () => Validated[T]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
-	import PageContentMarshalling.ErrorList
-
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
 

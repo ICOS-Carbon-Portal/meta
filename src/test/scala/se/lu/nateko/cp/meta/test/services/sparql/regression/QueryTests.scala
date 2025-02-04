@@ -14,9 +14,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
+@tags.DbTest
 class QueryTests extends AsyncFunSpec {
 
-	val db = TestDb()
+	lazy val db = TestDb()
 
 	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
 		val start = System.currentTimeMillis()

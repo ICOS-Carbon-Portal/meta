@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
+import se.lu.nateko.cp.meta.test.tags.SlowRoute
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.HttpHeader
@@ -27,11 +28,12 @@ import concurrent.duration.DurationInt
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 import akka.event.Logging
 
+@tags.DbTest
 class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	private val log = Logging.getLogger(system, this)
 
-	val db = TestDb()
+	lazy val db = TestDb()
 
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
@@ -40,7 +42,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	// TODO: Changing this signature to just Route and updating tests accordingly breaks things.
 	//			 Tests can probably be rewritten so that doesn't happen.
-	val sparqlRoute: Future[Route] =
+	lazy val sparqlRoute: Future[Route] =
 		Future.apply {
 			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
@@ -165,12 +167,12 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 			offset 1000 limit 3
 		"""
 
-		it("Long running query should result in bad-request response"):
+		it("Long running query should result in bad-request response", SlowRoute):
 			testRoute(longRunningQuery):
 				assertCORS()
 				assert(status == StatusCodes.BadRequest)
 
-		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries"):
+		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries", SlowRoute):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.1.1"
 
@@ -185,7 +187,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		it("Too many parallel queries result in bad-request responses"):
+		it("Too many parallel queries result in bad-request responses", SlowRoute):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
 			val ip = "127.0.2.1"
 

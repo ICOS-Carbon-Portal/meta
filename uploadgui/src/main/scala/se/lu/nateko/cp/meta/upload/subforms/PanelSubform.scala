@@ -4,7 +4,6 @@ import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 import se.lu.nateko.cp.meta.upload.*
 import eu.icoscp.envri.Envri
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.Future
 
 abstract class PanelSubform(selector: String)(using bus: PubSubBus) {

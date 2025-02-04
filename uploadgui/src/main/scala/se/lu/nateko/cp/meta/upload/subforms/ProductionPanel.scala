@@ -1,13 +1,9 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
-
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import scala.util.{Try, Success}
 
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto, DataProductionDto}
-import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 
 import formcomponents.*
 import Utils.*

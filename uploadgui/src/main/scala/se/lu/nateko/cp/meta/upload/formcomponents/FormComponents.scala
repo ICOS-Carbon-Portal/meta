@@ -6,7 +6,6 @@ import scala.util.{ Success, Try, Failure }
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import org.scalajs.dom.ext.*
 
 import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

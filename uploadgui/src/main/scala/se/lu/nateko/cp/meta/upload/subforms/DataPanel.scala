@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.SubmitterProfile
 import UploadApp.whenDone
 import java.net.URI
 import java.time.Instant
-import org.scalajs.dom.html
 import eu.icoscp.envri.Envri
 
 

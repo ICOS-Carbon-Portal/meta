@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.{IRI, Literal}
-import org.semanticweb.owlapi.model.{IRI as OWLIRI, *}
+import org.semanticweb.owlapi.model.{IRI as OWLIRI, OWLObjectProperty}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{TSC, getValues}
 
 class MultiComponentIndividualLabeler(

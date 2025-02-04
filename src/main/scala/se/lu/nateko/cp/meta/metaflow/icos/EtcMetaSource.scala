@@ -11,7 +11,18 @@ import akka.util.ByteString
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment as _, *}
+import se.lu.nateko.cp.meta.core.data.{
+   Orcid,
+   Position,
+   CountryCode,
+   Organization,
+   UriResource,
+   Funder,
+   Funding,
+   Station,
+   EtcStationSpecifics,
+   PositionUtil
+}
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmLocalDate, BadmLocalDateTime, BadmYear}
 import se.lu.nateko.cp.meta.metaflow.*

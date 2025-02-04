@@ -3,7 +3,20 @@ package se.lu.nateko.cp.meta.metaflow
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment as _, *}
+import se.lu.nateko.cp.meta.core.data.{
+	InstrumentDeployment as _,
+	GeoFeature,
+	UriResource,
+	StationSpecifics,
+	EtcStationSpecifics,
+	AtcStationSpecifics,
+	IcosStationSpecifics,
+	IcosCitiesStationSpecifics,
+	SitesStationSpecifics,
+	NoStationSpecifics,
+	Position,
+	Organization
+}
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*

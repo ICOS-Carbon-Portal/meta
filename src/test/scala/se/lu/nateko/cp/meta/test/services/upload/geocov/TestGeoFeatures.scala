@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.{HttpRequest, MediaTypes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import se.lu.nateko.cp.cpauth.core.JsonSupport.immSeqFormat
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.{DataObject, PlainStaticObject, StaticCollection, *}
+import se.lu.nateko.cp.meta.core.data.{DataObject, PlainStaticObject, StaticCollection, GeoFeature, GeoTrack, FeatureCollection, Position, Circle, Polygon}
 import se.lu.nateko.cp.meta.utils.async.traverseFut
 import spray.json.RootJsonFormat
 import spray.json.given

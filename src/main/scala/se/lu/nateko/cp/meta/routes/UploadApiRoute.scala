@@ -1,38 +1,25 @@
 package se.lu.nateko.cp.meta.routes
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.ExceptionHandler
-import akka.http.scaladsl.server.MalformedRequestContentRejection
-import akka.http.scaladsl.server.RejectionHandler
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ExceptionHandler, MalformedRequestContentRejection, RejectionHandler, Route}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Keep
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.DocObject
-import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, UploadCompletionInfo}
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
-import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto}
 
 import java.net.URI
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.Try
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 

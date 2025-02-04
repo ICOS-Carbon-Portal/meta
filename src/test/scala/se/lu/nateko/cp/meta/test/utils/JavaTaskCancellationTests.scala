@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.test.utils
 
-import org.scalatest.funsuite.AnyFunSuite
-import java.util.concurrent.Callable
-import java.util.concurrent.CancellationException
-import java.util.concurrent.ScheduledThreadPoolExecutor
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+
+import java.util.concurrent.{Callable, CancellationException, ScheduledThreadPoolExecutor}
 
 class JavaTaskCancellationTests extends AnyFunSuite with BeforeAndAfterAll{
 

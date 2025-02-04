@@ -2,27 +2,17 @@ package se.lu.nateko.cp.meta.services
 
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.ReferencesDto
-import se.lu.nateko.cp.meta.SpatioTemporalDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
-import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.GeoJsonString
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
 
 import java.net.URI
 import java.time.Instant
 import scala.util.Success
 
 import UriSerializer.Hash
-import se.lu.nateko.cp.meta.GeoCoverage
 
 class UploadDtoReader(uriSer: UriSerializer){
 	import UploadDtoReader.*

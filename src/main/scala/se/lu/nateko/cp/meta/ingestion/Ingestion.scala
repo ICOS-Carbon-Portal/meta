@@ -1,25 +1,19 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.Statement
-import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import org.eclipse.rdf4j.repository.Repository
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import java.net.URI
-
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import scala.util.Using
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.ingestion.Ingestion.Statements
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.vocabulary.LOCN
-import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.{Statement, ValueFactory}
+import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.ingestion.Ingestion.Statements
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, RdfUpdate}
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+
+import java.net.URI
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false

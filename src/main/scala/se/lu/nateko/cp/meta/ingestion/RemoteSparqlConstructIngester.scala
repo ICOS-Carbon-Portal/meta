@@ -1,27 +1,18 @@
 package se.lu.nateko.cp.meta.ingestion
 
-import java.net.URI
-
-import scala.concurrent.Future
-
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector
-import org.eclipse.rdf4j.rio.turtle.TurtleParser
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaTypes
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers
-import akka.stream.scaladsl.StreamConverters
-import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, MediaTypes, StatusCodes, headers}
 import akka.stream.Materializer
+import akka.stream.scaladsl.StreamConverters
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector
+import org.eclipse.rdf4j.rio.turtle.TurtleParser
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import scala.concurrent.ExecutionContext
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+
+import java.net.URI
+import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteRdfGraphIngester(
 	endpoint: URI, rdfGraph: URI

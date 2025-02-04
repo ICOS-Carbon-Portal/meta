@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.core.data
 import java.time.Instant
-import java.net.URI
 
 case class InstrumentDeployment(
 	instrument: UriResource,

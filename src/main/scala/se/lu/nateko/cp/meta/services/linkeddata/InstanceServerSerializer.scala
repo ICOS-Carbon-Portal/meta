@@ -1,32 +1,21 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
-import org.eclipse.rdf4j.model.Namespace
-import org.eclipse.rdf4j.model.Statement
+import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
+import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes}
+import akka.stream.StreamDetachedException
+import akka.stream.scaladsl.StreamConverters
 import org.eclipse.rdf4j.model.impl.SimpleNamespace
 import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XSD }
+import org.eclipse.rdf4j.model.{Namespace, Statement}
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
-
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.Marshalling
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.ContentType
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpCharsets
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.MediaTypes
-import akka.stream.scaladsl.StreamConverters
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import scala.util.Using
+
 import java.io.IOException
-import akka.stream.StreamDetachedException
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 object InstanceServerSerializer {
 

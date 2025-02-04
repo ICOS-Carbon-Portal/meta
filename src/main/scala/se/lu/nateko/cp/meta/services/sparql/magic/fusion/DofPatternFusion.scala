@@ -1,27 +1,15 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.query.algebra.BindingSetAssignment
-import org.eclipse.rdf4j.query.algebra.Exists
-import org.eclipse.rdf4j.query.algebra.Extension
-import org.eclipse.rdf4j.query.algebra.Not
-import org.eclipse.rdf4j.query.algebra.QueryModelNode
-import org.eclipse.rdf4j.query.algebra.SingletonSet
-import org.eclipse.rdf4j.query.algebra.StatementPattern
-import org.eclipse.rdf4j.query.algebra.TupleExpr
-import org.eclipse.rdf4j.query.algebra.Union
-import org.eclipse.rdf4j.query.algebra.ValueExpr
+import org.eclipse.rdf4j.model.vocabulary.GEO
+import org.eclipse.rdf4j.model.{IRI, Literal, Value}
+import org.eclipse.rdf4j.query.algebra.{Extension, QueryModelNode, StatementPattern, TupleExpr}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
-import se.lu.nateko.cp.meta.services.sparql.index.{Exists => _, *}
+import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import DofPatternFusion.*
-import org.eclipse.rdf4j.model.vocabulary.GEO
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern

@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.IRI
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.{IRI => OwlIri}
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import org.semanticweb.owlapi.model.{IRI as OwlIri, OWLOntology}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.TSC
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*

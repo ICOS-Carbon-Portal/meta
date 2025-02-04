@@ -2,20 +2,13 @@ package se.lu.nateko.cp.meta.api
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.http.scaladsl.ConnectionContext
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, RequestEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
-import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -24,20 +17,12 @@ import se.lu.nateko.cp.meta.utils.async.*
 
 import java.io.FileInputStream
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.security.KeyFactory
-import java.security.KeyStore
-import java.security.SecureRandom
+import java.nio.file.{Files, Path, Paths}
 import java.security.cert.CertificateFactory
-import java.security.interfaces.RSAPrivateKey
-import java.security.interfaces.RSAPublicKey
-import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.X509EncodedKeySpec
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManagerFactory
+import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.security.{KeyFactory, KeyStore, SecureRandom}
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 

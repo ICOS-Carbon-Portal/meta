@@ -1,12 +1,9 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.CitiesMetaFlowConfig
-import se.lu.nateko.cp.meta.IcosMetaFlowConfig
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.MetaFlowConfig
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.{CitiesMetaFlowConfig, IcosMetaFlowConfig, MetaDb, MetaFlowConfig}
 
 
 class StateDiffApplier(

@@ -1,13 +1,12 @@
 package se.lu.nateko.cp.meta.test.persistence
 
-import org.scalatest.funspec.AnyFunSpec
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.OWL
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import org.eclipse.rdf4j.common.iteration.Iterations
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF}
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 
 class RdfUpdateLogIngesterTest extends AnyFunSpec{
 

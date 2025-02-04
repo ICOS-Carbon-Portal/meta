@@ -1,42 +1,21 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.SpatioTemporalDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.flattenToSeq
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.core.data.{GeoFeature, GeoJson, LatLonBox, Position, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto}
 
 import java.net.URI
 import java.time.Instant
 import scala.collection.mutable.Buffer
-import se.lu.nateko.cp.meta.GeoJsonString
-import se.lu.nateko.cp.meta.GeoCoverage
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 

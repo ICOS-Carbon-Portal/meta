@@ -1,18 +1,13 @@
 package se.lu.nateko.cp.meta
 
-import se.lu.nateko.cp.meta.core.data.{Polygon => GeoPolygon, Position, Circle}
-import com.scalakml.io.{KmzFileReader, KmlPrintWriter}
+import com.scalakml.io.KmzFileReader
 import com.scalakml.kml.*
-import xml.PrettyPrinter
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import spray.json.JsObject
-import java.io.File
-import spray.json.{JsNull, JsValue}
-import se.lu.nateko.cp.meta.core.data.GeoJson
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
+import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, GeoFeature, GeoJson, Polygon as GeoPolygon, Position}
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import java.net.URI
-import java.net.URL
+import spray.json.{JsNull, JsValue}
+
+import java.io.File
+import java.net.{URI, URL}
 import scala.io.Source
 
 object KmlGeoJsonWorkbench {

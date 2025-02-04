@@ -2,15 +2,9 @@ package se.lu.nateko.cp.meta.test.services.sparql
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCode, StatusCodes}
 import akka.stream.Materializer
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
@@ -18,8 +12,6 @@ import se.lu.nateko.cp.meta.routes.SparqlRoute
 
 import java.util.concurrent.CancellationException
 import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
 
 class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 

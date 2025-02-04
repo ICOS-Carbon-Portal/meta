@@ -1,24 +1,22 @@
 package se.lu.nateko.cp.meta.views
 
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.CpVocab
-import spray.json.*
+import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.node.*
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
-import org.commonmark.ext.autolink.AutolinkExtension
+import se.lu.nateko.cp.doi.meta.Person as DoiMetaPerson
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.urlEncode
+import spray.json.*
 
 import java.net.URI
-import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import scala.jdk.CollectionConverters.IterableHasAsJava
-import se.lu.nateko.cp.doi.meta.{Person => DoiMetaPerson}
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.utils.urlEncode
-import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 object LandingPageHelpers:
 

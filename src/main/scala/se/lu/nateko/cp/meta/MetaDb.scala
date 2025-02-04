@@ -2,60 +2,37 @@ package se.lu.nateko.cp.meta
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.RdfLenses
-import se.lu.nateko.cp.meta.api.SparqlServer
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.core.data.flattenToSeq
-import se.lu.nateko.cp.meta.ingestion.BnodeStabilizers
-import se.lu.nateko.cp.meta.ingestion.Extractor
-import se.lu.nateko.cp.meta.ingestion.Ingester
-import se.lu.nateko.cp.meta.ingestion.Ingestion
-import se.lu.nateko.cp.meta.ingestion.StatementProvider
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
-import se.lu.nateko.cp.meta.onto.InstOnto
-import se.lu.nateko.cp.meta.onto.Onto
+import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.services.FileStorageService
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.ServiceException
-import se.lu.nateko.cp.meta.services.citation.CitationClient.CitationCache
-import se.lu.nateko.cp.meta.services.citation.CitationClient.DoiCache
+import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
-import se.lu.nateko.cp.meta.services.linkeddata.Rdf4jUriSerializer
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
+import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndexProvider
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.StorageSail
-import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
-import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
+import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
+import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
 import java.util.concurrent.Executors
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.{Success, Failure}
-import akka.event.Logging
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 
 class MetaDb (

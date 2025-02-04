@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
+import org.eclipse.rdf4j.model.{IRI, Value}
 
 import scala.util.Try
 

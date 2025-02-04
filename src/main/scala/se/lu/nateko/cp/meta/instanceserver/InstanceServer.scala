@@ -1,25 +1,17 @@
 package se.lu.nateko.cp.meta.instanceserver
 
 import org.eclipse.rdf4j.model.*
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.api.CloseableIterator.empty
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.Validated.CardinalityExpectation
-import se.lu.nateko.cp.meta.utils.Validated.validateSize
-import se.lu.nateko.cp.meta.utils.parseInstant
-import se.lu.nateko.cp.meta.utils.rdf4j.===
-import se.lu.nateko.cp.meta.utils.rdf4j.toJava
+import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
+import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava}
+import se.lu.nateko.cp.meta.utils.{Validated, parseInstant}
 
 import java.net.URI as JavaUri
-import java.time.Instant
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import scala.util.Try
 
 trait InstanceServer extends AutoCloseable:
@@ -95,7 +87,7 @@ trait TriplestoreConnection extends AutoCloseable:
 
 
 object TriplestoreConnection:
-	import Validated.CardinalityExpectation.{AtLeastOne, AtMostOne, ExactlyOne}
+	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
 	type TSC = TriplestoreConnection
 
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using conn: TSC): CloseableIterator[Statement] =

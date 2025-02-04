@@ -1,12 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.locationtech.jts.algorithm.hull.ConcaveHull
-import org.locationtech.jts.geom.Envelope
-import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.GeometryFactory
-import org.roaringbitmap.buffer.ImmutableRoaringBitmap
-import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection, GeometryFactory}
+import org.roaringbitmap.buffer.{ImmutableRoaringBitmap, MutableRoaringBitmap}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

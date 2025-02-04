@@ -1,38 +1,27 @@
 package se.lu.nateko.cp.meta.upload
 
-import scala.concurrent.Future
-import scala.collection.immutable.Seq
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.headers.Cookie
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import java.nio.file.Path
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.ContentTypes
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Sink
-import akka.http.scaladsl.model.headers.Host
-import spray.json.RootJsonFormat
-import se.lu.nateko.cp.meta.utils.akkahttp.responseToDone
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.Done
-import akka.stream.Materializer
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.UploadDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import java.net.URI
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.headers.{Accept, Cookie, Host}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, MediaTypes, RequestEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.Materializer
+import akka.stream.scaladsl.{FileIO, Sink}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObject
-import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.MediaTypes
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.utils.akkahttp.responseToDone
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto, UploadDto}
+import spray.json.RootJsonFormat
+
+import java.net.URI
+import java.nio.file.Path
+import scala.collection.immutable.Seq
+import scala.concurrent.Future
 
 class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSystem) extends CpmetaJsonProtocol{
 

@@ -1,16 +1,12 @@
 package se.lu.nateko.cp.meta.upload
 
 import org.scalajs.dom
-import org.scalajs.dom.document
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.upload.formcomponents.Button
 import se.lu.nateko.cp.meta.upload.formcomponents.HtmlElements
 import se.lu.nateko.cp.meta.upload.formcomponents.ProgressBar
 
-import java.net.URI
-import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.URIUtils
 import scala.concurrent.Future

@@ -1,21 +1,17 @@
 package se.lu.nateko.cp.meta.upload
 
+import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
-import se.lu.nateko.cp.meta.core.data.DataObject
-import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
-import java.net.URI
-import se.lu.nateko.cp.meta.core.sparql.BoundLiteral
-import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.core.data.Station
-import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import scala.concurrent.Future
-import akka.Done
-import se.lu.nateko.cp.meta.utils.async.*
+import se.lu.nateko.cp.meta.core.data.{DataObject, Person, Station}
+import se.lu.nateko.cp.meta.core.sparql.{BoundUri, SparqlSelectResult}
 import se.lu.nateko.cp.meta.services.upload.UploadService
+import se.lu.nateko.cp.meta.utils.async.*
+
+import java.net.URI
+import scala.concurrent.{ExecutionContext, Future}
 
 class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: ExecutionContext) {
 	import AtcCollMaker.*

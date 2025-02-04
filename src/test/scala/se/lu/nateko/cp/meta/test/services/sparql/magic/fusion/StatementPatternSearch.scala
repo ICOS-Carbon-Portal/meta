@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.query.algebra.*
 
 object StatementPatternSearch{
 	import PatternFinder.*

@@ -1,24 +1,18 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
 import org.eclipse.rdf4j.sail.Sail
-import org.roaringbitmap.buffer.BufferFastAggregation
-import org.roaringbitmap.buffer.ImmutableRoaringBitmap
-import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry, emptyBitmap}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
 
 import java.io.Serializable
 import java.time.Instant
@@ -26,11 +20,9 @@ import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
+
 import CpIndex.*
-import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry, emptyBitmap}
 
 trait ObjSpecific{
 	def hash: Sha256Sum

@@ -1,11 +1,8 @@
 package se.lu.nateko.cp.meta.utils
 
 import scala.collection.mutable.Buffer
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 

@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.rio.RDFFormat
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.eclipse.rdf4j.model.ValueFactory
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+
+import scala.concurrent.{ExecutionContext, Future}
 
 
 //TODO Consider rewriting using a parser only, without loading all statements into memory

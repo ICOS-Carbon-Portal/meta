@@ -3,19 +3,14 @@ package se.lu.nateko.cp.meta.upload
 import akka.Done
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.doi.core.DoiClient
-import se.lu.nateko.cp.doi.core.DoiClientConfig
-import se.lu.nateko.cp.doi.core.PlainJavaDoiHttp
+import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, DoiMemberConfig, PlainJavaDoiHttp}
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.net.URI
 import scala.concurrent.Future
-import scala.util.Try
-import se.lu.nateko.cp.doi.core.DoiMemberConfig
 
 class DoiMaker(password: String)(implicit val system: ActorSystem){
 

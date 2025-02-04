@@ -1,15 +1,13 @@
 package se.lu.nateko.cp.meta.routes
 
-import se.lu.nateko.cp.meta.onto.InstOnto
+import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.model.*
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import se.lu.nateko.cp.meta.UpdateDto
-import se.lu.nateko.cp.meta.ReplaceDto
-import java.net.URI
-import se.lu.nateko.cp.meta.InstOntoServerConfig
+import se.lu.nateko.cp.meta.onto.InstOnto
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, InstOntoServerConfig, ReplaceDto, UpdateDto}
 import spray.json.*
+
+import java.net.URI
 import scala.language.implicitConversions
 
 class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{

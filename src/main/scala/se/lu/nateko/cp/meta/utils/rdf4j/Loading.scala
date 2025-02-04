@@ -1,13 +1,12 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
+import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.eclipse.rdf4j.rio.RDFFormat
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.IRI
-import scala.util.Failure
-import scala.util.Try
+import org.eclipse.rdf4j.sail.memory.MemoryStore
+
+import scala.util.{Failure, Try}
 
 object Loading {
 

@@ -1,12 +1,13 @@
 package se.lu.nateko.cp.meta.utils.owlapi
 
 
-import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.io.XMLUtils
-import java.util.Optional
-import java.util.stream.{Stream => JavaStream}
-import scala.reflect.ClassTag
+import org.semanticweb.owlapi.model.*
 import se.lu.nateko.cp.meta.CpmetaConfig
+
+import java.util.Optional
+import java.util.stream.Stream as JavaStream
+import scala.reflect.ClassTag
 
 extension [T] (opt: Optional[T])
 	def toOption: Option[T] = if(opt.isPresent) Some(opt.get) else None

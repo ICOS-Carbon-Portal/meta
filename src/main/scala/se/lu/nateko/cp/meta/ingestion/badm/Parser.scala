@@ -1,22 +1,15 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
+import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import spray.json.{JsArray, JsNumber, JsObject, JsString, JsValue}
+
+import java.io.StringReader
 import java.text.ParseException
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
+import scala.util.control.NoStackTrace
 
 import BadmConsts.*
-import com.opencsv.CSVParserBuilder
-import com.opencsv.CSVReaderBuilder
-
-import spray.json.JsArray
-import spray.json.JsNumber
-import spray.json.JsObject
-import spray.json.JsString
-import java.io.StringReader
-import java.time.LocalDateTime
-
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import spray.json.JsValue
-import scala.util.control.NoStackTrace
 
 object Parser {
 

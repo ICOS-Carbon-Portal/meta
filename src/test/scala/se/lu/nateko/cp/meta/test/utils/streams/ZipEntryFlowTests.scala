@@ -1,20 +1,17 @@
 package se.lu.nateko.cp.meta.test.utils.streams
 
-import scala.language.postfixOps
-
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
 
 import scala.collection.immutable.Iterable
-import akka.util.ByteString
-import akka.stream.scaladsl.Source
-import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
-import akka.stream.scaladsl.Sink
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 class ZipEntryFlowTests extends AnyFunSuite with BeforeAndAfterAll{
 

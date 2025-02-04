@@ -1,22 +1,14 @@
 package se.lu.nateko.cp.meta.upload
 
-import java.security.MessageDigest
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.util.Success
-import akka.stream.Attributes
-import akka.stream.FlowShape
-import akka.stream.Inlet
-import akka.stream.Outlet
 import akka.stream.scaladsl.Flow
-import akka.stream.stage.GraphStageLogic
-import akka.stream.stage.GraphStageWithMaterializedValue
-import akka.stream.stage.InHandler
-import akka.stream.stage.OutHandler
+import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.core.crypto.Md5Sum
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import scala.util.Failure
+import se.lu.nateko.cp.meta.core.crypto.{Md5Sum, Sha256Sum}
+
+import java.security.MessageDigest
+import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Success}
 
 object DigestFlow{
 

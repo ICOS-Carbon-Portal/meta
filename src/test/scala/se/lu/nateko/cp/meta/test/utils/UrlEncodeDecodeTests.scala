@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.utils
 
-import se.lu.nateko.cp.meta.utils.{urlDecode, urlEncode}
 import org.scalatest.funsuite.AnyFunSuite
+import se.lu.nateko.cp.meta.utils.{urlDecode, urlEncode}
 
 class UrlEncodeDecodeTests extends AnyFunSuite{
 

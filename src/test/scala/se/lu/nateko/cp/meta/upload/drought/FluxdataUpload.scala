@@ -1,30 +1,18 @@
 package se.lu.nateko.cp.meta.upload.drought
 
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.net.URI
-import java.nio.file.Path
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import akka.Done
-import java.io.InputStreamReader
-import com.opencsv.CSVReader
-import java.nio.file.Paths
-import scala.jdk.CollectionConverters.*
-import se.lu.nateko.cp.meta.StaticCollectionDto
-import se.lu.nateko.cp.meta.ObjectUploadDto
-import se.lu.nateko.cp.meta.DataProductionDto
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.doi.*
+import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.services.citation.CitationClient
-import scala.concurrent.ExecutionContext
-import java.nio.file.Files
+import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
-import java.util.zip.ZipFile
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, ReferencesDto, StaticCollectionDto, StationTimeSeriesDto}
+
+import java.net.URI
+import java.nio.file.{Files, Path, Paths}
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.References
-import se.lu.nateko.cp.meta.ReferencesDto
+import java.util.zip.ZipFile
+import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.*
 
 
 object FluxdataUpload{

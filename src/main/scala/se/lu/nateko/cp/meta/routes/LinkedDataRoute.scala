@@ -1,24 +1,22 @@
 package se.lu.nateko.cp.meta.routes
 
-import scala.language.postfixOps
+import akka.event.{Logging, LoggingBus}
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.meta.InstanceServersConfig
-import se.lu.nateko.cp.meta.MetaDb
-import se.lu.nateko.cp.meta.core.data.DataObject
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import eu.icoscp.envri.Envri
-import akka.event.{LoggingBus, Logging}
+import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}
+
+import scala.language.postfixOps
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller

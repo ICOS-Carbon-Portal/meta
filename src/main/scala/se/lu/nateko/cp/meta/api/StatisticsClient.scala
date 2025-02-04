@@ -1,26 +1,24 @@
 package se.lu.nateko.cp.meta.api
 
-import java.net.URI
-import scala.concurrent.{ ExecutionContextExecutor, Future }
-import scala.concurrent.duration.DurationInt
-
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
 import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.unmarshalling.{Unmarshal, FromEntityUnmarshaller}
+import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
+import akka.http.scaladsl.settings.ConnectionPoolSettings
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal}
 import akka.stream.Materializer
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.MetadataException
-import spray.json.DefaultJsonProtocol
-import se.lu.nateko.cp.meta.core.data.StaticObject
-import akka.http.scaladsl.settings.ConnectionPoolSettings
-import spray.json.RootJsonFormat
-import eu.icoscp.envri.Envri
-import akka.event.Logging
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+
+import java.net.URI
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 
 object StatisticsClient extends DefaultJsonProtocol {

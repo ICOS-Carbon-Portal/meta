@@ -1,12 +1,10 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import se.lu.nateko.cp.meta.core.data.DataObject
-import java.time.Instant
-import scala.quoted.Expr
-import scala.quoted.Quotes
+import se.lu.nateko.cp.meta.core.data.{DataObject, TimeInterval}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
-import se.lu.nateko.cp.meta.core.data.TimeInterval
+
+import java.time.Instant
 
 
 object Inspire{

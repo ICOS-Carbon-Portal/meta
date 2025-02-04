@@ -1,17 +1,12 @@
 package se.lu.nateko.cp.meta.metaflow
 
-import scala.concurrent.duration.DurationInt
-
+import akka.actor.{ActorRef, Status}
 import akka.event.LoggingAdapter
-import akka.actor.ActorRef
-import akka.actor.Status
-import akka.stream.scaladsl.Source
-import akka.stream.CompletionStrategy
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Keep
-import akka.stream.ThrottleMode
-
+import akka.stream.scaladsl.{Keep, Source}
+import akka.stream.{CompletionStrategy, OverflowStrategy, ThrottleMode}
 import se.lu.nateko.cp.meta.utils.Validated
+
+import scala.concurrent.duration.DurationInt
 
 trait TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	def log: LoggingAdapter

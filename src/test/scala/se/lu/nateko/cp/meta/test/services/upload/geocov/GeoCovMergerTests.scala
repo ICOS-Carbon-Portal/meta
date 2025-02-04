@@ -1,13 +1,11 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom.{Coordinate, Geometry}
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
-import se.lu.nateko.cp.meta.test.services.upload.geocov.TestGeometries.*
 
 import ClusteringExample.convertStringsToJTS
 import TestGeometries.*

@@ -5,9 +5,9 @@ import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource.{parseFromCsv, lookUpMandatory}
+import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource.{lookUpMandatory, parseFromCsv}
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.{Lookup, dummyUri}
+import se.lu.nateko.cp.meta.utils.Validated
 
 class MidLowCostMetaSource[T <: CitiesTC : TcConf](
 	conf: MetaUploadConf,

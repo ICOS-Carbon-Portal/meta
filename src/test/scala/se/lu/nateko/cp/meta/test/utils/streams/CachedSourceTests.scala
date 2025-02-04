@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.test.utils.streams
 
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.BeforeAndAfterAll
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+
 import scala.util.Success
 
 class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{

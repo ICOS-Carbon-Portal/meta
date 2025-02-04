@@ -1,15 +1,12 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import akka.stream.scaladsl.Source
-import java.time.Instant
-import java.time.LocalDateTime
 import org.eclipse.rdf4j.model.IRI
-
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{Position, Orcid, Station}
-import se.lu.nateko.cp.meta.core.data.{Organization, Funding, Funder}
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+
+import java.time.Instant
 
 
 trait TC

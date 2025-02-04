@@ -1,18 +1,14 @@
 package se.lu.nateko.cp.meta.upload.drought
-
-import se.lu.nateko.cp.doi.core.DoiClient
+import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import java.net.URI
-import scala.concurrent.ExecutionContext
-import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
-import akka.Done
-import java.time.Instant
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
+
+import java.time.Instant
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: ExecutionContext){

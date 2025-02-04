@@ -1,17 +1,18 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import se.lu.nateko.cp.doi.meta.*
-import se.lu.nateko.cp.doi.meta.GeoLocation
-import se.lu.nateko.cp.meta.core.data.Circle
-import se.lu.nateko.cp.meta.core.data.FeatureCollection
-import se.lu.nateko.cp.meta.core.data.GeoFeature
-import se.lu.nateko.cp.meta.core.data.GeoTrack
-import se.lu.nateko.cp.meta.core.data.LatLonBox
-import se.lu.nateko.cp.meta.core.data.Pin
-import se.lu.nateko.cp.meta.core.data.Polygon
-import se.lu.nateko.cp.meta.core.data.Position
+import se.lu.nateko.cp.doi.meta.{GeoLocation, GeoLocationPoint, Longitude, Latitude, GeoLocationBox}
+import se.lu.nateko.cp.meta.core.data.{
+	Circle,
+	FeatureCollection,
+	FeatureWithGeoJson,
+	GeoFeature,
+	GeoTrack,
+	LatLonBox,
+	Pin,
+	Polygon,
+	Position
+}
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.circleToBox
-import se.lu.nateko.cp.meta.core.data.FeatureWithGeoJson
 
 object DoiGeoCovConverter:
 

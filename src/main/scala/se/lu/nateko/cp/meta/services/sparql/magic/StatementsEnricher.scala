@@ -1,21 +1,12 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.common.iteration.CloseableIteration
-import org.eclipse.rdf4j.common.iteration.EmptyIteration
-import org.eclipse.rdf4j.common.iteration.SingletonIteration
-import org.eclipse.rdf4j.common.iteration.UnionIteration
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.common.iteration.{CloseableIteration, EmptyIteration, SingletonIteration, UnionIteration}
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sparql.federation.CollectionIteration
 import org.eclipse.rdf4j.sail.SailException
 import se.lu.nateko.cp.meta.core.data.References
-import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
-import se.lu.nateko.cp.meta.utils.rdf4j.createStringLiteral
-import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
 
 import java.util.Arrays
 import scala.collection.immutable.SeqMap

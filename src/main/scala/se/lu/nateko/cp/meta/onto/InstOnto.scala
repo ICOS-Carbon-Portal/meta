@@ -1,26 +1,16 @@
 package se.lu.nateko.cp.meta.onto
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.OWL
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF, RDFS, XSD}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.UpdateExecutionException
-import org.semanticweb.owlapi.model.{IRI => OwlIri}
+import org.semanticweb.owlapi.model.IRI as OwlIri
 import se.lu.nateko.cp.meta.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
-import scala.util.Failure
-import scala.util.Try
 import scala.util.control.NoStackTrace
+import scala.util.{Failure, Try}
 
 import TriplestoreConnection.*
 

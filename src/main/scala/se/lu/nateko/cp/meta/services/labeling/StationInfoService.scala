@@ -1,15 +1,11 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.core.data.DataTheme
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import spray.json.JsObject
-import spray.json.JsString
+import spray.json.{JsObject, JsString}
 
 import java.net.URI
 import java.time.Instant

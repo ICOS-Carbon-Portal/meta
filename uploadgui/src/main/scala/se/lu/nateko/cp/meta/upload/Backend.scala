@@ -8,9 +8,7 @@ import scala.scalajs.js.URIUtils.encodeURIComponent
 import scala.scalajs.js.Thenable.Implicits.thenable2future
 import org.scalajs.dom.File
 import org.scalajs.dom.fetch
-import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.RequestInit
-import org.scalajs.dom.Headers
 import org.scalajs.dom.RequestCredentials
 import org.scalajs.dom.Response
 import org.scalajs.dom.HttpMethod
@@ -20,7 +18,6 @@ import se.lu.nateko.cp.meta.{SubmitterProfile, UploadDto}
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.doi.Doi
 import scala.scalajs.js.Dictionary
-import se.lu.nateko.cp.meta.OntoConstants.FormatUris.*
 import scala.language.strictEquality
 
 object Backend {

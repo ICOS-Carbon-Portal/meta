@@ -1,9 +1,9 @@
 package se.lu.nateko.cp.meta.test.routes
 
-import org.scalatest.funspec.AnyFunSpec
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.model.StatusCodes
+import org.scalatest.funspec.AnyFunSpec
 
 class AlternativePathRouteTest extends AnyFunSpec with ScalatestRouteTest{
 

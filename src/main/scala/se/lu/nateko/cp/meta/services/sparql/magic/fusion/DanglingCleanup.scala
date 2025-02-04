@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.query.algebra.StatementPattern
-import org.eclipse.rdf4j.query.algebra.SingletonSet
-import org.eclipse.rdf4j.query.algebra.QueryModelNode
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
+import org.eclipse.rdf4j.query.algebra.{QueryModelNode, SingletonSet, StatementPattern}
 
 object DanglingCleanup{
 

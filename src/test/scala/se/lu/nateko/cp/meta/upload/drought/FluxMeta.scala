@@ -1,11 +1,12 @@
 package se.lu.nateko.cp.meta.upload.drought
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import java.net.URI
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import java.time.Instant
 import se.lu.nateko.cp.meta.upload.CpUploadClient
+
+import java.net.URI
+import java.nio.file.{Files, Path}
+import java.time.Instant
 import java.util.zip.ZipFile
-import java.nio.file.{Path, Files}
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 
 

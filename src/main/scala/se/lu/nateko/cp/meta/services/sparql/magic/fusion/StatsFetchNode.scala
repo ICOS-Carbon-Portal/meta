@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 class StatsFetchNode(
 	val countVarName: String,

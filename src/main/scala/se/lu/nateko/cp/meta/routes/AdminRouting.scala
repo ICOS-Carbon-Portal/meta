@@ -1,28 +1,19 @@
 package se.lu.nateko.cp.meta.routes
-
-import akka.Done
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import se.lu.nateko.cp.meta.utils.rdf4j.transact
+import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}
 
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 
 class AdminRouting(

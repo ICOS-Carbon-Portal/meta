@@ -3,33 +3,22 @@ package se.lu.nateko.cp.meta.test.services.upload.geocov
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.{HttpRequest, MediaTypes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import se.lu.nateko.cp.cpauth.core.JsonSupport.immSeqFormat
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.PlainStaticObject
-import se.lu.nateko.cp.meta.core.data.StaticCollection
+import se.lu.nateko.cp.meta.core.data.{DataObject, PlainStaticObject, StaticCollection, GeoFeature, GeoTrack, FeatureCollection, Position, Circle, Polygon}
 import se.lu.nateko.cp.meta.utils.async.traverseFut
 import spray.json.RootJsonFormat
 import spray.json.given
 
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption.CREATE
-import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
-import java.nio.file.StandardOpenOption.WRITE
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
+import java.nio.file.StandardOpenOption.{CREATE, TRUNCATE_EXISTING, WRITE}
+import java.nio.file.{Files, Paths}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.concurrent.Future
 import scala.util.Using
 

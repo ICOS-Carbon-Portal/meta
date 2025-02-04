@@ -1,9 +1,10 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
-import scala.jdk.CollectionConverters.*
 import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.onto.Vocab
+
+import scala.jdk.CollectionConverters.*
 
 
 object ClassIndividualsLabeler{

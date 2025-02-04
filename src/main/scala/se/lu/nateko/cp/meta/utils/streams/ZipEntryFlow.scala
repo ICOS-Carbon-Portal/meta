@@ -1,26 +1,18 @@
 package se.lu.nateko.cp.meta.utils.streams
 
-import java.io.BufferedOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
+import akka.NotUsed
+import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
+import akka.util.ByteString
 
+import java.io.BufferedOutputStream
+import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable.Queue
 
 import ZipEntryFlow.ZipEntrySegment
 import ZipEntryFlow.ZipEntryStart
 import ZipEntryFlow.ZipFlowElement
-import akka.NotUsed
-import akka.stream.Attributes
-import akka.stream.FlowShape
-import akka.stream.Inlet
-import akka.stream.Outlet
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Source
-import akka.stream.stage.GraphStage
-import akka.stream.stage.GraphStageLogic
-import akka.stream.stage.InHandler
-import akka.stream.stage.OutHandler
-import akka.util.ByteString
 
 object ZipEntryFlow {
 

@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
 import org.eclipse.rdf4j.model.Statement
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, TriplestoreConnection}
 
 object LabelingDb:
 

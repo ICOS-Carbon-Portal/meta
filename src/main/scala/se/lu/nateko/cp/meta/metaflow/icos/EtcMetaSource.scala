@@ -1,43 +1,41 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneOffset
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpRequest, Uri}
+import akka.stream.scaladsl.Source
+import akka.stream.{ActorAttributes, Materializer, Supervision}
+import akka.util.ByteString
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.EtcConfig
+import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data.{
+   Orcid,
+   Position,
+   CountryCode,
+   Organization,
+   UriResource,
+   Funder,
+   Funding,
+   Station,
+   EtcStationSpecifics,
+   PositionUtil
+}
+import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
+import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmLocalDate, BadmLocalDateTime, BadmYear}
+import se.lu.nateko.cp.meta.metaflow.*
+import se.lu.nateko.cp.meta.services.upload.etc.*
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.net.URI
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneOffset}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
-
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.Uri
-import akka.stream.ActorAttributes
-import akka.stream.Materializer
-import akka.stream.Supervision
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.ingestion.badm.Badm
-import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDate
-import se.lu.nateko.cp.meta.ingestion.badm.BadmLocalDateTime
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment => _, *}
-import se.lu.nateko.cp.meta.core.etcupload.DataType
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.upload.etc.*
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import java.net.URI
-import se.lu.nateko.cp.meta.ingestion.badm.BadmYear
-import eu.icoscp.envri.Envri
-import akka.event.Logging
 
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {

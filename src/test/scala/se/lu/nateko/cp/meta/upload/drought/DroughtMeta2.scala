@@ -1,22 +1,16 @@
 package se.lu.nateko.cp.meta.upload.drought
 
-import com.opencsv.CSVParserBuilder
-import com.opencsv.CSVReaderBuilder
+import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.services.citation.CitationStyle
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
 
-import java.io.File
-import java.io.FileReader
+import java.io.{File, FileReader}
 import java.net.URI
-import java.time.Instant
-import java.time.LocalDate
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.io.Source
+import java.time.{Instant, LocalDate}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 

@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.upload.formcomponents.JsonInput
 import se.lu.nateko.cp.meta.upload.formcomponents.TextOptInput
 
 import java.net.URI
-import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import se.lu.nateko.cp.meta.GeoCoverage

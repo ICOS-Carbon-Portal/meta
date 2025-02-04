@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.index
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
+
 import java.time.Instant
 import scala.compiletime.uninitialized
 

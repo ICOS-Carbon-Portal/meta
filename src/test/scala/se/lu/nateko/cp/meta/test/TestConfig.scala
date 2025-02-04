@@ -1,19 +1,16 @@
 package se.lu.nateko.cp.meta.test
 
-import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.utils.owlapi.*
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import org.semanticweb.owlapi.model.PrefixManager
-import org.semanticweb.owlapi.util.DefaultPrefixManager
-import org.semanticweb.owlapi.model.OWLClass
-import org.semanticweb.owlapi.model.OWLDataProperty
-import org.semanticweb.owlapi.model.OWLObjectProperty
-import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
-import java.net.URI
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.rio.RDFFormat
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.model.{OWLClass, OWLDataProperty, OWLObjectProperty, PrefixManager}
+import org.semanticweb.owlapi.util.DefaultPrefixManager
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
+import se.lu.nateko.cp.meta.utils.owlapi.*
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+
+import java.net.URI
 
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager

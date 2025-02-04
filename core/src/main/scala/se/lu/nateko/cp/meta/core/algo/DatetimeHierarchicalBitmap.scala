@@ -1,14 +1,12 @@
 package se.lu.nateko.cp.meta.core.algo
 
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-
 /**
  * Factory for HierarchivalBitmap[Long] suitable for representing java.time.Instant keys
  * (converted to milliseconds since epoch). Internal constants for hierarchy-coordinate calculation
  * algorithm are chosen so that the algorithm works correctly only for years from approximately 1420 AD to 2520 AD
 */
 object DatetimeHierarchicalBitmap:
-	import HierarchicalBitmap.*
+	import HierarchicalBitmap.{Coord, Geo}
 
 	val SpilloverThreshold = 513
 

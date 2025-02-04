@@ -1,25 +1,21 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import akka.event.LoggingBus
+import akka.http.scaladsl.marshalling.{ToEntityMarshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.ExceptionHandler
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
+import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
 
 import scala.concurrent.ExecutionContext
-import akka.event.LoggingBus
 
 object MainRoute {
 

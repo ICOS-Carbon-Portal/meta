@@ -1,15 +1,13 @@
 package se.lu.nateko.cp.meta.test.instanceserver
 
-import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.persistence.InMemoryRdfLog
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.instanceserver.LoggingInstanceServer
-import se.lu.nateko.cp.meta.utils.rdf4j.*
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.instanceserver.{LoggingInstanceServer, Rdf4jInstanceServer}
+import se.lu.nateko.cp.meta.persistence.{InMemoryRdfLog, RdfUpdateLogIngester}
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class InstanceServerTests extends AnyFunSpec{
 

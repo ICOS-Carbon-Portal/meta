@@ -1,8 +1,5 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
-import java.nio.file.{Files, Path}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
 import akka.Done
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
@@ -20,6 +17,10 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
+
+import java.nio.file.{Files, Path}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",

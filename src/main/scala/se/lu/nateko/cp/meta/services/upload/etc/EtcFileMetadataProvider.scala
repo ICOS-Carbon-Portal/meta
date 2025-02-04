@@ -1,16 +1,15 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import scala.concurrent.duration.*
-import scala.util.Failure
-import scala.util.Success
-
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.stream.Materializer
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.EtcConfig
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
-import akka.event.Logging
+
+import scala.concurrent.duration.*
+import scala.util.{Failure, Success}
 
 class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{
 

@@ -9,7 +9,9 @@ val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
-	"-deprecation"
+	"-deprecation",
+	"-Werror",
+	"-Wunused:imports"
 )
 
 lazy val metaCore = (project in file("core"))
@@ -107,7 +109,7 @@ lazy val meta = (project in file("."))
 	.settings(
 		name := "meta",
 		version := "0.11.0",
-		scalacOptions ++= commonScalacOptions,
+		scalacOptions ++= (commonScalacOptions ++ Seq("-Wconf:src=.*(html|xml):s")),
 
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),

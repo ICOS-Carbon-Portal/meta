@@ -1,14 +1,15 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import org.scalatest.funspec.AnyFunSpec
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.memory.MemoryStore
-import java.io.StringReader
 import org.eclipse.rdf4j.rio.RDFFormat
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.io.StringReader
 
 class SparqlTests extends AnyFunSpec{
 

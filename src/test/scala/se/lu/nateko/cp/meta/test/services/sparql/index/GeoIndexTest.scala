@@ -1,29 +1,15 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import com.opencsv.CSVParserBuilder
-import com.opencsv.CSVReaderBuilder
+import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import org.locationtech.jts.algorithm.hull.ConcaveHull
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.Envelope
-import org.locationtech.jts.geom.Geometry
-import org.locationtech.jts.geom.GeometryCollection
-import org.locationtech.jts.geom.Point
+import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, Point}
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.crypto.Md5Sum
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.Vars.stationLon
-import se.lu.nateko.cp.meta.services.sparql.magic.DataObjCov
-import se.lu.nateko.cp.meta.services.sparql.magic.DenseCluster
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoEvent
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoIndex
-import se.lu.nateko.cp.meta.services.sparql.magic.GeoLookup
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-import se.lu.nateko.cp.meta.services.sparql.magic.SparseCluster
+import se.lu.nateko.cp.meta.services.sparql.magic.{DataObjCov, DenseCluster, GeoEvent, GeoIndex, GeoLookup, JtsGeoFactory, SparseCluster}
 
 import java.io.FileReader
-import scala.collection.mutable.Buffer
-import scala.io.Source
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
 

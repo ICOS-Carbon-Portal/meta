@@ -1,23 +1,20 @@
 package se.lu.nateko.cp.meta
 
-import spray.json.*
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers.liftMarshaller
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
+import akka.http.scaladsl.unmarshalling.{FromRequestUnmarshaller, Unmarshaller}
 import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.doi.*
-import scala.util.Failure
-import scala.util.Success
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers.liftMarshaller
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
-import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpEntity
 import se.lu.nateko.cp.meta.core.data.GeoFeature
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import spray.json.*
+
 import java.net.URI
+import scala.util.{Failure, Success}
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import DefaultJsonProtocol.*

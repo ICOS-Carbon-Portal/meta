@@ -1,13 +1,14 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index.*
-import scala.jdk.CollectionConverters.IteratorHasAsScala
-
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import HierarchicalBitmap.*
-import StringHierarchicalBitmap.{StringOrdering => Ord, StringGeo}
+import se.lu.nateko.cp.meta.services.sparql.index.*
+
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Random
+
+import HierarchicalBitmap.*
+import StringHierarchicalBitmap.{StringOrdering as Ord, StringGeo}
 
 class StringHierarchicalBitmapTests extends AnyFunSpec{
 

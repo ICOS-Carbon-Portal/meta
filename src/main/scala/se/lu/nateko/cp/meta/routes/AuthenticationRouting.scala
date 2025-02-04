@@ -1,31 +1,18 @@
 package se.lu.nateko.cp.meta.routes
 
-import scala.language.implicitConversions
-
-import se.lu.nateko.cp.cpauth.core.Authenticator
-import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.cpauth.core.CookieToToken
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.StandardRoute
-import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.Directive0
-import akka.http.scaladsl.server.Directive1
-import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
-
-import scala.util.Success
-import scala.util.Failure
-import akka.http.scaladsl.model.StatusCodes
-import se.lu.nateko.cp.meta.CpmetaJsonProtocol
-import akka.http.scaladsl.server.Rejection
-import akka.http.scaladsl.server.RejectionHandler
-import akka.http.scaladsl.model.headers.`X-Forwarded-For`
-import spray.json.JsObject
-import spray.json.JsNull
-import se.lu.nateko.cp.meta.core.data.{EnvriResolver, EnvriConfigs}
-import akka.http.scaladsl.model.headers.HttpCookie
-import akka.http.scaladsl.model.headers.SameSite
 import akka.http.javadsl.server.MissingCookieRejection
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.{HttpCookie, SameSite, `X-Forwarded-For`}
+import akka.http.scaladsl.server.Directives.*
+import akka.http.scaladsl.server.{Directive0, Directive1, Rejection, RejectionHandler, Route, StandardRoute}
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.{Authenticator, CookieToToken, PublicAuthConfig, UserId}
+import se.lu.nateko.cp.meta.CpmetaJsonProtocol
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, EnvriResolver}
+import spray.json.{JsNull, JsObject}
+
+import scala.language.implicitConversions
+import scala.util.{Failure, Success}
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(using EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting.*

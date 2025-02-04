@@ -2,16 +2,16 @@ package se.lu.nateko.cp.meta.test.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.*
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import akka.http.scaladsl.model.*
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import scala.concurrent.Future
-import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
 import se.lu.nateko.cp.meta.core.sparql.JsonSupport.given
+import se.lu.nateko.cp.meta.core.sparql.SparqlSelectResult
+
 import java.net.URI
-import scala.util.Success
-import scala.util.Failure
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 class SparqlClient(url: URI)(using system: ActorSystem) {
 	import system.dispatcher

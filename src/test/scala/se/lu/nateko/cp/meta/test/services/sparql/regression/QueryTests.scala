@@ -1,8 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
 import org.scalatest
 import org.scalatest.Informer
@@ -10,8 +9,7 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 @tags.DbTest

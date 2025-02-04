@@ -1,22 +1,25 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Resource
-import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.Value
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment as _, *}
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
+import se.lu.nateko.cp.meta.core.data.{
+	InstrumentDeployment as _,
+	GeoFeature,
+	UriResource,
+	StationSpecifics,
+	EtcStationSpecifics,
+	AtcStationSpecifics,
+	IcosStationSpecifics,
+	IcosCitiesStationSpecifics,
+	SitesStationSpecifics,
+	NoStationSpecifics,
+	Position,
+	Organization
+}
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.time.Instant
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 

@@ -1,8 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import se.lu.nateko.cp.meta.core.etcupload.DataType
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmEntry, BadmValue}
+import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 
 case class EtcFileMeta(dtype: DataType, isBinary: Boolean)
 case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType)

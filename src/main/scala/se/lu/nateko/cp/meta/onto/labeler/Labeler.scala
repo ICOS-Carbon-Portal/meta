@@ -2,14 +2,10 @@ package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.semanticweb.owlapi.model.OWLAnnotationProperty
-import org.semanticweb.owlapi.model.OWLEntity
-import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntology}
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.ResourceDto
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.TSC
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getValues
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{TSC, getValues}
 import se.lu.nateko.cp.meta.utils.owlapi.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsScala

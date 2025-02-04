@@ -1,38 +1,28 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import java.net.URI
-
-import scala.concurrent.Future
-import scala.util.Try
-
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.{ ObjectUploadDto, StaticCollectionDto, SubmitterProfile, UploadServiceConfig }
-import se.lu.nateko.cp.meta.DataObjectDto
-import se.lu.nateko.cp.meta.DocObjectDto
-import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.api.SparqlRunner
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data.{UploadCompletionInfo, FeatureCollection, GeoFeature, DataObject, DocObject}
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
-import se.lu.nateko.cp.meta.services.UploadUserErrorException
-import se.lu.nateko.cp.meta.services.upload.completion.UploadCompleter
+import se.lu.nateko.cp.meta.services.upload.completion.{Report, UploadCompleter}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.validation.UploadValidator
-import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.services.upload.completion.Report
-import se.lu.nateko.cp.meta.ConfigLoader
-import org.eclipse.rdf4j.model.ValueFactory
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.api.RdfLens
-import akka.http.scaladsl.model.Uri
+import se.lu.nateko.cp.meta.services.{MetadataException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.Validated
-import scala.util.Success
+import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DocObjectDto, ObjectUploadDto, StaticCollectionDto, SubmitterProfile, UploadServiceConfig}
+
+import java.net.URI
+import scala.concurrent.Future
+import scala.util.{Success, Try}
 
 class AccessUri(val uri: URI)
 
@@ -42,7 +32,7 @@ class UploadService(
 	conf: UploadServiceConfig
 )(using system: ActorSystem, mat: Materializer):
 
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+	
 	import RdfLens.GlobConn
 	import servers.{ metaVocab, vocab, metaReader }
 	import system.{ dispatcher, log }

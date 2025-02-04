@@ -1,21 +1,13 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
-import org.scalatest.funspec.AnyFunSpec
-
-import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.algebra.TupleExpr
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
-
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternSearch
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternFusion
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DobjStatFusion
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.DofPatternRewrite
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.ProjectionDofPattern
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.LeftJoinDofPattern
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.{DobjStatFusion, DofPatternFusion, DofPatternSearch, StatsFetchNode}
 
 class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)

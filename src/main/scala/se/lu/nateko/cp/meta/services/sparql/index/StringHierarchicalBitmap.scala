@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
-import scala.collection.IndexedSeq
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 
 

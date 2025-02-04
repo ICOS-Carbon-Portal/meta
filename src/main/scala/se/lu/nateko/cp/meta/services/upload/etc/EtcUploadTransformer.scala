@@ -1,29 +1,18 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-
-import scala.util.Try
-
 import akka.actor.ActorSystem
-import akka.stream.Materializer
-import se.lu.nateko.cp.meta.EtcConfig
-import se.lu.nateko.cp.meta.StationTimeSeriesDto
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.api.SparqlRunner
-import se.lu.nateko.cp.meta.api.UriId
+import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.core.etcupload.DataType
-import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.core.etcupload.{DataType, EtcUploadMetadata, StationId}
+import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import scala.util.Success
-import se.lu.nateko.cp.meta.DataObjectDto
-import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.{DataObjectDto, EtcConfig, StationTimeSeriesDto}
+
+import java.time.{LocalDateTime, ZoneOffset}
+import scala.util.{Success, Try}
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(using ActorSystem) {
 

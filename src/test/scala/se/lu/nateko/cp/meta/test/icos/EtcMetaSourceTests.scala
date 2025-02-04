@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test.icos
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
-import se.lu.nateko.cp.meta.core.data.Position
 import se.lu.nateko.cp.meta.api.UriId
+import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
+import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
+
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.PositionUtil
 
 class EtcMetaSourceTests extends AnyFunSpec{
 

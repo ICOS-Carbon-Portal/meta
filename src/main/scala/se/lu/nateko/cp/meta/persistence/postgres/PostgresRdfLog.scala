@@ -1,16 +1,13 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
-import java.sql.BatchUpdateException
-import java.sql.PreparedStatement
-import java.sql.Timestamp
-import org.eclipse.rdf4j.model.Literal
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
+import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
+
+import java.sql.{BatchUpdateException, PreparedStatement, Timestamp}
 import java.time.Instant
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{

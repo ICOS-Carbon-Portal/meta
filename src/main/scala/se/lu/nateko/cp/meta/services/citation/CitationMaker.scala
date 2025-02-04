@@ -2,33 +2,23 @@ package se.lu.nateko.cp.meta.services.citation
 
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.model.vocabulary.SKOS
-import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.doi.DoiMeta
+import org.eclipse.rdf4j.model.vocabulary.{RDFS, SKOS}
+import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.parseCommaSepList
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
 import java.net.URI
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
-import org.slf4j.LoggerFactory
+import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
+import scala.util.{Failure, Success, Try}
 
 private class CitationInfo(
 	val pidUrl: Option[String],

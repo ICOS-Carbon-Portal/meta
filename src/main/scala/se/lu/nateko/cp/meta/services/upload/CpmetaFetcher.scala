@@ -1,25 +1,16 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
-import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.utils.containsEither
-import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
 
 import java.net.URI
-import scala.util.Try
-import se.lu.nateko.cp.meta.api.RdfLens.CollConn
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 
 trait CpmetaReader:

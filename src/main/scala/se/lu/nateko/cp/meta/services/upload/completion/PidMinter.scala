@@ -3,12 +3,10 @@ package se.lu.nateko.cp.meta.services.upload.completion
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.CpVocab
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class PidMinter(handles: HandleNetClient, vocab: CpVocab)(using Envri) extends FormatSpecificCompleter:
 

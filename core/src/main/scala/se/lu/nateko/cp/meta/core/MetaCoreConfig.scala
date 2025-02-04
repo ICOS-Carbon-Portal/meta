@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core
 import java.net.URI
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import spray.json.{JsonFormat, RootJsonFormat}
+import spray.json.RootJsonFormat
 import spray.json.DefaultJsonProtocol.*
 
 

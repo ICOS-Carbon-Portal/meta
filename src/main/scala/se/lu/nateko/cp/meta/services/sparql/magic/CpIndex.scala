@@ -31,6 +31,7 @@ trait ObjSpecific{
 
 trait ObjInfo extends ObjSpecific{
 	def spec: IRI
+	def idx: Int
 	def submitter: IRI
 	def station: IRI
 	def site: IRI
@@ -218,7 +219,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	val getObjEntry = data.getObjEntry
+	val getObjInfo : Sha256Sum => ObjInfo =
+		data.getObjInfo
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

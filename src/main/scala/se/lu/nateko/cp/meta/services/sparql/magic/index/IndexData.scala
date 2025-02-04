@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -48,7 +49,11 @@ class IndexData(nObjects: Int)(
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
 
-	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+	val getObjInfo: Sha256Sum => ObjInfo =
+		getObjEntry
+
+	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap =
+		boolMap.getOrElseUpdate(prop, emptyBitmap)
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
@@ -292,7 +297,7 @@ class IndexData(nObjects: Int)(
 		}
 	}
 
-	def getObjEntry(hash: Sha256Sum): ObjEntry = {
+	private def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
 			val canonicalHash = hash.truncate
 			val oe = new ObjEntry(canonicalHash, objs.length, "")

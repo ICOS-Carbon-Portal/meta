@@ -14,7 +14,7 @@ class GeoEventProducer(cpIndex: CpIndex, metaVocab: CpmetaVocab, geoLookup: GeoL
 
 	def getDobjEvents(dobj: IRI)(using GlobConn): Validated[Seq[GeoEvent]] =
 		getHashsum(dobj, metaVocab.hasSha256sum).flatMap: objHash =>
-			val idx = cpIndex.getObjEntry(objHash).idx
+			val idx = cpIndex.getObjInfo(objHash).idx
 			val stationClusterId = getStationClusterId(dobj)
 
 			getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>

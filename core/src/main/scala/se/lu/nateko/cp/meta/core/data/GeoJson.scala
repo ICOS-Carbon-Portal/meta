@@ -5,7 +5,6 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NoStackTrace
-import java.net.URI
 
 object GeoJson {
 

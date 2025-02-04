@@ -1,6 +1,4 @@
 package se.lu.nateko.cp.meta.routes
-
-import akka.Done
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
@@ -9,7 +7,7 @@ import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}

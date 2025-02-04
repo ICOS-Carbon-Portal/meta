@@ -32,7 +32,7 @@ class UploadService(
 	conf: UploadServiceConfig
 )(using system: ActorSystem, mat: Materializer):
 
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+	
 	import RdfLens.GlobConn
 	import servers.{ metaVocab, vocab, metaReader }
 	import system.{ dispatcher, log }

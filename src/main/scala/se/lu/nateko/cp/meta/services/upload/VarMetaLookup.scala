@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment, UriResource, ValueType, VarMeta}
+import se.lu.nateko.cp.meta.core.data.{UriResource, ValueType, VarMeta}
 
 import java.net.URI
 import scala.util.matching.Regex

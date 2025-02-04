@@ -3,9 +3,9 @@ package se.lu.nateko.cp.meta.services.sparql
 import se.lu.nateko.cp.meta.SparqlServerConfig
 
 import java.time.Instant
-import java.time.temporal.{ChronoUnit, TemporalUnit}
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.{ConcurrentLinkedQueue, Executor, RejectedExecutionException}
+import java.util.concurrent.{ConcurrentLinkedQueue, Executor}
 import scala.collection.concurrent.TrieMap
 
 class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val now: () => Instant):

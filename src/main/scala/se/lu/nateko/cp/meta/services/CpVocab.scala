@@ -4,7 +4,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, collectionPrefix, objectPathPrefix, objectPrefix, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
 import se.lu.nateko.cp.meta.core.etcupload.StationId as EtcStationId
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
 import se.lu.nateko.cp.meta.metaflow.{Role, TC, TcConf, TcId}

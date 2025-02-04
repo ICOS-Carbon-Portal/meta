@@ -2,11 +2,10 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.model.vocabulary.GEO
 import org.eclipse.rdf4j.model.{IRI, Literal, Value}
-import org.eclipse.rdf4j.query.algebra.{BindingSetAssignment, Exists, Extension, Not, QueryModelNode, SingletonSet, StatementPattern, TupleExpr, Union, ValueExpr}
+import org.eclipse.rdf4j.query.algebra.{Extension, QueryModelNode, StatementPattern, TupleExpr}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.{Exists as _, *}
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchNode
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 

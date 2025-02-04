@@ -5,7 +5,6 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.time.Instant
-import scala.quoted.{Expr, Quotes}
 
 
 object Inspire{

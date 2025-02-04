@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
 
 
 trait TC

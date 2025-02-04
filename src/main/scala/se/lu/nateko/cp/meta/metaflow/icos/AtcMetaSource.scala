@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
+import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.io.{BufferedInputStream, FileInputStream, InputStreamReader}

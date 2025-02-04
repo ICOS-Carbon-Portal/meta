@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.instanceserver
 
 import org.eclipse.rdf4j.model.*
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
-import se.lu.nateko.cp.meta.api.CloseableIterator.empty
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
@@ -88,7 +87,7 @@ trait TriplestoreConnection extends AutoCloseable:
 
 
 object TriplestoreConnection:
-	import Validated.CardinalityExpectation.{AtLeastOne, AtMostOne, ExactlyOne}
+	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
 	type TSC = TriplestoreConnection
 
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using conn: TSC): CloseableIterator[Statement] =

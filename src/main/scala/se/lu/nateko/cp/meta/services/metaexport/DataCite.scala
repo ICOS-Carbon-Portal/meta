@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.metaexport
 
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
-import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, PlainStaticObject, StaticCollection, StaticObject}
+import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.Validated
 

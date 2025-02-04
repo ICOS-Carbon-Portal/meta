@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.SailConnection
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID

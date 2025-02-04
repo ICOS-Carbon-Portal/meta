@@ -2,15 +2,15 @@ package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
 import java.net.URI
 import java.time.Instant

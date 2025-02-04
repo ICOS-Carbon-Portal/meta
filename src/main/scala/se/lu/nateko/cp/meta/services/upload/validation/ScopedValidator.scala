@@ -2,26 +2,22 @@ package se.lu.nateko.cp.meta.services.upload.validation
 
 import akka.NotUsed
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
-import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, OptionalOneOrSeq, TimeInterval, flattenToSeq}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, OptionalOneOrSeq, TimeInterval, flattenToSeq}
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.CpmetaReader
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UnauthorizedUploadException, UploadUserErrorException}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, ObjectUploadDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto, UploadServiceConfig}
+import se.lu.nateko.cp.meta.{DataObjectDto, DataSubmitterConfig, DocObjectDto, ObjectUploadDto, StationTimeSeriesDto}
 
 import java.net.URI
 import java.time.Instant
-import java.util.Date
-import scala.collection.mutable.Buffer
 import scala.language.strictEquality
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 

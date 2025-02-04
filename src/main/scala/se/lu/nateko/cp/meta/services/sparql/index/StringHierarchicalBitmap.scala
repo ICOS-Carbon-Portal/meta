@@ -2,8 +2,6 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 
-import scala.collection.IndexedSeq
-
 
 object StringHierarchicalBitmap:
 	import HierarchicalBitmap.*

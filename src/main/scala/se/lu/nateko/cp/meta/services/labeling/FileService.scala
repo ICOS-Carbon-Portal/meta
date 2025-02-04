@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.{HttpResponse, MediaTypes, Multipart}
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 

@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

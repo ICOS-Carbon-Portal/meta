@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.utils
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import scala.collection.mutable.Buffer

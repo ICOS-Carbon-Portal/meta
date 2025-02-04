@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.routes
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, Multipart, ResponseEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
@@ -10,8 +10,7 @@ import akka.util.ByteString
 import se.lu.nateko.cp.meta.services.labeling.{StationLabelingHistory, StationLabelingService}
 import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException, UnauthorizedUserInfoUpdateException}
 import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, FileDeletionDto, LabelingStatusUpdate, LabelingUserDto}
-import spray.json.DefaultJsonProtocol.RootJsObjectFormat
-import spray.json.{JsObject, RootJsonReader}
+import spray.json.JsObject
 
 import java.net.URI
 import java.nio.charset.StandardCharsets

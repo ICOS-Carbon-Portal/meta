@@ -1,22 +1,14 @@
 package se.lu.nateko.cp.meta.services.upload
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.{HttpRequest, MediaTypes, Uri}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, PlainJavaDoiHttp}
-import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.DoiConfig
-import se.lu.nateko.cp.meta.core.data.{DataObject, DataProduction, DocObject, FeatureCollection, PlainStaticCollection, PlainStaticObject, StaticCollection, StaticObject}
+import se.lu.nateko.cp.meta.core.data.{DataObject, DocObject, PlainStaticCollection, PlainStaticObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.net.URI
-import java.time.{Instant, Year}
 import scala.concurrent.{ExecutionContext, Future}
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {

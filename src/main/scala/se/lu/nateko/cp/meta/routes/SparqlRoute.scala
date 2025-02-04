@@ -3,51 +3,29 @@ package se.lu.nateko.cp.meta.routes
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
-import akka.http.caching.scaladsl.Cache
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.HttpEntity.Default
-import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model.headers.*
-import akka.http.scaladsl.server.Directive
-import akka.http.scaladsl.server.Directive0
-import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.RejectionHandler
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.RouteResult
-import akka.http.scaladsl.server.RouteResult.Complete
-import akka.http.scaladsl.server.RouteResult.Rejected
+import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.directives.CachingDirectives.*
-import akka.stream.Materializer
-import akka.stream.SinkShape
-import akka.stream.scaladsl.Broadcast
-import akka.stream.scaladsl.Concat
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.GraphDSL
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.SinkQueueWithCancel
-import akka.stream.scaladsl.Source
+import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHandler, RequestContext, Route, RouteResult}
+import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
+import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.CacheSizeLimitExceeded
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletionException
 import scala.collection.immutable.Queue
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.*
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-import scala.util.Success
 
 object SparqlRoute:
 
@@ -100,21 +78,21 @@ object SparqlRoute:
 				tprovide((msg, false))
 
 		path("sparql"):
-			withPermissiveCorsHeader:
-				options:
-					respondWithHeaders(
-						`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
-						`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
-					)(complete(StatusCodes.OK))
-				~
-				extractRequestContext: ctxt =>
-					//system.log.info(s"Got a SPARQL request with entity ${ctxt.request.entity}")
-					spCache.makeKey(ctxt).fold(bypass): key =>
-						cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
-							respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)): _ =>
-								if cacheProhibited
-								then spCache.put(key, plainRoute(ctxt))
-								else spCache.apply(key, () => plainRoute(ctxt))
+				withPermissiveCorsHeader:
+					options:
+						respondWithHeaders(
+							`Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST),
+							`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
+						)(complete(StatusCodes.OK))
+					~
+					extractRequestContext: ctxt =>
+						//system.log.info(s"Got a SPARQL request with entity ${ctxt.request.entity}")
+						spCache.makeKey(ctxt).fold(bypass): key =>
+							cacheStatus(key): (cacheStatusMessage, cacheProhibited) =>
+								respondWithHeader(RawHeader(X_Cache_Status, cacheStatusMessage)): _ =>
+									if cacheProhibited
+									then spCache.put(key, plainRoute(ctxt))
+									else spCache.apply(key, () => plainRoute(ctxt))
 	end apply
 
 	private val ensureNoEmptyOkResponseDueToTimeout: Directive0 = extractRequestContext.flatMap{ctxt =>

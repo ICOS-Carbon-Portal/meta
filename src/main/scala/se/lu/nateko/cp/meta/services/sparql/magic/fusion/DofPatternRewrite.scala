@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, BindingSetAssignment, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator}
-import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
+import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator}
 
 object DofPatternRewrite{
 

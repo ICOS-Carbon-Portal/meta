@@ -1,6 +1,4 @@
 package se.lu.nateko.cp.meta.routes
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, MalformedRequestContentRejection, RejectionHandler, Route}
@@ -9,11 +7,10 @@ import akka.stream.scaladsl.Keep
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.{DataObject, DocObject, EnvriConfigs, GeoFeature, UploadCompletionInfo}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, UploadCompletionInfo}
+import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
-import se.lu.nateko.cp.meta.core.etcupload.{EtcUploadMetadata, StationId}
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
-import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto}

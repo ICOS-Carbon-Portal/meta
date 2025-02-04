@@ -1,11 +1,8 @@
 package se.lu.nateko.cp.meta.services.citation
-
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
-import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DataTheme, Orcid, Organization, Person, Station, UriResource}
-import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
-import se.lu.nateko.cp.meta.metaflow.{Administrator, PI, Role}
+import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, Organization, Person, UriResource}
+import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.upload.CpmetaReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -13,9 +10,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
-import java.util as ju
-import scala.collection.mutable
-import scala.util.{Try, Using}
 
 final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 	import AttributionProvider.*

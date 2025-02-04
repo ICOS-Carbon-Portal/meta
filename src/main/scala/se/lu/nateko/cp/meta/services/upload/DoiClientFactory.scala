@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, DoiReadonlyClient, PlainJavaDoiHttp}
-import se.lu.nateko.cp.meta.{CpmetaConfig, DoiConfig}
+import se.lu.nateko.cp.meta.DoiConfig
 
 import scala.concurrent.ExecutionContext
 

@@ -1,16 +1,10 @@
 package se.lu.nateko.cp.meta.services.upload.geocov
-
-import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, LineString, Point as JtsPoint, Polygon as JtsPolygon}
 import org.locationtech.jts.index.strtree.STRtree
-import org.locationtech.jts.io.geojson.GeoJsonReader
-import se.lu.nateko.cp.doi.meta.GeoLocation
-import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, FeatureWithGeoJson, GeoFeature, GeoTrack, LatLonBox, Pin, Polygon, Position, PositionUtil}
+import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, FeatureWithGeoJson, GeoFeature, GeoTrack, LatLonBox, Pin, Polygon, Position}
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.services.sparql.magic.{ConcaveHullLengthRatio, JtsGeoFactory}
-
-import scala.collection.mutable.ArrayBuffer
 
 
 

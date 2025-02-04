@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.eclipse.rdf4j.model.{IRI, Statement, Value}
+import org.eclipse.rdf4j.model.{IRI, Value}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
 import scala.util.Try

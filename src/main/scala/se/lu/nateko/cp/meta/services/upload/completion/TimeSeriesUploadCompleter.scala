@@ -6,9 +6,9 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DobjLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.upload.{MetadataUpdater, StatementsProducer}
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadCompletionException}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.printAsJsonArray
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 

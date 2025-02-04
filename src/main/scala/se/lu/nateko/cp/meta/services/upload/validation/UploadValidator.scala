@@ -2,24 +2,20 @@ package se.lu.nateko.cp.meta.services.upload.validation
 
 import akka.NotUsed
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, GeoFeature, GeoJson, OptionalOneOrSeq, TimeInterval, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException, UnauthorizedUploadException, UploadUserErrorException}
+import se.lu.nateko.cp.meta.services.{MetadataException, UnauthorizedUploadException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, StaticCollectionDto, UploadDto, UploadServiceConfig}
-import spray.json.JsonParser
+import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, StaticCollectionDto, UploadDto}
 
 import java.net.URI
 import java.time.Instant
-import java.util.Date
 import scala.collection.mutable.Buffer
 import scala.language.strictEquality
 import scala.util.{Failure, Success, Try}
@@ -36,7 +32,7 @@ def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 class UploadValidator(servers: DataObjectInstanceServers):
 	import servers.{ metaVocab, vocab, metaReader, lenses }
 	import TriplestoreConnection.*
-	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, ItemConn, GlobConn}
+	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, GlobConn}
 	given vf: ValueFactory = metaVocab.factory
 	private val scoped = ScopedValidator(vocab, metaVocab)
 

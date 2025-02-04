@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
-import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder, Orcid, Organization, Person, Position}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
-import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf

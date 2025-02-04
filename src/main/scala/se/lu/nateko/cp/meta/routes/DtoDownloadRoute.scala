@@ -1,6 +1,4 @@
 package se.lu.nateko.cp.meta.routes
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route

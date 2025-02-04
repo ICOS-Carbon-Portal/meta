@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.model.*
-import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, envriConf}
 import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 

@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
-import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
 
 import java.net.URI
 import java.time.Instant

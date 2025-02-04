@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
-import akka.actor.{ActorRef, Status}
+import akka.actor.ActorRef
 import akka.event.LoggingAdapter
-import akka.stream.scaladsl.{Keep, Source}
-import akka.stream.{OverflowStrategy, ThrottleMode}
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
@@ -15,9 +13,7 @@ import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import java.time.{Instant, LocalDate}
-import scala.concurrent.duration.DurationInt
-import scala.util.Try
+import java.time.Instant
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter

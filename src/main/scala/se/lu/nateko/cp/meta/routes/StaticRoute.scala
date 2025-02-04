@@ -6,10 +6,9 @@ import akka.http.scaladsl.server.Route
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import play.twirl.api.Html
-import se.lu.nateko.cp.cpauth.core.PublicAuthConfig
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, Licence}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.rdf4j.*

@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
-import java.nio.file.{Files, Paths}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 

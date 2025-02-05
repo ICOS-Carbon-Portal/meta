@@ -14,30 +14,25 @@ class IndexDataTest extends AnyFunSpec {
 		it("clears fileName of ObjEntry when hasName tuple is deleted") {
 			val factory = SimpleValueFactory.getInstance()
 			val vocab = CpmetaVocab(factory)
-
 			val subject: IRI = factory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")
-
-			// Make sure we insert a DataObject
 			val CpVocab.DataObject(hash, _) = subject : @unchecked
-			// val hash = subject match
-			// 	case CpVocab.DataObject(hash, _) => hash
-
 			val data = IndexData(100)()
 
-			// IndexData requires a StatementSource but in current tests it is not actually used,
+			// IndexData requires a StatementSource but in this case we never pull any statements,
 			// hence we can leave things unimplemented.
 			given StatementSource with
 				def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
 				def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
 
-
 			// Insert hasName triple
 			data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), true, vocab)
 			assert(data.objs.length == 1)
 			assert(data.getObjEntry(hash).fileName === Some("test name"))
+
 			// Remove it
 			data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), false, vocab)
 			assert(data.getObjEntry(hash).fileName === None)
+			assert(data.objs.length == 1)
 		}
 	}
 }

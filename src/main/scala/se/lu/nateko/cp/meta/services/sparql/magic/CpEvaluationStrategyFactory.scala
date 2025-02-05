@@ -129,7 +129,7 @@ class CpEvaluationStrategyFactory(
 
 	}
 
-	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
+	private def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
 		override def evaluate(bindings: BindingSet) =
 			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}

@@ -538,4 +538,21 @@ class QueryTests extends AsyncFunSpec {
 			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
 	}
+
+	it("Data object keywords also return associated keywords") {
+		val factory = db.repo.getValueFactory()
+
+		val query = """
+			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			select distinct ?keywords where{
+				<https://meta.icos-cp.eu/objects/I7AkhYn7F8XpV78btk44fK_K> cpmeta:hasKeywords ?keywords .
+			}
+		"""
+		info(query)
+		db.runSparql(query).map(rowIterator => {
+			val List(row) = rowIterator.toList
+			info(s"Row: ${row.toString()}")
+			assert(row.getBinding("keywords").getValue() == factory.createLiteral("CO2"))
+		})
+	}
 }

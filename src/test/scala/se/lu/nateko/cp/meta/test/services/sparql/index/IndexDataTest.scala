@@ -4,17 +4,10 @@ import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
-// IndexData requires a StatementSource but in current tests it is not actually used,
-// hence we can leave things unimplemented.
-private class DummyStatements extends StatementSource {
-  override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
-  override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
-}
 
 class IndexDataTest extends AnyFunSpec {
 	describe("processTriple") {
@@ -25,13 +18,18 @@ class IndexDataTest extends AnyFunSpec {
 			val subject: IRI = factory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")
 
 			// Make sure we insert a DataObject
-			val hash: Sha256Sum =
-				subject match {
-					case CpVocab.DataObject(hash, _prefix) => hash
-				}
+			val CpVocab.DataObject(hash, _) = subject : @unchecked
+			// val hash = subject match
+			// 	case CpVocab.DataObject(hash, _) => hash
 
 			val data = IndexData(100)()
-			given StatementSource = DummyStatements()
+
+			// IndexData requires a StatementSource but in current tests it is not actually used,
+			// hence we can leave things unimplemented.
+			given StatementSource with
+				def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
+				def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
+
 
 			// Insert hasName triple
 			data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), true, vocab)

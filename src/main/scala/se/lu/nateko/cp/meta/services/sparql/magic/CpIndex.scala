@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.sail.Sail
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
 import org.slf4j.LoggerFactory
@@ -232,12 +232,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 			sail.accessEagerly:
 				list.forEach:
 					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-						processUpdate(subj, pred, obj, isAssertion)
+						data.processTriple(subj, pred, obj, isAssertion, vocab)
 					case _ => ()
 			list.clear()
-
-	private def processUpdate(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean)(using GlobConn): Unit =
-		data.processTriple(subj, pred, obj, isAssertion, vocab)
 
 end CpIndex
 

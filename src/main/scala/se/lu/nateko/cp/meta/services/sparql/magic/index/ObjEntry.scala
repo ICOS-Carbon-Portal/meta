@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
 import java.time.Instant
 import scala.compiletime.uninitialized
 
-class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable {
+final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable {
 	var spec: IRI = uninitialized
 	var submitter: IRI = uninitialized
 	var station: IRI = uninitialized
@@ -21,7 +21,7 @@ class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends Ob
 	var submissionEnd: Long = Long.MinValue
 	var isNextVersion: Boolean = false
 
-	private def dateTimeFromLong(dt: Long): Option[Instant] =
+	private final def dateTimeFromLong(dt: Long): Option[Instant] =
 		if (dt == Long.MinValue) None
 		else Some(Instant.ofEpochMilli(dt))
 

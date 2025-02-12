@@ -11,9 +11,15 @@ import org.scalajs.dom.crypto
 import org.scalajs.dom.File
 import org.scalajs.dom.FileReader
 
+import scala.util.{Failure, Success}
+
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 object FileHasher {
+
+	val FileMaxSize = 2000000000
+	val FileMaxSizeMessage = "This file could be too large to upload with this form. " +
+		"Please contact us if you need an alternative."
 
 	def hash(file: File): Future[Sha256Sum] = readFile(file)
 		.flatMap{buff =>
@@ -21,7 +27,12 @@ object FileHasher {
 		}
 		.asInstanceOf[Future[ArrayBuffer]]
 		.map(ab => new Sha256Sum(new Int8Array(ab).toArray))
-
+		.transform{
+			case Success(hashSum) => Success(hashSum)
+			case Failure(err) if file.size > FileMaxSize =>
+				throw new Exception(FileMaxSizeMessage)
+			case Failure(err) => throw err
+		}
 
 	def readFile(file: File): Future[ArrayBuffer] = {
 

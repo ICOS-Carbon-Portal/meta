@@ -227,6 +227,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		}
 	}
 
+	//TODO Find out why the hack with limiting the depth below was needed to prevent the stack overflow crash in ICOS Cities
 	def optimizeAndTrim(depth: Int = 0): Unit = if depth < 20 then
 		values.runOptimize()
 		values.trim()

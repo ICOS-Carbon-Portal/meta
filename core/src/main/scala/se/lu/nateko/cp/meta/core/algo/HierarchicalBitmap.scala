@@ -227,12 +227,11 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		}
 	}
 
-	def optimizeAndTrim(): Unit = {
+	def optimizeAndTrim(depth: Int = 0): Unit = if depth < 20 then
 		values.runOptimize()
 		values.trim()
 		children.foreach: innerChildren =>
-			if(innerChildren.nonEmpty) innerChildren.valuesIterator.foreach(_.optimizeAndTrim())
-	}
+			if(innerChildren.nonEmpty) innerChildren.valuesIterator.foreach(_.optimizeAndTrim(depth + 1))
 
 	def filterKey(key: K, filter: FilterRequest[K]): Boolean = filter match{
 		case EqualsFilter(fkey) => ord.equiv(key, fkey)

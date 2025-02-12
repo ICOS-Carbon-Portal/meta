@@ -11,8 +11,6 @@ import org.scalajs.dom.crypto
 import org.scalajs.dom.File
 import org.scalajs.dom.FileReader
 
-import scala.util.{Failure, Success}
-
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 object FileHasher {

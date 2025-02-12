@@ -144,6 +144,11 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:MunichMidLow</AbbreviatedIRI>
+        <IRI>https://citymeta.icos-cp.eu/resources/stations/</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty"/>
         <AbbreviatedIRI>cpmeta:Organization</AbbreviatedIRI>
         <AbbreviatedIRI>cpmeta:hasName</AbbreviatedIRI>
@@ -162,6 +167,11 @@
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:ParisMidLow</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:ParisMidLow</AbbreviatedIRI>
+        <IRI>https://citymeta.icos-cp.eu/resources/stations/</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty abbreviatedIRI="cpanno:displayProperty1"/>
@@ -282,6 +292,11 @@
         <AnnotationProperty abbreviatedIRI="cpanno:isExposedToUsers"/>
         <AbbreviatedIRI>cpmeta:ZurichMidLow</AbbreviatedIRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="cpanno:newInstanceBaseUri"/>
+        <AbbreviatedIRI>cpmeta:ZurichMidLow</AbbreviatedIRI>
+        <IRI>https://citymeta.icos-cp.eu/resources/stations/</IRI>
     </AnnotationAssertion>
 </Ontology>
 

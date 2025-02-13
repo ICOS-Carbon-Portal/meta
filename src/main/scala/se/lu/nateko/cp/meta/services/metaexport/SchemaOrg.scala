@@ -250,6 +250,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 				"logo"  -> JsString(publisherLogoUri)
 			),
 			"license"               -> licenceJs,
+			"isAccessibleForFree"   -> JsBoolean(true),
 			"acquireLicensePage"    -> asOptJsString(references.licence.map(_.url.toString)),
 		)
 	end commonJson

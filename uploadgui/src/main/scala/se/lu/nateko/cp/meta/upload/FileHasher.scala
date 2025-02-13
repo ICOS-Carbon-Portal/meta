@@ -16,9 +16,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 object FileHasher {
 
 	val FileMaxSize = 2_000_000_000
-	val FileMaxSizeMessage = "This file could be too large to upload with this web app. " +
-		"Please consider scripted uploads as instructed here: " +
-		"https://github.com/ICOS-Carbon-Portal/meta/?tab=readme-ov-file#upload-instructions-scripting"
+	val FileMaxSizeMessage = "The file you selected is too large to upload with this form. Please use scripted uploads as described in <a class='alert-link' href='https://github.com/ICOS-Carbon-Portal/meta/?tab=readme-ov-file#upload-instructions-scripting'>our documentation</a>."
 
 	def hash(file: File): Future[Sha256Sum] = readFile(file)
 		.flatMap{buff =>

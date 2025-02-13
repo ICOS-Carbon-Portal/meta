@@ -10,7 +10,8 @@ import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters.*
+// import scala.collection.JavaConverters.*
 
 @tags.DbTest
 class QueryTests extends AsyncFunSpec {
@@ -544,9 +545,9 @@ class QueryTests extends AsyncFunSpec {
 			val factory = db.repo.getValueFactory()
 			val objectId = "08ArGBmAQHiig_xtrwmprrL7";
 
-			val query = s"""
+			val allKeywordsQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?spec ?proj ?objKeywords ?specKeywords ?projKeywords where {
+				select ?objKeywords ?specKeywords ?projKeywords where {
 					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasObjectSpec ?spec .
 					?spec cpmeta:hasAssociatedProject ?proj .
 					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasKeywords ?objKeywords .
@@ -571,20 +572,25 @@ class QueryTests extends AsyncFunSpec {
 			*/
 
 
-			info(query)
-			db.runSparql(query).map(rowIterator => {
+			db.runSparql(allKeywordsQuery).map(rowIterator => {
 				/*
 				rowIterator.foreach { row => 
 				info(s"Row: ${row.toString()}")
 				}
 				assert(true == true)
 				*/
-				val List(row) = rowIterator.toList
-				info(s"Row: ${row.toString()}")
-				assert(row.getBinding("objKeywords").getValue() == factory.createLiteral("test keyword"))
-				assert(row.getBinding("specKeywords").getValue() == factory.createLiteral("carbon flux"))
-				assert(row.getBinding("projKeywords").getValue() == factory.createLiteral("ICOS"))
+				val List(allKeywordsRow) = rowIterator.toList
+
+				assert(bindingsFromRow(allKeywordsRow) == Map(
+					"objKeywords" -> factory.createLiteral("test keyword"),
+					"specKeywords" -> factory.createLiteral("carbon flux"),
+					"projKeywords" -> factory.createLiteral("ICOS")
+				))
 			})
 		}
 	}
+}
+
+private def bindingsFromRow(row : BindingSet) : Map[String, Value] = {
+	row.iterator().asScala.map(b => b.getName -> b.getValue).toMap
 }

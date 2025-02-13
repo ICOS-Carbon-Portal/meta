@@ -539,20 +539,52 @@ class QueryTests extends AsyncFunSpec {
 		)
 	}
 
-	it("Data object keywords also return associated keywords") {
-		val factory = db.repo.getValueFactory()
+	describe("Data object keywords") {
+		it("also return associated keywords") {
+			val factory = db.repo.getValueFactory()
+			val objectId = "08ArGBmAQHiig_xtrwmprrL7";
 
-		val query = """
-			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-			select distinct ?keywords where{
-				<https://meta.icos-cp.eu/objects/I7AkhYn7F8XpV78btk44fK_K> cpmeta:hasKeywords ?keywords .
-			}
-		"""
-		info(query)
-		db.runSparql(query).map(rowIterator => {
-			val List(row) = rowIterator.toList
-			info(s"Row: ${row.toString()}")
-			assert(row.getBinding("keywords").getValue() == factory.createLiteral("CO2"))
-		})
+			val query = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?spec ?proj ?objKeywords ?specKeywords ?projKeywords where {
+					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasObjectSpec ?spec .
+					?spec cpmeta:hasAssociatedProject ?proj .
+					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasKeywords ?objKeywords .
+					?spec cpmeta:hasKeywords ?specKeywords .
+					?proj cpmeta:hasKeywords ?projKeywords
+				}
+			""" 
+
+			/*
+			val query = """
+						prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+						prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+						select ?obj ?keywords ?skeys ?okeys
+						where{
+							?spec cpmeta:hasAssociatedProject ?proj .
+							?obj cpmeta:hasObjectSpec ?spec .
+							?proj cpmeta:hasKeywords ?keywords .
+							?spec cpmeta:hasKeywords ?skeys .
+							?obj cpmeta:hasKeywords ?okeys .
+						}
+			"""
+			*/
+
+
+			info(query)
+			db.runSparql(query).map(rowIterator => {
+				/*
+				rowIterator.foreach { row => 
+				info(s"Row: ${row.toString()}")
+				}
+				assert(true == true)
+				*/
+				val List(row) = rowIterator.toList
+				info(s"Row: ${row.toString()}")
+				assert(row.getBinding("objKeywords").getValue() == factory.createLiteral("test keyword"))
+				assert(row.getBinding("specKeywords").getValue() == factory.createLiteral("carbon flux"))
+				assert(row.getBinding("projKeywords").getValue() == factory.createLiteral("ICOS"))
+			})
+		}
 	}
 }

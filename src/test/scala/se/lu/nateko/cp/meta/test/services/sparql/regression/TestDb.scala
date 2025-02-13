@@ -156,7 +156,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	CpNotifyingSail(base, idxFactories, citer)
 }
 
-object CitationClientDummy extends CitationClient {
+private object CitationClientDummy extends CitationClient {
 	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
 	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }

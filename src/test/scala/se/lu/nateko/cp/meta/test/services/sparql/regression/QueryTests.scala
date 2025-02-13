@@ -11,6 +11,9 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
 // import scala.collection.JavaConverters.*
 
 @tags.DbTest
@@ -557,38 +560,29 @@ class QueryTests extends AsyncFunSpec {
 				}
 			""" 
 
-			/*
-			val query = """
-						prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-						prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-						select ?obj ?keywords ?skeys ?okeys
-						where{
-							?spec cpmeta:hasAssociatedProject ?proj .
-							?obj cpmeta:hasObjectSpec ?spec .
-							?proj cpmeta:hasKeywords ?keywords .
-							?spec cpmeta:hasKeywords ?skeys .
-							?obj cpmeta:hasKeywords ?okeys .
-						}
-			"""
-			*/
-
-
-			db.runSparql(allKeywordsQuery).map(rowIterator => {
-				/*
-				rowIterator.foreach { row => 
-				info(s"Row: ${row.toString()}")
+			val objectKeywordsQuery = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?keywords ?specKeywords ?projKeywords where {
+					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasKeywords ?keywords
 				}
-				assert(true == true)
-				*/
-				val List(allKeywordsRow) = rowIterator.toList
+			"""
 
-				assert(bindingsFromRow(allKeywordsRow) == Map(
-					"objKeywords" -> factory.createLiteral("test keyword"),
-					"specKeywords" -> factory.createLiteral("carbon flux"),
-					"projKeywords" -> factory.createLiteral("ICOS")
-				))
-			})
+			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
+			val List(objectKeywords) = runSparqlSync(objectKeywordsQuery)
+
+			val expectedKeywords = Map(
+				"objKeywords" -> factory.createLiteral("test keyword"),
+				"specKeywords" -> factory.createLiteral("carbon flux"),
+				"projKeywords" -> factory.createLiteral("ICOS")
+			)
+
+			assert(bindingsFromRow(allKeywords) == expectedKeywords)
+			assert(objectKeywords.getValue("keywords") == expectedKeywords.values.toList)
 		}
+	}
+
+	private def runSparqlSync(query: String): List[BindingSet] = {
+		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList
 	}
 }
 

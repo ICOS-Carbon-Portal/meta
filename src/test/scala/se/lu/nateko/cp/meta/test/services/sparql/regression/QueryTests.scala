@@ -548,9 +548,10 @@ class QueryTests extends AsyncFunSpec {
 			val allKeywordsQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 				select ?objKeywords ?specKeywords ?projKeywords where {
-					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasObjectSpec ?spec .
+					BIND(<https://meta.icos-cp.eu/objects/${objectId}> as ?object)
+					?object cpmeta:hasObjectSpec ?spec .
+					?object cpmeta:hasKeywords ?objKeywords .
 					?spec cpmeta:hasAssociatedProject ?proj .
-					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasKeywords ?objKeywords .
 					?spec cpmeta:hasKeywords ?specKeywords .
 					?proj cpmeta:hasKeywords ?projKeywords
 				}

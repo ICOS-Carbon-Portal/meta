@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.upload.FileHasher
 import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.upload.UploadApp
+import se.lu.nateko.cp.meta.upload.FileHasher.{FileMaxSize, FileMaxSizeMessage}
 
 class FileInput(elemId: String, cb: () => Unit){
 	private val fileInput = getElementById[html.Input](elemId).get
@@ -40,11 +41,17 @@ class FileInput(elemId: String, cb: () => Unit){
 			_hash = fail("hashsum is being computed")
 			cb()
 		}
-		UploadApp.whenDone(FileHasher.hash(f)){hash =>
-			if(file.toOption.contains(f)) {
-				_hash = Success(hash) //file could have been changed while digesting for SHA-256
-				_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
-				cb()
+		if(f.size > FileMaxSize) {
+			UploadApp.showAlert(FileMaxSizeMessage, "alert alert-danger")
+		} else {
+			UploadApp.hideAlert()
+
+			UploadApp.whenDone(FileHasher.hash(f)){hash =>
+				if(file.toOption.contains(f)) {
+					_hash = Success(hash) //file could have been changed while digesting for SHA-256
+					_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
+					cb()
+				}
 			}
 		}
 	}

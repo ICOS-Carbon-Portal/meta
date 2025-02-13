@@ -562,7 +562,7 @@ class QueryTests extends AsyncFunSpec {
 
 			val objectKeywordsQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?keywords ?specKeywords ?projKeywords where {
+				select ?keywords where {
 					<https://meta.icos-cp.eu/objects/${objectId}> cpmeta:hasKeywords ?keywords
 				}
 			"""
@@ -587,5 +587,5 @@ class QueryTests extends AsyncFunSpec {
 }
 
 private def bindingsFromRow(row : BindingSet) : Map[String, Value] = {
-	row.iterator().asScala.map(b => b.getName -> b.getValue).toMap
+	row.iterator().asScala.map(b => (b.getName, b.getValue)).toMap
 }

@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
+import org.eclipse.rdf4j.query.algebra.StatementPattern
 
 
 class CpEvaluationStrategyFactory(
@@ -36,13 +37,25 @@ class CpEvaluationStrategyFactory(
 			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match
 
 				case doFetch: DataObjectFetchNode if indexEnabled =>
+					logger.info("Data object fetch!")
 					qEvalStep(bindingsForObjectFetch(doFetch, _))
 
 				case statsFetch: StatsFetchNode if indexEnabled =>
 					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 					qEvalStep(_ => statsBindings.iterator)
 
-				case _ => super.precompile(expr, context)
+				case pattern: StatementPattern if indexEnabled =>
+					val predicate = pattern.getPredicateVar().getValue()
+					logger.info(s"statement: $pattern")
+					if (predicate == metaVocab.hasKeywords){
+						logger.info("HAS KEYWORD")
+						qEvalStep(bindingsForKeywords(pattern, _))
+					}else{
+						super.precompile(expr, context)
+					}
+
+				case thing =>
+					super.precompile(expr, context)
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
 				logger.debug("Original query model:\n{}", expr)
@@ -90,8 +103,47 @@ class CpEvaluationStrategyFactory(
 		}
 	}
 
+	private def bindingsForKeywords(pattern: StatementPattern, bindings: BindingSet): Iterator[BindingSet] = {
+
+		/*
+		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = pattern.varNames.toSeq.map{case (prop, varName) =>
+
+			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
+			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
+
+			val f = index.factory
+			prop match{
+				case DobjUri				 => setter(_.uri(f))
+				case Spec						=> setter(_.spec)
+				case Station				 => setter(_.station)
+				case Site						=> setter(_.site)
+				case Submitter			 => setter(_.submitter)
+				case FileName				=> setterOpt(_.fileName.map(f.createLiteral))
+				case _: BoolProperty => (_, _) => ()
+				case _: StringCategProp => (_, _) => ()
+				case FileSize				=> setterOpt(_.sizeInBytes.map(f.createLiteral))
+				case SamplingHeight	=> setterOpt(_.samplingHeightMeters.map(f.createLiteral))
+				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
+				case SubmissionEnd	 => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
+				case DataStart			 => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
+				case DataEnd				 => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
+				case _: GeoProp			=> (_, _) => ()
+			}
+		}
+		*/
+
+		val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindings)
+
+		index.fetch(fetchRequest).map{oinfo =>
+			val bs = new QueryBindingSet(bindings)
+			setters.foreach{_(bs, oinfo)}
+			bs
+		}
+	}
+
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
-		val f = index.factory
 
 		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
 
@@ -100,6 +152,7 @@ class CpEvaluationStrategyFactory(
 			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
 				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
+			val f = index.factory
 			prop match{
 				case DobjUri         => setter(_.uri(f))
 				case Spec            => setter(_.spec)

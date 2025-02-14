@@ -200,6 +200,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
+	def objectKeywords(hash: Sha256Sum) : List[String] = {
+		// TODO: Look up in data.contMap?
+	}
+
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
 		log.debug(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
@@ -216,8 +220,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 				else None
 		}
 	}
-
-	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
 	val getObjInfo : Sha256Sum => ObjInfo =
 		data.getObjInfo

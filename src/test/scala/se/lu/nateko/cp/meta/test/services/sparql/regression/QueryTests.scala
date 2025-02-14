@@ -569,15 +569,17 @@ class QueryTests extends AsyncFunSpec {
 
 			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
 			val List(objectKeywords) = runSparqlSync(objectKeywordsQuery)
+			info(s"Query result: $objectKeywords")
 
-			val expectedKeywords = Map(
+			val expectedBindings = Map(
 				"objKeywords" -> factory.createLiteral("test keyword"),
 				"specKeywords" -> factory.createLiteral("carbon flux"),
 				"projKeywords" -> factory.createLiteral("ICOS")
 			)
+			val expectedKeywords = expectedBindings.values.map(_.stringValue()).mkString(", ")
 
-			assert(bindingsFromRow(allKeywords) == expectedKeywords)
-			assert(objectKeywords.getValue("keywords") == expectedKeywords.values.toList)
+			assert(bindingsFromRow(allKeywords) == expectedBindings)
+			assert(objectKeywords.getValue("keywords").stringValue() === expectedKeywords)
 		}
 	}
 

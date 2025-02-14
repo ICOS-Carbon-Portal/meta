@@ -10,7 +10,6 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.upload.FileHasher
 import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.upload.UploadApp
-import se.lu.nateko.cp.meta.upload.FileHasher.{FileMaxSize, FileMaxSizeMessage}
 
 class FileInput(elemId: String, cb: () => Unit){
 	private val fileInput = getElementById[html.Input](elemId).get
@@ -41,8 +40,14 @@ class FileInput(elemId: String, cb: () => Unit){
 			_hash = fail("hashsum is being computed")
 			cb()
 		}
-		if(f.size > FileMaxSize) {
-			UploadApp.showAlert(FileMaxSizeMessage, "alert alert-danger")
+		if(f.size > 2_000_000_000) {
+			UploadApp.showAlert("The file you selected is too large to upload with this form. " +
+				"Please use scripted uploads as described in " +
+				"<a class='alert-link' href='https://github.com/ICOS-Carbon-Portal/meta/?tab=readme-ov-file#upload-instructions-scripting'>our documentation</a>."
+				, "alert alert-danger")
+			_hash = fail("The file is too large")
+			_lastModified = getLastModified(f)
+			cb()
 		} else {
 			UploadApp.hideAlert()
 

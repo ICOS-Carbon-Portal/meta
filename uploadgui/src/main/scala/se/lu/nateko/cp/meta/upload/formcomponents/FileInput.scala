@@ -36,8 +36,9 @@ class FileInput(elemId: String, cb: () => Unit){
 
 	// The event is not dispatched if the file selected is the same as before
 	fileInput.onchange = _ => file.foreach{f =>
-		if(_hash.isSuccess){
+		if(file.isSuccess){
 			_hash = fail("hashsum is being computed")
+			_lastModified = getLastModified(f)
 			cb()
 		}
 		if(f.size > 2_000_000_000) {
@@ -54,7 +55,7 @@ class FileInput(elemId: String, cb: () => Unit){
 			UploadApp.whenDone(FileHasher.hash(f)){hash =>
 				if(file.toOption.contains(f)) {
 					_hash = Success(hash) //file could have been changed while digesting for SHA-256
-					_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
+					_lastModified = getLastModified(f)
 					cb()
 				}
 			}

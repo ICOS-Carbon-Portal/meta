@@ -36,11 +36,10 @@ class FileInput(elemId: String, cb: () => Unit){
 
 	// The event is not dispatched if the file selected is the same as before
 	fileInput.onchange = _ => file.foreach{f =>
-		if(file.isSuccess){
-			_hash = fail("hashsum is being computed")
-			_lastModified = getLastModified(f)
-			cb()
-		}
+		_hash = fail("hashsum is being computed")
+		_lastModified = getLastModified(f)
+		cb()
+
 		if(f.size > 2_000_000_000) {
 			UploadApp.showAlert("The file you selected is too large to upload with this form. " +
 				"Please use scripted uploads as described in " +

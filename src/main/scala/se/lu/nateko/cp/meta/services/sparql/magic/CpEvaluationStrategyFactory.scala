@@ -17,7 +17,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 import org.eclipse.rdf4j.query.algebra.StatementPattern
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getHashsum
 // import org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps.StatementPatternQueryEvaluationStep
 
 class CpEvaluationStrategyFactory(
@@ -54,8 +53,9 @@ class CpEvaluationStrategyFactory(
 					logger.info(s"statement: $statement")
 					if (predicate == metaVocab.hasKeywords 
 						&& subject.hasValue() // TODO: Extend StatementPatternQueryEvaluationStep in order to handle variable (multiple) subjects.
+						&& subject.getValue().isIRI()
 						&& !obj.hasValue()){
-						qEvalStep(keywordBindings(statement, _))
+						qEvalStep(keywordBindings(subject.getValue().asInstanceOf[IRI], statement, _))
 
 						// StatementPatternQueryEvaluationStep(statement, context, tripleSrc)
 					}else{
@@ -111,13 +111,11 @@ class CpEvaluationStrategyFactory(
 		}
 	}
 
-	private def keywordBindings(pattern: StatementPattern, bindings: BindingSet): Iterator[BindingSet] = {
-		logger.info(s"names: ${bindings.getBindingNames()}, size: ${bindings.size()}, val: ${bindings.getValue("obj")}")
+	private def keywordBindings(subject: IRI, pattern: StatementPattern, bindings: BindingSet): Iterator[BindingSet] = {
+		logger.info(s"names: ${bindings.getBindingNames()}, size: ${bindings.size()}, val: ${bindings.getValue("obj")}, subj: ${subject}")
 		val bind = new QueryBindingSet(bindings)
 		logger.info(s"thing: ${pattern.getObjectVar().getName()}")
-		val v : Value = pattern.getObjectVar().getValue()
-		val hash = getHashsum(v, metaVocab.hasSha256sum)
-		// val keywords : List[String] = index.objectKeywords()
+		val keywords : List[String] = index.objectKeywords(subject)
 		bind.setBinding(pattern.getObjectVar().getName(), index.factory.createLiteral("test"))
 		List(bind).iterator
 	}

@@ -200,7 +200,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
 		if(bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 
-	def objectKeywords(hash: Sha256Sum) : List[String] = {
+	def objectKeywords(obj: IRI) : List[String] = {
+		List()
 		// TODO: Look up in data.contMap?
 	}
 

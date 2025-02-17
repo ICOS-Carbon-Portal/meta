@@ -70,9 +70,10 @@ class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] =
+		categMaps
+			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
 	def processTriple(subj: IRI, pred: IRI, obj: Value, isAssertion: Boolean, vocab: CpmetaVocab)(using
 		statements: StatementSource
@@ -279,8 +280,17 @@ class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => val _ = modForDobj(subj) { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+			case `hasKeywords` =>
+				val _ = modForDobj(subj) { oe =>
+					val ret = updateStrArrayProp(
+						obj,
+						Keyword,
+						(keywords => Some(parseCommaSepList(keywords))),
+						oe.idx,
+						isAssertion
+					)
+					// log.info(s"KW: ${categMap(Keyword)}")
+					ret
 				}
 
 			case _ =>
@@ -294,9 +304,14 @@ class IndexData(nObjects: Int)(
 		idx: Int,
 		isAssertion: Boolean
 	): Unit = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(categMap(prop), strVal, idx, isAssertion)
-		}
+		obj.asOptInstanceOf[Literal]
+			.flatMap(asString)
+			.flatMap(parser)
+			.toSeq
+			.flatten
+			.foreach { strVal =>
+				updateCategSet(categMap(prop), strVal, idx, isAssertion)
+			}
 	}
 
 	private def getObjEntry(hash: Sha256Sum): ObjEntry = {

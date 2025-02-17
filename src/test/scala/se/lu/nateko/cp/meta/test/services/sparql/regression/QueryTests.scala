@@ -544,6 +544,20 @@ class QueryTests extends AsyncFunSpec {
 	}
 
 	describe("Data object keywords") {
+		it("filtering includes associated keywords") {
+			val query = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?objKeywords ?specKeywords ?projKeywords where {
+					?object cpmeta:hasKeywords "ICOS"
+				}
+			""" 
+			// TODO: Use more specific project keyword.
+			// Filter on data objects by prefix, and expect more than 0 results.
+			val results = runSparqlSync(query)
+			assert(results.length == 1)
+		}
+
+
 		it("also return associated keywords") {
 			val factory = db.repo.getValueFactory()
 			val objectId = "08ArGBmAQHiig_xtrwmprrL7";

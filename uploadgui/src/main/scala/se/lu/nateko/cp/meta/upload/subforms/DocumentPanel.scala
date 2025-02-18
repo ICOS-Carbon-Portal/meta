@@ -7,7 +7,6 @@ import se.lu.nateko.cp.meta.upload.*
 
 import eu.icoscp.envri.Envri
 import java.net.URI
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.Try
 
 import formcomponents.*
@@ -53,12 +52,10 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
 		case dto: DocObjectDto =>
-			for(
-				people <- Backend.getPeople;
-				organizations <- Backend.getOrganizations
-			)
-			yield {
-				agentList.values = organizations.concat(people)
+			whenDone(getPeopleAndOrganizations()) { (people, organizations) =>
+				agentAgg.agents = organizations.concat(people)
+				agentList.values = agentAgg.agents
+
 				documentTitle.value = dto.title
 				documentAuthors.setValues(dto.authors.flatMap(agentUri => agentList.values.find(_.uri == agentUri)))
 				documentDescription.value = dto.description

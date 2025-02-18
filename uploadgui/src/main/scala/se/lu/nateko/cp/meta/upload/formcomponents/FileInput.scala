@@ -36,21 +36,27 @@ class FileInput(elemId: String, cb: () => Unit){
 
 	// The event is not dispatched if the file selected is the same as before
 	fileInput.onchange = _ => file.foreach{f =>
-		if(_hash.isSuccess){
-			_hash = fail("hashsum is being computed")
+		_hash = fail("hashsum is being computed")
+		_lastModified = getLastModified(f)
+		cb()
+
+		if(f.size > 2_000_000_000) {
+			UploadApp.showAlert("The file you selected is too large to upload with this form. " +
+				"Please use scripted uploads as described in " +
+				"<a class='alert-link' href='https://github.com/ICOS-Carbon-Portal/meta/?tab=readme-ov-file#upload-instructions-scripting'>our documentation</a>."
+				, "alert alert-danger")
+			_hash = fail("The file is too large")
+			_lastModified = getLastModified(f)
 			cb()
-		}
-		if(f.size > 2000000000) {
-			UploadApp.showAlert("This file could be too large to upload with this form. " +
-				"Please contact us if you need an alternative.", "alert alert-warning")
 		} else {
 			UploadApp.hideAlert()
-		}
-		UploadApp.whenDone(FileHasher.hash(f)){hash =>
-			if(file.toOption.contains(f)) {
-				_hash = Success(hash) //file could have been changed while digesting for SHA-256
-				_lastModified = f.asInstanceOf[js.Dynamic].lastModified.asInstanceOf[Double]
-				cb()
+
+			UploadApp.whenDone(FileHasher.hash(f)){hash =>
+				if(file.toOption.contains(f)) {
+					_hash = Success(hash) //file could have been changed while digesting for SHA-256
+					_lastModified = getLastModified(f)
+					cb()
+				}
 			}
 		}
 	}

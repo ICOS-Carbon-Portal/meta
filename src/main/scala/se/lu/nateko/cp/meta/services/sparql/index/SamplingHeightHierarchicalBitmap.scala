@@ -12,7 +12,7 @@ import scala.collection.IndexedSeq
 object SamplingHeightHierarchicalBitmap{
 	import HierarchicalBitmap.*
 
-	val SpilloverThreshold = 2
+	val SpilloverThreshold = 513
 
 	def getCoordinate(key: Float, depth: Int): Coord = if(depth <= 0 || depth > 3) 0 else {
 		Math.signum(key).toInt * (

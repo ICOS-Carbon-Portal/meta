@@ -249,7 +249,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 								log.error(s"Unexpected non-assertion")
 							}
 							data.processTriple(subj, pred, obj, isAssertion, vocab)
-							log.info(s"${obj.stringValue()}")
+							// log.info(s"${obj.stringValue()}")
 						}
 					case _ => ()
 			list.clear()

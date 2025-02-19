@@ -12,6 +12,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap.*
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Assumptions:
@@ -30,6 +31,8 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	private var firstKey: Option[K] = None
 	private var seenDifferentKeys: Boolean = false
 
+	private val log = LoggerFactory.getLogger(getClass())
+
 	def all: ImmutableRoaringBitmap = values
 
 	/**
@@ -41,6 +44,9 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	def add(key: K, value: Int): Boolean =
 
 		val wasPresent = purgeValueIfPresent(value)
+		if (wasPresent){
+			log.warn(s"was present!")
+		}
 
 		values.add(value)
 		n += 1
@@ -51,6 +57,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		if children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)
 		then values.forEach{v => addToChild(geo.keyLookup(v), v)}
 
+		// log.info(s"wasPresent: $wasPresent, key: $key, val: $value, n: $n")
 		!wasPresent
 
 
@@ -85,10 +92,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)
-		case Some(fKey) => {
-			val eqi = !ord.equiv(key, fKey)
-			seenDifferentKeys = eqi
-		}
+		case Some(fKey) => seenDifferentKeys = !ord.equiv(key, fKey)
 	}
 
 	private def addToChild(key: K, value: Int): Unit =
@@ -233,6 +237,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	def optimizeAndTrim(parent: Option[HierarchicalBitmap[K]], depth: Int = 0)(using log: Logger): Int = 
 		// if (depth == 12){
 		// if (depth > 1 && children.isDefined){
+		/*
 		if(children.isDefined && children.get.size > 0){
 				log.info(s"this: $this")
 				log.info(s"parent: $parent")
@@ -259,6 +264,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 				log.info(s"Child depth: $count")
 				log.info(s"---")
 		}
+		*/
 
 		if (depth < 20){
 			/*

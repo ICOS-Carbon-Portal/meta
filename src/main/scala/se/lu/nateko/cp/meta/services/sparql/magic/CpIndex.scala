@@ -62,7 +62,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
 		flush()
 		var ind = 0
-		val first = contMap.values.head
+		val List((prop, first)) = contMap.toList
+		log.info(s"prop: $prop")
 		given Logger = log
 		first.optimizeAndTrim(None)
 		/*
@@ -243,7 +244,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 			sail.accessEagerly:
 				list.forEach:
 					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-						data.processTriple(subj, pred, obj, isAssertion, vocab)
+						if (pred == vocab.hasSamplingHeight){
+							if (!isAssertion){
+								log.error(s"Unexpected non-assertion")
+							}
+							data.processTriple(subj, pred, obj, isAssertion, vocab)
+							log.info(s"${obj.stringValue()}")
+						}
 					case _ => ()
 			list.clear()
 

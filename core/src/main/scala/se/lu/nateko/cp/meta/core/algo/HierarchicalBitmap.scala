@@ -85,12 +85,14 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 
 	private def assessDiversityOfKeys(key: K): Unit = firstKey match{
 		case None =>       firstKey = Some(key)
-		case Some(fKey) => seenDifferentKeys = !ord.equiv(key, fKey)
+		case Some(fKey) => {
+			val eqi = !ord.equiv(key, fKey)
+			seenDifferentKeys = eqi
+		}
 	}
 
 	private def addToChild(key: K, value: Int): Unit =
 		val coord = nextLevel(key)
-
 		if children.isEmpty then children = Some(HashMap.empty)
 
 		children.foreach: ch =>
@@ -234,7 +236,8 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		if(children.isDefined && children.get.size > 0){
 				log.info(s"this: $this")
 				log.info(s"parent: $parent")
-				log.info(s"first child: ${children.get.head._2}")
+				val firstChild = children.get.head
+				log.info(s"first child: ${firstChild._2}, coord: ${firstChild._1}")
 				log.info(s"depth: $depth, children: ${children.get.size}")
 				var count = 0
 				var continue = true
@@ -254,11 +257,10 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 					}
 				}
 				log.info(s"Child depth: $count")
-				// }
 				log.info(s"---")
 		}
 
-		if (depth < 3){
+		if (depth < 20){
 			/*
 			values.runOptimize()
 			values.trim()

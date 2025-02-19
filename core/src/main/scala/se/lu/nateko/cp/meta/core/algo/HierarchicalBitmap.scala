@@ -11,6 +11,7 @@ import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap.*
+import org.slf4j.Logger
 
 /**
  * Assumptions:
@@ -25,7 +26,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 
 	private var values = emptyBitmap
 	private var n = 0
-	private var children: Option[HashMap[Coord, HierarchicalBitmap[K]]] = None
+	var children: Option[HashMap[Coord, HierarchicalBitmap[K]]] = None
 	private var firstKey: Option[K] = None
 	private var seenDifferentKeys: Boolean = false
 
@@ -227,12 +228,48 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		}
 	}
 
-	//TODO Find out why the hack with limiting the depth below was needed to prevent the stack overflow crash in ICOS Cities
-	def optimizeAndTrim(depth: Int = 0): Unit = if depth < 20 then
-		values.runOptimize()
-		values.trim()
-		children.foreach: innerChildren =>
-			if(innerChildren.nonEmpty) innerChildren.valuesIterator.foreach(_.optimizeAndTrim(depth + 1))
+	def optimizeAndTrim(parent: Option[HierarchicalBitmap[K]], depth: Int = 0)(using log: Logger): Int = 
+		// if (depth == 12){
+		// if (depth > 1 && children.isDefined){
+		if(children.isDefined && children.get.size > 0){
+				log.info(s"this: $this")
+				log.info(s"parent: $parent")
+				log.info(s"first child: ${children.get.head._2}")
+				log.info(s"depth: $depth, children: ${children.get.size}")
+				var count = 0
+				var continue = true
+				var childs = children
+				while(count < 100 * 100 && continue){
+					childs match {
+						case None => {continue = false}
+						case Some(children) => {
+							if (children.size > 0){
+								val (_, child) = children.head
+								childs = child.children
+								count += 1
+							}else{
+								continue = false
+							}
+						}
+					}
+				}
+				log.info(s"Child depth: $count")
+				// }
+				log.info(s"---")
+		}
+
+		if (depth < 3){
+			/*
+			values.runOptimize()
+			values.trim()
+			*/
+			children.foreach: innerChildren =>
+				if(innerChildren.nonEmpty) {
+					innerChildren.valuesIterator.foreach(_.optimizeAndTrim(Some(this), depth + 1))
+				}
+		}
+		
+		return depth
 
 	def filterKey(key: K, filter: FilterRequest[K]): Boolean = filter match{
 		case EqualsFilter(fkey) => ord.equiv(key, fkey)

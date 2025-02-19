@@ -23,6 +23,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.{Failure, Success}
 
 import CpIndex.*
+import org.slf4j.Logger
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -60,7 +61,17 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
 		flush()
-		contMap.valuesIterator.foreach(_.optimizeAndTrim())
+		var ind = 0
+		val first = contMap.values.head
+		given Logger = log
+		first.optimizeAndTrim(None)
+		/*
+		contMap.valuesIterator.foreach(
+			bm => 
+				bm.optimizeAndTrim(bm, ind)
+				ind += 1
+		)
+		*/
 		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
 		reportDebugInfo()

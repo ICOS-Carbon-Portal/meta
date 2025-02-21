@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, envriConf}
 import java.net.URI
@@ -14,6 +14,14 @@ object SitemapRoute {
 	val Data = "data"
 	val Collections = "collections"
 	val Documents = "documents"
+
+	private val exceptionHandler = ExceptionHandler{
+
+		case argErr: IllegalArgumentException =>
+			complete(StatusCodes.NotFound)
+
+		case err => throw err
+	}
 
 	def apply(sparqler: SparqlRunner)(using EnvriConfigs): Route = {
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
@@ -35,7 +43,7 @@ object SitemapRoute {
 			~
 			path("""([a-z]{2})-data-sitemap.xml""".r):
 				case countryCode if CountryCode.unapply(countryCode.toUpperCase).isDefined =>
-					completeRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode.toUpperCase))
+					handleExceptions(exceptionHandler){completeRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode.toUpperCase))}
 				case _ => reject
 			~
 			path("""([a-z]{4,11})-sitemap.xml""".r):

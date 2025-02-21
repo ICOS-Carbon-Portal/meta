@@ -80,6 +80,9 @@ object SchemaOrg:
 	end dataObjs
 
 	def dataObjsByCountry(sparqler: SparqlRunner, countryCode: String)(using envriConf: EnvriConfig): Seq[URI] =
+		if (countryCode.length != 2  || !countryCode.forall(char => char.isLetter) || !CountryCode.unapply(countryCode.toUpperCase).isDefined)
+			throw new IllegalArgumentException("Undefined country code.")
+
 		val specs: Iterator[String] = getDataObjsSpecs(sparqler)
 
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

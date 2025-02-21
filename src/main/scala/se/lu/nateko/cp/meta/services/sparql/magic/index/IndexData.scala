@@ -80,6 +80,7 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
 							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -272,7 +273,8 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => getDataObject(subj).foreach { oe =>
+			case `hasKeywords` => 
+				getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 				}
 

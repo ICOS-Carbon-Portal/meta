@@ -5,7 +5,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
 
@@ -25,12 +25,12 @@ class IndexDataTest extends AnyFunSpec {
 				def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
 
 			// Insert hasName triple
-			data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), true, vocab)
+			data.processTriple(TripleStatement(subject, vocab.hasName, factory.createLiteral("test name"), true), vocab)
 			assert(data.objs.length == 1)
 			assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 			// Remove it
-			data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), false, vocab)
+			data.processTriple(TripleStatement(subject, vocab.hasName, factory.createLiteral("test name"), false), vocab)
 			assert(data.getObjEntry(hash).fileName === None)
 			assert(data.objs.length == 1)
 		}

@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement, StatEntry, emptyBitmap}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
+import org.eclipse.rdf4j.model.Statement
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -42,6 +43,7 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
+
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
@@ -54,7 +56,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		sail.accessEagerly:
 			StatementSource.getStatements(null, null, null)
 			.foreach: s =>
-				put(RdfUpdate(s, true))
+				put(s, true)
 				statementCount += 1
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
@@ -84,7 +86,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
-	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
+	private val queue = new ArrayBlockingQueue[TripleStatement](UpdateQueueSize)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -126,20 +128,26 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	val getObjEntry = data.getObjEntry
 
-	def put(st: RdfUpdate): Unit = {
-		queue.put(st)
-		if(queue.remainingCapacity == 0) flush()
+	def put(statement: Statement, isAssertion: Boolean): Boolean = {
+		statement match {
+			case Rdf4jStatement(subj, pred, obj) => {
+				queue.put(TripleStatement(subj, pred, obj, isAssertion))
+				if(queue.remainingCapacity == 0) flush()
+				true
+			}
+			case _ => false
+		}
 	}
 
 	def flush(): Unit = if !queue.isEmpty then writeLocked:
 		if !queue.isEmpty then
-			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
+			val list = new ArrayList[TripleStatement](UpdateQueueSize)
 			queue.drainTo(list)
-			sail.accessEagerly:
-				list.forEach:
-					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-						data.processTriple(subj, pred, obj, isAssertion, vocab)
-					case _ => ()
+			sail.accessEagerly {
+				list.forEach { statement => 
+					data.processTriple(statement, vocab)
+				}
+			}
 			list.clear()
 end CpIndex
 

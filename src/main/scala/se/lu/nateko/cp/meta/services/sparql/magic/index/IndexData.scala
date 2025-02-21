@@ -39,7 +39,6 @@ class IndexData(nObjects: Int)(
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
 ) extends Serializable:
-
 	private val log = LoggerFactory.getLogger(getClass())
 
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
@@ -78,8 +77,9 @@ class IndexData(nObjects: Int)(
 			case `hasObjectSpec` =>
 				obj match {
 					case spec: IRI => {
-						val _ = modForDobj(subj) { oe =>
+						getDataObject(subj).foreach { oe =>
 							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -93,7 +93,7 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `hasName` =>
-				val _ = modForDobj(subj) { oe =>
+				getDataObject(subj).foreach { oe =>
 					val fName = obj.stringValue
 					if (isAssertion) oe.fName = fName
 					else if (oe.fName == fName) { oe.fName = null }
@@ -135,7 +135,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasStartTime` =>
 				ifDateTime(obj) { dt =>
-					val _ = modForDobj(subj) { oe =>
+					getDataObject(subj).foreach { oe =>
 						oe.dataStart = dt
 						handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
 					}
@@ -143,7 +143,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasEndTime` =>
 				ifDateTime(obj) { dt =>
-					val _ = modForDobj(subj) { oe =>
+					getDataObject(subj).foreach { oe =>
 						oe.dataEnd = dt
 						handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
 					}
@@ -179,11 +179,11 @@ class IndexData(nObjects: Int)(
 				}
 
 			case `isNextVersionOf` =>
-				val _ = modForDobj(obj) { oe =>
+				getDataObject(obj).foreach { oe =>
 					val deprecated = boolBitmap(DeprecationFlag)
 					if isAssertion then
 						if !deprecated.contains(oe.idx) then // to prevent needless work
-							val subjIsDobj = modForDobj(subj) { deprecator =>
+							val subjIsDobj = getDataObject(subj).map { deprecator =>
 								deprecator.isNextVersion = true
 								// only fully-uploaded deprecators can actually deprecate:
 								if deprecator.size > -1 then
@@ -210,7 +210,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasSizeInBytes` =>
 				ifLong(obj) { size =>
-					val _ = modForDobj(subj) { oe =>
+					getDataObject(subj).foreach { oe =>
 						inline def isRetraction = oe.size == size && !isAssertion
 						if isAssertion then oe.size = size
 						else if isRetraction then oe.size = -1
@@ -221,7 +221,7 @@ class IndexData(nObjects: Int)(
 
 							val directPrevVers: IndexedSeq[Int] =
 								statements.getStatements(subj, isNextVersionOf, null)
-									.flatMap(st => modForDobj(st.getObject)(_.idx))
+									.flatMap(st => getDataObject(st.getObject).map(_.idx))
 									.toIndexedSeq
 
 							directPrevVers.foreach { oldIdx =>
@@ -241,7 +241,7 @@ class IndexData(nObjects: Int)(
 
 			case `hasPart` => if isAssertion then
 					subj match
-						case CpVocab.NextVersColl(hashOfOld) => val _ = modForDobj(obj) { oe =>
+						case CpVocab.NextVersColl(hashOfOld) => getDataObject(obj).foreach { oe =>
 								oe.isNextVersion = true
 								if oe.size > -1 then
 									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
@@ -259,7 +259,7 @@ class IndexData(nObjects: Int)(
 					}
 				}
 
-			case `hasActualColumnNames` => val _ = modForDobj(subj) { oe =>
+			case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
 					updateHasVarList(oe.idx, isAssertion)
 				}
@@ -272,7 +272,8 @@ class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => val _ = modForDobj(subj) { oe =>
+			case `hasKeywords` => 
+				getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 				}
 
@@ -327,7 +328,7 @@ class IndexData(nObjects: Int)(
 	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using statements: StatementSource): Boolean =
 		statements.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
-				case Rdf4jStatement(_, _, member: IRI) => modForDobj(member): oe =>
+				case Rdf4jStatement(_, _, member: IRI) => getDataObject(member).map: oe =>
 						oe.isNextVersion = true
 						oe.size > -1
 			.flatten
@@ -340,11 +341,13 @@ class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.headOption
 
-	private def modForDobj[T](dobj: Value)(mod: ObjEntry => T): Option[T] = dobj match
+	private def getDataObject[T](dobj: Value): Option[ObjEntry] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
-			if (entry.prefix == "") entry.prefix = prefix.intern()
-			Some(mod(entry))
+			if (entry.prefix == "") {
+				entry.prefix = prefix.intern()
+			}
+			Some(entry)
 
 		case _ => None
 

@@ -5,20 +5,52 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, envriConf}
+import java.net.URI
 import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
+import se.lu.nateko.cp.meta.core.data.CountryCode
 
 object SitemapRoute {
+
+	val Data = "data"
+	val Collections = "collections"
+	val Documents = "documents"
+
 	def apply(sparqler: SparqlRunner)(using EnvriConfigs): Route = {
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
-		(get & path("sitemap.xml") & extractEnvri){ implicit envri =>
+		(get & extractEnvri){ implicit envri =>
 			given EnvriConfig = envriConf
-			complete(
-				HttpEntity(
-					ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
-					views.xml.Sitemap(SchemaOrg.dataObjs(sparqler) ++ SchemaOrg.collObjs(sparqler) ++ SchemaOrg.docObjs(sparqler)).body
+			path("sitemap.xml"):
+				val sitemaps = Seq(
+					URI(s"${envriConf.metaItemPrefix}${Data}-sitemap.xml"),
+					URI(s"${envriConf.metaItemPrefix}${Collections}-sitemap.xml"),
+					URI(s"${envriConf.metaItemPrefix}${Documents}-sitemap.xml"))
+
+				complete(
+					HttpEntity(
+						ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
+						views.xml.IndexSitemap(sitemaps).body
+					)
 				)
-			)
+			~
+			path("""([a-z]{2})-data-sitemap.xml""".r):
+				case countryCode if CountryCode.unapply(countryCode.toUpperCase).isDefined =>
+					completeRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode.toUpperCase))
+				case _ => reject
+			~
+			path("""([a-z]{4,11})-sitemap.xml""".r):
+				case Data => completeRequest(SchemaOrg.dataObjs(sparqler))
+				case Collections => completeRequest(SchemaOrg.collObjs(sparqler))
+				case Documents => completeRequest(SchemaOrg.docObjs(sparqler))
+				case _ => reject
 		}
 	}
+
+	private def completeRequest(schemaObjects: => Seq[URI]) (using EnvriConfig) =
+		complete(
+			HttpEntity(
+				ContentType.WithCharset(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`),
+				views.xml.Sitemap(schemaObjects).body
+			)
+		)
 }

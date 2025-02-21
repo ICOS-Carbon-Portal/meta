@@ -144,9 +144,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 			val list = new ArrayList[TripleStatement](UpdateQueueSize)
 			queue.drainTo(list)
 			sail.accessEagerly {
-				list.forEach { statement => 
-					data.processTriple(statement, vocab)
-				}
+				data.processTriples(list, vocab)
 			}
 			list.clear()
 end CpIndex

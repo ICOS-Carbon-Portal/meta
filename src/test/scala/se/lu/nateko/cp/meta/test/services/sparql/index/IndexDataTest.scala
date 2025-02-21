@@ -5,7 +5,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 

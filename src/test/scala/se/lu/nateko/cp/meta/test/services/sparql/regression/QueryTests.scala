@@ -8,9 +8,11 @@ import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
-
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters.*
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
 
 @tags.DbTest
 class QueryTests extends AsyncFunSpec {
@@ -537,5 +539,71 @@ class QueryTests extends AsyncFunSpec {
 			"count" -> f.createLiteral("1", XSD.INTEGER),
 			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
+	}
+
+	describe("Magic query") {
+		it("filtering includes keywords from data object, associated project and spec") {
+			val factory = db.repo.getValueFactory()
+
+			// An object which has the unique keyword: "test keyword"
+			val objectId = "08ArGBmAQHiig_xtrwmprrL7";
+
+			// Query all the relevant keywords to make sure test data matches our expectations
+			val allKeywordsQuery = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?objKeywords ?specKeywords ?projKeywords where {
+					BIND(<https://meta.icos-cp.eu/objects/${objectId}> as ?object)
+					?object cpmeta:hasObjectSpec ?spec .
+					?object cpmeta:hasKeywords ?objKeywords .
+					?spec cpmeta:hasAssociatedProject ?proj .
+					?spec cpmeta:hasKeywords ?specKeywords .
+					?proj cpmeta:hasKeywords ?projKeywords
+				}
+			"""
+
+			// Verify that our object has the associated keywords we expect
+			val objKeyword = "test keyword"
+			val specKeyword = "carbon flux"
+			val projKeyword = "ICOS"
+
+			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
+			assert(bindingsFromRow(allKeywords) == Map(
+				"objKeywords" -> factory.createLiteral(objKeyword),
+				"specKeywords" -> factory.createLiteral(specKeyword),
+				"projKeywords" -> factory.createLiteral(projKeyword)
+			))
+
+			// The combination of `hasObjectSpec` and `hasKeyword` is a
+			// minimal requirement for triggering the magic query path.
+			// `hasKeyword` is only available in the magic filtering query.
+			def magicFilterQuery(keyword : String) = {
+				s"""
+					prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+					select ?obj where {
+						?obj cpmeta:hasObjectSpec ?spec .
+						?obj cpmeta:hasKeyword "${keyword}"
+					}
+				"""
+			}
+
+			val List(objResult) = runSparqlSync(magicFilterQuery(objKeyword))
+			val List(projResult) = runSparqlSync(magicFilterQuery(projKeyword))
+			val List(specResult) = runSparqlSync(magicFilterQuery(specKeyword))
+
+			// Make sure we got the object we were looking for
+			assert(objResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
+
+			// And all results should be equivalent
+			assert(objResult == projResult)
+			assert(objResult == specResult)
+		}
+	}
+
+	private def runSparqlSync(query: String): List[BindingSet] = {
+		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList
+	}
+
+	private def bindingsFromRow(row: BindingSet): Map[String, Value] = {
+		row.iterator().asScala.map(b => (b.getName, b.getValue)).toMap
 	}
 }

@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import java.util.ArrayList
 
 case class TripleStatement(
 	val subj: IRI,
@@ -75,7 +76,16 @@ class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using statements: StatementSource): Unit = {
+	def processTriples(triples: ArrayList[TripleStatement], vocab: CpmetaVocab)(using StatementSource) = {
+		triples.forEach { statement =>
+			processTriple(statement, vocab)
+		}
+	}
+
+	// TODO: Make private and fix IndexDataTest
+	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
+		statements: StatementSource
+	): Unit = {
 		import statement.{subj, pred, obj, isAssertion}
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
@@ -280,7 +290,7 @@ class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => 
+			case `hasKeywords` =>
 				getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 				}
@@ -343,7 +353,9 @@ class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using statements: StatementSource): Option[Int] =
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using
+		statements: StatementSource
+	): Option[Int] =
 		statements.getStatements(null, vocab.dcterms.hasPart, deprecator)
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq

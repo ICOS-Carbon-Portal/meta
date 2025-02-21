@@ -43,7 +43,6 @@ trait ObjInfo extends ObjSpecific{
 }
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
-
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
 
@@ -65,6 +64,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
 		reportDebugInfo()
 	}
+
+
 	private def reportDebugInfo(): Unit =
 		log.debug(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
 		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
@@ -140,7 +141,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 						data.processTriple(subj, pred, obj, isAssertion, vocab)
 					case _ => ()
 			list.clear()
-
 end CpIndex
 
 

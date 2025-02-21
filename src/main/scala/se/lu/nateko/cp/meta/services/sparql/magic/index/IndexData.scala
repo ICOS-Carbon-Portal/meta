@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import java.util.ArrayList
 
 case class TripleStatement(
 	val subj: IRI,
@@ -75,7 +76,16 @@ final class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
+	def processTriples(triples: ArrayList[TripleStatement], vocab: CpmetaVocab)(using StatementSource) = {
+		triples.forEach { statement =>
+			processTriple(statement, vocab)
+		}
+	}
+
+	// TODO: Make private and fix IndexDataTest
+	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
+		statements: StatementSource
+	): Unit = {
 		import statement.{subj, pred, obj, isAssertion}
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
@@ -343,8 +353,9 @@ final class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using StatementSource): Option[Int] =
-		StatementSource.getStatements(null, vocab.dcterms.hasPart, deprecator)
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using
+		statements: StatementSource
+	): Option[Int] =
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq
 			.headOption

@@ -9,10 +9,10 @@
 	<div class="row gy-2">
 		<div class="col-md-8">
 			<div class="row gy-2">
-				@property("URI", info.res.uri.toString)
 				@for(label <- info.res.label) {
 					@property("Label", label)
 				}
+				@property("URI", info.res.uri.toString)
 				@for(comment <- info.res.comments) {
 					@property("Comment", comment)
 				}

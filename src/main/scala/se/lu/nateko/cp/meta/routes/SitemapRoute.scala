@@ -11,9 +11,9 @@ import se.lu.nateko.cp.meta.core.data.CountryCode
 
 object SitemapRoute {
 
-	val Data = "data"
-	val Collections = "collections"
-	val Documents = "documents"
+	val DataSitemap = "data-sitemap.xml"
+	val CollectionsSitemap = "collections-sitemap.xml"
+	val DocumentsSitemap = "documents-sitemap.xml"
 
 	private val exceptionHandler = ExceptionHandler{
 
@@ -30,9 +30,9 @@ object SitemapRoute {
 			given EnvriConfig = envriConf
 			path("sitemap.xml"):
 				val sitemaps = Seq(
-					URI(s"${envriConf.metaItemPrefix}${Data}-sitemap.xml"),
-					URI(s"${envriConf.metaItemPrefix}${Collections}-sitemap.xml"),
-					URI(s"${envriConf.metaItemPrefix}${Documents}-sitemap.xml"))
+					URI(s"${envriConf.metaHost}/${DataSitemap}"),
+					URI(s"${envriConf.metaHost}/${CollectionsSitemap}"),
+					URI(s"${envriConf.metaHost}/${DocumentsSitemap}"))
 
 				complete(
 					HttpEntity(
@@ -46,11 +46,14 @@ object SitemapRoute {
 					handleExceptions(exceptionHandler){completeRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode.toUpperCase))}
 				case _ => reject
 			~
-			path("""([a-z]{4,11})-sitemap.xml""".r):
-				case Data => completeRequest(SchemaOrg.dataObjs(sparqler))
-				case Collections => completeRequest(SchemaOrg.collObjs(sparqler))
-				case Documents => completeRequest(SchemaOrg.docObjs(sparqler))
-				case _ => reject
+			path(DataSitemap):
+				completeRequest(SchemaOrg.dataObjs(sparqler))
+			~
+			path(CollectionsSitemap):
+				completeRequest(SchemaOrg.collObjs(sparqler))
+			~
+			path(DocumentsSitemap):
+				completeRequest(SchemaOrg.docObjs(sparqler))
 		}
 	}
 

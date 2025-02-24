@@ -15,7 +15,7 @@ sealed trait TcId[+T <: TC]{
 }
 
 trait TcConf[+T <: TC]{
-	private case class Id(val id: String) extends TcId[T]
+	private final case class Id(val id: String) extends TcId[T]
 	def makeId(id: String): TcId[T] = new Id(id)
 	def tc: T
 	def stationPrefix: String
@@ -89,7 +89,7 @@ object Entity{
 	}
 }
 
-case class TcPerson[+T <: TC](
+final case class TcPerson[+T <: TC](
 	cpId: UriId,
 	tcIdOpt: Option[TcId[T]],
 	fname: String,
@@ -100,7 +100,7 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcStation[+T <: TC](
+final case class TcStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
 	core: Station,
@@ -111,12 +111,12 @@ case class TcStation[+T <: TC](
 }
 
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
-case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]
-case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]{
+final case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]
+final case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]{
 	def org = core.org
 }
 
-case class TcInstrument[+T <: TC : TcConf](
+final case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
 	model: String,
 	sn: String,
@@ -131,7 +131,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	def cpId = CpVocab.instrCpId(tcId)
 }
 
-case class InstrumentDeployment[+T <: TC](
+final case class InstrumentDeployment[+T <: TC](
 	cpId: UriId,
 	stationTcId: TcId[T],
 	stationUriId: UriId,
@@ -143,7 +143,7 @@ case class InstrumentDeployment[+T <: TC](
 	def tcIdOpt: Option[TcId[T]] = Some(stationTcId)
 }
 
-case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)
+final case class TcFunding[+T <: TC](cpId: UriId, funder: TcFunder[T], core: Funding)
 
 class AssumedRole[+T <: TC](
 	val kind: Role,
@@ -156,7 +156,7 @@ class AssumedRole[+T <: TC](
 	override def toString = s"AssumedRole($kind , $holder , $org )"
 }
 
-case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
+final case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
 class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
 	def tcConf = implicitly[TcConf[T]]

@@ -20,7 +20,7 @@ given ReadWriter[Md5Sum] = readwriter[String]
 given ReadWriter[Instant] = readwriter[String]
 	.bimap(_.toString, Instant.parse)
 
-case class MultiZipEntry(
+final case class MultiZipEntry(
 	name: String, size: Long, md5: Md5Sum, timestamp: Instant
 ) derives ReadWriter
 

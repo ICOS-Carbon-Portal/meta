@@ -25,8 +25,8 @@ final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).sub
 final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
 final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
-case class StatEntry(key: StatKey, count: Int)
+final case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
+final case class StatEntry(key: StatKey, count: Int)
 
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 

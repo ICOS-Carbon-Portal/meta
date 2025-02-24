@@ -68,7 +68,7 @@ private object IcosStationsIngester{
 	enum Project:
 		case INGOS, WDCGG, FLUXNET, ATMO, SAILDRONE, NEON
 
-	case class Station(
+	final case class Station(
 		project: Project,
 		id: String,
 		name: String,

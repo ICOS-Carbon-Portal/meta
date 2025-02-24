@@ -17,8 +17,8 @@ import ZipEntryFlow.ZipFlowElement
 object ZipEntryFlow {
 
 	sealed trait ZipFlowElement
-	case class ZipEntryStart(fileName: String) extends ZipFlowElement
-	case class ZipEntrySegment(bytes: ByteString) extends ZipFlowElement
+	final case class ZipEntryStart(fileName: String) extends ZipFlowElement
+	final case class ZipEntrySegment(bytes: ByteString) extends ZipFlowElement
 
 	type FileLikeSource = Source[ByteString, Any]
 

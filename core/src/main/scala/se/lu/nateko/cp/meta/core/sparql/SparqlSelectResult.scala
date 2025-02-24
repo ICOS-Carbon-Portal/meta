@@ -5,9 +5,9 @@ import java.net.URI
 type Binding = Map[String, BoundValue]
 
 sealed trait BoundValue
-case class BoundLiteral(value: String, datatype: Option[URI]) extends BoundValue
-case class BoundUri(value: URI) extends BoundValue
+final case class BoundLiteral(value: String, datatype: Option[URI]) extends BoundValue
+final case class BoundUri(value: URI) extends BoundValue
 
-case class SparqlResultHead(vars: Seq[String])
-case class SparqlResultResults(bindings: Seq[Binding])
-case class SparqlSelectResult(head: SparqlResultHead, results: SparqlResultResults)
+final case class SparqlResultHead(vars: Seq[String])
+final case class SparqlResultResults(bindings: Seq[Binding])
+final case class SparqlSelectResult(head: SparqlResultHead, results: SparqlResultResults)

@@ -58,7 +58,7 @@ object GeoCluster:
 end GeoCluster
 
 
-case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
+final case class LabeledJtsGeo(geom: Geometry, labels: Seq[String]):
 	export geom.getArea
 
 	def isWithinDistance(geo: LabeledJtsGeo, maxDistance: Double): Boolean =

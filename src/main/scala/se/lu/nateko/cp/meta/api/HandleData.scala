@@ -8,13 +8,13 @@ import DefaultJsonProtocol.*
 
 sealed trait HandleData
 
-case class StringHandleData(value: String) extends HandleData
+final case class StringHandleData(value: String) extends HandleData
 
-case class AdminValue(handle: String, index: Int, permissions: String)
+final case class AdminValue(handle: String, index: Int, permissions: String)
 
-case class AdminHandleData(value: AdminValue) extends HandleData
+final case class AdminHandleData(value: AdminValue) extends HandleData
 
-case class AnyHandleData(format: String, value: JsValue) extends HandleData
+final case class AnyHandleData(format: String, value: JsValue) extends HandleData
 
 object HandleData{
 
@@ -57,9 +57,9 @@ sealed trait HandleValue{
 	def index: Int
 }
 
-case class UrlHandleValue(index: Int, url: URI) extends HandleValue
-case class AdminHandleValue(index: Int, admin: AdminValue) extends HandleValue
-case class AnyHandleValue(index: Int, `type`: String, data: HandleData) extends HandleValue
+final case class UrlHandleValue(index: Int, url: URI) extends HandleValue
+final case class AdminHandleValue(index: Int, admin: AdminValue) extends HandleValue
+final case class AnyHandleValue(index: Int, `type`: String, data: HandleData) extends HandleValue
 
 object HandleValue{
 	val UrlType = "URL"
@@ -92,14 +92,14 @@ object HandleValue{
 	}
 }
 
-case class HandleValues(values: Seq[HandleValue])
+final case class HandleValues(values: Seq[HandleValue])
 
 object HandleValues{
 	import HandleValue.given
 	given RootJsonFormat[HandleValues] =  jsonFormat1(HandleValues.apply)
 }
 
-case class HandleList(handles: Seq[String])
+final case class HandleList(handles: Seq[String])
 
 object HandleList{
 	given RootJsonFormat[HandleList] = jsonFormat1(HandleList.apply)

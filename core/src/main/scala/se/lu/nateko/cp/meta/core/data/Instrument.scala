@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 import java.time.Instant
 
-case class InstrumentDeployment(
+final case class InstrumentDeployment(
 	instrument: UriResource,
 	station: Organization,
 	pos: Option[Position],
@@ -11,7 +11,7 @@ case class InstrumentDeployment(
 	stop: Option[Instant]
 )
 
-case class Instrument(
+final case class Instrument(
 	self: UriResource,
 	model: String,
 	serialNumber: String,

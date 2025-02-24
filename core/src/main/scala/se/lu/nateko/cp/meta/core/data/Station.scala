@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import java.time.LocalDate
 
-case class Station(
+final case class Station(
 	org: Organization,
 	id: String,
 	location: Option[Position],
@@ -26,7 +26,7 @@ case class Station(
 		case _: SitesStationSpecifics | NoStationSpecifics => None
 }
 
-case class Funding(
+final case class Funding(
 	self: UriResource,
 	funder: Funder,
 	awardTitle: Option[String],
@@ -39,7 +39,7 @@ case class Funding(
 enum FunderIdType:
 	case `Crossref Funder ID`, GRID, ISNI, ROR, Other
 
-case class Funder(org: Organization, id: Option[(String, FunderIdType)])
+final case class Funder(org: Organization, id: Option[(String, FunderIdType)])
 
 case object NoStationSpecifics extends StationSpecifics
 
@@ -50,7 +50,7 @@ sealed trait EcoStationSpecifics extends StationSpecifics{
 	def meanAnnualPrecip: Option[Float]
 }
 
-case class SitesStationSpecifics(
+final case class SitesStationSpecifics(
 	sites: Seq[Site],
 	ecosystems: Seq[UriResource],
 	climateZone: Option[UriResource],
@@ -72,7 +72,7 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 
 sealed trait StationSpecifics
 
-case class AtcStationSpecifics(
+final case class AtcStationSpecifics(
 	wigosId: Option[String],
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass],
@@ -94,7 +94,7 @@ object AtcStationSpecifics{
 	)
 }
 
-case class OtcStationSpecifics(
+final case class OtcStationSpecifics(
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
@@ -103,7 +103,7 @@ case class OtcStationSpecifics(
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics
 
-case class EtcStationSpecifics(
+final case class EtcStationSpecifics(
 	theme: Option[DataTheme],
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
@@ -130,7 +130,7 @@ def cityNetworkFromStr(s: String): CityNetwork = s match
 
 
 
-case class IcosCitiesStationSpecifics(
+final case class IcosCitiesStationSpecifics(
 	timeZoneOffset: Option[Int],
 	network: CityNetwork
 ) extends StationSpecifics

@@ -50,7 +50,7 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 
 		if(hist.runs.isEmpty && hist.queue.isEmpty) q -= cid
 
-	case class QueryRun(start: Instant, streamingStart: Option[Instant], stop: Option[Instant]):
+	final case class QueryRun(start: Instant, streamingStart: Option[Instant], stop: Option[Instant]):
 
 		def isOngoing = stop.isEmpty
 		def streamingStarted = streamingStart.isDefined

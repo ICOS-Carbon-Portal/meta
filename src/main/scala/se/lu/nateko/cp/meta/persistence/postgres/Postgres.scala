@@ -3,8 +3,8 @@ package se.lu.nateko.cp.meta.persistence.postgres
 import java.sql.{Connection, DriverManager}
 import scala.util.Try
 
-case class DbCredentials(db: String, user: String, password: String)
-case class DbServer(host: String, port: Int)
+final case class DbCredentials(db: String, user: String, password: String)
+final case class DbServer(host: String, port: Int)
 
 object Postgres {
 

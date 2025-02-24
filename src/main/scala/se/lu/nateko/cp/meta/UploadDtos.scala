@@ -22,7 +22,7 @@ sealed trait ObjectUploadDto extends UploadDto {
 	def partialUpload = references.flatMap(_.partialUpload).getOrElse(false)
 }
 
-case class DataObjectDto(
+final case class DataObjectDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	objectSpecification: URI,
@@ -33,7 +33,7 @@ case class DataObjectDto(
 	references: Option[ReferencesDto]
 ) extends ObjectUploadDto
 
-case class DocObjectDto(
+final case class DocObjectDto(
 	hashSum: Sha256Sum,
 	submitterId: String,
 	fileName: String,
@@ -52,7 +52,7 @@ object GeoJsonString:
 
 type GeoCoverage = GeoFeature | URI | GeoJsonString
 
-case class StaticCollectionDto(
+final case class StaticCollectionDto(
 	submitterId: String,
 	members: Seq[URI],
 	title: String,
@@ -63,7 +63,7 @@ case class StaticCollectionDto(
 	coverage: Option[GeoCoverage]
 ) extends UploadDto
 
-case class StationTimeSeriesDto(
+final case class StationTimeSeriesDto(
 	station: URI,
 	site: Option[URI],
 	instrument: OptionalOneOrSeq[URI],
@@ -77,7 +77,7 @@ case class StationTimeSeriesDto(
 	def instruments: Seq[URI] = instrument.fold(Seq.empty[URI])(_.fold(Seq(_), identity))
 }
 
-case class SpatioTemporalDto(
+final case class SpatioTemporalDto(
 	title: String,
 	description: Option[String],
 	spatial: GeoCoverage,
@@ -89,7 +89,7 @@ case class SpatioTemporalDto(
 	variables: Option[Seq[String]]
 )
 
-case class DataProductionDto(
+final case class DataProductionDto(
 	creator: URI,
 	contributors: Seq[URI],
 	hostOrganization: Option[URI],
@@ -99,7 +99,7 @@ case class DataProductionDto(
 	creationDate: Instant
 )
 
-case class SubmitterProfile(
+final case class SubmitterProfile(
 	id: String,
 	producingOrganizationClass: Option[URI],
 	producingOrganization: Option[URI],
@@ -107,7 +107,7 @@ case class SubmitterProfile(
 	authorizedProjects: Option[Seq[URI]]
 )
 
-case class ReferencesDto(
+final case class ReferencesDto(
 	keywords: Option[Seq[String]],
 	licence: Option[URI],
 	moratorium: Option[Instant],

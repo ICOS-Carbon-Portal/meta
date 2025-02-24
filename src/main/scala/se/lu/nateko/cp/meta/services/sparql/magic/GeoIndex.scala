@@ -21,14 +21,14 @@ trait SimpleCluster extends Cluster:
 	def addObject(dobjCov: DataObjCov): SimpleCluster
 	def removeObject(dobjCov: DataObjCov): Option[SimpleCluster]
 
-case class GeoEvent(
+final case class GeoEvent(
 	objIdx: Int,
 	isAssertion: Boolean,
 	geometry: Geometry,
 	clusterId: String
 )
 
-case class DataObjCov(val idx: Int, val geo: Geometry)
+final case class DataObjCov(val idx: Int, val geo: Geometry)
 
 def calculateBoundingBox(shapes: Seq[Geometry]): Geometry =
 	val collection = GeometryCollection(shapes.toArray, JtsGeoFactory)

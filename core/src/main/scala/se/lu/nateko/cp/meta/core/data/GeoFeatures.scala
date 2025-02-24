@@ -16,7 +16,7 @@ sealed trait GeoFeature{
 
 type LatLon = (Double, Double)
 
-case class FeatureCollection(features: Seq[GeoFeature], label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class FeatureCollection(features: Seq[GeoFeature], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = FeatureCollection
 	def textSpecification = features.map(_.textSpecification).mkString("Geometries: ", "; ", "")
 
@@ -29,7 +29,7 @@ case class FeatureCollection(features: Seq[GeoFeature], label: Option[String], u
 	def withOptLabel(label: Option[String]) = copy(label = label)
 	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
-case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Position
 	def latlon: LatLon = lat -> lon
 
@@ -90,7 +90,7 @@ object PositionUtil:
 
 end PositionUtil
 
-case class LatLonBox(min: Position, max: Position, label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class LatLonBox(min: Position, max: Position, label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = LatLonBox
 
 	def asPolygon = Polygon(
@@ -107,7 +107,7 @@ case class LatLonBox(min: Position, max: Position, label: Option[String], uri: O
 	def withOptLabel(label: Option[String]) = copy(label = label)
 	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
-case class GeoTrack(points: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class GeoTrack(points: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = GeoTrack
 
 	def textSpecification = points.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
@@ -115,7 +115,7 @@ case class GeoTrack(points: Seq[Position], label: Option[String], uri: Option[UR
 	def withOptLabel(label: Option[String]) = copy(label = label)
 	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
-case class Polygon(vertices: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class Polygon(vertices: Seq[Position], label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Polygon
 
 	def textSpecification = vertices.map(p => s"(${p.textSpecification})").mkString("[", ", ", "]")
@@ -123,7 +123,7 @@ case class Polygon(vertices: Seq[Position], label: Option[String], uri: Option[U
 	def withOptLabel(label: Option[String]) = copy(label = label)
 	def withOptUri(uri: Option[URI]) = copy(uri = uri)
 
-case class Circle(center: Position, radius: Float, label: Option[String], uri: Option[URI]) extends GeoFeature:
+final case class Circle(center: Position, radius: Float, label: Option[String], uri: Option[URI]) extends GeoFeature:
 	type Self = Circle
 
 	def textSpecification: String = s"(${center.textSpecification}, Rad: $radius m)"
@@ -134,14 +134,14 @@ case class Circle(center: Position, radius: Float, label: Option[String], uri: O
 enum PinKind:
 	case Sensor, Other
 
-case class Pin(position: Position, kind: PinKind) extends GeoFeature:
+final case class Pin(position: Position, kind: PinKind) extends GeoFeature:
 	type Self = Pin
 	export position.{label, uri}
 	def textSpecification: String = s"Pin ($kind): ${position.textSpecification}"
 	def withOptLabel(label: Option[String]) = copy(position = position.withOptLabel(label))
 	def withOptUri(uri: Option[URI]) = copy(position = position.withOptUri(uri))
 
-case class FeatureWithGeoJson(feature: GeoFeature, geoJson: String) extends GeoFeature:
+final case class FeatureWithGeoJson(feature: GeoFeature, geoJson: String) extends GeoFeature:
 	type Self = FeatureWithGeoJson
 
 	export feature.{label, textSpecification, uri}

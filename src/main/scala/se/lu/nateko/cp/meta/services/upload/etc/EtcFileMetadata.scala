@@ -2,9 +2,9 @@ package se.lu.nateko.cp.meta.services.upload.etc
 
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 
-case class EtcFileMeta(dtype: DataType, isBinary: Boolean)
-case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType)
-case class EtcLoggerMeta(serial: String, model: String)
+final case class EtcFileMeta(dtype: DataType, isBinary: Boolean)
+final case class EtcFileMetaKey(station: StationId, loggerId: Int, fileId: Int, dataType: DataType)
+final case class EtcLoggerMeta(serial: String, model: String)
 
 private class EtcStation(val stationId: StationId, val utcOffset: Int)
 

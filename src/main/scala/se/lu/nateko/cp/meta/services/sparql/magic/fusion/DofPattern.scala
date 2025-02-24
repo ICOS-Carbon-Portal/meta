@@ -22,8 +22,8 @@ object DofPattern{
 sealed trait QVar{
 	def name: String
 }
-case class NamedVar(name: String) extends QVar
-case class AnonVar(name: String) extends QVar
+final case class NamedVar(name: String) extends QVar
+final case class AnonVar(name: String) extends QVar
 
 object QVar{
 	def apply(v: Var): QVar = if(v.isAnonymous) AnonVar(v.getName) else NamedVar(v.getName)

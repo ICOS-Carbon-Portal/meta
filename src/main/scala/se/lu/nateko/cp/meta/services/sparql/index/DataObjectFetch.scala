@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 
 import scala.language.implicitConversions
 
-case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
+final case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
 
 sealed trait Filter
 
@@ -34,7 +34,7 @@ object ContFilter{
 
 final case class GeoFilter(property: GeoProp, geo: Geometry) extends Filter
 
-case class SortBy(property: ContProp, descending: Boolean)
+final case class SortBy(property: ContProp, descending: Boolean)
 
 sealed trait Property extends java.io.Serializable{type ValueType}
 

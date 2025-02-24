@@ -5,31 +5,31 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant
 import se.lu.nateko.cp.doi.DoiMeta
 
-case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
+final case class UriResource(uri: URI, label: Option[String], comments: Seq[String])
 
 sealed trait Agent{
 	def self: UriResource
 	def email: Option[String]
 }
 
-case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
-case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
-case class Organization(
+final case class LinkBox(name: String, coverImage: URI, target: URI, orderWeight: Option[Int])
+final case class WebpageElements(self: UriResource, coverImage: Option[URI], linkBoxes: Option[Seq[LinkBox]])
+final case class Organization(
 	self: UriResource,
 	name: String,
 	email: Option[String],
 	website: Option[URI],
 	webpageDetails: Option[WebpageElements]
 ) extends Agent
-case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
+final case class Person(self: UriResource, firstName: String, lastName: String, email: Option[String], orcid: Option[Orcid]) extends Agent
 
-case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoFeature])
+final case class Site(self: UriResource, ecosystem: UriResource, location: Option[GeoFeature])
 
-case class Project(self: UriResource, keywords: Option[Seq[String]])
-case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
-case class ObjectFormat(self: UriResource, goodFlagValues: Option[Seq[String]])
+final case class Project(self: UriResource, keywords: Option[Seq[String]])
+final case class DataTheme(self: UriResource, icon: URI, markerIcon: Option[URI])
+final case class ObjectFormat(self: UriResource, goodFlagValues: Option[Seq[String]])
 
-case class DataObjectSpec(
+final case class DataObjectSpec(
 	self: UriResource,
 	project: Project,
 	theme: DataTheme,
@@ -43,12 +43,12 @@ case class DataObjectSpec(
 )
 
 
-case class DatasetSpec(
+final case class DatasetSpec(
 	self: UriResource,
 	resolution: Option[String]
 )
 
-case class DataAcquisition(
+final case class DataAcquisition(
 	station: Station,
 	site: Option[Site],
 	interval: Option[TimeInterval],
@@ -68,7 +68,7 @@ case class DataAcquisition(
 	private def siteFeature = site.flatMap(_.location)
 }
 
-case class DataProduction(
+final case class DataProduction(
 	creator: Agent,
 	contributors: Seq[Agent],
 	host: Option[Organization],
@@ -77,9 +77,9 @@ case class DataProduction(
 	documentation: Option[PlainStaticObject],
 	dateTime: Instant
 )
-case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
+final case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
 
-case class StationTimeSeriesMeta(
+final case class StationTimeSeriesMeta(
 	acquisition: DataAcquisition,
 	productionInfo: Option[DataProduction],
 	nRows: Option[Int],
@@ -87,8 +87,8 @@ case class StationTimeSeriesMeta(
 	columns: Option[Seq[VarMeta]]
 )
 
-case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
-case class VarMeta(
+final case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
+final case class VarMeta(
 	model: UriResource,
 	label: String,
 	valueType: ValueType,
@@ -98,7 +98,7 @@ case class VarMeta(
 	instrumentDeployments: Option[Seq[InstrumentDeployment]]
 )
 
-case class SpatioTemporalMeta(
+final case class SpatioTemporalMeta(
 	title: String,
 	description: Option[String],
 	spatial: GeoFeature,
@@ -133,7 +133,7 @@ sealed trait StaticObject extends CitableItem{
 	}
 }
 
-case class DataObject(
+final case class DataObject(
 	hash: Sha256Sum,
 	accessUrl: Option[URI],
 	pid: Option[String],
@@ -209,7 +209,7 @@ case class DataObject(
 	)
 }
 
-case class DocObject(
+final case class DocObject(
 	hash: Sha256Sum,
 	accessUrl: Option[URI],
 	pid: Option[String],
@@ -225,9 +225,9 @@ case class DocObject(
 	references: References
 ) extends StaticObject
 
-case class Licence(url: URI, name: String, webpage: URI, baseLicence: Option[URI])
+final case class Licence(url: URI, name: String, webpage: URI, baseLicence: Option[URI])
 
-case class References(
+final case class References(
 	citationString: Option[String],
 	citationBibTex: Option[String],
 	citationRis: Option[String],

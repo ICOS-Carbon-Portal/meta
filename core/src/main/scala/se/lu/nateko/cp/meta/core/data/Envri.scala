@@ -4,7 +4,7 @@ import java.net.URI
 import eu.icoscp.envri.Envri
 
 //TODO Add logotype URL
-case class EnvriConfig(
+final case class EnvriConfig(
 	authHost: String,
 	dataHost: String,
 	metaHost: String,

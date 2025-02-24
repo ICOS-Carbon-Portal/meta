@@ -78,7 +78,7 @@ end AttributionProvider
 
 object AttributionProvider:
 
-	case class RoleDetails(role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
+	final case class RoleDetails(role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){
 		def isRelevantFor(dobj: DataObject): Boolean = dobj.specificInfo.fold(
 			l3 => {
 				val prodTime = l3.productionInfo.dateTime
@@ -92,8 +92,8 @@ object AttributionProvider:
 		)
 	}
 
-	case class Membership(person: Person, role: RoleDetails)
-	case class PersonRole(org: UriResource, role: RoleDetails)
+	final case class Membership(person: Person, role: RoleDetails)
+	final case class PersonRole(org: UriResource, role: RoleDetails)
 
 	given personOrdering: Ordering[Person] = Ordering
 		.by[Person, String](_.lastName.toUpperCase)

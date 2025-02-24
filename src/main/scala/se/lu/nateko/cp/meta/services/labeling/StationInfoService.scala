@@ -158,7 +158,7 @@ trait StationInfoService:
 	end getStationBasicInfo
 end StationInfoService
 
-case class LabelingProgressDates(
+final case class LabelingProgressDates(
 	step1start: Option[Instant],
 	step1approval: Option[Instant],
 	step2start: Option[Instant],
@@ -168,7 +168,7 @@ case class LabelingProgressDates(
 object LabelingProgressDates:
 	def empty = LabelingProgressDates(None, None, None, None, None)
 
-case class LabelingHistory(added: Instant, progress: LabelingProgressDates):
+final case class LabelingHistory(added: Instant, progress: LabelingProgressDates):
 	def withOverrides(overrides: LabelingProgressDates): LabelingHistory = copy(
 		progress = progress.copy(
 			step1start = overrides.step1start.orElse(progress.step1start),
@@ -179,7 +179,7 @@ case class LabelingHistory(added: Instant, progress: LabelingProgressDates):
 		)
 	)
 
-case class StationBasicInfo(
+final case class StationBasicInfo(
 	provId: String,
 	prodId: Option[String],
 	provName: String,

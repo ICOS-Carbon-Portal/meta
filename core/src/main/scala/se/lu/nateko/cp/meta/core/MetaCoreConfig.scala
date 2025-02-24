@@ -7,12 +7,12 @@ import spray.json.RootJsonFormat
 import spray.json.DefaultJsonProtocol.*
 
 
-case class MetaCoreConfig(
+final case class MetaCoreConfig(
 	handleProxies: HandleProxiesConfig,
 	envriConfigs: Map[Envri, EnvriConfig]
 )
 
-case class HandleProxiesConfig(basic: URI, doi: URI)
+final case class HandleProxiesConfig(basic: URI, doi: URI)
 
 object MetaCoreConfig extends CommonJsonSupport{
 

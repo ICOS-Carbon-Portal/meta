@@ -6,11 +6,11 @@ import org.semanticweb.owlapi.model.parameters.Imports
 
 sealed trait DisplayComponent
 
-case class DataPropComponent(property: IRI) extends DisplayComponent
+final case class DataPropComponent(property: IRI) extends DisplayComponent
 
-case class ObjectPropComponent(property: OWLObjectProperty) extends DisplayComponent
+final case class ObjectPropComponent(property: OWLObjectProperty) extends DisplayComponent
 
-case class ConstantComponent(value: String) extends DisplayComponent
+final case class ConstantComponent(value: String) extends DisplayComponent
 
 object DisplayComponent{
 

@@ -6,8 +6,8 @@ object BadmSchema{
 	type Schema = Map[String, PropertyInfo]
 	type Rows = Seq[Array[String]]
 
-	case class AncillaryValue(label: String, comment: Option[String])
-	case class PropertyInfo(label: String, comment: Option[String], vocab: Option[BadmVarVocab]){
+	final case class AncillaryValue(label: String, comment: Option[String])
+	final case class PropertyInfo(label: String, comment: Option[String], vocab: Option[BadmVarVocab]){
 		def hasVocab = vocab.isDefined
 	}
 

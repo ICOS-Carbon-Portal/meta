@@ -107,7 +107,7 @@ object CpUploadClient{
 	class FileInfo(val path: Path, val hash: Sha256Sum)
 	type ObjectUploadInfo = (ObjectUploadDto, FileInfo)
 
-	case class Config(
+	final case class Config(
 		cpauthToken: String, metaHost: String, dataHost: String,
 		customMetaBase: Option[Uri] = None, customDataBase: Option[Uri] = None
 	){

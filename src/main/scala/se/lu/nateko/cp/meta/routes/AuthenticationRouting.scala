@@ -73,7 +73,7 @@ object AuthenticationRouting {
 		ctxt.request.discardEntityBytes(ctxt.materializer)
 		complete(StatusCodes.Forbidden -> msg)
 
-	case class InvalidCpauthTokenRejection(message: String) extends Rejection
+	final case class InvalidCpauthTokenRejection(message: String) extends Rejection
 
 	val authRejectionHandler = RejectionHandler.newBuilder().handle{
 			case InvalidCpauthTokenRejection(message) => forbid(message)

@@ -20,8 +20,8 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(using EnvriConfigs, Execution
 	private val ingosRegexp = """^(.+),\ (.+):\ (.+)\ \((.+)\)$""".r
 	private val gcpRegexp = """^(.+),\ (.+)$""".r
 	private val fluxnetRegexp = """^(.+),(.+),(.+)$""".r
-	private case class OrgInfo(orgName: String, orgId: UriId)
-	private case class Info(lname: String, fname: String, email: Option[String], org: Option[OrgInfo])
+	private final case class OrgInfo(orgName: String, orgId: UriId)
+	private final case class Info(lname: String, fname: String, email: Option[String], org: Option[OrgInfo])
 
 	def getStatements(factory: ValueFactory): Ingestion.Statements = Future{
 

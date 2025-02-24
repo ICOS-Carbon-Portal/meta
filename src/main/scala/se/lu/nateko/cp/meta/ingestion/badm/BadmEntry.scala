@@ -7,11 +7,11 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.Locale
 
 sealed trait BadmDate
-case class BadmYear(year: Int) extends BadmDate
-case class BadmLocalDate(date: LocalDate) extends BadmDate
-case class BadmLocalDateTime(dt: LocalDateTime) extends BadmDate
+final case class BadmYear(year: Int) extends BadmDate
+final case class BadmLocalDate(date: LocalDate) extends BadmDate
+final case class BadmLocalDateTime(dt: LocalDateTime) extends BadmDate
 
-case class BadmRawEntry(
+final case class BadmRawEntry(
 	id: Int,
 	variable: String,
 	qualifier: String,
@@ -20,7 +20,7 @@ case class BadmRawEntry(
 	submissionDate: LocalDate
 )
 
-case class BadmValue(variable: String, valueStr: String)
+final case class BadmValue(variable: String, valueStr: String)
 
 object Badm{
 
@@ -47,7 +47,7 @@ object Badm{
 	}
 }
 
-case class BadmEntry(
+final case class BadmEntry(
 	variable: String,
 	values: Seq[BadmValue],
 	date: Option[BadmDate],

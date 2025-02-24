@@ -4,7 +4,7 @@ import se.lu.nateko.cp.meta.core.data.UriResource
 
 import ResourceViewInfo.PropValue
 
-case class ResourceViewInfo(
+final case class ResourceViewInfo(
 	res: UriResource,
 	types: List[UriResource],
 	propValues: List[(UriResource, PropValue)],

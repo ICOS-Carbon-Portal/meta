@@ -35,7 +35,7 @@ object CustomVocab{
 	def urlEncode(s: String) = se.lu.nateko.cp.meta.utils.urlEncode(s)
 }
 
-case class UriId(urlSafeString: String){
+final case class UriId(urlSafeString: String){
 	override def toString = urlSafeString
 }
 

@@ -10,9 +10,9 @@ import org.eclipse.rdf4j.rio.RDFFormat
 import java.io.StringReader
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
-case class User(email: String, password: String) derives ReadWriter
-case class Token(token: String) derives ReadWriter
-//case class QueryRequest(graphPattern: String, ordering: String, prefixes: String) derives ReadWriter
+final case class User(email: String, password: String) derives ReadWriter
+final case class Token(token: String) derives ReadWriter
+//final case class QueryRequest(graphPattern: String, ordering: String, prefixes: String) derives ReadWriter
 
 // class FDPPublicClient(val host: Uri):
 // 	def query(req: QueryRequest): Seq[SearchResult]

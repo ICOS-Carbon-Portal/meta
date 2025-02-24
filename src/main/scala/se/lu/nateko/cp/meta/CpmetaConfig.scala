@@ -15,18 +15,18 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
 
-case class RdflogConfig(server: DbServer, credentials: DbCredentials)
+final case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 
 enum IngestionMode:
 	case EAGER, BACKGROUND, OFF
 
-case class IngestionConfig(
+final case class IngestionConfig(
 	ingesterId: String,
 	waitFor: Option[Seq[String]],
 	mode: IngestionMode
 )
 
-case class InstanceServerConfig(
+final case class InstanceServerConfig(
 	writeContext: URI,
 	logName: Option[String],
 	skipLogIngestionAtStart: Option[Boolean],
@@ -35,15 +35,15 @@ case class InstanceServerConfig(
 	ingestion: Option[IngestionConfig]
 )
 
-case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
+final case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
 
-case class DataObjectInstServersConfig(
+final case class DataObjectInstServersConfig(
 	commonReadContexts: Seq[URI],
 	uriPrefix: URI,
 	definitions: Seq[DataObjectInstServerDefinition]
 )
 
-case class InstanceServersConfig(
+final case class InstanceServersConfig(
 	specific: Map[String, InstanceServerConfig],
 	forDataObjects: Map[Envri, DataObjectInstServersConfig],
 	metaFlow: OptionalOneOrSeq[MetaFlowConfig]
@@ -52,14 +52,14 @@ case class InstanceServersConfig(
 sealed trait MetaFlowConfig:
 	def cpMetaInstanceServerId: String
 
-case class IcosMetaFlowConfig(
+final case class IcosMetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	icosMetaInstanceServerId: String,
 	otcMetaInstanceServerId: String,
 	atcUpload: MetaUploadConf
 ) extends MetaFlowConfig
 
-case class CitiesMetaFlowConfig(
+final case class CitiesMetaFlowConfig(
 	cpMetaInstanceServerId: String,
 	citiesMetaInstanceServerId: String,
 	munichUpload: MetaUploadConf,
@@ -68,23 +68,23 @@ case class CitiesMetaFlowConfig(
 	atcUpload: MetaUploadConf
 ) extends MetaFlowConfig
 
-case class MetaUploadConf(dirName: String, uploader: String)
+final case class MetaUploadConf(dirName: String, uploader: String)
 
-case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
+final case class SchemaOntologyConfig(ontoId: Option[String], owlResource: String)
 
-case class InstOntoServerConfig(
+final case class InstOntoServerConfig(
 	serviceTitle: String,
 	ontoId: String,
 	instanceServerId: String,
 	authorizedUserIds: Seq[String]
 )
 
-case class OntoConfig(
+final case class OntoConfig(
 	ontologies: Seq[SchemaOntologyConfig],
 	instOntoServers: Map[String, InstOntoServerConfig]
 )
 
-case class DataSubmitterConfig(
+final case class DataSubmitterConfig(
 	authorizedUserIds: Seq[String],
 	producingOrganizationClass: Option[URI],
 	producingOrganization: Option[URI],
@@ -93,9 +93,9 @@ case class DataSubmitterConfig(
 	authorizedProjects: Option[Seq[URI]]
 )
 
-case class SubmittersConfig(submitters: Map[Envri, Map[String, DataSubmitterConfig]])
+final case class SubmittersConfig(submitters: Map[Envri, Map[String, DataSubmitterConfig]])
 
-case class EtcConfig(
+final case class EtcConfig(
 	eddyCovarObjSpecId: String,
 	storageObjSpecId: String,
 	bioMeteoObjSpecId: String,
@@ -105,7 +105,7 @@ case class EtcConfig(
 	ingestFileMeta: Boolean
 )
 
-case class UploadServiceConfig(
+final case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	documentServers: Map[Envri, String],
@@ -113,7 +113,7 @@ case class UploadServiceConfig(
 	etc: EtcConfig
 )
 
-case class LabelingServiceConfig(
+final case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
 	icosMetaInstanceServerId: String,
@@ -126,7 +126,7 @@ case class LabelingServiceConfig(
 	ontoId: String
 )
 
-case class HandleNetClientConfig(
+final case class HandleNetClientConfig(
 	prefix: Map[Envri, String],
 	baseUrl: String,
 	serverCertPemFilePath: Option[String],
@@ -135,7 +135,7 @@ case class HandleNetClientConfig(
 	dryRun: Boolean
 )
 
-case class SparqlServerConfig(
+final case class SparqlServerConfig(
 	maxQueryRuntimeSec: Int,
 	quotaPerMinute: Int,//in seconds
 	quotaPerHour: Int,  //in seconds
@@ -146,7 +146,7 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class RdfStorageConfig(
+final case class RdfStorageConfig(
 	lmdb: Option[LmdbConfig],
 	path: String,
 	recreateAtStartup: Boolean,
@@ -155,18 +155,18 @@ case class RdfStorageConfig(
 	recreateCpIndexAtStartup: Boolean
 )
 
-case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
+final case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
+final case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
+final case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
-case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
+final case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
 }
 
-case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
+final case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
 
-case class CpmetaConfig(
+final case class CpmetaConfig(
 	port: Int,
 	httpBindInterface: String,
 	dataUploadService: UploadServiceConfig,

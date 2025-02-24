@@ -30,6 +30,6 @@ object StatsFetchPatternSearch{
 		case _ => None
 	}
 
-	case class GroupPattern(filter: Filter, submitterVar: String, stationVar: String, specVar: String, siteVar: Option[String])
+	final case class GroupPattern(filter: Filter, submitterVar: String, stationVar: String, specVar: String, siteVar: Option[String])
 
 }

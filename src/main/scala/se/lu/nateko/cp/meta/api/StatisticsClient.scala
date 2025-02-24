@@ -22,8 +22,8 @@ import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 
 object StatisticsClient extends DefaultJsonProtocol {
-	case class RestHeartCount(count: Int)
-	case class StatsApiCount(downloadCount: Int)
+	final case class RestHeartCount(count: Int)
+	final case class StatsApiCount(downloadCount: Int)
 	given RootJsonFormat[StatsApiCount] = jsonFormat1(StatsApiCount.apply)
 	given RootJsonFormat[RestHeartCount] = jsonFormat1(RestHeartCount.apply)
 }

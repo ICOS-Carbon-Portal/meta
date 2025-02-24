@@ -14,6 +14,10 @@ val commonScalacOptions = Seq(
 	"-Wunused:imports"
 )
 
+// wartremoverErrors ++= Warts.(Wart.FinalCaseClass, Wart.ImplicitParameter, Wart.Null, Wart.Overloading)
+wartremoverErrors ++= Seq(Wart.Serializable, Wart.FinalCaseClass)
+
+
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(

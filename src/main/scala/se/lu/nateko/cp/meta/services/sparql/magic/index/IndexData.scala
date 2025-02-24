@@ -16,15 +16,15 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
 import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
 
 import java.time.Instant
+import java.util.ArrayList
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
-import java.util.ArrayList
 
-case class TripleStatement(
-	val subj: IRI,
-	val pred: IRI,
-	val obj: Value,
-	val isAssertion: Boolean
+final case class TripleStatement(
+	subj: IRI,
+	pred: IRI,
+	obj: Value,
+	isAssertion: Boolean
 )
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
@@ -33,12 +33,12 @@ final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).sub
 final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
 final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
 
-case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
-case class StatEntry(key: StatKey, count: Int)
+final case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
+final case class StatEntry(key: StatKey, count: Int)
 
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
-class IndexData(nObjects: Int)(
+final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
@@ -299,7 +299,7 @@ class IndexData(nObjects: Int)(
 		}
 	}
 
-	def updateStrArrayProp(
+	private def updateStrArrayProp(
 		obj: Value,
 		prop: StringCategProp,
 		parser: String => Option[Array[String]],
@@ -361,7 +361,7 @@ class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.headOption
 
-	private def getDataObject[T](dobj: Value): Option[ObjEntry] = dobj match
+	private def getDataObject(dobj: Value): Option[ObjEntry] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if (entry.prefix == "") {

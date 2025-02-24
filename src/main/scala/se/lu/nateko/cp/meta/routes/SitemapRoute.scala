@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.CountryCode
 
 object SitemapRoute {
 
+	val SiteMap = "sitemap.xml"
 	val DataSitemap = "data-sitemap.xml"
 	val CollectionsSitemap = "collections-sitemap.xml"
 	val DocumentsSitemap = "documents-sitemap.xml"
@@ -28,11 +29,11 @@ object SitemapRoute {
 
 		(get & extractEnvri){ implicit envri =>
 			given EnvriConfig = envriConf
-			path("sitemap.xml"):
+			path(SiteMap):
 				val sitemaps = Seq(
-					URI(s"${envriConf.metaHost}/${DataSitemap}"),
-					URI(s"${envriConf.metaHost}/${CollectionsSitemap}"),
-					URI(s"${envriConf.metaHost}/${DocumentsSitemap}"))
+					URI(s"https://${envriConf.metaHost}/${DataSitemap}"),
+					URI(s"https://${envriConf.metaHost}/${CollectionsSitemap}"),
+					URI(s"https://${envriConf.metaHost}/${DocumentsSitemap}"))
 
 				complete(
 					HttpEntity(

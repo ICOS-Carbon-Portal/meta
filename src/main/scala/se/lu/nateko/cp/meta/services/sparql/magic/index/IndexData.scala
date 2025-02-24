@@ -16,15 +16,15 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
 import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
 
 import java.time.Instant
+import java.util.ArrayList
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
-import java.util.ArrayList
 
-case class TripleStatement(
-	val subj: IRI,
-	val pred: IRI,
-	val obj: Value,
-	val isAssertion: Boolean
+final case class TripleStatement(
+	subj: IRI,
+	pred: IRI,
+	obj: Value,
+	isAssertion: Boolean
 )
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
@@ -300,7 +300,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	def updateStrArrayProp(
+	private def updateStrArrayProp(
 		obj: Value,
 		prop: StringCategProp,
 		parser: String => Option[Array[String]],

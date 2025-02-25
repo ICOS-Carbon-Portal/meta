@@ -81,9 +81,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
-		statements: StatementSource
-	): Unit = {
+	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import statement.{subj, pred, obj, isAssertion}
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
@@ -352,9 +350,8 @@ final class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using
-		statements: StatementSource
-	): Option[Int] =
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using StatementSource): Option[Int] =
+		StatementSource.getStatements(null, vocab.dcterms.hasPart, deprecator)
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq
 			.headOption

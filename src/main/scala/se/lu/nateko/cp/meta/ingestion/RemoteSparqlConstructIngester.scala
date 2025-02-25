@@ -5,14 +5,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, MediaTypes, StatusCodes, headers}
 import akka.stream.Materializer
 import akka.stream.scaladsl.StreamConverters
+import java.net.URI
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector
 import org.eclipse.rdf4j.rio.turtle.TurtleParser
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
-
-import java.net.URI
-import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteRdfGraphIngester(
 	endpoint: URI, rdfGraph: URI

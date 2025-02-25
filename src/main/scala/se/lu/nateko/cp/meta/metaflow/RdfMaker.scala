@@ -4,18 +4,18 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import se.lu.nateko.cp.meta.core.data.{
-	InstrumentDeployment as _,
-	GeoFeature,
-	UriResource,
-	StationSpecifics,
-	EtcStationSpecifics,
 	AtcStationSpecifics,
-	IcosStationSpecifics,
+	EtcStationSpecifics,
+	GeoFeature,
 	IcosCitiesStationSpecifics,
-	SitesStationSpecifics,
+	IcosStationSpecifics,
+	InstrumentDeployment as _,
 	NoStationSpecifics,
+	Organization,
 	Position,
-	Organization
+	SitesStationSpecifics,
+	StationSpecifics,
+	UriResource
 }
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}

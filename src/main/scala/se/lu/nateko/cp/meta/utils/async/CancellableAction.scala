@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.utils.async
 
 import akka.actor.Scheduler
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 

@@ -1,6 +1,8 @@
 package se.lu.nateko.cp.meta.test.services.upload
 
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -14,9 +16,6 @@ import se.lu.nateko.cp.meta.services.upload.ObjMetadataUpdater
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.createStringLiteral
 
-import java.net.URI
-import java.time.Instant
-
 class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 	class Setup(
 		val cpVocab: CpVocab,
@@ -25,7 +24,7 @@ class MetadataUpdaterTests extends AsyncFunSpec with GivenWhenThen:
 		val server: InstanceServer,
 		val factory: ValueFactory
 	):
-		def hash(base64Url: String) = Sha256Sum.fromBase64Url(base64Url).get
+		def hash(base64Url: String): Sha256Sum = Sha256Sum.fromBase64Url(base64Url).get
 		def stringLit(str: String): Literal = factory.createStringLiteral(str)
 
 	given Envri = Envri.ICOS

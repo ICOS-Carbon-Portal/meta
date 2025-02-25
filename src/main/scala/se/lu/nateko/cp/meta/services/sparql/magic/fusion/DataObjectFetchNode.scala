@@ -2,9 +2,8 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
-import se.lu.nateko.cp.meta.services.sparql.index.{DataObjectFetch, Property}
-
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import se.lu.nateko.cp.meta.services.sparql.index.{DataObjectFetch, Property}
 
 class DataObjectFetchNode(
 	val fetchRequest: DataObjectFetch,

@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.metaflow
 
+import java.time.Instant
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
+import scala.collection.mutable.Buffer
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===
-
-import java.time.Instant
-import scala.collection.mutable.Buffer
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 

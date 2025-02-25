@@ -5,13 +5,12 @@ import akka.event.Logging
 import akka.stream.IOResult
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
-import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.MetaUploadConf
-import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
-
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import se.lu.nateko.cp.cpauth.core.UserId
+import se.lu.nateko.cp.meta.MetaUploadConf
+import se.lu.nateko.cp.meta.services.UnauthorizedUploadException
 
 trait FileDropMetaSource[T <: TC : TcConf](
 	conf: MetaUploadConf

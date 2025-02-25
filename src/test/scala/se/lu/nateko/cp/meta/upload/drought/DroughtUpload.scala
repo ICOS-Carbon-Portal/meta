@@ -1,27 +1,27 @@
 package se.lu.nateko.cp.meta.upload.drought
 
+import se.lu.nateko.cp.doi.*
+
 import akka.Done
 import com.opencsv.CSVReader
-import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, StaticCollectionDto, StationTimeSeriesDto}
-
 import java.io.InputStreamReader
 import java.net.URI
 import java.nio.file.{Path, Paths}
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, StaticCollectionDto, StationTimeSeriesDto}
 
 
 object DroughtUpload{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/drought2018/v2")
+	val baseDir: Path = Paths.get("/home/oleg/workspace/cpupload/drought2018/v2")
 	val archiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/dought2018ArchiveProduct")
 	val hhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018FluxnetProduct")
 
-	def archiveMetas = metas(baseDir, "fluxnetMetaSrc.csv")
-	def hhMetas = metas(baseDir.resolve("hh/"), "fluxnetHhMetaSrc.csv")
+	def archiveMetas: Iterator[FluxMeta] = metas(baseDir, "fluxnetMetaSrc.csv")
+	def hhMetas: Iterator[FluxMeta] = metas(baseDir.resolve("hh/"), "fluxnetHhMetaSrc.csv")
 
 	def archiveObjInfos: Iterator[CpUploadClient.ObjectUploadInfo] = archiveMetas.map{meta =>
 		makeDto(meta, archiveSpec, false) -> meta.fileInfo
@@ -49,7 +49,7 @@ object DroughtUpload{
 
 	def uploadFluxCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getFluxCollDto)
 
-	def getFluxCollDto = StaticCollectionDto(
+	def getFluxCollDto: StaticCollectionDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = archiveMetas.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Drought-2018 ecosystem eddy covariance flux product in FLUXNET-Archive format - release 2019-1",

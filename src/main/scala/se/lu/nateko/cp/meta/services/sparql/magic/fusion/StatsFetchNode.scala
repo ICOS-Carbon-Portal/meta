@@ -2,9 +2,8 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra.*
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
 
 class StatsFetchNode(
 	val countVarName: String,
@@ -21,8 +20,8 @@ class StatsFetchNode(
 	}
 	override def visitChildren[X <: Exception](v: QueryModelVisitor[X]): Unit = {}
 
-	override def getAssuredBindingNames() = mkSet(assuredVars)
-	override def getBindingNames() = mkSet(assuredVars :+ group.stationVar)
+	override def getAssuredBindingNames(): java.util.Set[String] = mkSet(assuredVars)
+	override def getBindingNames(): java.util.Set[String] = mkSet(assuredVars :+ group.stationVar)
 
 	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
 

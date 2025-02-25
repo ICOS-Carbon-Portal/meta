@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta
 
 import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.*
 
 import java.net.URI
 import java.time.Instant
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.*
 
 sealed trait UploadDto{
 	def submitterId: String
@@ -17,9 +17,9 @@ sealed trait ObjectUploadDto extends UploadDto {
 	def hashSum: Sha256Sum
 	def fileName: String
 	def references: Option[ReferencesDto]
-	def duplicateFilenameAllowed = references.flatMap(_.duplicateFilenameAllowed).getOrElse(false)
-	def autodeprecateSameFilenameObjects = references.flatMap(_.autodeprecateSameFilenameObjects).getOrElse(false)
-	def partialUpload = references.flatMap(_.partialUpload).getOrElse(false)
+	def duplicateFilenameAllowed: Boolean = references.flatMap(_.duplicateFilenameAllowed).getOrElse(false)
+	def autodeprecateSameFilenameObjects: Boolean = references.flatMap(_.autodeprecateSameFilenameObjects).getOrElse(false)
+	def partialUpload: Boolean = references.flatMap(_.partialUpload).getOrElse(false)
 }
 
 final case class DataObjectDto(

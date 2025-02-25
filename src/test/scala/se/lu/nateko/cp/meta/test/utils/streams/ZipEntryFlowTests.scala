@@ -6,12 +6,11 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
-import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
-
 import scala.collection.immutable.Iterable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
 
 class ZipEntryFlowTests extends AnyFunSuite with BeforeAndAfterAll{
 

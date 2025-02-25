@@ -18,14 +18,14 @@ class StationLabelingService(
 	import LabelingDb.{LblAppConn, ProvConn}
 	import TriplestoreConnection.{getStringValues, getUriValues, getOptionalString, getSingleString}
 
-	protected val db = LabelingDb(
+	protected val db: LabelingDb = LabelingDb(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),
 		lblServer = instanceServers(config.instanceServerId),
 		icosServer = instanceServers(config.icosMetaInstanceServerId)
 	)
 	protected given factory: ValueFactory = metaVocab.factory
 	protected val vocab = new StationsVocab(factory)
-	protected val protectedPredicates = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
+	protected val protectedPredicates: Set[IRI] = Set(vocab.hasAssociatedFile, vocab.hasApplicationStatus)
 
 	protected def assertThatWriteIsAuthorized(stationUri: IRI, uploader: UserId)(using ProvConn): Unit =
 		if(!userIsPiOrDeputy(uploader, stationUri)) throw new UnauthorizedStationUpdateException(

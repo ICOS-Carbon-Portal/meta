@@ -15,8 +15,8 @@ object DanglingCleanup{
 
 	private class StatPattCollector extends AbstractQueryModelVisitor[Exception]{
 		import scala.collection.mutable.{Set, Buffer}
-		val dangling = Buffer.empty[(AnonVar,StatementPattern)]
-		val used = Set.empty[AnonVar]
+		val dangling: Buffer[(AnonVar, StatementPattern)] = Buffer.empty[(AnonVar,StatementPattern)]
+		val used: Set[AnonVar] = Set.empty[AnonVar]
 
 		override def meetNode(node: QueryModelNode): Unit = {
 			node match{

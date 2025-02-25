@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra.TupleExpr
-import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
-
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import se.lu.nateko.cp.meta.services.sparql.index.DobjUri
 
 import PatternFinder.*
 

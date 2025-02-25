@@ -1,11 +1,11 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.index.*
-
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Random
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
+import se.lu.nateko.cp.meta.services.sparql.index.*
 
 import HierarchicalBitmap.*
 import StringHierarchicalBitmap.{StringOrdering as Ord, StringGeo}
@@ -27,7 +27,7 @@ class StringHierarchicalBitmapTests extends AnyFunSpec{
 		(bm, strings)
 	}
 
-	def testFilter(req: FilterRequest[String], expected: Seq[Int])(implicit bm: HierarchicalBitmap[String]) = {
+	def testFilter(req: FilterRequest[String], expected: Seq[Int])(implicit bm: HierarchicalBitmap[String]): Assertion = {
 		assert(bm.filter(req).iterator().asScala.toSeq == expected)
 	}
 

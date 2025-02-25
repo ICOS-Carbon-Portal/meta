@@ -1,27 +1,26 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
-import se.lu.nateko.cp.meta.test.tags.SlowRoute
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.model.headers.CacheDirectives.*
-import akka.http.scaladsl.model.{HttpHeader, StatusCodes}
+import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.pattern.after
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
+import scala.concurrent.Future
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
-
-import java.net.URI
-import scala.concurrent.Future
+import se.lu.nateko.cp.meta.test.tags.SlowRoute
 
 import concurrent.duration.DurationInt
 
@@ -30,7 +29,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	private val log = Logging.getLogger(system, this)
 
-	lazy val db = TestDb()
+	lazy val db: TestDb = TestDb()
 
 	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
@@ -50,7 +49,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 			SparqlRoute.apply(sparqlConfig)
 		}
 
-	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin) =
+	def req(query: String, ip: String, additionalHeader: Option[HttpHeader] = None, origin: String = reqOrigin): HttpRequest =
 		val otherHeaders = Seq(RawHeader("X-Forwarded-For", ip), Origin(HttpOrigin(origin))) ++ additionalHeader
 		Post("/sparql", query).withHeaders(Accept(Rdf4jSparqlServer.csvSparql.mediaType), otherHeaders*)
 

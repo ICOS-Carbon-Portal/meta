@@ -1,9 +1,14 @@
 package se.lu.nateko.cp.meta.routes
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.{ExceptionHandler, MalformedRequestContentRejection, RejectionHandler, Route}
+import akka.http.scaladsl.server.{ExceptionHandler, MalformedRequestContentRejection, PathMatcher, RejectionHandler, Route}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Keep
+import java.net.URI
+import scala.collection.immutable.Seq
+import scala.concurrent.Future
+import scala.language.implicitConversions
+import scala.util.Try
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
@@ -14,12 +19,6 @@ import se.lu.nateko.cp.meta.metaflow.MetaUploadService
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
 import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto}
-
-import java.net.URI
-import scala.collection.immutable.Seq
-import scala.concurrent.Future
-import scala.language.implicitConversions
-import scala.util.Try
 
 object UploadApiRoute extends CpmetaJsonProtocol{
 
@@ -46,7 +45,7 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		}.result()
 	)
 
-	val Sha256Segment = Segment.flatMap(Sha256Sum.fromString(_).toOption)
+	val Sha256Segment: PathMatcher[Tuple1[Sha256Sum]] = Segment.flatMap(Sha256Sum.fromString(_).toOption)
 	import AuthenticationRouting.ensureLocalRequest
 
 	def apply(

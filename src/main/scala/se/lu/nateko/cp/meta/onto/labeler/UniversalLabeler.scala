@@ -2,11 +2,10 @@ package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.IRI
 import org.semanticweb.owlapi.model.{IRI as OwlIri, OWLOntology}
+import scala.collection.mutable
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.TSC
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import scala.collection.mutable
 
 class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler:
 

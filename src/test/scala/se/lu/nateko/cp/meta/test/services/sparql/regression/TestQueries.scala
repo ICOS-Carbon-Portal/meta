@@ -254,7 +254,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def objectSpec(spec: String, station: String) = s"""
+	def objectSpec(spec: String, station: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?station ?samplingHeight
@@ -288,12 +288,12 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def collectionItems(collId: String) = s"""
+	def collectionItems(collId: String): String = s"""
 		select * where{ $collId <http://purl.org/dc/terms/hasPart> ?dobj}
 	"""
 
 	//from icoscp Python library
-	def stationData(station: String, level: Int) = s"""
+	def stationData(station: String, level: Int): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select *
@@ -314,7 +314,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def stations(id: String) = s"""
+	def stations(id: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select *
 		from <http://meta.icos-cp.eu/resources/icos/> 
@@ -332,7 +332,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def dataObjStation(dObj: String) = s"""
+	def dataObjStation(dObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select distinct ?dobj ?stationName ?stationId ?samplingHeight ?longitude ?latitude ?elevation ?theme
@@ -439,7 +439,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def ATCStationList(station: String, tracer: String, dObj: String) = s"""
+	def ATCStationList(station: String, tracer: String, dObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
@@ -461,7 +461,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def drought2018AtmoProductFileInfo(stationLabel: String) = s"""
+	def drought2018AtmoProductFileInfo(stationLabel: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?samplingHeight
@@ -506,7 +506,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def icosCitation(dataObj: String) = s"""
+	def icosCitation(dataObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where{
 		optional{$dataObj cpmeta:hasCitationString ?cit}
@@ -514,7 +514,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def prodsPerDomain(domain: String) = s"""
+	def prodsPerDomain(domain: String): String = s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select ?specLabel ?spec where{
@@ -537,7 +537,7 @@ object TestQueries {
 	"""
 
 	//from icoscp Python library
-	def prodAvailability(dObjLabels: String) = s"""
+	def prodAvailability(dObjLabels: String): String = s"""
 		prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
@@ -631,7 +631,7 @@ object TestQueries {
 	"""
 
 	//from portal app in data project, called for time-series preview
-	def listKnownDataObjects(dObj: String) = s"""
+	def listKnownDataObjects(dObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
@@ -649,7 +649,7 @@ object TestQueries {
 	"""
 
 	//from dygraph-light front-end app in data project
-	def previewTableInfo(dObj: String) = s"""
+	def previewTableInfo(dObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		prefix prov: <http://www.w3.org/ns/prov#>
 		select distinct ?dobj ?objSpec ?nRows ?fileName ?specLabel ?startedAtTime ?columnNames where {
@@ -691,7 +691,7 @@ object TestQueries {
 	"""
 
 	//from labeling app
-	def stationLabelingInfo(station: String) = s"""
+	def stationLabelingInfo(station: String): String = s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		SELECT * FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 		FROM NAMED <http://meta.icos-cp.eu/resources/stationentry/>
@@ -700,7 +700,7 @@ object TestQueries {
 	"""
 
 	//from labeling app
-	def stationLabelingFiles(station: String) = s"""
+	def stationLabelingFiles(station: String): String = s"""
 		PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 		PREFIX cpfls: <http://meta.icos-cp.eu/files/>
 		SELECT DISTINCT ?file ?fileType ?fileName FROM <http://meta.icos-cp.eu/resources/stationlabeling/>
@@ -754,7 +754,7 @@ object TestQueries {
 	"""
 
 	//from dashboard front-end app in data project
-	def dashboardTableInfo(dObj: String) = s"""
+	def dashboardTableInfo(dObj: String): String = s"""
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select * where {
 		values ?dobj { $dObj }
@@ -779,7 +779,7 @@ object TestQueries {
 	"""
 
 	//from EtcUploadTransformer
-	def sameFilenameDataObjects(fn: String) = s"""
+	def sameFilenameDataObjects(fn: String): String = s"""
 		prefix prov: <http://www.w3.org/ns/prov#>
 		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		select distinct ?dobj where{

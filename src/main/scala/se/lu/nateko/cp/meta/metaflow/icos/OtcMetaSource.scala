@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.metaflow.icos
 
 import akka.actor.ActorRef
 import akka.event.LoggingAdapter
+import java.time.Instant
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
@@ -12,8 +13,6 @@ import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.time.Instant
 
 class OtcMetaSource(
 	server: WriteNotifyingInstanceServer, sparql: SparqlRunner, val log: LoggingAdapter
@@ -323,10 +322,10 @@ class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 	// val assumedRoleClass = getRelativeRaw("AssumedRole")
 
 	object Roles{
-		val dataSubmitter = getRelativeRaw("dataSubmitter")
-		val engineer = getRelativeRaw("engineer")
-		val pi = getRelativeRaw("pi")
-		val researcher = getRelativeRaw("researcher")
+		val dataSubmitter: IRI = getRelativeRaw("dataSubmitter")
+		val engineer: IRI = getRelativeRaw("engineer")
+		val pi: IRI = getRelativeRaw("pi")
+		val researcher: IRI = getRelativeRaw("researcher")
 
 		val map: Map[IRI, Role] = Map(
 			dataSubmitter -> DataManager,

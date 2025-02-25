@@ -1,20 +1,20 @@
 package se.lu.nateko.cp.meta
 
-import com.scalakml.io.KmzFileReader
-import com.scalakml.kml.*
-import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, GeoFeature, GeoJson, Polygon as GeoPolygon, Position}
-import se.lu.nateko.cp.meta.core.etcupload.StationId
 import spray.json.{JsNull, JsValue}
 
+import com.scalakml.io.KmzFileReader
+import com.scalakml.kml.*
 import java.io.File
 import java.net.{URI, URL}
 import scala.io.Source
+import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, GeoFeature, GeoJson, Polygon as GeoPolygon, Position}
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 object KmlGeoJsonWorkbench {
 
 	val workDir = "/home/oleg/Downloads/ETC_kmz/"
 
-	def saveKmzs = {
+	def saveKmzs: Unit = {
 		import sys.process.*
 		for((id, url) <- getKmzUrls){
 			(url #> new File(workDir + id.id + ".kmz")).!!

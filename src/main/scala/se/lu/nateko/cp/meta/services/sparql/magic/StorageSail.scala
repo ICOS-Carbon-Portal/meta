@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import java.nio.file.{FileVisitOption, Files, Paths}
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStorageConfig
-
-import java.nio.file.{FileVisitOption, Files, Paths}
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())

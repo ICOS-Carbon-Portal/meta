@@ -1,15 +1,14 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import java.util.Arrays
 import org.eclipse.rdf4j.common.iteration.{CloseableIteration, EmptyIteration, SingletonIteration, UnionIteration}
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sparql.federation.CollectionIteration
 import org.eclipse.rdf4j.sail.SailException
+import scala.collection.immutable.SeqMap
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
-
-import java.util.Arrays
-import scala.collection.immutable.SeqMap
 
 class StatementsEnricher(val citer: CitationProvider) {
 	import StatementsEnricher.StatIter

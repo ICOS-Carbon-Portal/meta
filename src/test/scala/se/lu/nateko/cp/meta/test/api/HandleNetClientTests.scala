@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.test.api
 
+import java.nio.file.{Files, Paths}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum.formatByte
-
-import java.nio.file.{Files, Paths}
 
 class HandleNetClientTests extends AnyFunSpec{
 

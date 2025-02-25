@@ -1,4 +1,6 @@
 package se.lu.nateko.cp.meta.services.citation
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, Organization, Person, UriResource}
@@ -7,9 +9,6 @@ import se.lu.nateko.cp.meta.services.upload.CpmetaReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import java.time.Instant
 
 final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 	import AttributionProvider.*

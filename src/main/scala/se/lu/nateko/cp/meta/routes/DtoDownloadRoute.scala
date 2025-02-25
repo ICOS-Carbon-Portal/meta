@@ -3,14 +3,13 @@ import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import scala.concurrent.Future
+import scala.language.implicitConversions
+import scala.util.Try
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.services.UploadDtoReader
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
-
-import scala.concurrent.Future
-import scala.language.implicitConversions
-import scala.util.Try
 
 object DtoDownloadRoute extends CpmetaJsonProtocol{
 

@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.metaflow
 
 import akka.stream.scaladsl.Source
+import java.time.Instant
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-
-import java.time.Instant
 
 
 trait TC
@@ -26,8 +25,8 @@ trait TcConf[+T <: TC]{
 
 object TcConf:
 	def makeId[T <: TC](id: String)(using conf: TcConf[T]): TcId[T] = conf.makeId(id)
-	def stationId[T <: TC](baseId: UriId)(using tc: TcConf[T]) = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
-	def tcScopedId[T <: TC](baseId: UriId)(using tc: TcConf[T]) = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
+	def stationId[T <: TC](baseId: UriId)(using tc: TcConf[T]): UriId = UriId(s"${tc.stationPrefix}_${baseId.urlSafeString}")
+	def tcScopedId[T <: TC](baseId: UriId)(using tc: TcConf[T]): UriId = UriId(s"${tc.tcPrefix}_${baseId.urlSafeString}")
 
 
 sealed trait Entity[+T <: TC]{
@@ -38,7 +37,7 @@ sealed trait Entity[+T <: TC]{
 
 sealed trait TcEntity[+T <: TC] extends Entity[T]{
 	def tcId: TcId[T]
-	override def tcIdOpt = Some(tcId)
+	override def tcIdOpt: Option[TcId[T]] = Some(tcId)
 }
 
 trait CpIdSwapper[E]{
@@ -52,11 +51,11 @@ object Entity{
 	}
 
 	given [T <: TC]: CpIdSwapper[TcPerson[T]] with{
-		def withCpId(p: TcPerson[T], id: UriId) = p.copy(cpId = id)
+		def withCpId(p: TcPerson[T], id: UriId): TcPerson[T] = p.copy(cpId = id)
 	}
 
 	given [T <: TC]: CpIdSwapper[TcOrg[T]] with{
-		def withCpId(org: TcOrg[T], id: UriId) = org match{
+		def withCpId(org: TcOrg[T], id: UriId): TcOrg[T] = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
@@ -64,18 +63,18 @@ object Entity{
 	}
 
 	given [T <: TC]: CpIdSwapper[TcFunder[T]] with{
-		def withCpId(org: TcFunder[T], id: UriId) = org.copy(cpId = id)
+		def withCpId(org: TcFunder[T], id: UriId): TcFunder[T] = org.copy(cpId = id)
 	}
 
 	given [T <: TC]: CpIdSwapper[TcPlainOrg[T]] with{
-		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
+		def withCpId(org: TcPlainOrg[T], id: UriId): TcPlainOrg[T] = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
 
 	given [T <: TC]: CpIdSwapper[TcStation[T]] with{
-		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
+		def withCpId(s: TcStation[T], id: UriId): TcStation[T] = s.copy(cpId = id)
 	}
 
 	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
@@ -85,7 +84,7 @@ object Entity{
 
 	given [T <: TC]: CpIdSwapper[InstrumentDeployment[T]] with{
 		//swapping station info, not deployments own cpid
-		def withCpId(depl: InstrumentDeployment[T], id: UriId) = depl.copy(stationUriId = id)
+		def withCpId(depl: InstrumentDeployment[T], id: UriId): InstrumentDeployment[T] = depl.copy(stationUriId = id)
 	}
 }
 
@@ -128,7 +127,7 @@ final case class TcInstrument[+T <: TC : TcConf](
 	deployments: Seq[InstrumentDeployment[T]]
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	def cpId = CpVocab.instrCpId(tcId)
+	def cpId: UriId = CpVocab.instrCpId(tcId)
 }
 
 final case class InstrumentDeployment[+T <: TC](
@@ -152,20 +151,20 @@ class AssumedRole[+T <: TC](
 	val weight: Option[Int],
 	val extra: Option[String]
 ){
-	def id = (kind.name, holder.bestId, org.bestId)
-	override def toString = s"AssumedRole($kind , $holder , $org )"
+	def id: (String, String, String) = (kind.name, holder.bestId, org.bestId)
+	override def toString: String = s"AssumedRole($kind , $holder , $org )"
 }
 
 final case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
 class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
-	def tcConf = implicitly[TcConf[T]]
+	def tcConf: TcConf[T] = implicitly[TcConf[T]]
 }
 
 trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]
 	def state: Source[State, () => Unit]
-	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
+	def stationId(baseId: UriId): UriId = TcConf.stationId[T](baseId)
 
 object TcMetaSource:
 	val defaultInstrModel = "N/A"

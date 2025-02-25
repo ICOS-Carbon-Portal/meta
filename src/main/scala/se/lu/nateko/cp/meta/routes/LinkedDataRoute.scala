@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import eu.icoscp.envri.Envri
+import scala.language.postfixOps
 import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
@@ -15,8 +16,6 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
 import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}
-
-import scala.language.postfixOps
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -144,7 +143,7 @@ object LinkedDataRoute {
 	private def objMetaFormatUriToObjUri(uri: Uri): Uri =
 		uri.withPath(uri.path.reverse.tail.tail.reverse)
 
-	def attachmentHeader(fileName: String) = {
+	def attachmentHeader(fileName: String): `Content-Disposition` = {
 		import ContentDispositionTypes.attachment
 		`Content-Disposition`(attachment, Map("filename" -> fileName))
 	}

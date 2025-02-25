@@ -1,22 +1,23 @@
 package se.lu.nateko.cp.meta.views
 
+import spray.json.*
+
+import se.lu.nateko.cp.doi.meta.Person as DoiMetaPerson
+
+import java.net.URI
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.node.*
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
-import se.lu.nateko.cp.doi.meta.Person as DoiMetaPerson
+import scala.jdk.CollectionConverters.IterableHasAsJava
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.urlEncode
-import spray.json.*
-
-import java.net.URI
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
-import scala.jdk.CollectionConverters.IterableHasAsJava
 
 object LandingPageHelpers:
 
@@ -91,7 +92,7 @@ object LandingPageHelpers:
 	def getDoiTitle(refs: References): Option[String] =
 		refs.doi.flatMap(_.titles.map(_.head)).map(_.title)
 
-	def getPreviewURL(hash: Sha256Sum, variable: Option[String] = None)(using conf: EnvriConfig) = {
+	def getPreviewURL(hash: Sha256Sum, variable: Option[String] = None)(using conf: EnvriConfig): String = {
 		val yAxis = variable.fold("")(v => s""","yAxis":"${v}"""")
 		val params = urlEncode(s"""{"route":"preview","preview":["${hash.id}"]${yAxis}}""")
 

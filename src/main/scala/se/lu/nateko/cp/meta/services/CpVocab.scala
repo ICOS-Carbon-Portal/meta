@@ -1,7 +1,9 @@
 package se.lu.nateko.cp.meta.services
 
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import scala.util.matching.Regex
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
@@ -9,8 +11,6 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId as EtcStationId
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
 import se.lu.nateko.cp.meta.metaflow.{Role, TC, TcConf, TcId}
 import se.lu.nateko.cp.meta.utils.rdf4j.===
-
-import java.net.URI
 
 class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab:
 	import CpVocab.*
@@ -27,8 +27,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	private val icosBup: BaseUriProvider = baseResourceUriProviders(Envri.ICOS)
 
-	def getStation(stationId: UriId)(using Envri) = getRelative(s"stations/", stationId)
-	def getEcosystemStation(id: EtcStationId) = getStation(etcStationUriId(id))(using Envri.ICOS)
+	def getStation(stationId: UriId)(using Envri): IRI = getRelative(s"stations/", stationId)
+	def getEcosystemStation(id: EtcStationId): IRI = getStation(etcStationUriId(id))(using Envri.ICOS)
 
 	def getPerson(firstName: String, lastName: String)(using Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(using Envri): IRI = getRelativeRaw("people/" + cpId)
@@ -44,12 +44,12 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getFunding(fundId: UriId)(using Envri): IRI = getRelative("fundings/", fundId)
 
-	def getRole(role: Role)(using Envri) = getRelative(RolesPrefix, UriId(role.name))
+	def getRole(role: Role)(using Envri): IRI = getRelative(RolesPrefix, UriId(role.name))
 
-	def getOrganization(orgId: UriId)(using Envri) = getRelative("organizations/", orgId)
+	def getOrganization(orgId: UriId)(using Envri): IRI = getRelative("organizations/", orgId)
 
-	def getInstrument(id: UriId)(using Envri) = getRelative("instruments/", id)
-	def getEtcInstrument(station: Int, id: Int) = getInstrument{
+	def getInstrument(id: UriId)(using Envri): IRI = getRelative("instruments/", id)
+	def getEtcInstrument(station: Int, id: Int): IRI = getInstrument{
 		instrCpId(getEtcInstrTcId(station, id))(EtcConf)
 	}(using Envri.ICOS)
 
@@ -61,26 +61,26 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def hasOceanTheme(icosSpec: IcosStationSpecifics): Boolean = icosSpec.theme.exists(_.self.uri === oceanTheme)
 
-	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(using icosBup)
+	def getAncillaryEntry(valueId: String): IRI = getRelativeRaw("ancillary/" + valueId)(using icosBup)
 
-	def getStaticObject(hash: Sha256Sum)(using Envri) = factory.createIRI(staticObjLandingPage(hash).toString)
-	def getCollection(hash: Sha256Sum)(using Envri) = factory.createIRI(staticCollLandingPage(hash).toString)
+	def getStaticObject(hash: Sha256Sum)(using Envri): IRI = factory.createIRI(staticObjLandingPage(hash).toString)
+	def getCollection(hash: Sha256Sum)(using Envri): IRI = factory.createIRI(staticCollLandingPage(hash).toString)
 
-	def getStaticObjectAccessUrl(hash: Sha256Sum)(using Envri) = staticObjAccessUrl(hash)
+	def getStaticObjectAccessUrl(hash: Sha256Sum)(using Envri): URI = staticObjAccessUrl(hash)
 
-	def getAcquisition(hash: Sha256Sum)(using Envri) = getRelativeRaw(AcqPrefix + hash.id)
-	def getProduction(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + hash.id)
-	def getProductionContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + ContribsPrefix + hash.id)
-	def getDocContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ContribsPrefix + hash.id)
-	def getSubmission(hash: Sha256Sum)(using Envri) = getRelativeRaw(SubmPrefix + hash.id)
+	def getAcquisition(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(AcqPrefix + hash.id)
+	def getProduction(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(ProdPrefix + hash.id)
+	def getProductionContribList(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(ProdPrefix + ContribsPrefix + hash.id)
+	def getDocContribList(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(ContribsPrefix + hash.id)
+	def getSubmission(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(SubmPrefix + hash.id)
 	def getSpatialCoverage(hash: Sha256Sum)(using Envri): IRI = getSpatialCoverage(UriId(hash.id))
-	def getSpatialCoverage(id: UriId)(using Envri) = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
-	def getVarInfo(hash: Sha256Sum, varLabel: String)(using Envri) = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
-	def getPosition(pos: Position)(using Envri) = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
+	def getSpatialCoverage(id: UriId)(using Envri): IRI = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
+	def getVarInfo(hash: Sha256Sum, varLabel: String)(using Envri): IRI = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
+	def getPosition(pos: Position)(using Envri): IRI = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
 
-	def getNextVersionColl(hash: Sha256Sum)(using Envri) = getRelativeRaw(NextVersionCollPrefix + hash.id)
+	def getNextVersionColl(hash: Sha256Sum)(using Envri): IRI = getRelativeRaw(NextVersionCollPrefix + hash.id)
 
-	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) =
+	def getObjectSpecification(lastSegment: UriId)(using envri: Envri): IRI =
 		val suffix: String = envri match
 			case Envri.ICOS | Envri.ICOSCities => "cpmeta/"
 			case Envri.SITES =>  "objspecs/"
@@ -89,8 +89,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 	def lookupIcosEcoDatasetVar(varName: String): Option[IRI] = getEcoVariableFamily(varName).map: fam =>
 		getRelativeRaw(s"cpmeta/${fam}_n_n_n")(using icosBup)
 
-	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
-	val cfCompliantNetcdfSpec = getObjectSpecification(UriId("arbitraryCfNetcdf"))(using Envri.ICOS)
+	val atmGhgProdSpec: IRI = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
+	val cfCompliantNetcdfSpec: IRI = getObjectSpecification(UriId("arbitraryCfNetcdf"))(using Envri.ICOS)
 
 end CpVocab
 
@@ -109,8 +109,8 @@ object CpVocab{
 	val RolesPrefix = "roles/"
 	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
 	val LabeledStationStatus = "STEP3APPROVED"
-	val EcoVarFamilyRegex = """^(.+)_\d{1,2}_\d{1,2}_\d{1,2}$""".r
-	val KnownEcoVarFamilies = Set(
+	val EcoVarFamilyRegex: Regex = """^(.+)_\d{1,2}_\d{1,2}_\d{1,2}$""".r
+	val KnownEcoVarFamilies: Set[String] = Set(
 		"SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT", "TA", "RH", "PPFD_IN", "PPFD_OUT",
 		"PPFD_BC_IN", "PPFD_BC_OUT", "PPFD_DIF", "SW_DIF", "G", "WTD", "PA", "P", "D_SNOW", "P_SNOW",
 		"WS", "WD"
@@ -153,7 +153,7 @@ object CpVocab{
 		}
 	}
 
-	def etcStationUriId(station: EtcStationId) = TcConf.stationId[ETC.type](UriId.escaped(station.id))
+	def etcStationUriId(station: EtcStationId): UriId = TcConf.stationId[ETC.type](UriId.escaped(station.id))
 	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = EtcConf.makeId(s"${station}_$id")
 	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 
@@ -168,7 +168,7 @@ object CpVocab{
 		else
 			None
 
-	def getPersonCpId(firstName: String, lastName: String) = UriId(s"${urlEncode(firstName)}_${urlEncode(lastName)}")
+	def getPersonCpId(firstName: String, lastName: String): UriId = UriId(s"${urlEncode(firstName)}_${urlEncode(lastName)}")
 
 	def getEcoVariableFamily(varName: String): Option[String] = varName match
 		case EcoVarFamilyRegex(famName) if KnownEcoVarFamilies.contains(famName) => Some(famName)

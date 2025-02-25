@@ -124,7 +124,7 @@ object TestQueries{
 	}
 	"""
 
-	val last100uploadedFilteredByDateWithOR = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val last100uploadedFilteredByDateWithOR: String = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select (str(?submTime) as ?time) ?dobj ?spec ?dataLevel ?fileName where{
 	|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
@@ -135,7 +135,7 @@ object TestQueries{
 	|order by ?submTime
 	|limit 100""".stripMargin
 
-	val storageInfos = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val storageInfos: String = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|select * where{
 	|	?dobj cpmeta:hasObjectSpec/cpmeta:hasFormat ?format .
 	|	?dobj cpmeta:hasSizeInBytes ?size .
@@ -143,7 +143,7 @@ object TestQueries{
 	|	filter (?format != cpmeta:asciiWdcggTimeSer)
 	|}""".stripMargin
 
-	val prevVersions = """prefix prov: <http://www.w3.org/ns/prov#>
+	val prevVersions: String = """prefix prov: <http://www.w3.org/ns/prov#>
 	|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|select distinct ?dobj where{
 	|	?dobj cpmeta:hasName "$fileName" .
@@ -152,14 +152,14 @@ object TestQueries{
 	|order by desc(?submEnd)
 	|limit 2""".stripMargin
 
-	val varNameRegexFilter = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val varNameRegexFilter: String = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|select ?dobj ?spec where{
 	|	?dobj cpmeta:hasVariableName ?varName .
 	|	?dobj cpmeta:hasObjectSpec ?spec .
 	|	FILTER(regex(?varName, "^SWC_\\d_5_\\d$"))
 	|}""".stripMargin
 
-	val samplHeightStats = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val samplHeightStats: String = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select * where{
 	|	{
@@ -179,7 +179,7 @@ object TestQueries{
 	|	?station cpmeta:hasStationId ?id .
 	|}""".stripMargin
 
-	val distinctOfMagicQuery = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val distinctOfMagicQuery: String = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select distinct ?stationId ?stationName
 	|where{
@@ -190,7 +190,7 @@ object TestQueries{
 	|	?station cpmeta:hasName ?stationName .
 	|}""".stripMargin
 
-	val mandatoryStationQuery = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val mandatoryStationQuery: String = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select ?dobj ?fileName ?station ?site
 	|where {
@@ -200,7 +200,7 @@ object TestQueries{
 	|	OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
 	|}""".stripMargin
 
-	val filenameRegex = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val filenameRegex: String = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
 	|select ?dobj ?fileName where{
 	|	VALUES ?spec { cpres:inversionModelingTimeseries cpres:inversionModelingSpatial }
@@ -210,7 +210,7 @@ object TestQueries{
 	|	FILTER regex(?fileName, "lumia", "i")
 	}""".stripMargin
 
-	val unionWithNonMagicProp = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val unionWithNonMagicProp: String = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select ?dobj ?timeStart ?nrows
 	|where {
@@ -219,7 +219,7 @@ object TestQueries{
 	|	?dobj cpmeta:hasNumberOfRows ?nrows .
 	|} order by ?timeStart offset 20 limit 10""".stripMargin
 
-	val nonHiddenNonDeprObjectsWithUrlFilter = """|PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+	val nonHiddenNonDeprObjectsWithUrlFilter: String = """|PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 	|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|SELECT ?dobj WHERE{
 	|	?dobj cpmeta:hasObjectSpec ?spec .
@@ -231,7 +231,7 @@ object TestQueries{
 	|	)
 	|}""".stripMargin
 
-	val unionQueryWithMultipleSpecValuesBlocks = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val unionQueryWithMultipleSpecValuesBlocks: String = """|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 	|prefix prov: <http://www.w3.org/ns/prov#>
 	|select ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
 	|where {
@@ -265,13 +265,13 @@ object TestQueries{
 	|order by desc(?submTime)
 	|offset 10 limit 20""".stripMargin
 
-	val allDataObjects = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val allDataObjects: String = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?dobj
 		|where {
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|}""".stripMargin
 
-	val byFilenameWithSpecFilter = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	val byFilenameWithSpecFilter: String = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?dobj
 		|where {
 		|	?dobj cpmeta:hasObjectSpec ?spec .

@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import akka.Done
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.services.MetadataException
-
 import scala.collection.mutable.Set
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.services.MetadataException
 
 private[upload] class UploadLock {
 

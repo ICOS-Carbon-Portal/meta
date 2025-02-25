@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.test.TestConfig
 
 object Manual {
 
-	val factory = SimpleValueFactory.getInstance()
+	val factory: SimpleValueFactory = SimpleValueFactory.getInstance()
 
 	def getLog: PostgresRdfLog = {
 		val config = ConfigLoader.default

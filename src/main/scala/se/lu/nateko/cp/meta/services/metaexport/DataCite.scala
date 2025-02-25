@@ -2,11 +2,11 @@ package se.lu.nateko.cp.meta.services.metaexport
 
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
+
+import java.time.{Instant, Year}
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.Validated
-
-import java.time.{Instant, Year}
 
 
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
@@ -15,7 +15,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
 	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
 
-	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
+	def getCreators(obj: StaticObject): Seq[Creator] = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 
 	def getContributors(dobj: DataObject): Seq[Contributor] = dobj.production.toSeq.flatMap{
 		_.contributors
@@ -64,7 +64,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def takeDate(ts: Instant): String = ts.toString.take(10)
-	def doiDate(ts: Instant, dtype: DateType) = Date(takeDate(ts), Some(dtype))
+	def doiDate(ts: Instant, dtype: DateType): Date = Date(takeDate(ts), Some(dtype))
 
 	def tempCoverageDate(dobj: DataObject): Option[Date] =
 		for
@@ -75,7 +75,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			Date(dateStr, Some(DateType.Collected))
 
 
-	def makeDocObjectDoi(doc: DocObject) = DoiMeta(
+	def makeDocObjectDoi(doc: DocObject): DoiMeta = DoiMeta(
 		doi = doiMaker(CoolDoi.makeRandom),
 		titles = doc.references.title.map(title => Seq(Title(title, None, None))),
 		publisher = Some("ICOS ERIC -- Carbon Portal"),
@@ -132,7 +132,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		)
 	end makeCollectionDoi
 
-	def toFundingReference(funding: Funding) = {
+	def toFundingReference(funding: Funding): FundingReference = {
 		val funderIdentifier = funding.funder.id.flatMap((s, idType) => {
 			val scheme = idType match {
 				case FunderIdType.`Crossref Funder ID` => FunderIdentifierScheme.Crossref
@@ -151,7 +151,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		)
 	}
 
-	def toDoiCreator(p: Agent) = p match {
+	def toDoiCreator(p: Agent): Creator = p match {
 		case Organization(_, name, _, _, _) =>
 			Creator(
 				name = GenericName(name),

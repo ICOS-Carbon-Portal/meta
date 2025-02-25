@@ -1,13 +1,13 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
 import org.semanticweb.owlapi.model.{OWLClass, OWLClassExpression, OWLDataProperty, OWLObjectProperty, OWLOntology, OWLProperty}
-
+import org.semanticweb.owlapi.reasoner.OWLReasoner
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 
 class HermitBasedReasoner(ontology: OWLOntology) extends BaseReasoner(ontology){
 
-	val reasoner = new org.semanticweb.HermiT.ReasonerFactory().createReasoner(ontology)
+	val reasoner: OWLReasoner = new org.semanticweb.HermiT.ReasonerFactory().createReasoner(ontology)
 
 	override def close(): Unit = {
 		reasoner.dispose()

@@ -1,13 +1,12 @@
 package se.lu.nateko.cp.meta.upload.drought
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.upload.CpUploadClient
-
 import java.net.URI
 import java.nio.file.{Files, Path}
 import java.time.Instant
 import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.upload.CpUploadClient
 
 
 class FluxMeta(
@@ -27,11 +26,11 @@ class FluxMeta(
 	def yearFrom = yearFromStr.toInt
 	def yearTo = yearToStr.toInt
 
-	def acqStart = Instant.parse(
+	def acqStart: Instant = Instant.parse(
 		s"${yearFrom}-01-01T00:00:00Z"
 	)
 
-	def acqEnd = Instant.parse(
+	def acqEnd: Instant = Instant.parse(
 		s"${yearTo + 1}-01-01T00:00:00Z"
 	)
 
@@ -46,7 +45,7 @@ class FluxMeta(
 
 	def fileExists: Boolean = Files.exists(filePath)
 
-	def creationDate = Instant.ofEpochMilli(
+	def creationDate: Instant = Instant.ofEpochMilli(
 		if(fileExists)
 			new ZipFile(filePath.toFile).entries().asScala.map(_.getTime).max
 		else 0

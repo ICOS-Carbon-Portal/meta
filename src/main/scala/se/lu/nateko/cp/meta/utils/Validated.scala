@@ -6,10 +6,10 @@ import scala.util.{Failure, Success, Try}
 
 class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
-	def require(errMsg: String) = if(result.isDefined) this else
+	def require(errMsg: String): Validated[T] = if(result.isDefined) this else
 		new Validated(result, errors :+ errMsg)
 
-	def require(test: T => Boolean, errMsg: String) = if(result.map(test).getOrElse(true)) this else
+	def require(test: T => Boolean, errMsg: String): Validated[T] = if(result.map(test).getOrElse(true)) this else
 		new Validated(result, errors :+ errMsg)
 
 	def optional: Validated[Option[T]] =
@@ -17,7 +17,7 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 		then new Validated(Some(result), errors)
 		else Validated.ok(None)
 
-	def orElse[U >: T](fallback: => U) =
+	def orElse[U >: T](fallback: => U): Validated[U] =
 		if(result.isDefined) this
 		else new Validated[U](Some(fallback), errors)
 
@@ -37,7 +37,7 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 
 	def foreach[U](f: T => U): Unit = result.foreach(f)
 
-	def filter(p: T => Boolean) = tryTransform(new Validated(result.filter(p), errors))
+	def filter(p: T => Boolean): Validated[T] = tryTransform(new Validated(result.filter(p), errors))
 
 	def withExtraError(msg: String) = new Validated(result, errors :+ msg)
 
@@ -137,7 +137,7 @@ object Validated:
 				case Default | AtLeastOne | AtMostOne | ExactlyOne =>
 					Validated.ok(s)
 
-	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
+	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]): Validated[T] =
 		val res = (l.result ++ r.result).reduceOption(m.merge)
 		new Validated(res, l.errors ++ r.errors)
 

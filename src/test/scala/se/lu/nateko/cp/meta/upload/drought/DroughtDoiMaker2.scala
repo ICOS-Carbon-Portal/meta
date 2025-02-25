@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.upload.drought
-import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
+
+import akka.Done
+import java.time.Instant
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
-
-import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
 
 
 class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: ExecutionContext){
@@ -164,18 +164,18 @@ class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: Ex
 object DroughtDoiMaker2{
 	import DoiMaker.{atc,etc}
 
-	def creatorPerson(p: PersonEntry) = Creator(
+	def creatorPerson(p: PersonEntry): Creator = Creator(
 		name = PersonalName(p.firstName, p.lastName),
 		nameIdentifiers = p.orcid.toSeq.map(oid => NameIdentifier(oid, NameIdentifierScheme.ORCID)),
 		affiliation = ???//Seq(p.affiliation.name)
 	)
 
-	def dataCollectorPerson(p: PersonEntry) = {
+	def dataCollectorPerson(p: PersonEntry): Contributor = {
 		val cr = creatorPerson(p)
 		Contributor(cr.name, cr.nameIdentifiers, cr.affiliation, Some(ContributorType.DataCollector))
 	}
 
-	def creatorStation(longName: String, stationId: String) = Creator(
+	def creatorStation(longName: String, stationId: String): Creator = Creator(
 		name = GenericName(longName),
 		nameIdentifiers = Seq(NameIdentifier(stationId, NameIdentifierScheme.FLUXNET)),
 		affiliation = Nil
@@ -202,8 +202,8 @@ object DroughtDoiMaker2{
 		etcPerson("Dario", "Papale", ContributorType.ProjectLeader)
 	)
 
-	val atcCreator = Creator(atc, Nil, Nil)
-	val etcCreator = Creator(etc, Nil, Nil)
-	val atcContrib = Contributor(atc, Nil, Nil, Some(ContributorType.Producer))
-	val etcContrib = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
+	val atcCreator: Creator = Creator(atc, Nil, Nil)
+	val etcCreator: Creator = Creator(etc, Nil, Nil)
+	val atcContrib: Contributor = Contributor(atc, Nil, Nil, Some(ContributorType.Producer))
+	val etcContrib: Contributor = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
 }

@@ -2,12 +2,14 @@ package se.lu.nateko.cp.meta.test.routes
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
+import akka.http.scaladsl.server.{RequestContext, RouteResult}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AnyFunSpec
+import scala.concurrent.Future
 
 class AlternativePathRouteTest extends AnyFunSpec with ScalatestRouteTest{
 
-	val route = get{
+	val route: RequestContext => Future[RouteResult] = get{
 		path("blabla.csv" | "blabla"){
 			complete("yes")
 		}

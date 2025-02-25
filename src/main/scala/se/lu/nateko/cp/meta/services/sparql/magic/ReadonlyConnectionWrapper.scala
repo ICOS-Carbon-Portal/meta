@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper
 import org.eclipse.rdf4j.sail.{NotifyingSailConnection, UpdateContext}
-
 import scala.util.control.NoStackTrace
 
 class ReadonlyConnectionWrapper(conn: NotifyingSailConnection, errorMessage: String) extends NotifyingSailConnectionWrapper(conn){

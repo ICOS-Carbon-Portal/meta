@@ -2,11 +2,10 @@ package se.lu.nateko.cp.meta.ingestion
 
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 class LocalSparqlConstructExtractor(queryRes: String, extras: String*)(using ExecutionContext) extends Extractor{
 

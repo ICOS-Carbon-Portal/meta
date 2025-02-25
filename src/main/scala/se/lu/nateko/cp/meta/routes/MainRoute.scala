@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.Materializer
+import scala.concurrent.ExecutionContext
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
@@ -15,11 +16,9 @@ import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
 
-import scala.concurrent.ExecutionContext
-
 object MainRoute {
 
-	def exceptionHandler(using envriConfigs: EnvriConfigs) = ExceptionHandler{
+	def exceptionHandler(using envriConfigs: EnvriConfigs): ExceptionHandler = ExceptionHandler{
 		case ex =>
 			val extractEnvri = AuthenticationRouting.extractEnvriDirective
 			extractEnvri { implicit envri =>

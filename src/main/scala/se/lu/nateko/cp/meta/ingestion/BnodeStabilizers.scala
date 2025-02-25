@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.ingestion
 
 import org.eclipse.rdf4j.model.{BNode, IRI, Statement, ValueFactory}
-import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
-
 import scala.collection.mutable
+import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 
 class BnodeStabilizers:
 

@@ -1,6 +1,6 @@
 package se.lu.nateko.cp.meta.test.api
 
-import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
@@ -10,7 +10,7 @@ class CustomVocabTests extends AnyFunSpec{
 	private object Vocab extends CustomVocab{
 		given bup: BaseUriProvider = makeUriProvider("http://test.icos-cp.eu/ontologies/test/")
 		val factory: ValueFactory = new MemValueFactory
-		def encode(s: String) = CustomVocab.urlEncode(s)
+		def encode(s: String): String = CustomVocab.urlEncode(s)
 	}
 
 	describe("getRelative and getRelativeRaw"){
@@ -36,7 +36,7 @@ class CustomVocabTests extends AnyFunSpec{
 			object tempVocab extends CustomVocab{
 				given BaseUriProvider = makeUriProvider(Vocab.bup.baseUri)
 				val factory: ValueFactory = new MemValueFactory
-				val bebe = getRelativeRaw("bebe")
+				val bebe: IRI = getRelativeRaw("bebe")
 			}
 
 			assert(Vocab.getRelativeRaw("bebe") === tempVocab.bebe)

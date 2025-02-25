@@ -1,19 +1,19 @@
 package se.lu.nateko.cp.meta.upload
 
+import se.lu.nateko.cp.doi.*
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import se.lu.nateko.cp.doi.*
+import java.net.URI
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.upload.drought.{DroughtDoiMaker, DroughtDoiMaker2, FluxdataUpload}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
-
-import java.net.URI
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
 
 object UploadWorkbench{
 	given system: ActorSystem = ActorSystem("upload_workbench")
@@ -32,7 +32,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
+	val citer: CitationClientImpl = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)
@@ -99,11 +99,11 @@ object UploadWorkbench{
 }
 
 object ETC_2019_1{
-	val ids = Seq("a3nJ2DqICphKnnJgTNc8NwUf", "ARCuA67fE8jQ5vLrfAMOnjZc", "exeQ2RM9MBXc72KMcl_h4C1W")
+	val ids: Seq[String] = Seq("a3nJ2DqICphKnnJgTNc8NwUf", "ARCuA67fE8jQ5vLrfAMOnjZc", "exeQ2RM9MBXc72KMcl_h4C1W")
 
-	def uploadColl(client: CpUploadClient) = client.uploadSingleCollMeta(collDto)
+	def uploadColl(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(collDto)
 
-	def collDto = StaticCollectionDto(
+	def collDto: StaticCollectionDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = ids.map(UploadWorkbench.toCpDobj).toIndexedSeq,
 		title = "Ecosystem eddy covariance final quality (L2) flux product in ETC-Archive format - release 2019-1",

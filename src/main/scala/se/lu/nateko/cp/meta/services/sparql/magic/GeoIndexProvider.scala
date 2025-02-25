@@ -3,14 +3,13 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.sail.Sail
 import org.slf4j.LoggerFactory
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getStatements
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, accessEagerly}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using
 
 class GeoIndexProvider(using ExecutionContext):
 	private val log = LoggerFactory.getLogger(getClass())

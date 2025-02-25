@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql
 
-import se.lu.nateko.cp.meta.SparqlServerConfig
-
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.{ConcurrentLinkedQueue, Executor}
 import scala.collection.concurrent.TrieMap
+import se.lu.nateko.cp.meta.SparqlServerConfig
 
 class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val now: () => Instant):
 	import QuotaManager.*
@@ -65,10 +64,10 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 		private def ageAt(i: Instant): Float = (i.toEpochMilli - start.toEpochMilli).toFloat / 1000
 
 	private class ClientHistory:
-		val runs = TrieMap.empty[QueryId, QueryRun]
+		val runs: TrieMap[QueryId, QueryRun] = TrieMap.empty[QueryId, QueryRun]
 		val queue = new ConcurrentLinkedQueue[Runnable]()
 		var banTo: Option[Instant] = None
-		def nRunning = runs.values.count(_.isOngoing) - queue.size
+		def nRunning: Int = runs.values.count(_.isOngoing) - queue.size
 
 	private class ProperQueryQuotaManager(val cid: ClientId, val qid: QueryId) extends QueryQuotaManager:
 		private def runInfo: Option[QueryRun] = q.get(cid).flatMap(_.runs.get(qid))

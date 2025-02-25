@@ -1,16 +1,16 @@
 package se.lu.nateko.cp.meta.services
 
-import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.doi.Doi
+
+import akka.http.scaladsl.model.Uri
+import java.net.URI
+import java.time.Instant
+import scala.util.Success
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
-import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
-
-import java.net.URI
-import java.time.Instant
-import scala.util.Success
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, ObjectUploadDto, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
 
 import UriSerializer.Hash
 
@@ -29,7 +29,7 @@ class UploadDtoReader(uriSer: UriSerializer){
 }
 
 object UploadDtoReader{
-	def objToDto(obj: StaticObject) = obj match {
+	def objToDto(obj: StaticObject): ObjectUploadDto = obj match {
 		case dobj: DataObject => DataObjectDto(
 			submitterId = "",
 			hashSum = dobj.hash,
@@ -101,7 +101,7 @@ object UploadDtoReader{
 		)
 	)
 
-	def collToDto(coll: StaticCollection) = StaticCollectionDto(
+	def collToDto(coll: StaticCollection): StaticCollectionDto = StaticCollectionDto(
 		submitterId = "",
 		members = coll.members.map(_.res),
 		title = coll.title,

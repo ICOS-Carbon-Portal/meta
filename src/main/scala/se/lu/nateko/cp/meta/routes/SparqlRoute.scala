@@ -14,18 +14,17 @@ import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHa
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.utils.getStackTrace
-
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+import se.lu.nateko.cp.meta.SparqlServerConfig
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.utils.getStackTrace
 
 object SparqlRoute:
 
@@ -158,7 +157,7 @@ class SparqlCache(maxCacheableQuerySize: Int)(using system: ActorSystem):
 	def put(key: Sha256Sum, mayBeValue: Future[RouteResult]): Future[RouteResult] =
 		mayBeValue.map(makeCached(key))
 
-	def contains(key: Sha256Sum) = inner.keys.contains(key)
+	def contains(key: Sha256Sum): Boolean = inner.keys.contains(key)
 
 	def makeKey(reqCtxt: RequestContext): Option[Sha256Sum] = Some(reqCtxt).filter(shouldCache).map: reqCtxt =>
 		val req = reqCtxt.request

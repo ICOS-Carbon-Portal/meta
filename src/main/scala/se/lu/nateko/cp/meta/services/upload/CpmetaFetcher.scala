@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
@@ -9,8 +10,6 @@ import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
-
-import java.net.URI
 
 
 trait CpmetaReader:

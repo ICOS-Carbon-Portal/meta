@@ -6,12 +6,12 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusC
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funspec.AsyncFunSpec
-import se.lu.nateko.cp.meta.routes.SparqlRoute
-
 import java.util.concurrent.CancellationException
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.compatible.Assertion
+import org.scalatest.funspec.AsyncFunSpec
 import scala.concurrent.Future
+import se.lu.nateko.cp.meta.routes.SparqlRoute
 
 class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 
@@ -37,7 +37,7 @@ class SparqlFailureHandlerTest extends AsyncFunSpec with BeforeAndAfterAll{
 	def handleErrors(in: Source[ByteString, NotUsed]): Future[HttpResponse] =
 		SparqlRoute.handleSparqlFailures(HttpResponse(entity = HttpEntity(ContentTypes.`application/octet-stream`, in)))
 
-	def assertStatusCode(in: Source[ByteString, NotUsed], status: StatusCode) = handleErrors(in).map: r =>
+	def assertStatusCode(in: Source[ByteString, NotUsed], status: StatusCode): Future[Assertion] = handleErrors(in).map: r =>
 		assert(r.status === status)
 
 	describe("SparqlFailureHandleTest"):

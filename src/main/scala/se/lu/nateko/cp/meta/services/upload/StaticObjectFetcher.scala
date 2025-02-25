@@ -1,6 +1,8 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
@@ -11,9 +13,6 @@ import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import java.time.Instant
 
 
 class StaticObjectReader(

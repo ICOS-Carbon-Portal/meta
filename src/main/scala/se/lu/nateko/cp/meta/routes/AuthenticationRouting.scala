@@ -1,18 +1,18 @@
 package se.lu.nateko.cp.meta.routes
 
+import spray.json.{JsNull, JsObject}
+
 import akka.http.javadsl.server.MissingCookieRejection
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{HttpCookie, SameSite, `X-Forwarded-For`}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{Directive0, Directive1, Rejection, RejectionHandler, Route, StandardRoute}
 import eu.icoscp.envri.Envri
+import scala.language.implicitConversions
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.cpauth.core.{Authenticator, CookieToToken, PublicAuthConfig, UserId}
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, EnvriResolver}
-import spray.json.{JsNull, JsObject}
-
-import scala.language.implicitConversions
-import scala.util.{Failure, Success}
 
 class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(using EnvriConfigs) extends CpmetaJsonProtocol{
 	import AuthenticationRouting.*
@@ -52,7 +52,7 @@ class AuthenticationRouting(authConf: Map[Envri, PublicAuthConfig])(using EnvriC
 			}
 		}
 
-	def route = get{
+	def route: Route = get{
 		path("whoami"){
 			user{uid => complete(uid)} ~
 			complete(JsObject(Map("email" -> JsNull)))
@@ -75,7 +75,7 @@ object AuthenticationRouting {
 
 	final case class InvalidCpauthTokenRejection(message: String) extends Rejection
 
-	val authRejectionHandler = RejectionHandler.newBuilder().handle{
+	val authRejectionHandler: RejectionHandler = RejectionHandler.newBuilder().handle{
 			case InvalidCpauthTokenRejection(message) => forbid(message)
 			case cookieRej: MissingCookieRejection => forbid(
 				s"Authentication cookie ${cookieRej.cookieName} not present. Login required for this operation."

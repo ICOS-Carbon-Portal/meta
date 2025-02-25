@@ -1,10 +1,16 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDFS, SKOS}
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import scala.util.{Failure, Success, Try}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
@@ -13,12 +19,6 @@ import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
-
-import java.net.URI
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
-import scala.util.{Failure, Success, Try}
 
 private class CitationInfo(
 	val pidUrl: Option[String],

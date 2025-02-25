@@ -26,7 +26,7 @@ final case class DobjListFusion(
 		this.nonMagicNodeIds == other.nonMagicNodeIds
 
 	def isPureCpIndexQuery: Boolean = nonMagicQMNodes.isEmpty
-	def nonMagicNodeIds = nonMagicQMNodes.map(System.identityHashCode).toSet
+	def nonMagicNodeIds: Set[Int] = nonMagicQMNodes.map(System.identityHashCode).toSet
 }
 
 class DofPatternFusion(meta: CpmetaVocab){

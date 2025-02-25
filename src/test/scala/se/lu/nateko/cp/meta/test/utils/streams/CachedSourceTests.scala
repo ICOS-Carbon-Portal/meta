@@ -5,7 +5,6 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
-
 import scala.util.Success
 
 class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{

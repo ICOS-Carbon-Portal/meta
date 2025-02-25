@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import spray.json.{JsObject, JsString}
+
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import spray.json.{JsObject, JsString}
-
-import java.net.URI
-import java.time.Instant
 
 trait StationInfoService:
 	self: StationLabelingService =>
@@ -166,7 +166,7 @@ final case class LabelingProgressDates(
 	labelled: Option[Instant]
 )
 object LabelingProgressDates:
-	def empty = LabelingProgressDates(None, None, None, None, None)
+	def empty: LabelingProgressDates = LabelingProgressDates(None, None, None, None, None)
 
 final case class LabelingHistory(added: Instant, progress: LabelingProgressDates):
 	def withOverrides(overrides: LabelingProgressDates): LabelingHistory = copy(
@@ -192,13 +192,13 @@ final case class StationBasicInfo(
 	joinYear: Option[Int],
 	labelingProgressOverrides: LabelingProgressDates
 ):
-	def bestName = prodName.getOrElse(provName)
+	def bestName: String = prodName.getOrElse(provName)
 
 class StationLabelingHistory(val station: StationBasicInfo, val hist: LabelingHistory)
 
 object StationLabelingHistory{
 
-	def empty(ts: Instant) = LabelingHistory(ts, LabelingProgressDates.empty)
+	def empty(ts: Instant): LabelingHistory = LabelingHistory(ts, LabelingProgressDates.empty)
 
 	val CsvHeader = "Theme,ID,Name,Class,JoinYear,AddedToDb,Step1Start,Step1End,Step2Start,Step2End,Labelled"
 
@@ -215,5 +215,5 @@ object StationLabelingHistory{
 
 	private def cell(ts: Option[Instant]): String = ts.fold("")(_.toString)
 
-	val histOrder = Ordering.by[StationLabelingHistory, String](_.station.theme).orElseBy(_.station.bestName)
+	val histOrder: Ordering[StationLabelingHistory] = Ordering.by[StationLabelingHistory, String](_.station.theme).orElseBy(_.station.bestName)
 }

@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.utils.async
 
 import akka.Done
 import akka.actor.Scheduler
-
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.FiniteDuration

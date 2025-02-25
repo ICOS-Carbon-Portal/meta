@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.test
 
+import java.net.URI
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-
-import java.net.URI
 
 class InstOntoTests extends AnyFunSpec{
 

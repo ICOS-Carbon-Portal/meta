@@ -4,18 +4,17 @@ import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import play.twirl.api.Html
+import scala.language.postfixOps
+import scala.util.Using
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import scala.language.postfixOps
-import scala.util.Using
 
 object StaticRoute {
 

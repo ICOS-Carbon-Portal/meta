@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import se.lu.nateko.cp.doi.Doi
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
@@ -8,9 +10,8 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
-import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -61,9 +62,9 @@ class CitationProvider(
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
 
-	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
+	val lenses: RdfLenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 
-	val metaReader =
+	val metaReader: StaticObjectReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
 		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 

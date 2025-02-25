@@ -23,7 +23,7 @@ final case class ObjectPropertyDto(resource: ResourceDto, cardinality: Cardinali
 
 final case class ClassDto(resource: ResourceDto, properties: Seq[PropertyDto])
 final case class ClassInfoDto(displayName: String, uri: URI, newInstanceBaseUri: Option[URI]){
-	def withFallbackBaseUri(fallback: URI) =
+	def withFallbackBaseUri(fallback: URI): ClassInfoDto =
 		if(newInstanceBaseUri.isDefined) this
 		else this.copy(newInstanceBaseUri = Some(fallback))
 }
@@ -31,8 +31,8 @@ final case class IndividualDto(resource: ResourceDto, owlClass: ClassDto, values
 
 final case class UpdateDto(isAssertion: Boolean, subject: URI, predicate: URI, obj: String)
 final case class ReplaceDto(subject: URI, predicate: URI, oldObject: String, newObject: String){
-	def assertion = UpdateDto(true, subject, predicate, newObject)
-	def retraction = UpdateDto(false, subject, predicate, oldObject)
+	def assertion: UpdateDto = UpdateDto(true, subject, predicate, newObject)
+	def retraction: UpdateDto = UpdateDto(false, subject, predicate, oldObject)
 }
 
 final case class FileDeletionDto(stationUri: URI, file: URI)

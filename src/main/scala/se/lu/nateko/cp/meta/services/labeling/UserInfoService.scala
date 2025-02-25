@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import java.net.URI as JavaURI
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Literal}
+import scala.util.Using
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingUserDto
 import se.lu.nateko.cp.meta.services.UnauthorizedUserInfoUpdateException
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI as JavaURI
-import scala.util.Using
 
 trait UserInfoService:
 	self: StationLabelingService =>

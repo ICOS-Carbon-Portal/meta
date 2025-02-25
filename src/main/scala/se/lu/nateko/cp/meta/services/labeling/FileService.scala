@@ -2,16 +2,15 @@ package se.lu.nateko.cp.meta.services.labeling
 
 import akka.http.scaladsl.model.HttpEntity.Chunked
 import akka.http.scaladsl.model.{HttpResponse, MediaTypes, Multipart}
+import java.net.URI
+import java.nio.charset.StandardCharsets
 import org.eclipse.rdf4j.model.IRI
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import java.nio.charset.StandardCharsets
-import scala.concurrent.{ExecutionContext, Future}
 
 
 trait FileService:

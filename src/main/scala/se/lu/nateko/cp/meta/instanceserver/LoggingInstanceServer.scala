@@ -1,18 +1,18 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.eclipse.rdf4j.model.{IRI, Value}
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
-
+import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import scala.util.Try
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
 class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extends InstanceServer:
 
 	def factory = inner.factory
 	def readContexts = inner.readContexts
 	def writeContext = inner.writeContext
-	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)
+	def makeNewInstance(prefix: IRI): IRI = inner.makeNewInstance(prefix)
 
-	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]) =
+	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement] =
 		inner.getStatements(subject, predicate, obj)
 
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
@@ -28,6 +28,6 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 
 	def withContexts(read: Seq[IRI], write: IRI) = new LoggingInstanceServer(inner.withContexts(read, write), log)
 
-	override def getConnection() = inner.getConnection()
+	override def getConnection(): TriplestoreConnection & SparqlRunner = inner.getConnection()
 
 end LoggingInstanceServer

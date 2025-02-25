@@ -1,20 +1,21 @@
 package se.lu.nateko.cp.meta
 
+import spray.json.*
+
+import se.lu.nateko.cp.doi.*
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers.liftMarshaller
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import akka.http.scaladsl.unmarshalling.{FromRequestUnmarshaller, Unmarshaller}
+import java.net.URI
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.GeoFeature
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import spray.json.*
-
-import java.net.URI
-import scala.util.{Failure, Success}
 
 trait CpmetaJsonProtocol extends CommonJsonSupport{
 	import DefaultJsonProtocol.*
@@ -43,7 +44,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[OneOfRestrictionDto] = jsonFormat1(OneOfRestrictionDto.apply)
 
 	given JsonFormat[ValueDto] with{
-		override def write(dto: ValueDto) = dto match
+		override def write(dto: ValueDto): JsValue = dto match
 			case dto: LiteralValueDto => dto.toJson.pluss("type" -> "literal")
 			case dto: ObjectValueDto => dto.toJson.pluss("type" -> "object")
 
@@ -51,7 +52,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	}
 
 	given JsonFormat[DataRestrictionDto] with{
-		override def write(dto: DataRestrictionDto) = dto match{
+		override def write(dto: DataRestrictionDto): JsValue = dto match{
 			case dto: MinRestrictionDto => dto.toJson.pluss("type" -> "minValue")
 			case dto: MaxRestrictionDto => dto.toJson.pluss("type" -> "maxValue")
 			case dto: RegexpRestrictionDto => dto.toJson.pluss("type" -> "regExp")
@@ -66,7 +67,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[ObjectPropertyDto] = jsonFormat2(ObjectPropertyDto.apply)
 
 	given JsonFormat[PropertyDto] with{
-		override def write(dto: PropertyDto) = dto match{
+		override def write(dto: PropertyDto): JsValue = dto match{
 			case dto: DataPropertyDto => dto.toJson.pluss("type" -> "dataProperty")
 			case dto: ObjectPropertyDto => dto.toJson.pluss("type" -> "objectProperty")
 		}
@@ -74,7 +75,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	}
 
 	given JsonFormat[GeoCoverage] with
-		def write(spatialObject: GeoCoverage) = spatialObject match
+		def write(spatialObject: GeoCoverage): JsValue = spatialObject match
 			case feature: GeoFeature => feature.toJson
 			case uri: URI => uri.toJson
 			case jsonString: String => JsString(jsonString)
@@ -113,7 +114,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[DocObjectDto] = jsonFormat9(DocObjectDto.apply)
 
 	given RootJsonFormat[ObjectUploadDto] with
-		override def write(umd: ObjectUploadDto) = umd match{
+		override def write(umd: ObjectUploadDto): JsValue = umd match{
 			case data: DataObjectDto => data.toJson
 			case doc: DocObjectDto => doc.toJson
 		}
@@ -126,7 +127,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[StaticCollectionDto] = jsonFormat8(StaticCollectionDto.apply)
 
 	given RootJsonWriter[UploadDto] with{
-		override def write(dto: UploadDto) = dto match {
+		override def write(dto: UploadDto): JsValue = dto match {
 			case oud: ObjectUploadDto => oud.toJson
 			case scd: StaticCollectionDto => scd.toJson
 		}

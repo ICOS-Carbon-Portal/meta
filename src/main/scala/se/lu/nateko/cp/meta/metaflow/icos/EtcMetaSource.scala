@@ -9,19 +9,24 @@ import akka.stream.scaladsl.Source
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.ByteString
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneOffset}
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.util.Failure
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{
-   Orcid,
-   Position,
-   CountryCode,
-   Organization,
-   UriResource,
-   Funder,
-   Funding,
-   Station,
-   EtcStationSpecifics,
-   PositionUtil
+	CountryCode,
+	EtcStationSpecifics,
+	Funder,
+	Funding,
+	Orcid,
+	Organization,
+	Position,
+	PositionUtil,
+	Station,
+	UriResource
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmLocalDate, BadmLocalDateTime, BadmYear}
@@ -30,12 +35,6 @@ import se.lu.nateko.cp.meta.services.upload.etc.*
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneOffset}
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.util.Failure
 
 
 class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {

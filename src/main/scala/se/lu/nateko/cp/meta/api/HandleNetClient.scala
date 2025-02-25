@@ -10,21 +10,20 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.HandleNetClientConfig
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.utils.akkahttp.*
-import se.lu.nateko.cp.meta.utils.async.*
-
 import java.io.FileInputStream
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
-import java.security.cert.CertificateFactory
+import java.security.cert.{Certificate, CertificateFactory}
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyStore, SecureRandom}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import se.lu.nateko.cp.meta.HandleNetClientConfig
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.utils.akkahttp.*
+import se.lu.nateko.cp.meta.utils.async.*
 
 class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, mat: Materializer){
 	import HandleNetClient.*
@@ -136,10 +135,10 @@ object HandleNetClient{
 			envri,
 			throw new Exception(s"No PID prefix for ENVRI $envri in the config")
 		)
-		def getPid(suffix: String)(using Envri) = s"${prefix}/$suffix"
+		def getPid(suffix: String)(using Envri): String = s"${prefix}/$suffix"
 		def getSuffix(hash: Sha256Sum): String = hash.id
 		def getPid(hash: Sha256Sum)(using Envri): String = getPid(getSuffix(hash))
-		def pidUrlStr(suffix: String)(using Envri) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
+		def pidUrlStr(suffix: String)(using Envri): String = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
 	}
 //	implicit val system = ActorSystem()
 //	implicit val mat = ActorMaterializer()
@@ -152,7 +151,7 @@ object HandleNetClient{
 //		new HandleNetClient(conf)
 //	}
 
-	def getCertificate(fileName: String) = {
+	def getCertificate(fileName: String): Certificate = {
 		val certFact = CertificateFactory.getInstance("X.509")
 		val certStr = new FileInputStream(fileName)
 		val cert = certFact.generateCertificate(certStr)

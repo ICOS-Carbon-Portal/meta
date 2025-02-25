@@ -1,21 +1,20 @@
 package se.lu.nateko.cp.meta.test
 
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.model.{OWLClass, OWLDataProperty, OWLObjectProperty, PrefixManager}
+import org.semanticweb.owlapi.model.{OWLClass, OWLDataProperty, OWLObjectProperty, OWLOntology, PrefixManager}
 import org.semanticweb.owlapi.util.DefaultPrefixManager
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.utils.owlapi.*
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 
-import java.net.URI
-
 object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
 	val factory = manager.getOWLDataFactory
-	lazy val owlOnto = {
+	lazy val owlOnto: OWLOntology = {
 		getOntologyFromJarResourceFile("/../classes/owl/uiannotations.owl", manager)
 		getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
 		getOntologyFromJarResourceFile("/owl/cpmetaui.owl", manager)

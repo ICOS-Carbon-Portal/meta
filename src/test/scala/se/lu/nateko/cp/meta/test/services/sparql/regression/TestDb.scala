@@ -1,13 +1,17 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
+import java.nio.file.{Files, Path}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -17,10 +21,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
-
-import java.nio.file.{Files, Path}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",
@@ -58,7 +58,7 @@ class TestDb {
 }
 
 private object TestRepo {
-	lazy val repo = Await.result(initRepo(), Duration.Inf)
+	lazy val repo: Repository = Await.result(initRepo(), Duration.Inf)
 	private var reference_count = 0
 	private var open = false
 
@@ -92,13 +92,13 @@ private object TestRepo {
 		yield SailRepository(sail)
 	}
 
-	def checkout() = {
+	def checkout(): Unit = {
 		log.info("Checkout")
 		open = true
 		reference_count += 1;
 	}
 
-	def close() = {
+	def close(): Unit = {
 		reference_count -= 1;
 		if (open && reference_count <= 0) {
 			log.info("Cleaning up!")
@@ -157,6 +157,6 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 }
 
 object CitationClientDummy extends CitationClient {
-	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
+	override def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] = Future.successful("dummy citation string")
+	override def getDoiMeta(doi: Doi): Future[DoiMeta] = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }

@@ -1,18 +1,19 @@
 package se.lu.nateko.cp.meta.upload.drought
 
-import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
 
+import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import java.io.{File, FileReader}
 import java.net.URI
 import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
+import scala.util.matching.UnanchoredRegex
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
 
 import DroughtUpload.ifNotEmpty
 
@@ -22,7 +23,7 @@ class PersonEntry(
 	val id: Int, val firstName: String, val lastName: String,
 	val affiliation: AffiliationEntry, urlSegm: Option[String], val orcid: Option[String]
 ){
-	def url = "http://meta.icos-cp.eu/resources/people/" + urlSegm.getOrElse(CpVocab.getPersonCpId(firstName, lastName))
+	def url: String = "http://meta.icos-cp.eu/resources/people/" + urlSegm.getOrElse(CpVocab.getPersonCpId(firstName, lastName))
 }
 
 class FileEntry(
@@ -80,8 +81,8 @@ object DroughtMeta2{
 	case object Winter2020 extends Project
 	case object Winter2020Hh extends Project
 
-	val YearsRegex = """(\d{4})\-(\d{4})""".r.unanchored
-	val HeightRegex = """^\w{3}_(\d+\.?\d*)m_""".r.unanchored
+	val YearsRegex: UnanchoredRegex = """(\d{4})\-(\d{4})""".r.unanchored
+	val HeightRegex: UnanchoredRegex = """^\w{3}_(\d+\.?\d*)m_""".r.unanchored
 
 	def fluxFileYears(fe: FileEntry): (Int, Int) =
 		assert(fe.project != Atmo, s"Can parse years only from Fluxnet files")

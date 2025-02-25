@@ -5,7 +5,7 @@ import scala.collection.AbstractIterator
 
 trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 
-	def ++[A >: T](other: => CloseableIterator[A]) = new CloseableIterator[A]{
+	def ++[A >: T](other: => CloseableIterator[A]): CloseableIterator[A] = new CloseableIterator[A]{
 
 		private var thatInitialized = false
 		private lazy val that = {
@@ -13,7 +13,7 @@ trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 			other
 		}
 
-		def hasNext = self.hasNext || that.hasNext
+		def hasNext: Boolean = self.hasNext || that.hasNext
 
 		def next(): A = if(self.hasNext) self.next() else that.next()
 
@@ -23,7 +23,7 @@ trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 		}
 	}
 
-	def mapC[U](f: T => U) = new CloseableIterator[U]{
+	def mapC[U](f: T => U): CloseableIterator[U] = new CloseableIterator[U]{
 		def hasNext: Boolean = self.hasNext
 		def next(): U = f(self.next())
 		def close(): Unit = self.close()
@@ -32,7 +32,7 @@ trait CloseableIterator[+T] extends Iterator[T] with AutoCloseable{self =>
 }
 
 object CloseableIterator{
-	def empty = new CloseableIterator[Nothing]{
+	def empty: CloseableIterator[Nothing] = new CloseableIterator[Nothing]{
 		def hasNext = false
 		def next(): Nothing = throw new NoSuchElementException("Empty iterator cannot have next element")
 		def close(): Unit = {}

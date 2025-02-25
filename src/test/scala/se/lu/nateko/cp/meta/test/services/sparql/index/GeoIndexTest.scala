@@ -1,17 +1,16 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
+import java.io.FileReader
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, Point}
 import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.core.crypto.Md5Sum
-import se.lu.nateko.cp.meta.services.sparql.magic.{DataObjCov, DenseCluster, GeoEvent, GeoIndex, GeoLookup, JtsGeoFactory, SparseCluster}
-
-import java.io.FileReader
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.language.dynamics
+import se.lu.nateko.cp.meta.core.crypto.Md5Sum
+import se.lu.nateko.cp.meta.services.sparql.magic.{DataObjCov, DenseCluster, GeoEvent, GeoIndex, GeoLookup, JtsGeoFactory, SparseCluster}
 
 class GeoIndexTest extends AnyFunSpec{
 

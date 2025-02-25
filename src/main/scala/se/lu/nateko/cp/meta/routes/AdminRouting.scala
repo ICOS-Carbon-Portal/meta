@@ -6,14 +6,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}
-
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 
 class AdminRouting(
@@ -35,7 +34,7 @@ class AdminRouting(
 		}
 	}
 
-	val route = pathPrefix("admin"){
+	val route: Route = pathPrefix("admin"){
 		path("switchToReadonlyMode"){
 			optEnsureLocalRequest{readonlyModeRoute} ~
 			permitAdmins{readonlyModeRoute}

@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.labeling
 
 import org.eclipse.rdf4j.model.Statement
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
 object LabelingDb:
 
@@ -20,13 +21,13 @@ class LabelingDb(
 ):
 	import LabelingDb.*
 
-	val provRdfLog = provServer match
+	val provRdfLog: RdfUpdateLog = provServer match
 		case logging: LoggingInstanceServer => logging.log
 		case _ => throw Exception(
 			"Configuration error! Provisional stations metadata InstanceServer is expected to be a LoggingInstanceServer"
 		)
 
-	val labelingRdfLog = lblServer match
+	val labelingRdfLog: RdfUpdateLog = lblServer match
 		case logging: LoggingInstanceServer => logging.log
 		case _ => throw Exception(
 			"Configuration error! Labeling metadata InstanceServer is expected to be a LoggingInstanceServer"

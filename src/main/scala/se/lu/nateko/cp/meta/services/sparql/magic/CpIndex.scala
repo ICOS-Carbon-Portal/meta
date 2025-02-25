@@ -1,9 +1,16 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import java.io.Serializable
+import java.time.Instant
+import java.util.ArrayList
+import java.util.concurrent.ArrayBlockingQueue
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.sail.Sail
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
 import org.slf4j.LoggerFactory
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
@@ -13,14 +20,6 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.io.Serializable
-import java.time.Instant
-import java.util.ArrayList
-import java.util.concurrent.ArrayBlockingQueue
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.util.{Failure, Success}
 
 import CpIndex.*
 
@@ -240,5 +239,5 @@ end CpIndex
 
 
 object CpIndex:
-	val UpdateQueueSize = 1 << 13
+	val UpdateQueueSize: Int = 1 << 13
 

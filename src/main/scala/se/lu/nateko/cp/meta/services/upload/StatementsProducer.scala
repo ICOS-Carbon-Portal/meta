@@ -1,8 +1,11 @@
 package se.lu.nateko.cp.meta.services.upload
 
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
+import scala.collection.mutable.Buffer
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{GeoFeature, GeoJson, LatLonBox, Position, flattenToSeq}
@@ -12,10 +15,6 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadUserErrorExcep
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto}
-
-import java.net.URI
-import java.time.Instant
-import scala.collection.mutable.Buffer
 
 class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 

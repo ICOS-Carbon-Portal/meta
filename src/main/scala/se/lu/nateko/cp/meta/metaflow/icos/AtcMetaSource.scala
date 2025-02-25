@@ -1,18 +1,17 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
 import akka.actor.ActorSystem
+import java.io.{BufferedInputStream, FileInputStream, InputStreamReader}
+import java.net.URI
+import java.nio.file.Path
+import java.time.{Instant, LocalDate}
+import scala.util.Using
 import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.Validated
-
-import java.io.{BufferedInputStream, FileInputStream, InputStreamReader}
-import java.net.URI
-import java.nio.file.Path
-import java.time.{Instant, LocalDate}
-import scala.util.Using
 
 import EtcMetaSource.{Lookup, lookUp, lookUpOrcid, dummyUri}
 

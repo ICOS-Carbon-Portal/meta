@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
+import spray.json.{JsObject, JsValue}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
@@ -7,8 +9,6 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, RequestEntity, StatusCodes, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import spray.json.{JsObject, JsValue}
-
 import scala.concurrent.{ExecutionContext, Future}
 
 object EtcEntriesFetcher {

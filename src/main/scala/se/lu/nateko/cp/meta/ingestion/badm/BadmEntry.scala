@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-
 import java.text.{NumberFormat, ParseException}
 import java.time.{LocalDate, LocalDateTime}
 import java.util.Locale
+import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 sealed trait BadmDate
 final case class BadmYear(year: Int) extends BadmDate
@@ -28,7 +27,7 @@ object Badm{
 		def unapply(v: String): Option[T]
 	}
 
-	val numParser = NumberFormat.getNumberInstance(Locale.ROOT)
+	val numParser: NumberFormat = NumberFormat.getNumberInstance(Locale.ROOT)
 
 	object Numeric extends Extractor[Number]{
 		override def unapply(v: String): Option[Number] = try{

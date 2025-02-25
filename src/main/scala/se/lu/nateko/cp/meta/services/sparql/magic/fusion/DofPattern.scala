@@ -16,7 +16,7 @@ sealed trait DofPattern{
 }
 
 object DofPattern{
-	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
+	val Empty: PlainDofPattern = PlainDofPattern(None, Map.empty, Map.empty, Nil)
 }
 
 sealed trait QVar{
@@ -101,8 +101,8 @@ final class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends
 
 final case class StatementPattern2(pred: IRI, sp: StatementPattern){
 	assert(sp.getPredicateVar.getValue == pred, "StatementPattern's predicate value must be a specified IRI")
-	def sourceVar = QVar(sp.getSubjectVar)
-	def targetVar = QVar(sp.getObjectVar)
+	def sourceVar: QVar = QVar(sp.getSubjectVar)
+	def targetVar: QVar = QVar(sp.getObjectVar)
 }
 
 final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[TupleExpr]){
@@ -118,7 +118,7 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolean)
 
 final class OffsetPattern(val slice: Slice){
-	def offset = if(slice.hasOffset) slice.getOffset.toInt else 0
+	def offset: Int = if(slice.hasOffset) slice.getOffset.toInt else 0
 }
 
 final class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)

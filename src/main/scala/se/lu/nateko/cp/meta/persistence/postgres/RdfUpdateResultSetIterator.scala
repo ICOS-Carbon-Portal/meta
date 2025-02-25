@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
-import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-
 import java.sql.{Connection, ResultSet}
 import java.time.Instant
+import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 
 class RdfUpdateResultSetIterator(getConn: () => Connection, factory: ValueFactory, selectQuery: String){
 	def plain = new ResultSetIterator(getConn, readRdfUpdate, selectQuery)

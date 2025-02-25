@@ -4,15 +4,14 @@ import org.eclipse.rdf4j.model.vocabulary.GEO
 import org.eclipse.rdf4j.model.{IRI, Literal, Value}
 import org.eclipse.rdf4j.query.algebra.{And, Compare, Exists, Not, Or, Regex as RdfRegex, StatementPattern, ValueConstant, ValueExpr, Var}
 import org.locationtech.jts.io.WKTReader
+import scala.util.Try
+import scala.util.matching.Regex
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.utils.asOptInstanceOf
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import scala.util.Try
-import scala.util.matching.Regex
 
 class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 	import FilterPatternSearch.*

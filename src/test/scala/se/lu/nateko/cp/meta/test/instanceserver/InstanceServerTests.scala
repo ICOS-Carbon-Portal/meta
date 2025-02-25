@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.test.instanceserver
 
+import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -11,11 +12,11 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class InstanceServerTests extends AnyFunSpec{
 
-	val factory = SimpleValueFactory.getInstance()
-	val ctxt = factory.createIRI("http://www.icos-cp.eu/ontology/")
-	val ctxt2 = factory.createIRI("http://www.icos-cp.eu/ontology2/")
+	val factory: SimpleValueFactory = SimpleValueFactory.getInstance()
+	val ctxt: IRI = factory.createIRI("http://www.icos-cp.eu/ontology/")
+	val ctxt2: IRI = factory.createIRI("http://www.icos-cp.eu/ontology2/")
 
-	def makeUri(suff: String) = factory.createIRI(ctxt.stringValue, suff)
+	def makeUri(suff: String): IRI = factory.createIRI(ctxt.stringValue, suff)
 
 	describe("LoggingInstanceServer over Rdf4jInstanceServer"){
 

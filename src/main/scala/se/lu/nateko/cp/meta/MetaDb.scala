@@ -5,10 +5,14 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.util.concurrent.Executors
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
@@ -28,11 +32,6 @@ import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticOb
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
-
-import java.net.URI
-import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 
 class MetaDb (

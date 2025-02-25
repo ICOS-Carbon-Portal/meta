@@ -4,6 +4,8 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
@@ -11,9 +13,6 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 
@@ -44,7 +43,7 @@ object Main extends App with CpmetaJsonProtocol{
 			}
 		}
 
-	val startup = for(
+	val startup: Future[Unit] = for(
 		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
 		db <- metaFactory(citCache, doiCache, config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));

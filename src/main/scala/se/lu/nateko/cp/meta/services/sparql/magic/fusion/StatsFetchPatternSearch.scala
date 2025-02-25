@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra.{Count, Extension, Group, ValueExpr, Var}
-import se.lu.nateko.cp.meta.services.sparql.index.Filter
-
 import scala.jdk.CollectionConverters.*
+import se.lu.nateko.cp.meta.services.sparql.index.Filter
 
 
 object StatsFetchPatternSearch{

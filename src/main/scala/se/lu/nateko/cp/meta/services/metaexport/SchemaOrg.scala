@@ -1,10 +1,15 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import akka.http.scaladsl.server.directives.ContentTypeResolver
-import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
+import spray.json.*
+
 import se.lu.nateko.cp.doi.meta as doi
 import se.lu.nateko.cp.doi.meta.{GenericName, PersonalName}
+
+import akka.http.scaladsl.server.directives.ContentTypeResolver
+import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.{LocalDate, ZoneOffset}
+import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
@@ -12,10 +17,6 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
-import spray.json.*
-
-import java.net.URI
-import java.time.{LocalDate, ZoneOffset}
 
 import doi.DescriptionType.Abstract as DoiAbstract
 

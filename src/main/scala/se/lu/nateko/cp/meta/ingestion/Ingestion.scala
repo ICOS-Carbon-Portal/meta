@@ -2,18 +2,17 @@ package se.lu.nateko.cp.meta.ingestion
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import java.net.URI
 import org.eclipse.rdf4j.model.vocabulary.LOCN
 import org.eclipse.rdf4j.model.{Statement, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.Ingestion.Statements
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-
-import java.net.URI
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using
 
 sealed trait StatementProvider{
 	def isAppendOnly: Boolean = false
@@ -25,7 +24,7 @@ trait Ingester extends StatementProvider{
 
 trait  Extractor extends StatementProvider{ self =>
 	def getStatements(repo: Repository): Ingestion.Statements
-	def map(ff: Repository => (Statement => Statement))(using ExecutionContext) = new Extractor{
+	def map(ff: Repository => (Statement => Statement))(using ExecutionContext): Extractor = new Extractor{
 		def getStatements(repo: Repository): Statements = self.getStatements(repo).map(_.mapC(ff(repo)))
 	}
 }
@@ -141,7 +140,7 @@ object Ingestion:
 	}
 
 	object EmptyIngester extends Ingester{
-		override def getStatements(valueFactory: ValueFactory) = Future.successful(CloseableIterator.empty)
+		override def getStatements(valueFactory: ValueFactory): Statements = Future.successful(CloseableIterator.empty)
 	}
 
 

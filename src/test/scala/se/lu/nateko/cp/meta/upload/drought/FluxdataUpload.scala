@@ -1,11 +1,6 @@
 package se.lu.nateko.cp.meta.upload.drought
 
 import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.services.citation.CitationClient
-import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
-import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, ReferencesDto, StaticCollectionDto, StationTimeSeriesDto}
 
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
@@ -13,10 +8,15 @@ import java.time.Instant
 import java.util.zip.ZipFile
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
+import se.lu.nateko.cp.meta.core.data.TimeInterval
+import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, ReferencesDto, StaticCollectionDto, StationTimeSeriesDto}
 
 
 object FluxdataUpload{
-	val baseDir = Paths.get("/home/oleg/workspace/cpupload/icosHistorical/v2")
+	val baseDir: Path = Paths.get("/home/oleg/workspace/cpupload/icosHistorical/v2")
 	val fluxnetArchiveSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct")
 	val fluxnetHhSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct")
 	val atmoSpec = new URI("http://meta.icos-cp.eu/resources/cpmeta/drought2018AtmoProduct")
@@ -67,7 +67,7 @@ class FluxdataUpload(
 
 	//def uploadFluxCollection(client: CpUploadClient): Future[Done] = client.uploadSingleCollMeta(getFluxCollDto)
 
-	def getAtmoCollDto = StaticCollectionDto(
+	def getAtmoCollDto: StaticCollectionDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = allFileMetaEntries.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Drought-2018 atmospheric CO2 Mole Fraction product for 48 stations (96 sample heights)—release 2019-1",
@@ -78,7 +78,7 @@ class FluxdataUpload(
 		coverage = None
 	)
 
-	def getFluxCollDto = StaticCollectionDto(
+	def getFluxCollDto: StaticCollectionDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = allFileMetaEntries.map(meta => UploadWorkbench.toCpDobj(meta.hash)).toIndexedSeq,
 		title = "Warm Winter 2020 ecosystem eddy covariance flux product for 73 stations in FLUXNET-Archive format—release 2022-1",

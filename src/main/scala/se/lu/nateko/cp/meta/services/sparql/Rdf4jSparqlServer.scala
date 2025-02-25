@@ -7,6 +7,8 @@ import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEn
 import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
+import java.time.Instant
+import java.util.concurrent.{CancellationException, Executors}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.parser.{ParsedBooleanQuery, ParsedGraphQuery, ParsedTupleQuery}
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
@@ -19,15 +21,12 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
-import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-
-import java.time.Instant
-import java.util.concurrent.{CancellationException, Executors}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
+import se.lu.nateko.cp.meta.SparqlServerConfig
+import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 
 class Rdf4jSparqlServer(
@@ -144,10 +143,10 @@ object Rdf4jSparqlServer:
 	private val utf8 = HttpCharsets.`UTF-8`
 	private val xml = ContentType(MediaTypes.`application/xml`, utf8)
 
-	val jsonSparql = getSparqlContentType("application/sparql-results+json", ".srj")
-	val xmlSparql = getSparqlContentType("application/sparql-results+xml", ".srx")
-	val csvSparql = getSparqlContentType("text/csv", ".csv")
-	val tsvSparql = getSparqlContentType("text/tab-separated-values", ".tsv")
+	val jsonSparql: ContentType = getSparqlContentType("application/sparql-results+json", ".srj")
+	val xmlSparql: ContentType = getSparqlContentType("application/sparql-results+xml", ".srx")
+	val csvSparql: ContentType = getSparqlContentType("text/csv", ".csv")
+	val tsvSparql: ContentType = getSparqlContentType("text/tab-separated-values", ".tsv")
 
 	def getSparqlContentType(mimeType: String, fileExtension: String): ContentType = {
 		val mediaType = MediaType.custom(mimeType, false, fileExtensions = List(fileExtension))

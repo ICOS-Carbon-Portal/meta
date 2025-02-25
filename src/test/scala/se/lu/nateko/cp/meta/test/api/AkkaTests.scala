@@ -3,11 +3,10 @@ package se.lu.nateko.cp.meta.test.api
 import akka.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuite
-
 import scala.concurrent.Future
 
 class AkkaTests extends AsyncFunSuite with BeforeAndAfterAll:
-	val system = ActorSystem("akkaTests")
+	val system: ActorSystem = ActorSystem("akkaTests")
 	override protected def afterAll(): Unit =
 		system.terminate()
 

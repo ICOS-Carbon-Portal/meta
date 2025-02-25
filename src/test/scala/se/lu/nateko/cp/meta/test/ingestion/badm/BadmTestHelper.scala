@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
+import java.nio.charset.StandardCharsets
 import org.apache.commons.io.IOUtils
 import se.lu.nateko.cp.meta.ingestion.badm.BadmSchema
-
-import java.nio.charset.StandardCharsets
 
 object BadmTestHelper {
 

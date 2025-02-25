@@ -1,10 +1,10 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
+import spray.json.JsObject
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
-import spray.json.JsObject
-
 import scala.concurrent.Future
 
 class IcosBadmFetcher(implicit system: ActorSystem, m: Materializer){

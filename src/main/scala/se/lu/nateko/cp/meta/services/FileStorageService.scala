@@ -2,13 +2,12 @@ package se.lu.nateko.cp.meta.services
 
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
-
 import java.io.File
 import java.nio.file.StandardOpenOption.*
 import java.nio.file.{Files, Path, Paths}
 import java.security.MessageDigest
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.utils.streams.ZipEntryFlow
 
 class FileStorageService(folder: File) {
 

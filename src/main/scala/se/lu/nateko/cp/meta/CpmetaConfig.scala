@@ -1,19 +1,20 @@
 package se.lu.nateko.cp.meta
-import com.typesafe.config.ConfigFactory
-import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
-import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
-import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
-import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
-import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
-import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
-import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
 import spray.json.*
 
+import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
+
+import com.typesafe.config.ConfigFactory
+import eu.icoscp.envri.Envri
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
+import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
+import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
+import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
 
 final case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 

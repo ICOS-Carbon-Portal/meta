@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):
 	val metaVocab = staticObjReader.metaVocab
-	val reader = GeoJsonReader()
+	val reader: GeoJsonReader = GeoJsonReader()
 
 	def geoFeatureToJtsGeometry(gf: GeoFeature): Geometry =
 		val jsonStr = GeoJson.fromFeature(gf).toString

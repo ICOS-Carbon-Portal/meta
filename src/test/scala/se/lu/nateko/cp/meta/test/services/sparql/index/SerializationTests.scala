@@ -3,11 +3,17 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 import akka.actor.{Cancellable, Scheduler}
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.time.Instant
 import org.eclipse.rdf4j.model.util.Values
+import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.sail.{NotifyingSailConnection, Sail}
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -15,12 +21,6 @@ import se.lu.nateko.cp.meta.services.sparql.index.{And, CategFilter, ContFilter,
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpIndex, IndexHandler}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.time.Instant
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using
 
 class SerializationTests extends AsyncFunSpec{
 
@@ -54,14 +54,14 @@ class SerializationTests extends AsyncFunSpec{
 		IndexHandler.restoreFromStream(is)
 	}
 
-	def roundTrip(sail: Sail)(using Kryo) = //: Future[(CpIndex, CpIndex)] =
+	def roundTrip(sail: Sail)(using Kryo): Future[(CpIndex, CpIndex)] = //: Future[(CpIndex, CpIndex)] =
 		for(
 			idx <- Future(CpIndex(sail, Future.never, 5));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
 		) yield idx -> CpIndex(sail, Future.never, data)
 
-	def smallRepo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
+	def smallRepo: SailRepository = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
 
 
 	describe("Small index created, object deleted, leaving orphan data type"):

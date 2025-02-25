@@ -6,16 +6,15 @@ import org.eclipse.rdf4j.model.{IRI, Value}
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
-import org.eclipse.rdf4j.query.algebra.evaluation.{QueryBindingSet, QueryEvaluationStep, TripleSource}
+import org.eclipse.rdf4j.query.algebra.evaluation.{EvaluationStrategy, QueryBindingSet, QueryEvaluationStep, TripleSource}
 import org.eclipse.rdf4j.query.{BindingSet, Dataset}
 import org.slf4j.LoggerFactory
+import scala.jdk.CollectionConverters.IteratorHasAsJava
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 
 class CpEvaluationStrategyFactory(
@@ -27,7 +26,7 @@ class CpEvaluationStrategyFactory(
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
-	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
+	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics): EvaluationStrategy = {
 		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
 		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
@@ -129,7 +128,7 @@ class CpEvaluationStrategyFactory(
 
 	}
 
-	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
+	def qEvalStep(eval: BindingSet => Iterator[BindingSet]): QueryEvaluationStep = new QueryEvaluationStep{
 		override def evaluate(bindings: BindingSet) =
 			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}

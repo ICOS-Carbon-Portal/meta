@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.api
 
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
@@ -10,15 +12,13 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
+import java.net.URI
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ ExecutionContextExecutor, Future }
 import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.MetadataException
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
-
-import java.net.URI
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 
 object StatisticsClient extends DefaultJsonProtocol {

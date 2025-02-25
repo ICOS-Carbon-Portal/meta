@@ -1,11 +1,10 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
+import java.time.Instant
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import scala.compiletime.uninitialized
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
-
-import java.time.Instant
-import scala.compiletime.uninitialized
 
 final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) extends ObjInfo with Serializable {
 	var spec: IRI = uninitialized

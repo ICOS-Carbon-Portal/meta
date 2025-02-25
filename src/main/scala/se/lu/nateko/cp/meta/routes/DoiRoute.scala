@@ -1,18 +1,18 @@
 package se.lu.nateko.cp.meta.routes
 
+import se.lu.nateko.cp.doi.Doi
+
 import akka.event.{Logging, LoggingBus}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.doi.Doi
+import java.net.URI
+import scala.language.implicitConversions
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.upload.*
-
-import java.net.URI
-import scala.language.implicitConversions
 
 object DoiRoute extends CpmetaJsonProtocol{
 	def apply(

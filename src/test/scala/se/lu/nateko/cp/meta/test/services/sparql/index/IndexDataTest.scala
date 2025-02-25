@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource

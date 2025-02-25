@@ -1,17 +1,17 @@
 package se.lu.nateko.cp.meta.upload
 
-import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
+
+import akka.Done
+import java.net.URI
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{DataObject, Person, Station}
 import se.lu.nateko.cp.meta.core.sparql.{BoundUri, SparqlSelectResult}
 import se.lu.nateko.cp.meta.services.upload.UploadService
 import se.lu.nateko.cp.meta.utils.async.*
-
-import java.net.URI
-import scala.concurrent.{ExecutionContext, Future}
 
 class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: ExecutionContext) {
 	import AtcCollMaker.*
@@ -66,7 +66,7 @@ object AtcCollMaker{
 		)
 	}
 
-	val contributors = Seq(
+	val contributors: Seq[Contributor] = Seq(
 		"ICOS ATC-Laboratoires Des Sciences Du Climat Et De L'Environnement (LSCE), France" -> ContributorType.DataCurator,
 		"ICOS Central Radiocarbon Laboratory (CRL), Germany" -> ContributorType.DataCurator,
 		"ICOS ERIC--Carbon Portal, Sweden" -> ContributorType.DataManager,
@@ -75,7 +75,7 @@ object AtcCollMaker{
 		case (name, cType) => Contributor(GenericName(name), Nil, Nil, Some(cType))
 	}
 
-	val icosRiCreator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.ROR)), Nil)
+	val icosRiCreator: Creator = Creator(GenericName("ICOS RI"), Seq(NameIdentifier("01d0fc168", NameIdentifierScheme.ROR)), Nil)
 
 	def makeDoiMeta(dto: StaticCollectionDto, doi: Doi, samples: Seq[DataObject]): DoiMeta = {
 		val creators = samples.flatMap(_.references.authors.getOrElse(Nil)).distinct.collect{ _ match {
@@ -129,7 +129,7 @@ object AtcCollMaker{
 		)
 	}
 
-	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]) = StaticCollectionDto(
+	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]): StaticCollectionDto = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
 		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2024-1",
@@ -177,7 +177,7 @@ where {
 			.map{case Seq(station, coll) => (station, coll)}
 			.toMap //to map staion -> collection, with single-station collections only
 
-	def stationCollsQuery(submFrom: String, submTo: String) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	def stationCollsQuery(submFrom: String, submTo: String): String = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix dcterms: <http://purl.org/dc/terms/>
 prefix prov: <http://www.w3.org/ns/prov#>
 select distinct ?coll ?station where{

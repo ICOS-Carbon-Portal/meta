@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
+import java.nio.file.{Files, Paths}
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.io.WKTReader
 import se.lu.nateko.cp.meta.core.data.{FeatureCollection, GeoFeature, GeoJson}
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.{mergeIntersecting, representativeCoverage}
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
-
-import java.nio.file.{Files, Paths}
 
 
 object ClusteringExample:

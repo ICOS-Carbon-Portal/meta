@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.services.upload
 
-import se.lu.nateko.cp.meta.core.data.{UriResource, ValueType, VarMeta}
-
 import java.net.URI
 import scala.util.matching.Regex
+import se.lu.nateko.cp.meta.core.data.{UriResource, ValueType, VarMeta}
 
 class DatasetVariable(
 	val self: UriResource,
@@ -21,7 +20,7 @@ class DatasetVariable(
 
 class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 
-	val plainMandatory = varDefs.filterNot(_.isOptional).flatMap(_.plain)
+	val plainMandatory: Seq[VarMeta] = varDefs.filterNot(_.isOptional).flatMap(_.plain)
 
 	private val plainLookup: Map[String, VarMeta] = varDefs.flatMap(_.plain).map(vm => vm.label -> vm).toMap
 

@@ -1,11 +1,10 @@
 package se.lu.nateko.cp.meta.test.icos
 
+import java.time.Instant
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
 import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
-
-import java.time.Instant
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
@@ -22,9 +21,9 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			stop.map(Instant.parse)
 		)
 
-	val p1 = Position(0, 0, Some(-1.5f), None, None)
-	val p2 = Position(10, 20, Some(-1.5f), None, None)
-	val p3 = Position(50, 50, Some(-0.5f), None, None)
+	val p1: Position = Position(0, 0, Some(-1.5f), None, None)
+	val p2: Position = Position(10, 20, Some(-1.5f), None, None)
+	val p3: Position = Position(50, 50, Some(-0.5f), None, None)
 
 	describe("mergeInstrDeployments"){
 		val input = Seq(

@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.onto.reasoner
 import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.model.{OWLClass, OWLClassExpression, OWLDataProperty, OWLObjectProperty, OWLOntology, OWLProperty}
 import org.semanticweb.owlapi.search.EntitySearcher
-
 import scala.jdk.CollectionConverters.{IteratorHasAsScala, SeqHasAsJava}
 
 abstract class BaseReasoner(ontology: OWLOntology) extends Reasoner {

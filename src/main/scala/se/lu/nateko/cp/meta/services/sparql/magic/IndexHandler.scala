@@ -4,7 +4,10 @@ import akka.Done
 import akka.actor.Scheduler
 import com.esotericsoftware.kryo.io.{Input, KryoDataInput, KryoDataOutput, Output}
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer
-import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.esotericsoftware.kryo.{Kryo, Registration, Serializer}
+import java.io.{FileInputStream, FileOutputStream, InputStream, OutputStream}
+import java.nio.file.{Files, Path, Paths}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import org.eclipse.rdf4j.model.impl.SimpleIRI
 import org.eclipse.rdf4j.model.util.Values
 import org.eclipse.rdf4j.model.{IRI, Statement}
@@ -13,6 +16,12 @@ import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import org.eclipse.rdf4j.sail.nativerdf.model.NativeIRI
 import org.eclipse.rdf4j.sail.{Sail, SailConnectionListener}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import scala.collection.IndexedSeq
+import scala.collection.mutable.{AnyRefMap, ArrayBuffer, HashMap}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -41,16 +50,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.{
 import se.lu.nateko.cp.meta.utils.async.throttle
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, accessEagerly}
 
-import java.io.{FileInputStream, FileOutputStream, InputStream, OutputStream}
-import java.nio.file.{Files, Paths}
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
-import scala.collection.IndexedSeq
-import scala.collection.mutable.{AnyRefMap, ArrayBuffer, HashMap}
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
-
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 
 	def getListener(
@@ -58,7 +57,7 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 		metaVocab: CpmetaVocab,
 		index: CpIndex,
 		geo: Future[(GeoIndex, GeoEventProducer)]
-	) = new SailConnectionListener:
+	): SailConnectionListener = new SailConnectionListener:
 		//important that this is a val, not a def, otherwise throttle will work very wrongly
 		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
@@ -87,7 +86,7 @@ object IndexHandler{
 	//import com.esotericsoftware.minlog.Log
 	//Log.DEBUG()
 
-	def storagePath = Paths.get("./sparqlMagicIndex.bin")
+	def storagePath: Path = Paths.get("./sparqlMagicIndex.bin")
 	def dropStorage(): Unit = Files.deleteIfExists(storagePath)
 
 	def makeKryo: Kryo =
@@ -396,7 +395,7 @@ class OrderingSerializer private(ords: HashMap[Int, Ordering[?]]) extends Serial
 
 object OptionSerializer extends Serializer[Option[?]]:
 
-	def register(kryo: Kryo) =
+	def register(kryo: Kryo): Registration =
 		kryo.register(classOf[Option[?]], OptionSerializer)
 		kryo.register(classOf[Some[?]], OptionSerializer)
 		kryo.register(classOf[None.type], OptionSerializer)

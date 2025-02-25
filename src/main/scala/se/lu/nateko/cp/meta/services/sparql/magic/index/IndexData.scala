@@ -1,9 +1,12 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
+import java.time.Instant
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.slf4j.LoggerFactory
+import scala.collection.IndexedSeq as IndSeq
+import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -14,10 +17,6 @@ import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.Strin
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
 import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
-
-import java.time.Instant
-import scala.collection.IndexedSeq as IndSeq
-import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)

@@ -2,7 +2,12 @@ package se.lu.nateko.cp.meta.services.upload.validation
 
 import akka.NotUsed
 import eu.icoscp.envri.Envri
+import java.net.URI
+import java.time.Instant
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import scala.collection.mutable.Buffer
+import scala.language.strictEquality
+import scala.util.{Failure, Success, Try}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -13,12 +18,6 @@ import se.lu.nateko.cp.meta.services.{MetadataException, UnauthorizedUploadExcep
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, StaticCollectionDto, UploadDto}
-
-import java.net.URI
-import java.time.Instant
-import scala.collection.mutable.Buffer
-import scala.language.strictEquality
-import scala.util.{Failure, Success, Try}
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived

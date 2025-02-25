@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection, GeometryFactory}
 import org.roaringbitmap.buffer.{ImmutableRoaringBitmap, MutableRoaringBitmap}
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IteratorHasAsJava
@@ -204,7 +203,7 @@ class SparseCluster(val area: Geometry, children: Seq[DataObjCov], objectIds: Mu
 			new MutableRoaringBitmap
 
 class GeoIndex:
-	val allClusters = mutable.Map.empty[String, SimpleCluster]
+	val allClusters: scala.collection.mutable.Map[String, SimpleCluster] = mutable.Map.empty[String, SimpleCluster]
 	private var _rootCluster: CompositeCluster = createClusterHierarchy
 	def rootCluster = _rootCluster
 

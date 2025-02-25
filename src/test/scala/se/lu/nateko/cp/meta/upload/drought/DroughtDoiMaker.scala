@@ -1,14 +1,14 @@
 package se.lu.nateko.cp.meta.upload.drought
-import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
-import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.upload.*
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
+import akka.Done
 import java.net.URI
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
+import se.lu.nateko.cp.meta.core.etcupload.StationId
+import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 
 class DroughtDoiMaker(maker: DoiMaker, peeps: Map[URI, PersonalName], names: Map[URI, String])(implicit ctxt: ExecutionContext){
@@ -115,7 +115,7 @@ object DroughtDoiMaker{
 		) yield new DroughtDoiMaker(doiMaker, peeps, names)
 	}
 
-	def creatorStation(longName: String, id: StationId) = Creator(
+	def creatorStation(longName: String, id: StationId): Creator = Creator(
 		name = GenericName(longName),
 		nameIdentifiers = Seq(NameIdentifier(id.id, NameIdentifierScheme.FLUXNET)),
 		affiliation = Nil
@@ -135,6 +135,6 @@ object DroughtDoiMaker{
 		etcPerson("Dario", "Papale", ContributorType.ProjectLeader)
 	)
 
-	val etcCreator = Creator(etc, Nil, Nil)
-	val etcContrib = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
+	val etcCreator: Creator = Creator(etc, Nil, Nil)
+	val etcContrib: Contributor = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
 }

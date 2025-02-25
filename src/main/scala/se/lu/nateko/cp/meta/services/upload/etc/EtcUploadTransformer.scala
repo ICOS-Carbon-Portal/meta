@@ -2,6 +2,8 @@ package se.lu.nateko.cp.meta.services.upload.etc
 
 import akka.actor.ActorSystem
 import eu.icoscp.envri.Envri
+import java.time.{LocalDateTime, ZoneOffset}
+import scala.util.{Success, Try}
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
@@ -10,9 +12,6 @@ import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{DataObjectDto, EtcConfig, StationTimeSeriesDto}
-
-import java.time.{LocalDateTime, ZoneOffset}
-import scala.util.{Success, Try}
 
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(using ActorSystem) {
 

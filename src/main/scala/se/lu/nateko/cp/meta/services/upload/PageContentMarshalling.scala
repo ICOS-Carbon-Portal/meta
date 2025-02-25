@@ -1,10 +1,14 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import spray.json.*
+
 import akka.http.scaladsl.marshalling.Marshalling.*
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model.*
 import eu.icoscp.envri.Envri
+import java.util.concurrent.ExecutionException
 import play.twirl.api.Html
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
@@ -13,11 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObje
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
-import spray.json.*
 import views.html.{CollectionLandingPage, LandingPage, MessagePage}
-
-import java.util.concurrent.ExecutionException
-import scala.concurrent.{ExecutionContext, Future}
 
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
@@ -108,7 +108,7 @@ object PageContentMarshalling:
 		content
 	)
 
-	def messagePage(title: String, errors: ErrorList)(using Envri, EnvriConfig) =
+	def messagePage(title: String, errors: ErrorList)(using Envri, EnvriConfig): Html =
 		MessagePage(title, errors.mkString("\n"))
 
 	def getJson[T: JsonWriter](itemV: Validated[T]): HttpResponse = itemV.result match

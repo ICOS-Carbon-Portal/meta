@@ -1,20 +1,19 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
 import akka.http.scaladsl.model.Uri
+import java.net.URI as JavaUri
+import java.time.Instant
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.Sail
+import scala.collection.AbstractIterator
+import scala.util.{Try, Using}
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
-
-import java.net.URI as JavaUri
-import java.time.Instant
-import scala.collection.AbstractIterator
-import scala.util.{Try, Using}
 
 
 

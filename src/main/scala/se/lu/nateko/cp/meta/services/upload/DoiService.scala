@@ -1,15 +1,15 @@
 package se.lu.nateko.cp.meta.services.upload
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+
 import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import java.net.URI
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.DoiConfig
 import se.lu.nateko.cp.meta.core.data.{DataObject, DocObject, PlainStaticCollection, PlainStaticObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.services.metaexport.DataCite
 import se.lu.nateko.cp.meta.utils.Validated
-
-import java.net.URI
-import scala.concurrent.{ExecutionContext, Future}
 
 class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
 

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
+import spray.json.JsObject
+
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
@@ -7,17 +9,15 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import se.lu.nateko.cp.meta.services.labeling.{StationLabelingHistory, StationLabelingService}
-import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException, UnauthorizedUserInfoUpdateException}
-import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, FileDeletionDto, LabelingStatusUpdate, LabelingUserDto}
-import spray.json.JsObject
-
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
 import scala.util.Try
+import se.lu.nateko.cp.meta.services.labeling.{StationLabelingHistory, StationLabelingService}
+import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException, UnauthorizedUserInfoUpdateException}
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, FileDeletionDto, LabelingStatusUpdate, LabelingUserDto}
 
 object LabelingApiRoute extends CpmetaJsonProtocol:
 

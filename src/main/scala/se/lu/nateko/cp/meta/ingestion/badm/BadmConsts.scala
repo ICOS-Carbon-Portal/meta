@@ -1,14 +1,15 @@
 package se.lu.nateko.cp.meta.ingestion.badm
+import scala.util.matching.Regex
 
 object BadmConsts {
 
-	val badmDateRegex = """(\d{4})(\d\d)(\d\d)""".r
-	val badmDateTimeRegex = """(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?""".r
-	val yearRegex = "(\\d{4})".r
-	val varCodeRegex = "(.+)_\\d+_\\d+_\\d+".r
-	val standardNameRegex = """\s*(\w+)\s+(\w+)\s*""".r
-	val withMiddleNameRegex = """(\w\.\s\w+)\s(\w+)\s*""".r
-	val universalNameRegex = """(.*?)\s+([^\s]+)""".r
+	val badmDateRegex: Regex = """(\d{4})(\d\d)(\d\d)""".r
+	val badmDateTimeRegex: Regex = """(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?""".r
+	val yearRegex: Regex = "(\\d{4})".r
+	val varCodeRegex: Regex = "(.+)_\\d+_\\d+_\\d+".r
+	val standardNameRegex: Regex = """\s*(\w+)\s+(\w+)\s*""".r
+	val withMiddleNameRegex: Regex = """(\w\.\s\w+)\s(\w+)\s*""".r
+	val universalNameRegex: Regex = """(.*?)\s+([^\s]+)""".r
 
 	val SiteVar = "SITE_ID"
 	val SiteIdVar = "SITE_ID"

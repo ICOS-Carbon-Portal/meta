@@ -1,6 +1,8 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
 import eu.icoscp.envri.Envri
+import java.time.Instant
+import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -9,9 +11,6 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, Triplesto
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
-
-import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):

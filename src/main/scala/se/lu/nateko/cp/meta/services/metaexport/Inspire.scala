@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
+import java.time.Instant
 import se.lu.nateko.cp.meta.core.data.{DataObject, TimeInterval}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.===
-
-import java.time.Instant
 
 
 object Inspire{
@@ -24,7 +23,7 @@ class Inspire(dobj: DataObject, vocab: CpVocab) {
 
 	def id: String = dobj.pid.getOrElse(dobj.hash.id)
 	def hasPid: Boolean = dobj.pid.isDefined
-	def title = dobj.references.title.getOrElse(dobj.fileName)
+	def title: String = dobj.references.title.getOrElse(dobj.fileName)
 
 	def description: Option[String] = dobj.specificInfo.fold(_.description, _.productionInfo.flatMap(_.comment))
 

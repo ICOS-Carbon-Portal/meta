@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.api
 
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.MetaFlowConfig
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.getOrElseV
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
-
-import java.net.URI
 
 import RdfLens.*
 

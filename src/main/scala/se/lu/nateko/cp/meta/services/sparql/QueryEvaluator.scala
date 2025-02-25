@@ -1,12 +1,11 @@
 package se.lu.nateko.cp.meta.services.sparql
 
 import akka.Done
+import java.io.OutputStream
+import java.lang.AutoCloseable
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryResults, TupleQuery}
 import org.eclipse.rdf4j.rio.RDFWriterFactory
-
-import java.io.OutputStream
-import java.lang.AutoCloseable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 

@@ -4,9 +4,8 @@ import akka.actor.{ActorRef, Status}
 import akka.event.LoggingAdapter
 import akka.stream.scaladsl.{Keep, Source}
 import akka.stream.{CompletionStrategy, OverflowStrategy, ThrottleMode}
-import se.lu.nateko.cp.meta.utils.Validated
-
 import scala.concurrent.duration.DurationInt
+import se.lu.nateko.cp.meta.utils.Validated
 
 trait TriggeredMetaSource[T <: TC : TcConf] extends TcMetaSource[T] {
 	def log: LoggingAdapter

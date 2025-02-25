@@ -5,7 +5,6 @@ import akka.stream.scaladsl.{Flow, Source}
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.util.ByteString
-
 import java.io.BufferedOutputStream
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable.Queue
@@ -42,15 +41,15 @@ private class ZipEntryFlow extends GraphStage[FlowShape[ZipFlowElement, ByteStri
 	private val in: Inlet[ZipFlowElement] = Inlet("ZipEntryFlowInput")
 	private val out: Outlet[ByteString] = Outlet("ZipEntryFlowOutput")
 
-	override val shape = FlowShape(in, out)
+	override val shape: FlowShape[ZipFlowElement, ByteString] = FlowShape(in, out)
 
-	override def createLogic(inheritedAttributes: Attributes) = new GraphStageLogic(shape){
+	override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape){
 
 		private val bsq = Queue.empty[ByteString]
 		private val os = new java.io.OutputStream{
-			override def write(b: Array[Byte]) = bsq += ByteString(b)
-			override def write(b: Array[Byte], off: Int, len: Int) = bsq += ByteString.fromArray(b, off, len)
-			override def write(b: Int) = bsq += ByteString(b.toByte)
+			override def write(b: Array[Byte]): Unit = bsq += ByteString(b)
+			override def write(b: Array[Byte], off: Int, len: Int): Unit = bsq += ByteString.fromArray(b, off, len)
+			override def write(b: Int): Unit = bsq += ByteString(b.toByte)
 			
 		}
 		private val zos = new ZipOutputStream(new BufferedOutputStream(os))

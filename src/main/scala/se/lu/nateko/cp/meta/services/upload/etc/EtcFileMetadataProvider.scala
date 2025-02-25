@@ -3,13 +3,12 @@ package se.lu.nateko.cp.meta.services.upload.etc
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
+import scala.concurrent.duration.*
+import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import se.lu.nateko.cp.meta.services.CpVocab
-
-import scala.concurrent.duration.*
-import scala.util.{Failure, Success}
 
 class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem) extends EtcFileMetadataStore{
 
@@ -20,11 +19,11 @@ class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: Act
 	private var inner: Option[EtcFileMetadataStore] = None
 	private var retryCount: Int = 0
 
-	def lookupFile(key: EtcFileMetaKey) = inner.flatMap(_.lookupFile(key))
+	def lookupFile(key: EtcFileMetaKey): Option[EtcFileMeta] = inner.flatMap(_.lookupFile(key))
 
-	def getUtcOffset(station: StationId) = inner.flatMap(_.getUtcOffset(station))
+	def getUtcOffset(station: StationId): Option[Int] = inner.flatMap(_.getUtcOffset(station))
 
-	def stationTcId(station: StationId) = inner.flatMap(_.stationTcId(station))
+	def stationTcId(station: StationId): Option[Int] = inner.flatMap(_.stationTcId(station))
 
 	if conf.ingestFileMeta then
 		system.scheduler.scheduleWithFixedDelay(Duration.Zero, 5.hours)(() => fetchFromEtc())

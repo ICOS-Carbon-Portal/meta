@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
-import se.lu.nateko.cp.doi.meta.{GeoLocation, GeoLocationPoint, Longitude, Latitude, GeoLocationBox}
+import se.lu.nateko.cp.doi.meta.{GeoLocation, GeoLocationBox, GeoLocationPoint, Latitude, Longitude}
+
 import se.lu.nateko.cp.meta.core.data.{
 	Circle,
 	FeatureCollection,

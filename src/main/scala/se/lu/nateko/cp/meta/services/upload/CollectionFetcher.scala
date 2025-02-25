@@ -1,4 +1,5 @@
 package se.lu.nateko.cp.meta.services.upload
+import java.net.URI
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.RdfLens
@@ -10,8 +11,6 @@ import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import java.net.URI
 
 
 class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:

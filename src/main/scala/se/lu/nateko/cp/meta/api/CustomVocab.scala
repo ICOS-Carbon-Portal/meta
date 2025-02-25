@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.api
 
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
-
 import java.net.URI
 import java.time.{Instant, LocalDate, LocalDateTime}
+import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 
 trait CustomVocab {
 	
@@ -17,22 +16,22 @@ trait CustomVocab {
 	def getRelative(local: UriId)(using BaseUriProvider): IRI = getRelativeRaw(local.urlSafeString)
 	def getRelative(suffix: String, local: UriId)(using BaseUriProvider): IRI = getRelativeRaw(suffix + local.urlSafeString)
 
-	def lit(litVal: String, dtype: IRI) = factory.createLiteral(litVal, dtype)
-	def lit(litVal: String) = factory.createLiteral(litVal, XSD.STRING)
+	def lit(litVal: String, dtype: IRI): Literal = factory.createLiteral(litVal, dtype)
+	def lit(litVal: String): Literal = factory.createLiteral(litVal, XSD.STRING)
 	def lit(litVal: Int): Literal = lit(litVal.toString, XSD.INTEGER) //INTEGER, not INT!
-	def lit(litVal: Long) = factory.createLiteral(litVal)
-	def lit(litVal: Boolean) = factory.createLiteral(litVal)
-	def lit(litVal: Double) = factory.createLiteral(litVal)
-	def lit(litVal: Float) = factory.createLiteral(litVal)
-	def lit(litVal: Instant) = factory.createLiteral(litVal.toString, XSD.DATETIME)
-	def lit(litVal: LocalDate) = factory.createLiteral(litVal.toString, XSD.DATE)
-	def lit(litVal: LocalDateTime) = factory.createLiteral(litVal.toString, XSD.DATETIME)
-	def lit(litVal: URI) = factory.createLiteral(litVal.toASCIIString, XSD.ANYURI)
+	def lit(litVal: Long): Literal = factory.createLiteral(litVal)
+	def lit(litVal: Boolean): Literal = factory.createLiteral(litVal)
+	def lit(litVal: Double): Literal = factory.createLiteral(litVal)
+	def lit(litVal: Float): Literal = factory.createLiteral(litVal)
+	def lit(litVal: Instant): Literal = factory.createLiteral(litVal.toString, XSD.DATETIME)
+	def lit(litVal: LocalDate): Literal = factory.createLiteral(litVal.toString, XSD.DATE)
+	def lit(litVal: LocalDateTime): Literal = factory.createLiteral(litVal.toString, XSD.DATETIME)
+	def lit(litVal: URI): Literal = factory.createLiteral(litVal.toASCIIString, XSD.ANYURI)
 }
 
 object CustomVocab{
 
-	def urlEncode(s: String) = se.lu.nateko.cp.meta.utils.urlEncode(s)
+	def urlEncode(s: String): String = se.lu.nateko.cp.meta.utils.urlEncode(s)
 }
 
 final case class UriId(urlSafeString: String){
@@ -42,5 +41,5 @@ final case class UriId(urlSafeString: String){
 object UriId{
 	def apply(uri: URI): UriId = UriId(uri.getPath.split('/').last)
 	def apply(iri: IRI): UriId = UriId(iri.getLocalName)
-	def escaped(str: String) = UriId(CustomVocab.urlEncode(str))
+	def escaped(str: String): UriId = UriId(CustomVocab.urlEncode(str))
 }

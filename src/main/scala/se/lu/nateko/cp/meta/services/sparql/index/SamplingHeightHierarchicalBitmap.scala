@@ -1,9 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
+import scala.collection.IndexedSeq
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
-
-import scala.collection.IndexedSeq
 
 /**
  * Factory for HierarchivalBitmap[Float] suitable for representing air/water sampling heights

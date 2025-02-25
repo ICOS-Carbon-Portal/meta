@@ -1,18 +1,14 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
+import spray.json.RootJsonFormat
+import spray.json.given
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.{HttpRequest, MediaTypes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import se.lu.nateko.cp.cpauth.core.JsonSupport.immSeqFormat
-import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.core.data.{DataObject, PlainStaticObject, StaticCollection, GeoFeature, GeoTrack, FeatureCollection, Position, Circle, Polygon}
-import se.lu.nateko.cp.meta.utils.async.traverseFut
-import spray.json.RootJsonFormat
-import spray.json.given
-
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -21,6 +17,10 @@ import java.nio.file.{Files, Paths}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.concurrent.Future
 import scala.util.Using
+import se.lu.nateko.cp.cpauth.core.JsonSupport.immSeqFormat
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.{Circle, DataObject, FeatureCollection, GeoFeature, GeoTrack, PlainStaticObject, Polygon, Position, StaticCollection}
+import se.lu.nateko.cp.meta.utils.async.traverseFut
 
 object TestGeoFeatures:
 
@@ -91,7 +91,7 @@ object TestGeoFeatures:
 	end prepareTestInput
 
 	// https://meta.icos-cp.eu/collections/QoycFqCewfdEXsTxZMU6XJH9
-	val geoFeatures = Vector(
+	val geoFeatures: Vector[GeoFeature] = Vector(
 		Position(48.476357,2.780096,Some(103.0f),Some("FR-Fon"),None),
 		Circle(Position(48.475868,2.780064,None,None,None),25.2,None,None),
 		Circle(Position(48.476095,2.77934,None,None,None),25.2,None,None),
@@ -114,7 +114,7 @@ object TestGeoFeatures:
 		Position(48.473986,2.783961,None,None,None)),Some("TA"),None)
 	)
 
-	val oceanGeoTracks = Vector(
+	val oceanGeoTracks: Vector[GeoTrack] = Vector(
 		GeoTrack(
 			Vector(
 				Position(57.438,10.545,None,None,None),
@@ -187,7 +187,7 @@ object TestGeoFeatures:
 	)
 
 	// https://meta.icos-cp.eu/objects/qtCBVnL4CL_GGscXknBHLPFN	
-	val modisWithFewerPoints = Vector(
+	val modisWithFewerPoints: Vector[FeatureCollection] = Vector(
 		FeatureCollection(
 			Vector(
 				Position(-22.283,133.249,None,Some("AU-ASM"),None),
@@ -221,7 +221,7 @@ object TestGeoFeatures:
 	)
 
 	// https://metalocal.icos-cp.eu/objects/DwQ18YNv6YN4ELts5LwmbQZw
-	val modisWithMorePoints = FeatureCollection(
+	val modisWithMorePoints: FeatureCollection = FeatureCollection(
 			Vector(
 				Position(51.971,4.927,None,Some("NL-Ca1"),None),
 				Position(52.003611,4.805556,None,Some("NL-Haa"),None),

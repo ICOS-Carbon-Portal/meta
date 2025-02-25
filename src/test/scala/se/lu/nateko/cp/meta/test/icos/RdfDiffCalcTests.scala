@@ -1,6 +1,7 @@
 package se.lu.nateko.cp.meta.test.icos
 
 import eu.icoscp.envri.Envri
+import java.net.URI
 import org.eclipse.rdf4j.model.{Statement, ValueFactory}
 import org.scalatest.GivenWhenThen
 import org.scalatest.funspec.AnyFunSpec
@@ -13,8 +14,6 @@ import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
-import java.net.URI
-
 import RdfDiffCalcTests.*
 
 class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
@@ -26,10 +25,10 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	type A = ATC.type
 	import AtcConf.{makeId => aId}
 
-	val jane = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
-	val se = CountryCode.unapply("SE").get
+	val jane: TcPerson[A] = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
+	val se: CountryCode = CountryCode.unapply("SE").get
 
-	val airCpStation = TcStation[A](
+	val airCpStation: TcStation[A] = TcStation[A](
 		cpId = UriId("AIR1"),
 		tcId = aId("43"),
 		core = Station(

@@ -7,17 +7,16 @@ import org.scalatest
 import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
-import se.lu.nateko.cp.meta.api.CloseableIterator
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.IterableHasAsScala
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 @tags.DbTest
 class QueryTests extends AsyncFunSpec {
 
-	lazy val db = TestDb()
+	lazy val db: TestDb = TestDb()
 
-	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext) = {
+	def timedExecution[T](f: Future[T], executedFunction: String, info: Informer)(using ExecutionContext): Future[T] = {
 		val start = System.currentTimeMillis()
 		f.onComplete{_ => 
 			val end = System.currentTimeMillis()
@@ -31,7 +30,7 @@ class QueryTests extends AsyncFunSpec {
 
 	def describeQfull(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int
-	)(transformResult: CloseableIterator[BindingSet] => IndexedSeq[BindingSet])(sampleMaker: RowExpectation) =
+	)(transformResult: CloseableIterator[BindingSet] => IndexedSeq[BindingSet])(sampleMaker: RowExpectation): Unit =
 		describe(descr){
 			
 			given rows: Rows = for (
@@ -75,7 +74,7 @@ class QueryTests extends AsyncFunSpec {
 
 	def describeQ(
 		q: String, descr: String, expectRows: Int, sampleIndex: Int, sortColumn: String = ""
-	)(sampleMaker: RowExpectation) =
+	)(sampleMaker: RowExpectation): Unit =
 		describeQfull(q, descr, expectRows, sampleIndex){
 			if (sortColumn.isEmpty) _.toIndexedSeq
 			else _.toIndexedSeq.sortBy(_.getValue(sortColumn).stringValue)

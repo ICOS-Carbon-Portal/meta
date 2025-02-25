@@ -1,14 +1,13 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
+import java.sql.{BatchUpdateException, PreparedStatement, Timestamp}
+import java.time.Instant
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
-
-import java.sql.{BatchUpdateException, PreparedStatement, Timestamp}
-import java.time.Instant
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
 
@@ -65,7 +64,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 	private def allUpdQuery = s"SELECT * FROM $logName ORDER BY id"
 	def updates: CloseableIterator[RdfUpdate] = rdfUpdateIterator(allUpdQuery).plain
 	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = rdfUpdateIterator(allUpdQuery).timed
-	def updatesFromId(id: Int) = rdfUpdateIterator(s"SELECT * FROM $logName WHERE id >= $id ORDER BY id").plain
+	def updatesFromId(id: Int): ResultSetIterator[RdfUpdate] = rdfUpdateIterator(s"SELECT * FROM $logName WHERE id >= $id ORDER BY id").plain
 
 	private def rdfUpdateIterator(query: String) = new RdfUpdateResultSetIterator(getConnection, factory, query)
 

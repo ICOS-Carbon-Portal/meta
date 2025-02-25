@@ -4,15 +4,14 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
+import java.nio.file.Path
+import scala.concurrent.Future
+import scala.util.Try
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.metaflow.cities.CitiesMetaFlow
 import se.lu.nateko.cp.meta.metaflow.icos.IcosMetaFlow
 import se.lu.nateko.cp.meta.{CitiesMetaFlowConfig, CpmetaConfig, IcosMetaFlowConfig, MetaDb}
-
-import java.nio.file.Path
-import scala.concurrent.Future
-import scala.util.Try
 
 trait MetaUploadService:
 	def getTableSink(tableId: String, user: UserId): Try[Sink[ByteString, Future[IOResult]]]

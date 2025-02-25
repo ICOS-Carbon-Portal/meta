@@ -1,8 +1,8 @@
 package se.lu.nateko.cp.meta.instanceserver
 
-import org.eclipse.rdf4j.model.{IRI, Value}
-
+import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import scala.util.Try
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 
 class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceServer:
 
@@ -19,12 +19,12 @@ class WriteNotifyingInstanceServer(val inner: InstanceServer) extends InstanceSe
 
 
 	def factory = inner.factory
-	def getStatements(subj: Option[IRI], pred: Option[IRI], obj: Option[Value]) = inner.getStatements(subj, pred, obj)
-	def makeNewInstance(prefix: IRI) = inner.makeNewInstance(prefix)
+	def getStatements(subj: Option[IRI], pred: Option[IRI], obj: Option[Value]): CloseableIterator[Statement] = inner.getStatements(subj, pred, obj)
+	def makeNewInstance(prefix: IRI): IRI = inner.makeNewInstance(prefix)
 	def readContexts = inner.readContexts
 	def writeContext = inner.writeContext
-	def withContexts(read: Seq[IRI], write: IRI) = inner.withContexts(read, write)
-	override def getConnection() = inner.getConnection()
+	def withContexts(read: Seq[IRI], write: IRI): InstanceServer = inner.withContexts(read, write)
+	override def getConnection(): TriplestoreConnection & SparqlRunner = inner.getConnection()
 
 	override def shutDown(): Unit = inner.shutDown()
 

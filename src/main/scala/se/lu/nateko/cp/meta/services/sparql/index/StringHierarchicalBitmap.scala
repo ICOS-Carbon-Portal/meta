@@ -25,7 +25,7 @@ object StringHierarchicalBitmap:
 			else 1
 		}
 
-	def apply(geo: Geo[String]) =
+	def apply(geo: Geo[String]): HierarchicalBitmap[String] =
 		given Geo[String] = geo
 		new HierarchicalBitmap[String](0, None)
 

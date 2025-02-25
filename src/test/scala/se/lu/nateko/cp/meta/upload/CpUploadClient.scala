@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
+import spray.json.RootJsonFormat
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -10,18 +12,16 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequ
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink}
+import java.net.URI
+import java.nio.file.Path
+import scala.collection.immutable.Seq
+import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.DataObject
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.utils.akkahttp.responseToDone
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto, UploadDto}
-import spray.json.RootJsonFormat
-
-import java.net.URI
-import java.nio.file.Path
-import scala.collection.immutable.Seq
-import scala.concurrent.Future
 
 class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSystem) extends CpmetaJsonProtocol{
 
@@ -43,8 +43,8 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 				entity = entity
 		)}
 
-	def objMetaUploadReq(dto: ObjectUploadDto) = metaUploadReq(dto)
-	def collUploadReq(dto: StaticCollectionDto) = metaUploadReq(dto)
+	def objMetaUploadReq(dto: ObjectUploadDto): Future[HttpRequest] = metaUploadReq(dto)
+	def collUploadReq(dto: StaticCollectionDto): Future[HttpRequest] = metaUploadReq(dto)
 
 	def fileUploadReq(file: FileInfo): HttpRequest = {
 		val entity = HttpEntity(ContentTypes.`application/octet-stream`, FileIO.fromPath(file.path))
@@ -60,13 +60,13 @@ class CpUploadClient(conf: CpUploadClient.Config)(implicit val system: ActorSyst
 		.flatMap(req => http.singleRequest(req))
 		.flatMap(responseToDone("uploading single meta"))
 
-	def uploadSingleObjMeta(dto: ObjectUploadDto) = uploadSingleMeta(dto)
-	def uploadSingleCollMeta(dto: StaticCollectionDto) = uploadSingleMeta(dto)
+	def uploadSingleObjMeta(dto: ObjectUploadDto): Future[Done] = uploadSingleMeta(dto)
+	def uploadSingleCollMeta(dto: StaticCollectionDto): Future[Done] = uploadSingleMeta(dto)
 
 	def uploadSingleObject(dto: ObjectUploadDto, file: FileInfo): Future[Done] = uploadSingleMeta(dto).flatMap(_ => uploadSingleFile(file))
 
 	def uploadMultiMetas(dtos: Seq[ObjectUploadDto]): Future[Done] = executeSequentially(dtos)(dto => uploadSingleMeta(dto)).map(_ => Done)
-	def uploadMultiObjs(objs: Seq[ObjectUploadInfo]) = executeSequentially(objs){case (dto, file) => uploadSingleObject(dto, file)}
+	def uploadMultiObjs(objs: Seq[ObjectUploadInfo]): Future[Done] = executeSequentially(objs){case (dto, file) => uploadSingleObject(dto, file)}
 
 	def uploadSingleFile(file: FileInfo): Future[Done] = http
 		.singleRequest(fileUploadReq(file))

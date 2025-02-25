@@ -1,11 +1,10 @@
 package se.lu.nateko.cp.meta.test.metaflow.cities
 
+import java.nio.file.Paths
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.metaflow.cities.MidLowCostMetaSource.parseStation
 import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource.parseFromCsv
-
-import java.nio.file.Paths
 
 
 class MidLowCostMetaSourceTest extends AnyFunSpec:

@@ -130,7 +130,7 @@ class GeoCovMergerTests extends AnyFunSpec:
 		assertApproxCovers(merged, geoms)
 
 
-	def assertApproxCovers(cover: LabeledJtsGeo, gs: Seq[LabeledJtsGeo]) =
+	def assertApproxCovers(cover: LabeledJtsGeo, gs: Seq[LabeledJtsGeo]): Unit =
 		val areaTolerance = cover.geom.getArea * 0.002 // due to point simplification
 		for g <- gs do
 			val uncoveredArea = g.geom.difference(cover.geom).getArea

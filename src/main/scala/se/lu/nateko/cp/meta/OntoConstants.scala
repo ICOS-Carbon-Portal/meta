@@ -5,7 +5,7 @@ import java.net.URI
 object OntoConstants:
 	val CpmetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 
-	def getOntologyUrl(suffix: String) = URI(s"$CpmetaPrefix$suffix")
+	def getOntologyUrl(suffix: String): URI = URI(s"$CpmetaPrefix$suffix")
 
 	val zipFormatSuff = "zipArchive"
 	val excelFormatSuff = "excel"
@@ -13,9 +13,9 @@ object OntoConstants:
 	val netCdfTsFormatSuff = "netcdfTimeSeries"
 
 	object FormatUris:
-		val zipArchive = getOntologyUrl(zipFormatSuff)
-		val excel = getOntologyUrl(excelFormatSuff)
-		val netCdf = getOntologyUrl(netCdfFormatSuff)
-		val netCdfTimeSeries = getOntologyUrl(netCdfTsFormatSuff)
+		val zipArchive: URI = getOntologyUrl(zipFormatSuff)
+		val excel: URI = getOntologyUrl(excelFormatSuff)
+		val netCdf: URI = getOntologyUrl(netCdfFormatSuff)
+		val netCdfTimeSeries: URI = getOntologyUrl(netCdfTsFormatSuff)
 
 end OntoConstants

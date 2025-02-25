@@ -2,9 +2,8 @@ package se.lu.nateko.cp.meta.services.sparql.index
 
 import org.eclipse.rdf4j.model.IRI
 import org.locationtech.jts.geom.Geometry
-import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
-
 import scala.language.implicitConversions
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 
 final case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
 
@@ -18,7 +17,7 @@ object Nothing extends Filter
 final case class Exists(prop: Property) extends Filter
 final case class CategFilter[T <: AnyRef](category: CategProp{type ValueType = T}, values: Seq[T]) extends Filter
 final case class GeneralCategFilter[T](category: CategProp{type ValueType = T}, condition: T => Boolean) extends Filter{
-	override def toString = s"GeneralCategFilter($category)"
+	override def toString: String = s"GeneralCategFilter($category)"
 	def testUnsafe(v: AnyRef): Boolean = condition(v.asInstanceOf[category.ValueType])
 }
 

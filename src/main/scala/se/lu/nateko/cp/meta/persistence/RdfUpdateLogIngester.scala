@@ -1,11 +1,10 @@
 package se.lu.nateko.cp.meta.persistence
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.repository.Repository
+import scala.util.{Try, Using}
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-
-import scala.util.{Try, Using}
 
 
 object RdfUpdateLogIngester:

@@ -1,10 +1,9 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
+import java.time.{LocalDate, LocalDateTime}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.ingestion.badm.*
 import se.lu.nateko.cp.meta.ingestion.badm.Parser.*
-
-import java.time.{LocalDate, LocalDateTime}
 
 class ParserTests extends AnyFunSpec{
 

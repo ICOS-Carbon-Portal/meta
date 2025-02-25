@@ -4,11 +4,10 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntology}
 import org.semanticweb.owlapi.search.EntitySearcher
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import se.lu.nateko.cp.meta.ResourceDto
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{TSC, getValues}
 import se.lu.nateko.cp.meta.utils.owlapi.*
-
-import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 trait InstanceLabeler:
 
@@ -22,7 +21,7 @@ trait InstanceLabeler:
 	final def getRdfsComment(instUri: IRI)(using TSC): Option[String] =
 		getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
 
-	final def getInfo(instUri: IRI)(using TSC) = ResourceDto(
+	final def getInfo(instUri: IRI)(using TSC): ResourceDto = ResourceDto(
 		displayName = getLabel(instUri),
 		uri = java.net.URI.create(instUri.stringValue),
 		comment = getRdfsComment(instUri)
@@ -50,7 +49,7 @@ object Labeler{
 	def getRdfsComment(entity: OWLEntity, onto: OWLOntology): Option[String] =
 		getAnnotation(entity, getFactory(onto).getRDFSComment, onto)
 
-	def getInfo(entity: OWLEntity, onto: OWLOntology) = ResourceDto(
+	def getInfo(entity: OWLEntity, onto: OWLOntology): ResourceDto = ResourceDto(
 		displayName = getLabel(entity, onto),
 		uri = entity.getIRI.toURI,
 		comment = getRdfsComment(entity, onto)

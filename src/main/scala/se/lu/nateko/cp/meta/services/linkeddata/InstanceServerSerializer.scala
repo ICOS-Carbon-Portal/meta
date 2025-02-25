@@ -4,25 +4,24 @@ import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarsha
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes}
 import akka.stream.StreamDetachedException
 import akka.stream.scaladsl.StreamConverters
+import java.io.IOException
 import org.eclipse.rdf4j.model.impl.SimpleNamespace
 import org.eclipse.rdf4j.model.vocabulary.{ OWL, RDF, RDFS, XSD }
 import org.eclipse.rdf4j.model.{Namespace, Statement}
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
-import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-
-import java.io.IOException
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 
 object InstanceServerSerializer {
 
 	private val utf8 = HttpCharsets.`UTF-8`
 
-	val turtleContType = getContType("text/turtle", ".ttl")
-	val xmlContType = getContType("application/rdf+xml", ".rdf")
+	val turtleContType: ContentType = getContType("text/turtle", ".ttl")
+	val xmlContType: ContentType = getContType("application/rdf+xml", ".rdf")
 	private val basicNamespaces = Seq(XSD.NS, OWL.NS, RDFS.NS, RDF.NS)
 
 
@@ -38,8 +37,8 @@ object InstanceServerSerializer {
 
 	val marshaller: ToResponseMarshaller[InstanceServer] = statementProdMarshaller
 		.compose(is => new StatementProducer{
-			def statements = is.getStatements(None, None, None)
-			def namespaces = {
+			def statements: CloseableIterator[Statement] = is.getStatements(None, None, None)
+			def namespaces: Iterable[Namespace] = {
 				val ns = new SimpleNamespace("", is.writeContext.stringValue)
 
 				val readNss = is.readContexts.diff(Seq(is.writeContext)).map{uri =>
@@ -53,7 +52,7 @@ object InstanceServerSerializer {
 
 	val statementIterMarshaller: ToResponseMarshaller[() => CloseableIterator[Statement]] = statementProdMarshaller
 		.compose(stMaker => new StatementProducer{
-			def statements = stMaker()
+			def statements: CloseableIterator[Statement] = stMaker()
 			def namespaces = basicNamespaces
 		})
 

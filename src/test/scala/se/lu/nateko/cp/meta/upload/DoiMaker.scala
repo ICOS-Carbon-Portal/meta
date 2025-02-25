@@ -1,16 +1,17 @@
 package se.lu.nateko.cp.meta.upload
 
+import se.lu.nateko.cp.doi.*
+import se.lu.nateko.cp.doi.meta.*
+
+import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, DoiMemberConfig, PlainJavaDoiHttp}
+
 import akka.Done
 import akka.actor.ActorSystem
-import se.lu.nateko.cp.doi.*
-import se.lu.nateko.cp.doi.core.{DoiClient, DoiClientConfig, DoiMemberConfig, PlainJavaDoiHttp}
-import se.lu.nateko.cp.doi.meta.*
+import java.net.URI
+import scala.concurrent.Future
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
-
-import java.net.URI
-import scala.concurrent.Future
 
 class DoiMaker(password: String)(implicit val system: ActorSystem){
 
@@ -37,9 +38,9 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 object DoiMaker{
 
-	val ccby4 = Rights("CC BY 4.0", Some(CpVocab.CCBY4.toString))
-	val etc = GenericName("ICOS Ecosystem Thematic Centre")
-	val atc = GenericName("ICOS Atmosphere Thematic Centre")
+	val ccby4: Rights = Rights("CC BY 4.0", Some(CpVocab.CCBY4.toString))
+	val etc: GenericName = GenericName("ICOS Ecosystem Thematic Centre")
+	val atc: GenericName = GenericName("ICOS Atmosphere Thematic Centre")
 
 	def coolDoi(hash: Sha256Sum): String = {
 		val id: Long = hash.getBytes.take(8).foldLeft(0L){(acc, b) => (acc << 8) + b}

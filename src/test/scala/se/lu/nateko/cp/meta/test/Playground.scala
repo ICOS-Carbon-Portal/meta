@@ -1,9 +1,13 @@
 package se.lu.nateko.cp.meta.test
 
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Terminated}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
+import java.net.URI
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import se.lu.nateko.cp.cpauth.core.EmailSender
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.api.HandleNetClient
@@ -11,11 +15,6 @@ import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
 import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
-
-import java.net.URI
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 
 
 object Playground {
@@ -31,9 +30,9 @@ object Playground {
 	)
 
 	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))
-	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
+	val citer: CitationClientImpl = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
 
-	def stop() = system.terminate()
+	def stop(): Future[Terminated] = system.terminate()
 
 	def create(postfix: String, targetUrl: String): Unit = wait{
 		handles.createOrRecreate(postfix, new java.net.URI(targetUrl))
@@ -102,7 +101,7 @@ object Playground {
 		}
 	}
 
-	def mailSender =
+	def mailSender: EmailSender =
 		val conf = ConfigLoader.default.stationLabelingService.get.mailing
 		EmailSender(conf)
 

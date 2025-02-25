@@ -1,8 +1,7 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
-import se.lu.nateko.cp.meta.api.CloseableIterator
-
 import java.sql.{Connection, ResultSet}
+import se.lu.nateko.cp.meta.api.CloseableIterator
 
 class ResultSetIterator[T](connectionFactory: () => Connection, resultFactory: ResultSet => T, selectQuery: String) extends CloseableIterator[T]{
 	private val conn = connectionFactory()

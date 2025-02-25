@@ -9,12 +9,11 @@ import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceRes
 import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
 import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
-import se.lu.nateko.cp.meta.utils.async.ok
-
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
+import se.lu.nateko.cp.meta.utils.async.ok
 
 import index.IndexData
 

@@ -79,10 +79,7 @@ object SchemaOrg:
 		sparqlUriSeq(sparqler, query, "dobj")
 	end dataObjs
 
-	def dataObjsByCountry(sparqler: SparqlRunner, countryCode: String)(using envriConf: EnvriConfig): Seq[URI] =
-		if (countryCode.length != 2  || !countryCode.forall(char => char.isLetter) || !CountryCode.unapply(countryCode.toUpperCase).isDefined)
-			throw new IllegalArgumentException("Undefined country code.")
-
+	def dataObjsByCountry(sparqler: SparqlRunner, countryCode: CountryCode)(using envriConf: EnvriConfig): Seq[URI] =
 		val specs: Iterator[String] = getDataObjsSpecs(sparqler)
 
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -92,7 +89,7 @@ object SchemaOrg:
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith/cpmeta:countryCode ?countryCode .
-		|	FILTER (?countryCode = "$countryCode")
+		|	FILTER (?countryCode = "${countryCode.code}")
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 		|}
 		|order by desc(?submTime)""".stripMargin

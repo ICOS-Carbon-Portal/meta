@@ -81,9 +81,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
-		statements: StatementSource
-	): Unit = {
+	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import statement.{subj, pred, obj, isAssertion}
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
@@ -220,7 +218,7 @@ final class IndexData(nObjects: Int)(
 											case _ =>
 					else if
 						deprecated.contains(oe.idx) && // this was to prevent needless repo access
-						!statements.hasStatement(null, isNextVersionOf, obj)
+						!StatementSource.hasStatement(null, isNextVersionOf, obj)
 					then deprecated.remove(oe.idx)
 				}
 
@@ -236,7 +234,7 @@ final class IndexData(nObjects: Int)(
 							val deprecated = boolBitmap(DeprecationFlag)
 
 							val directPrevVers: IndexedSeq[Int] =
-								statements.getStatements(subj, isNextVersionOf, null)
+								StatementSource.getStatements(subj, isNextVersionOf, null)
 									.flatMap(st => getDataObject(st.getObject).map(_.idx))
 									.toIndexedSeq
 
@@ -341,8 +339,8 @@ final class IndexData(nObjects: Int)(
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
-	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using statements: StatementSource): Boolean =
-		statements.getStatements(obj, vocab.dcterms.hasPart, null)
+	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using StatementSource): Boolean =
+		StatementSource.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => getDataObject(member).map: oe =>
 						oe.isNextVersion = true
@@ -351,10 +349,8 @@ final class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using
-		statements: StatementSource
-	): Option[Int] =
-		statements.getStatements(null, vocab.dcterms.hasPart, deprecator)
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using StatementSource): Option[Int] =
+		StatementSource.getStatements(null, vocab.dcterms.hasPart, deprecator)
 			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
 			.toIndexedSeq
 			.headOption

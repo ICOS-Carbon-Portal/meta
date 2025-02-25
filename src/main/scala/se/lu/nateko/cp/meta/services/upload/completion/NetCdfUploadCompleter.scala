@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.NetCdfExtract
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
@@ -18,7 +18,7 @@ private class NetCdfUploadCompleter(
 	metaVocab: CpmetaVocab
 )(using Envri) extends PidMinter(handles, vocab):
 
-	import TriplestoreConnection.getStatements
+	import StatementSource.getStatements
 	private val factory = vocab.factory
 
 	override def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate] =

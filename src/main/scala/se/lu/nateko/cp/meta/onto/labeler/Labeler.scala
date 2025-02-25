@@ -6,7 +6,7 @@ import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntolo
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.ResourceDto
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getValues
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.getValues
 import se.lu.nateko.cp.meta.utils.owlapi.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsScala

@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, GeoFeature, GeoJson, OptionalOneOrSeq, TimeInterval, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.{hasStatement, resourceHasType, getSingleUri}
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.{MetadataException, UnauthorizedUploadException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
@@ -31,7 +32,6 @@ def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 
 class UploadValidator(servers: DataObjectInstanceServers):
 	import servers.{ metaVocab, vocab, metaReader, lenses }
-	import TriplestoreConnection.*
 	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, GlobConn}
 	given vf: ValueFactory = metaVocab.factory
 	private val scoped = ScopedValidator(vocab, metaVocab)

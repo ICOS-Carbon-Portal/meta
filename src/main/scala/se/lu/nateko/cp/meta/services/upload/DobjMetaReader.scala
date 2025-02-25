@@ -4,8 +4,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList, parseJsonStringArray}
@@ -15,7 +14,7 @@ import scala.util.Try
 
 
 trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
-	import TriplestoreConnection.*
+	import StatementSource.*
 	import RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 	def getSpecification(spec: IRI)(using DocConn): Validated[DataObjectSpec] =

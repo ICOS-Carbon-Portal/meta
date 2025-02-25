@@ -4,7 +4,7 @@ import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.slf4j.LoggerFactory
 import play.twirl.api.Html
 import se.lu.nateko.cp.cpauth.core.{EmailSender, UserId}
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStringValues, getStatements}
 import se.lu.nateko.cp.meta.services.{IllegalLabelingStatusException, UnauthorizedStationUpdateException}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -17,7 +17,7 @@ trait LifecycleService:
 
 	import LifecycleService.*
 	import LabelingDb.{ProvConn, LblAppConn}
-	import TriplestoreConnection.{getStringValues, getStatements}
+	
 
 	private val log = LoggerFactory.getLogger(getClass())
 	private val mailer = EmailSender(config.mailing)

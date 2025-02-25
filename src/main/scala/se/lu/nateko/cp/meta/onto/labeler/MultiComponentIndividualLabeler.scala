@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.onto.labeler
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import org.semanticweb.owlapi.model.{IRI as OWLIRI, OWLObjectProperty}
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{getValues}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.getValues
 
 class MultiComponentIndividualLabeler(
 	components: Seq[DisplayComponent],

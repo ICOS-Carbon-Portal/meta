@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DobjLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.getStatements
 import se.lu.nateko.cp.meta.services.upload.{MetadataUpdater, StatementsProducer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.printAsJsonArray
@@ -22,7 +23,6 @@ private class TimeSeriesUploadCompleter(
 )(using Envri) extends PidMinter(handles, vocab):
 
 	private val factory = vocab.factory
-	import TriplestoreConnection.{getStatements}
 
 	override def getUpdates(hash: Sha256Sum)(using tsc: TriplestoreConnection): Seq[RdfUpdate] =
 		given DobjConn = lens(using tsc)

@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{GeoFeature, GeoJson, LatLonBox, Position, flattenToSeq}
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
@@ -38,7 +38,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 	//TODO Write a test for this, at least to control the number of statements to avoid accidental regressions
 	def getObjStatements(meta: ObjectUploadDto, submittingOrg: URI)(using Envri, TriplestoreConnection): Seq[Statement] =
 		import meta.hashSum
-		import TriplestoreConnection.getValues
+		import StatementSource.getValues
 
 		val objectUri = vocab.getStaticObject(hashSum)
 

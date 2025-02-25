@@ -5,15 +5,14 @@ import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.UpdateExecutionException
 import org.semanticweb.owlapi.model.IRI as OwlIri
 import se.lu.nateko.cp.meta.*
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Try}
 
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import TriplestoreConnection.{getPropValueHolders, getStatements, getTypes}
+import StatementSource.{getPropValueHolders, getStatements, getTypes}
 
 class InstOnto (instServer: InstanceServer, val onto: Onto):
 

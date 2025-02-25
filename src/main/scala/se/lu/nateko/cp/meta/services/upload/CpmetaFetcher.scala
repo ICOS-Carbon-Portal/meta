@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -15,7 +14,7 @@ import java.net.URI
 
 
 trait CpmetaReader:
-	import TriplestoreConnection.*
+	import StatementSource.*
 	import RdfLens.{MetaConn, DobjConn, DocConn, ItemConn}
 
 	val metaVocab: CpmetaVocab

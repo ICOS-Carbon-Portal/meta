@@ -5,8 +5,15 @@ import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.api.RdfLens.{CollConn, DocConn}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.{
+	resourceHasType,
+	getSingleString,
+	getOptionalUri,
+	getPropValueHolders,
+	getUriValues,
+	getSingleUri,
+	getOptionalString
+}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*

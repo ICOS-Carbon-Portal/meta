@@ -90,130 +90,259 @@ trait TriplestoreConnection extends AutoCloseable, StatementSource:
 
 object TriplestoreConnection:
 	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
-	private type Source = StatementSource
 
-	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: Source): CloseableIterator[Statement] =
+	private def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: StatementSource): CloseableIterator[Statement] =
 		source.getStatements(subject, predicate, obj)
 
-	def getStatements(subject: IRI)(using Source): IndexedSeq[Statement] = getStatements(subject, null, null).toIndexedSeq
+	private def getStatements(subject: IRI)(using StatementSource): IndexedSeq[Statement] = getStatements(subject, null, null).toIndexedSeq
 
-	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: Source): Boolean =
+	private def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: StatementSource): Boolean =
 		source.hasStatement(subject, predicate, obj)
 
-	def resourceHasType(res: IRI, tpe: IRI)(using Source): Boolean = hasStatement(res, RDF.TYPE, tpe)
+	private def resourceHasType(res: IRI, tpe: IRI)(using StatementSource): Boolean = hasStatement(res, RDF.TYPE, tpe)
 
-	def getValues(instUri: IRI, propUri: IRI)(using Source): IndexedSeq[Value] =
+	private def getValues(instUri: IRI, propUri: IRI)(using StatementSource): IndexedSeq[Value] =
 		getStatements(instUri, propUri, null).map(_.getObject).toIndexedSeq
 
-	def getPropValueHolders(prop: IRI, v: Value)(using Source): IndexedSeq[IRI] =
+	private def getPropValueHolders(prop: IRI, v: Value)(using StatementSource): IndexedSeq[IRI] =
 		getStatements(null, prop, v)
 			.map(_.getSubject)
 			.collect{case subj: IRI => subj}
 			.toIndexedSeq
 
-	def getTypes(res: IRI)(using Source): IndexedSeq[IRI] = getValues(res, RDF.TYPE).collect:
+	private def getTypes(res: IRI)(using StatementSource): IndexedSeq[IRI] = getValues(res, RDF.TYPE).collect:
 		case classUri: IRI => classUri
 
-	def getLiteralValues(subj: IRI, pred: IRI, dType: IRI)(using Source): IndexedSeq[String] = getValues(subj, pred)
+	private def getLiteralValues(subj: IRI, pred: IRI, dType: IRI)(using StatementSource): IndexedSeq[String] = getValues(subj, pred)
 		.collect:
 			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
 		.distinct
 
-	def getUriValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[IRI] =
+	private def getUriValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[IRI] =
 		getValues(subj, pred).collect{case uri: IRI => uri}.distinct
 
-	def getStringValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[String] =
+	private def getStringValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[String] =
 		getLiteralValues(subj, pred, XSD.STRING)
 
-	def getIntValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[Int] =
+	private def getIntValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Int] =
 		getLiteralValues(subj, pred, XSD.INTEGER).flatMap(_.toIntOption)
 
-	def getLongValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[Long] =
+	private def getLongValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Long] =
 		getLiteralValues(subj, pred, XSD.LONG).flatMap(_.toLongOption)
 
-	def getDoubleValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[Double] =
+	private def getDoubleValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Double] =
 		getLiteralValues(subj, pred, XSD.DOUBLE).flatMap(_.toDoubleOption)
 
-	def getFloatValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[Float] =
+	private def getFloatValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Float] =
 		getLiteralValues(subj, pred, XSD.FLOAT).flatMap(_.toFloatOption)
 
-	def getUriLiteralValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[JavaUri] =
+	private def getUriLiteralValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[JavaUri] =
 		getLiteralValues(subj, pred, XSD.ANYURI).map(new JavaUri(_))
 
 
 	def validate[T](
-		getter: (IRI, IRI) => Source ?=> IndexedSeq[T],
+		getter: (IRI, IRI) => StatementSource ?=> IndexedSeq[T],
 		subj: IRI,
 		pred: IRI,
 		card: CardinalityExpectation
-	)(using Source): Validated[IndexedSeq[T]] = Validated(getter(subj, pred)).flatMap: vals =>
+	)(using StatementSource): Validated[IndexedSeq[T]] = Validated(getter(subj, pred)).flatMap: vals =>
 		vals.validateSize(card, s"Expected ${card.descr} values of property $pred for resource $subj, but got ${vals.length}")
 	end validate
 
 
-	def getSingleUri[C <: Source](subj: IRI, pred: IRI)(using C): Validated[IRI] =
+	def getSingleUri[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[IRI] =
 		validate(getUriValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getOptionalUri[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[IRI]] =
+	def getOptionalUri[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[IRI]] =
 		validate(getUriValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getLabeledResource[C <: Source](subj: IRI, pred: IRI)(using C): Validated[UriResource] =
+	def getLabeledResource[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[UriResource] =
 		getSingleUri(subj, pred).flatMap(getLabeledResource)
 
-	def getLabeledResource[C <: Source](uri: IRI)(using C): Validated[UriResource] =
+	def getLabeledResource[C <: StatementSource](uri: IRI)(using C): Validated[UriResource] =
 		getOptionalString[C](uri, RDFS.LABEL).map: label =>
 			UriResource(uri.toJava, label, getStringValues(uri, RDFS.COMMENT))
 
-	def getOptionalString[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[String]] =
+	def getOptionalString[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[String]] =
 		validate(getStringValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getSingleString[C <: Source](subj: IRI, pred: IRI)(using C): Validated[String] =
+	def getSingleString[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[String] =
 		validate(getStringValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getSingleInt[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Int] =
+	def getSingleInt[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Int] =
 		validate(getIntValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getOptionalInt[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Int]] =
+	def getOptionalInt[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Int]] =
 		validate(getIntValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getOptionalLong[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Long]] =
+	def getOptionalLong[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Long]] =
 		validate(getLongValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getOptionalDouble[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Double]] =
+	def getOptionalDouble[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Double]] =
 		validate(getDoubleValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getOptionalFloat[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Float]] =
+	def getOptionalFloat[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Float]] =
 		validate(getFloatValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getOptionalBool[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Boolean]] =
+	def getOptionalBool[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Boolean]] =
 		validate(getLiteralValues(_, _, XSD.BOOLEAN), subj, pred, AtMostOne)
 			.map(_.headOption.map(_.toLowerCase == "true"))
 
-	def getSingleDouble[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Double] =
+	def getSingleDouble[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Double] =
 		validate(getDoubleValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getInstantValues[C <: Source](subj: IRI, pred: IRI)(using C): IndexedSeq[Instant] =
+	private def getInstantValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Instant] =
 		getLiteralValues(subj, pred, XSD.DATETIME).map(parseInstant)
 
-	def getOptionalInstant[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[Instant]] =
+	def getOptionalInstant[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Instant]] =
 		validate(getInstantValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getSingleInstant[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Instant] =
+	private def getSingleInstant[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Instant] =
 		validate(getInstantValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getOptionalLocalDate[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[LocalDate]] =
+	def getOptionalLocalDate[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[LocalDate]] =
 		validate(getLiteralValues(_, _, XSD.DATE), subj, pred, AtMostOne).map(_.headOption.map(LocalDate.parse))
 
-	def getSingleUriLiteral[C <: Source](subj: IRI, pred: IRI)(using C): Validated[JavaUri] =
+	def getSingleUriLiteral[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[JavaUri] =
 		validate(getUriLiteralValues, subj, pred, ExactlyOne).map(_.head)
 
-	def getOptionalUriLiteral[C <: Source](subj: IRI, pred: IRI)(using C): Validated[Option[JavaUri]] =
+	def getOptionalUriLiteral[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[JavaUri]] =
 		validate(getUriLiteralValues, subj, pred, AtMostOne).map(_.headOption)
 
-	def getHashsum[C <: Source](dataObjUri: IRI, pred: IRI)(using C): Validated[Sha256Sum] =
+	def getHashsum[C <: StatementSource](dataObjUri: IRI, pred: IRI)(using C): Validated[Sha256Sum] =
 		for
 			hashLits <- validate(getLiteralValues(_, _, XSD.BASE64BINARY), dataObjUri, pred, ExactlyOne)
 			hash <- Validated.fromTry(Sha256Sum.fromBase64(hashLits.head))
 		yield hash
 
 end TriplestoreConnection
+
+
+object StatementSource:
+	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
+
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: StatementSource): CloseableIterator[Statement] =
+		source.getStatements(subject, predicate, obj)
+
+	def getStatements(subject: IRI)(using StatementSource): IndexedSeq[Statement] = getStatements(subject, null, null).toIndexedSeq
+
+	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: StatementSource): Boolean =
+		source.hasStatement(subject, predicate, obj)
+
+	def resourceHasType(res: IRI, tpe: IRI)(using StatementSource): Boolean = hasStatement(res, RDF.TYPE, tpe)
+
+	def getValues(instUri: IRI, propUri: IRI)(using StatementSource): IndexedSeq[Value] =
+		getStatements(instUri, propUri, null).map(_.getObject).toIndexedSeq
+
+	def getPropValueHolders(prop: IRI, v: Value)(using StatementSource): IndexedSeq[IRI] =
+		getStatements(null, prop, v)
+			.map(_.getSubject)
+			.collect{case subj: IRI => subj}
+			.toIndexedSeq
+
+	def getTypes(res: IRI)(using StatementSource): IndexedSeq[IRI] = getValues(res, RDF.TYPE).collect:
+		case classUri: IRI => classUri
+
+	def getLiteralValues(subj: IRI, pred: IRI, dType: IRI)(using StatementSource): IndexedSeq[String] = getValues(subj, pred)
+		.collect:
+			case lit: Literal if(lit.getDatatype === dType) => lit.stringValue
+		.distinct
+
+	def getUriValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[IRI] =
+		getValues(subj, pred).collect{case uri: IRI => uri}.distinct
+
+	def getStringValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[String] =
+		getLiteralValues(subj, pred, XSD.STRING)
+
+	def getIntValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Int] =
+		getLiteralValues(subj, pred, XSD.INTEGER).flatMap(_.toIntOption)
+
+	def getLongValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Long] =
+		getLiteralValues(subj, pred, XSD.LONG).flatMap(_.toLongOption)
+
+	def getDoubleValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Double] =
+		getLiteralValues(subj, pred, XSD.DOUBLE).flatMap(_.toDoubleOption)
+
+	def getFloatValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Float] =
+		getLiteralValues(subj, pred, XSD.FLOAT).flatMap(_.toFloatOption)
+
+	def getUriLiteralValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[JavaUri] =
+		getLiteralValues(subj, pred, XSD.ANYURI).map(new JavaUri(_))
+
+
+	def validate[T](
+		getter: (IRI, IRI) => StatementSource ?=> IndexedSeq[T],
+		subj: IRI,
+		pred: IRI,
+		card: CardinalityExpectation
+	)(using StatementSource): Validated[IndexedSeq[T]] = Validated(getter(subj, pred)).flatMap: vals =>
+		vals.validateSize(card, s"Expected ${card.descr} values of property $pred for resource $subj, but got ${vals.length}")
+	end validate
+
+
+	def getSingleUri[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[IRI] =
+		validate(getUriValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalUri[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[IRI]] =
+		validate(getUriValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getLabeledResource[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[UriResource] =
+		getSingleUri(subj, pred).flatMap(getLabeledResource)
+
+	def getLabeledResource[C <: StatementSource](uri: IRI)(using C): Validated[UriResource] =
+		getOptionalString[C](uri, RDFS.LABEL).map: label =>
+			UriResource(uri.toJava, label, getStringValues(uri, RDFS.COMMENT))
+
+	def getOptionalString[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[String]] =
+		validate(getStringValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getSingleString[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[String] =
+		validate(getStringValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getSingleInt[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Int] =
+		validate(getIntValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalInt[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Int]] =
+		validate(getIntValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalLong[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Long]] =
+		validate(getLongValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalDouble[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Double]] =
+		validate(getDoubleValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalFloat[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Float]] =
+		validate(getFloatValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getOptionalBool[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Boolean]] =
+		validate(getLiteralValues(_, _, XSD.BOOLEAN), subj, pred, AtMostOne)
+			.map(_.headOption.map(_.toLowerCase == "true"))
+
+	def getSingleDouble[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Double] =
+		validate(getDoubleValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getInstantValues[C <: StatementSource](subj: IRI, pred: IRI)(using C): IndexedSeq[Instant] =
+		getLiteralValues(subj, pred, XSD.DATETIME).map(parseInstant)
+
+	def getOptionalInstant[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[Instant]] =
+		validate(getInstantValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getSingleInstant[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Instant] =
+		validate(getInstantValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalLocalDate[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[LocalDate]] =
+		validate(getLiteralValues(_, _, XSD.DATE), subj, pred, AtMostOne).map(_.headOption.map(LocalDate.parse))
+
+	def getSingleUriLiteral[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[JavaUri] =
+		validate(getUriLiteralValues, subj, pred, ExactlyOne).map(_.head)
+
+	def getOptionalUriLiteral[C <: StatementSource](subj: IRI, pred: IRI)(using C): Validated[Option[JavaUri]] =
+		validate(getUriLiteralValues, subj, pred, AtMostOne).map(_.headOption)
+
+	def getHashsum[C <: StatementSource](dataObjUri: IRI, pred: IRI)(using C): Validated[Sha256Sum] =
+		for
+			hashLits <- validate(getLiteralValues(_, _, XSD.BASE64BINARY), dataObjUri, pred, ExactlyOne)
+			hash <- Validated.fromTry(Sha256Sum.fromBase64(hashLits.head))
+		yield hash
+
+end StatementSource

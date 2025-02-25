@@ -90,8 +90,6 @@ trait TriplestoreConnection extends AutoCloseable, StatementSource:
 
 object TriplestoreConnection:
 	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
-	type TSC = StatementSource
-	type TS = TriplestoreConnection
 	private type Source = StatementSource
 
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: Source): CloseableIterator[Statement] =

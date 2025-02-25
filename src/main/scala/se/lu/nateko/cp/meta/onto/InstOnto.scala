@@ -12,7 +12,8 @@ import java.net.URI
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Try}
 
-import TriplestoreConnection.*
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import TriplestoreConnection.{getPropValueHolders, getStatements, getTypes}
 
 class InstOnto (instServer: InstanceServer, val onto: Onto):
 
@@ -129,12 +130,12 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		rdfUpdates.flatMap(instServer.applyAll(_)())
 
 	
-	private def hasStatement(statement: Statement)(using conn: TSC): Boolean =
+	private def hasStatement(statement: Statement)(using conn: StatementSource): Boolean =
 		statement.getSubject match
 			case subj: IRI => conn.hasStatement(subj, statement.getPredicate, statement.getObject)
 			case _ => false
 
-	private def updateDtoToStatement(update: UpdateDto)(using TSC): Statement =
+	private def updateDtoToStatement(update: UpdateDto)(using StatementSource): Statement =
 		val classUri = InstOnto.getSingleType(update.subject.toRdf)
 
 		val obj: Value = getPropInfo(update.predicate, classUri.toJava) match{
@@ -157,7 +158,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 			case _ => onto.getPropInfo(propUri, classUri)
 		}
 
-	private def updateDtoToRdfUpdate(update: UpdateDto)(using TSC) =
+	private def updateDtoToRdfUpdate(update: UpdateDto)(using StatementSource) =
 		RdfUpdate(updateDtoToStatement(update), update.isAssertion)
 
 end InstOnto
@@ -167,7 +168,7 @@ object InstOnto:
 	 * returns Some type IRI if any, None if none, and throws an AssertionError if the instance has more than one type.
 	 * The type owl:NamedIndividual is disregarded.
 	 */
-	def getSingleTypeIfAny(instUri: IRI)(using TSC): Option[IRI] =
+	def getSingleTypeIfAny(instUri: IRI)(using StatementSource): Option[IRI] =
 
 		val types = getTypes(instUri).filter(_ != OWL.NAMEDINDIVIDUAL).distinct
 
@@ -175,7 +176,7 @@ object InstOnto:
 		types.headOption
 
 
-	def getSingleType(instUri: IRI)(using TSC): IRI =
+	def getSingleType(instUri: IRI)(using StatementSource): IRI =
 		val typeIfAny = getSingleTypeIfAny(instUri)
 		assert(typeIfAny.isDefined, s"Instance $instUri has no type")
 		typeIfAny.get

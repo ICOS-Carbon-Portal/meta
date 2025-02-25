@@ -5,6 +5,7 @@ import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -226,13 +227,13 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		Validated.sequence(seqV)
 
 
-	protected def getTcId[T <: TC](uri: IRI)(using tcConf: TcConf[T], conn: TSC): Validated[Option[TcId[T]]] =
+	protected def getTcId[T <: TC](uri: IRI)(using tcConf: TcConf[T], conn: StatementSource): Validated[Option[TcId[T]]] =
 		val tcIdPred = tcConf.tcIdPredicate(metaVocab)
 		getOptionalString(uri, tcIdPred).map(_.map(tcConf.makeId))
 
 
 	private def stationClass[T <: TC](using tcConf: TcConf[T]): IRI = tcConf.stationClass(metaVocab)
 
-	private def getDirectClassMembers(cls: IRI)(using TSC): IndexedSeq[IRI] = getPropValueHolders(RDF.TYPE, cls)
+	private def getDirectClassMembers(cls: IRI)(using StatementSource): IndexedSeq[IRI] = getPropValueHolders(RDF.TYPE, cls)
 
 end IcosMetaInstancesFetcher

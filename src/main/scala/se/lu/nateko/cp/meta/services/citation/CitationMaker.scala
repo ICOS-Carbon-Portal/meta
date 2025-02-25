@@ -8,7 +8,7 @@ import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -38,7 +38,7 @@ class CitationMaker(
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
 	import Validated.getOrElseV
-	import TriplestoreConnection.*
+	import StatementSource.*
 	import RdfLens.{DobjConn, DocConn, MetaConn}
 	private given envriConfs: EnvriConfigs = coreConf.envriConfigs
 

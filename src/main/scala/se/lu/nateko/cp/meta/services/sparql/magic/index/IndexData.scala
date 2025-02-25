@@ -98,6 +98,10 @@ final class IndexData(nObjects: Int)(
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
 								addStat(oe, initOk)
+								// Insert spec keywords into obj index
+								val specKeywords = StatementSource.getValues(spec, hasKeywords)
+								log.info(s"spec keywords: $specKeywords")
+
 							} else if (spec === oe.spec) {
 								removeStat(oe, initOk)
 								oe.spec = null
@@ -105,6 +109,9 @@ final class IndexData(nObjects: Int)(
 						}
 					}
 				}
+
+			case `hasAssociatedProject` =>
+				// TODO: Deal with project keywords similar to spec
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>

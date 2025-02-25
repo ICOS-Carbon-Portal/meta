@@ -6,7 +6,7 @@ import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab

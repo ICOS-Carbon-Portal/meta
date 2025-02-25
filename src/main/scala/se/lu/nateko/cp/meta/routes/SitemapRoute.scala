@@ -34,7 +34,7 @@ object SitemapRoute {
 					)
 				)
 			~
-			path("""([a-zA-Z]{2})-data-sitemap\.xml""".r):
+			path("""([A-Z]{2})-data-sitemap\.xml""".r):
 				case CountryCode(countryCode) =>
 					completeSitemapRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode))
 				case _ => reject

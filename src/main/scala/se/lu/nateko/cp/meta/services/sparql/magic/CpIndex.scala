@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement, StatEntry, emptyBitmap}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -16,10 +16,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.io.Serializable
 import java.time.Instant
-import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.jdk.CollectionConverters.{IteratorHasAsScala, IterableHasAsScala}
 
 import CpIndex.*
 
@@ -138,14 +137,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
-	def flush(): Unit = if !queue.isEmpty then writeLocked:
-		if !queue.isEmpty then
-			val list = new ArrayList[TripleStatement](UpdateQueueSize)
-			queue.drainTo(list)
+	def flush(): Unit = {
+		if !queue.isEmpty then writeLocked:
 			sail.accessEagerly {
-				data.processTriples(list, vocab)
+				data.processTriples(queue.asScala, vocab)
 			}
-			list.clear()
+			queue.clear()
+	}
 end CpIndex
 
 

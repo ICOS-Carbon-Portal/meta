@@ -81,8 +81,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	// TODO: Make private and fix IndexDataTest
-	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
+	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using
 		statements: StatementSource
 	): Unit = {
 		import statement.{subj, pred, obj, isAssertion}

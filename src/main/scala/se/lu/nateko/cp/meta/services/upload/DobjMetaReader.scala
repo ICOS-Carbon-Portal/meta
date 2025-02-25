@@ -193,7 +193,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				documentation = documentation
 			)
 
-	private def getLabelingDate(stat: IRI)(using conn: TSC): Validated[Option[LocalDate]] =
+	private def getLabelingDate(stat: IRI)(using conn: TS): Validated[Option[LocalDate]] =
 		//one-off local hack to avoid extensive config for fetching the labeling date from the labeling app metadata layer
 		val vf = conn.factory
 

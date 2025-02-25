@@ -20,15 +20,25 @@ class IndexDataTest extends AnyFunSuite {
 		// hence we can leave things unimplemented.
 		given StatementSource with
 			def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
+					subject: IRI | Null,
+					predicate: IRI | Null,
+					obj: Value | Null
+				): CloseableIterator[Statement] = ???
 			def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
 
 		// Insert hasName triple
 		data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), true, vocab)
+				Seq(TripleStatement(subject, vocab.hasName, factory.createLiteral("test name"), true)),
+				vocab
+			)
 		assert(data.objs.length == 1)
 		assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 		// Remove it
 		data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), false, vocab)
+				Seq(TripleStatement(subject, vocab.hasName, factory.createLiteral("test name"), false)),
+				vocab
+			)
 		assert(data.getObjEntry(hash).fileName === None)
 		assert(data.objs.length == 1)
 	}

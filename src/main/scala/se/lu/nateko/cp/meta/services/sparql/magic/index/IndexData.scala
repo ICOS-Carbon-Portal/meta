@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
 import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
 
 import java.time.Instant
-import java.util.ArrayList
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 
@@ -76,8 +75,8 @@ final class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriples(triples: ArrayList[TripleStatement], vocab: CpmetaVocab)(using StatementSource) = {
-		triples.forEach { statement =>
+	def processTriples(triples: Iterable[TripleStatement], vocab: CpmetaVocab)(using StatementSource) = {
+		triples.foreach { statement =>
 			processTriple(statement, vocab)
 		}
 	}

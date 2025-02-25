@@ -61,19 +61,10 @@ trait InstanceServer extends AutoCloseable:
 		val updates = MetadataUpdater.diff(from, to, factory)
 		applyAll(updates)()
 
-
 end InstanceServer
 
-trait StatementSource {
-	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
-	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
 
-	final def hasStatement(st: Statement): Boolean = st.getSubject() match
-		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
-		case _ => false
-}
-
-trait TriplestoreConnection extends AutoCloseable, StatementSource:
+trait TriplestoreConnection extends AutoCloseable, StatementSource {
 	def primaryContext: IRI
 	def readContexts: Seq[IRI]
 	def factory: ValueFactory
@@ -86,9 +77,20 @@ trait TriplestoreConnection extends AutoCloseable, StatementSource:
 	final def primaryContextView: TriplestoreConnection =
 		if readContexts.length == 1 && readContexts.head == primaryContext then this
 		else withContexts(primaryContext, Seq(primaryContext))
+}
 
 
-object StatementSource:
+trait StatementSource {
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
+	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
+
+	final def hasStatement(st: Statement): Boolean = st.getSubject() match
+		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
+		case _ => false
+}
+
+
+object StatementSource {
 	import Validated.CardinalityExpectation.{AtMostOne, ExactlyOne}
 
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using source: StatementSource): CloseableIterator[Statement] =
@@ -214,5 +216,4 @@ object StatementSource:
 			hashLits <- validate(getLiteralValues(_, _, XSD.BASE64BINARY), dataObjUri, pred, ExactlyOne)
 			hash <- Validated.fromTry(Sha256Sum.fromBase64(hashLits.head))
 		yield hash
-
-end StatementSource
+}

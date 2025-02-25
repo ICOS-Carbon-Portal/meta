@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.routes
 
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.{Route}
+import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, envriConf}
 import java.net.URI
@@ -34,10 +34,11 @@ object SitemapRoute {
 					)
 				)
 			~
-			path("""([A-Z]{2})-data-sitemap\.xml""".r):
-				case CountryCode(countryCode) =>
-					completeSitemapRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode))
-				case _ => reject
+			path("""([a-zA-Z]{2})-data-sitemap\.xml""".r):
+				pathCountryCode => pathCountryCode.toUpperCase match
+					case CountryCode(countryCode) =>
+						completeSitemapRequest(SchemaOrg.dataObjsByCountry(sparqler, countryCode))
+					case _ => reject
 			~
 			path(DataSitemap):
 				completeSitemapRequest(SchemaOrg.dataObjs(sparqler))

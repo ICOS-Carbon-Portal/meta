@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.instanceserver.StatementSource
 trait InstanceLabeler:
 
 	// rdfs:label is the default, to be overridden in some implementations
-	def getLabel(instUri: IRI)(using TriplestoreConnection): String =
+	def getLabel(instUri: IRI)(using StatementSource): String =
 		getRdfsLabel(instUri).getOrElse(instUri.stringValue)
 
 	final def getRdfsLabel(instUri: IRI)(using StatementSource): Option[String] =
@@ -24,7 +24,7 @@ trait InstanceLabeler:
 	final def getRdfsComment(instUri: IRI)(using StatementSource): Option[String] =
 		getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
 
-	final def getInfo(instUri: IRI)(using TriplestoreConnection) = ResourceDto(
+	final def getInfo(instUri: IRI)(using StatementSource) = ResourceDto(
 		displayName = getLabel(instUri),
 		uri = java.net.URI.create(instUri.stringValue),
 		comment = getRdfsComment(instUri)

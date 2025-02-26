@@ -98,17 +98,32 @@ final class IndexData(nObjects: Int)(
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
 								addStat(oe, initOk)
-								// Insert spec keywords into obj index
-								val specKeywords = StatementSource.getValues(spec, hasKeywords)
-								specKeywords.foreach(keyword =>
-									log.info(s"spec KW: ${keyword.stringValue()}")
-									updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
-								)
-
 							} else if (spec === oe.spec) {
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
+
+							// Insert spec keywords into obj index
+							val specKeywords = StatementSource.getStringValues(spec, hasKeywords)
+							specKeywords.foreach(keyword =>
+								updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+							)
+
+							val specProjects = StatementSource.getUriValues(spec, hasAssociatedProject)
+							specProjects.foreach(project => {
+								val projKeywords = StatementSource.getValues(project, hasKeywords)
+								if (projKeywords.length > 0) {
+									log.info(s"project, subj: $subj")
+									getDataObject(subj).foreach { oe =>
+										projKeywords.foreach(keyword =>
+											log.info(s"KW: ${keyword.stringValue()}")
+											updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
+										)
+									}
+									log.info(s"Proj: $project, keywords: $projKeywords")
+								}
+							})
+
 						}
 					}
 				}

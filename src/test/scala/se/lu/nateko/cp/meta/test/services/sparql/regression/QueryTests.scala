@@ -542,7 +542,7 @@ class QueryTests extends AsyncFunSpec {
 	}
 
 	describe("Magic query") {
-		it("filtering includes keywords from data object, associated project and spec") {
+		it("filters on keywords from data object, associated project and spec") {
 			val factory = db.repo.getValueFactory()
 
 			// An object which has the unique keyword: "test keyword"

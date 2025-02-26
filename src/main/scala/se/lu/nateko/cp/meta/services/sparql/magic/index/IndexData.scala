@@ -97,27 +97,7 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 
-							// Insert spec keywords into obj index
-							val specKeywords = StatementSource.getStringValues(spec, hasKeywords)
-							specKeywords.foreach(keyword =>
-								updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
-							)
-
-							val specProjects = StatementSource.getUriValues(spec, hasAssociatedProject)
-							specProjects.foreach(project => {
-								val projKeywords = StatementSource.getValues(project, hasKeywords)
-								if (projKeywords.length > 0) {
-									log.info(s"project, subj: $subj")
-									getDataObject(subj).foreach { oe =>
-										projKeywords.foreach(keyword =>
-											log.info(s"KW: ${keyword.stringValue()}")
-											updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
-										)
-									}
-									log.info(s"Proj: $project, keywords: $projKeywords")
-								}
-							})
-
+							addSpecKeywords(oe, spec, isAssertion, vocab)
 						}
 					}
 				}
@@ -126,16 +106,13 @@ final class IndexData(nObjects: Int)(
 				// Associated projects should always be IRI's, so crashing on other values is okay.
 				obj match {
 					case project: IRI => {
-						val projKeywords = StatementSource.getValues(project, hasKeywords)
+						val projKeywords = StatementSource.getStringValues(project, vocab.hasKeywords)
 						if (projKeywords.length > 0) {
-							log.info(s"project, subj: $subj")
 							getDataObject(subj).foreach { oe =>
-								projKeywords.foreach(keyword =>
-									log.info(s"KW: ${keyword.stringValue()}")
-									updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
-								)
+								projKeywords.foreach { keyword =>
+									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+								}
 							}
-							log.info(s"Proj: $project, keywords: $projKeywords")
 						}
 					}
 				}
@@ -327,6 +304,21 @@ final class IndexData(nObjects: Int)(
 
 			case _ =>
 		}
+	}
+
+	private def addSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
+		StatementSource
+	) = {
+		val specKeywords = StatementSource.getStringValues(spec, vocab.hasKeywords)
+		val specProjects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+
+		val specProjKeywords = specProjects.flatMap(project => {
+			StatementSource.getStringValues(project, vocab.hasKeywords)
+		})
+
+		Set.from(specKeywords ++ specProjKeywords).foreach(keyword =>
+			updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+		)
 	}
 
 	private def updateStrArrayProp(

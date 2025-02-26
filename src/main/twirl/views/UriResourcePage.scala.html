@@ -5,7 +5,7 @@
 @import landpagesnips._
 
 @(info: ResourceViewInfo)(implicit envri: Envri, conf: EnvriConfig)
-@ServerSidePage("Metadata Entity Page", Some(info.res.uri.toString)){
+@ServerSidePage("Metadata Entity Page", Some(info.res.label.getOrElse(info.res.uri.toString))){
 	<div class="row gy-2">
 		<div class="col-md-8">
 			<div class="row gy-2">

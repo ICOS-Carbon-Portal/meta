@@ -100,7 +100,10 @@ final class IndexData(nObjects: Int)(
 								addStat(oe, initOk)
 								// Insert spec keywords into obj index
 								val specKeywords = StatementSource.getValues(spec, hasKeywords)
-								log.info(s"spec keywords: $specKeywords")
+								specKeywords.foreach(keyword =>
+									log.info(s"spec KW: ${keyword.stringValue()}")
+									updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
+								)
 
 							} else if (spec === oe.spec) {
 								removeStat(oe, initOk)
@@ -111,7 +114,22 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` =>
-				// TODO: Deal with project keywords similar to spec
+				// Associated projects should always be IRI's, so crashing on other values is okay.
+				obj match {
+					case project: IRI => {
+						val projKeywords = StatementSource.getValues(project, hasKeywords)
+						if (projKeywords.length > 0) {
+							log.info(s"project, subj: $subj")
+							getDataObject(subj).foreach { oe =>
+								projKeywords.foreach(keyword =>
+									log.info(s"KW: ${keyword.stringValue()}")
+									updateCategSet(categMap(Keyword), keyword.stringValue(), oe.idx, isAssertion)
+								)
+							}
+							log.info(s"Proj: $project, keywords: $projKeywords")
+						}
+					}
+				}
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>

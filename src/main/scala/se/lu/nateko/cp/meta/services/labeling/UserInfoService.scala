@@ -13,7 +13,7 @@ import scala.util.Using
 trait UserInfoService:
 	self: StationLabelingService =>
 
-	import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.getStatements
+	import se.lu.nateko.cp.meta.instanceserver.StatementSource.getStatements
 
 	private val userToTcsLookup: Map[String, Seq[JavaURI]] = {
 		val userTcPairs = for(

@@ -5,18 +5,19 @@ import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{NetCdfExtract, SpatialTimeSeriesExtract, TimeSeriesExtract, UploadCompletionInfo}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 
 
 class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
 	import servers.{ metaVocab, vocab }
-	import TriplestoreConnection.{TSC, hasStatement}
+	import StatementSource.hasStatement
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
 		for
@@ -41,7 +42,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 	private def dobjLens(server: InstanceServer): DobjLens =
 		RdfLens.dobjLens(server.writeContext.toJava, server.readContexts.map(_.toJava))
 
-	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, TSC): Seq[RdfUpdate] =
+	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, StatementSource): Seq[RdfUpdate] =
 		val submissionUri = vocab.getSubmission(hash)
 		if hasStatement(submissionUri, metaVocab.prov.endedAtTime, null) then Nil
 		else
@@ -49,7 +50,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 			Seq(RdfUpdate(stopInfo, true))
 
 
-	private def getBytesSizeUpdates(hash: Sha256Sum, size: Long)(using Envri, TSC): Seq[RdfUpdate] =
+	private def getBytesSizeUpdates(hash: Sha256Sum, size: Long)(using Envri, StatementSource): Seq[RdfUpdate] =
 		val dobj = vocab.getStaticObject(hash)
 		if hasStatement(dobj, metaVocab.hasSizeInBytes, null) then Nil //byte size cannot change for same hash
 		else

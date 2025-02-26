@@ -7,12 +7,13 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, GeoFeature, GeoJson, OptionalOneOrSeq, TimeInterval, flattenToSeq}
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.{MetadataException, UnauthorizedUploadException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DataProductionDto, DataSubmitterConfig, DocObjectDto, GeoCoverage, GeoJsonString, ObjectUploadDto, StaticCollectionDto, UploadDto}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import StatementSource.{hasStatement, resourceHasType, getSingleUri}
 
 import java.net.URI
 import java.time.Instant
@@ -31,7 +32,6 @@ def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 
 class UploadValidator(servers: DataObjectInstanceServers):
 	import servers.{ metaVocab, vocab, metaReader, lenses }
-	import TriplestoreConnection.*
 	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, GlobConn}
 	given vf: ValueFactory = metaVocab.factory
 	private val scoped = ScopedValidator(vocab, metaVocab)
@@ -250,7 +250,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 
 	private def validateSpatialCoverage(meta: DataObjectDto)(using conn: DobjConn): Try[DataObjectDto] =
-		def coverageExistsIn(covUri: URI)(using TriplestoreConnection): Boolean =
+		def coverageExistsIn(covUri: URI)(using StatementSource): Boolean =
 			val cov = covUri.toRdf
 			hasStatement(cov, metaVocab.asGeoJSON, null) ||
 			resourceHasType(cov, metaVocab.latLonBoxClass) ||

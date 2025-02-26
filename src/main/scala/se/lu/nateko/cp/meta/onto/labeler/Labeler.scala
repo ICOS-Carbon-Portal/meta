@@ -5,24 +5,25 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntology}
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.ResourceDto
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{TSC, getValues}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.getValues
 import se.lu.nateko.cp.meta.utils.owlapi.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 
 trait InstanceLabeler:
 
 	// rdfs:label is the default, to be overridden in some implementations
-	def getLabel(instUri: IRI)(using TSC): String =
+	def getLabel(instUri: IRI)(using StatementSource): String =
 		getRdfsLabel(instUri).getOrElse(instUri.stringValue)
 
-	final def getRdfsLabel(instUri: IRI)(using TSC): Option[String] =
+	final def getRdfsLabel(instUri: IRI)(using StatementSource): Option[String] =
 		getValues(instUri, RDFS.LABEL).headOption.map(_.stringValue)
 
-	final def getRdfsComment(instUri: IRI)(using TSC): Option[String] =
+	final def getRdfsComment(instUri: IRI)(using StatementSource): Option[String] =
 		getValues(instUri, RDFS.COMMENT).headOption.map(_.stringValue)
 
-	final def getInfo(instUri: IRI)(using TSC) = ResourceDto(
+	final def getInfo(instUri: IRI)(using StatementSource) = ResourceDto(
 		displayName = getLabel(instUri),
 		uri = java.net.URI.create(instUri.stringValue),
 		comment = getRdfsComment(instUri)

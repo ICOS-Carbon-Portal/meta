@@ -6,8 +6,8 @@ import org.eclipse.rdf4j.model.{IRI, Resource, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.CollConn
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection.{getStatements, getUriValues}
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStatements, getUriValues}
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 

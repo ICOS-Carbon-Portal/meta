@@ -6,7 +6,7 @@ import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -52,7 +52,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		//Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
-			TriplestoreConnection.getStatements(null, null, null)
+			StatementSource.getStatements(null, null, null)
 			.foreach: s =>
 				put(RdfUpdate(s, true))
 				statementCount += 1

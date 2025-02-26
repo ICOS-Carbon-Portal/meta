@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.labeling
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingServiceConfig
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, FileStorageService, MetadataException, UnauthorizedStationUpdateException}
 
@@ -16,7 +16,7 @@ class StationLabelingService(
 	protected val config: LabelingServiceConfig
 ) extends UserInfoService with StationInfoService with FileService with LifecycleService:
 	import LabelingDb.{LblAppConn, ProvConn}
-	import TriplestoreConnection.{getStringValues, getUriValues, getOptionalString, getSingleString}
+	import StatementSource.{getStringValues, getUriValues, getOptionalString, getSingleString}
 
 	protected val db = LabelingDb(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),

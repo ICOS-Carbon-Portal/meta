@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.onto.labeler
 
 import org.eclipse.rdf4j.model.IRI
 import org.semanticweb.owlapi.model.{IRI as OwlIri, OWLOntology}
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -13,7 +13,7 @@ class UniversalLabeler(ontology: OWLOntology) extends InstanceLabeler:
 	private val cache = mutable.Map.empty[IRI, InstanceLabeler]
 	private val owlFactory = ontology.getOWLOntologyManager.getOWLDataFactory
 
-	override def getLabel(instUri: IRI)(using TriplestoreConnection): String =
+	override def getLabel(instUri: IRI)(using StatementSource): String =
 		try
 			val theType: IRI = InstOnto.getSingleType(instUri)
 

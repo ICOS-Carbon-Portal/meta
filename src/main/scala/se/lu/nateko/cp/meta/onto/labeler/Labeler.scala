@@ -5,7 +5,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntology}
 import org.semanticweb.owlapi.search.EntitySearcher
 import se.lu.nateko.cp.meta.ResourceDto
-import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.getValues
 import se.lu.nateko.cp.meta.utils.owlapi.*
 

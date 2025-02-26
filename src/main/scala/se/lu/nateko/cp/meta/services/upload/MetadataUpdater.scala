@@ -77,7 +77,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 	private val stickyPredicates =
 		import metaVocab.*
 		Seq(
-			hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue, dcterms.license,
+			hasNumberOfRows, hasActualColumnNames, hasMinValue, hasMaxValue,
 			hasSpatialCoverage, asGeoJSON, RDF.TYPE
 		)
 

@@ -592,7 +592,7 @@ write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscree
 	<div class="mb-3 licence-block">
 		<label class="form-label" for=@selectId>Licence @optional</label>
 		<select class="form-select" id=@selectId>
-			<option value="">(inherit default or keep current)</option>
+			<option value="">(inherit default)</option>
 			@for((licUrl, licName) <- licences){
 				<option value=@licUrl>@licName</option>
 			}

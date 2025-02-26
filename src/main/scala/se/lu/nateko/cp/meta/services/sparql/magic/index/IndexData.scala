@@ -61,13 +61,13 @@ final class IndexData(nObjects: Int)(
 			prop,
 			prop match {
 				/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
-				case FileName        => fileNameBm
-				case FileSize        => FileSizeHierarchicalBitmap(objs)
-				case SamplingHeight  => SamplingHeightHierarchicalBitmap(objs)
-				case DataStart       => dataStartBm
-				case DataEnd         => dataEndBm
+				case FileName => fileNameBm
+				case FileSize => FileSizeHierarchicalBitmap(objs)
+				case SamplingHeight => SamplingHeightHierarchicalBitmap(objs)
+				case DataStart => dataStartBm
+				case DataEnd => dataEndBm
 				case SubmissionStart => submStartBm
-				case SubmissionEnd   => submEndBm
+				case SubmissionEnd => submEndBm
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
@@ -75,13 +75,7 @@ final class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriples(triples: Iterable[TripleStatement], vocab: CpmetaVocab)(using StatementSource) = {
-		triples.foreach { statement =>
-			processTriple(statement, vocab)
-		}
-	}
-
-	private def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using StatementSource): Unit = {
+	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import statement.{subj, pred, obj, isAssertion}
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}

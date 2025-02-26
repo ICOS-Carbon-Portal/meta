@@ -7,7 +7,6 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{DataObjectSpec, DatasetType, GeoFeature, GeoJson, OptionalOneOrSeq, TimeInterval, flattenToSeq}
-import se.lu.nateko.cp.meta.instanceserver.StatementSource.{hasStatement, resourceHasType, getSingleUri}
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.services.{MetadataException, UnauthorizedUploadException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*

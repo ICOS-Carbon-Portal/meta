@@ -63,8 +63,12 @@ object SchemaOrg:
 
 	end docObjs
 
-	def dataObjs(sparqler: SparqlRunner)(using envriConf: EnvriConfig): Seq[URI] =
+	def dataObjs(sparqler: SparqlRunner, countryCode: Option[CountryCode])(using envriConf: EnvriConfig): Seq[URI] =
 		val specs: Iterator[String] = getDataObjsSpecs(sparqler)
+
+		val countryFilter = countryCode.fold(""): cc =>
+			s"""	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			|	?station cpmeta:countryCode "${cc.code}"^^xsd:string .""".stripMargin
 
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix prov: <http://www.w3.org/ns/prov#>
@@ -73,29 +77,12 @@ object SchemaOrg:
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+		|	${countryFilter}
 		|}
 		|order by desc(?submTime)""".stripMargin
 
 		sparqlUriSeq(sparqler, query, "dobj")
 	end dataObjs
-
-	def dataObjsByCountry(sparqler: SparqlRunner, countryCode: CountryCode)(using envriConf: EnvriConfig): Seq[URI] =
-		val specs: Iterator[String] = getDataObjsSpecs(sparqler)
-
-		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|prefix prov: <http://www.w3.org/ns/prov#>
-		|select ?dobj where {
-		|	VALUES ?spec {${specs.mkString("<", "> <", ">")}}
-		|	?dobj cpmeta:hasObjectSpec ?spec .
-		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
-		|	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith/cpmeta:countryCode ?countryCode .
-		|	FILTER (?countryCode = "${countryCode.code}")
-		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-		|}
-		|order by desc(?submTime)""".stripMargin
-
-		sparqlUriSeq(sparqler, query, "dobj")
-	end dataObjsByCountry
 
 	private def getDataObjsSpecs(sparqler: SparqlRunner) (using envriConf: EnvriConfig): Iterator[String] =
 		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

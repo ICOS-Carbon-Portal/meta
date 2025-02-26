@@ -18,7 +18,7 @@ import java.io.Serializable
 import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.{IteratorHasAsScala, IterableHasAsScala}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
 import org.eclipse.rdf4j.model.Statement
@@ -141,7 +141,9 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	def flush(): Unit = {
 		if !queue.isEmpty then writeLocked:
 			sail.accessEagerly {
-				data.processTriples(queue.asScala, vocab)
+				queue.forEach {
+					statement => data.processTriple(statement, vocab)
+				}
 			}
 			queue.clear()
 	}

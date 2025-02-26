@@ -587,19 +587,16 @@ class QueryTests extends AsyncFunSpec {
 			}
 
 			val List(objResult) = runSparqlSync(magicFilterQuery(objKeyword))
-			/*
-			val List(projResult) = runSparqlSync(magicFilterQuery(projKeyword))
-			val List(specResult) = runSparqlSync(magicFilterQuery(specKeyword))
-			*/
 
 			// Make sure we got the object we were looking for
 			assert(objResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
 
+			def findTargetObject(bindings: Iterable[BindingSet]) : Option[BindingSet] =
+				bindings.find(binds => binds.getBinding("obj").getValue().stringValue().endsWith(objectId))
+
 			// And all results should be equivalent
-			/*
-			assert(objResult == projResult)
-			assert(objResult == specResult)
-			*/
+			assert(findTargetObject(runSparqlSync(magicFilterQuery(specKeyword))) == Some(objResult))
+			assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
 		}
 	}
 

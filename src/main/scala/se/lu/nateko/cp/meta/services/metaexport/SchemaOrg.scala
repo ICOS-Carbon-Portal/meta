@@ -63,8 +63,7 @@ object SchemaOrg:
 
 	end docObjs
 
-	def dataObjs(sparqler: SparqlRunner)(using envriConf: EnvriConfig): Seq[URI] =
-
+	def dataObjs(sparqler: SparqlRunner, countryCode: Option[CountryCode])(using envriConf: EnvriConfig): Seq[URI] =
 		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?spec
 		|where{
@@ -78,6 +77,10 @@ object SchemaOrg:
 			Option(b.getValue("spec")).map(_.stringValue)
 		)
 
+		val countryFilter = countryCode.fold(""): cc =>
+			s"""	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+			|	?station cpmeta:countryCode "${cc.code}"^^xsd:string .""".stripMargin
+
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix prov: <http://www.w3.org/ns/prov#>
 		|select ?dobj where {
@@ -85,6 +88,7 @@ object SchemaOrg:
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+		|	${countryFilter}
 		|}
 		|order by desc(?submTime)""".stripMargin
 

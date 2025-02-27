@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, TripleStatement, StatEntry}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -21,6 +21,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexUpdate
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -84,7 +85,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
-	private val queue = new ArrayBlockingQueue[TripleStatement](UpdateQueueSize)
+	private val queue = new ArrayBlockingQueue[IndexUpdate](UpdateQueueSize)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -127,13 +128,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	def getObjEntry = data.getObjEntry
 
 	def put(statement: Statement, isAssertion: Boolean): Boolean = {
-		statement match {
-			case Rdf4jStatement(subj, pred, obj) => {
-				queue.put(TripleStatement(subj, pred, obj, isAssertion))
-				if(queue.remainingCapacity == 0) flush()
+		Rdf4jStatement.unapply(statement) match {
+			case Some(statement) => {
+				queue.put(IndexUpdate(statement, isAssertion))
+				if (queue.remainingCapacity == 0) flush()
 				true
 			}
-			case _ => false
+			case None => false
 		}
 	}
 
@@ -141,7 +142,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		if !queue.isEmpty then writeLocked:
 			sail.accessEagerly {
 				queue.forEach {
-					statement => data.processTriple(statement, vocab)
+					update => 
+						data.processUpdate(update, vocab)
 				}
 			}
 			queue.clear()

@@ -19,11 +19,12 @@ import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 
-final case class TripleStatement(
-	subj: IRI,
-	pred: IRI,
-	obj: Value,
-	isAssertion: Boolean
+// IndexUpdate is similar to se.lu.nateko.cp.meta.instanceserver.RdfUpdate,
+// but constrained to Rdf4jStatement rather than Statement.
+// TODO: If RdfUpdate is is changed to be more constrained, we can get rid of IndexUpdate.
+final case class IndexUpdate(
+	val statement: Rdf4jStatement,
+	val isAssertion: Boolean
 )
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
@@ -75,11 +76,12 @@ final class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processTriple(statement: TripleStatement, vocab: CpmetaVocab)(using StatementSource): Unit = {
-		import statement.{subj, pred, obj, isAssertion}
+	def processUpdate(update: IndexUpdate, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
+		import update.statement.{subj, pred, obj}
+		val isAssertion = update.isAssertion
 
 		pred match {
 			case `hasObjectSpec` =>

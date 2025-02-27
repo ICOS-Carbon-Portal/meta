@@ -64,7 +64,18 @@ object SchemaOrg:
 	end docObjs
 
 	def dataObjs(sparqler: SparqlRunner, countryCode: Option[CountryCode])(using envriConf: EnvriConfig): Seq[URI] =
-		val specs: Iterator[String] = getDataObjsSpecs(sparqler)
+		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|select ?spec
+		|where{
+		|	VALUES ?level { 2 3 }
+		|	?spec cpmeta:hasDataLevel ?level .
+		|	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+		|	FILTER(STRSTARTS(str(?spec), "${envriConf.metaItemPrefix}"))
+		|}""".stripMargin
+
+		val specs: Iterator[String] = sparqler.evaluateTupleQuery(SparqlQuery(specsQuery)).flatMap(b =>
+			Option(b.getValue("spec")).map(_.stringValue)
+		)
 
 		val countryFilter = countryCode.fold(""): cc =>
 			s"""	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
@@ -83,22 +94,6 @@ object SchemaOrg:
 
 		sparqlUriSeq(sparqler, query, "dobj")
 	end dataObjs
-
-	private def getDataObjsSpecs(sparqler: SparqlRunner) (using envriConf: EnvriConfig): Iterator[String] =
-		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|select ?spec
-		|where{
-		|	VALUES ?level { 2 3 }
-		|	?spec cpmeta:hasDataLevel ?level .
-		|	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
-		|	FILTER(STRSTARTS(str(?spec), "${envriConf.metaItemPrefix}"))
-		|}""".stripMargin
-
-		sparqler.evaluateTupleQuery(SparqlQuery(specsQuery)).flatMap(b =>
-			Option(b.getValue("spec")).map(_.stringValue)
-		)
-	end getDataObjsSpecs
-
 end SchemaOrg
 
 

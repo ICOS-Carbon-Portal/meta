@@ -61,10 +61,10 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 		//important that this is a val, not a def, otherwise throttle will work very wrongly
 		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
-		def statementAdded(s: Statement): Unit =
-			index.put(s, true)
+		def statementAdded(statement: Statement): Unit =
+			index.put(statement, true)
 			flushIndex()
-			s match
+			statement match
 				case Rdf4jStatement(dobj, pred, _) if pred === metaVocab.hasSizeInBytes =>
 					geo.onComplete:
 						case Success((geoIndex, events)) =>

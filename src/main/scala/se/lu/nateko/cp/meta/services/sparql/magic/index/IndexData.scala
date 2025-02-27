@@ -81,230 +81,232 @@ final class IndexData(nObjects: Int)(
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
 		import update.statement.{subj, pred, obj}
+		import ParsedStatement.*
 		val isAssertion = update.isAssertion
 
-		pred match {
-			case `hasObjectSpec` =>
-				obj match {
-					case spec: IRI => {
-						getDataObject(subj).foreach { oe =>
-							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
-
-							if (isAssertion) {
-								if (oe.spec != null) removeStat(oe, initOk)
-								oe.spec = spec
-								addStat(oe, initOk)
-							} else if (spec === oe.spec) {
-								removeStat(oe, initOk)
-								oe.spec = null
-							}
-
-							addSpecKeywords(oe, spec, isAssertion, vocab)
+		ParsedStatement(update.statement, vocab) match {
+			case AssociatedProject(project) => {
+				val projKeywords = StatementSource.getStringValues(project, vocab.hasKeywords)
+				if (projKeywords.length > 0) {
+					getDataObject(subj).foreach { oe =>
+						projKeywords.foreach { keyword =>
+							updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
 						}
 					}
 				}
+			}
 
-			case `hasAssociatedProject` =>
-				// Associated projects should always be IRI's, so crashing on other values is okay.
-				obj match {
-					case project: IRI => {
-						val projKeywords = StatementSource.getStringValues(project, vocab.hasKeywords)
-						if (projKeywords.length > 0) {
-							getDataObject(subj).foreach { oe =>
-								projKeywords.foreach { keyword =>
-									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+			case Unparsed =>
+				pred match {
+					case `hasObjectSpec` =>
+						obj match {
+							case spec: IRI => {
+								getDataObject(subj).foreach { oe =>
+									updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+
+									if (isAssertion) {
+										if (oe.spec != null) removeStat(oe, initOk)
+										oe.spec = spec
+										addStat(oe, initOk)
+									} else if (spec === oe.spec) {
+										removeStat(oe, initOk)
+										oe.spec = null
+									}
+
+									addSpecKeywords(oe, spec, isAssertion, vocab)
 								}
 							}
 						}
-					}
-				}
 
-			case `hasName` =>
-				getDataObject(subj).foreach { oe =>
-					val fName = obj.stringValue
-					if (isAssertion) oe.fName = fName
-					else if (oe.fName == fName) { oe.fName = null }
-					handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
-				}
+					case `hasName` =>
+						getDataObject(subj).foreach { oe =>
+							val fName = obj.stringValue
+							if (isAssertion) oe.fName = fName
+							else if (oe.fName == fName) { oe.fName = null }
+							handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
+						}
 
-			case `wasAssociatedWith` =>
-				subj match {
-					case CpVocab.Submission(hash) =>
-						val oe = getObjEntry(hash)
-						removeStat(oe, initOk)
-						oe.submitter = targetUri(obj, isAssertion)
-						if (isAssertion) addStat(oe, initOk)
-						obj match
-							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
+					case `wasAssociatedWith` =>
+						subj match {
+							case CpVocab.Submission(hash) =>
+								val oe = getObjEntry(hash)
+								removeStat(oe, initOk)
+								oe.submitter = targetUri(obj, isAssertion)
+								if (isAssertion) addStat(oe, initOk)
+								obj match
+									case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
 
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
-						removeStat(oe, initOk)
-						oe.station = targetUri(obj, isAssertion)
-						if (isAssertion) addStat(oe, initOk)
-						obj match
-							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
+							case CpVocab.Acquisition(hash) =>
+								val oe = getObjEntry(hash)
+								removeStat(oe, initOk)
+								oe.station = targetUri(obj, isAssertion)
+								if (isAssertion) addStat(oe, initOk)
+								obj match
+									case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
 
-					case _ =>
-				}
+							case _ =>
+						}
 
-			case `wasPerformedAt` => subj match {
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
-						removeStat(oe, initOk)
-						oe.site = targetUri(obj, isAssertion)
-						if (isAssertion) addStat(oe, initOk)
-						obj match
-							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
+					case `wasPerformedAt` => subj match {
+							case CpVocab.Acquisition(hash) =>
+								val oe = getObjEntry(hash)
+								removeStat(oe, initOk)
+								oe.site = targetUri(obj, isAssertion)
+								if (isAssertion) addStat(oe, initOk)
+								obj match
+									case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
 
-					case _ =>
-				}
+							case _ =>
+						}
 
-			case `hasStartTime` =>
-				ifDateTime(obj) { dt =>
-					getDataObject(subj).foreach { oe =>
-						oe.dataStart = dt
-						handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
-					}
-				}
+					case `hasStartTime` =>
+						ifDateTime(obj) { dt =>
+							getDataObject(subj).foreach { oe =>
+								oe.dataStart = dt
+								handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
+							}
+						}
 
-			case `hasEndTime` =>
-				ifDateTime(obj) { dt =>
-					getDataObject(subj).foreach { oe =>
-						oe.dataEnd = dt
-						handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
-					}
-				}
+					case `hasEndTime` =>
+						ifDateTime(obj) { dt =>
+							getDataObject(subj).foreach { oe =>
+								oe.dataEnd = dt
+								handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
+							}
+						}
 
-			case `startedAtTime` =>
-				ifDateTime(obj) { dt =>
-					subj match {
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
-							oe.dataStart = dt
-							handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
-						case CpVocab.Submission(hash) =>
-							val oe = getObjEntry(hash)
-							oe.submissionStart = dt
-							handleContinuousPropUpdate(SubmissionStart, dt, oe.idx, isAssertion)
-						case _ =>
-					}
-				}
+					case `startedAtTime` =>
+						ifDateTime(obj) { dt =>
+							subj match {
+								case CpVocab.Acquisition(hash) =>
+									val oe = getObjEntry(hash)
+									oe.dataStart = dt
+									handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
+								case CpVocab.Submission(hash) =>
+									val oe = getObjEntry(hash)
+									oe.submissionStart = dt
+									handleContinuousPropUpdate(SubmissionStart, dt, oe.idx, isAssertion)
+								case _ =>
+							}
+						}
 
-			case `endedAtTime` =>
-				ifDateTime(obj) { dt =>
-					subj match
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
-							oe.dataEnd = dt
-							handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
-						case CpVocab.Submission(hash) =>
-							val oe = getObjEntry(hash)
-							oe.submissionEnd = dt
-							handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
-						case _ =>
-				}
+					case `endedAtTime` =>
+						ifDateTime(obj) { dt =>
+							subj match
+								case CpVocab.Acquisition(hash) =>
+									val oe = getObjEntry(hash)
+									oe.dataEnd = dt
+									handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
+								case CpVocab.Submission(hash) =>
+									val oe = getObjEntry(hash)
+									oe.submissionEnd = dt
+									handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
+								case _ =>
+						}
 
-			case `isNextVersionOf` =>
-				getDataObject(obj).foreach { oe =>
-					val deprecated = boolBitmap(DeprecationFlag)
-					if isAssertion then
-						if !deprecated.contains(oe.idx) then // to prevent needless work
-							val subjIsDobj = getDataObject(subj).map { deprecator =>
-								deprecator.isNextVersion = true
-								// only fully-uploaded deprecators can actually deprecate:
-								if deprecator.size > -1 then
-									deprecated.add(oe.idx)
-									log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
-								else
-									log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
-							}.isDefined
-							if !subjIsDobj then
-								subj.toJava match
-									case Hash.Collection(_) =>
-										// proper collections are always fully uploaded
-										deprecated.add(oe.idx)
-									case _ => subj match
-											case CpVocab.NextVersColl(_) =>
-												if nextVersCollIsComplete(subj, vocab)
-												then deprecated.add(oe.idx)
-											case _ =>
-					else if
-						deprecated.contains(oe.idx) && // this was to prevent needless repo access
-						!StatementSource.hasStatement(null, isNextVersionOf, obj)
-					then deprecated.remove(oe.idx)
-				}
-
-			case `hasSizeInBytes` =>
-				ifLong(obj) { size =>
-					getDataObject(subj).foreach { oe =>
-						inline def isRetraction = oe.size == size && !isAssertion
-						if isAssertion then oe.size = size
-						else if isRetraction then oe.size = -1
-
-						if oe.isNextVersion then
-							log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+					case `isNextVersionOf` =>
+						getDataObject(obj).foreach { oe =>
 							val deprecated = boolBitmap(DeprecationFlag)
+							if isAssertion then
+								if !deprecated.contains(oe.idx) then // to prevent needless work
+									val subjIsDobj = getDataObject(subj).map { deprecator =>
+										deprecator.isNextVersion = true
+										// only fully-uploaded deprecators can actually deprecate:
+										if deprecator.size > -1 then
+											deprecated.add(oe.idx)
+											log.debug(s"Marked object ${deprecator.hash.id} as a deprecator of ${oe.hash.id}")
+										else
+											log.debug(s"Object ${deprecator.hash.id} wants to deprecate ${oe.hash.id} but is not fully uploaded yet")
+									}.isDefined
+									if !subjIsDobj then
+										subj.toJava match
+											case Hash.Collection(_) =>
+												// proper collections are always fully uploaded
+												deprecated.add(oe.idx)
+											case _ => subj match
+													case CpVocab.NextVersColl(_) =>
+														if nextVersCollIsComplete(subj, vocab)
+														then deprecated.add(oe.idx)
+													case _ =>
+							else if
+								deprecated.contains(oe.idx) && // this was to prevent needless repo access
+								!StatementSource.hasStatement(null, isNextVersionOf, obj)
+							then deprecated.remove(oe.idx)
+						}
 
-							val directPrevVers: IndexedSeq[Int] =
-								StatementSource.getStatements(subj, isNextVersionOf, null)
-									.flatMap(st => getDataObject(st.getObject).map(_.idx))
-									.toIndexedSeq
+					case `hasSizeInBytes` =>
+						ifLong(obj) { size =>
+							getDataObject(subj).foreach { oe =>
+								inline def isRetraction = oe.size == size && !isAssertion
+								if isAssertion then oe.size = size
+								else if isRetraction then oe.size = -1
 
-							directPrevVers.foreach { oldIdx =>
-								if isAssertion then deprecated.add(oldIdx)
-								else if isRetraction then deprecated.remove(oldIdx)
-								log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
+								if oe.isNextVersion then
+									log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
+									val deprecated = boolBitmap(DeprecationFlag)
+
+									val directPrevVers: IndexedSeq[Int] =
+										StatementSource.getStatements(subj, isNextVersionOf, null)
+											.flatMap(st => getDataObject(st.getObject).map(_.idx))
+											.toIndexedSeq
+
+									directPrevVers.foreach { oldIdx =>
+										if isAssertion then deprecated.add(oldIdx)
+										else if isRetraction then deprecated.remove(oldIdx)
+										log.debug(
+											s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated"
+										)
+									}
+									if directPrevVers.isEmpty then
+										getIdxsOfPrevVersThroughColl(subj, vocab) match
+											case None =>
+												log.warn(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
+											case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
+
+								if (size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx, isAssertion)
 							}
-							if directPrevVers.isEmpty then
-								getIdxsOfPrevVersThroughColl(subj, vocab) match
-									case None =>
-										log.warn(s"Object ${oe.hash.id} is marked as a deprecator but has no associated old versions")
-									case Some(throughColl) => if isAssertion then deprecated.add(throughColl)
+						}
 
-						if (size >= 0) handleContinuousPropUpdate(FileSize, size, oe.idx, isAssertion)
-					}
-				}
+					case `hasPart` => if isAssertion then
+							subj match
+								case CpVocab.NextVersColl(hashOfOld) => getDataObject(obj).foreach { oe =>
+										oe.isNextVersion = true
+										if oe.size > -1 then
+											boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+									}
+								case _ =>
 
-			case `hasPart` => if isAssertion then
-					subj match
-						case CpVocab.NextVersColl(hashOfOld) => getDataObject(obj).foreach { oe =>
-								oe.isNextVersion = true
-								if oe.size > -1 then
-									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+					case `hasSamplingHeight` => ifFloat(obj) { height =>
+							subj match {
+								case CpVocab.Acquisition(hash) =>
+									val oe = getObjEntry(hash)
+									if (isAssertion) oe.samplingHeight = height
+									else if (oe.samplingHeight == height) oe.samplingHeight = Float.NaN
+									handleContinuousPropUpdate(SamplingHeight, height, oe.idx, isAssertion)
+								case _ =>
 							}
-						case _ =>
+						}
 
-			case `hasSamplingHeight` => ifFloat(obj) { height =>
-					subj match {
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
-							if (isAssertion) oe.samplingHeight = height
-							else if (oe.samplingHeight == height) oe.samplingHeight = Float.NaN
-							handleContinuousPropUpdate(SamplingHeight, height, oe.idx, isAssertion)
-						case _ =>
-					}
-				}
+					case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
+							updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
+							updateHasVarList(oe.idx, isAssertion)
+						}
 
-			case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
-					updateHasVarList(oe.idx, isAssertion)
-				}
+					case `hasActualVariable` => obj match {
+							case CpVocab.VarInfo(hash, varName) =>
+								val oe = getObjEntry(hash)
+								updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
+								updateHasVarList(oe.idx, isAssertion)
+							case _ =>
+						}
 
-			case `hasActualVariable` => obj match {
-					case CpVocab.VarInfo(hash, varName) =>
-						val oe = getObjEntry(hash)
-						updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
-						updateHasVarList(oe.idx, isAssertion)
+					case `hasKeywords` =>
+						getDataObject(subj).foreach { oe =>
+							updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+						}
+
 					case _ =>
 				}
-
-			case `hasKeywords` =>
-				getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
-				}
-
-			case _ =>
 		}
 	}
 
@@ -449,3 +451,19 @@ private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
 		try mod(lit.floatValue)
 		catch case _: Throwable => () // ignoring wrong floats
 	case _ =>
+
+private enum ParsedStatement {
+	case AssociatedProject(project: IRI)
+	case Unparsed
+}
+
+private object ParsedStatement {
+	def apply(st: Rdf4jStatement, vocab: CpmetaVocab): ParsedStatement = {
+		import vocab.hasAssociatedProject
+
+		(st.subj, st.pred, st.obj) match {
+			case (_, `hasAssociatedProject`, project: IRI) => AssociatedProject(project)
+			case _ => Unparsed
+		}
+	}
+}

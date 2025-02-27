@@ -575,7 +575,7 @@ class QueryTests extends AsyncFunSpec {
 
 			// The combination of `hasObjectSpec` and `hasKeyword` is a
 			// minimal requirement for triggering the magic query path.
-			// `hasKeyword` is only available in the magic filtering query.
+			// The predicate `hasKeyword` is virtual, and only available in the magic filtering query.
 			def magicFilterQuery(keyword : String) = {
 				s"""
 					prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

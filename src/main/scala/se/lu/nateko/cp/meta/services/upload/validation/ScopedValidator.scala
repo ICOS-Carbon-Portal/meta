@@ -113,7 +113,10 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 				if allDuplicates.exists(deprecated.contains) then Success(dto)
 
 				else if dto.autodeprecateSameFilenameObjects then
-					withDeprecations(dto, deprecated ++ allDuplicates)
+					if validChangedTemporalCoverage(dto) then
+						withDeprecations(dto, deprecated ++ allDuplicates)
+					else
+						userFail("New temporal coverage must include temporal coverage of the objects being deprecated.")
 
 				else
 					userFail(
@@ -131,6 +134,34 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 			.filter(isComplete)
 			.toIndexedSeq
 			.nonEmpty
+
+	private def validChangedTemporalCoverage[Dto <: ObjectUploadDto](dto: Dto)(using Envri, DocConn | DobjConn): Boolean =
+
+		val newIntervalIncludesPrevious = for
+			dataDto <- dto.asOptInstanceOf[DataObjectDto]
+			timeSeries <- dataDto.specificInfo match
+				case Right(timeSeries) => Some(timeSeries)
+				case _ => None
+			newTimeInterval <- timeSeries.acquisitionInterval
+			newStart = newTimeInterval.start
+			newStop = newTimeInterval.stop
+			previousIris = getPropValueHolders(metaVocab.hasName, vf.createLiteral(dto.fileName))
+				.collect{case subj if isCompleted(subj) && !isDeprecated(subj) => subj}
+				.toIndexedSeq
+			aquiredByIris = previousIris.map(getSingleUri(_, metaVocab.wasAcquiredBy).result)
+				.collect{case Some(iri) => iri}
+			previousStarts = aquiredByIris.map(getSingleInstant(_, metaVocab.prov.startedAtTime).result)
+				.collect{case Some(iri) => iri}
+			previousStops = aquiredByIris.map(getSingleInstant(_, metaVocab.prov.endedAtTime).result)
+				.collect{case Some(iri) => iri}
+		yield
+			(previousStarts.isEmpty || !newStart.isAfter(previousStarts.min))
+				&& (previousStops.isEmpty || !newStop.isBefore(previousStops.max))
+
+		newIntervalIncludesPrevious.getOrElse(true)
+
+	end validChangedTemporalCoverage
+
 
 	def growingIsGrowing(
 		dto: ObjectUploadDto,

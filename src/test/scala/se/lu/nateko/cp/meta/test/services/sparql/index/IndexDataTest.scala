@@ -11,11 +11,6 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.Resource
 import org.roaringbitmap.buffer.MutableRoaringBitmap
-// import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-/*
-import org.eclipse.rdf4j.common.iteration.CloseableIteration
-import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jIterationIterator
- */
 
 class IndexDataTest extends AnyFunSuite {
 	val factory = SimpleValueFactory.getInstance()
@@ -45,18 +40,20 @@ class IndexDataTest extends AnyFunSuite {
 		assert(data.objs.length == 1)
 	}
 
-	test("Object keywords include associated ones from spec and project") {
+	test("Data object keywords are indexed from associated spec and project") {
 		// TODO: Introduce test factory for generating RDF values
 		// TODO: Generate random hash for objects
 		// TODO: Generate random project names
 		// TODO: Generate random spec names
 
 		val dataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W6")
-		val otherDataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W7")
 		val objectProject: IRI = projectIRI("project")
 		val specProject: IRI = projectIRI("spec-project")
 		val spec = specIRI("spec")
+
+		val otherDataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W7")
 		val otherSpec = specIRI("other-spec")
+		val otherSpecProject = specIRI("other-spec-project")
 
 		val data: IndexData = IndexData(20)()
 
@@ -65,18 +62,20 @@ class IndexDataTest extends AnyFunSuite {
 		// - A project associated with an associated spec
 		// - A directly associated project
 		val statements = Seq(
+			Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
 			Rdf4jStatement(dataObject, hasObjectSpec, spec),
 			Rdf4jStatement(dataObject, hasAssociatedProject, objectProject),
-			Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
 			Rdf4jStatement(spec, hasAssociatedProject, specProject),
 			Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")),
 			Rdf4jStatement(specProject, hasKeywords, factory.createLiteral("spec-project keyword")),
-			Rdf4jStatement(objectProject, hasKeywords, factory.createLiteral("object-project keyword"))
-
-			/*
+			Rdf4jStatement(objectProject, hasKeywords, factory.createLiteral("object-project keyword")),
+			//
+			// Add an object->spec->project chain with keywords for another object
 			Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword")),
-			Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("unrelated-spec keyword"))
-			 */
+			Rdf4jStatement(otherDataObject, hasObjectSpec, otherSpec),
+			Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other-spec keyword")),
+			Rdf4jStatement(otherSpec, hasAssociatedProject, otherSpecProject),
+			Rdf4jStatement(otherSpecProject, hasKeywords, factory.createLiteral("other-project-spec keyword"))
 		)
 
 		statements.foreach(statement =>
@@ -87,14 +86,19 @@ class IndexDataTest extends AnyFunSuite {
 		// For each keyword lookup, we expect the same bitmap
 		// containing only the ID of the object, which will be 0.
 		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
-		val otherObjectBitmap = Some(MutableRoaringBitmap.bitmapOf(1))
+		val otherObjectBitmap = MutableRoaringBitmap.bitmapOf(1)
 
 		val keywords = data.categMap(Keyword)
 		assert(keywords == Map(
 			"object keyword" -> objectBitmap,
 			"spec keyword" -> objectBitmap,
 			"spec-project keyword" -> objectBitmap,
-			"object-project keyword" -> objectBitmap
+			"object-project keyword" -> objectBitmap,
+			//
+			// Check keywords for other object
+			"other-object keyword" -> otherObjectBitmap,
+			"other-spec keyword" -> otherObjectBitmap,
+			"other-project-spec keyword" -> otherObjectBitmap
 		))
 	}
 

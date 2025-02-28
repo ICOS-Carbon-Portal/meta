@@ -52,7 +52,7 @@ class IndexDataTest extends AnyFunSuite {
 		val specProject: IRI = projectIRI("spec-project")
 		val spec = specIRI("spec")
 
-		val otherDataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W7")
+		val otherDataObject: IRI = objectIRI("iS2ubFLw7HNbyKz_pHcJ89uL")
 		val otherSpec = specIRI("other-spec")
 		val otherSpecProject = specIRI("other-spec-project")
 

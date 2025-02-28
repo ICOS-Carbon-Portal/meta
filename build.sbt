@@ -14,8 +14,6 @@ val commonScalacOptions = Seq(
 	"-Wunused:imports"
 )
 
-testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oNXELPQR")
-
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(

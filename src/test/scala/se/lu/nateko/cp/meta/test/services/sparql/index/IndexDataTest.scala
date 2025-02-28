@@ -12,9 +12,10 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.Resource
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
+private val factory = SimpleValueFactory.getInstance()
+
 class IndexDataTest extends AnyFunSuite {
-	val factory = SimpleValueFactory.getInstance()
-	val vocab = CpmetaVocab(factory)
+	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
 	test("ObjEntry.fileName is cleared when hasName statement is deleted") {
@@ -102,47 +103,46 @@ class IndexDataTest extends AnyFunSuite {
 			"other-project-spec keyword" -> otherObjectBitmap
 		))
 	}
+}
 
-	private def objectIRI(hash: String) = {
-		factory.createIRI(s"https://meta.icos-cp.eu/objects/$hash")
+private def objectIRI(hash: String) = {
+	factory.createIRI(s"https://meta.icos-cp.eu/objects/$hash")
+}
+
+private def projectIRI(name: String) = {
+	factory.createIRI(s"http://meta.icos-cp.eu/resources/projects/$name")
+}
+
+private def specIRI(name: String) = {
+	factory.createIRI(s"http://meta.icos-cp.eu/resources/cpmeta/$name")
+}
+
+class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSource {
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
+		val filtered = statements.filter(st =>
+			matching(subject, st.subj)
+				&& matching(predicate, st.pred)
+				&& matching(obj, st.obj)
+		).map(TestStatement(_))
+
+		CloseableIterator.Wrap(filtered.iterator, () => ())
 	}
 
-	private def projectIRI(name: String) = {
-		factory.createIRI(s"http://meta.icos-cp.eu/resources/projects/$name")
+	// Null arguments in getStatements means wildcard
+	private def matching(query: Value, target: Value) = {
+		query == null || query == target
 	}
 
-	private def specIRI(name: String) = {
-		factory.createIRI(s"http://meta.icos-cp.eu/resources/cpmeta/$name")
-	}
+	// Leave unimplemented until used by any test
+	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
+}
 
-	class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSource {
-		def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
-			val filtered = statements.filter(st =>
-				matching(subject, st.subj)
-					&& matching(predicate, st.pred)
-					&& matching(obj, st.obj)
-			).map(TestStatement(_))
-
-			CloseableIterator.Wrap(filtered.iterator, () => ())
-		}
-
-		// Null arguments in getStatements means wildcard
-		private def matching(query: Value, target: Value) = {
-			query == null || query == target
-		}
-
-		// Leave unimplemented until used by any test
-		def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
-	}
-
-	// The StatementSource interface requires the more general Statement type, which includes context.
-	// IndexData never cares about context, however, so we can "upcast" like this.
-	// TODO: Introduce a more limited RdfStatementSource, use it in IndexData, and get rid of this workaround.
-	final class TestStatement(inner: Rdf4jStatement) extends Statement {
-		override def getObject(): Value = inner.obj
-		override def getSubject(): Resource = inner.subj
-		override def getPredicate(): IRI = inner.pred
-		override def getContext(): Resource = ???
-	}
-
+// The StatementSource interface requires the more general Statement type, which includes context.
+// IndexData never cares about context, however, so we can "upcast" like this.
+// TODO: Introduce a more limited RdfStatementSource, use it in IndexData, and get rid of this workaround.
+final class TestStatement(inner: Rdf4jStatement) extends Statement {
+	override def getObject(): Value = inner.obj
+	override def getSubject(): Resource = inner.subj
+	override def getPredicate(): IRI = inner.pred
+	override def getContext(): Resource = ???
 }

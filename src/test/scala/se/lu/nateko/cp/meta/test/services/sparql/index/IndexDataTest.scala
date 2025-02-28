@@ -8,6 +8,10 @@ import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, IndexUpdate}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+/*
+import org.eclipse.rdf4j.common.iteration.CloseableIteration
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jIterationIterator
+ */
 
 class IndexDataTest extends AnyFunSuite {
 	test("ObjEntry.fileName is cleared when hasName statement is deleted") {
@@ -19,11 +23,10 @@ class IndexDataTest extends AnyFunSuite {
 
 		// IndexData requires a StatementSource but in this case we never pull any statements,
 		// hence we can leave things unimplemented.
-		given StatementSource with
-			def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
-			def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
 
 		val statement = Rdf4jStatement(subject, vocab.hasName, factory.createLiteral("test name"))
+
+		given StatementSource = StaticStatements(Seq())
 
 		// Insert hasName triple
 		data.processUpdate(IndexUpdate(statement, true), vocab)
@@ -33,5 +36,12 @@ class IndexDataTest extends AnyFunSuite {
 		data.processUpdate(IndexUpdate(statement, false), vocab)
 		assert(data.getObjEntry(hash).fileName === None)
 		assert(data.objs.length == 1)
+	}
+
+	class StaticStatements(statements: Seq[Statement]) extends StatementSource {
+		def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
+			CloseableIterator.Wrap(statements.iterator, () => ())
+		}
+		def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ??? // Leave unimplemented until used
 	}
 }

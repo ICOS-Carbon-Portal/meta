@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.UriResource
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, toJava}
 import se.lu.nateko.cp.meta.utils.{Validated, parseInstant}
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import Validated.{CardinalityExpectation, validateSize}
 import CardinalityExpectation.{AtMostOne, ExactlyOne}
 
@@ -16,9 +17,14 @@ trait StatementSource {
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
 	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
 
-	final def hasStatement(st: Statement): Boolean = st.getSubject() match
-		case subj: IRI => hasStatement(subj, st.getPredicate(), st.getObject())
+	final def hasStatement(st: Rdf4jStatement): Boolean = {
+		hasStatement(st.subj, st.pred, st.obj)
+	}
+
+	final def hasStatement(st: Statement): Boolean = st match {
+		case Rdf4jStatement(rdfStatement) => hasStatement(rdfStatement)
 		case _ => false
+	}
 }
 
 object StatementSource {

@@ -138,12 +138,16 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 			dataDto <- dto.asOptInstanceOf[DataObjectDto]
 			timeSeries <- dataDto.specificInfo.fold(_ => None, ts => Some(ts))
 			newTimeInterval <- timeSeries.acquisitionInterval
-			aquiredByIris = getPropValueHolders(metaVocab.hasName, vf.createLiteral(dto.fileName))
-				.collect{case subj if isCompleted(subj) && !isDeprecated(subj) => subj}
+			autoDeprecateIris = getPropValueHolders(metaVocab.hasName, vf.createLiteral(dto.fileName))
+				.collect{case subj if dto.autodeprecateSameFilenameObjects && isCompleted(subj) && !isDeprecated(subj) => subj}
 				.toIndexedSeq
+			selectedDeprecateIris = dto.isNextVersionOf.flattenToSeq.iterator.map(prevHash =>
+				vocab.getStaticObject(prevHash))
+				.toIndexedSeq
+			allAquiredByIris = (autoDeprecateIris ++ selectedDeprecateIris).toSet
 				.flatMap(getSingleUri(_, metaVocab.wasAcquiredBy).result)
-			previousStarts = aquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.startedAtTime).result)
-			previousStops = aquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.endedAtTime).result)
+			previousStarts = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.startedAtTime).result)
+			previousStops = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.endedAtTime).result)
 		yield
 			(previousStarts.isEmpty || !newTimeInterval.start.isAfter(previousStarts.min))
 				&& (previousStops.isEmpty || !newTimeInterval.stop.isBefore(previousStops.max))

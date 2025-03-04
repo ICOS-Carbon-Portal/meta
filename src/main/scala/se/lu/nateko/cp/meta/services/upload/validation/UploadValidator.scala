@@ -66,10 +66,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				_ <- scoped.growingIsGrowing(meta, spec, submConf)
 				_ <- validateActors(meta)
 				_ <- validateTemporalCoverage(meta, spec)
-				_ <-
-					if meta.autodeprecateSameFilenameObjects then
-						scoped.compareToPreviousTemporalCoverage(meta)
-					else ok
+				_ <- scoped.compareToPreviousTemporalCoverage(meta)
 				_ <- noProductionProvenanceIfL0(meta, spec)
 				_ <- validateFormatsByFileExt(meta, spec)
 				amended0 <- validateSpatialCoverage(meta)

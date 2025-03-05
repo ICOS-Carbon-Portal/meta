@@ -19,14 +19,6 @@ import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 
-// IndexUpdate is similar to se.lu.nateko.cp.meta.instanceserver.RdfUpdate,
-// but constrained to Rdf4jStatement rather than Statement.
-// TODO: If RdfUpdate is is changed to be more constrained, we can get rid of IndexUpdate.
-final case class IndexUpdate(
-	val statement: Rdf4jStatement,
-	val isAssertion: Boolean
-)
-
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
 final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionStart)
@@ -76,12 +68,11 @@ final class IndexData(nObjects: Int)(
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-	def processUpdate(update: IndexUpdate, vocab: CpmetaVocab)(using StatementSource): Unit = {
+	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
-		import update.statement.{subj, pred, obj}
-		val isAssertion = update.isAssertion
+		import statement.{subj, pred, obj}
 
 		pred match {
 			case `hasObjectSpec` =>

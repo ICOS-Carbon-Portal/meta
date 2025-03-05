@@ -20,6 +20,7 @@ import java.time.Instant
 import scala.collection.mutable.Buffer
 import scala.language.strictEquality
 import scala.util.{Failure, Success, Try}
+import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
 
 given CanEqual[URI, URI] = CanEqual.derived
 given CanEqual[IRI, IRI] = CanEqual.derived
@@ -44,6 +45,17 @@ class UploadValidator(servers: DataObjectInstanceServers):
 					case dobj: DataObjectDto => validateDobj(dobj, uploader)
 					case doc: DocObjectDto => validateDoc(doc, uploader)
 			yield dto
+
+	def validatePreviousTemporalCoverage(hash: Sha256Sum, info: UploadCompletionInfo)(using envri: Envri): Try[NotUsed] =
+		val objIri = vocab.getStaticObject(hash)
+		val validation = servers.vanillaGlobal.access:
+			for
+				given DobjConn <- metaReader.getLensForDataObj(objIri)(using envri, RdfLens.global)
+			yield
+				scoped.compareToPreviousTemporalCoverageByIri(objIri, info)
+		validation.toTry(new UploadUserErrorException(_)).flatten
+
+	end validatePreviousTemporalCoverage
 
 
 	private def validateDobj(meta: DataObjectDto, uploader: UserId)(using Envri, DocConn): Try[DataObjectDto] =

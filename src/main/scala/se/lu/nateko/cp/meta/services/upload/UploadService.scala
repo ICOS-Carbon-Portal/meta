@@ -155,8 +155,9 @@ class UploadService(
 	}.toSeq.sortBy(sp => sp.id)
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
-		uploadLock.wrapFuture(hash):
-			completer.completeUpload(hash, info)
+		Future.fromTry(validator.validatePreviousTemporalCoverage(hash, info)).flatMap: _ =>
+			uploadLock.wrapFuture(hash):
+				completer.completeUpload(hash, info)
 
 end UploadService
 

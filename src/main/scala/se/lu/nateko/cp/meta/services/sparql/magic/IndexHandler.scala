@@ -16,6 +16,7 @@ import org.roaringbitmap.buffer.MutableRoaringBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.FileSizeHierarchicalBitmap.LongGeo
 import se.lu.nateko.cp.meta.services.sparql.index.{
@@ -61,10 +62,10 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 		//important that this is a val, not a def, otherwise throttle will work very wrongly
 		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
-		def statementAdded(statement: Statement): Unit =
-			index.put(statement, true)
+		def statementAdded(s: Statement): Unit =
+			index.put(RdfUpdate(s, true))
 			flushIndex()
-			statement match
+			s match
 				case Rdf4jStatement(dobj, pred, _) if pred === metaVocab.hasSizeInBytes =>
 					geo.onComplete:
 						case Success((geoIndex, events)) =>
@@ -75,7 +76,7 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 				case _ =>
 
 		def statementRemoved(s: Statement): Unit =
-			index.put(s, false)
+			index.put(RdfUpdate(s, false))
 			flushIndex()
 
 

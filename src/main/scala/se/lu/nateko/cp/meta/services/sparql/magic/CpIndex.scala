@@ -139,18 +139,14 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
-	def flush(): Unit = {
-		if !queue.isEmpty then writeLocked:
+	def flush(): Unit = if !queue.isEmpty then writeLocked:
+		if !queue.isEmpty then
 			val list = new ArrayList[IndexUpdate](UpdateQueueSize)
 			queue.drainTo(list)
-			sail.accessEagerly {
-				list.forEach {
-					update => 
-						data.processUpdate(update, vocab)
-				}
-			}
+			sail.accessEagerly:
+				list.forEach(data.processUpdate(_, vocab))
 			list.clear()
-	}
+
 end CpIndex
 
 

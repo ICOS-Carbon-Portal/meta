@@ -42,6 +42,8 @@ class IndexDataTest extends AnyFunSuite {
 		assert(data.objs.length == 1)
 	}
 
+	// TODO: Test editing of keywords of associated specs and project
+	// TODO: Test addition/removal of associated specs and project
 	test("Data object keywords are indexed from associated spec and project") {
 		// TODO: Introduce test factory for generating RDF values
 		// TODO: Generate random hash for objects

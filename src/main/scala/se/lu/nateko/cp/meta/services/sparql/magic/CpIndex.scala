@@ -6,7 +6,7 @@ import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -22,8 +22,6 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
-import org.eclipse.rdf4j.model.Statement
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexUpdate
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -44,7 +42,6 @@ trait ObjInfo extends ObjSpecific{
 	def submissionEndTime: Option[Instant]
 }
 
-
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
@@ -56,8 +53,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		var statementCount = 0
 		sail.accessEagerly:
 			StatementSource.getStatements(null, null, null)
-			.foreach: statement =>
-				put(statement, true)
+			.foreach: s =>
+				put(RdfUpdate(s, true))
 				statementCount += 1
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
@@ -87,7 +84,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	given factory: ValueFactory = sail.getValueFactory
 	val vocab = new CpmetaVocab(factory)
 
-	private val queue = new ArrayBlockingQueue[IndexUpdate](UpdateQueueSize)
+	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	def size: Int = objs.length
 	def serializableData: Serializable = data
@@ -129,27 +126,24 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def getObjEntry = data.getObjEntry
 
-	def put(statement: Statement, isAssertion: Boolean): Boolean = {
-		Rdf4jStatement.unapply(statement) match {
-			case Some(statement) => {
-				queue.put(IndexUpdate(statement, isAssertion))
-				if (queue.remainingCapacity == 0) flush()
-				true
-			}
-			case None => false
-		}
+	def put(st: RdfUpdate): Unit = {
+		queue.put(st)
+		if(queue.remainingCapacity == 0) flush()
 	}
 
 	def flush(): Unit = if !queue.isEmpty then writeLocked:
 		if !queue.isEmpty then
-			val list = new ArrayList[IndexUpdate](UpdateQueueSize)
+			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
 			queue.drainTo(list)
 			sail.accessEagerly:
-				list.forEach(data.processUpdate(_, vocab))
+				list.forEach:
+					case RdfUpdate(Rdf4jStatement(statement), isAssertion) =>
+						data.processUpdate(statement, isAssertion, vocab)
+					case _ => ()
 			list.clear()
-
 end CpIndex
 
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
+

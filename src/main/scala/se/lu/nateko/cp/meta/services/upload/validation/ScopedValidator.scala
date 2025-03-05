@@ -18,6 +18,10 @@ import java.net.URI
 import java.time.Instant
 import scala.language.strictEquality
 import scala.util.{Success, Try}
+import se.lu.nateko.cp.meta.core.data.UploadCompletionInfo
+import se.lu.nateko.cp.meta.core.data.TimeSeriesExtract
+import se.lu.nateko.cp.meta.core.data.SpatialTimeSeriesExtract
+import se.lu.nateko.cp.meta.core.data.TabularIngestionExtract
 
 private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extends CpmetaReader:
 
@@ -132,9 +136,9 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 			.toIndexedSeq
 			.nonEmpty
 
-	def compareToPreviousTemporalCoverage(dto: DataObjectDto)(using Envri, DocConn | DobjConn): Try[NotUsed] =
+	def compareToPreviousTemporalCoverage(dto: DataObjectDto)(using Envri, DobjConn): Try[NotUsed] =
 
-		val newIntervalIncludesPrevious = for
+		val compareInterval = for
 			dataDto <- dto.asOptInstanceOf[DataObjectDto]
 			timeSeries <- dataDto.specificInfo.fold(_ => None, ts => Some(ts))
 			newTimeInterval <- timeSeries.acquisitionInterval
@@ -146,16 +150,46 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 				.toIndexedSeq
 			allAquiredByIris = (autoDeprecateIris ++ selectedDeprecateIris).toSet
 				.flatMap(getSingleUri(_, metaVocab.wasAcquiredBy).result)
-			previousStarts = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.startedAtTime).result)
-			previousStops = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.endedAtTime).result)
-		yield
-			(previousStarts.isEmpty || !newTimeInterval.start.isAfter(previousStarts.min))
-				&& (previousStops.isEmpty || !newTimeInterval.stop.isBefore(previousStops.max))
+				.toIndexedSeq
 
-		if newIntervalIncludesPrevious.getOrElse(true) then ok
-		else userFail("New temporal coverage must include temporal coverage of the objects being deprecated.")
+		yield
+			compareToPreviousInterval(allAquiredByIris, newTimeInterval)
+
+		compareInterval.getOrElse(ok)
 
 	end compareToPreviousTemporalCoverage
+
+	def compareToPreviousTemporalCoverageByIri(iri: IRI, info: UploadCompletionInfo)(using Envri, DobjConn): Try[NotUsed] =
+
+		val compareInterval = for
+			tabularExtract <- info.ingestionResult match
+				case Some(timeSeries: TimeSeriesExtract) => Some(timeSeries.tabular)
+				case Some(spatialTimeSeries: SpatialTimeSeriesExtract) => Some(spatialTimeSeries.tabular)
+				case Some(tabularIngestion: TabularIngestionExtract) => Some(tabularIngestion)
+				case _ => None
+			newTimeInterval = tabularExtract.interval
+			aquiredBy <- getSingleUri(iri, metaVocab.wasAcquiredBy).result
+			selectedDeprecateIris = getUriValues(iri, metaVocab.isNextVersionOf)
+				.toIndexedSeq
+				.flatMap(getSingleUri(_, metaVocab.wasAcquiredBy).result)
+		yield
+			compareToPreviousInterval(selectedDeprecateIris, newTimeInterval)
+
+		compareInterval.getOrElse(ok)
+
+	end compareToPreviousTemporalCoverageByIri
+
+	private def compareToPreviousInterval(allAquiredByIris: Seq[IRI], newTimeInterval: TimeInterval)(using Envri, DobjConn): Try[NotUsed] =
+		val previousStarts = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.startedAtTime).result)
+		val previousStops = allAquiredByIris.flatMap(getSingleInstant(_, metaVocab.prov.endedAtTime).result)
+
+		val newIntervalIncludesPrevious = (previousStarts.isEmpty || !newTimeInterval.start.isAfter(previousStarts.min))
+			&& (previousStops.isEmpty || !newTimeInterval.stop.isBefore(previousStops.max))
+
+		if newIntervalIncludesPrevious then ok
+		else userFail("New temporal coverage must include temporal coverage of the objects being deprecated.")
+
+	end compareToPreviousInterval
 
 
 	def growingIsGrowing(

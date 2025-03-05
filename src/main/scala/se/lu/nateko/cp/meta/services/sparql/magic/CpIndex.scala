@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.io.Serializable
 import java.time.Instant
+import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
@@ -140,13 +141,15 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def flush(): Unit = {
 		if !queue.isEmpty then writeLocked:
+			val list = new ArrayList[IndexUpdate](UpdateQueueSize)
+			queue.drainTo(list)
 			sail.accessEagerly {
-				queue.forEach {
+				list.forEach {
 					update => 
 						data.processUpdate(update, vocab)
 				}
 			}
-			queue.clear()
+			list.clear()
 	}
 end CpIndex
 

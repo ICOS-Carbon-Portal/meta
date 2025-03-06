@@ -5,7 +5,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, IndexUpdate}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.index.Keyword
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
@@ -32,11 +32,11 @@ class IndexDataTest extends AnyFunSuite {
 		given StatementSource = StaticStatementSource(Seq())
 
 		// Insert hasName triple
-		data.processUpdate(IndexUpdate(statement, true), vocab)
+		data.processUpdate(statement, true, vocab)
 		assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 		// Remove it
-		data.processUpdate(IndexUpdate(statement, false), vocab)
+		data.processUpdate(statement, false, vocab)
 		assert(data.getObjEntry(hash).fileName === None)
 		assert(data.objs.length == 1)
 	}
@@ -83,7 +83,7 @@ class IndexDataTest extends AnyFunSuite {
 
 		statements.foreach(statement =>
 			given StatementSource = StaticStatementSource(statements)
-			data.processUpdate(IndexUpdate(statement, true), vocab)
+			data.processUpdate(statement, true, vocab)
 		)
 
 		// For each keyword lookup, we expect the same bitmap

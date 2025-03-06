@@ -137,8 +137,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 			queue.drainTo(list)
 			sail.accessEagerly:
 				list.forEach:
-					case RdfUpdate(Rdf4jStatement(subj, pred, obj), isAssertion) =>
-						data.processTriple(subj, pred, obj, isAssertion, vocab)
+					case RdfUpdate(Rdf4jStatement(statement), isAssertion) =>
+						data.processUpdate(statement, isAssertion, vocab)
 					case _ => ()
 			list.clear()
 end CpIndex

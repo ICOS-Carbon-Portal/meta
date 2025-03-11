@@ -104,6 +104,102 @@ class IndexDataTest extends AnyFunSuite {
 			"other-project-spec keyword" -> otherObjectBitmap
 		))
 	}
+
+	test("Data object keywords are kept updated") {
+		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
+			val data = IndexData(30)()
+			statements.foreach((isAssertion, statement) =>
+				given StatementSource = StaticStatementSource(statements.map(_._2))
+				data.processUpdate(statement, isAssertion, vocab)
+			)
+
+			data.categMap(Keyword)
+		}
+
+		val dataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W6")
+		val spec: IRI = projectIRI("spec")
+		val project: IRI = projectIRI("project")
+
+		// Set up object->spec->project chain
+		val initial = Seq(
+			(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
+			(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+			(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
+			(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
+			(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
+		)
+
+		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
+
+		assert(runStatements(initial) == Map(
+			"object keyword" -> objectBitmap,
+			"spec keyword" -> objectBitmap,
+			"project keyword" -> objectBitmap
+		))
+
+		{
+			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
+
+			assert(runStatements(initial :+ addObjectKeyword) == Map(
+				"object keyword" -> objectBitmap,
+				"object edited" -> objectBitmap,
+				"spec keyword" -> objectBitmap,
+				"project keyword" -> objectBitmap
+			))
+		}
+
+		{
+			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))
+
+			assert(runStatements(initial :+ removeObjectKeyword) == Map(
+				"spec keyword" -> objectBitmap,
+				"project keyword" -> objectBitmap
+			))
+		}
+
+		{
+			val editSpec = Seq(
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited"))),
+				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))))
+
+			assert(runStatements(initial ++ editSpec) == Map(
+				"object keyword" -> objectBitmap,
+				"spec edited" -> objectBitmap,
+				"project keyword" -> objectBitmap
+			))
+		}
+
+		/*
+		{
+			val editProject = (true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited")))
+			assert(runStatements(initial :+ editProject) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap,
+				"project edited" -> objectBitmap
+			))
+		}
+		 */
+
+		/*
+		{
+			val removeProject = (true, Rdf4jStatement(spec, hasAssociatedProject, project))
+			assert(runStatements(initial :+ removeProject) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap
+			))
+		}
+		 */
+
+		/*
+		{
+			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+			assert(runStatements(initial :+ removeSpec) == Map(
+				"object keyword" -> objectBitmap
+			))
+		}
+		 */
+
+	}
 }
 
 private def objectIRI(hash: String) = {

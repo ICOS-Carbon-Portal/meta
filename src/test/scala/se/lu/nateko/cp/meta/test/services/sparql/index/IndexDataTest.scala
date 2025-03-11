@@ -55,29 +55,26 @@ class IndexDataTest extends AnyFunSuite {
 		// TODO: Generate random spec names
 
 		val dataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W6")
-		val objectProject: IRI = projectIRI("project")
-		val specProject: IRI = projectIRI("spec-project")
+		val specProject: IRI = projectIRI("project")
 		val spec = specIRI("spec")
 
 		val otherDataObject: IRI = objectIRI("iS2ubFLw7HNbyKz_pHcJ89uL")
 		val otherSpec = specIRI("other-spec")
-		val otherSpecProject = specIRI("other-spec-project")
+		val otherSpecProject = specIRI("other-project")
 
 		val data: IndexData = IndexData(20)()
 
-		// There are 3 ways in which a data object can have associated keywords:
+		// There are 3 ways in which a data object can have keywords:
+		// - Directly, through `hasKeywords`
 		// - An associated spec
 		// - A project associated with an associated spec
-		// - A directly associated project
 
 		val statements = Random.shuffle(Seq(
 			Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
 			Rdf4jStatement(dataObject, hasObjectSpec, spec),
-			Rdf4jStatement(dataObject, hasAssociatedProject, objectProject),
 			Rdf4jStatement(spec, hasAssociatedProject, specProject),
 			Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")),
-			Rdf4jStatement(specProject, hasKeywords, factory.createLiteral("spec-project keyword")),
-			Rdf4jStatement(objectProject, hasKeywords, factory.createLiteral("object-project keyword")),
+			Rdf4jStatement(specProject, hasKeywords, factory.createLiteral("project keyword")),
 			//
 			// Add an object->spec->project chain with keywords for another object
 			Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword")),
@@ -102,8 +99,7 @@ class IndexDataTest extends AnyFunSuite {
 		assert(keywords == Map(
 			"object keyword" -> objectBitmap,
 			"spec keyword" -> objectBitmap,
-			"spec-project keyword" -> objectBitmap,
-			"object-project keyword" -> objectBitmap,
+			"project keyword" -> objectBitmap,
 			//
 			// Check keywords for other object
 			"other-object keyword" -> otherObjectBitmap,

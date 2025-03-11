@@ -96,20 +96,9 @@ final class IndexData(nObjects: Int)(
 					}
 				}
 
-			case `hasAssociatedProject` =>
-				// Associated projects should always be IRI's, so crashing on other values is okay.
-				obj match {
-					case project: IRI => {
-						val projKeywords = StatementSource.getStringValues(project, vocab.hasKeywords)
-						if (projKeywords.length > 0) {
-							getDataObject(subj).foreach { oe =>
-								projKeywords.foreach { keyword =>
-									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
-								}
-							}
-						}
-					}
-				}
+			case `hasAssociatedProject` => 
+				// TODO: Update object keywords from all specs which are associated with the project
+				()
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>

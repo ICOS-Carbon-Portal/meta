@@ -333,14 +333,14 @@ final class IndexData(nObjects: Int)(
 	private def addSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
-		val specKeywords = StatementSource.getStringValues(spec, vocab.hasKeywords)
+		val specKeywords = StatementSource.getValues(spec, vocab.hasKeywords)
 		val specProjects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
 
 		val specProjKeywords = specProjects.flatMap(project => {
-			StatementSource.getStringValues(project, vocab.hasKeywords)
+			StatementSource.getValues(project, vocab.hasKeywords)
 		})
 
-		Set.from(specKeywords ++ specProjKeywords).foreach(keyword =>
+		Set.from(specKeywords ++ specProjKeywords).flatMap(extractKeywords).flatten().foreach(keyword =>
 			updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
 		)
 	}

@@ -167,12 +167,13 @@ class IndexDataTest extends AnyFunSuite {
 
 		{
 			val editSpec = Seq(
-				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited"))),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited,spec other edit"))),
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))))
 
 			assert(runStatements(initial ++ editSpec) == Map(
 				"object keyword" -> objectBitmap,
 				"spec edited" -> objectBitmap,
+				"spec other edit" -> objectBitmap,
 				"project keyword" -> objectBitmap
 			))
 		}

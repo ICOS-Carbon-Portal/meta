@@ -11,12 +11,17 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.Resource
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import scala.util.Random
 
 private val factory = SimpleValueFactory.getInstance()
 
 class IndexDataTest extends AnyFunSuite {
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
+
+	val seed = Math.abs(Random.nextInt())
+	Random.setSeed(seed)
+	info(s"Random seed: $seed")
 
 	test("ObjEntry.fileName is cleared when hasName statement is deleted") {
 		val subject: IRI = factory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")
@@ -65,7 +70,8 @@ class IndexDataTest extends AnyFunSuite {
 		// - An associated spec
 		// - A project associated with an associated spec
 		// - A directly associated project
-		val statements = Seq(
+
+		val statements = Random.shuffle(Seq(
 			Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
 			Rdf4jStatement(dataObject, hasObjectSpec, spec),
 			Rdf4jStatement(dataObject, hasAssociatedProject, objectProject),
@@ -80,7 +86,8 @@ class IndexDataTest extends AnyFunSuite {
 			Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other-spec keyword")),
 			Rdf4jStatement(otherSpec, hasAssociatedProject, otherSpecProject),
 			Rdf4jStatement(otherSpecProject, hasKeywords, factory.createLiteral("other-project-spec keyword"))
-		)
+		))
+		
 
 		statements.foreach(statement =>
 			given StatementSource = StaticStatementSource(statements)
@@ -122,13 +129,13 @@ class IndexDataTest extends AnyFunSuite {
 		val project: IRI = projectIRI("project")
 
 		// Set up object->spec->project chain
-		val initial = Seq(
+		val initial = Random.shuffle(Seq(
 			(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
 			(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 			(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
 			(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
 			(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
-		)
+		))
 
 		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
 

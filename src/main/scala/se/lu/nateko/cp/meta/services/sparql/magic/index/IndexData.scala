@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import org.eclipse.rdf4j.model.Resource
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -291,11 +292,41 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasKeywords` =>
-				getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+				getDataObject(subj) match {
+					case Some(oe) => updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+					case None => {
+						extractKeywords(obj).foreach(keywords =>
+							updateAssociatedKeywords(subj, keywords.toSeq, isAssertion, vocab)
+						)
+					}
 				}
 
 			case _ =>
+		}
+	}
+
+	private def extractKeywords(obj: Value): Option[Array[String]] = {
+		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
+	}
+
+	private def updateAssociatedKeywords(association: IRI, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+		StatementSource
+	) = {
+		// Find all data objects which have `association` as the spec.
+		val dataObjects: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasObjectSpec, association).map(_.getSubject())
+
+		// Find out if we got any results without consuming the iterator.
+		if (dataObjects.hasNext) {
+			dataObjects.foreach(obj => {
+				getDataObject(obj).foreach(oe => {
+					keywords.foreach(kw => {
+						updateCategSet(categMap(Keyword), kw, oe.idx, isAssertion)
+					})
+				})
+			})
+		} else {
+			// No results for hasObjectSpec, so maybe it's a project.
+			// val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, association).map(_.getSubject())
 		}
 	}
 

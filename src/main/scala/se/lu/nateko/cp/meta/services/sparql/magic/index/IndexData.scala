@@ -307,22 +307,23 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource) = {
-		val dataObjects: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
+	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+		StatementSource
+	): Boolean = {
+		var anyUpdate = false
+		val dataObjects: Iterator[Resource] =
+			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
-		// Find out if we got any results without consuming the iterator.
-		if (dataObjects.hasNext) {
-			dataObjects.foreach(obj => {
-				for (oe <- getDataObject(obj)) {
-					keywords.foreach(kw => {
-						updateCategSet(categMap(Keyword), kw, oe.idx, isAssertion)
-					})
-				}
-			})
-			true
-		} else {
-			false
-		}
+		dataObjects.foreach(obj => {
+			for (oe <- getDataObject(obj)) {
+				anyUpdate = true
+				keywords.foreach(kw => {
+					updateCategSet(categMap(Keyword), kw, oe.idx, isAssertion)
+				})
+			}
+		})
+
+		anyUpdate
 	}
 
 	private def addSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using

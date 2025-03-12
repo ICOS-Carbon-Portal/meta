@@ -192,6 +192,14 @@ class IndexDataTest extends AnyFunSuite {
 		}
 
 		{
+			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
+			assert(runStatements(initial :+ removeProject) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap
+			))
+		}
+
+		{
 			val otherProject = projectIRI("other project")
 			val addOtherProject =
 				Seq(
@@ -206,23 +214,32 @@ class IndexDataTest extends AnyFunSuite {
 				"other project keyword" -> objectBitmap
 			))
 
-			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
-			assert(runStatements(initial :+ removeProject) == Map(
-				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap,
-				"other project keyword" -> objectBitmap
-			))
 		}
 
-		/*
+
 		{
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			assert(runStatements(initial :+ removeSpec) == Map(
 				"object keyword" -> objectBitmap
 			))
 		}
-		 */
 
+		{
+			val otherSpec = projectIRI("other spec")
+			val addOtherSpec =
+				Seq(
+					(true, Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other spec keyword"))),
+					(true, Rdf4jStatement(dataObject, hasObjectSpec, otherSpec))
+				)
+
+			assert(runStatements((initial) ++ addOtherSpec) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap,
+				"project keyword" -> objectBitmap,
+				"other spec keyword" -> objectBitmap
+			))
+
+		}
 	}
 }
 

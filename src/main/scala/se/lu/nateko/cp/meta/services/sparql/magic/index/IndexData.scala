@@ -97,14 +97,24 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => {
-				val spec = subj
-				val dataObjects: Iterator[Resource] =
-					StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
-				dataObjects.foreach(dataObj =>
-					for (oe <- getDataObject(obj)) {
-						setSpecKeywords(oe, spec, isAssertion, vocab)
+				obj match {
+					case project: IRI => {
+						val dataObjects: Iterator[Resource] =
+							StatementSource.getStatements(null, vocab.hasObjectSpec, subj).map(_.getSubject())
+
+						val projKeywords = StatementSource.getValues(project, vocab.hasKeywords)
+
+						dataObjects.foreach(dataObj =>
+							for (oe <- getDataObject(dataObj)) {
+								projKeywords.flatMap(parseKeywords).flatten().foreach(keyword => {
+									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+								})
+							}
+						)
 					}
-				)
+					case _ => ()
+				}
+
 			}
 
 			case `hasName` =>

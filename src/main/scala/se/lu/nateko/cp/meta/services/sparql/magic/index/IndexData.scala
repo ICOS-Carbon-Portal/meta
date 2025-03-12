@@ -96,7 +96,7 @@ final class IndexData(nObjects: Int)(
 					}
 				}
 
-			case `hasAssociatedProject` => 
+			case `hasAssociatedProject` =>
 				// TODO: Update object keywords from all specs which are associated with the project
 				()
 
@@ -293,24 +293,35 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateAssociatedKeywords(association: IRI, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def updateAssociatedKeywords(association: IRI, newKeywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
-		// Find all data objects which have `association` as the spec.
-		val dataObjects: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasObjectSpec, association).map(_.getSubject())
+		if (!updateSpecKeywords(association, newKeywords, isAssertion, vocab)) {
+			// No results when treating association as a spec, so maybe it's a project.
+			val project = association
+			val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, association).map(_.getSubject())
+
+			specs.foreach { spec =>
+				updateSpecKeywords(spec, newKeywords, isAssertion, vocab)
+			}
+		}
+	}
+
+	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource) = {
+		val dataObjects: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
 		// Find out if we got any results without consuming the iterator.
 		if (dataObjects.hasNext) {
 			dataObjects.foreach(obj => {
-				getDataObject(obj).foreach(oe => {
+				for (oe <- getDataObject(obj)) {
 					keywords.foreach(kw => {
 						updateCategSet(categMap(Keyword), kw, oe.idx, isAssertion)
 					})
-				})
+				}
 			})
+			true
 		} else {
-			// No results for hasObjectSpec, so maybe it's a project.
-			// val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, association).map(_.getSubject())
+			false
 		}
 	}
 

@@ -46,8 +46,6 @@ class IndexDataTest extends AnyFunSuite {
 		assert(data.objs.length == 1)
 	}
 
-	// TODO: Test editing of keywords of associated specs and project
-	// TODO: Test addition/removal of associated specs and project
 	test("Data object keywords are indexed from associated spec and project") {
 		// TODO: Introduce test factory for generating RDF values
 		// TODO: Generate random hash for objects
@@ -69,21 +67,26 @@ class IndexDataTest extends AnyFunSuite {
 		// - An associated spec
 		// - A project associated with an associated spec
 
-		val statements = Random.shuffle(Seq(
-			Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
-			Rdf4jStatement(dataObject, hasObjectSpec, spec),
-			Rdf4jStatement(spec, hasAssociatedProject, specProject),
-			Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")),
-			Rdf4jStatement(specProject, hasKeywords, factory.createLiteral("project keyword")),
-			//
-			// Add an object->spec->project chain with keywords for another object
-			Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword")),
-			Rdf4jStatement(otherDataObject, hasObjectSpec, otherSpec),
-			Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other-spec keyword")),
-			Rdf4jStatement(otherSpec, hasAssociatedProject, otherSpecProject),
-			Rdf4jStatement(otherSpecProject, hasKeywords, factory.createLiteral("other-project-spec keyword"))
-		))
-		
+		// Insert objects in order, to get deterministic IDs.
+		// Shuffle the rest of the statements.
+		val statements =
+			Seq(
+				Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
+				Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword"))
+			)
+				++ Random.shuffle(Seq(
+					Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword")),
+					Rdf4jStatement(dataObject, hasObjectSpec, spec),
+					Rdf4jStatement(spec, hasAssociatedProject, specProject),
+					Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")),
+					Rdf4jStatement(specProject, hasKeywords, factory.createLiteral("project keyword")),
+					//
+					// Add an object->spec->project chain with keywords for another object
+					Rdf4jStatement(otherDataObject, hasObjectSpec, otherSpec),
+					Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other-spec keyword")),
+					Rdf4jStatement(otherSpec, hasAssociatedProject, otherSpecProject),
+					Rdf4jStatement(otherSpecProject, hasKeywords, factory.createLiteral("other-project-spec keyword"))
+				))
 
 		statements.foreach(statement =>
 			given StatementSource = StaticStatementSource(statements)
@@ -163,7 +166,8 @@ class IndexDataTest extends AnyFunSuite {
 		{
 			val editSpec = Seq(
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited,spec other edit"))),
-				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))))
+				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")))
+			)
 
 			assert(runStatements(initial ++ editSpec) == Map(
 				"object keyword" -> objectBitmap,
@@ -173,16 +177,19 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		/*
 		{
-			val editProject = (true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited")))
-			assert(runStatements(initial :+ editProject) == Map(
+			val editProject = Seq(
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited,project other edit"))),
+				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
+			)
+
+			assert(runStatements(initial ++ editProject) == Map(
 				"object keyword" -> objectBitmap,
 				"spec keyword" -> objectBitmap,
-				"project edited" -> objectBitmap
+				"project edited" -> objectBitmap,
+				"project other edit" -> objectBitmap,
 			))
 		}
-		 */
 
 		/*
 		{

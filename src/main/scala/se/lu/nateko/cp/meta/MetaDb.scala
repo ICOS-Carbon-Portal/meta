@@ -171,12 +171,13 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val serversFut =
 			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty then
+			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
 				val ctxt = Executors.newSingleThreadExecutor()
 				Some(ExecutionContext.fromExecutorService(ctxt))
 			else None
 
 			// LMDB seems to work fine under fully parallel write conditions
+			// with the exception of full re-building of the triplestore database from rdflog
 			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
 
 			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:

@@ -91,14 +91,21 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 
-							addSpecKeywords(oe, spec, isAssertion, vocab)
+							setSpecKeywords(oe, spec, isAssertion, vocab)
 						}
 					}
 				}
 
-			case `hasAssociatedProject` =>
-				// TODO: Update object keywords from all specs which are associated with the project
-				()
+			case `hasAssociatedProject` => {
+				val spec = subj
+				val dataObjects: Iterator[Resource] =
+					StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
+				dataObjects.foreach(dataObj =>
+					for (oe <- getDataObject(obj)) {
+						setSpecKeywords(oe, spec, isAssertion, vocab)
+					}
+				)
+			}
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>
@@ -284,7 +291,7 @@ final class IndexData(nObjects: Int)(
 				getDataObject(subj) match {
 					case Some(oe) => updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 					case None => {
-						extractKeywords(obj).foreach(keywords =>
+						parseKeywords(obj).foreach(keywords =>
 							updateAssociatedKeywords(subj, keywords.toSeq, isAssertion, vocab)
 						)
 					}
@@ -294,22 +301,31 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def extractKeywords(obj: Value): Option[Array[String]] = {
+	private def parseKeywords(obj: Value): Option[Array[String]] = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
 	private def updateAssociatedKeywords(association: IRI, newKeywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
 		StatementSource
-	) = {
-		if (!updateSpecKeywords(association, newKeywords, isAssertion, vocab)) {
-			// No results when treating association as a spec, so maybe it's a project.
-			val project = association
-			val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, association).map(_.getSubject())
+	): Boolean = {
+		val isSpec = updateSpecKeywords(association, newKeywords, isAssertion, vocab)
+		// If we get no results when treating association as a spec, then maybe it's a project.
+		isSpec || updateProjectKeywords(association, newKeywords, isAssertion, vocab)
+	}
 
-			specs.foreach { spec =>
-				updateSpecKeywords(spec, newKeywords, isAssertion, vocab)
-			}
-		}
+	private def updateProjectKeywords(project: IRI, newKeywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+		StatementSource
+	): Boolean = {
+		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
+
+		// Find out if we got any results without consuming the iterator.
+		val anySpecs = specs.hasNext
+
+		specs.foreach(spec =>
+			updateSpecKeywords(spec, newKeywords, isAssertion, vocab)
+		)
+
+		anySpecs
 	}
 
 	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
@@ -331,7 +347,7 @@ final class IndexData(nObjects: Int)(
 		anyUpdate
 	}
 
-	private def addSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def setSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
 		val specKeywords = StatementSource.getValues(spec, vocab.hasKeywords)
@@ -341,7 +357,7 @@ final class IndexData(nObjects: Int)(
 			StatementSource.getValues(project, vocab.hasKeywords)
 		})
 
-		Set.from(specKeywords ++ specProjKeywords).flatMap(extractKeywords).flatten().foreach(keyword =>
+		Set.from(specKeywords ++ specProjKeywords).flatMap(parseKeywords).flatten().foreach(keyword =>
 			updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
 		)
 	}

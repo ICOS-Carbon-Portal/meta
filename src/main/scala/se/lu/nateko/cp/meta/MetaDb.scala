@@ -171,12 +171,19 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val serversFut =
 			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty then
+			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
 				val ctxt = Executors.newSingleThreadExecutor()
 				Some(ExecutionContext.fromExecutorService(ctxt))
 			else None
 
-			// LMDB seems to work fine under fully parallel write conditions
+			/*
+			 LMDB seems to work fine under fully parallel write conditions,
+			 with the exception of full re-building of the triplestore database from rdflog.
+			 Note that in the typical meta service restart scenario RDF storage is not re-built,
+			 but multi-threaded initialization can be beneficial for startup time, because some
+			 of RDF-graph-init jobs are expensive and are best run as background even after the
+			 server starts up (see `enum IngestionMode` in CpmetaConfig.scala)
+			*/
 			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
 
 			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:

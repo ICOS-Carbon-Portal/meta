@@ -188,19 +188,32 @@ class IndexDataTest extends AnyFunSuite {
 				"object keyword" -> objectBitmap,
 				"spec keyword" -> objectBitmap,
 				"project edited" -> objectBitmap,
-				"project other edit" -> objectBitmap,
+				"project other edit" -> objectBitmap
 			))
 		}
 
-		/*
 		{
-			val removeProject = (true, Rdf4jStatement(spec, hasAssociatedProject, project))
+			val otherProject = projectIRI("other project")
+			val addOtherProject =
+				Seq(
+					(true, Rdf4jStatement(otherProject, hasKeywords, factory.createLiteral("other project keyword"))),
+					(true, Rdf4jStatement(spec, hasAssociatedProject, otherProject))
+				)
+
+			assert(runStatements((initial) ++ addOtherProject) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap,
+				"project keyword" -> objectBitmap,
+				"other project keyword" -> objectBitmap
+			))
+
+			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			assert(runStatements(initial :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap
+				"spec keyword" -> objectBitmap,
+				"other project keyword" -> objectBitmap
 			))
 		}
-		 */
 
 		/*
 		{

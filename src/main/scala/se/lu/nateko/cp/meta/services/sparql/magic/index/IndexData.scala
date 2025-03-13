@@ -80,6 +80,7 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
 							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -88,9 +89,32 @@ final class IndexData(nObjects: Int)(
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
+
+							setSpecKeywords(oe, spec, isAssertion, vocab)
 						}
 					}
 				}
+
+			case `hasAssociatedProject` => {
+				obj match {
+					case project: IRI => {
+						val dataObjects: Iterator[Resource] =
+							StatementSource.getStatements(null, vocab.hasObjectSpec, subj).map(_.getSubject())
+
+						val projKeywords = StatementSource.getValues(project, vocab.hasKeywords)
+
+						dataObjects.foreach(dataObj =>
+							for (oe <- getDataObject(dataObj)) {
+								projKeywords.flatMap(parseKeywords).flatten().foreach(keyword => {
+									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
+								})
+							}
+						)
+					}
+					case _ => ()
+				}
+
+			}
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>

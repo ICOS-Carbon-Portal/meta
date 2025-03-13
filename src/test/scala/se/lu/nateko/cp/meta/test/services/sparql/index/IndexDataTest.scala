@@ -31,7 +31,7 @@ class IndexDataTest extends AnyFunSpec {
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
-	test("ObjEntry.fileName is cleared when hasName statement is deleted") {
+	test("ObjEntry.fileName is cleared hasName statement is deleted") {
 		val subject: IRI = factory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")
 		val CpVocab.DataObject(hash, _) = subject: @unchecked
 		val data = IndexData(1)()
@@ -54,7 +54,7 @@ class IndexDataTest extends AnyFunSpec {
 		assert(data.objs.length == 1)
 	}
 
-	test("Data object keywords indexing should include keywords from associated spec and project") {
+	test("Data object keywords indexing includes keywords from associated spec and project") {
 		// TODO: Introduce test factory for generating RDF values
 		// TODO: Generate random hash for objects
 		// TODO: Generate random project names
@@ -119,7 +119,7 @@ class IndexDataTest extends AnyFunSpec {
 		))
 	}
 
-	describe("Data object keywords should be kept up-to-date") {
+	describe("Data object keywords are kept up-to-date when") {
 		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
 			val data = IndexData(30)()
 			statements.foreach((isAssertion, statement) =>
@@ -151,7 +151,7 @@ class IndexDataTest extends AnyFunSpec {
 			"project keyword" -> objectBitmap
 		))
 
-		testCase("when adding object keyword") {
+		testCase("adding object keyword") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
 
 			assert(runStatements(initial :+ addObjectKeyword) == Map(
@@ -162,7 +162,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("when removing object keyword") {
+		testCase("removing object keyword") {
 			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))
 
 			assert(runStatements(initial :+ removeObjectKeyword) == Map(
@@ -171,7 +171,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("when editing associated spec") {
+		testCase("editing associated spec") {
 			val editSpec = Seq(
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited,spec other edit"))),
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")))
@@ -185,7 +185,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("when editing asserted project") {
+		testCase("editing asserted project") {
 			val editProject = Seq(
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited,project other edit"))),
 				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
@@ -199,7 +199,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("when removing associated project") {
+		testCase("removing associated project") {
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			assert(runStatements(initial :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
@@ -207,7 +207,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("when adding another project") {
+		testCase("adding another project") {
 			val otherProject = projectIRI("other project")
 			val addOtherProject =
 				Seq(
@@ -224,14 +224,14 @@ class IndexDataTest extends AnyFunSpec {
 
 		}
 
-		testCase("when removing associated spec") {
+		testCase("removing associated spec") {
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			assert(runStatements(initial :+ removeSpec) == Map(
 				"object keyword" -> objectBitmap
 			))
 		}
 
-		testCase("when adding another spec") {
+		testCase("adding another spec") {
 			val otherSpec = projectIRI("other spec")
 			val addOtherSpec =
 				Seq(
@@ -244,6 +244,52 @@ class IndexDataTest extends AnyFunSpec {
 				"spec keyword" -> objectBitmap,
 				"project keyword" -> objectBitmap,
 				"other spec keyword" -> objectBitmap
+			))
+		}
+
+		testCase("spec is removed with keywords overlapping data object") {
+			val statements = Seq(
+				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("duplicate"))),
+				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+			)
+
+			assert(runStatements(statements) == Map("duplicate" -> objectBitmap))
+		}
+
+		testCase("project is removed with keywords overlapping data object") {
+			val statements = Seq(
+				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("duplicate"))),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("duplicate"))),
+				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+			)
+
+			assert(runStatements(statements) == Map("duplicate" -> objectBitmap, "spec keyword" -> objectBitmap))
+		}
+
+		testCase("spec or project with overlapping keywords is removed") {
+			val statements = Seq(
+				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("duplicate"))),
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("duplicate")))
+			)
+
+			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
+			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+
+			assert(runStatements(statements :+ removeProject) == Map(
+				"object keyword" -> objectBitmap,
+				"duplicate" -> objectBitmap
+			))
+
+			assert(runStatements(statements :+ removeSpec) == Map(
+				"object keyword" -> objectBitmap,
 			))
 		}
 	}

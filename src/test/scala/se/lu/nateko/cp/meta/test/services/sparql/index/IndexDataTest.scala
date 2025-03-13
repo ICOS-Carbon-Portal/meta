@@ -123,6 +123,7 @@ class IndexDataTest extends AnyFunSpec {
 		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
 			val data = IndexData(30)()
 			statements.foreach((isAssertion, statement) =>
+					// TODO: Wrong, should not include all statements before they've been processed.
 				given StatementSource = StaticStatementSource(statements.map(_._2))
 				data.processUpdate(statement, isAssertion, vocab)
 			)
@@ -145,11 +146,13 @@ class IndexDataTest extends AnyFunSpec {
 
 		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
 
-		assert(runStatements(initial) == Map(
-			"object keyword" -> objectBitmap,
-			"spec keyword" -> objectBitmap,
-			"project keyword" -> objectBitmap
-		))
+		testCase("initial") {
+			assert(runStatements(initial) == Map(
+				"object keyword" -> objectBitmap,
+				"spec keyword" -> objectBitmap,
+				"project keyword" -> objectBitmap
+			))
+		}
 
 		testCase("adding object keyword") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
@@ -289,7 +292,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 
 			assert(runStatements(statements :+ removeSpec) == Map(
-				"object keyword" -> objectBitmap,
+				"object keyword" -> objectBitmap
 			))
 		}
 	}

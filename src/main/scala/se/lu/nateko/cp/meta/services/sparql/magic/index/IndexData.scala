@@ -93,7 +93,7 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 
-							setDataObjectKeywords(oe, spec, isAssertion, vocab)
+							updateDataObjectKeywords(subj, oe)
 						}
 					}
 				}
@@ -105,10 +105,9 @@ final class IndexData(nObjects: Int)(
 						val projKeywords = StatementSource.getValues(project, vocab.hasKeywords)
 
 						objectsForSpec(spec).foreach(dataObj =>
-							for (oe <- getDataObject(dataObj)) {
-								projKeywords.flatMap(parseKeywords).flatten().foreach(keyword => {
-									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
-								})
+							for (entry <- getDataObject(dataObj)) {
+								// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
+								updateDataObjectKeywords(dataObj.asInstanceOf[IRI], entry)
 							}
 						)
 					}
@@ -298,6 +297,9 @@ final class IndexData(nObjects: Int)(
 
 			case `hasKeywords` => getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+						// TODO: Should use updateDataObjectKeywords
+						/*
+						*/
 					}
 				}
 
@@ -305,10 +307,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-
-	private def updateObjectKeywords(dataObject: ObjEntry) = {
-
-	}
+	private def updateObjectKeywords(dataObject: ObjEntry) = {}
 
 	private def objectsForSpec(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
 		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
@@ -360,19 +359,28 @@ final class IndexData(nObjects: Int)(
 		anyUpdate
 	}
 
-	private def setDataObjectKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def updateDataObjectKeywords(dataObject: IRI, entry: ObjEntry)(using vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
-		val specKeywords = StatementSource.getValues(spec, vocab.hasKeywords)
-		val specProjects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
+		val specKeywords = StatementSource.getValues(entry.spec, vocab.hasKeywords)
+		val specProjects = StatementSource.getUriValues(entry.spec, vocab.hasAssociatedProject)
 
 		val specProjKeywords = specProjects.flatMap(project => {
 			StatementSource.getValues(project, vocab.hasKeywords)
 		})
 
-		Set.from(specKeywords ++ specProjKeywords).flatMap(parseKeywords).flatten().foreach(keyword =>
-			updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
-		)
+		val keywordIndex = categMap(Keyword)
+		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ specProjKeywords).flatMap(parseKeywords).flatten())
+		for (keyword <- newKeywords) {
+			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(entry.idx)
+		}
+
+		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
+			if (bitmap.contains(entry.idx) && !newKeywords.contains(keyword)) {
+				bitmap.remove(entry.idx)
+			}
+		}
 	}
 
 	private def updateStrArrayProp(

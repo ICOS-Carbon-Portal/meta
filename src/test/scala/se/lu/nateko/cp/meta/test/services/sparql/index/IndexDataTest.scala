@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
@@ -15,7 +15,15 @@ import scala.util.Random
 
 private val factory = SimpleValueFactory.getInstance()
 
-class IndexDataTest extends AnyFunSuite {
+class IndexDataTest extends AnyFunSpec {
+	def test(name: String)(body: => Any) = {
+		describe("") {
+			it(name)(body)
+		}
+	}
+
+	val testCase = it
+
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
@@ -46,7 +54,7 @@ class IndexDataTest extends AnyFunSuite {
 		assert(data.objs.length == 1)
 	}
 
-	test("Data object keywords are indexed from associated spec and project") {
+	test("Data object keywords indexing should include keywords from associated spec and project") {
 		// TODO: Introduce test factory for generating RDF values
 		// TODO: Generate random hash for objects
 		// TODO: Generate random project names
@@ -111,7 +119,7 @@ class IndexDataTest extends AnyFunSuite {
 		))
 	}
 
-	test("Data object keywords are kept updated") {
+	describe("Data object keywords should be kept up-to-date") {
 		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
 			val data = IndexData(30)()
 			statements.foreach((isAssertion, statement) =>
@@ -143,7 +151,7 @@ class IndexDataTest extends AnyFunSuite {
 			"project keyword" -> objectBitmap
 		))
 
-		{
+		testCase("when adding object keyword") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
 
 			assert(runStatements(initial :+ addObjectKeyword) == Map(
@@ -154,7 +162,7 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		{
+		testCase("when removing object keyword") {
 			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))
 
 			assert(runStatements(initial :+ removeObjectKeyword) == Map(
@@ -163,7 +171,7 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		{
+		testCase("when editing associated spec") {
 			val editSpec = Seq(
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited,spec other edit"))),
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")))
@@ -177,7 +185,7 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		{
+		testCase("when editing asserted project") {
 			val editProject = Seq(
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited,project other edit"))),
 				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
@@ -191,7 +199,7 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		{
+		testCase("when removing associated project") {
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			assert(runStatements(initial :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
@@ -199,7 +207,7 @@ class IndexDataTest extends AnyFunSuite {
 			))
 		}
 
-		{
+		testCase("when adding another project") {
 			val otherProject = projectIRI("other project")
 			val addOtherProject =
 				Seq(
@@ -216,15 +224,14 @@ class IndexDataTest extends AnyFunSuite {
 
 		}
 
-
-		{
+		testCase("when removing associated spec") {
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			assert(runStatements(initial :+ removeSpec) == Map(
 				"object keyword" -> objectBitmap
 			))
 		}
 
-		{
+		testCase("when adding another spec") {
 			val otherSpec = projectIRI("other spec")
 			val addOtherSpec =
 				Seq(
@@ -238,7 +245,6 @@ class IndexDataTest extends AnyFunSuite {
 				"project keyword" -> objectBitmap,
 				"other spec keyword" -> objectBitmap
 			))
-
 		}
 	}
 }

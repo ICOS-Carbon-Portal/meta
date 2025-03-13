@@ -7,6 +7,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 class IndexDataTest extends AnyFunSuite {
 	test("ObjEntry.fileName is cleared when hasName statement is deleted") {
@@ -22,13 +23,15 @@ class IndexDataTest extends AnyFunSuite {
 			def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = ???
 			def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
 
+		val statement = Rdf4jStatement(subject, vocab.hasName, factory.createLiteral("test name"))
+
 		// Insert hasName triple
-		data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), true, vocab)
+		data.processUpdate(statement, true, vocab)
 		assert(data.objs.length == 1)
 		assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 		// Remove it
-		data.processTriple(subject, vocab.hasName, factory.createLiteral("test name"), false, vocab)
+		data.processUpdate(statement, false, vocab)
 		assert(data.getObjEntry(hash).fileName === None)
 		assert(data.objs.length == 1)
 	}

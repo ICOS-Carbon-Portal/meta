@@ -104,6 +104,8 @@ final class IndexData(nObjects: Int)(
 		import vocab.dcterms.hasPart
 		import statement.{subj, pred, obj}
 
+		given CpmetaVocab = vocab
+
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
@@ -120,7 +122,7 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 
-							setSpecKeywords(oe, spec, isAssertion, vocab)
+							setDataObjectKeywords(oe, spec, isAssertion, vocab)
 						}
 					}
 				}
@@ -128,12 +130,10 @@ final class IndexData(nObjects: Int)(
 			case `hasAssociatedProject` => {
 				obj match {
 					case project: IRI => {
-						val dataObjects: Iterator[Resource] =
-							StatementSource.getStatements(null, vocab.hasObjectSpec, subj).map(_.getSubject())
-
+						val spec = subj
 						val projKeywords = StatementSource.getValues(project, vocab.hasKeywords)
 
-						dataObjects.foreach(dataObj =>
+						objectsForSpec(spec).foreach(dataObj =>
 							for (oe <- getDataObject(dataObj)) {
 								projKeywords.flatMap(parseKeywords).flatten().foreach(keyword => {
 									updateCategSet(categMap(Keyword), keyword, oe.idx, isAssertion)
@@ -143,7 +143,6 @@ final class IndexData(nObjects: Int)(
 					}
 					case _ => ()
 				}
-
 			}
 
 			case `hasName` =>
@@ -331,7 +330,7 @@ final class IndexData(nObjects: Int)(
 					case Some(oe) => updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 					case None => {
 						parseKeywords(obj).foreach(keywords =>
-							updateAssociatedKeywords(subj, keywords.toSeq, isAssertion, vocab)
+							updateAssociatedKeywords(subj, keywords.toSeq, isAssertion)
 						)
 					}
 							println(s"It's a project: $subj")
@@ -343,19 +342,28 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
+
+	private def updateObjectKeywords(dataObject: ObjEntry) = {
+
+	}
+
+	private def objectsForSpec(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
+		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
+	}
+
 	private def parseKeywords(obj: Value): Option[Array[String]] = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateAssociatedKeywords(association: IRI, newKeywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def updateAssociatedKeywords(association: IRI, newKeywords: Seq[String], isAssertion: Boolean)(using CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
-		val isSpec = updateSpecKeywords(association, newKeywords, isAssertion, vocab)
+		val isSpec = updateSpecKeywords(association, newKeywords, isAssertion)
 		// If we get no results when treating association as a spec, then maybe it's a project.
-		isSpec || updateProjectKeywords(association, newKeywords, isAssertion, vocab)
+		isSpec || updateProjectKeywords(association, newKeywords, isAssertion)
 	}
 
-	private def updateProjectKeywords(project: IRI, newKeywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def updateProjectKeywords(project: IRI, newKeywords: Seq[String], isAssertion: Boolean)(using vocab: CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
 		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
@@ -364,13 +372,13 @@ final class IndexData(nObjects: Int)(
 		val anySpecs = specs.hasNext
 
 		specs.foreach(spec =>
-			updateSpecKeywords(spec, newKeywords, isAssertion, vocab)
+			updateSpecKeywords(spec, newKeywords, isAssertion)
 		)
 
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean)(using vocab: CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
 		var anyUpdate = false
@@ -389,7 +397,7 @@ final class IndexData(nObjects: Int)(
 		anyUpdate
 	}
 
-	private def setSpecKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
+	private def setDataObjectKeywords(oe: ObjEntry, spec: IRI, isAssertion: Boolean, vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
 		val specKeywords = StatementSource.getValues(spec, vocab.hasKeywords)

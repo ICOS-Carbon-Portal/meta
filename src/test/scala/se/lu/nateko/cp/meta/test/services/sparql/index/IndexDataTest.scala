@@ -262,20 +262,20 @@ class IndexDataTest extends AnyFunSpec {
 				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			)
 
-			assert(runStatements(statements) == Map("duplicate" -> objectBitmap))
+			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
 		}
 
 		testCase("project is removed with keywords overlapping data object") {
-			val statements = Seq(
+			val statements = Random.shuffle(Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap"))),
-				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
-			)
+				(false, Rdf4jStatement(spec, hasAssociatedProject, project))
+			))
 
-			assert(runStatements(statements) == Map("duplicate" -> objectBitmap, "spec keyword" -> objectBitmap))
+			assert(runStatements(statements) == Map("overlap" -> objectBitmap, "spec keyword" -> objectBitmap))
 		}
 
 		testCase("spec or project with overlapping keywords is removed") {
@@ -292,7 +292,7 @@ class IndexDataTest extends AnyFunSpec {
 
 			assert(runStatements(statements :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
-				"duplicate" -> objectBitmap
+				"overlap" -> objectBitmap
 			))
 
 			assert(runStatements(statements :+ removeSpec) == Map(

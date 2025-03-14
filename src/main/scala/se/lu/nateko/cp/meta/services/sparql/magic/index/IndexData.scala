@@ -451,11 +451,11 @@ final class IndexData(nObjects: Int)(
 
 	private def getDataObject(dobj: Value): Option[ObjEntry] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
-			val oe = getObjEntry(hash)
-			if (oe.prefix == "") {
-				oe.prefix = prefix.intern()
+			val entry = getObjEntry(hash)
+			if (entry.prefix == "") {
+				entry.prefix = prefix.intern()
 			}
-			Some(oe)
+			Some(entry)
 
 		case _ => None
 

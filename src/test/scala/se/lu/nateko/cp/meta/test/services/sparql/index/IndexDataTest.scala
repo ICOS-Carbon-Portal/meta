@@ -138,11 +138,6 @@ class IndexDataTest extends AnyFunSpec {
 					)
 				}
 
-				println("Store:")
-				for (x <- store) {
-					println(s"$x")
-				}
-				println("")
 				given StatementSource = StaticStatementSource(store)
 				data.processUpdate(statement, isAssertion, vocab)
 			)

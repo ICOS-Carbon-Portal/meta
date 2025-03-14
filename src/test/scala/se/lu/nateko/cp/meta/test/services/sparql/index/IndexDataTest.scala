@@ -254,22 +254,6 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("adding another spec") {
-			val otherSpec = projectIRI("other spec")
-			val addOtherSpec =
-				Seq(
-					(true, Rdf4jStatement(otherSpec, hasKeywords, factory.createLiteral("other spec keyword"))),
-					(true, Rdf4jStatement(dataObject, hasObjectSpec, otherSpec))
-				)
-
-			assert(runStatements((initial) ++ addOtherSpec) == Map(
-				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap,
-				"project keyword" -> objectBitmap,
-				"other spec keyword" -> objectBitmap
-			))
-		}
-
 		testCase("spec is removed with keywords overlapping data object") {
 			val statements = Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),

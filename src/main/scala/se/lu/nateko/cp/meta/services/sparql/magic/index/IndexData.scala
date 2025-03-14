@@ -304,7 +304,7 @@ final class IndexData(nObjects: Int)(
 						parseKeywords(obj).foreach(keywords =>
 							updateAssociatedKeywords(subj, keywords.toSeq, isAssertion)
 						)
-						*/
+						 */
 					}
 				}
 
@@ -377,13 +377,17 @@ final class IndexData(nObjects: Int)(
 
 		val keywordIndex = categMap(Keyword)
 		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ specProjKeywords).flatMap(parseKeywords).flatten())
+
 		for (keyword <- newKeywords) {
 			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(entry.idx)
 		}
 
 		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
-			if (bitmap.contains(entry.idx) && !newKeywords.contains(keyword)) {
+			if (!newKeywords.contains(keyword)) {
 				bitmap.remove(entry.idx)
+				if bitmap.isEmpty then {
+					val _ = keywordIndex.remove(keyword)
+				}
 			}
 		}
 	}

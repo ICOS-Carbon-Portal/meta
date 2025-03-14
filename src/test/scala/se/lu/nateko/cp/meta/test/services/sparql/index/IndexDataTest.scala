@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-
 import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funspec.AnyFunSpec
@@ -129,13 +128,7 @@ class IndexDataTest extends AnyFunSpec {
 				store = if (isAssertion) {
 					store :+ statement
 				} else {
-					store.filter(existing =>
-						val res = existing != statement
-						if (!res){
-							info(s"Removing $existing")
-						}
-						res
-					)
+					store.filter(existing => existing != statement)
 				}
 
 				given StatementSource = StaticStatementSource(store)

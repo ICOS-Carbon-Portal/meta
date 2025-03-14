@@ -138,6 +138,11 @@ class IndexDataTest extends AnyFunSpec {
 					)
 				}
 
+				println("Store:")
+				for (x <- store) {
+					println(s"$x")
+				}
+				println("")
 				given StatementSource = StaticStatementSource(store)
 				data.processUpdate(statement, isAssertion, vocab)
 			)
@@ -268,7 +273,7 @@ class IndexDataTest extends AnyFunSpec {
 			val statements = Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
-				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("duplicate"))),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap"))),
 				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			)
 
@@ -277,11 +282,11 @@ class IndexDataTest extends AnyFunSpec {
 
 		testCase("project is removed with keywords overlapping data object") {
 			val statements = Seq(
-				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("duplicate"))),
+				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
-				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("duplicate"))),
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap"))),
 				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			)
 
@@ -293,8 +298,8 @@ class IndexDataTest extends AnyFunSpec {
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
-				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("duplicate"))),
-				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("duplicate")))
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap"))),
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap")))
 			)
 
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))

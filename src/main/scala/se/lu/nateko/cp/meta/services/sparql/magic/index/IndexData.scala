@@ -92,7 +92,7 @@ final class IndexData(nObjects: Int)(
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
-
+							println(s"statement: $statement, isAssertion: $isAssertion")
 							updateDataObjectKeywords(subj, oe)
 						}
 					}
@@ -102,12 +102,11 @@ final class IndexData(nObjects: Int)(
 				obj match {
 					case project: IRI => {
 						val spec = subj
-						val projKeywords = StatementSource.getValues(project, vocab.hasKeywords)
 
-						objectsForSpec(spec).foreach(dataObj =>
-							for (entry <- getDataObject(dataObj)) {
+						objectsForSpec(spec).foreach(dataObject =>
+							for (oe <- getDataObject(dataObject)) {
 								// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
-								updateDataObjectKeywords(dataObj.asInstanceOf[IRI], entry)
+								updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
 							}
 						)
 					}
@@ -297,9 +296,7 @@ final class IndexData(nObjects: Int)(
 
 			case `hasKeywords` => getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
-						// TODO: Should use updateDataObjectKeywords
-						/*
-						 */
+						updateAssociatedKeywords(subj)
 					}
 				}
 
@@ -317,15 +314,15 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateAssociatedKeywords(association: IRI, newKeywords: Seq[String], isAssertion: Boolean)(using CpmetaVocab)(using
+	private def updateAssociatedKeywords(association: IRI)(using CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
-		val isSpec = updateSpecKeywords(association, newKeywords, isAssertion)
+		val isSpec = updateSpecKeywords(association)
 		// If we get no results when treating association as a spec, then maybe it's a project.
-		isSpec || updateProjectKeywords(association, newKeywords, isAssertion)
+		isSpec || updateProjectKeywords(association)
 	}
 
-	private def updateProjectKeywords(project: IRI, newKeywords: Seq[String], isAssertion: Boolean)(using vocab: CpmetaVocab)(using
+	private def updateProjectKeywords(project: IRI)(using vocab: CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
 		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
@@ -334,52 +331,60 @@ final class IndexData(nObjects: Int)(
 		val anySpecs = specs.hasNext
 
 		specs.foreach(spec =>
-			updateSpecKeywords(spec, newKeywords, isAssertion)
+			updateSpecKeywords(spec)
 		)
 
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource, keywords: Seq[String], isAssertion: Boolean)(using vocab: CpmetaVocab)(using
+	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
-		var anyUpdate = false
 		val dataObjects: Iterator[Resource] =
 			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
-		dataObjects.foreach(obj => {
-			for (oe <- getDataObject(obj)) {
-				anyUpdate = true
-				keywords.foreach(kw => {
-					updateCategSet(categMap(Keyword), kw, oe.idx, isAssertion)
-				})
+		// Find out if we got any results without consuming the iterator.
+		val anyObjects = dataObjects.hasNext
+
+		dataObjects.foreach(dataObject => {
+			for (oe <- getDataObject(dataObject)) {
+				// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
+				updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
 			}
 		})
 
-		anyUpdate
+		anyObjects
 	}
 
-	private def updateDataObjectKeywords(dataObject: IRI, entry: ObjEntry)(using vocab: CpmetaVocab)(using
+	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using
 		StatementSource
 	) = {
 		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
-		val specKeywords = StatementSource.getValues(entry.spec, vocab.hasKeywords)
-		val specProjects = StatementSource.getUriValues(entry.spec, vocab.hasAssociatedProject)
+		val (specKeywords, projectKeywords) = if (oe.spec != null) {
+			val projects = StatementSource.getUriValues(oe.spec, vocab.hasAssociatedProject)
+			(
+				StatementSource.getValues(oe.spec, vocab.hasKeywords),
+				projects.flatMap(project => { StatementSource.getValues(project, vocab.hasKeywords) })
+			)
+		} else {
+			(Set(), Set())
+		}
 
-		val specProjKeywords = specProjects.flatMap(project => {
-			StatementSource.getValues(project, vocab.hasKeywords)
-		})
-
+		println(s"objectKeywords: $objectKeywords")
+		println(s"specKeywords: $specKeywords")
+		println(s"specProjKeywords: $projectKeywords")
 		val keywordIndex = categMap(Keyword)
-		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ specProjKeywords).flatMap(parseKeywords).flatten())
+		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ projectKeywords).flatMap(parseKeywords).flatten())
+		println(s"newKeywords: $newKeywords")
+		println(s"")
 
 		for (keyword <- newKeywords) {
-			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(entry.idx)
+			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(oe.idx)
 		}
 
 		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
 			if (!newKeywords.contains(keyword)) {
-				bitmap.remove(entry.idx)
+				bitmap.remove(oe.idx)
 				if bitmap.isEmpty then {
 					val _ = keywordIndex.remove(keyword)
 				}
@@ -449,11 +454,11 @@ final class IndexData(nObjects: Int)(
 
 	private def getDataObject(dobj: Value): Option[ObjEntry] = dobj match
 		case CpVocab.DataObject(hash, prefix) =>
-			val entry = getObjEntry(hash)
-			if (entry.prefix == "") {
-				entry.prefix = prefix.intern()
+			val oe = getObjEntry(hash)
+			if (oe.prefix == "") {
+				oe.prefix = prefix.intern()
 			}
-			Some(entry)
+			Some(oe)
 
 		case _ => None
 

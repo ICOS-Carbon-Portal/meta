@@ -92,7 +92,7 @@ final class IndexData(nObjects: Int)(
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
-							println(s"statement: $statement, isAssertion: $isAssertion")
+
 							updateDataObjectKeywords(subj, oe)
 						}
 					}
@@ -370,13 +370,8 @@ final class IndexData(nObjects: Int)(
 			(Set(), Set())
 		}
 
-		println(s"objectKeywords: $objectKeywords")
-		println(s"specKeywords: $specKeywords")
-		println(s"specProjKeywords: $projectKeywords")
 		val keywordIndex = categMap(Keyword)
 		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ projectKeywords).flatMap(parseKeywords).flatten())
-		println(s"newKeywords: $newKeywords")
-		println(s"")
 
 		for (keyword <- newKeywords) {
 			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(oe.idx)

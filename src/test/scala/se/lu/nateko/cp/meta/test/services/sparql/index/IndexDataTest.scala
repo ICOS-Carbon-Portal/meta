@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+
 import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funspec.AnyFunSpec
@@ -122,10 +123,23 @@ class IndexDataTest extends AnyFunSpec {
 
 	describe("Data object keywords are kept up-to-date when") {
 		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
-			val data = IndexData(30)()
+			val data = IndexData(100)()
+			var store: Seq[Rdf4jStatement] = Seq()
+
 			statements.foreach((isAssertion, statement) =>
-					// TODO: Wrong, should not include all statements before they've been processed.
-				given StatementSource = StaticStatementSource(statements.map(_._2))
+				store = if (isAssertion) {
+					store :+ statement
+				} else {
+					store.filter(existing =>
+						val res = existing != statement
+						if (!res){
+							info(s"Removing $existing")
+						}
+						res
+					)
+				}
+
+				given StatementSource = StaticStatementSource(store)
 				data.processUpdate(statement, isAssertion, vocab)
 			)
 

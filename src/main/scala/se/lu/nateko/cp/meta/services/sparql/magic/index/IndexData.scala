@@ -107,6 +107,15 @@ final class IndexData(nObjects: Int)(
 
 			case `hasAssociatedProject` => {
 				updateSpecKeywords(subj)
+				val spec = subj
+				val project = obj.asInstanceOf[IRI]
+
+				if (!isAssertion) {
+					cache.projectKeywords.remove(project)
+					cache.specKeywords.remove(spec)
+				}
+
+				updateSpecKeywords(spec)
 			}
 
 			case `hasName` =>
@@ -292,7 +301,9 @@ final class IndexData(nObjects: Int)(
 			case `hasKeywords` =>
 				getDataObject(subj) match {
 					case Some(oe) => updateDataObjectKeywords(subj, oe)
-					case None => updateAssociatedKeywords(subj)
+					case None => {
+						updateAssociatedKeywords(subj)
+					}
 				}
 
 			case _ =>
@@ -320,13 +331,16 @@ final class IndexData(nObjects: Int)(
 		val anySpecs = specs.hasNext
 
 		specs.foreach(spec =>
-			updateSpecKeywords(spec)
+			spec match {
+				case spec: IRI =>
+					updateSpecKeywords(spec)
+			}
 		)
 
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using
+	private def updateSpecKeywords(spec: IRI)(using vocab: CpmetaVocab)(using
 		StatementSource
 	): Boolean = {
 		val dataObjects: Iterator[Resource] =
@@ -381,8 +395,10 @@ final class IndexData(nObjects: Int)(
 		val projectKeywords = Set.from(projects.flatMap(project => getProjectKeywords(project, cache.projectKeywords)))
 
 		getKeywords(spec) ++ projectKeywords
-		// }
-		// )
+		/*
+			}
+		)
+		 */
 	}
 
 	private def getProjectKeywords(project: IRI, cache: AnyRefMap[IRI, Set[String]])(using
@@ -392,15 +408,11 @@ final class IndexData(nObjects: Int)(
 			return Set.empty;
 		}
 
-		/*
 		cache.getOrElseUpdate(
 			project, {
-		 */
-		getKeywords(project)
-		/*
+				getKeywords(project)
 			}
 		)
-		 */
 	}
 
 	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource) = {

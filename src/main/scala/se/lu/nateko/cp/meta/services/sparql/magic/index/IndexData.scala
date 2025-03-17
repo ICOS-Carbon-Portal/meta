@@ -296,8 +296,6 @@ final class IndexData(nObjects: Int)(
 
 			case `hasKeywords` => getDataObject(subj).foreach { oe =>
 					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
-						updateAssociatedKeywords(subj)
-					}
 				}
 
 			case _ =>

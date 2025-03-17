@@ -99,19 +99,7 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => {
-				obj match {
-					case project: IRI => {
-						val spec = subj
-
-						objectsForSpec(spec).foreach(dataObject =>
-							for (oe <- getDataObject(dataObject)) {
-								// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
-								updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
-							}
-						)
-					}
-					case _ => ()
-				}
+				updateSpecKeywords(subj)
 			}
 
 			case `hasName` =>
@@ -300,10 +288,6 @@ final class IndexData(nObjects: Int)(
 
 			case _ =>
 		}
-	}
-
-	private def objectsForSpec(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
-		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 	}
 
 	private def parseKeywords(obj: Value): Option[Array[String]] = {

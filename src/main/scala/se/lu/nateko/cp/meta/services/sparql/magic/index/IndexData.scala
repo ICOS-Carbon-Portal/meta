@@ -31,6 +31,11 @@ final case class StatEntry(key: StatKey, count: Int)
 
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
+private final case class Cache(
+	var specKeywords: AnyRefMap[IRI, Set[String]] = AnyRefMap.empty,
+	var projectKeywords: AnyRefMap[IRI, Set[String]] = AnyRefMap.empty
+)
+
 final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
@@ -47,6 +52,8 @@ final class IndexData(nObjects: Int)(
 	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
+
+	private given cache: Cache = Cache()
 
 	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
@@ -338,22 +345,14 @@ final class IndexData(nObjects: Int)(
 		anyObjects
 	}
 
-	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using
+	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab, cache: Cache)(using
 		StatementSource
 	) = {
-		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
-		val (specKeywords, projectKeywords) = if (oe.spec != null) {
-			val projects = StatementSource.getUriValues(oe.spec, vocab.hasAssociatedProject)
-			(
-				StatementSource.getValues(oe.spec, vocab.hasKeywords),
-				projects.flatMap(project => { StatementSource.getValues(project, vocab.hasKeywords) })
-			)
-		} else {
-			(Set(), Set())
-		}
+		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords).flatMap(parseKeywords).flatten()
+		val specKeywords = getSpecKeywords(oe.spec)
+		val newKeywords = Set.from(objectKeywords ++ specKeywords)
 
 		val keywordIndex = categMap(Keyword)
-		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ projectKeywords).flatMap(parseKeywords).flatten())
 
 		for (keyword <- newKeywords) {
 			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(oe.idx)
@@ -367,6 +366,45 @@ final class IndexData(nObjects: Int)(
 				}
 			}
 		}
+	}
+
+	private def getSpecKeywords(spec: IRI)(using vocab: CpmetaVocab, cache: Cache)(using StatementSource): Set[String] = {
+		if (spec == null) {
+			return Set.empty;
+		}
+
+		/*
+		cache.specKeywords.getOrElseUpdate(
+			spec, {
+		 */
+		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+		val projectKeywords = Set.from(projects.flatMap(project => getProjectKeywords(project, cache.projectKeywords)))
+
+		getKeywords(spec) ++ projectKeywords
+		// }
+		// )
+	}
+
+	private def getProjectKeywords(project: IRI, cache: AnyRefMap[IRI, Set[String]])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Set[String] = {
+		if (project == null) {
+			return Set.empty;
+		}
+
+		/*
+		cache.getOrElseUpdate(
+			project, {
+		 */
+		getKeywords(project)
+		/*
+			}
+		)
+		 */
+	}
+
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource) = {
+		Set.from(StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
 	}
 
 	private def updateStrArrayProp(

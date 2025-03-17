@@ -297,9 +297,7 @@ final class IndexData(nObjects: Int)(
 			case `hasKeywords` =>
 				getDataObject(subj) match {
 					case Some(oe) => updateDataObjectKeywords(subj, oe)
-					case None => {
-						updateAssociatedKeywords(subj)
-					}
+					case None => updateAssociatedKeywords(subj)
 				}
 
 			case _ =>

@@ -304,8 +304,6 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def updateObjectKeywords(dataObject: ObjEntry) = {}
-
 	private def objectsForSpec(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
 		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 	}

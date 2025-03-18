@@ -296,17 +296,13 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateAssociatedKeywords(association: IRI)(using CpmetaVocab)(using
-		StatementSource
-	): Boolean = {
+	private def updateAssociatedKeywords(association: IRI)(using CpmetaVocab)(using StatementSource): Boolean = {
 		val isSpec = updateSpecKeywords(association)
 		// If we get no results when treating association as a spec, then maybe it's a project.
 		isSpec || updateProjectKeywords(association)
 	}
 
-	private def updateProjectKeywords(project: IRI)(using vocab: CpmetaVocab)(using
-		StatementSource
-	): Boolean = {
+	private def updateProjectKeywords(project: IRI)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
 		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
 
 		// Find out if we got any results without consuming the iterator.
@@ -319,9 +315,7 @@ final class IndexData(nObjects: Int)(
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using
-		StatementSource
-	): Boolean = {
+	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
 		val dataObjects: Iterator[Resource] =
 			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
@@ -338,9 +332,7 @@ final class IndexData(nObjects: Int)(
 		anyObjects
 	}
 
-	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using
-		StatementSource
-	) = {
+	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using StatementSource) = {
 		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
 		val (specKeywords, projectKeywords) = if (oe.spec != null) {
 			val projects = StatementSource.getUriValues(oe.spec, vocab.hasAssociatedProject)

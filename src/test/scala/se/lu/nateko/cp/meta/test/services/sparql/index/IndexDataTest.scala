@@ -126,14 +126,16 @@ class IndexDataTest extends AnyFunSpec {
 			var store: Seq[Rdf4jStatement] = Seq()
 
 			statements.foreach((isAssertion, statement) =>
+				// Process before insertion, to make sure indexing does not rely
+				// on the active triple being inserted already.
+				given StatementSource = StaticStatementSource(store)
+				data.processUpdate(statement, isAssertion, vocab)
+
 				store = if (isAssertion) {
 					store :+ statement
 				} else {
 					store.filter(existing => existing != statement)
 				}
-
-				given StatementSource = StaticStatementSource(store)
-				data.processUpdate(statement, isAssertion, vocab)
 			)
 
 			data.categMap(Keyword)

@@ -99,7 +99,7 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => {
-				updateSpecKeywords(subj)
+				updateSpecKeywords(subj, isAssertion, None)
 			}
 
 			case `hasName` =>
@@ -283,24 +283,30 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasKeywords` =>
+				val changedKeywords = Set.from(parseKeywords(obj).get)
 				getDataObject(subj) match {
 					case Some(oe) => {
 						val dataObject: IRI = subj
-						val change = Set.from(parseKeywords(obj).get)
 
 						val objectKeywords = Set.from(StatementSource.getValues(dataObject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
 						val specKeywords = getSpecKeywords(oe.spec)
 						val existingKeywords = objectKeywords ++ specKeywords
 
 						val newKeywords: Set[String] = if (isAssertion) {
-							existingKeywords ++ change
+							existingKeywords ++ changedKeywords
 						} else {
-							existingKeywords -- change
+							existingKeywords -- changedKeywords
 						}
 
 						updateKeywordIndex(oe.idx, newKeywords)
 					}
-					case None => updateAssociatedKeywords(subj)
+					case None => {
+						val isSpec = updateSpecKeywords(subj, isAssertion, Some(changedKeywords))
+						// If we get no results when treating association as a spec, then maybe it's a project.
+						if (!isSpec) {
+							updateProjectKeywords(subj, isAssertion, Some(changedKeywords))
+						}
+					}
 				}
 
 			case _ =>
@@ -311,36 +317,53 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateAssociatedKeywords(association: IRI)(using CpmetaVocab)(using StatementSource): Boolean = {
-		val isSpec = updateSpecKeywords(association)
-		// If we get no results when treating association as a spec, then maybe it's a project.
-		isSpec || updateProjectKeywords(association)
-	}
-
-	private def updateProjectKeywords(project: IRI)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
+	private def updateProjectKeywords(project: IRI, isAssertion: Boolean, changedKeywords: Option[Set[String]])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Boolean = {
 		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
 
 		// Find out if we got any results without consuming the iterator.
 		val anySpecs = specs.hasNext
-		specs.foreach(updateSpecKeywords)
+		specs.foreach(spec => updateSpecKeywords(spec, isAssertion, changedKeywords))
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
+	private def updateSpecKeywords(spec: Resource, isAssertion: Boolean, changedKeywords: Option[Set[String]])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Boolean = {
 		val dataObjects: Iterator[Resource] =
 			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
 		// Find out if we got any results without consuming the iterator.
 		val anyObjects = dataObjects.hasNext
 
-		dataObjects.foreach(dataObject => {
-			getDataObject(dataObject) match {
-				case Some(oe) =>
-					// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
-					updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
-				case None => ()
-			}
-		})
+		if (anyObjects) {
+			dataObjects.foreach(dataObject => {
+				val specKeywords = getSpecKeywords(spec.asInstanceOf[IRI])
+
+				getDataObject(dataObject) match {
+					case Some(oe) =>
+						// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
+						val objectKeywords =
+							Set.from(StatementSource.getValues(dataObject.asInstanceOf[IRI], vocab.hasKeywords).flatMap(parseKeywords).flatten())
+						val existingKeywords: Set[String] = objectKeywords ++ specKeywords
+
+						val newKeywords: Set[String] =
+							changedKeywords match {
+								case Some(changedKeywords) =>
+									if (isAssertion) {
+										existingKeywords ++ changedKeywords
+									} else {
+										existingKeywords -- changedKeywords
+									}
+								case None => existingKeywords
+							}
+
+						updateKeywordIndex(oe.idx, newKeywords)
+					case None => ()
+				}
+			})
+		}
 
 		anyObjects
 	}

@@ -305,11 +305,7 @@ final class IndexData(nObjects: Int)(
 
 		// Find out if we got any results without consuming the iterator.
 		val anySpecs = specs.hasNext
-
-		specs.foreach(spec =>
-			updateSpecKeywords(spec)
-		)
-
+		specs.foreach(updateSpecKeywords)
 		anySpecs
 	}
 
@@ -321,9 +317,11 @@ final class IndexData(nObjects: Int)(
 		val anyObjects = dataObjects.hasNext
 
 		dataObjects.foreach(dataObject => {
-			for (oe <- getDataObject(dataObject)) {
-				// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
-				updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
+			getDataObject(dataObject) match {
+				case Some(oe) =>
+					// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
+					updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
+				case None => ()
 			}
 		})
 
@@ -339,7 +337,7 @@ final class IndexData(nObjects: Int)(
 				projects.flatMap(project => { StatementSource.getValues(project, vocab.hasKeywords) })
 			)
 		} else {
-			(Set(), Set())
+			(Seq.empty, Seq.empty)
 		}
 
 		val keywordIndex = categMap(Keyword)

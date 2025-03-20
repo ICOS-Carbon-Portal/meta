@@ -99,7 +99,8 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => {
-				updateSpecKeywords(subj, isAssertion, None)
+				// TODO: Get the project keywords and send them as changed ones
+				updateSpecKeywords(subj, isAssertion, Set.empty)
 			}
 
 			case `hasName` =>
@@ -301,10 +302,10 @@ final class IndexData(nObjects: Int)(
 						updateKeywordIndex(oe.idx, newKeywords)
 					}
 					case None => {
-						val isSpec = updateSpecKeywords(subj, isAssertion, Some(changedKeywords))
+						val isSpec = updateSpecKeywords(subj, isAssertion, changedKeywords)
 						// If we get no results when treating association as a spec, then maybe it's a project.
 						if (!isSpec) {
-							updateProjectKeywords(subj, isAssertion, Some(changedKeywords))
+							updateProjectKeywords(subj, isAssertion, changedKeywords)
 						}
 					}
 				}
@@ -317,7 +318,7 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateProjectKeywords(project: IRI, isAssertion: Boolean, changedKeywords: Option[Set[String]])(using
+	private def updateProjectKeywords(project: IRI, isAssertion: Boolean, changedKeywords: Set[String])(using
 		vocab: CpmetaVocab
 	)(using StatementSource): Boolean = {
 		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
@@ -328,7 +329,7 @@ final class IndexData(nObjects: Int)(
 		anySpecs
 	}
 
-	private def updateSpecKeywords(spec: Resource, isAssertion: Boolean, changedKeywords: Option[Set[String]])(using
+	private def updateSpecKeywords(spec: Resource, isAssertion: Boolean, changedKeywords: Set[String])(using
 		vocab: CpmetaVocab
 	)(using StatementSource): Boolean = {
 		val dataObjects: Iterator[Resource] =
@@ -338,9 +339,9 @@ final class IndexData(nObjects: Int)(
 		val anyObjects = dataObjects.hasNext
 
 		if (anyObjects) {
-			dataObjects.foreach(dataObject => {
-				val specKeywords = getSpecKeywords(spec.asInstanceOf[IRI])
+			val specKeywords = getSpecKeywords(spec.asInstanceOf[IRI])
 
+			dataObjects.foreach(dataObject => {
 				getDataObject(dataObject) match {
 					case Some(oe) =>
 						// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
@@ -349,14 +350,10 @@ final class IndexData(nObjects: Int)(
 						val existingKeywords: Set[String] = objectKeywords ++ specKeywords
 
 						val newKeywords: Set[String] =
-							changedKeywords match {
-								case Some(changedKeywords) =>
-									if (isAssertion) {
-										existingKeywords ++ changedKeywords
-									} else {
-										existingKeywords -- changedKeywords
-									}
-								case None => existingKeywords
+							if (isAssertion) {
+								existingKeywords ++ changedKeywords
+							} else {
+								existingKeywords -- changedKeywords
 							}
 
 						updateKeywordIndex(oe.idx, newKeywords)

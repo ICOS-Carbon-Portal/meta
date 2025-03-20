@@ -284,7 +284,22 @@ final class IndexData(nObjects: Int)(
 
 			case `hasKeywords` =>
 				getDataObject(subj) match {
-					case Some(oe) => updateDataObjectKeywords(subj, oe)
+					case Some(oe) => {
+						val dataObject: IRI = subj
+						val change = Set.from(parseKeywords(obj).get)
+
+						val objectKeywords = Set.from(StatementSource.getValues(dataObject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
+						val specKeywords = getSpecKeywords(oe.spec)
+						val existingKeywords = objectKeywords ++ specKeywords
+
+						val newKeywords: Set[String] = if (isAssertion) {
+							existingKeywords ++ change
+						} else {
+							existingKeywords -- change
+						}
+
+						updateKeywordIndex(oe.idx, newKeywords)
+					}
 					case None => updateAssociatedKeywords(subj)
 				}
 
@@ -331,32 +346,52 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using StatementSource) = {
-		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
-		val (specKeywords, projectKeywords) = if (oe.spec != null) {
-			val projects = StatementSource.getUriValues(oe.spec, vocab.hasAssociatedProject)
-			(
-				StatementSource.getValues(oe.spec, vocab.hasKeywords),
-				projects.flatMap(project => { StatementSource.getValues(project, vocab.hasKeywords) })
-			)
-		} else {
-			(Seq.empty, Seq.empty)
-		}
+		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords).flatMap(parseKeywords).flatten()
+		val specKeywords = getSpecKeywords(oe.spec)
+		val newKeywords = Set.from(objectKeywords ++ specKeywords)
+		updateKeywordIndex(oe.idx, newKeywords)
+	}
 
+	private def updateKeywordIndex(dataObjectId: Int, newKeywords: Set[String]) = {
 		val keywordIndex = categMap(Keyword)
-		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ projectKeywords).flatMap(parseKeywords).flatten())
 
 		for (keyword <- newKeywords) {
-			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(oe.idx)
+			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(dataObjectId)
 		}
 
 		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
 			if (!newKeywords.contains(keyword)) {
-				bitmap.remove(oe.idx)
+				bitmap.remove(dataObjectId)
 				if bitmap.isEmpty then {
 					val _ = keywordIndex.remove(keyword)
 				}
 			}
 		}
+	}
+
+	private def getSpecKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (spec == null) {
+			return Set.empty;
+		}
+
+		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+		val projectKeywords = Set.from(projects.flatMap(project => getProjectKeywords(project)))
+
+		getKeywords(spec) ++ projectKeywords
+	}
+
+	private def getProjectKeywords(project: IRI)(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Set[String] = {
+		if (project == null) {
+			return Set.empty;
+		}
+
+		getKeywords(project)
+	}
+
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource) = {
+		Set.from(StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
 	}
 
 	private def updateStrArrayProp(

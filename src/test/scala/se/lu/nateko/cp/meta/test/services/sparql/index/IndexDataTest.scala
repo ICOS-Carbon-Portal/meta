@@ -192,7 +192,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("editing asserted project") {
+		testCase("editing associated project") {
 			val editProject = Seq(
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited,project other edit"))),
 				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))

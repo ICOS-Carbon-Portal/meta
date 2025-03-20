@@ -16,13 +16,15 @@ import scala.util.Random
 private val factory = SimpleValueFactory.getInstance()
 
 class IndexDataTest extends AnyFunSpec {
+	// Abusing ScalaTest a bit to allow top-level 'test' blocks as well as 'describe'-blocks.
+	val testCase = it
+
 	def test(name: String)(body: => Any) = {
 		describe("") {
 			it(name)(body)
 		}
 	}
 
-	val testCase = it
 
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}

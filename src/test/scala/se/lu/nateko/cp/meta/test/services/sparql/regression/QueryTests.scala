@@ -311,7 +311,7 @@ class QueryTests extends AsyncFunSpec {
 
 	describeQ(TestQueries.icosCitation("<https://meta.icos-cp.eu/objects/FCZAo0M_gnyN0RZ4I1J6llzM>"), "Citation of specified data object", expectRows = 1, sampleIndex = 0, sortColumn = "cit") {
 		f => Map(
-				"cit" -> f.createLiteral("Kubistin, D., Plaß-Dülmer, C., Lindauer, M., Schumacher, M. (2018). ICOS ATC CO2 Release, Hohenpeissenberg (50.0 m), 2017-02-15–2017-12-31, ICOS RI, https://hdl.handle.net/11676/FCZAo0M_gnyN0RZ4I1J6llzM")
+				"cit" -> f.createLiteral("Kubistin, D., Plaß-Dülmer, C., Lindauer, M., Schumacher, M. (2018). ICOS ATC CO2 Release from Hohenpeissenberg (50.0 m), 2017-02-15–2017-12-31, ICOS RI, https://hdl.handle.net/11676/FCZAo0M_gnyN0RZ4I1J6llzM")
 			)
 	}
 

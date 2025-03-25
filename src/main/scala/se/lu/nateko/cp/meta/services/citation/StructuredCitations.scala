@@ -20,6 +20,12 @@ class StructuredCitations(
 		case _ => None
 	}
 
+	private val titleWithTempCov = for
+			title <- citInfo.title;
+			tempCovDisplay <- citInfo.tempCovDisplay
+		yield
+			s"${title}, ${tempCovDisplay}"
+
 	private val newLine = "\r\n"
 
 	def toBibTex: String = {
@@ -42,7 +48,7 @@ class StructuredCitations(
 
 		val tagsOpt: Seq[TagOpt] = Seq(
 			"author" -> authorsOpt,
-			"title" -> citInfo.title,
+			"title" -> titleWithTempCov,
 			"year" -> citInfo.year,
 			"note" -> note,
 			"keywords" -> kwords,
@@ -83,7 +89,7 @@ class StructuredCitations(
 		val endTag = "ER" -> Some("")
 
 		val tagsOpt: Seq[TagOpt] = Seq(
-			"T1" -> citInfo.title,
+			"T1" -> titleWithTempCov,
 			"ID" -> obj.pid,
 			"DO" -> obj.doi,
 			"PY" -> citInfo.year,

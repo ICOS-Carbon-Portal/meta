@@ -13,7 +13,7 @@
 @(dobj: DataObject, extras: LandingPageExtras, handleProxies: HandleProxiesConfig)(implicit envri: Envri, conf: EnvriConfig, vocab: CpVocab)
 @ServerSidePage(
 	pageTitle,
-	Some(pageHeading),
+	Some(pageTitle),
 	headerExtra = headerExtra,
 	extraMetaTags = Some(schemaOrg),
 	subHeading = pageSubHeading,
@@ -306,21 +306,11 @@
 ****************************@
 }
 
-@shouldSplitTitle = @{!(envri != Envri.SITES && dobj.specification.dataLevel > 2) && splitTitle.size > 1}
-@splitTitle = @{dobj.references.title.map(_.split(",")).getOrElse(Array(""))}
-@pageHeading = @{
-	if(shouldSplitTitle)
-		dobj.references.title.map(_.split(",").dropRight(1).mkString(",")).getOrElse(pageTitle)
-	else
-		dobj.references.title.getOrElse(pageTitle)
+@pageTitle = @{
+	dobj.references.title.getOrElse(dobj.fileName)
 }
 @pageSubHeading = @{
-	if(shouldSplitTitle) dobj.references.title.map(_.split(",").last) else None
-}
-
-@pageTitle = @{
-	dobj.specificInfo.left.toOption.map(_.title)
-		.getOrElse(dobj.fileName)
+	dobj.references.temporalCoverageDisplay
 }
 
 @resourceproperty(label: String, res: UriResource) = {

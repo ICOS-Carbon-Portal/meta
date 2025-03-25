@@ -168,8 +168,7 @@ class CitationMaker(
 			spatioTemp => Some(spatioTemp.title),
 			stationTs => for(
 					spec <- dobj.specification.self.label;
-					acq = stationTs.acquisition;
-					time <- tempCov
+					acq = stationTs.acquisition
 				) yield {
 					val station = acq.station.org.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
@@ -180,7 +179,7 @@ class CitationMaker(
 							}.mkString(" (", ", ", ")"))
 						else ""
 
-					s"$spec$vars, $station$height, $time"
+					s"$spec$vars from $station$height"
 				}
 		)
 
@@ -208,6 +207,7 @@ class CitationMaker(
 			val citText = for(
 				title <- titleOpt;
 				pidUrl <- pidUrlOpt;
+				time <- tempCov;
 				year <- yearOpt;
 				projName <- projName
 			) yield {
@@ -215,7 +215,7 @@ class CitationMaker(
 					case p: Person => s"${p.lastName}, ${p.firstName.head}."
 					case o: Organization => o.name
 				}.mkString(", ")
-				s"${authorsStr} ($year). $title, $projName, $pidUrl"
+				s"${authorsStr} ($year). $title, $time, $projName, $pidUrl"
 			}
 
 			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
@@ -227,29 +227,29 @@ class CitationMaker(
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
 
 		val titleOpt = dobj.specificInfo.fold(
-			l3 => Some(l3.title),
-			l2 => for(
+			spatioTemp => Some(spatioTemp.title),
+			stationTs => for(
 				spec <- dobj.specification.self.label;
-				acq = l2.acquisition;
-				location <- acq.site.flatMap(_.location.flatMap(_.label));
-				time <- tempCov
+				acq = stationTs.acquisition;
+				location <- acq.site.flatMap(_.location.flatMap(_.label))
 			) yield {
 				val dataType = spec.split(",").head
 				val samplingPoint = acq.samplingPoint.flatMap(_.label)
-				s"$dataType from ${samplingPoint.getOrElse(location)}, $time"
+				s"$dataType from ${samplingPoint.getOrElse(location)}"
 			}
 		)
 
 		val authors = dobj.specificInfo.fold(
 			_ => "",
-			l2 => s"${l2.acquisition.station.org.name} "
+			stationTs => s"${stationTs.acquisition.station.org.name} "
 		)
 		val pidUrlOpt = getPidUrl(dobj)
 		val citString = for(
 			year <- yearOpt;
 			title <- titleOpt;
+			time <- tempCov;
 			pidUrl <- pidUrlOpt
-		) yield s"$authors($year). $title [Data set]. ${e.longName} (${e.shortName}). $pidUrl"
+		) yield s"$authors($year). $title, $time [Data set]. ${e.longName} (${e.shortName}). $pidUrl"
 
 		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 
@@ -312,8 +312,8 @@ object CitationMaker:
 
 
 	def getFundingObjects(dobj: DataObject): Seq[Funding] =  dobj.specificInfo match
-		case Right(l2) =>
-			val acq = l2.acquisition
+		case Right(stationTs) =>
+			val acq = stationTs.acquisition
 			acq.station.funding.toSeq.flatten.filter{funding =>
 				funding.start.fold(true){
 					fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
@@ -325,8 +325,8 @@ object CitationMaker:
 		case _ => Seq.empty
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
-		l3 => Some(getTimeFromInterval(l3.temporal.interval, zoneId)),
-		l2 => l2.acquisition.interval.map(getTimeFromInterval(_, zoneId))
+		spatioTemp => Some(getTimeFromInterval(spatioTemp.temporal.interval, zoneId)),
+		stationTs => stationTs.acquisition.interval.map(getTimeFromInterval(_, zoneId))
 	)
 
 	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {

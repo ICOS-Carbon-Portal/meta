@@ -18,7 +18,6 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
-import org.eclipse.rdf4j.model.Resource
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -75,15 +74,12 @@ final class IndexData(nObjects: Int)(
 		import vocab.dcterms.hasPart
 		import statement.{subj, pred, obj}
 
-		given CpmetaVocab = vocab
-
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
 							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
-
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -92,15 +88,9 @@ final class IndexData(nObjects: Int)(
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
-
-							updateDataObjectKeywords(subj, oe)
 						}
 					}
 				}
-
-			case `hasAssociatedProject` => {
-				updateSpecKeywords(subj)
-			}
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>
@@ -290,74 +280,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def parseKeywords(obj: Value): Option[Array[String]] = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
-	}
-
-	private def updateAssociatedKeywords(association: IRI)(using CpmetaVocab)(using StatementSource): Boolean = {
-		val isSpec = updateSpecKeywords(association)
-		// If we get no results when treating association as a spec, then maybe it's a project.
-		isSpec || updateProjectKeywords(association)
-	}
-
-	private def updateProjectKeywords(project: IRI)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
-		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
-
-		// Find out if we got any results without consuming the iterator.
-		val anySpecs = specs.hasNext
-		specs.foreach(updateSpecKeywords)
-		anySpecs
-	}
-
-	private def updateSpecKeywords(spec: Resource)(using vocab: CpmetaVocab)(using StatementSource): Boolean = {
-		val dataObjects: Iterator[Resource] =
-			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
-
-		// Find out if we got any results without consuming the iterator.
-		val anyObjects = dataObjects.hasNext
-
-		dataObjects.foreach(dataObject => {
-			getDataObject(dataObject) match {
-				case Some(oe) =>
-					// Casting to IRI should be fine here, since getDataObject gave us an ObjEntry
-					updateDataObjectKeywords(dataObject.asInstanceOf[IRI], oe)
-				case None => ()
-			}
-		})
-
-		anyObjects
-	}
-
-	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using StatementSource) = {
-		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords)
-		val (specKeywords, projectKeywords) = if (oe.spec != null) {
-			val projects = StatementSource.getUriValues(oe.spec, vocab.hasAssociatedProject)
-			(
-				StatementSource.getValues(oe.spec, vocab.hasKeywords),
-				projects.flatMap(project => { StatementSource.getValues(project, vocab.hasKeywords) })
-			)
-		} else {
-			(Seq.empty, Seq.empty)
-		}
-
-		val keywordIndex = categMap(Keyword)
-		val newKeywords = Set.from((objectKeywords ++ specKeywords ++ projectKeywords).flatMap(parseKeywords).flatten())
-
-		for (keyword <- newKeywords) {
-			keywordIndex.getOrElseUpdate(keyword, emptyBitmap).add(oe.idx)
-		}
-
-		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
-			if (!newKeywords.contains(keyword)) {
-				bitmap.remove(oe.idx)
-				if bitmap.isEmpty then {
-					val _ = keywordIndex.remove(keyword)
-				}
-			}
-		}
-	}
-
-	private def updateStrArrayProp(
+	def updateStrArrayProp(
 		obj: Value,
 		prop: StringCategProp,
 		parser: String => Option[Array[String]],

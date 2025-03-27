@@ -85,17 +85,22 @@ final class IndexData(nObjects: Int)(
 	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
 		prop match {
 			case Keyword =>
-				getCategMap(prop)
+				// TODO: Would be nice to avoid dynamic cast, but not sure how.
+				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 			case _ => {
-				getCategMap(prop)
+				generalCategoryMap(prop)
 			}
 		}
 	}
 
-	private def getCategMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] =
+	private def generalCategoryMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] =
 		categMaps
 			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+
+	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
+		generalCategoryMap(Keyword)
+	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*

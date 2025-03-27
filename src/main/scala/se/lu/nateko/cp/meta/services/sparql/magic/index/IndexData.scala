@@ -65,8 +65,13 @@ final class IndexData(nObjects: Int)(
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
 	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
+				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+
+	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
+		generalCategoryMap(Keyword)
+	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*

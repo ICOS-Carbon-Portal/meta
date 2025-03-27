@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -46,7 +47,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
 
-	import data.{contMap, stats, objs, initOk, idLookup}
+	import data.{contMap, stats, initOk}
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
@@ -86,7 +87,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
-	def size: Int = objs.length
+	def size: Int = data.objectCount
 	def serializableData: Serializable = data
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
@@ -101,7 +102,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 				data.bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
 		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
-		idxIter.map(objs.apply)
+		idxIter.map(data.getObject)
 	}
 
 
@@ -122,9 +123,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
-	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
+	def lookupObject(hash: Sha256Sum): Option[ObjEntry] = {
+		data.getObjectId(hash).map(data.getObject)
+	}
 
-	def getObjEntry = data.getObjEntry
+	def getObjEntry: Sha256Sum => ObjEntry = {
+		data.getObjEntry
+	}
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

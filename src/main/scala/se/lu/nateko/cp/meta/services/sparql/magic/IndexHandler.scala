@@ -175,23 +175,24 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 
 object IndexDataSerializer extends Serializer[IndexData]:
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
-		output.writeInt(data.objs.size)
+		output.writeInt(data.objectCount)
 
 		registerIriSerializer(kryo, IriSerializer)
 
-		val iriIndex = buildIriIndex(data.objs)
+		val objects = data.copyObjects()
+		val iriIndex = buildIriIndex(objects)
 		kryo.writeObject(output, iriIndex)
 
-		val prefixIndex = buildPrefixIndex(data.objs)
+		val prefixIndex = buildPrefixIndex(objects)
 		kryo.writeObject(output, prefixIndex)
 
 		val iriWriteIndex = iriIndex.zipWithIndex.toMap
 		registerIriSerializer(kryo, IndexedIriWriter(iriWriteIndex))
 
 		kryo.register(classOf[ObjEntry], ObjEntrySerializer(prefixIndex))
-		GeoSerializer.register(kryo, data.objs)
+		GeoSerializer.register(kryo, objects)
 
-		kryo.writeObject(output, data.objs.toArray)
+		kryo.writeObject(output, objects)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
 		kryo.writeObject(output, data.categMaps)
@@ -217,7 +218,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		GeoSerializer.register(kryo, objs)
 
 		IndexData(nObjs)(
-			objs = objs,
+			objects = objs,
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
@@ -233,13 +234,13 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.register(classOf[MemIRI], serializer)
 		kryo.register(classOf[SimpleIRI], serializer)
 
-	private def buildPrefixIndex(objs: ArrayBuffer[ObjEntry]): Array[String] = objs
+	private def buildPrefixIndex(objs: Iterable[ObjEntry]): Array[String] = objs
 		.iterator
 		.map(_.prefix)
 		.distinct
 		.toArray
 
-	private def buildIriIndex(objs: ArrayBuffer[ObjEntry]): Array[IRI] = objs
+	private def buildIriIndex(objs: Iterable[ObjEntry]): Array[IRI] = objs
 		.iterator
 		.flatMap: o =>
 			Iterator(o.spec, o.submitter, o.station, o.site)

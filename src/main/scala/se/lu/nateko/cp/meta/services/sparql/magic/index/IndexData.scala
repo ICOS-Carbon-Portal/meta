@@ -272,8 +272,14 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+			case `hasKeywords` =>
+				getDataObject(subj) match {
+					case Some(oe) =>
+						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+					case None => {
+						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
+							println(s"It's a spec!: $subj")
+						} else if (StatementSource.hasStatement(null, vocab.hasAssociatedProject, subj)) {
 				}
 
 			case _ =>

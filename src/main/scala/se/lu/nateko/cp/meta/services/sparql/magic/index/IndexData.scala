@@ -33,6 +33,7 @@ def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 final class IndexData(nObjects: Int)(
 	private val objects: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	private val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+	private val specKeywords: AnyRefMap[IRI, Set[String]] = new AnyRefMap[IRI, Set[String]](nObjects * 2),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -65,6 +66,12 @@ final class IndexData(nObjects: Int)(
 
 	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = {
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
+	}
+
+	def getKeywordSpecs(keywords : Seq[String]) : Seq[IRI] =  {
+		// TODO: Build index of keywords to specs and return it
+		// Seq.empty
+		???
 	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
@@ -311,8 +318,10 @@ final class IndexData(nObjects: Int)(
 					case Some(oe) =>
 						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 					case None => {
+						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
 						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
 							println(s"It's a spec!: $subj")
+							updateSpecKeywords(subj, isAssertion, changedKeywords)
 						} else if (StatementSource.hasStatement(null, vocab.hasAssociatedProject, subj)) {
 							println(s"It's a project: $subj")
 						}
@@ -321,6 +330,31 @@ final class IndexData(nObjects: Int)(
 
 			case _ =>
 		}
+	}
+
+	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String]) = {
+		specKeywords.updateWith(spec)(existing =>
+			val newKeywords =
+				existing match {
+					case None => changedKeywords
+					case Some(existingKeywords) => {
+						if (isAssertion) {
+							existingKeywords ++ changedKeywords
+						} else {
+							existingKeywords -- changedKeywords
+						}
+					}
+				}
+			if (newKeywords.isEmpty) {
+				None
+			} else {
+				Some(newKeywords)
+			}
+		)
+	}
+
+	private def parseKeywords(obj: Value): Option[Array[String]] = {
+		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
 	def updateStrArrayProp(

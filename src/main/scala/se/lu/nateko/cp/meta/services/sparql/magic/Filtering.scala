@@ -18,13 +18,13 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			else
 				val nonGeoFilts = filters.filter:
 					case gf: GeoFilter => false
-					case _             => true
+					case _ => true
 				val nonGeoBm = andFiltering(nonGeoFilts)
 				val geoBms = geoFilts.flatMap(geoFiltering(_, nonGeoBm))
 				if geoBms.isEmpty then nonGeoBm else and(geoBms ++ nonGeoBm)
 
 		case Not(filter) => this.apply(filter) match {
-				case None     => Some(emptyBitmap)
+				case None => Some(emptyBitmap)
 				case Some(bm) => Some(negate(bm))
 			}
 
@@ -32,14 +32,14 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 				case cp: ContProp => Some(data.bitmap(cp).all)
 				case cp: CategProp => cp match {
 						case optUriProp: OptUriProperty => data.categMap(optUriProp).get(None) match {
-								case None                               => None
+								case None => None
 								case Some(deprived) if deprived.isEmpty => None
-								case Some(deprived)                     => Some(negate(deprived))
+								case Some(deprived) => Some(negate(deprived))
 							}
 						case _ => None
 					}
 				case boo: BoolProperty => Some(data.boolBitmap(boo))
-				case _: GeoProp        => None
+				case _: GeoProp => None
 			}
 
 		case ContFilter(property, condition) =>
@@ -51,6 +51,15 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 				.collect { case CpVocab.DataObject(hash, _) => data.getObjectId(hash) }
 				.flatten
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
+
+		case CategFilter(category, values) if category == Keyword =>
+			val keywords: Seq[String] = values.collect { case kw: String => kw }
+
+			val specs: Seq[IRI] = data.getKeywordSpecs(keywords)
+			val specObjects = apply(CategFilter(Spec, specs)).getOrElse(emptyBitmap)
+
+			val perValue = data.categMap(category)
+			or(values.map(v => perValue.getOrElse(v, emptyBitmap)) :+ specObjects)
 
 		case CategFilter(category, values) =>
 			val perValue = data.categMap(category)
@@ -79,7 +88,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 	private def andFiltering(filters: Seq[Filter]): Option[ImmutableRoaringBitmap] =
 		collectUnless(filters.iterator.flatMap(this.apply))(_.isEmpty) match
-			case None      => Some(emptyBitmap)
+			case None => Some(emptyBitmap)
 			case Some(bms) => and(bms)
 
 	private def geoFiltering(

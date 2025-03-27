@@ -124,7 +124,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	val getObjEntry = data.getObjEntry
+	def getObjEntry = data.getObjEntry
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

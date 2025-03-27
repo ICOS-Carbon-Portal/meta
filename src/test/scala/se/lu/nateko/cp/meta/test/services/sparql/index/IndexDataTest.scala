@@ -296,9 +296,7 @@ private def specIRI(name: String) = {
 class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSource {
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
 		val filtered = statements.filter(st =>
-			matching(subject, st.subj)
-				&& matching(predicate, st.pred)
-				&& matching(obj, st.obj)
+			matchingStatement(Rdf4jStatement(subject, predicate, obj), st)
 		).map(TestStatement(_))
 
 		CloseableIterator.Wrap(filtered.iterator, () => ())
@@ -309,8 +307,19 @@ class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSo
 		query == null || query == target
 	}
 
+	// Null arguments in getStatements means wildcard
+	private def matchingStatement(a: Rdf4jStatement, b: Rdf4jStatement) = {
+		matching(a.subj, b.subj)
+		&& matching(a.pred, b.pred)
+		&& matching(a.obj, b.obj)
+	}
+
 	// Leave unimplemented until used by any test
-	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = ???
+	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = {
+		statements.find(statement =>
+			matchingStatement(Rdf4jStatement(subject, predicate, obj), statement)
+		).isDefined
+	}
 }
 
 // The StatementSource interface requires the more general Statement type, which includes context.

@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.ObjEntry
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -122,9 +123,13 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
-	def lookupObject = data.lookupObject
+	def lookupObject(hash: Sha256Sum): Option[ObjEntry] = {
+		data.getObjectId(hash).map(data.getObject)
+	}
 
-	def getObjEntry = data.getObjEntry
+	def getObjEntry: Sha256Sum => ObjEntry = {
+		data.getObjEntry
+	}
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

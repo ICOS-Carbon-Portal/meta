@@ -47,23 +47,25 @@ final class IndexData(nObjects: Int)(
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objects))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objects))
 
-	def copyObjects(): Array[ObjEntry] =
+	def copyObjects(): Array[ObjEntry] = {
 		objects.toArray()
+	}
 
-	def objectCount =
+	def objectCount: Int = {
 		objects.length
+	}
 
-	def getObjectId(hash: Sha256Sum) =
+	def getObjectId(hash: Sha256Sum): Option[Int] = {
 		idLookup.get(hash)
+	}
 
-	def lookupObject(hash: Sha256Sum) =
-		idLookup.get(hash).map(objects.apply)
-
-	def getObject(id: Int) =
+	def getObject(id: Int): ObjEntry = {
 		objects.apply(id)
+	}
 
-	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap =
+	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = {
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
+	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(

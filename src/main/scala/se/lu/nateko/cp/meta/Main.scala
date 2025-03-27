@@ -34,7 +34,7 @@ object Main extends App with CpmetaJsonProtocol{
 			log.info("Trying to restore SPARQL magic index...")
 			val indexDataFut = IndexHandler.restore()
 			indexDataFut.foreach{idx =>
-				log.info(s"SPARQL magic index restored successfully (${idx.objs.length} objects)")
+				log.info(s"SPARQL magic index restored successfully (${idx.objectCount} objects)")
 				IndexHandler.dropStorage()
 			}
 			indexDataFut.map(Option(_)).recover{

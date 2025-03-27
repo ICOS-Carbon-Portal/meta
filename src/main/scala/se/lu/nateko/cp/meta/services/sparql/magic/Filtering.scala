@@ -10,8 +10,6 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 class Filtering(data: IndexData, geo: Future[GeoIndex]) {
-	import data.{objs, idLookup}
-
 	def apply(filter: Filter): Option[ImmutableRoaringBitmap] = filter match {
 		case And(filters) =>
 			val geoFilts = filters.collect { case gf: GeoFilter => gf }
@@ -50,7 +48,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case CategFilter(category, values) if category == DobjUri =>
 			val objIndices: Seq[Int] = values
 				.collect { case iri: IRI => iri }
-				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
+				.collect { case CpVocab.DataObject(hash, _) => data.getObjectId(hash) }
 				.flatten
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
@@ -96,8 +94,10 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			case Some(Failure(exc)) =>
 				throw Exception("Geo indexing failed", exc)
 
-	private def negate(bm: ImmutableRoaringBitmap) =
-		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
+	private def negate(bm: ImmutableRoaringBitmap) = {
+		val objectCount = data.objectCount
+		if objectCount == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objectCount.toLong)
+	}
 
 	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
 		var condHappened = false

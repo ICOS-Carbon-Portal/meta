@@ -31,8 +31,8 @@ final case class StatEntry(key: StatKey, count: Int)
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
-	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+	private val objects: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
+	private val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -41,13 +41,29 @@ final class IndexData(nObjects: Int)(
 ) extends Serializable:
 	private val log = LoggerFactory.getLogger(getClass())
 
-	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
-	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
-	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
-	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
-	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
+	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objects))
+	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objects))
+	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objects))
+	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objects))
+	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objects))
 
-	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+	def copyObjects(): Array[ObjEntry] =
+		objects.toArray()
+
+	def objectCount =
+		objects.length
+
+	def getObjectId(hash: Sha256Sum) =
+		idLookup.get(hash)
+
+	def lookupObject(hash: Sha256Sum) =
+		idLookup.get(hash).map(objects.apply)
+
+	def getObject(id: Int) =
+		objects.apply(id)
+
+	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap =
+		boolMap.getOrElseUpdate(prop, emptyBitmap)
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
@@ -55,8 +71,8 @@ final class IndexData(nObjects: Int)(
 			prop match {
 				/** Important to maintain type consistency between props and HierarchicalBitmaps here*/
 				case FileName => fileNameBm
-				case FileSize => FileSizeHierarchicalBitmap(objs)
-				case SamplingHeight => SamplingHeightHierarchicalBitmap(objs)
+				case FileSize => FileSizeHierarchicalBitmap(objects)
+				case SamplingHeight => SamplingHeightHierarchicalBitmap(objects)
 				case DataStart => dataStartBm
 				case DataEnd => dataEndBm
 				case SubmissionStart => submStartBm
@@ -64,9 +80,20 @@ final class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
+		prop match {
+			case Keyword =>
+				getCategMap(prop)
+			case _ => {
+				getCategMap(prop)
+			}
+		}
+	}
+
+	private def getCategMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] =
+		categMaps
+			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*
@@ -227,7 +254,7 @@ final class IndexData(nObjects: Int)(
 							directPrevVers.foreach { oldIdx =>
 								if isAssertion then deprecated.add(oldIdx)
 								else if isRetraction then deprecated.remove(oldIdx)
-								log.debug(s"Marked ${objs(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
+								log.debug(s"Marked ${objects(oldIdx).hash.id} as ${if isRetraction then "non-" else ""}deprecated")
 							}
 							if directPrevVers.isEmpty then
 								getIdxsOfPrevVersThroughColl(subj, vocab) match
@@ -272,8 +299,17 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+			case `hasKeywords` =>
+				getDataObject(subj) match {
+					case Some(oe) =>
+						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+					case None => {
+						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
+							println(s"It's a spec!: $subj")
+						} else if (StatementSource.hasStatement(null, vocab.hasAssociatedProject, subj)) {
+							println(s"It's a project: $subj")
+						}
+					}
 				}
 
 			case _ =>
@@ -295,11 +331,11 @@ final class IndexData(nObjects: Int)(
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
 			val canonicalHash = hash.truncate
-			val oe = new ObjEntry(canonicalHash, objs.length, "")
-			objs += oe
+			val oe = new ObjEntry(canonicalHash, objects.length, "")
+			objects += oe
 			idLookup += canonicalHash -> oe.idx
 			oe
-		}(objs.apply)
+		}(objects.apply)
 	}
 
 	private def handleContinuousPropUpdate(
@@ -309,7 +345,7 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 
-		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
+		def helpTxt = s"value $key of property $prop on object ${objects(idx).hash.base64Url}"
 		if (isAssertion) {
 			if (!bitmap(prop).add(key, idx)) {
 				log.warn(s"Value already existed: asserted $helpTxt")

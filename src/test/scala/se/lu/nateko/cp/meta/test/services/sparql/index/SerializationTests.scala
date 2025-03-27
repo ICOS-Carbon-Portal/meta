@@ -128,7 +128,7 @@ class SerializationTests extends AsyncFunSpec{
 		}
 
 		origAndCopy("contain expected hashsums", Set(etcObjHash, droughtObjHash)){
-			toData.andThen(_.objs.map(_.hash).toSet)
+			toData.andThen(_.copyObjects().map(_.hash).toSet)
 		}
 
 		origAndCopy("correctly filters by station", 1){idx =>

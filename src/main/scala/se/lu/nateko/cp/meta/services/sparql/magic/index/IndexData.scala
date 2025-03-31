@@ -346,6 +346,17 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (subject == null) {
+			return Set.empty;
+		}
+
+		StatementSource.getValues(subject, vocab.hasKeywords)
+			.flatMap(parseKeywords)
+			.flatten()
+			.toSet
+	}
+
 	private def updateAssociatedKeywords(spec: Resource, isAssertion: Boolean, changedKeywords: Set[String])(using
 		vocab: CpmetaVocab
 	)(using StatementSource): Boolean = {
@@ -390,7 +401,7 @@ final class IndexData(nObjects: Int)(
 		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordIndex) {
 			if (!newKeywords.contains(keyword)) {
 				bitmap.remove(dataObjectId)
-				if bitmap.isEmpty then {
+				if (bitmap.isEmpty) {
 					val _ = keywordIndex.remove(keyword)
 				}
 			}
@@ -408,17 +419,6 @@ final class IndexData(nObjects: Int)(
 			.toSet
 
 		getKeywords(spec) ++ projectKeywords
-	}
-
-	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (subject == null) {
-			return Set.empty;
-		}
-
-		StatementSource.getValues(subject, vocab.hasKeywords)
-			.flatMap(parseKeywords)
-			.flatten()
-			.toSet
 	}
 
 	private def updateStrArrayProp(

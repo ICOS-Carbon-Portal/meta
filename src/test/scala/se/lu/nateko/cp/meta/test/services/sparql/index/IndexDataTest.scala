@@ -37,9 +37,6 @@ class IndexDataTest extends AnyFunSpec {
 		val CpVocab.DataObject(hash, _) = subject: @unchecked
 		val data = IndexData(1)()
 
-		// IndexData requires a StatementSource but in this case we never pull any statements,
-		// hence we can leave things unimplemented.
-
 		val statement = Rdf4jStatement(subject, hasName, factory.createLiteral("test name"))
 
 		// This test does not rely on any existing statements
@@ -126,17 +123,25 @@ class IndexDataTest extends AnyFunSpec {
 			val data = IndexData(100)()
 			var store: Seq[Rdf4jStatement] = Seq()
 
-			statements.foreach((isAssertion, statement) =>
+			// Try processing before insertion sometimes, to make sure indexing does not rely
+			// on the active triple being inserted already.
+			val processBeforeInsertion = Random.nextBoolean()
 
-				// Process before insertion, to make sure indexing does not rely
-				// on the active triple being inserted already.
-				given StatementSource = StaticStatementSource(store)
-				data.processUpdate(statement, isAssertion, vocab)
+			statements.foreach((isAssertion, statement) =>
+				if (processBeforeInsertion) {
+					given StatementSource = StaticStatementSource(store)
+					data.processUpdate(statement, isAssertion, vocab)
+				}
 
 				store = if (isAssertion) {
 					store :+ statement
 				} else {
 					store.filter(existing => existing != statement)
+				}
+
+				if (!processBeforeInsertion) {
+					given StatementSource = StaticStatementSource(store)
+					data.processUpdate(statement, isAssertion, vocab)
 				}
 			)
 
@@ -271,13 +276,8 @@ class IndexDataTest extends AnyFunSpec {
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(otherProject, hasKeywords, factory.createLiteral("otherProject keyword"))),
-				(true, Rdf4jStatement(spec, hasAssociatedProject, otherProject)),
+				(true, Rdf4jStatement(spec, hasAssociatedProject, otherProject))
 			))
-
-			println(s"statements:")
-			for ((_, s) <- statements) {
-				println(s"		$s")
-			}
 
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))

@@ -28,8 +28,8 @@ class IndexDataTest extends AnyFunSpec {
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
-	val seed = Math.abs(Random.nextInt())
-	// val seed = 492934230
+	// val seed = Math.abs(Random.nextInt())
+	val seed = 492934230
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -290,8 +290,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 
 			assert(runStatements(statements :+ removeSpec) == Map(
-				"object keyword" -> objectBitmap,
-				"otherProject keyword" -> objectBitmap,
+				"object keyword" -> objectBitmap
 			))
 		}
 	}

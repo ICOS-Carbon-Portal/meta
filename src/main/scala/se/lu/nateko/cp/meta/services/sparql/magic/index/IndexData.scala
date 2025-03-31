@@ -93,7 +93,10 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 
-							updateDataObjectKeywords(subj, oe)
+							val objectKeywords = StatementSource.getValues(subj, vocab.hasKeywords).flatMap(parseKeywords).flatten()
+							val specKeywords = getSpecKeywords(oe.spec)
+							val newKeywords = Set.from(objectKeywords ++ specKeywords)
+							updateKeywordIndex(oe.idx, newKeywords)
 						}
 					}
 				}
@@ -371,13 +374,6 @@ final class IndexData(nObjects: Int)(
 		anyObjects
 	}
 
-	private def updateDataObjectKeywords(dataObject: IRI, oe: ObjEntry)(using vocab: CpmetaVocab)(using StatementSource) = {
-		val objectKeywords = StatementSource.getValues(dataObject, vocab.hasKeywords).flatMap(parseKeywords).flatten()
-		val specKeywords = getSpecKeywords(oe.spec)
-		val newKeywords = Set.from(objectKeywords ++ specKeywords)
-		updateKeywordIndex(oe.idx, newKeywords)
-	}
-
 	private def updateKeywordIndex(dataObjectId: Int, newKeywords: Set[String]) = {
 		val keywordIndex = categMap(Keyword)
 
@@ -401,7 +397,9 @@ final class IndexData(nObjects: Int)(
 		}
 
 		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
-		val projectKeywords = Set.from(projects.flatMap(project => getKeywords(project)))
+		val projectKeywords = projects
+			.flatMap(project => getKeywords(project))
+			.toSet
 
 		getKeywords(spec) ++ projectKeywords
 	}
@@ -411,7 +409,10 @@ final class IndexData(nObjects: Int)(
 			return Set.empty;
 		}
 
-		Set.from(StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
+		StatementSource.getValues(subject, vocab.hasKeywords)
+			.flatMap(parseKeywords)
+			.flatten()
+			.toSet
 	}
 
 	private def updateStrArrayProp(

@@ -94,8 +94,15 @@ final class IndexData(nObjects: Int)(
 							}
 
 							val objectKeywords = StatementSource.getValues(subj, vocab.hasKeywords).flatMap(parseKeywords).flatten()
-							val specKeywords = getSpecKeywords(oe.spec)
-							val newKeywords = Set.from(objectKeywords ++ specKeywords)
+							val existingSpecKeywords = getSpecKeywords(oe.spec)
+							val changedKeywords = getKeywords(spec)
+							val newSpecKeywords = if (isAssertion) {
+								existingSpecKeywords ++ changedKeywords
+							} else {
+								existingSpecKeywords -- changedKeywords
+							}
+
+							val newKeywords = Set.from(objectKeywords ++ newSpecKeywords)
 							updateKeywordIndex(oe.idx, newKeywords)
 						}
 					}

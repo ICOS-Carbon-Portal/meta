@@ -311,9 +311,15 @@ final class IndexData(nObjects: Int)(
 					}
 					case None => {
 						val isSpec = updateAssociatedKeywords(subj, isAssertion, changedKeywords)
+
 						// If we get no results when treating association as a spec, then maybe it's a project.
 						if (!isSpec) {
-							updateProjectKeywords(subj, isAssertion, changedKeywords)
+							val project = subj
+							val specs: Iterator[Resource] =
+								StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
+									.map(_.getSubject())
+
+							specs.foreach(spec => updateAssociatedKeywords(spec, isAssertion, changedKeywords))
 						}
 					}
 				}
@@ -340,47 +346,38 @@ final class IndexData(nObjects: Int)(
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
-	private def updateProjectKeywords(project: IRI, isAssertion: Boolean, changedKeywords: Set[String])(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Boolean = {
-		val specs: Iterator[Resource] = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
-
-		// Find out if we got any results without consuming the iterator.
-		val anySpecs = specs.hasNext
-		specs.foreach(spec => updateAssociatedKeywords(spec, isAssertion, changedKeywords))
-		anySpecs
-	}
-
 	private def updateAssociatedKeywords(spec: Resource, isAssertion: Boolean, changedKeywords: Set[String])(using
 		vocab: CpmetaVocab
 	)(using StatementSource): Boolean = {
+		// This is potentially expensive, and could be optimized by keeping additional
+		// index information on which data objects are associated with each spec.
+		// This could be done selectively during initial index building,
+		// only for specs with a large number of associated objects.
 		val dataObjects: Iterator[Resource] =
 			StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 
 		// Find out if we got any results without consuming the iterator.
-		val anyObjects = dataObjects.hasNext
-
-		if (anyObjects) {
-			val specKeywords = getAssociatedKeywords(ensureIRI(spec))
-
-			dataObjects.foreach(dataObject => {
-				getDataObject(dataObject) match {
-					case Some(oe) =>
-						val existingKeywords: Set[String] = specKeywords
-
-						val newKeywords: Set[String] = updateKeywords(isAssertion, existingKeywords, changedKeywords)
-
-						// Associated keywords changed, so always include object ones.
-						val objectKeywords =
-							Set.from(StatementSource.getValues(ensureIRI(dataObject), vocab.hasKeywords).flatMap(parseKeywords).flatten())
-
-						updateKeywordIndex(oe.idx, objectKeywords ++ newKeywords)
-					case None => ()
-				}
-			})
+		if (!dataObjects.hasNext) {
+			return false
 		}
 
-		anyObjects
+		val specKeywords = getAssociatedKeywords(ensureIRI(spec))
+
+		dataObjects.foreach(dataObject => {
+			getDataObject(dataObject) match {
+				case Some(oe) =>
+					val existingKeywords: Set[String] = specKeywords
+					val newKeywords: Set[String] = updateKeywords(isAssertion, existingKeywords, changedKeywords)
+
+					// Associated keywords changed, so always include object ones.
+					val objectKeywords = getKeywords(ensureIRI(dataObject))
+					updateKeywordIndex(oe.idx, objectKeywords ++ newKeywords)
+
+				case None => ()
+			}
+		})
+
+		true
 	}
 
 	private def updateKeywordIndex(dataObjectId: Int, newKeywords: Set[String]) = {

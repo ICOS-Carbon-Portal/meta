@@ -28,8 +28,7 @@ class IndexDataTest extends AnyFunSpec {
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
-	// val seed = Math.abs(Random.nextInt())
-	val seed = 492934230
+	val seed = Math.abs(Random.nextInt())
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -128,17 +127,17 @@ class IndexDataTest extends AnyFunSpec {
 			var store: Seq[Rdf4jStatement] = Seq()
 
 			statements.foreach((isAssertion, statement) =>
-				store = if (isAssertion) {
-					store :+ statement
-				} else {
-					store.filter(existing => existing != statement)
-				}
 
 				// Process before insertion, to make sure indexing does not rely
 				// on the active triple being inserted already.
 				given StatementSource = StaticStatementSource(store)
 				data.processUpdate(statement, isAssertion, vocab)
 
+				store = if (isAssertion) {
+					store :+ statement
+				} else {
+					store.filter(existing => existing != statement)
+				}
 			)
 
 			data.categMap(Keyword)

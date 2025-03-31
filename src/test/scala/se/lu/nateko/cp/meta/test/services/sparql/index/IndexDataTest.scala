@@ -228,7 +228,6 @@ class IndexDataTest extends AnyFunSpec {
 				"project keyword" -> objectBitmap,
 				"other project keyword" -> objectBitmap
 			))
-
 		}
 
 		testCase("associated spec is removed") {

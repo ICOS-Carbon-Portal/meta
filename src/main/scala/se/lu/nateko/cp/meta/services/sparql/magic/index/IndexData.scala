@@ -99,8 +99,8 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => {
-				// TODO: Get the project keywords and send them as changed ones
-				updateSpecKeywords(subj, isAssertion, Set.empty)
+				val project: IRI = ensureIRI(obj)
+				updateSpecKeywords(subj, isAssertion, getKeywords(project))
 			}
 
 			case `hasName` =>
@@ -314,6 +314,12 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
+	private def ensureIRI(value: Value): IRI = {
+		value match {
+			case iri: IRI => iri
+		}
+	}
+
 	private def parseKeywords(obj: Value): Option[Array[String]] = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
@@ -395,22 +401,16 @@ final class IndexData(nObjects: Int)(
 		}
 
 		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
-		val projectKeywords = Set.from(projects.flatMap(project => getProjectKeywords(project)))
+		val projectKeywords = Set.from(projects.flatMap(project => getKeywords(project)))
 
 		getKeywords(spec) ++ projectKeywords
 	}
 
-	private def getProjectKeywords(project: IRI)(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Set[String] = {
-		if (project == null) {
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (subject == null) {
 			return Set.empty;
 		}
 
-		getKeywords(project)
-	}
-
-	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource) = {
 		Set.from(StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords).flatten())
 	}
 

@@ -345,6 +345,18 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
+	private def updateStrArrayProp(
+		obj: Value,
+		prop: StringCategProp,
+		parser: String => Option[Array[String]],
+		idx: Int,
+		isAssertion: Boolean
+	): Unit = {
+		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
+			updateCategSet(categMap(prop), strVal, idx, isAssertion)
+		}
+	}
+
 	private def modifyKeywords(isAssertion: Boolean, existing: Set[String], changed: Set[String]): Set[String] = {
 		if (isAssertion) {
 			existing ++ changed
@@ -439,18 +451,6 @@ final class IndexData(nObjects: Int)(
 			.toSet
 
 		getKeywords(spec) ++ projectKeywords
-	}
-
-	private def updateStrArrayProp(
-		obj: Value,
-		prop: StringCategProp,
-		parser: String => Option[Array[String]],
-		idx: Int,
-		isAssertion: Boolean
-	): Unit = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(categMap(prop), strVal, idx, isAssertion)
-		}
 	}
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {

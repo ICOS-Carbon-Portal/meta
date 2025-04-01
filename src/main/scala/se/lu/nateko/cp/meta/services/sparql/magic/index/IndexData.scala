@@ -73,16 +73,16 @@ final class IndexData(nObjects: Int)(
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
 	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
 	def getKeywordsBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
-		val kwMap = generalCategoryMap(Keyword)
+		val kwMap = getCategoryMap(Keyword)
 		val kwObjects: Seq[ImmutableRoaringBitmap] = keywords.map(keyword =>
 			kwMap(keyword)
 		)
 
 		val kwSpecs: Seq[IRI] = getKeywordSpecs(keywords)
 
-		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = getCategoryMap(Spec)
 		val specObjects: Seq[ImmutableRoaringBitmap] = kwSpecs.map(spec =>
 			specMap(spec)
 		)
@@ -107,7 +107,7 @@ final class IndexData(nObjects: Int)(
 		val keywords = keywordToSpecs.keySet ++ objKeywords
 
 		val res = new AnyRefMap[String, MutableRoaringBitmap]
-		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = getCategoryMap(Spec)
 
 		keywords.foreach((kw: String) =>
 			val kwObjects = kwIndex.getOrElse(kw, emptyBitmap)
@@ -147,7 +147,7 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI =>
 						{
 							getDataObject(subj).foreach { oe =>
-								updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+								updateCategSet(getCategoryMap(Spec), spec, oe.idx, isAssertion)
 								if (isAssertion) {
 									if (oe.spec != null) removeStat(oe, initOk)
 									oe.spec = spec
@@ -183,7 +183,7 @@ final class IndexData(nObjects: Int)(
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
+							case subm: IRI => updateCategSet(getCategoryMap(Submitter), subm, oe.idx, isAssertion)
 
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
@@ -191,7 +191,7 @@ final class IndexData(nObjects: Int)(
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
+							case stat: IRI => updateCategSet(getCategoryMap(Station), Some(stat), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -203,7 +203,7 @@ final class IndexData(nObjects: Int)(
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
+							case site: IRI => updateCategSet(getCategoryMap(Site), Some(site), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -342,7 +342,7 @@ final class IndexData(nObjects: Int)(
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
 						val oe = getObjEntry(hash)
-						updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
+						updateCategSet(getCategoryMap(VariableName), varName, oe.idx, isAssertion)
 						updateHasVarList(oe.idx, isAssertion)
 					case _ =>
 				}
@@ -391,7 +391,7 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(generalCategoryMap(prop), strVal, idx, isAssertion)
+			updateCategSet(getCategoryMap(prop), strVal, idx, isAssertion)
 		}
 	}
 

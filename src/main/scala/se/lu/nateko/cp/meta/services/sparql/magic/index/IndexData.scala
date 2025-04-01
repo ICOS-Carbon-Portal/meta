@@ -75,7 +75,7 @@ final class IndexData(nObjects: Int)(
 	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
 				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	def getKeywordsBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
-		val kwMap = categMap(Keyword)
+		val kwMap = generalCategoryMap(Keyword)
 		val kwObjects: Seq[ImmutableRoaringBitmap] = keywords.map(keyword =>
 			kwMap(keyword)
 		)
@@ -92,11 +92,36 @@ final class IndexData(nObjects: Int)(
 
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	}
 
 	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
-		val keywordObjects = generalCategoryMap(Keyword)
-		val specs = getKeywordSpecs
-		keywordObjects
+		val kwIndex: AnyRefMap[String, MutableRoaringBitmap] =
+			categMaps
+				.getOrElse(Keyword, new AnyRefMap[String, MutableRoaringBitmap])
+				.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]
+
+		val objKeywords = (categMaps
+			.getOrElse(Keyword, new AnyRefMap[String, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]).keySet
+
+		val keywords = keywordToSpecs.keySet ++ objKeywords
+
+		val res = new AnyRefMap[String, MutableRoaringBitmap]
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
+
+		keywords.foreach((kw: String) =>
+			val kwObjects = kwIndex.getOrElse(kw, emptyBitmap)
+			val specObjects: Seq[ImmutableRoaringBitmap] = getKeywordSpecs(Seq(kw)).flatMap(specMap.get)
+
+			val combined = BufferFastAggregation.or((specObjects :+ kwObjects)*)
+			if (!combined.isEmpty) {
+				res.put(kw, combined)
+			}
+		)
+
+		println(s"res: $res")
+
+		res
 	}
 
 	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
@@ -366,7 +391,7 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(categMap(prop), strVal, idx, isAssertion)
+			updateCategSet(generalCategoryMap(prop), strVal, idx, isAssertion)
 		}
 	}
 

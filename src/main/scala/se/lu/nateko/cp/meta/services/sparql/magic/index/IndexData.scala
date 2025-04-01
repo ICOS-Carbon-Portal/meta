@@ -19,6 +19,7 @@ import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import org.roaringbitmap.buffer.BufferFastAggregation
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -56,17 +57,6 @@ final class IndexData(nObjects: Int)(
 
 	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
-	def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
-		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordToSpecs.get)*)
-		val result: ArrayBuffer[IRI] = new ArrayBuffer();
-
-		bitmap.forEach(index => {
-			result += specs(index)
-		})
-
-		result.toSeq
-	}
-
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
 			prop,
@@ -84,11 +74,40 @@ final class IndexData(nObjects: Int)(
 
 	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
 				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	def getKeywordsBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
+		val kwMap = categMap(Keyword)
+		val kwObjects: Seq[ImmutableRoaringBitmap] = keywords.map(keyword =>
+			kwMap(keyword)
+		)
+
+		val kwSpecs: Seq[IRI] = getKeywordSpecs(keywords)
+
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
+		val specObjects: Seq[ImmutableRoaringBitmap] = kwSpecs.map(spec =>
+			specMap(spec)
+		)
+
+		BufferFastAggregation.or((specObjects ++ kwObjects)*)
+	}
+
 		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
 	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
-		generalCategoryMap(Keyword)
+		val keywordObjects = generalCategoryMap(Keyword)
+		val specs = getKeywordSpecs
+		keywordObjects
+	}
+
+	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
+		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordToSpecs.get)*)
+		val result: ArrayBuffer[IRI] = new ArrayBuffer();
+
+		bitmap.forEach(index => {
+			result += specs(index)
+		})
+
+		result.toSeq
 	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
@@ -327,7 +346,7 @@ final class IndexData(nObjects: Int)(
 		/*
 		println(s"id: $id")
 		println(s"changedKeywords: $changedKeywords")
-		*/
+		 */
 
 		for (kw <- changedKeywords) {
 			updateCategSet(keywordToSpecs, kw, id, isAssertion)

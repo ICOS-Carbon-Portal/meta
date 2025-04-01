@@ -34,8 +34,8 @@ def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	private val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
-	private val keywordToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
+	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
+	val keywordToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -49,6 +49,10 @@ final class IndexData(nObjects: Int)(
 	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
+	def copySpecs(): Array[IRI] = {
+		specs.toArray()
+	}
+
 
 	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
@@ -59,10 +63,6 @@ final class IndexData(nObjects: Int)(
 		bitmap.forEach(index => {
 			result += specs(index)
 		})
-
-		println(s"keywords: $keywords")
-		println(s"result: $result")
-		println(s"keywordToSpecs: $keywordToSpecs")
 
 		result.toSeq
 	}
@@ -310,7 +310,6 @@ final class IndexData(nObjects: Int)(
 					case None => {
 						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
 						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
-							println(s"It's a spec!: $subj")
 							updateSpecKeywords(subj, isAssertion, changedKeywords)
 						} else if (StatementSource.hasStatement(null, vocab.hasAssociatedProject, subj)) {
 				}

@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import org.roaringbitmap.buffer.BufferFastAggregation
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -33,7 +34,8 @@ def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	private val specKeywords: AnyRefMap[IRI, Set[String]] = new AnyRefMap[IRI, Set[String]](nObjects * 2),
+	private val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
+	private val keywordToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -50,10 +52,19 @@ final class IndexData(nObjects: Int)(
 
 	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
 
-	def getKeywordSpecs(keywords : Seq[String]) : Seq[IRI] =  {
-		// TODO: Build index of keywords to specs and return it
-		// Seq.empty
-		???
+	def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
+		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordToSpecs.get)*)
+		val result: ArrayBuffer[IRI] = new ArrayBuffer();
+
+		bitmap.forEach(index => {
+			result += specs(index)
+		})
+
+		println(s"keywords: $keywords")
+		println(s"result: $result")
+		println(s"keywordToSpecs: $keywordToSpecs")
+
+		result.toSeq
 	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
@@ -89,19 +100,27 @@ final class IndexData(nObjects: Int)(
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
-					case spec: IRI => {
-						getDataObject(subj).foreach { oe =>
-							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
-							if (isAssertion) {
-								if (oe.spec != null) removeStat(oe, initOk)
-								oe.spec = spec
-								addStat(oe, initOk)
-							} else if (spec === oe.spec) {
-								removeStat(oe, initOk)
-								oe.spec = null
+					case spec: IRI =>
+						{
+							getDataObject(subj).foreach { oe =>
+								updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+								if (isAssertion) {
+									if (oe.spec != null) removeStat(oe, initOk)
+									oe.spec = spec
+									addStat(oe, initOk)
+								} else if (spec === oe.spec) {
+									removeStat(oe, initOk)
+									oe.spec = null
+								}
 							}
 						}
-					}
+
+						if (isAssertion) {
+							val found = specs.find(_ == spec).isDefined
+							if (!found) {
+								specs += spec
+							}
+						}
 				}
 
 			case `hasName` =>
@@ -301,24 +320,20 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String]) = {
-		specKeywords.updateWith(spec)(existing =>
-			val newKeywords =
-				existing match {
-					case None => changedKeywords
-					case Some(existingKeywords) => {
-						if (isAssertion) {
-							existingKeywords ++ changedKeywords
-						} else {
-							existingKeywords -- changedKeywords
-						}
-					}
-				}
-			if (newKeywords.isEmpty) {
-				None
-			} else {
-				Some(newKeywords)
-			}
-		)
+		var id = specs.indexOf(spec);
+		if (id < 0) {
+			specs += spec
+			id = specs.length - 1
+		}
+		/*
+		println(s"id: $id")
+		println(s"changedKeywords: $changedKeywords")
+		*/
+
+		for (kw <- changedKeywords) {
+			updateCategSet(keywordToSpecs, kw, id, isAssertion)
+		}
+		// println(s"keywordToSpecs: $keywordToSpecs")
 	}
 
 	private def parseKeywords(obj: Value): Option[Array[String]] = {

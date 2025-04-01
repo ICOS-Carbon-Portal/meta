@@ -56,12 +56,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case CategFilter(category, values) if category == Keyword =>
 			val keywords: Seq[String] = values.collect { case kw: String => kw }
-
-			val specs: Seq[IRI] = data.getKeywordSpecs(keywords)
-			val specObjects = apply(CategFilter(Spec, specs)).getOrElse(emptyBitmap)
-
-			val perValue = data.categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)) :+ specObjects)
+			Some(data.getKeywordsBitmap(keywords))
 
 		case CategFilter(category, values) =>
 			val perValue = data.categMap(category)

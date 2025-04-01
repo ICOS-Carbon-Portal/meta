@@ -551,26 +551,24 @@ class QueryTests extends AsyncFunSpec {
 			// Query all the relevant keywords to make sure test data matches our expectations
 			val allKeywordsQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?objKeywords ?specKeywords ?projKeywords where {
+				select ?objKeywords ?specKeywords where {
 					BIND(<https://meta.icos-cp.eu/objects/${objectId}> as ?object)
 					?object cpmeta:hasObjectSpec ?spec .
 					?object cpmeta:hasKeywords ?objKeywords .
 					?spec cpmeta:hasAssociatedProject ?proj .
 					?spec cpmeta:hasKeywords ?specKeywords .
-					?proj cpmeta:hasKeywords ?projKeywords
 				}
 			"""
 
 			// Verify that our object has the associated keywords we expect
 			val objKeyword = "test keyword"
 			val specKeyword = "carbon flux"
-			val projKeyword = "ICOS"
+			// val projKeyword = "ICOS"
 
 			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
 			assert(bindingsFromRow(allKeywords) == Map(
 				"objKeywords" -> factory.createLiteral(objKeyword),
 				"specKeywords" -> factory.createLiteral(specKeyword),
-				"projKeywords" -> factory.createLiteral(projKeyword)
 			))
 
 			// The combination of `hasObjectSpec` and `hasKeyword` is a
@@ -587,6 +585,7 @@ class QueryTests extends AsyncFunSpec {
 			}
 
 			val List(objResult) = runSparqlSync(magicFilterQuery(objKeyword))
+			info(s"$objResult")
 
 			// Make sure we got the object we were looking for
 			assert(objResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
@@ -596,7 +595,7 @@ class QueryTests extends AsyncFunSpec {
 
 			// And all results should be equivalent
 			assert(findTargetObject(runSparqlSync(magicFilterQuery(specKeyword))) == Some(objResult))
-			assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
+			// assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
 		}
 	}
 

@@ -160,10 +160,14 @@ final class IndexData(nObjects: Int)(
 							}
 						}
 
+						// Add spec if it is not already indexed
 						if (isAssertion) {
 							val found = specs.find(_ == spec).isDefined
 							if (!found) {
 								specs += spec
+								given CpmetaVocab = vocab
+								val keywords = getAssociatedKeywords(spec)
+								updateSpecKeywords(spec, true, keywords)
 							}
 						}
 				}
@@ -439,7 +443,8 @@ final class IndexData(nObjects: Int)(
 
 	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String]) = {
 		var id = specs.indexOf(spec);
-		if (id < 0) {
+		val found = id > 0
+		if (!found) {
 			specs += spec
 			id = specs.length - 1
 		}

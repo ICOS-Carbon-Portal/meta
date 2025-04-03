@@ -56,8 +56,8 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case CategFilter(category, values) =>
 			category match {
-				case cat : BasicCategProp =>  {
-					val perValue = data.categMap(cat)
+				case basic: BasicCategProp => {
+					val perValue = data.categMap(basic)
 					or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
 				}
 
@@ -67,16 +67,24 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 				}
 			}
 
-		case GeneralCategFilter(category, condition) => 
-			// TODO: Enable again
-			None
-			/*
-			or(
-				data.categMap(category).collect {
-					case (cat, bm) if condition(cat) => bm
-				}.toSeq
-			)
-			*/
+		case GeneralCategFilter(category, condition) =>
+			category match {
+				case basic: BasicCategProp => {
+					or(
+						data.categMap(basic).collect {
+							case (cat, bm) if condition(cat) => bm
+						}.toSeq
+					)
+				}
+
+				case Keyword => {
+					// TODO: How do I apply the filter?
+					// TODO: A test should be failing.
+					// val filtered = data.allKeywords().filter(condition)
+					val filtered: Seq[String] = Seq.empty
+					Some(data.keywordBitmap(filtered))
+				}
+			}
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

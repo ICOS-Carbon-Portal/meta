@@ -51,12 +51,14 @@ final class IndexData(nObjects: Int)(
 	private def submStartBm = DatetimeHierarchicalBitmap(SubmStartGeo(objs))
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
-	def copySpecs(): Array[IRI] = {
-		specs.toArray()
+
+	def boolBitmap(prop: BoolProperty): ImmutableRoaringBitmap = {
+		mutableBoolBitmap(prop)
 	}
 
-
-	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+	private def mutableBoolBitmap(prop: BoolProperty): MutableRoaringBitmap = {
+		boolMap.getOrElseUpdate(prop, emptyBitmap)
+	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
@@ -73,9 +75,18 @@ final class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, ImmutableRoaringBitmap] = {
+		prop match {
+			case Keyword =>
+				// TODO: Would be nice to avoid dynamic cast, but not sure how.
 				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
-	def getKeywordsBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
+			case _ => {
+				getCategoryMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
+			}
+		}
+	}
+
+	def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
 		val kwMap = getCategoryMap(Keyword)
 		val kwObjects: Seq[ImmutableRoaringBitmap] = keywords.map(keyword =>
 			kwMap(keyword)
@@ -89,8 +100,10 @@ final class IndexData(nObjects: Int)(
 		BufferFastAggregation.or((specObjects ++ kwObjects)*)
 	}
 
-		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	private def getCategoryMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
+		categMaps
+			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
 
 	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
@@ -249,7 +262,7 @@ final class IndexData(nObjects: Int)(
 
 			case `isNextVersionOf` =>
 				getDataObject(obj).foreach { oe =>
-					val deprecated = boolBitmap(DeprecationFlag)
+					val deprecated = mutableBoolBitmap(DeprecationFlag)
 					if isAssertion then
 						if !deprecated.contains(oe.idx) then // to prevent needless work
 							val subjIsDobj = getDataObject(subj).map { deprecator =>
@@ -286,7 +299,7 @@ final class IndexData(nObjects: Int)(
 
 						if oe.isNextVersion then
 							log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
-							val deprecated = boolBitmap(DeprecationFlag)
+							val deprecated = mutableBoolBitmap(DeprecationFlag)
 
 							val directPrevVers: IndexedSeq[Int] =
 								StatementSource.getStatements(subj, isNextVersionOf, null)
@@ -366,6 +379,8 @@ final class IndexData(nObjects: Int)(
 									// TODO: Does not cover the case where two projects have overlapping keywords
 									updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
 								)
+						}
+					}
 				}
 
 			case _ =>
@@ -505,7 +520,7 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
-		val hasVarsBm = boolBitmap(HasVarList)
+		val hasVarsBm = mutableBoolBitmap(HasVarList)
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 

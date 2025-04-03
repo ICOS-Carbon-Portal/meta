@@ -82,14 +82,13 @@ final class IndexData(nObjects: Int)(
 	}
 
 	def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
-		val kwMap = mutableCategMap(Keyword)
-		val kwObjects = keywords.flatMap(kwMap.get)
-		val kwSpecs: Seq[IRI] = getKeywordSpecs(keywords)
-
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = mutableCategMap(Spec)
-		val specObjects = kwSpecs.flatMap(specMap.get)
+		val specObjects = getKeywordSpecs(keywords).flatMap(specMap.get)
 
-		BufferFastAggregation.or((specObjects ++ kwObjects)*)
+		val objectMap = mutableCategMap(Keyword)
+		val objects = keywords.flatMap(objectMap.get)
+
+		BufferFastAggregation.or((specObjects ++ objects)*)
 	}
 
 	private def mutableCategMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {

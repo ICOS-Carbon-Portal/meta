@@ -47,15 +47,17 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case ContFilter(property, condition) =>
 			Some(data.bitmap(property).filter(condition))
 
-		case CategFilter(DobjUri, values) =>
-			val objIndices: Seq[Int] = values
-				.collect { case iri: IRI => iri }
-				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
-				.flatten
-			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
-
 		case CategFilter(category, values) =>
 			category match {
+				case DobjUri => {
+					val objIndices: Seq[Int] = values
+						.collect { case iri: IRI => iri }
+						.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
+						.flatten
+					Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
+
+				}
+
 				case basic: BasicCategProp => {
 					val perValue = data.categMap(basic)
 					or(values.map(v => perValue.getOrElse(v, emptyBitmap)))

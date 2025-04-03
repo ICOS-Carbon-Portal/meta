@@ -23,6 +23,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.{
 	BoolProperty,
 	CategProp,
 	ContProp,
+	Keyword,
 	FileSizeHierarchicalBitmap,
 	Property,
 	SamplingHeightHierarchicalBitmap,
@@ -108,8 +109,10 @@ object IndexHandler{
 		kryo.register(classOf[IndexData], IndexDataSerializer)
 		OrderingSerializer.register(kryo)
 		OptionSerializer.register(kryo)
+		kryo.register(Keyword.getClass, SingletonSerializer(Keyword))
 		Property.allConcrete.foreach: prop =>
 			kryo.register(prop.getClass, SingletonSerializer(prop))
+
 		kryo
 
 

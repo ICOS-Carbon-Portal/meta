@@ -563,7 +563,7 @@ class QueryTests extends AsyncFunSpec {
 			// Verify that our object has the associated keywords we expect
 			val objKeyword = "test keyword"
 			val specKeyword = "carbon flux"
-			// val projKeyword = "ICOS"
+			val projKeyword = "ICOS"
 
 			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
 			assert(bindingsFromRow(allKeywords) == Map(
@@ -595,7 +595,7 @@ class QueryTests extends AsyncFunSpec {
 
 			// And all results should be equivalent
 			assert(findTargetObject(runSparqlSync(magicFilterQuery(specKeyword))) == Some(objResult))
-			// assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
+			assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
 		}
 	}
 

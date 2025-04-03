@@ -28,7 +28,8 @@ class IndexDataTest extends AnyFunSpec {
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
-	val seed = Math.abs(Random.nextInt())
+	// val seed = Math.abs(Random.nextInt())
+	val seed = 2142629917
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 

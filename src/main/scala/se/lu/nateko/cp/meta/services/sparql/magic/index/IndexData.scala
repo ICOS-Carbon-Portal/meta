@@ -120,8 +120,6 @@ final class IndexData(nObjects: Int)(
 			}
 		)
 
-		println(s"res: $res")
-
 		res
 	}
 
@@ -142,6 +140,8 @@ final class IndexData(nObjects: Int)(
 		import vocab.dcterms.hasPart
 		import statement.{subj, pred, obj}
 
+		given CpmetaVocab = vocab
+
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
@@ -160,16 +160,7 @@ final class IndexData(nObjects: Int)(
 							}
 						}
 
-						// Add spec if it is not already indexed
-						if (isAssertion) {
-							val found = specs.find(_ == spec).isDefined
-							if (!found) {
-								specs += spec
-								given CpmetaVocab = vocab
-								val keywords = getAssociatedKeywords(spec)
-								updateSpecKeywords(spec, true, keywords)
-							}
-						}
+						updateSpecKeywords(spec, true, Set.empty)
 				}
 
 			case `hasName` =>
@@ -352,47 +343,51 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasAssociatedProject` => {
+			case `hasAssociatedProject` =>
 				val project = ensureIRI(obj)
 				val spec = subj
 
-				given CpmetaVocab = vocab
 				val associatedKeywords = getAssociatedKeywords(spec)
 				val projectKeywords = getKeywords(project)
 				val specKeywords = getKeywords(spec)
 
 				val newKeywords: Set[String] = specKeywords ++ modifyKeywords(isAssertion, associatedKeywords, projectKeywords)
-				updateSpecKeywords(subj, true, newKeywords)
-			}
+				setSpecKeywords(spec, specKeywords ++ newKeywords)
 
 			case `hasKeywords` =>
-				given CpmetaVocab = vocab
 				getDataObject(subj) match {
-					case Some(oe) =>
+					case Some(oe) => {
 						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+					}
 					case None => {
 						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
+						val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
 
 						// TODO: If we can assume specs are always inserted before their hasKeywords triple,
 						//			 we could use the `specs` array to know if this is a spec.
-						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
-							val existingKeywords = getAssociatedKeywords(ensureIRI(subj))
-							updateSpecKeywords(subj, isAssertion, modifyKeywords(isAssertion, existingKeywords, changedKeywords))
+						if (isSpec) {
+							updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
 						} else {
 							val project = subj
-							val projectSpecs = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
-							for (spec <- projectSpecs) {
-								given CpmetaVocab = vocab
-								val associatedKeywords = getAssociatedKeywords(ensureIRI((spec)))
-								val specKeywords = getKeywords(ensureIRI(spec))
-
-								val newKeywords: Set[String] = specKeywords ++ modifyKeywords(isAssertion, associatedKeywords, changedKeywords)
-								updateSpecKeywords(subj, true, newKeywords)
-							}
+							StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
+								.map(_.getSubject())
+								.foreach(spec =>
+									updateSpecKeywords(ensureIRI(spec), isAssertion, changedKeywords)
+								)
 				}
 
 			case _ =>
 		}
+	}
+
+	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Unit = {
+		val existingKeywords: Set[String] = getKeywords(spec)
+		val projKeywords = getSpecProjectKeywords(spec)
+		val newKeywords: Set[String] = projKeywords ++ modifyKeywords(isAssertion, existingKeywords, changedKeywords)
+
+		setSpecKeywords(spec, newKeywords)
 	}
 
 	private def modifyKeywords(isAssertion: Boolean, existing: Set[String], changed: Set[String]): Set[String] = {
@@ -411,17 +406,18 @@ final class IndexData(nObjects: Int)(
 		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
 	}
 
-	private def getAssociatedKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+	private def getSpecProjectKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
 		if (spec == null) {
 			return Set.empty;
 		}
 
-		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
-		val projectKeywords = projects
+		StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
 			.flatMap(project => getKeywords(project))
 			.toSet
+	}
 
-		getKeywords(spec) ++ projectKeywords
+	private def getAssociatedKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		getKeywords(spec) ++ getSpecProjectKeywords(spec)
 	}
 
 	private def ensureIRI(value: Value): IRI = {
@@ -441,22 +437,30 @@ final class IndexData(nObjects: Int)(
 			.toSet
 	}
 
-	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String]) = {
+	private def setSpecKeywords(spec: IRI, keywords: Set[String]) = {
 		var id = specs.indexOf(spec);
-		val found = id > 0
-		if (!found) {
+		if (id < 0) {
 			specs += spec
 			id = specs.length - 1
 		}
-		/*
-		println(s"id: $id")
-		println(s"changedKeywords: $changedKeywords")
-		 */
 
-		for (kw <- changedKeywords) {
-			updateCategSet(keywordToSpecs, kw, id, isAssertion)
+
+		// Add or update new ones
+		for (keyword <- keywords) {
+			println(s"setting keyword: $keyword")
+			keywordToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
 		}
-		// println(s"keywordToSpecs: $keywordToSpecs")
+
+		// Remove old ones
+		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordToSpecs) {
+			if (!keywords.contains(keyword)) {
+				println(s"removing keyword: $keyword, id: $id")
+				bitmap.remove(id)
+				if (bitmap.isEmpty) {
+					val _ = keywordToSpecs.remove(keyword)
+				}
+			}
+		}
 	}
 
 	private def parseKeywords(obj: Value): Option[Array[String]] = {

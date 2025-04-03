@@ -16,19 +16,19 @@ import scala.util.Random
 private val factory = SimpleValueFactory.getInstance()
 
 class IndexDataTest extends AnyFunSpec {
+	// Abusing ScalaTest a bit to allow top-level 'test' blocks as well as 'describe'-blocks.
+	val testCase = it
+
 	def test(name: String)(body: => Any) = {
 		describe("") {
 			it(name)(body)
 		}
 	}
 
-	val testCase = it
-
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
-	// val seed = Math.abs(Random.nextInt())
-	val seed = 921265851
+	val seed = Math.abs(Random.nextInt())
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -37,9 +37,6 @@ class IndexDataTest extends AnyFunSpec {
 		val CpVocab.DataObject(hash, _) = subject: @unchecked
 		val data = IndexData(1)()
 
-		// IndexData requires a StatementSource but in this case we never pull any statements,
-		// hence we can leave things unimplemented.
-
 		val statement = Rdf4jStatement(subject, hasName, factory.createLiteral("test name"))
 
 		// This test does not rely on any existing statements
@@ -47,6 +44,7 @@ class IndexDataTest extends AnyFunSpec {
 
 		// Insert hasName triple
 		data.processUpdate(statement, true, vocab)
+		assert(data.objectCount == 1)
 		assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 		// Remove it
@@ -125,8 +123,15 @@ class IndexDataTest extends AnyFunSpec {
 			val data = IndexData(100)()
 			var store: Seq[Rdf4jStatement] = Seq()
 
+			// Try processing before insertion sometimes, to make sure indexing does not rely
+			// on the active triple being inserted already.
+			val processBeforeInsertion = Random.nextBoolean()
+
 			statements.foreach((isAssertion, statement) =>
-				println(s"statement: $statement")
+				if (processBeforeInsertion) {
+					given StatementSource = StaticStatementSource(store)
+					data.processUpdate(statement, isAssertion, vocab)
+				}
 
 				store = if (isAssertion) {
 					store :+ statement
@@ -134,8 +139,10 @@ class IndexDataTest extends AnyFunSpec {
 					store.filter(existing => existing != statement)
 				}
 
-				given StatementSource = StaticStatementSource(store)
-				data.processUpdate(statement, isAssertion, vocab)
+				if (!processBeforeInsertion) {
+					given StatementSource = StaticStatementSource(store)
+					data.processUpdate(statement, isAssertion, vocab)
+				}
 			)
 
 			data.categMap(Keyword)
@@ -156,7 +163,7 @@ class IndexDataTest extends AnyFunSpec {
 
 		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
 
-		testCase("adding object keyword") {
+		testCase("object keyword is added") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
 
 			assert(runStatements(objSpecProj :+ addObjectKeyword) == Map(
@@ -167,8 +174,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-
-		testCase("removing object keyword") {
+		testCase("object keyword is removed") {
 			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))
 
 			assert(runStatements(objSpecProj :+ removeObjectKeyword) == Map(
@@ -177,7 +183,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("editing associated spec") {
+		testCase("associated spec is edited") {
 			val editSpec = Seq(
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec edited,spec other edit"))),
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")))
@@ -191,7 +197,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("editing asserted project") {
+		testCase("associated project is edited") {
 			val editProject = Seq(
 				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project edited,project other edit"))),
 				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
@@ -205,7 +211,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("removing associated project") {
+		testCase("associated project is removed") {
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			assert(runStatements(objSpecProj :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
@@ -213,7 +219,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 		}
 
-		testCase("adding another project") {
+		testCase("another project is added") {
 			val otherProject = projectIRI("other project")
 			val addOtherProject =
 				Seq(
@@ -227,17 +233,16 @@ class IndexDataTest extends AnyFunSpec {
 				"project keyword" -> objectBitmap,
 				"other project keyword" -> objectBitmap
 			))
-
 		}
 
-		testCase("removing associated spec") {
+		testCase("associated spec is removed") {
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			assert(runStatements(objSpecProj :+ removeSpec) == Map(
 				"object keyword" -> objectBitmap
 			))
 		}
 
-		testCase("spec is removed with keywords overlapping data object") {
+		testCase("spec with keywords overlapping data object is removed") {
 			val statements = Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
@@ -248,39 +253,72 @@ class IndexDataTest extends AnyFunSpec {
 			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
 		}
 
-		testCase("project is removed with keywords overlapping data object") {
+		testCase("project with keywords overlapping data object is removed") {
 			val statements = Random.shuffle(Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
-				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap"))),
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap")))
+			)) :+
 				(false, Rdf4jStatement(spec, hasAssociatedProject, project))
-			))
 
 			assert(runStatements(statements) == Map("overlap" -> objectBitmap, "spec keyword" -> objectBitmap))
 		}
 
 		testCase("spec or project with overlapping keywords is removed") {
-			val statements = Seq(
+			val otherProject = projectIRI("other project")
+
+			val statements = Random.shuffle(Seq(
 				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
 				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap"))),
-				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap")))
-			)
+				(true, Rdf4jStatement(project, hasKeywords, factory.createLiteral("overlap"))),
+				(true, Rdf4jStatement(otherProject, hasKeywords, factory.createLiteral("otherProject keyword"))),
+				(true, Rdf4jStatement(spec, hasAssociatedProject, otherProject))
+			))
 
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 
 			assert(runStatements(statements :+ removeProject) == Map(
 				"object keyword" -> objectBitmap,
+				"otherProject keyword" -> objectBitmap,
 				"overlap" -> objectBitmap
 			))
 
 			assert(runStatements(statements :+ removeSpec) == Map(
 				"object keyword" -> objectBitmap
 			))
+		}
+
+		testCase("overlapping keywords in spec is removed") {
+			val statements = Random.shuffle(Seq(
+				(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("overlap"))),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap")))
+			)) ++ Random.shuffle(Seq(
+				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap")))
+			))
+
+			assert(runStatements(statements) == Map(
+				"overlap" -> objectBitmap
+			))
+		}
+
+		testCase("overlapping keywords in project is removed") {
+			val overlap = factory.createLiteral("overlap")
+
+			val statements = Random.shuffle(Seq(
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
+				(true, Rdf4jStatement(spec, hasKeywords, overlap)),
+				(true, Rdf4jStatement(project, hasKeywords, overlap))
+			)) :+
+				(false, Rdf4jStatement(project, hasKeywords, overlap))
+
+			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
 		}
 	}
 }

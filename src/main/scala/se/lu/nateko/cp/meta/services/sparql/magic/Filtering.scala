@@ -47,26 +47,36 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case ContFilter(property, condition) =>
 			Some(data.bitmap(property).filter(condition))
 
-		case CategFilter(category, values) if category == DobjUri =>
+		case CategFilter(DobjUri, values) =>
 			val objIndices: Seq[Int] = values
 				.collect { case iri: IRI => iri }
 				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
 				.flatten
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
-		case CategFilter(category, values) if category == Keyword =>
-			val keywords: Seq[String] = values.collect { case kw: String => kw }
-			Some(data.keywordBitmap(keywords))
-
 		case CategFilter(category, values) =>
-			val perValue = data.categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+			category match {
+				case cat : BasicCategProp =>  {
+					val perValue = data.categMap(cat)
+					or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+				}
 
-		case GeneralCategFilter(category, condition) => or(
+				case Keyword => {
+					val keywords: Seq[String] = values.collect { case kw: String => kw }
+					Some(data.keywordBitmap(keywords))
+				}
+			}
+
+		case GeneralCategFilter(category, condition) => 
+			// TODO: Enable again
+			None
+			/*
+			or(
 				data.categMap(category).collect {
 					case (cat, bm) if condition(cat) => bm
 				}.toSeq
 			)
+			*/
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

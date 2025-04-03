@@ -20,6 +20,7 @@ import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import org.roaringbitmap.buffer.BufferFastAggregation
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+import org.eclipse.rdf4j.model.Resource
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -347,19 +348,93 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
+			case `hasAssociatedProject` => {
+				val project = ensureIRI(obj)
+				val spec = subj
+
+				given CpmetaVocab = vocab
+				val associatedKeywords = getAssociatedKeywords(spec)
+				val projectKeywords = getKeywords(project)
+				val specKeywords = getKeywords(spec)
+
+				val newKeywords: Set[String] = specKeywords ++ modifyKeywords(isAssertion, associatedKeywords, projectKeywords)
+				updateSpecKeywords(subj, true, newKeywords)
+			}
+
 			case `hasKeywords` =>
+				given CpmetaVocab = vocab
 				getDataObject(subj) match {
 					case Some(oe) =>
 						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
 					case None => {
 						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
+
+						// TODO: If we can assume specs are always inserted before their hasKeywords triple,
+						//			 we could use the `specs` array to know if this is a spec.
 						if (StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)) {
-							updateSpecKeywords(subj, isAssertion, changedKeywords)
-						} else if (StatementSource.hasStatement(null, vocab.hasAssociatedProject, subj)) {
+							val existingKeywords = getAssociatedKeywords(ensureIRI(subj))
+							updateSpecKeywords(subj, isAssertion, modifyKeywords(isAssertion, existingKeywords, changedKeywords))
+						} else {
+							val project = subj
+							val projectSpecs = StatementSource.getStatements(null, vocab.hasAssociatedProject, project).map(_.getSubject())
+							for (spec <- projectSpecs) {
+								given CpmetaVocab = vocab
+								val associatedKeywords = getAssociatedKeywords(ensureIRI((spec)))
+								val specKeywords = getKeywords(ensureIRI(spec))
+
+								val newKeywords: Set[String] = specKeywords ++ modifyKeywords(isAssertion, associatedKeywords, changedKeywords)
+								updateSpecKeywords(subj, true, newKeywords)
+							}
 				}
 
 			case _ =>
 		}
+	}
+
+	private def modifyKeywords(isAssertion: Boolean, existing: Set[String], changed: Set[String]): Set[String] = {
+		if (isAssertion) {
+			existing ++ changed
+		} else {
+			existing -- changed
+		}
+	}
+
+	private def getSpecObjects(spec: Resource)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
+		// This is potentially expensive, and could be optimized by keeping additional
+		// index information on which data objects are associated with each spec.
+		// This could be done selectively during initial index building,
+		// only for specs with a large number of associated objects.
+		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
+	}
+
+	private def getAssociatedKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (spec == null) {
+			return Set.empty;
+		}
+
+		val projects = StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+		val projectKeywords = projects
+			.flatMap(project => getKeywords(project))
+			.toSet
+
+		getKeywords(spec) ++ projectKeywords
+	}
+
+	private def ensureIRI(value: Value): IRI = {
+		value match {
+			case iri: IRI => iri
+		}
+	}
+
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (subject == null) {
+			return Set.empty;
+		}
+
+		StatementSource.getValues(subject, vocab.hasKeywords)
+			.flatMap(parseKeywords)
+			.flatten()
+			.toSet
 	}
 
 	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String]) = {

@@ -44,7 +44,7 @@ class IndexDataTest extends AnyFunSpec {
 
 		// Insert hasName triple
 		data.processUpdate(statement, true, vocab)
-		assert(data.objectCount == 1)
+		assert(data.objs.length == 1)
 		assert(data.getObjEntry(hash).fileName === Some("test name"))
 
 		// Remove it

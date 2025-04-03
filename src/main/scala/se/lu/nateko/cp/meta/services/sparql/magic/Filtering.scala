@@ -56,7 +56,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case CategFilter(category, values) if category == Keyword =>
 			val keywords: Seq[String] = values.collect { case kw: String => kw }
-			Some(data.getKeywordsBitmap(keywords))
+			Some(data.keywordBitmap(keywords))
 
 		case CategFilter(category, values) =>
 			val perValue = data.categMap(category)

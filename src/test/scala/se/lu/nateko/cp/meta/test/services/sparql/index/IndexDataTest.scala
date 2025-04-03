@@ -27,7 +27,8 @@ class IndexDataTest extends AnyFunSpec {
 	private val vocab = CpmetaVocab(factory)
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
-	val seed = Math.abs(Random.nextInt())
+	// val seed = Math.abs(Random.nextInt())
+	val seed = 921265851
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -125,6 +126,8 @@ class IndexDataTest extends AnyFunSpec {
 			var store: Seq[Rdf4jStatement] = Seq()
 
 			statements.foreach((isAssertion, statement) =>
+				println(s"statement: $statement")
+
 				store = if (isAssertion) {
 					store :+ statement
 				} else {
@@ -163,6 +166,7 @@ class IndexDataTest extends AnyFunSpec {
 				"project keyword" -> objectBitmap
 			))
 		}
+
 
 		testCase("removing object keyword") {
 			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))

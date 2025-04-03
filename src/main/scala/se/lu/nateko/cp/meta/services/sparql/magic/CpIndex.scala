@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
-import se.lu.nateko.cp.meta.services.sparql.index.{DataObjectFetch, SortBy, Filter}
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry, ObjEntry}
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
@@ -21,7 +21,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-import CpIndex.UpdateQueueSize
+import CpIndex.*
 
 trait ObjSpecific{
 	def hash: Sha256Sum

@@ -75,63 +75,33 @@ final class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, ImmutableRoaringBitmap] = {
-		prop match {
-			case Keyword =>
-				// TODO: Would be nice to avoid dynamic cast, but not sure how.
-				keywordCategoryMap().asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
-			case _ => {
-				getCategoryMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
-			}
-		}
+	def categMap(prop: BasicCategProp): AnyRefMap[prop.ValueType, ImmutableRoaringBitmap] = {
+		mutableCategMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
 	}
 
 	def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
-		val kwMap = getCategoryMap(Keyword)
-		val kwObjects: Seq[ImmutableRoaringBitmap] = keywords.map(keyword =>
-			kwMap(keyword)
-		)
-
+		val kwMap = mutableCategMap(Keyword)
+		val kwObjects = keywords.flatMap(kwMap.get)
 		val kwSpecs: Seq[IRI] = getKeywordSpecs(keywords)
 
-		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = getCategoryMap(Spec)
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = mutableCategMap(Spec)
 		val specObjects = kwSpecs.flatMap(specMap.get)
 
 		BufferFastAggregation.or((specObjects ++ kwObjects)*)
 	}
 
-	private def getCategoryMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
+	private def mutableCategMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
 		categMaps
 			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
 
-	private def keywordCategoryMap(): AnyRefMap[String, MutableRoaringBitmap] = {
-		val kwIndex: AnyRefMap[String, MutableRoaringBitmap] =
-			categMaps
-				.getOrElse(Keyword, new AnyRefMap[String, MutableRoaringBitmap])
-				.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]
-
+	def allKeywords(): Set[String] = {
 		val objKeywords = (categMaps
 			.getOrElse(Keyword, new AnyRefMap[String, MutableRoaringBitmap])
 			.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]).keySet
 
-		val keywords = keywordToSpecs.keySet ++ objKeywords
-
-		val res = new AnyRefMap[String, MutableRoaringBitmap]
-		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = getCategoryMap(Spec)
-
-		keywords.foreach((kw: String) =>
-			val kwObjects = kwIndex.getOrElse(kw, emptyBitmap)
-			val specObjects: Seq[ImmutableRoaringBitmap] = getKeywordSpecs(Seq(kw)).flatMap(specMap.get)
-
-			val combined = BufferFastAggregation.or((specObjects :+ kwObjects)*)
-			if (!combined.isEmpty) {
-				res.put(kw, combined)
-			}
-		)
-
-		res
+		(keywordToSpecs.keySet ++ objKeywords).toSet
 	}
 
 	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
@@ -159,7 +129,7 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI =>
 						{
 							getDataObject(subj).foreach { oe =>
-								updateCategSet(getCategoryMap(Spec), spec, oe.idx, isAssertion)
+								updateCategSet(mutableCategMap(Spec), spec, oe.idx, isAssertion)
 								if (isAssertion) {
 									if (oe.spec != null) removeStat(oe, initOk)
 									oe.spec = spec
@@ -190,7 +160,7 @@ final class IndexData(nObjects: Int)(
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case subm: IRI => updateCategSet(getCategoryMap(Submitter), subm, oe.idx, isAssertion)
+							case subm: IRI => updateCategSet(mutableCategMap(Submitter), subm, oe.idx, isAssertion)
 
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
@@ -198,7 +168,7 @@ final class IndexData(nObjects: Int)(
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case stat: IRI => updateCategSet(getCategoryMap(Station), Some(stat), oe.idx, isAssertion)
+							case stat: IRI => updateCategSet(mutableCategMap(Station), Some(stat), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -210,7 +180,7 @@ final class IndexData(nObjects: Int)(
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case site: IRI => updateCategSet(getCategoryMap(Site), Some(site), oe.idx, isAssertion)
+							case site: IRI => updateCategSet(mutableCategMap(Site), Some(site), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -349,7 +319,7 @@ final class IndexData(nObjects: Int)(
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
 						val oe = getObjEntry(hash)
-						updateCategSet(getCategoryMap(VariableName), varName, oe.idx, isAssertion)
+						updateCategSet(mutableCategMap(VariableName), varName, oe.idx, isAssertion)
 						updateHasVarList(oe.idx, isAssertion)
 					case _ =>
 				}
@@ -361,7 +331,9 @@ final class IndexData(nObjects: Int)(
 			case `hasKeywords` =>
 				getDataObject(subj) match {
 					case Some(oe) => {
-						updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+						obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(s => Some(parseCommaSepList(s))).toSeq.flatten.foreach { strVal =>
+							updateCategSet(mutableCategMap(Keyword), strVal, oe.idx, isAssertion)
+						}
 					}
 					case None => {
 						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
@@ -488,7 +460,7 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(getCategoryMap(prop), strVal, idx, isAssertion)
+			updateCategSet(mutableCategMap(prop), strVal, idx, isAssertion)
 		}
 	}
 

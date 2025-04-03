@@ -84,9 +84,7 @@ final class IndexData(nObjects: Int)(
 		val kwSpecs: Seq[IRI] = getKeywordSpecs(keywords)
 
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = getCategoryMap(Spec)
-		val specObjects: Seq[ImmutableRoaringBitmap] = kwSpecs.map(spec =>
-			specMap(spec)
-		)
+		val specObjects = kwSpecs.flatMap(specMap.get)
 
 		BufferFastAggregation.or((specObjects ++ kwObjects)*)
 	}
@@ -344,15 +342,8 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` =>
-				val project = ensureIRI(obj)
-				val spec = subj
-
-				val associatedKeywords = getAssociatedKeywords(spec)
-				val projectKeywords = getKeywords(project)
-				val specKeywords = getKeywords(spec)
-
-				val newKeywords: Set[String] = specKeywords ++ modifyKeywords(isAssertion, associatedKeywords, projectKeywords)
-				setSpecKeywords(spec, specKeywords ++ newKeywords)
+				val projectKeywords = getKeywords(ensureIRI(obj))
+				updateProjectKeywords(subj, isAssertion, projectKeywords)
 
 			case `hasKeywords` =>
 				getDataObject(subj) match {
@@ -372,7 +363,8 @@ final class IndexData(nObjects: Int)(
 							StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
 								.map(_.getSubject())
 								.foreach(spec =>
-									updateSpecKeywords(ensureIRI(spec), isAssertion, changedKeywords)
+									// TODO: Does not cover the case where two projects have overlapping keywords
+									updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
 								)
 				}
 
@@ -380,12 +372,21 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedKeywords: Set[String])(using
+	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String])(using
 		vocab: CpmetaVocab
 	)(using StatementSource): Unit = {
 		val existingKeywords: Set[String] = getKeywords(spec)
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] = projKeywords ++ modifyKeywords(isAssertion, existingKeywords, changedKeywords)
+		val newKeywords: Set[String] = projKeywords ++ modifyKeywords(isAssertion, existingKeywords, changedSpecKeywords)
+
+		setSpecKeywords(spec, newKeywords)
+	}
+
+	private def updateProjectKeywords(spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Unit = {
+		val projKeywords = getSpecProjectKeywords(spec)
+		val newKeywords: Set[String] = getKeywords(spec) ++ modifyKeywords(isAssertion, projKeywords, changedProjectKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
@@ -444,17 +445,14 @@ final class IndexData(nObjects: Int)(
 			id = specs.length - 1
 		}
 
-
 		// Add or update new ones
 		for (keyword <- keywords) {
-			println(s"setting keyword: $keyword")
 			keywordToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
 		}
 
 		// Remove old ones
 		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordToSpecs) {
 			if (!keywords.contains(keyword)) {
-				println(s"removing keyword: $keyword, id: $id")
 				bitmap.remove(id)
 				if (bitmap.isEmpty) {
 					val _ = keywordToSpecs.remove(keyword)

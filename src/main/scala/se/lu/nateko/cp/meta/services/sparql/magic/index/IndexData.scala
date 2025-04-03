@@ -35,7 +35,7 @@ def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
 	// These members are public only because of serialization, and should not be accessed directly.
-	
+
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
 	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
@@ -128,22 +128,21 @@ final class IndexData(nObjects: Int)(
 		pred match {
 			case `hasObjectSpec` =>
 				obj match {
-					case spec: IRI =>
-						{
-							getDataObject(subj).foreach { oe =>
-								updateCategSet(mutableCategMap(Spec), spec, oe.idx, isAssertion)
-								if (isAssertion) {
-									if (oe.spec != null) removeStat(oe, initOk)
-									oe.spec = spec
-									addStat(oe, initOk)
-								} else if (spec === oe.spec) {
-									removeStat(oe, initOk)
-									oe.spec = null
-								}
+					case spec: IRI => {
+						getDataObject(subj).foreach { oe =>
+							updateCategSet(mutableCategMap(Spec), spec, oe.idx, isAssertion)
+							if (isAssertion) {
+								if (oe.spec != null) removeStat(oe, initOk)
+								oe.spec = spec
+								addStat(oe, initOk)
+							} else if (spec === oe.spec) {
+								removeStat(oe, initOk)
+								oe.spec = null
 							}
 						}
 
 						updateSpecKeywords(spec, true, Set.empty)
+					}
 				}
 
 			case `hasName` =>

@@ -196,7 +196,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.writeObject(output, data.keywordToSpecs)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
-		kryo.writeObject(output, data.categMaps)
+		kryo.writeObject(output, data._categMaps)
 		kryo.writeObject(output, data.contMap)
 		kryo.writeObject(output, data.initOk)
 
@@ -229,7 +229,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
-			categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
+			_categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
 			contMap = readObj(classOf[AnyRefMap[ContProp, HierarchicalBitmap[?]]]),
 			initOk = readObj(classOf[MutableRoaringBitmap])
 		)

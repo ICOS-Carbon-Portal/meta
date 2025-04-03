@@ -34,12 +34,14 @@ final case class StatEntry(key: StatKey, count: Int)
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
+	// These members are public only because of serialization, and should not be accessed directly.
+	
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
 	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
 	val keywordToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
-	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
+	val _categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
@@ -91,15 +93,16 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def mutableCategMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
-		categMaps
+		_categMaps
 			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
 
 	def allKeywords(): Set[String] = {
-		val objKeywords = (categMaps
+		val objKeywords = _categMaps
 			.getOrElse(Keyword, new AnyRefMap[String, MutableRoaringBitmap])
-			.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]).keySet
+			.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]
+			.keySet
 
 		(keywordToSpecs.keySet ++ objKeywords).toSet
 	}

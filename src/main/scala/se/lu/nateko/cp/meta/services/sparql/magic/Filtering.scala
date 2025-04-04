@@ -49,8 +49,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			Some(data.bitmap(property).filter(condition))
 
 		case CategFilter(Keyword, values) =>
-			val keywords: Seq[String] = values.collect { case kw: String => kw }
-			Some(data.keywordBitmap(keywords))
+			Some(data.getBitmap(Keyword, values.asInstanceOf[Seq[String]]))
 
 		case CategFilter(DobjUri , values) =>
 			val objIndices: Seq[Int] = values

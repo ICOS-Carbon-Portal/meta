@@ -83,6 +83,20 @@ final class IndexData(nObjects: Int)(
 		mutableCategMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
 	}
 
+	def getBitmap(prop: CategProp, values: Seq[prop.ValueType]): ImmutableRoaringBitmap = {
+		prop match {
+			case Keyword => 
+				keywordBitmap(values.asInstanceOf[Seq[String]])
+			case _ => {
+				val map = _categMaps
+					.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+					.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+
+				BufferFastAggregation.or(values.map(v => map.getOrElse(v, emptyBitmap))*)
+			}
+		}
+	}
+
 	def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = mutableCategMap(Spec)
 		val specObjects = getKeywordSpecs(keywords).flatMap(specMap.get)

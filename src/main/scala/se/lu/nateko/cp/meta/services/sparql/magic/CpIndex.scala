@@ -40,6 +40,7 @@ trait ObjInfo extends ObjSpecific{
 	def dataEndTime: Option[Instant]
 	def submissionStartTime: Option[Instant]
 	def submissionEndTime: Option[Instant]
+	def keywords: Option[Set[String]]
 }
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:

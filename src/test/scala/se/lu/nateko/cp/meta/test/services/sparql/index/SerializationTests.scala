@@ -143,7 +143,7 @@ class SerializationTests extends AsyncFunSpec{
 		}
 
 		origAndCopy("has two stations", 2)(
-			toData.andThen(_.categMap(Station).size)
+			toData.andThen(_.categoryKeys(Station).size)
 		)
 	}
 }

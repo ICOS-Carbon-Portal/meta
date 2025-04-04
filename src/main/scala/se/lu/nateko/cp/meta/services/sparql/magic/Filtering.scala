@@ -33,6 +33,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case Exists(prop) => prop match {
 				case cp: ContProp => Some(data.bitmap(cp).all)
 				case cp: CategProp => cp match {
+						// TODO: Handle Keyword case
 						case optUriProp: OptUriProperty => data.categMap(optUriProp).get(None) match {
 								case None => None
 								case Some(deprived) if deprived.isEmpty => None
@@ -47,46 +48,27 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case ContFilter(property, condition) =>
 			Some(data.bitmap(property).filter(condition))
 
+		case CategFilter(Keyword, values) =>
+			val keywords: Seq[String] = values.collect { case kw: String => kw }
+			Some(data.keywordBitmap(keywords))
+
+		case CategFilter(DobjUri , values) =>
+			val objIndices: Seq[Int] = values
+				.collect { case iri: IRI => iri }
+				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
+				.flatten
+			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
+
 		case CategFilter(category, values) =>
-			category match {
-				case DobjUri => {
-					val objIndices: Seq[Int] = values
-						.collect { case iri: IRI => iri }
-						.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
-						.flatten
-					Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
+			val perValue = data.categMap(category)
+			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
 
-				}
-
-				case basic: BasicCategProp => {
-					val perValue = data.categMap(basic)
-					or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
-				}
-
-				case Keyword => {
-					val keywords: Seq[String] = values.collect { case kw: String => kw }
-					Some(data.keywordBitmap(keywords))
-				}
-			}
-
-		case GeneralCategFilter(category, condition) =>
-			category match {
-				case basic: BasicCategProp => {
-					or(
-						data.categMap(basic).collect {
-							case (cat, bm) if condition(cat) => bm
-						}.toSeq
-					)
-				}
-
-				case Keyword => {
-					// TODO: How do I apply the filter?
-					// TODO: A test should be failing.
-					// val filtered = data.allKeywords().filter(condition)
-					val filtered: Seq[String] = Seq.empty
-					Some(data.keywordBitmap(filtered))
-				}
-			}
+		case GeneralCategFilter(category, condition) => or(
+				// TODO: Handle Keyword case
+				data.categMap(category).collect {
+					case (cat, bm) if condition(cat) => bm
+				}.toSeq
+			)
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

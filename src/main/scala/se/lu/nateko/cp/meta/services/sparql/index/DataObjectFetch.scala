@@ -59,12 +59,10 @@ sealed trait GeoProp extends Property{type ValueType = Geometry}
 case object GeoIntersects extends GeoProp
 
 sealed trait CategProp extends Property{type ValueType <: AnyRef}
-sealed trait BasicCategProp extends CategProp{type ValueType <: AnyRef}
-case object Keyword extends CategProp{type ValueType = String}
 
-sealed trait StringCategProp extends BasicCategProp{type ValueType = String}
-sealed trait UriProperty extends BasicCategProp{type ValueType = IRI}
-sealed trait OptUriProperty extends BasicCategProp{ type ValueType = Option[IRI]}
+sealed trait StringCategProp extends CategProp{type ValueType = String}
+sealed trait UriProperty extends CategProp{type ValueType = IRI}
+sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
 
 case object DobjUri extends UriProperty
 case object Spec extends UriProperty
@@ -72,6 +70,7 @@ case object Station extends OptUriProperty
 case object Site extends OptUriProperty
 case object Submitter extends UriProperty
 case object VariableName extends StringCategProp
+case object Keyword extends StringCategProp
 
 object Property{
 	import scala.deriving.Mirror.SumOf

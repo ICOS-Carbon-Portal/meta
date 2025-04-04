@@ -39,7 +39,7 @@ final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
 	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
-	val keywordToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
+	val _keywordsToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val _categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -77,7 +77,9 @@ final class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: BasicCategProp): AnyRefMap[prop.ValueType, ImmutableRoaringBitmap] = {
+	// NOTE: categMap(Keyword) returns a objects directly associated with each keyword.
+	//			 In order to include associated keywords from specs and projects, use `keywordBitmap()` instead.
+	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, ImmutableRoaringBitmap] = {
 		mutableCategMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, ImmutableRoaringBitmap]]
 	}
 
@@ -103,11 +105,11 @@ final class IndexData(nObjects: Int)(
 			.asInstanceOf[AnyRefMap[String, MutableRoaringBitmap]]
 			.keySet
 
-		(keywordToSpecs.keySet ++ objKeywords).toSet
+		(_keywordsToSpecs.keySet ++ objKeywords).toSet
 	}
 
 	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
-		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordToSpecs.get)*)
+		val bitmap = BufferFastAggregation.or(keywords.flatMap(_keywordsToSpecs.get)*)
 		val result: ArrayBuffer[IRI] = new ArrayBuffer();
 
 		bitmap.forEach(index => {
@@ -435,15 +437,15 @@ final class IndexData(nObjects: Int)(
 
 		// Add or update new ones
 		for (keyword <- keywords) {
-			keywordToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
+			_keywordsToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
 		}
 
 		// Remove old ones
-		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordToSpecs) {
+		for ((keyword: String, bitmap: MutableRoaringBitmap) <- _keywordsToSpecs) {
 			if (!keywords.contains(keyword)) {
 				bitmap.remove(id)
 				if (bitmap.isEmpty) {
-					val _ = keywordToSpecs.remove(keyword)
+					val _ = _keywordsToSpecs.remove(keyword)
 				}
 			}
 		}

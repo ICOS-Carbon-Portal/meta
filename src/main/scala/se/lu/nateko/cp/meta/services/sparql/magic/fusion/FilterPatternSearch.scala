@@ -129,9 +129,6 @@ object FilterPatternSearch{
 		case optUriProp: OptUriProperty =>
 			v.asOptInstanceOf[IRI].map(iri => CategFilter(optUriProp, Seq(Some(iri))))
 
-		case Keyword =>
-			v.asOptInstanceOf[Literal].flatMap(asString).map(varName => CategFilter(Keyword, Seq(varName)))
-
 		case strProp: StringCategProp =>
 			v.asOptInstanceOf[Literal].flatMap(asString).map(varName => CategFilter(strProp, Seq(varName)))
 

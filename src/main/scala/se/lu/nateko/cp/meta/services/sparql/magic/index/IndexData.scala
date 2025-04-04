@@ -81,11 +81,11 @@ final class IndexData(nObjects: Int)(
 			case Keyword =>
 				keywordBitmap(values.asInstanceOf[Seq[String]])
 			case _ => {
-				val map = _categMaps
+				val category = _categMaps
 					.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 					.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 
-				BufferFastAggregation.or(values.map(v => map.getOrElse(v, emptyBitmap)).toSeq*)
+				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*)
 			}
 		}
 	}

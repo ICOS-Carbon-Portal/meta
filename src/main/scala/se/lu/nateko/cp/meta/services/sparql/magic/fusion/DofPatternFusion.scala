@@ -240,11 +240,6 @@ object DofPatternFusion{
 					case catp: CategProp =>
 						val iris = vals.collect{case iri: IRI => iri}
 						catp match{
-							case Keyword => CategFilter(
-								Keyword,
-								vals.collect{case lit: Literal => asString(lit)}.flatten
-							)
-
 							case uriProp: UriProperty => CategFilter(uriProp, iris)
 							case optUri: OptUriProperty => CategFilter(optUri, iris.map(Some(_)))
 							case strProp: StringCategProp => CategFilter(

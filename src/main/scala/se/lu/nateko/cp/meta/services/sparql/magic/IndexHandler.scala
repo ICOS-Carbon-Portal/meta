@@ -23,7 +23,6 @@ import se.lu.nateko.cp.meta.services.sparql.index.{
 	BoolProperty,
 	CategProp,
 	ContProp,
-	Keyword,
 	FileSizeHierarchicalBitmap,
 	Property,
 	SamplingHeightHierarchicalBitmap,
@@ -109,7 +108,6 @@ object IndexHandler{
 		kryo.register(classOf[IndexData], IndexDataSerializer)
 		OrderingSerializer.register(kryo)
 		OptionSerializer.register(kryo)
-		kryo.register(Keyword.getClass, SingletonSerializer(Keyword))
 		Property.allConcrete.foreach: prop =>
 			kryo.register(prop.getClass, SingletonSerializer(prop))
 
@@ -196,7 +194,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		kryo.writeObject(output, data.objs.toArray)
 		kryo.writeObject(output, data.specs.map(_.stringValue()).toArray)
-		kryo.writeObject(output, data.keywordToSpecs)
+		kryo.writeObject(output, data._keywordsToSpecs)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
 		kryo.writeObject(output, data._categMaps)
@@ -228,7 +226,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		IndexData(nObjs)(
 			objs = objs,
 			specs = ArrayBuffer.from(specs),
-			keywordToSpecs = readObj(classOf[AnyRefMap[String, MutableRoaringBitmap]]),
+			_keywordsToSpecs = readObj(classOf[AnyRefMap[String, MutableRoaringBitmap]]),
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),

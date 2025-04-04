@@ -116,7 +116,6 @@ class CpEvaluationStrategyFactory(
 				case DataStart       => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
 				case DataEnd         => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
 				case _: GeoProp      => (_, _) => ()
-				case Keyword      => (_, _) => () // TODO: Bind keywords
 			}
 		}
 

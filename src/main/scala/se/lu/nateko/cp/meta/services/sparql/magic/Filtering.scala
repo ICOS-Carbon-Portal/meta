@@ -20,13 +20,13 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			else
 				val nonGeoFilts = filters.filter:
 					case gf: GeoFilter => false
-					case _ => true
+					case _             => true
 				val nonGeoBm = andFiltering(nonGeoFilts)
 				val geoBms = geoFilts.flatMap(geoFiltering(_, nonGeoBm))
 				if geoBms.isEmpty then nonGeoBm else and(geoBms ++ nonGeoBm)
 
 		case Not(filter) => this.apply(filter) match {
-				case None => Some(emptyBitmap)
+				case None     => Some(emptyBitmap)
 				case Some(bm) => Some(negate(bm))
 			}
 
@@ -40,7 +40,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 						}
 				case _: CategProp => None
 				case boo: BoolProperty => Some(data.boolBitmap(boo))
-				case _: GeoProp => None
+				case _: GeoProp        => None
 			}
 
 		case ContFilter(property, condition) =>

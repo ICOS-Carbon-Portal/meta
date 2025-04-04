@@ -235,7 +235,7 @@ object RdfDiffCalc{
 
 	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.flatMap(e => e.tcIdOpt.map(_ -> e)).toMap
 
-	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
+	def uniqBestId[E <: Entity[?]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
 class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){

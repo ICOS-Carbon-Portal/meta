@@ -158,7 +158,7 @@ object DofPatternSearch{
 	def mergeProjectionPatterns(patt: DofPattern): DofPattern = patt match{
 
 		case pdp @ ProjectionDofPattern(inner: ProjectionDofPattern, _, _, _, None) =>
-			mergeProjectionPatterns(pdp.copy(inner = DofPattern.Empty) join inner)
+			mergeProjectionPatterns(pdp.copy(inner = DofPattern.Empty) `join` inner)
 
 		case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
 			pdp.copy(outer = Some(mergeProjectionPatterns(outer)))

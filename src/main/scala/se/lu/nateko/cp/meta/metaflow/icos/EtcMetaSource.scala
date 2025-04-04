@@ -498,7 +498,7 @@ object EtcMetaSource{
 		people: Map[TcId[E], EtcPerson],
 		stations: Map[TcId[E], EtcStation]
 	)(using Lookup): Validated[EtcMembership] = {
-		val require = requireVar("membership") _
+		val require = requireVar("membership")
 		for(
 			persId <- require(Vars.persId);
 			stationTcId <- require(Vars.stationTcId);
@@ -518,7 +518,7 @@ object EtcMetaSource{
 
 	def getLogger(sensorsVal: Validated[Seq[EtcInstrument]])(using Lookup): Validated[EtcInstrument] = {
 		val sensorsDictVal = sensorsVal.map(_.map(sens => sens.tcId -> sens).toMap)
-		val require = requireVar("instrument") _
+		val require = requireVar("instrument")
 		for(
 			stId <- require(Vars.stationTcId).map(_.toInt);
 			loggerId <- require(Vars.loggerId).map(_.toInt);

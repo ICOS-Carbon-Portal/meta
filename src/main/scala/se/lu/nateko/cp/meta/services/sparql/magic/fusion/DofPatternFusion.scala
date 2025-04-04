@@ -60,7 +60,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			if(oneListFusionPerSubPatt && allMergable){
 				val newExprsToFuse = subs.flatMap(_.exprsToFuse).distinctBy(System.identityHashCode) :+ union.union
-				val allSame = subs.sliding(2,1).forall(s => s(0) essentiallyEqual s(1))
+				val allSame = subs.sliding(2,1).forall(s => s(0) `essentiallyEqual` s(1))
 				if(allSame)
 					Seq(subs.head.copy(exprsToFuse = newExprsToFuse))
 				else {

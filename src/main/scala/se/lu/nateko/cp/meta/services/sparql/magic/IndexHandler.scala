@@ -154,7 +154,7 @@ object RoaringSerializer extends Serializer[MutableRoaringBitmap] {
 	override def write(kryo: Kryo, output: Output, bitmap: MutableRoaringBitmap): Unit =
 		bitmap.serialize(new KryoDataOutput(output))
 
-	override def read(kryo: Kryo, input: Input, tpe: Class[_ <: MutableRoaringBitmap]): MutableRoaringBitmap = {
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: MutableRoaringBitmap]): MutableRoaringBitmap = {
 		val bitmap = new MutableRoaringBitmap()
 		bitmap.deserialize(new KryoDataInput(input))
 		bitmap

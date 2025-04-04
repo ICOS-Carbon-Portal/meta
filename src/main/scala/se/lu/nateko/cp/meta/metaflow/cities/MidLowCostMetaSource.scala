@@ -32,7 +32,7 @@ object MidLowCostMetaSource:
 		def commaToDot: String = s.replace(',', '.')
 
 	def parseStation[T <: CitiesTC : TcConf](countryCode: CountryCode)(using Lookup): Validated[TcStation[T]] =
-		val demand = lookUpMandatory(StationsTableName) _
+		val demand = lookUpMandatory(StationsTableName)
 		for(
 			stIdStr <- demand(StationIdCol);
 			lat <- demand(LatCol).map(_.commaToDot.toDouble);

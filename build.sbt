@@ -3,15 +3,19 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
-ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / scalaVersion := "3.6.4"
 
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
+	"-rewrite",
+	"-source:3.4-migration"
+	/*
 	"-unchecked",
 	"-feature",
 	"-deprecation",
 	"-Werror",
 	"-Wunused:imports"
+	*/
 )
 
 lazy val metaCore = (project in file("core"))

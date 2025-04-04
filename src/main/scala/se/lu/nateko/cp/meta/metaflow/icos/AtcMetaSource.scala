@@ -134,7 +134,7 @@ object AtcMetaSource{
 		else Validated(IcosStationClass.valueOf(s))
 
 	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){
-		val demand = lookUpMandatory(stationsTbl) _
+		val demand = lookUpMandatory(stationsTbl)
 
 		for(
 			stIdStr <- demand(StationIdCol);
@@ -193,7 +193,7 @@ object AtcMetaSource{
 		}
 
 		parseFromCsv(roles){
-			val demand = lookUpMandatory("roles") _
+			val demand = lookUpMandatory("roles")
 
 			for(
 				peopleLookup <- peopleLookupVal;
@@ -277,7 +277,7 @@ object AtcMetaSource{
 
 	private def parseOrgs(file: Path, idCol: String, nameCol: String, websiteCol: Option[String] = None) =
 		parseFromCsv(file){
-			val demand = lookUpMandatory(instrumentsTbl) _
+			val demand = lookUpMandatory(instrumentsTbl)
 			for(
 				idStr <- demand(idCol) if idStr != undefinedOrgId;
 				id = makeOrgId(idStr);
@@ -310,7 +310,7 @@ object AtcMetaSource{
 
 	def parseInstruments(instruments: Path, orgs: OrgsMap): Validated[Seq[TcInstrument[A]]] = {
 		parseFromCsv(instruments){
-			val demand = lookUpMandatory(instrumentsTbl) _
+			val demand = lookUpMandatory(instrumentsTbl)
 			for(
 				id <- demand(InstrIdCol).map(makeId);
 				nameOpt <- lookUp(InstrNameCol).optional;

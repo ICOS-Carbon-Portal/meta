@@ -59,7 +59,7 @@ extension (self: Filter){
 		case _ => false
 	})
 
-	def exists(pf: PartialFunction[Filter, Unit]): Boolean = exists(pf.isDefinedAt _)
+	def exists(pf: PartialFunction[Filter, Unit]): Boolean = exists(pf.isDefinedAt)
 
 	def collect[T](pf: PartialFunction[Filter, T]): Seq[T] = collectS(self, pf.andThen(Seq(_)))
 

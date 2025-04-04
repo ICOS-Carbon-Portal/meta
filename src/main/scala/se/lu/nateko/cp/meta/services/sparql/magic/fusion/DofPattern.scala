@@ -50,7 +50,7 @@ final case class PlainDofPattern(
 					.groupMapReduce(_._1)(_._2)(_ ++ _)
 
 				val newVarValues = (Iterable.from(varValues) ++ other.varValues)
-					.groupMapReduce(_._1)(_._2)(_ merge _)
+					.groupMapReduce(_._1)(_._2)(_ `merge` _)
 
 				PlainDofPattern(
 					newDobjVar,
@@ -62,7 +62,7 @@ final case class PlainDofPattern(
 
 		case lj: LeftJoinDofPattern => new LeftJoinDofPattern(join(lj.left), lj.optionals)
 
-		case u: DofPatternUnion => new DofPatternUnion(u.subs.map(join _), u.union)
+		case u: DofPatternUnion => new DofPatternUnion(u.subs.map(join), u.union)
 
 		case unexpected => throw new MatchError(unexpected)
 	}
@@ -77,7 +77,7 @@ final case class ProjectionDofPattern(
 	outer: Option[DofPattern]
 ) extends DofPattern {
 	protected def joinInner(other: DofPattern): DofPattern = copy(
-		outer = Some(outer.fold(other)(_ join other))
+		outer = Some(outer.fold(other)(_ `join` other))
 	)
 
 	def &:(left: DofPattern): DofPattern = copy(

@@ -101,7 +101,7 @@ object JsonSupport extends CommonJsonSupport:
 	}
 
 	given JsonFormat[FeatureCollection] = {
-		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(vanillaGeoFeatureFormat)
+		given JsonFormat[Seq[GeoFeature]] = immSeqFormat(using vanillaGeoFeatureFormat)
 		jsonFormat3(FeatureCollection.apply)
 	}
 
@@ -194,7 +194,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[DataObject] with {
 		private given defFormat: RootJsonFormat[DataObject] = jsonFormat14(DataObject.apply)
 
-		def read(value: JsValue): DataObject = value.convertTo[DataObject](defFormat)
+		def read(value: JsValue): DataObject = value.convertTo[DataObject](using defFormat)
 
 		def write(dobj: DataObject): JsValue =
 			val plain = dobj.toJson(defFormat).asJsObject

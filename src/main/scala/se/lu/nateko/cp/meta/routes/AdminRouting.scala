@@ -24,7 +24,7 @@ class AdminRouting(
 	conf: SparqlServerConfig
 ) {
 	import AuthenticationRouting.optEnsureLocalRequest
-	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _
+	private val permitAdmins = authRouting.allowUsers(conf.adminUsers)
 	private val sparqler = new Rdf4jSparqlRunner(repo)
 
 	private val readonlyModeRoute = (post & withoutRequestTimeout){

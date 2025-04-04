@@ -53,9 +53,9 @@ class Validated[+T](val result: Option[T], val errors: Seq[String] = Nil):
 	@inline final def withFilter(p: T => Boolean): WithFilter = new WithFilter(p)
 
 	final class WithFilter(p: T => Boolean) {
-		def map[U](f:     T => U): Validated[U]                 = Validated.this filter p map f
-		def flatMap[U](f: T => Validated[U]): Validated[U]      = Validated.this filter p flatMap f
-		def foreach[U](f: T => U): Unit                         = Validated.this filter p foreach f
+		def map[U](f:     T => U): Validated[U]                 = Validated.this `filter` p `map` f
+		def flatMap[U](f: T => Validated[U]): Validated[U]      = Validated.this `filter` p `flatMap` f
+		def foreach[U](f: T => U): Unit                         = Validated.this `filter` p `foreach` f
 		def withFilter(q: T => Boolean): WithFilter             = new WithFilter(x => p(x) && q(x))
 	}
 

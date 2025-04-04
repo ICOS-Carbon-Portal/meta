@@ -36,7 +36,7 @@ class Rdf4jSparqlServer(
 
 	private val log = Logging.getLogger(system, this)
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
-	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
+	private val quoter = new QuotaManager(config, sparqlExe)((() => Instant.now()))
 	private given ExecutionContext = system.dispatcher
 
 	//QuotaManager should be cleaned periodically to forget very old query runs

@@ -57,7 +57,7 @@ object UploadApp {
 			gcmdKeywords <- gcmdKeywordsFut
 		) yield{
 			implicit val bus = new PubSubBus
-			new Form(subms, objSpecs, spatCovs, gcmdKeywords, upload _, createDoi _)
+			new Form(subms, objSpecs, spatCovs, gcmdKeywords, upload, createDoi)
 		}
 
 		whenDone(formFut){ _ =>

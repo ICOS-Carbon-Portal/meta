@@ -597,7 +597,29 @@ class QueryTests extends AsyncFunSpec {
 			assert(findTargetObject(runSparqlSync(magicFilterQuery(specKeyword))) == Some(objResult))
 			assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
 		}
+
+		it("sets binding for hasKeyword"){
+			// An object which has the unique keyword: "test keyword"
+			val objectId = "08ArGBmAQHiig_xtrwmprrL7"
+
+			val query = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?object ?keyword ?keywords where {
+					?object cpmeta:hasName "anthropogenic.persector.201911.nc" .
+					?object cpmeta:hasObjectSpec ?spec .
+					?object cpmeta:hasKeywords ?keywords .
+					?object cpmeta:hasKeyword ?keyword
+				}
+			"""
+
+			val List(result) = runSparqlSync(query)
+			info(s"$result")
+			assert(result.getBinding("object").getValue().stringValue().endsWith(objectId))
+			assert(result.getBinding("keywords").getValue().stringValue() == "carbon flux")
+			assert(result.getBinding("keyword").getValue().stringValue() == "carbon flux")
+		}
 	}
+
 
 	private def runSparqlSync(query: String): List[BindingSet] = {
 		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList

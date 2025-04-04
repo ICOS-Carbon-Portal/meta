@@ -34,4 +34,5 @@ final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) exte
 	def submissionEndTime: Option[Instant] = dateTimeFromLong(submissionEnd)
 
 	def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
+	def keywords = None
 }

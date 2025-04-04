@@ -19,7 +19,6 @@ import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
-import org.eclipse.rdf4j.model.Resource
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -401,14 +400,6 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def getSpecObjects(spec: Resource)(using vocab: CpmetaVocab)(using StatementSource): Iterator[Resource] = {
-		// This is potentially expensive, and could be optimized by keeping additional
-		// index information on which data objects are associated with each spec.
-		// This could be done selectively during initial index building,
-		// only for specs with a large number of associated objects.
-		StatementSource.getStatements(null, vocab.hasObjectSpec, spec).map(_.getSubject())
-	}
-
 	private def getSpecProjectKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
 		if (spec == null) {
 			return Set.empty;
@@ -417,10 +408,6 @@ final class IndexData(nObjects: Int)(
 		StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
 			.flatMap(project => getKeywords(project))
 			.toSet
-	}
-
-	private def getAssociatedKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		getKeywords(spec) ++ getSpecProjectKeywords(spec)
 	}
 
 	private def ensureIRI(value: Value): IRI = {

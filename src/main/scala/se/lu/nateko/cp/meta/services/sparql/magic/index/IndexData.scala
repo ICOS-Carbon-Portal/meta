@@ -80,10 +80,7 @@ final class IndexData(nObjects: Int)(
 			case Keyword =>
 				keywordBitmap(values.asInstanceOf[Seq[String]])
 			case _ => {
-				val category = _categMaps
-					.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-					.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
-
+				val category = categMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*)
 			}
 		}
@@ -103,6 +100,12 @@ final class IndexData(nObjects: Int)(
 		})
 	}
 
+	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
+		_categMaps
+			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	}
+
 	private def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
 		val specObjects = getKeywordSpecs(keywords).flatMap(specMap.get)
@@ -111,12 +114,6 @@ final class IndexData(nObjects: Int)(
 		val objects = keywords.flatMap(objectMap.get)
 
 		BufferFastAggregation.or((specObjects ++ objects)*)
-	}
-
-	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
-		_categMaps
-			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
 
 	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {

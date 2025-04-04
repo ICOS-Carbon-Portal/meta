@@ -110,7 +110,6 @@ object IndexHandler{
 		OptionSerializer.register(kryo)
 		Property.allConcrete.foreach: prop =>
 			kryo.register(prop.getClass, SingletonSerializer(prop))
-
 		kryo
 
 

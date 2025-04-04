@@ -45,7 +45,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			coverage = None,
 			responsibleOrganization = None,
 			pictures = Seq.empty,
-			Some(se),
+			countryCode = Some(se),
 			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
 			funding = None
 		),
@@ -232,7 +232,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(theUpdate.statement.getObject.stringValue.endsWith(orcidStr))
 
 
-	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
+	def init(initTcState: Seq[TcState[? <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
 		val repo = Loading.emptyInMemory
 		given factory: ValueFactory = repo.getValueFactory
 		val vocab = new CpVocab(factory)

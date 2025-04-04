@@ -22,7 +22,7 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 		//_ = println(stationToColl);
 		stationToItems <- sparql.select(dobjStationQuery).map(parseStationObjs);
 		done <- executeSequentially(stationToItems){
-			(makeStationColl(stationToColl) _).tupled
+			(makeStationColl(stationToColl)).tupled
 		}
 	) yield done
 
@@ -147,7 +147,7 @@ object AtcCollMaker{
 	def parseStationObjs(spRes: SparqlSelectResult): Map[URI, SpecDobjs] =
 		getUriSeqs(spRes, "station", "spec", "dobj").groupMapReduce(_.apply(0)){
 			case Seq(_, spec, dobj) => new SpecDobjs(spec, dobj)
-		}(_ merge _)
+		}(_ `merge` _)
 
 	val dobjStationQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix prov: <http://www.w3.org/ns/prov#>

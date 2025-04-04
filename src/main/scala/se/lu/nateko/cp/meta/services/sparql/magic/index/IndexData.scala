@@ -38,7 +38,7 @@ final class IndexData(nObjects: Int)(
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
+	val _specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
 	val _keywordsToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val _categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
@@ -126,7 +126,7 @@ final class IndexData(nObjects: Int)(
 		val result: ArrayBuffer[IRI] = new ArrayBuffer();
 
 		bitmap.forEach(index => {
-			result += specs(index)
+			result += _specs(index)
 		})
 
 		result.toSeq
@@ -442,10 +442,10 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def setSpecKeywords(spec: IRI, keywords: Set[String]) = {
-		var id = specs.indexOf(spec);
+		var id = _specs.indexOf(spec);
 		if (id < 0) {
-			specs += spec
-			id = specs.length - 1
+			_specs += spec
+			id = _specs.length - 1
 		}
 
 		// Add or update new ones

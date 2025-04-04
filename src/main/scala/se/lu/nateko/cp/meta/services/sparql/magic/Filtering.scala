@@ -77,7 +77,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 	private def andFiltering(filters: Seq[Filter]): Option[ImmutableRoaringBitmap] =
 		collectUnless(filters.iterator.flatMap(this.apply))(_.isEmpty) match
-			case None => Some(emptyBitmap)
+			case None      => Some(emptyBitmap)
 			case Some(bms) => and(bms)
 
 	private def geoFiltering(

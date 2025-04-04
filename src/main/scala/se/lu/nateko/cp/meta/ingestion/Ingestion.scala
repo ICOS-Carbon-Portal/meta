@@ -64,7 +64,7 @@ object Ingestion:
 //				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 //				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
 //			),
-			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeopleAndOrgs_2.txt"),
+			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeople_3.csv"),
 
 			"dcatdemo" -> new LocalSparqlConstructExtractor(
 				"/sparql/cpL2ToDcat.rq", "/sparql/cpToEnvriSiteDocUseCase_1.rq", "/sparql/cpToEnvriSiteDocUseCase_2.rq"

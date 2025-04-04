@@ -6,6 +6,7 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.index.Keyword
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.Resource
@@ -104,7 +105,7 @@ class IndexDataTest extends AnyFunSpec {
 		val objectBitmap = MutableRoaringBitmap.bitmapOf(0)
 		val otherObjectBitmap = MutableRoaringBitmap.bitmapOf(1)
 
-		val keywords = data.allKeywords().map(kw => (kw, data.keywordBitmap(Seq(kw)))).toMap
+		val keywords = data.allKeywords().map(kw => (kw, data.categoryBitmap(Keyword, Seq(kw)))).toMap
 
 		assert(keywords == Map(
 			"object keyword" -> objectBitmap,
@@ -146,7 +147,7 @@ class IndexDataTest extends AnyFunSpec {
 			)
 
 			data.allKeywords().flatMap(kw =>
-				val bitmap = data.keywordBitmap(Seq(kw))
+				val bitmap = data.categoryBitmap(Keyword, Seq(kw))
 				if (bitmap.isEmpty) {
 					None
 				} else {

@@ -32,24 +32,19 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case Exists(prop) => prop match {
 				case cp: ContProp => Some(data.bitmap(cp).all)
-				case cp: CategProp => cp match {
-						// TODO: Handle Keyword case
-						case optUriProp: OptUriProperty => data.categMap(optUriProp).get(None) match {
-								case None => None
-								case Some(deprived) if deprived.isEmpty => None
-								case Some(deprived) => Some(negate(deprived))
-							}
-						case _ => None
-					}
+				case optUriProp: OptUriProperty => 
+					// TODO: Not covered by tests, so unsure if it's correct right now.
+					data.categoryBitmap(optUriProp, Seq(None)) match {
+							case bm if bm.isEmpty => None
+							case deprived => Some(negate(deprived))
+						}
+				case _: CategProp => None
 				case boo: BoolProperty => Some(data.boolBitmap(boo))
 				case _: GeoProp => None
 			}
 
 		case ContFilter(property, condition) =>
 			Some(data.bitmap(property).filter(condition))
-
-		case CategFilter(Keyword, values) =>
-			Some(data.getBitmap(Keyword, values.asInstanceOf[Seq[String]]))
 
 		case CategFilter(DobjUri , values) =>
 			val objIndices: Seq[Int] = values
@@ -59,15 +54,11 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>
-			val perValue = data.categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+			Some(data.categoryBitmap(category, values))
 
-		case GeneralCategFilter(category, condition) => or(
-				// TODO: Handle Keyword case
-				data.categMap(category).collect {
-					case (cat, bm) if condition(cat) => bm
-				}.toSeq
-			)
+		case GeneralCategFilter(category, condition) =>
+			// TODO: Not covered by tests, so unsure if it's correct right now.
+			Some(data.categoryBitmap(category, condition.asInstanceOf[PartialFunction[category.ValueType, Boolean]]))
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

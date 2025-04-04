@@ -8,9 +8,11 @@ import org.scalatest.Informer
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
-
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters.{IterableHasAsScala, IteratorHasAsScala}
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
 
 @tags.DbTest
 class QueryTests extends AsyncFunSpec {
@@ -537,5 +539,36 @@ class QueryTests extends AsyncFunSpec {
 			"count" -> f.createLiteral("1", XSD.INTEGER),
 			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
+	}
+
+	describe("Magic query") {
+		it("sets binding for hasKeyword"){
+			// An object which has the unique keyword: "test keyword"
+			val objectId = "08ArGBmAQHiig_xtrwmprrL7"
+
+			val query = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?object ?keyword ?keywords where {
+					?object cpmeta:hasName "anthropogenic.persector.201911.nc" .
+					?object cpmeta:hasObjectSpec ?spec .
+					?object cpmeta:hasKeywords ?keywords .
+					?object cpmeta:hasKeyword ?keyword
+				}
+			"""
+
+			val List(result) = runSparqlSync(query)
+			info(s"$result")
+			assert(result.getBinding("object").getValue().stringValue().endsWith(objectId))
+			assert(result.getBinding("keywords").getValue().stringValue() == "carbon flux")
+			assert(result.getBinding("keyword").getValue().stringValue() == "carbon flux")
+		}
+	}
+
+	private def runSparqlSync(query: String): List[BindingSet] = {
+		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList
+	}
+
+	private def bindingsFromRow(row: BindingSet): Map[String, Value] = {
+		row.iterator().asScala.map(b => (b.getName, b.getValue)).toMap
 	}
 }

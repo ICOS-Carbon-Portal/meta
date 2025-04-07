@@ -58,7 +58,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case GeneralCategFilter(category, condition) =>
 			// TODO: Not covered by tests, so unsure if it's correct right now.
-			Some(data.categoryBitmap(category, condition.asInstanceOf[PartialFunction[category.ValueType, Boolean]]))
+			Some(data.genCategoryBitmap(category, condition))
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

@@ -192,11 +192,11 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		GeoSerializer.register(kryo, data.objs)
 
 		kryo.writeObject(output, data.objs.toArray)
-		kryo.writeObject(output, data._specs.map(_.stringValue()).toArray)
-		kryo.writeObject(output, data._keywordsToSpecs)
+		kryo.writeObject(output, data.specs.map(_.stringValue()).toArray)
+		kryo.writeObject(output, data.keywordsToSpecs)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
-		kryo.writeObject(output, data._categMaps)
+		kryo.writeObject(output, data.categMaps)
 		kryo.writeObject(output, data.contMap)
 		kryo.writeObject(output, data.initOk)
 
@@ -222,12 +222,12 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		IndexData(nObjs)(
 			objs = objs,
-			_specs = ArrayBuffer.from(specs),
-			_keywordsToSpecs = readObj(classOf[AnyRefMap[String, MutableRoaringBitmap]]),
+			specs = ArrayBuffer.from(specs),
+			keywordsToSpecs = readObj(classOf[AnyRefMap[String, MutableRoaringBitmap]]),
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
-			_categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
+			categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
 			contMap = readObj(classOf[AnyRefMap[ContProp, HierarchicalBitmap[?]]]),
 			initOk = readObj(classOf[MutableRoaringBitmap])
 		)

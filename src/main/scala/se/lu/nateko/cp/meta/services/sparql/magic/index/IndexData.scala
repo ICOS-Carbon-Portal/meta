@@ -36,10 +36,10 @@ final class IndexData(nObjects: Int)(
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	val _specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
-	val _keywordsToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
+	val specs: ArrayBuffer[IRI] = new ArrayBuffer(nObjects),
+	val keywordsToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
-	val _categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
+	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
@@ -94,13 +94,13 @@ final class IndexData(nObjects: Int)(
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
-				(_keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
+				(keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
 			case _ =>
 				categMap(prop).keys
 	}
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
-		_categMaps
+		categMaps
 			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
 			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
@@ -116,11 +116,11 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def getKeywordSpecs(keywords: Iterable[String]): Seq[IRI] = {
-		val bitmap = BufferFastAggregation.or(keywords.flatMap(_keywordsToSpecs.get).toSeq *)
+		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordsToSpecs.get).toSeq *)
 		val result: ArrayBuffer[IRI] = new ArrayBuffer();
 
 		bitmap.forEach(index => {
-			result += _specs(index)
+			result += specs(index)
 		})
 
 		result.toSeq
@@ -424,23 +424,23 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def setSpecKeywords(spec: IRI, keywords: Set[String]) = {
-		var id = _specs.indexOf(spec);
+		var id = specs.indexOf(spec);
 		if (id < 0) {
-			_specs += spec
-			id = _specs.length - 1
+			specs += spec
+			id = specs.length - 1
 		}
 
 		// Add or update new ones
 		for (keyword <- keywords) {
-			_keywordsToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
+			keywordsToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
 		}
 
 		// Remove old ones
-		for ((keyword: String, bitmap: MutableRoaringBitmap) <- _keywordsToSpecs) {
+		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordsToSpecs) {
 			if (!keywords.contains(keyword)) {
 				bitmap.remove(id)
 				if (bitmap.isEmpty) {
-					val _ = _keywordsToSpecs.remove(keyword)
+					val _ = keywordsToSpecs.remove(keyword)
 				}
 			}
 		}

@@ -78,26 +78,25 @@ final class IndexData(nObjects: Int)(
 	def categoryBitmap(prop: CategProp, values: Iterable[prop.ValueType]): ImmutableRoaringBitmap = {
 		prop match {
 			case Keyword =>
-				keywordBitmap(values.asInstanceOf[Seq[String]])
+				keywordBitmap(values.asInstanceOf[Iterable[Keyword.ValueType]])
 			case _ => {
-				val category = categMap(prop).asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+				val category = categMap(prop)
 				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*)
 			}
 		}
 	}
 
-	def categoryBitmap(prop: CategProp, predicate: PartialFunction[prop.ValueType, Boolean]): ImmutableRoaringBitmap = {
+	def genCategoryBitmap(prop: CategProp, predicate: prop.ValueType => Boolean): ImmutableRoaringBitmap = {
 		categoryBitmap(prop, categoryKeys(prop).filter(predicate))
 	}
 
-	def categoryKeys(prop: CategProp): scala.collection.Set[prop.ValueType] = {
-		(prop match {
+	def categoryKeys(prop: CategProp): Iterable[prop.ValueType] = {
+		prop match
 			case Keyword =>
-				val objKeywords = categMap(Keyword).keySet
-				(_keywordsToSpecs.keySet ++ objKeywords).toSet.asInstanceOf[Set[prop.ValueType]]
+				val keywordsToObjs = categMap(Keyword)
+				(_keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
 			case _ =>
-				categMap(prop).keySet
-		})
+				categMap(prop).keys
 	}
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
@@ -106,7 +105,7 @@ final class IndexData(nObjects: Int)(
 			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
 	}
 
-	private def keywordBitmap(keywords: Seq[String]): ImmutableRoaringBitmap = {
+	private def keywordBitmap(keywords: Iterable[String]): ImmutableRoaringBitmap = {
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
 		val specObjects = getKeywordSpecs(keywords).flatMap(specMap.get)
 
@@ -116,8 +115,8 @@ final class IndexData(nObjects: Int)(
 		BufferFastAggregation.or((specObjects ++ objects)*)
 	}
 
-	private def getKeywordSpecs(keywords: Seq[String]): Seq[IRI] = {
-		val bitmap = BufferFastAggregation.or(keywords.flatMap(_keywordsToSpecs.get)*)
+	private def getKeywordSpecs(keywords: Iterable[String]): Seq[IRI] = {
+		val bitmap = BufferFastAggregation.or(keywords.flatMap(_keywordsToSpecs.get).toSeq *)
 		val result: ArrayBuffer[IRI] = new ArrayBuffer();
 
 		bitmap.forEach(index => {
@@ -340,14 +339,14 @@ final class IndexData(nObjects: Int)(
 				updateProjectKeywords(subj, isAssertion, projectKeywords)
 
 			case `hasKeywords` =>
+				val changedKeywords = obj.asOptInstanceOf[Literal].flatMap(asString).toSet.flatMap(parseCommaSepList)
 				getDataObject(subj) match {
 					case Some(oe) => {
-						obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(s => Some(parseCommaSepList(s))).toSeq.flatten.foreach { strVal =>
+						changedKeywords.foreach { strVal =>
 							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
 						}
 					}
-					case None => {
-						val changedKeywords = parseCommaSepList(obj.stringValue()).toSet
+					case None => if changedKeywords.nonEmpty then {
 						val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
 
 						// TODO: If we can assume specs are always inserted before their hasKeywords triple,

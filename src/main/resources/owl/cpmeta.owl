@@ -1336,7 +1336,7 @@
                 <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
                 <owl:withRestrictions rdf:parseType="Collection">
                     <rdf:Description>
-                        <xsd:pattern>^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
+                        <xsd:pattern>^[a-zA-Z0-9._%&apos;+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$</xsd:pattern>
                     </rdf:Description>
                 </owl:withRestrictions>
             </rdfs:Datatype>

@@ -20,6 +20,7 @@ final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) exte
 	var submissionStart: Long = Long.MinValue
 	var submissionEnd: Long = Long.MinValue
 	var isNextVersion: Boolean = false
+	var keywords: Set[String] = Set.empty
 
 	private final def dateTimeFromLong(dt: Long): Option[Instant] =
 		if (dt == Long.MinValue) None
@@ -34,5 +35,4 @@ final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) exte
 	def submissionEndTime: Option[Instant] = dateTimeFromLong(submissionEnd)
 
 	def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url)
-	def keywords = None
 }

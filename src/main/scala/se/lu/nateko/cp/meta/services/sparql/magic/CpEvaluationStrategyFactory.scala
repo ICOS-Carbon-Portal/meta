@@ -94,7 +94,6 @@ class CpEvaluationStrategyFactory(
 		val f = index.factory
 
 		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
-			println(s"prop: $prop, varname: $varName")
 
 			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
 				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
@@ -109,9 +108,7 @@ class CpEvaluationStrategyFactory(
 				case Submitter       => setter(_.submitter)
 				case FileName        => setterOpt(_.fileName.map(f.createLiteral))
 				case _: BoolProperty => (_, _) => ()
-				case Keyword				 => setter((oinfo: ObjInfo) => 
-																	f.createLiteral(oinfo.keywords.getOrElse(Seq()).mkString(","))
-																)
+				case Keyword				 => setter((oinfo: ObjInfo) => f.createLiteral(oinfo.keywords.mkString(",")))
 				case _: StringCategProp => (_, _) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(f.createLiteral))
 				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
@@ -128,7 +125,6 @@ class CpEvaluationStrategyFactory(
 		index.fetch(fetchRequest).map{oinfo =>
 			val bs = new QueryBindingSet(bindings)
 			setters.foreach{_(bs, oinfo)}
-			println(s"bs: $bs")
 			bs
 		}
 

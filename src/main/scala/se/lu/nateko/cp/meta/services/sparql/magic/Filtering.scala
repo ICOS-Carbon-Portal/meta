@@ -98,19 +98,19 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 	private def negate(bm: ImmutableRoaringBitmap) =
 		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
-
-	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
-		var condHappened = false
-		val seq = iter.takeWhile(elem => {
-			condHappened = cond(elem)
-			!condHappened
-		}).toIndexedSeq
-		if (condHappened) None else Some(seq)
-	}
-
-	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if (bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*))
-
-	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if (bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
 }
+
+private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
+	var condHappened = false
+	val seq = iter.takeWhile(elem => {
+		condHappened = cond(elem)
+		!condHappened
+	}).toIndexedSeq
+	if (condHappened) None else Some(seq)
+}
+
+private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
+	if (bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*))
+
+private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
+	if (bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))

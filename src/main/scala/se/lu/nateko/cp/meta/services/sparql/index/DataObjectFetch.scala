@@ -6,7 +6,7 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.FilterRequest
 
 import scala.language.implicitConversions
 
-case class DataObjectFetch(filter: Filter, sort: Option[SortBy], offset: Int)
+case class DataObjectFetch[T](filter: Filter, sort: Option[SortBy[T]], offset: Int)
 
 sealed trait Filter
 
@@ -15,54 +15,54 @@ final case class Or(filters: Seq[Filter]) extends Filter
 final case class Not(filter: Filter) extends Filter
 object All extends Filter
 object Nothing extends Filter
-final case class Exists(prop: Property) extends Filter
-final case class CategFilter[T <: AnyRef](category: CategProp{type ValueType = T}, values: Seq[T]) extends Filter
-final case class GeneralCategFilter[T](category: CategProp{type ValueType = T}, condition: T => Boolean) extends Filter{
+final case class Exists[T](prop: Property[T]) extends Filter
+final case class CategFilter[T <: AnyRef](category: CategProp[T], values: Seq[T]) extends Filter
+final case class GeneralCategFilter[T](category: CategProp[T], condition: T => Boolean) extends Filter {
 	override def toString = s"GeneralCategFilter($category)"
-	def testUnsafe(v: AnyRef): Boolean = condition(v.asInstanceOf[category.ValueType])
+	def testUnsafe(v: AnyRef): Boolean = condition(v.asInstanceOf[T])
 }
 
-final case class ContFilter[T](property: ContProp{type ValueType = T}, condition: FilterRequest[T]) extends Filter
-object ContFilter{
-	class FilterExtractor(val property: ContProp){
-		def unapply(f: ContFilter[?]): Option[FilterRequest[property.ValueType]] = f match{
-			case ContFilter(`property`, filtReq) => Some(filtReq.asInstanceOf[FilterRequest[property.ValueType]])
+final case class ContFilter[T](property: ContProp[T], condition: FilterRequest[T]) extends Filter
+object ContFilter {
+	class FilterExtractor[T](val property: ContProp[T]) {
+		def unapply(f: ContFilter[?]): Option[FilterRequest[T]] = f match {
+			case ContFilter(`property`, filtReq) => Some(filtReq.asInstanceOf[FilterRequest[T]])
 			case ContFilter(_, _) => None
 		}
 	}
 }
 
-final case class GeoFilter(property: GeoProp, geo: Geometry) extends Filter
+final case class GeoFilter[T](property: GeoProp[T], geo: Geometry) extends Filter
 
-case class SortBy(property: ContProp, descending: Boolean)
+case class SortBy[T](property: ContProp[T], descending: Boolean)
 
-sealed trait Property extends java.io.Serializable{type ValueType}
+sealed trait Property[T] extends java.io.Serializable
 
-sealed trait BoolProperty extends Property{type ValueType = Boolean}
+sealed trait BoolProperty extends Property[Boolean]
 case object DeprecationFlag extends BoolProperty
 case object HasVarList extends BoolProperty
 
-sealed trait ContProp extends Property
+sealed trait ContProp[T] extends Property[T]
 
-sealed trait LongProperty extends ContProp{type ValueType = Long}
+sealed trait LongProperty extends ContProp[Long]
 sealed trait DateProperty extends LongProperty
 
-case object FileName extends ContProp{type ValueType = String}
+case object FileName extends ContProp [String]
 case object FileSize extends LongProperty
-case object SamplingHeight extends ContProp{type ValueType = Float}
+case object SamplingHeight extends ContProp[Float]
 case object SubmissionStart extends DateProperty
 case object SubmissionEnd extends DateProperty
 case object DataStart extends DateProperty
 case object DataEnd extends DateProperty
 
-sealed trait GeoProp extends Property{type ValueType = Geometry}
+sealed trait GeoProp extends Property[Geometry]
 case object GeoIntersects extends GeoProp
 
-sealed trait CategProp extends Property{type ValueType <: AnyRef}
+sealed trait CategProp[T] extends Property[T]
 
-sealed trait StringCategProp extends CategProp{type ValueType = String}
-sealed trait UriProperty extends CategProp{type ValueType = IRI}
-sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
+sealed trait StringCategProp extends CategProp[String]
+sealed trait UriProperty extends CategProp[IRI]
+sealed trait OptUriProperty extends CategProp[Option[IRI]]
 
 case object DobjUri extends UriProperty
 case object Spec extends UriProperty
@@ -72,14 +72,14 @@ case object Submitter extends UriProperty
 case object VariableName extends StringCategProp
 case object Keyword extends StringCategProp
 
-object Property{
+object Property {
 	import scala.deriving.Mirror.SumOf
 	import scala.compiletime.{erasedValue, summonInline}
-	type ConcreteProp = Property & Singleton
+	// type ConcreteProp = Property & Singleton
 	/** TODO ATTENTION Fragile code. findSubSingletons should be re-written to support automatic discovery of all singletons
 	 * inheriting from Property. Then the explicit listing will not be needed.*/
-	val allConcrete: Set[ConcreteProp] = {
-		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight)
+	val allConcrete = {
+		val specials = Iterable(FileName, FileSize, SamplingHeight)
 		Iterable(
 			findSubSingletons[StringCategProp],
 			findSubSingletons[UriProperty],
@@ -94,9 +94,18 @@ object Property{
 		getSingles[m.MirroredElemTypes, m.MirroredType]
 
 	private inline def getSingles[MET <: Tuple, T]: List[T & Singleton] = {
-		inline erasedValue[MET] match{
+		inline erasedValue[MET] match {
 			case _: EmptyTuple => Nil
 			case _: (t *: ts) => summonInline[ValueOf[t]].value.asInstanceOf[T & Singleton] :: getSingles[ts, T]
 		}
 	}
 }
+/*
+
+sealed trait Prop[T] extends java.io.Serializable
+sealed trait Cont[T] extends Prop[T]
+sealed trait StringProp extends Prop[String]
+case object KeywordProp extends StringProp
+
+case class StringContValues(values: Iterable[String], prop: StringProp)
+ */

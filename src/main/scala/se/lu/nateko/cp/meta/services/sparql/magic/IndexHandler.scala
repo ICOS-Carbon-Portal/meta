@@ -50,6 +50,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
+import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 
@@ -276,6 +277,7 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		output.writeLong(obj.submissionStart)
 		output.writeLong(obj.submissionEnd)
 		output.writeBoolean(obj.isNextVersion)
+		output.writeString(obj.keywords.mkString(","))
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: ObjEntry]): ObjEntry =
 		val objEntry = ObjEntry(
@@ -297,6 +299,7 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		objEntry.submissionStart = input.readLong()
 		objEntry.submissionEnd = input.readLong()
 		objEntry.isNextVersion = input.readBoolean()
+		objEntry.keywords = parseCommaSepList(input.readString()).toSet
 
 		objEntry
 

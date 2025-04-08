@@ -439,10 +439,14 @@ final class IndexData(nObjects: Int)(
 		parser: String => Option[Array[String]],
 		idx: Int,
 		isAssertion: Boolean
-	): Unit = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
+	): Seq[String] = {
+		val values = obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten
+
+		values.foreach { strVal =>
 			updateCategSet(categMap(prop), strVal, idx, isAssertion)
 		}
+
+		values
 	}
 
 	def getObjEntry(hash: Sha256Sum): ObjEntry = {

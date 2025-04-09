@@ -337,8 +337,6 @@ final class IndexData(nObjects: Int)(
 					case None => if changedKeywords.nonEmpty then {
 							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
 
-							// TODO: If we can assume specs are always inserted before their hasKeywords triple,
-							//			 we could use the `specs` array to know if this is a spec.
 							if (isSpec) {
 								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
 							} else {
@@ -346,7 +344,6 @@ final class IndexData(nObjects: Int)(
 								StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
 									.map(_.getSubject())
 									.foreach(spec =>
-										// TODO: Does not cover the case where two projects have overlapping keywords
 										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
 									)
 							}

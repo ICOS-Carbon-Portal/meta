@@ -36,8 +36,7 @@ final class IndexData(nObjects: Int)(
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	val specs: ArrayBuffer[IRI] = new ArrayBuffer(100),
-	val keywordsToSpecs: AnyRefMap[String, MutableRoaringBitmap] = new AnyRefMap[String, MutableRoaringBitmap](nObjects),
+	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = new AnyRefMap[String, Set[IRI]](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -107,23 +106,12 @@ final class IndexData(nObjects: Int)(
 
 	private def keywordBitmap(keywords: Iterable[String]): ImmutableRoaringBitmap = {
 		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
-		val specObjects = getKeywordSpecs(keywords).flatMap(specMap.get)
+		val specObjects = keywords.flatMap(keywordsToSpecs.get).flatten.flatMap(specMap.get)
 
 		val objectMap = categMap(Keyword)
 		val objects = keywords.flatMap(objectMap.get)
 
-		BufferFastAggregation.or((specObjects ++ objects)*)
-	}
-
-	private def getKeywordSpecs(keywords: Iterable[String]): Seq[IRI] = {
-		val bitmap = BufferFastAggregation.or(keywords.flatMap(keywordsToSpecs.get).toSeq *)
-		val result: ArrayBuffer[IRI] = new ArrayBuffer();
-
-		bitmap.forEach(index => {
-			result += specs(index)
-		})
-
-		result.toSeq
+		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
 	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
@@ -347,22 +335,22 @@ final class IndexData(nObjects: Int)(
 						}
 					}
 					case None => if changedKeywords.nonEmpty then {
-						val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
+							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
 
-						// TODO: If we can assume specs are always inserted before their hasKeywords triple,
-						//			 we could use the `specs` array to know if this is a spec.
-						if (isSpec) {
-							updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
-						} else {
-							val project = subj
-							StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
-								.map(_.getSubject())
-								.foreach(spec =>
-									// TODO: Does not cover the case where two projects have overlapping keywords
-									updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
-								)
+							// TODO: If we can assume specs are always inserted before their hasKeywords triple,
+							//			 we could use the `specs` array to know if this is a spec.
+							if (isSpec) {
+								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
+							} else {
+								val project = subj
+								StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
+									.map(_.getSubject())
+									.foreach(spec =>
+										// TODO: Does not cover the case where two projects have overlapping keywords
+										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
+									)
+							}
 						}
-					}
 				}
 
 			case _ =>
@@ -423,26 +411,24 @@ final class IndexData(nObjects: Int)(
 			.toSet
 	}
 
-	private def setSpecKeywords(spec: IRI, keywords: Set[String]) = {
-		var id = specs.indexOf(spec);
-		if (id < 0) {
-			specs += spec
-			id = specs.length - 1
+	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
+		// Remove old ones
+		for (kw <- keywordsToSpecs.keySet) {
+			if (!newKeywords.contains(kw)) {
+				keywordsToSpecs.updateWith(kw)(specs =>
+					specs.map(_.-(spec))
+				)
+			}
 		}
 
 		// Add or update new ones
-		for (keyword <- keywords) {
-			keywordsToSpecs.getOrElseUpdate(keyword, emptyBitmap).add(id)
-		}
-
-		// Remove old ones
-		for ((keyword: String, bitmap: MutableRoaringBitmap) <- keywordsToSpecs) {
-			if (!keywords.contains(keyword)) {
-				bitmap.remove(id)
-				if (bitmap.isEmpty) {
-					val _ = keywordsToSpecs.remove(keyword)
-				}
-			}
+		for (kw <- newKeywords) {
+			keywordsToSpecs.updateWith(kw)(specs => {
+				Some(specs match {
+					case None => Set(spec)
+					case Some(existing) => existing.+(spec)
+				})
+			})
 		}
 	}
 

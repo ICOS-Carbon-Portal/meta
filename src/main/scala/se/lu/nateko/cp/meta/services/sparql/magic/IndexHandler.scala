@@ -192,7 +192,6 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		GeoSerializer.register(kryo, data.objs)
 
 		kryo.writeObject(output, data.objs.toArray)
-		kryo.writeObject(output, data.specs.map(_.stringValue()).toArray)
 		kryo.writeObject(output, data.keywordsToSpecs)
 		kryo.writeObject(output, data.stats)
 		kryo.writeObject(output, data.boolMap)
@@ -218,12 +217,9 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		GeoSerializer.register(kryo, objs)
 
-		val specs = readObj(classOf[Array[String]]).map(Values.iri(_))
-
 		IndexData(nObjs)(
 			objs = objs,
-			specs = ArrayBuffer.from(specs),
-			keywordsToSpecs = readObj(classOf[AnyRefMap[String, MutableRoaringBitmap]]),
+			keywordsToSpecs = readObj(classOf[AnyRefMap[String, Set[IRI]]]),
 			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),

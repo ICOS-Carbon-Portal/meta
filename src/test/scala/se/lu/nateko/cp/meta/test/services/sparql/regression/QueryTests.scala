@@ -601,22 +601,32 @@ class QueryTests extends AsyncFunSpec {
 		it("sets binding for hasKeyword"){
 			// An object which has the unique keyword: "test keyword"
 			val objectId = "08ArGBmAQHiig_xtrwmprrL7"
+			val objectName = "anthropogenic.persector.201911.nc"
 
-			val query = s"""
+			val keywordsQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?object ?keyword ?keywords where {
-					?object cpmeta:hasName "anthropogenic.persector.201911.nc" .
+				select ?object ?keywords where {
+					?object cpmeta:hasName "$objectName" .
+					?object cpmeta:hasKeywords ?keywords
+				}
+			"""
+
+			val List(keywordsResult) = runSparqlSync(keywordsQuery)
+			assert(keywordsResult.getBinding("object").getValue().stringValue().endsWith(objectId))
+			assert(keywordsResult.getBinding("keywords").getValue().stringValue() == "carbon flux")
+
+			val magicKeywordQuery = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select ?object ?keyword where {
+					?object cpmeta:hasName "$objectName" .
 					?object cpmeta:hasObjectSpec ?spec .
-					?object cpmeta:hasKeywords ?keywords .
 					?object cpmeta:hasKeyword ?keyword
 				}
 			"""
 
-			val List(result) = runSparqlSync(query)
-			info(s"$result")
-			assert(result.getBinding("object").getValue().stringValue().endsWith(objectId))
-			assert(result.getBinding("keywords").getValue().stringValue() == "carbon flux")
-			assert(result.getBinding("keyword").getValue().stringValue() == "carbon flux")
+			val List(magicResult) = runSparqlSync(magicKeywordQuery)
+			assert(magicResult.getBinding("object").getValue().stringValue().endsWith(objectId))
+			assert(magicResult.getBinding("keyword").getValue().stringValue() == "carbon flux")
 		}
 	}
 

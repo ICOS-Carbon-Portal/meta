@@ -32,14 +32,13 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case Exists(prop) => prop match {
 				case cp: ContProp => Some(data.bitmap(cp).all)
-				case cp: CategProp => cp match {
-						case optUriProp: OptUriProperty => data.categMap(optUriProp).get(None) match {
-								case None                               => None
-								case Some(deprived) if deprived.isEmpty => None
-								case Some(deprived)                     => Some(negate(deprived))
-							}
-						case _ => None
-					}
+				case optUriProp: OptUriProperty => 
+					// TODO: Not covered by tests, so unsure if it's correct right now.
+					data.categoryBitmap(optUriProp, Seq(None)) match {
+							case bm if bm.isEmpty => None
+							case deprived => Some(negate(deprived))
+						}
+				case _: CategProp => None
 				case boo: BoolProperty => Some(data.boolBitmap(boo))
 				case _: GeoProp        => None
 			}
@@ -47,7 +46,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case ContFilter(property, condition) =>
 			Some(data.bitmap(property).filter(condition))
 
-		case CategFilter(category, values) if category == DobjUri =>
+		case CategFilter(DobjUri , values) =>
 			val objIndices: Seq[Int] = values
 				.collect { case iri: IRI => iri }
 				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
@@ -55,14 +54,11 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>
-			val perValue = data.categMap(category)
-			or(values.map(v => perValue.getOrElse(v, emptyBitmap)))
+			Some(data.categoryBitmap(category, values))
 
-		case GeneralCategFilter(category, condition) => or(
-				data.categMap(category).collect {
-					case (cat, bm) if condition(cat) => bm
-				}.toSeq
-			)
+		case GeneralCategFilter(category, condition) =>
+			// TODO: Not covered by tests, so unsure if it's correct right now.
+			Some(data.categoryBitmapBy(category, condition))
 
 		case gf: GeoFilter =>
 			geoFiltering(gf, None)

@@ -267,6 +267,7 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		kryo.writeObjectOrNull(output, obj.submitter, classOf[IRI])
 		kryo.writeObjectOrNull(output, obj.station, classOf[IRI])
 		kryo.writeObjectOrNull(output, obj.site, classOf[IRI])
+		kryo.writeObject(output, obj.keywords.toArray)
 
 		output.writeLong(obj.size)
 		output.writeString(obj.fName)
@@ -288,6 +289,7 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		objEntry.submitter = kryo.readObjectOrNull(input, classOf[IRI])
 		objEntry.station = kryo.readObjectOrNull(input, classOf[IRI])
 		objEntry.site = kryo.readObjectOrNull(input, classOf[IRI])
+		objEntry.keywords = kryo.readObject(input, classOf[Array[String]]).toSet
 
 		objEntry.size = input.readLong()
 		objEntry.fName = input.readString()

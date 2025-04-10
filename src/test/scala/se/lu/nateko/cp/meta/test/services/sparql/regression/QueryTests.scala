@@ -626,7 +626,7 @@ class QueryTests extends AsyncFunSpec {
 
 			val List(magicResult) = runSparqlSync(magicKeywordQuery)
 			assert(magicResult.getBinding("object").getValue().stringValue().endsWith(objectId))
-			assert(magicResult.getBinding("keyword").getValue().stringValue() == "carbon flux,ICOS,test keyword")
+			assert(magicResult.getBinding("keyword").getValue().stringValue() == "test keyword,carbon flux,ICOS")
 		}
 	}
 

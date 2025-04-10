@@ -60,12 +60,25 @@ final class IndexData(nObjects: Int)(
 	}
 
 	def getObjectKeywords(objectId: Int): Set[String] = {
+		val allKeywords = categoryKeys(Keyword)
+		allKeywords.filter { kw =>
+			val bitmap = keywordBitmap(Set(kw))
+			bitmap.contains(objectId)
+		}.toSet
+
+		/*
 		val obj = objs(objectId)
-		if (obj == null){
+		if (obj == null) {
 			Set.empty
-		}else{
-			obj.keywords
+		} else {
+			if (obj.spec == null) {
+				obj.keywords
+			} else {
+				val specKeywords = Set.empty
+				obj.keywords ++ specKeywords
+			}
 		}
+		*/
 	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
@@ -341,12 +354,6 @@ final class IndexData(nObjects: Int)(
 					case Some(oe) => {
 						changedKeywords.foreach { strVal =>
 							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
-						}
-
-						if (isAssertion) {
-							oe.keywords = changedKeywords
-						} else {
-							oe.keywords = Set.empty
 						}
 					}
 					case None => if changedKeywords.nonEmpty then {

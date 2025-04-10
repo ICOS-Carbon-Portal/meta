@@ -26,6 +26,7 @@ import CpIndex.*
 trait ObjSpecific{
 	def hash: Sha256Sum
 	def uri(factory: ValueFactory): IRI
+	def idx: Int
 }
 
 trait ObjInfo extends ObjSpecific{
@@ -124,6 +125,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	}
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
+	def getObjectKeywords = data.getObjectKeywords
 
 	def getObjEntry = data.getObjEntry
 

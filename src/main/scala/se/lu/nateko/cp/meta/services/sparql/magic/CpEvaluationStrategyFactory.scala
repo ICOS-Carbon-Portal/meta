@@ -108,7 +108,7 @@ class CpEvaluationStrategyFactory(
 				case Submitter       => setter(_.submitter)
 				case FileName        => setterOpt(_.fileName.map(f.createLiteral))
 				case _: BoolProperty => (_, _) => ()
-				case Keyword				 => setter((oinfo: ObjInfo) => f.createLiteral(oinfo.keywords.mkString(",")))
+				case Keyword				 => setter((oinfo: ObjInfo) => f.createLiteral(index.getObjectKeywords(oinfo.idx).mkString(",")))
 				case _: StringCategProp => (_, _) => ()
 				case FileSize        => setterOpt(_.sizeInBytes.map(f.createLiteral))
 				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(f.createLiteral))

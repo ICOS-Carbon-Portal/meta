@@ -59,6 +59,15 @@ final class IndexData(nObjects: Int)(
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
 	}
 
+	def getObjectKeywords(objectId: Int): Set[String] = {
+		val obj = objs(objectId)
+		if (obj == null){
+			Set.empty
+		}else{
+			obj.keywords
+		}
+	}
+
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
 			prop,

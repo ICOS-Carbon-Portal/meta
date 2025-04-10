@@ -613,7 +613,7 @@ class QueryTests extends AsyncFunSpec {
 
 			val List(keywordsResult) = runSparqlSync(keywordsQuery)
 			assert(keywordsResult.getBinding("object").getValue().stringValue().endsWith(objectId))
-			assert(keywordsResult.getBinding("keywords").getValue().stringValue() == "carbon flux")
+			assert(keywordsResult.getBinding("keywords").getValue().stringValue() == "test keyword")
 
 			val magicKeywordQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -626,7 +626,7 @@ class QueryTests extends AsyncFunSpec {
 
 			val List(magicResult) = runSparqlSync(magicKeywordQuery)
 			assert(magicResult.getBinding("object").getValue().stringValue().endsWith(objectId))
-			assert(magicResult.getBinding("keyword").getValue().stringValue() == "carbon flux")
+			assert(magicResult.getBinding("keyword").getValue().stringValue() == "test keyword")
 		}
 	}
 

@@ -333,6 +333,12 @@ final class IndexData(nObjects: Int)(
 						changedKeywords.foreach { strVal =>
 							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
 						}
+
+						if (isAssertion) {
+							oe.keywords = changedKeywords
+						} else {
+							oe.keywords = Set.empty
+						}
 					}
 					case None => if changedKeywords.nonEmpty then {
 							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)

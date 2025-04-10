@@ -85,7 +85,7 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	def genCategoryBitmap(prop: CategProp, predicate: prop.ValueType => Boolean): ImmutableRoaringBitmap = {
+	def categoryBitmapBy(prop: CategProp, predicate: prop.ValueType => Boolean): ImmutableRoaringBitmap = {
 		categoryBitmap(prop, categoryKeys(prop).filter(predicate))
 	}
 

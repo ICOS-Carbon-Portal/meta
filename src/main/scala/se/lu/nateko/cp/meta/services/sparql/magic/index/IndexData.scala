@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJson
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
+import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -31,8 +32,11 @@ final case class StatEntry(key: StatKey, count: Int)
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
+	// These members are public only because of serialization, and should not be accessed directly.
+
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = new AnyRefMap[String, Set[IRI]](nObjects),
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -47,7 +51,13 @@ final class IndexData(nObjects: Int)(
 	private def submEndBm = DatetimeHierarchicalBitmap(SubmEndGeo(objs))
 	private def fileNameBm = StringHierarchicalBitmap(FileNameGeo(objs))
 
-	def boolBitmap(prop: BoolProperty): MutableRoaringBitmap = boolMap.getOrElseUpdate(prop, emptyBitmap)
+	def boolBitmap(prop: BoolProperty): ImmutableRoaringBitmap = {
+		mutableBoolBitmap(prop)
+	}
+
+	private def mutableBoolBitmap(prop: BoolProperty): MutableRoaringBitmap = {
+		boolMap.getOrElseUpdate(prop, emptyBitmap)
+	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
@@ -64,15 +74,53 @@ final class IndexData(nObjects: Int)(
 			}
 		).asInstanceOf[HierarchicalBitmap[prop.ValueType]]
 
-	def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = categMaps
-		.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
-		.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	def categoryBitmap(prop: CategProp, values: Iterable[prop.ValueType]): ImmutableRoaringBitmap = {
+		prop match {
+			case Keyword =>
+				keywordBitmap(values.asInstanceOf[Iterable[Keyword.ValueType]])
+			case _ => {
+				val category = categMap(prop)
+				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*)
+			}
+		}
+	}
+
+	def categoryBitmapBy(prop: CategProp, predicate: prop.ValueType => Boolean): ImmutableRoaringBitmap = {
+		categoryBitmap(prop, categoryKeys(prop).filter(predicate))
+	}
+
+	def categoryKeys(prop: CategProp): Iterable[prop.ValueType] = {
+		prop match
+			case Keyword =>
+				val keywordsToObjs = categMap(Keyword)
+				(keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
+			case _ =>
+				categMap(prop).keys
+	}
+
+	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
+		categMaps
+			.getOrElseUpdate(prop, new AnyRefMap[prop.ValueType, MutableRoaringBitmap])
+			.asInstanceOf[AnyRefMap[prop.ValueType, MutableRoaringBitmap]]
+	}
+
+	private def keywordBitmap(keywords: Iterable[String]): ImmutableRoaringBitmap = {
+		val specMap: AnyRefMap[IRI, MutableRoaringBitmap] = categMap(Spec)
+		val specObjects = keywords.flatMap(keywordsToSpecs.get).flatten.flatMap(specMap.get)
+
+		val objectMap = categMap(Keyword)
+		val objects = keywords.flatMap(objectMap.get)
+
+		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
+	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
 		import statement.{subj, pred, obj}
+
+		given CpmetaVocab = vocab
 
 		pred match {
 			case `hasObjectSpec` =>
@@ -89,6 +137,8 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
+
+						updateSpecKeywords(spec, true, Set.empty)
 					}
 				}
 
@@ -180,7 +230,7 @@ final class IndexData(nObjects: Int)(
 
 			case `isNextVersionOf` =>
 				getDataObject(obj).foreach { oe =>
-					val deprecated = boolBitmap(DeprecationFlag)
+					val deprecated = mutableBoolBitmap(DeprecationFlag)
 					if isAssertion then
 						if !deprecated.contains(oe.idx) then // to prevent needless work
 							val subjIsDobj = getDataObject(subj).map { deprecator =>
@@ -217,7 +267,7 @@ final class IndexData(nObjects: Int)(
 
 						if oe.isNextVersion then
 							log.debug(s"Object ${oe.hash.id} appears to be a deprecator and just got fully uploaded. Will update the 'old' objects.")
-							val deprecated = boolBitmap(DeprecationFlag)
+							val deprecated = mutableBoolBitmap(DeprecationFlag)
 
 							val directPrevVers: IndexedSeq[Int] =
 								StatementSource.getStatements(subj, isNextVersionOf, null)
@@ -272,12 +322,115 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasKeywords` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, Keyword, s => Some(parseCommaSepList(s)), oe.idx, isAssertion)
+			case `hasAssociatedProject` =>
+				val projectKeywords = getKeywords(ensureIRI(obj))
+				updateProjectKeywords(subj, isAssertion, projectKeywords)
+
+			case `hasKeywords` =>
+				val changedKeywords = obj.asOptInstanceOf[Literal].flatMap(asString).toSet.flatMap(parseCommaSepList)
+				getDataObject(subj) match {
+					case Some(oe) => {
+						changedKeywords.foreach { strVal =>
+							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
+						}
+					}
+					case None => if changedKeywords.nonEmpty then {
+							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
+
+							if (isSpec) {
+								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
+							} else {
+								val project = subj
+								StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
+									.map(_.getSubject())
+									.foreach(spec =>
+										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
+									)
+							}
+						}
 				}
 
 			case _ =>
 		}
+	}
+
+	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Unit = {
+		val existingKeywords: Set[String] = getKeywords(spec)
+		val projKeywords = getSpecProjectKeywords(spec)
+		val newKeywords: Set[String] = projKeywords ++ modifyKeywords(isAssertion, existingKeywords, changedSpecKeywords)
+
+		setSpecKeywords(spec, newKeywords)
+	}
+
+	private def updateProjectKeywords(spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String])(using
+		vocab: CpmetaVocab
+	)(using StatementSource): Unit = {
+		val projKeywords = getSpecProjectKeywords(spec)
+		val newKeywords: Set[String] = getKeywords(spec) ++ modifyKeywords(isAssertion, projKeywords, changedProjectKeywords)
+
+		setSpecKeywords(spec, newKeywords)
+	}
+
+	private def modifyKeywords(isAssertion: Boolean, existing: Set[String], changed: Set[String]): Set[String] = {
+		if (isAssertion) {
+			existing ++ changed
+		} else {
+			existing -- changed
+		}
+	}
+
+	private def getSpecProjectKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (spec == null) {
+			return Set.empty;
+		}
+
+		StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+			.flatMap(project => getKeywords(project))
+			.toSet
+	}
+
+	private def ensureIRI(value: Value): IRI = {
+		value match {
+			case iri: IRI => iri
+		}
+	}
+
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (subject == null) {
+			return Set.empty;
+		}
+
+		StatementSource.getValues(subject, vocab.hasKeywords)
+			.flatMap(parseKeywords)
+			.flatten()
+			.toSet
+	}
+
+	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
+		// Remove old ones
+		for (kw <- keywordsToSpecs.keySet) {
+			if (!newKeywords.contains(kw)) {
+				keywordsToSpecs.updateWith(kw)(specs =>
+					specs.map(_.-(spec))
+				)
+			}
+		}
+
+		// Add or update new ones
+		for (kw <- newKeywords) {
+			keywordsToSpecs.updateWith(kw)(specs => {
+				Some(specs match {
+					case None => Set(spec)
+					case Some(existing) => existing.+(spec)
+				})
+			})
+		}
+	}
+
+	private def parseKeywords(obj: Value): Option[Array[String]] = {
+		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
 	}
 
 	def updateStrArrayProp(
@@ -320,7 +473,7 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def updateHasVarList(idx: Int, isAssertion: Boolean): Unit = {
-		val hasVarsBm = boolBitmap(HasVarList)
+		val hasVarsBm = mutableBoolBitmap(HasVarList)
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 

@@ -117,6 +117,8 @@ class DofPatternSearch(meta: CpmetaVocab){
 			}
 
 		case ext: Extension =>
+			println(s"ext: $ext")
+
 			val groupByOpt = for(
 				(countVar, dobjCandVar) <- singleCountExtension(ext);
 				group <- ext.getArg.asOptInstanceOf[Group];
@@ -139,7 +141,14 @@ class DofPatternSearch(meta: CpmetaVocab){
 				}
 				mergeWithInner(find0(group.getArg))
 			}
-			groupByOpt.getOrElse(find0(ext.getArg))
+
+			println(s"{ext.getArg()}: ${ext.getArg()}")
+			groupByOpt.getOrElse {				
+				getDistinctKeywordsBinding(ext) match {
+					case Some(bindingName) => UniqueKeywords(bindingName, ext.getArg())
+					case None => find0(ext.getArg())
+				}
+			}
 
 		case grp: Group =>
 			find0(grp.getArg)
@@ -150,8 +159,30 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case _ => DofPattern.Empty
 
 	}
-
 }
+
+def getDistinctKeywordsBinding(ext : Extension): Option[String] = {
+	val elems = ext.getElements().asScala.toList;
+	if (elems.size == 1){
+		val elem = elems(0)
+		elem.getExpr() match {
+			case f : FunctionCall  => {
+				if (f.getURI() == "http://meta.icos-cp.eu/ontologies/cpmeta/distinct_keywords"){
+					println(s"{f.getURI()}: ${f.getURI()}")
+					println(s"{elem.getName()}: ${elem.getName()}")
+					Some(elem.getName())
+				}else{
+					None
+				}
+			}
+			case _ => 
+				None
+		}
+	} else {
+		None
+	}
+}
+
 
 object DofPatternSearch{
 

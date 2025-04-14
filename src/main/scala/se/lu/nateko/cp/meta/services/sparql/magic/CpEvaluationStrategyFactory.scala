@@ -11,9 +11,9 @@ import org.eclipse.rdf4j.query.{BindingSet, Dataset}
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 
@@ -33,31 +33,47 @@ class CpEvaluationStrategyFactory(
 
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
 
-			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = expr match
+			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = 
 
-				case doFetch: DataObjectFetchNode if indexEnabled =>
-					qEvalStep(bindingsForObjectFetch(doFetch, _))
+				println(s"Precompile!")
 
-				case statsFetch: StatsFetchNode if indexEnabled =>
-					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
-					qEvalStep(_ => statsBindings.iterator)
+				expr match
+					case doFetch: DataObjectFetchNode if indexEnabled =>
+						qEvalStep(bindingsForObjectFetch(doFetch, _))
 
-				case _ => super.precompile(expr, context)
+					case statsFetch: StatsFetchNode if indexEnabled =>
+						val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
+						qEvalStep(_ => statsBindings.iterator)
+
+					case expr => {
+						println(s"expr: $expr")
+						super.precompile(expr, context)
+					} 
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
 				logger.debug("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
+				println(s"queryExpr: $queryExpr")
 
 				if indexEnabled then
-					val dofps = new DofPatternSearch(metaVocab)
-					val fuser = new DofPatternFusion(metaVocab)
+					val pattern = new DofPatternSearch(metaVocab).find(queryExpr)
+					println(s"pattern: $pattern")
+					pattern match {
+						case ProjectionDofPattern(UniqueKeywords(bindingName, innerExpr), _, _, _, _) => {
+							println(s"Found UniqueKeywords: Found UniqueKeywords")
+							val innerPat = new DofPatternSearch(metaVocab).find(innerExpr)
+							val fusions = new DofPatternFusion(metaVocab).findFusions(innerPat)
+							DofPatternRewrite.rewrite(innerExpr, fusions)
+						}
 
-					val pattern = dofps.find(queryExpr)
-					val fusions = fuser.findFusions(pattern)
-					DofPatternRewrite.rewrite(queryExpr, fusions)
+						case _ => {
+							val fusions = new DofPatternFusion(metaVocab).findFusions(pattern)
+							DofPatternRewrite.rewrite(queryExpr, fusions)
 
-					logger.debug("Fused query model:\n{}", queryExpr)
+							logger.debug("Fused query model:\n{}", queryExpr)
+						}
+					}
 
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 

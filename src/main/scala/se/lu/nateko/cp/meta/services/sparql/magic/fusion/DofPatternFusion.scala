@@ -12,9 +12,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import DofPatternFusion.*
 
 sealed trait FusionPattern
-case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
+final case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
 
-case class DobjListFusion(
+final case class DobjListFusion(
 	fetch: DataObjectFetch,
 	exprsToFuse: Seq[TupleExpr],
 	propVars: Map[NamedVar, Property],
@@ -78,6 +78,9 @@ class DofPatternFusion(meta: CpmetaVocab){
 			else subSeqs.flatten
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
+
+		// TODO: UniqueKeywords should not be a DofPattern
+		case UniqueKeywords(_, _) => ???
 
 	}
 

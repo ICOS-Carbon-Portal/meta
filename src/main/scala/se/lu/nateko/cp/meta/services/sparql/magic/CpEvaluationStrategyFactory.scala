@@ -56,15 +56,17 @@ class CpEvaluationStrategyFactory(
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
 				println(s"queryExpr: $queryExpr")
 
-				if indexEnabled then
+				if (indexEnabled) {
 					val pattern = new DofPatternSearch(metaVocab).find(queryExpr)
 					println(s"pattern: $pattern")
 					pattern match {
 						case ProjectionDofPattern(UniqueKeywords(bindingName, innerExpr), _, _, _, _) => {
+							println(s"innerExpr: $innerExpr")
 							println(s"Found UniqueKeywords: Found UniqueKeywords")
 							val innerPat = new DofPatternSearch(metaVocab).find(innerExpr)
 							val fusions = new DofPatternFusion(metaVocab).findFusions(innerPat)
 							DofPatternRewrite.rewrite(innerExpr, fusions)
+							super.optimize(innerExpr, stats, bindings)
 						}
 
 						case _ => {
@@ -72,13 +74,16 @@ class CpEvaluationStrategyFactory(
 							DofPatternRewrite.rewrite(queryExpr, fusions)
 
 							logger.debug("Fused query model:\n{}", queryExpr)
+							super.optimize(queryExpr, stats, bindings)
 						}
 					}
+				} else {
+					val finalExpr = super.optimize(queryExpr, stats, bindings)
 
-				val finalExpr = super.optimize(queryExpr, stats, bindings)
+					logger.debug("Fully optimized final query model:\n{}", finalExpr)
+					finalExpr
+				}
 
-				logger.debug("Fully optimized final query model:\n{}", finalExpr)
-				finalExpr
 			}
 		}
 	}

@@ -33,24 +33,6 @@ import java.net.URI
 import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import org.eclipse.rdf4j.model.Value
-// import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-import org.eclipse.rdf4j.query.algebra.evaluation.function.{Function, FunctionRegistry}
-
-// Step 1: Define the custom function
-class DistinctKeywordsFunction extends Function {
-	override def getURI: String = "http://meta.icos-cp.eu/ontologies/cpmeta/distinct_keywords"
-
-	override def evaluate(factory: ValueFactory, values: Value*): Value = {
-		println(s"values: $values")
-		factory.createLiteral("yeooo")
-		/*
-		val stringValue = values.head.stringValue()
-		SimpleValueFactory.getInstance().createLiteral(stringValue.toUpperCase)
-		*/
-	}
-}
-
 
 
 class MetaDb (
@@ -175,7 +157,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			Some(indexHandler -> geoProvider)
 
 		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
-		FunctionRegistry.getInstance().add(new DistinctKeywordsFunction())
 		val repo = new SailRepository(sail)
 		repo.init()
 

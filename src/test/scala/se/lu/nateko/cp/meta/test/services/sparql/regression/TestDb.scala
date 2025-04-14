@@ -21,8 +21,6 @@ import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import se.lu.nateko.cp.meta.DistinctKeywordsFunction
-import org.eclipse.rdf4j.query.algebra.evaluation.function.FunctionRegistry
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",
@@ -91,11 +89,7 @@ private object TestRepo {
 			() = sail.init()
 			_ = sail.initSparqlMagicIndex(Some(idxData))
 			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
-		yield {
-				// TODO: Tie this to MetaDB init.
-				FunctionRegistry.getInstance().add(new DistinctKeywordsFunction())
-				SailRepository(sail)
-			}
+		yield SailRepository(sail)
 	}
 
 	def checkout() = {

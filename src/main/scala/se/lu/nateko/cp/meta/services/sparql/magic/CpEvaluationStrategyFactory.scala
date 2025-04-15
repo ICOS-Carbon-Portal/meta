@@ -53,10 +53,15 @@ class CpEvaluationStrategyFactory(
 								precompile(KeywordsExpr(join.getLeftArg()))
 
 							case doFetch : DataObjectFetchNode => {
-								println(s"Keywords inner: $inner")
-								precompile(inner)
+								qEvalStep( bindingSet => {
+									val bindings = bindingsForObjectFetch(doFetch, bindingSet)
+									println(s"Keywords inner: $inner")
+									for (b <- bindings) {
+										println(s"b: $b")
+									}
+									bindings
+								})
 							}
-
 						}
 					}
 

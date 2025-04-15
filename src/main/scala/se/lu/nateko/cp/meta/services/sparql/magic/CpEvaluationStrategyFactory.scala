@@ -45,7 +45,7 @@ class CpEvaluationStrategyFactory(
 						val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 						qEvalStep(_ => statsBindings.iterator)
 
-					case KeywordsExpr(bindingName, inner) => {
+					case KeywordsExpr(inner) => {
 						precompile(inner)
 					}
 

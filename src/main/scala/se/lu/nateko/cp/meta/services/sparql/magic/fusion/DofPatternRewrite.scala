@@ -15,26 +15,15 @@ object DofPatternRewrite{
 		println(s"queryTop: $queryTop")
 
 		fusions match {
-			case Seq(UniqueKeywordsFusion(bindingName, innerExpr, innerFusions)) => {
-				/*
-				println(s"queryTop: $queryTop")
-				println(s"")
-				println(s"innerFusions: $innerFusions")
-				println(s"")
-				println(s"innerExpr: $innerExpr")
-				*/
-				innerExpr.replaceWith(KeywordsExpr(bindingName, innerExpr.getArg()))
-
-				// val replacement = KeywordsExpr(bindingName, innerExpr)
-				// println(s"replacement: $replacement")
-				// println(s"Before queryTop: $queryTop")
-				// safelyReplace(queryTop, KeywordsExpr(bindingName, innerExpr))
-				// println(s"After queryTop: $queryTop")
+			case Seq(UniqueKeywordsFusion(innerExpr, innerFusions)) => {
+				val inner = innerExpr.getArg()
+				rewrite(inner, innerFusions)
+				innerExpr.replaceWith(KeywordsExpr(inner))
 			}
 
 			case _ => 
 				fusions.foreach{
-					case UniqueKeywordsFusion(_, _, _) =>  ??? 
+					case UniqueKeywordsFusion(_, _) =>  ??? 
 					case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
 					case DobjStatFusion(expr, statsNode) =>
 						expr.getArg.replaceWith(statsNode)
@@ -88,10 +77,10 @@ object DofPatternRewrite{
 	}
 }
 
-case class KeywordsExpr(bindingName: String, inner: TupleExpr) extends AbstractQueryModelNode with TupleExpr {
+case class KeywordsExpr(inner: TupleExpr) extends AbstractQueryModelNode with TupleExpr {
 	private val assuredVars: Seq[String] = Seq()
 
-	override def clone() = new KeywordsExpr(bindingName, inner.clone())
+	override def clone() = new KeywordsExpr(inner.clone())
 
 	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
 		case _: EvaluationStatistics.CardinalityCalculator => // this visitor crashes on 'alien' query nodes
@@ -104,7 +93,7 @@ case class KeywordsExpr(bindingName: String, inner: TupleExpr) extends AbstractQ
 
 	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
 
-	override def getSignature(): String = s"KeywordsExpr($bindingName, $inner)"
+	override def getSignature(): String = s"KeywordsExpr($inner)"
 
 	private def mkSet(strs: Seq[String]): java.util.Set[String] = new java.util.HashSet[String](strs.asJava)
 }

@@ -45,6 +45,10 @@ class CpEvaluationStrategyFactory(
 						val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 						qEvalStep(_ => statsBindings.iterator)
 
+					case KeywordsExpr(bindingName, inner) => {
+						precompile(inner)
+					}
+
 					case expr => {
 						println(s"expr: $expr")
 						super.precompile(expr, context)
@@ -54,36 +58,26 @@ class CpEvaluationStrategyFactory(
 				logger.debug("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
-				println(s"queryExpr: $queryExpr")
 
-				if (indexEnabled) {
-					val pattern = new DofPatternSearch(metaVocab).find(queryExpr)
+				if indexEnabled then
+					val dofps = new DofPatternSearch(metaVocab)
+					val fuser = new DofPatternFusion(metaVocab)
+
+					val pattern = dofps.find(queryExpr)
+					val fusions = fuser.findFusions(pattern)
 					println(s"pattern: $pattern")
-					pattern match {
-						case ProjectionDofPattern(UniqueKeywords(bindingName, innerExpr), _, _, _, _) => {
-							println(s"innerExpr: $innerExpr")
-							println(s"Found UniqueKeywords: Found UniqueKeywords")
-							val innerPat = new DofPatternSearch(metaVocab).find(innerExpr)
-							val fusions = new DofPatternFusion(metaVocab).findFusions(innerPat)
-							DofPatternRewrite.rewrite(innerExpr, fusions)
-							super.optimize(innerExpr, stats, bindings)
-						}
+					println(s"")
+					println(s"fusions: $fusions")
+					println(s"")
 
-						case _ => {
-							val fusions = new DofPatternFusion(metaVocab).findFusions(pattern)
-							DofPatternRewrite.rewrite(queryExpr, fusions)
+					DofPatternRewrite.rewrite(queryExpr, fusions)
 
-							logger.debug("Fused query model:\n{}", queryExpr)
-							super.optimize(queryExpr, stats, bindings)
-						}
-					}
-				} else {
-					val finalExpr = super.optimize(queryExpr, stats, bindings)
+					println(s"Fused query model: $queryExpr")
 
-					logger.debug("Fully optimized final query model:\n{}", finalExpr)
-					finalExpr
-				}
+				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
+				println("Fully optimized final query model $finalExpr")
+				finalExpr
 			}
 		}
 	}

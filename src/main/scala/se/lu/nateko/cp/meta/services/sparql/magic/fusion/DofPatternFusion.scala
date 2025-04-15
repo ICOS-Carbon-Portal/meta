@@ -29,6 +29,8 @@ final case class DobjListFusion(
 	def nonMagicNodeIds = nonMagicQMNodes.map(System.identityHashCode).toSet
 }
 
+final case class UniqueKeywordsFusion(bindingName: String, innerExpr: Extension, inner: Seq[FusionPattern]) extends FusionPattern
+
 class DofPatternFusion(meta: CpmetaVocab){
 
 	def findFusions(patt: DofPattern): Seq[FusionPattern] = patt match{
@@ -80,8 +82,10 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
 		// TODO: UniqueKeywords should not be a DofPattern
-		case UniqueKeywords(_, _) => ???
-
+		case UniqueKeywords(bindingName, innerExpr, innerPattern) => {
+			println(s"innerPattern: $innerPattern")
+			Seq(UniqueKeywordsFusion(bindingName, innerExpr, findFusions(innerPattern)))
+		}
 	}
 
 	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: DobjListFusion): DobjListFusion = {

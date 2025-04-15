@@ -10,26 +10,17 @@ import org.eclipse.rdf4j.query.algebra.AbstractQueryModelNode
 object DofPatternRewrite{
 
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = 
-		println(s"")
-		println(s"REWRITE!")
-		println(s"queryTop: $queryTop")
-
-		fusions match {
-			case Seq(UniqueKeywordsFusion(innerExpr, innerFusions)) => {
+		fusions.foreach{
+			case UniqueKeywordsFusion(innerExpr, innerFusions) => {
 				val inner = innerExpr.getArg()
 				rewrite(inner, innerFusions)
 				innerExpr.replaceWith(KeywordsExpr(inner))
 			}
-
-			case _ => 
-				fusions.foreach{
-					case UniqueKeywordsFusion(_, _) =>  ??? 
-					case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
-					case DobjStatFusion(expr, statsNode) =>
-						expr.getArg.replaceWith(statsNode)
-						expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
-				}
-		}	
+			case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
+			case DobjStatFusion(expr, statsNode) =>
+				expr.getArg.replaceWith(statsNode)
+				expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
+		}
 
 	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}

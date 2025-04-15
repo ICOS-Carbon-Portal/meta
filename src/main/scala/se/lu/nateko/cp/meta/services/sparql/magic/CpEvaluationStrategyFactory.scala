@@ -16,6 +16,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
+import org.eclipse.rdf4j.query.algebra.Join
+import org.eclipse.rdf4j.query.algebra.SingletonSet
 
 
 class CpEvaluationStrategyFactory(
@@ -46,7 +48,16 @@ class CpEvaluationStrategyFactory(
 						qEvalStep(_ => statsBindings.iterator)
 
 					case KeywordsExpr(inner) => {
-						precompile(inner)
+						inner match {
+							case join: Join if join.getRightArg().isInstanceOf[SingletonSet]=> 
+								precompile(KeywordsExpr(join.getLeftArg()))
+
+							case doFetch : DataObjectFetchNode => {
+								println(s"Keywords inner: $inner")
+								precompile(inner)
+							}
+
+						}
 					}
 
 					case expr => {

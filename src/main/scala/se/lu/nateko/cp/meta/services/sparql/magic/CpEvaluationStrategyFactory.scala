@@ -50,6 +50,9 @@ class CpEvaluationStrategyFactory(
 							case join: Join if join.getRightArg().isInstanceOf[SingletonSet]=> 
 								precompile(KeywordsExpr(join.getLeftArg()))
 
+							case join: Join if join.getLeftArg().isInstanceOf[SingletonSet]=> 
+								precompile(KeywordsExpr(join.getRightArg()))
+
 							case doFetch : DataObjectFetchNode => {
 								qEvalStep(bindingSet => {
 									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindingSet)

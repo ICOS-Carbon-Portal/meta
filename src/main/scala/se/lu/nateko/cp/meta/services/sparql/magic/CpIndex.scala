@@ -23,13 +23,13 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
 
-trait ObjSpecific{
+trait ObjSpecific {
 	def hash: Sha256Sum
 	def uri(factory: ValueFactory): IRI
 	def idx: Int
 }
 
-trait ObjInfo extends ObjSpecific{
+trait ObjInfo extends ObjSpecific {
 	def spec: IRI
 	def submitter: IRI
 	def station: IRI
@@ -50,29 +50,28 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	import data.{contMap, stats, objs, initOk, idLookup}
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
 		this(sail, geo, IndexData(nObjects)())
-		//Mass-import of the statistics data
+		// Mass-import of the statistics data
 		var statementCount = 0
 		sail.accessEagerly:
 			StatementSource.getStatements(null, null, null)
-			.foreach: s =>
-				put(RdfUpdate(s, true))
-				statementCount += 1
-				if statementCount % 1000000 == 0 then
-					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
+				.foreach: s =>
+					put(RdfUpdate(s, true))
+					statementCount += 1
+					if statementCount % 1000000 == 0 then
+						log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
 		flush()
 		contMap.valuesIterator.foreach(_.optimizeAndTrim())
-		stats.filterInPlace{case (_, bm) => !bm.isEmpty}
+		stats.filterInPlace { case (_, bm) => !bm.isEmpty }
 		log.info(s"SPARQL magic index initialized by $statementCount RDF assertions")
 		reportDebugInfo()
 	}
-
 
 	private def reportDebugInfo(): Unit =
 		log.debug(s"Amount of objects in 'initOk' is ${data.initOk.getCardinality}")
 		val objsInStats = stats.valuesIterator.map(_.getCardinality).sum
 		log.debug(s"Amount of objects in stats is $objsInStats")
 		log.debug(s"Following fieldsites data object keys are present in the index:")
-		stats.foreach{
+		stats.foreach {
 			case (key, bm) =>
 				if key.spec.toString.contains("fieldsites") then
 					log.debug(s"Count ${bm.getCardinality} for key $key")
@@ -90,39 +89,44 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	def size: Int = objs.length
 	def serializableData: Serializable = data
 
-	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
-		//val start = System.currentTimeMillis
+	private def fetchObjectIds(req: DataObjectFetch): Iterator[Int] = {
+		// val start = System.currentTimeMillis
 
 		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
 
-		val idxIter: Iterator[Int] = req.sort match{
+		req.sort match {
 			case None =>
 				filter.iterator.asScala.drop(req.offset).map(_.intValue)
 			case Some(SortBy(prop, descending)) =>
 				data.bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
-		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
-		idxIter.map(objs.apply)
+		// println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
+	}
+
+	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked {
+		fetchObjectIds(req).map(objs.apply)
 	}
 
 	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
-		Seq("yeppo")
+		val objectIds = fetchObjectIds(req)
+		objectIds.foldLeft(Set.empty)( (existing: Set[String], objectId: Int) => 
+			existing ++ data.getObjectKeywords(objectId)
+		)
 	}
 
-
-	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
+	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked {
 		log.debug(s"Fetching statEntries with Filter $filter")
 		val filterOpt: Option[ImmutableRoaringBitmap] = filtering(filter)
 		filterOpt match
 			case None => log.debug("Fetching statEntries with no filter")
 			case Some(bm) => log.debug(s"Fetching stat entries with filter permitting ${bm.getCardinality} objects")
 
-		stats.flatMap{
+		stats.flatMap {
 			case (key, bm) =>
 				val count = filterOpt.fold(bm.getCardinality)(ImmutableRoaringBitmap.andCardinality(bm, _))
 				if key.spec.toString.contains("fieldsites") then
 					log.debug(s"Count was $count for key $key")
-				if(count > 0) Some(StatEntry(key, count))
+				if (count > 0) Some(StatEntry(key, count))
 				else None
 		}
 	}
@@ -134,22 +138,21 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)
-		if(queue.remainingCapacity == 0) flush()
+		if (queue.remainingCapacity == 0) flush()
 	}
 
-	def flush(): Unit = if !queue.isEmpty then writeLocked:
-		if !queue.isEmpty then
-			val list = new ArrayList[RdfUpdate](UpdateQueueSize)
-			queue.drainTo(list)
-			sail.accessEagerly:
-				list.forEach:
-					case RdfUpdate(Rdf4jStatement(statement), isAssertion) =>
-						data.processUpdate(statement, isAssertion, vocab)
-					case _ => ()
-			list.clear()
+	def flush(): Unit = if !queue.isEmpty then
+		writeLocked:
+			if !queue.isEmpty then
+				val list = new ArrayList[RdfUpdate](UpdateQueueSize)
+				queue.drainTo(list)
+				sail.accessEagerly:
+					list.forEach:
+						case RdfUpdate(Rdf4jStatement(statement), isAssertion) =>
+							data.processUpdate(statement, isAssertion, vocab)
+						case _ => ()
+				list.clear()
 end CpIndex
-
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
-

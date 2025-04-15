@@ -81,9 +81,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
-		// TODO: UniqueKeywords should not be a DofPattern
-		case UniqueKeywords(innerExpr, innerPattern) => {
-			println(s"innerPattern: $innerPattern")
+		case UniqueKeywordsPattern(innerExpr, innerPattern) => {
 			Seq(UniqueKeywordsFusion(innerExpr, findFusions(innerPattern)))
 		}
 	}

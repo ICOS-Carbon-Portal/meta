@@ -117,11 +117,10 @@ class DofPatternSearch(meta: CpmetaVocab){
 			}
 
 		case ext: Extension =>
-			println(s"ext: $ext")
 
 			getDistinctKeywordsBinding(ext) match {
 				case Some(bindingName) => {
-					UniqueKeywords(ext, find0(ext.getArg()))
+					UniqueKeywordsPattern(ext, find0(ext.getArg()))
 				}
 
 				case None => {

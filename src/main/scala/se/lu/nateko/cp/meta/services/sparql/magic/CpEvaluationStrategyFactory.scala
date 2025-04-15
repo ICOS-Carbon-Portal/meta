@@ -37,8 +37,6 @@ class CpEvaluationStrategyFactory(
 
 			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = 
 
-				println(s"Precompile!")
-
 				expr match
 					case doFetch: DataObjectFetchNode if indexEnabled =>
 						qEvalStep(bindingsForObjectFetch(doFetch, _))
@@ -66,7 +64,6 @@ class CpEvaluationStrategyFactory(
 					}
 
 					case expr => {
-						println(s"expr: $expr")
 						super.precompile(expr, context)
 					} 
 
@@ -81,18 +78,10 @@ class CpEvaluationStrategyFactory(
 
 					val pattern = dofps.find(queryExpr)
 					val fusions = fuser.findFusions(pattern)
-					println(s"pattern: $pattern")
-					println(s"")
-					println(s"fusions: $fusions")
-					println(s"")
-
 					DofPatternRewrite.rewrite(queryExpr, fusions)
-
-					println(s"Fused query model: $queryExpr")
 
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
-				println("Fully optimized final query model $finalExpr")
 				finalExpr
 			}
 		}

@@ -89,29 +89,25 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	def size: Int = objs.length
 	def serializableData: Serializable = data
 
-	private def fetchObjectIds(req: DataObjectFetch): Iterator[Int] = {
-		// val start = System.currentTimeMillis
+	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
+		//val start = System.currentTimeMillis
 
 		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
 
-		req.sort match {
+		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
 				filter.iterator.asScala.drop(req.offset).map(_.intValue)
 			case Some(SortBy(prop, descending)) =>
 				data.bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
-		// println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
+		//println(s"Fetch from CpIndex complete in ${System.currentTimeMillis - start} ms")
+		idxIter.map(objs.apply)
 	}
 
-	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked {
-		fetchObjectIds(req).map(objs.apply)
-	}
 
 	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
-		val objectIds = fetchObjectIds(req)
-		objectIds.foldLeft(Set.empty)( (existing: Set[String], objectId: Int) => 
-			existing ++ data.getObjectKeywords(objectId)
-		)
+		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
+		data.getObjectKeywords(objectIds)
 	}
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked {
@@ -132,7 +128,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	}
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
-	def getObjectKeywords = data.getObjectKeywords
 
 	def getObjEntry = data.getObjEntry
 

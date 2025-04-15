@@ -59,7 +59,9 @@ final class IndexData(nObjects: Int)(
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
 	}
 
-	def getObjectKeywords(objectId: Int): Set[String] = {
+	def getObjectKeywords(objectIds : ImmutableRoaringBitmap): Set[String] = {
+		Set("test")
+		/*
 		// Assume the objectId is valid
 		val obj = objs(objectId)
 		if (obj.spec == null) {
@@ -75,6 +77,7 @@ final class IndexData(nObjects: Int)(
 
 			obj.keywords ++ specKeywords
 		}
+		*/
 	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =

@@ -17,7 +17,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 import org.eclipse.rdf4j.query.algebra.Join
-import org.eclipse.rdf4j.query.algebra.SingletonSet
 
 
 class CpEvaluationStrategyFactory(
@@ -46,23 +45,27 @@ class CpEvaluationStrategyFactory(
 						qEvalStep(_ => statsBindings.iterator)
 
 					case KeywordsExpr(inner) => {
-						inner match {
-							case join: Join if join.getRightArg().isInstanceOf[SingletonSet]=> 
-								precompile(KeywordsExpr(join.getLeftArg()))
+						println(s"")
+						println(s"inner: $inner")
+						println(s"")
 
-							case join: Join if join.getLeftArg().isInstanceOf[SingletonSet]=> 
-								precompile(KeywordsExpr(join.getRightArg()))
-
-							case doFetch : DataObjectFetchNode => {
+						findDataObjectFetchNode(inner) match {
+							case Some(doFetch) => {
 								qEvalStep(bindingSet => {
 									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindingSet)
 									val keywords = index.getUniqueKeywords(fetchRequest)
 
 									val bs = new QueryBindingSet(bindingSet)
+
+									// TODO: Should come from the projection
 									bs.setBinding("keywords", index.factory.createLiteral(keywords.mkString(",")))
 									Seq(bs).iterator
 								})
+
 							}
+
+							// TODO: This case should not exist. Filtering crashes here.
+							case None => ???
 						}
 					}
 
@@ -71,7 +74,7 @@ class CpEvaluationStrategyFactory(
 					} 
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
-				logger.debug("Original query model:\n{}", expr)
+				logger.info("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
 
@@ -83,8 +86,11 @@ class CpEvaluationStrategyFactory(
 					val fusions = fuser.findFusions(pattern)
 					DofPatternRewrite.rewrite(queryExpr, fusions)
 
+					logger.info("Fused query model:\n{}", queryExpr)
+
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
+				logger.info("Fully optimized final query model:\n{}", finalExpr)
 				finalExpr
 			}
 		}
@@ -158,6 +164,21 @@ class CpEvaluationStrategyFactory(
 			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}
 
+}
+
+private def findDataObjectFetchNode(expr : TupleExpr) : Option[DataObjectFetchNode]= {
+	expr match {
+		case node: DataObjectFetchNode => 
+			Some(node)
+
+		case join: Join => {
+			findDataObjectFetchNode(join.getLeftArg()).orElse(
+				findDataObjectFetchNode(join.getRightArg())
+			)
+		}
+
+		case _ => None
+	}
 }
 
 

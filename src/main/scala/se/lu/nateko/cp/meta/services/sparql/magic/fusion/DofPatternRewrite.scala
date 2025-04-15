@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra.AbstractQueryModelNode
+// import org.eclipse.rdf4j.query.algebra.Join
 
 object DofPatternRewrite{
 
@@ -21,6 +22,26 @@ object DofPatternRewrite{
 				expr.getArg.replaceWith(statsNode)
 				expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
 		}
+
+
+	/*
+	def removeEmptyJoins(expr: TupleExpr): TupleExpr = {
+		expr match {
+			case join: Join if join.getRightArg().isInstanceOf[SingletonSet] => {
+				join.replaceWith(join.getLeftArg())
+				removeEmptyJoins(join.getLeftArg())
+			}
+
+			case join: Join if join.getLeftArg().isInstanceOf[SingletonSet] => {
+				join.replaceWith(join.getRightArg())
+				removeEmptyJoins(join.getRightArg())
+			}
+
+
+			case _ => expr
+		}
+	}
+	*/
 
 	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}

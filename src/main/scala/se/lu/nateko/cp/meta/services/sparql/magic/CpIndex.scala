@@ -105,6 +105,10 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		idxIter.map(objs.apply)
 	}
 
+	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
+		Seq("yeppo")
+	}
+
 
 	def statEntries(filter: Filter): Iterable[StatEntry] = readLocked{
 		log.debug(s"Fetching statEntries with Filter $filter")

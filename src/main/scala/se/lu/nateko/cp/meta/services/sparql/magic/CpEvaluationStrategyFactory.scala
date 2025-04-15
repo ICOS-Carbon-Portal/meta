@@ -53,13 +53,13 @@ class CpEvaluationStrategyFactory(
 								precompile(KeywordsExpr(join.getLeftArg()))
 
 							case doFetch : DataObjectFetchNode => {
-								qEvalStep( bindingSet => {
-									val bindings = bindingsForObjectFetch(doFetch, bindingSet)
-									println(s"Keywords inner: $inner")
-									for (b <- bindings) {
-										println(s"b: $b")
-									}
-									bindings
+								qEvalStep(bindingSet => {
+									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindingSet)
+									val keywords = index.getUniqueKeywords(fetchRequest)
+
+									val bs = new QueryBindingSet(bindingSet)
+									bs.setBinding("keywords", index.factory.createLiteral(keywords.mkString(",")))
+									Seq(bs).iterator
 								})
 							}
 						}

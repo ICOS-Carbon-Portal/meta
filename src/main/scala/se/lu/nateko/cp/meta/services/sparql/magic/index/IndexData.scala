@@ -59,25 +59,15 @@ final class IndexData(nObjects: Int)(
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
 	}
 
-	def getObjectKeywords(objectIds : ImmutableRoaringBitmap): Set[String] = {
-		Set("test")
-		/*
-		// Assume the objectId is valid
-		val obj = objs(objectId)
-		if (obj.spec == null) {
-			obj.keywords
-		} else {
-			val specKeywords = keywordsToSpecs.flatMap((kw, specs) =>
-				if (specs.contains(obj.spec)) {
-					Some(kw)
-				} else {
-					None
-				}
-			)
-
-			obj.keywords ++ specKeywords
+	def getObjectKeywords(objectIds: ImmutableRoaringBitmap): Iterable[String] = {
+		categoryKeys(Keyword).flatMap { kw =>
+			val bitmap = keywordBitmap(Seq(kw))
+			if (BufferFastAggregation.and(objectIds, bitmap).isEmpty()) {
+				None
+			} else {
+				Some(kw)
+			}
 		}
-		*/
 	}
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =

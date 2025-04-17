@@ -619,16 +619,15 @@ class QueryTests extends AsyncFunSpec {
 
 			val magicKeywordQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select (cpmeta:distinct_keywords() AS ?keywords) where {
-					?object cpmeta:hasName "$objectName" .
-					?object cpmeta:hasObjectSpec ?spec .
-					?object cpmeta:hasKeyword ?keyword
+				select distinct (cpmeta:distinct_keywords() AS ?keyword) where {
+					?obj cpmeta:hasObjectSpec ?spec .
+					?obj cpmeta:hasKeyword ?k
 				}
 			"""
 
 			val List(magicResult) = runSparqlSync(magicKeywordQuery)
 			info(s"result: $magicResult")
-			// assert(magicResult.getBinding("object").getValue().stringValue().endsWith(objectId))
+			// assert(magicResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
 			val resultKeywords = magicResult.getBinding("keywords").getValue().stringValue().split(",").toSet
 			assert(resultKeywords == Set("test keyword", "carbon flux", "ICOS"))
 		}

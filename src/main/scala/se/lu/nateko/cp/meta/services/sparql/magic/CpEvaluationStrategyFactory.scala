@@ -18,24 +18,21 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 import org.eclipse.rdf4j.query.algebra.Join
 
-
 class CpEvaluationStrategyFactory(
 	fedResolver: FederatedServiceResolver,
 	index: CpIndex,
 	enricher: StatementsEnricher,
 	indexEnabled: Boolean
-) extends DefaultEvaluationStrategyFactory(fedResolver){
+) extends DefaultEvaluationStrategyFactory(fedResolver) {
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
 		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
-		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
-
+		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats) { strat =>
 			setOptimizerPipeline(CpQueryOptimizerPipeline(strat, tripleSrc, stats))
 
-			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep = 
-
+			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep =
 				expr match
 					case doFetch: DataObjectFetchNode if indexEnabled =>
 						qEvalStep(bindingsForObjectFetch(doFetch, _))
@@ -51,15 +48,32 @@ class CpEvaluationStrategyFactory(
 
 						findDataObjectFetchNode(inner) match {
 							case Some(doFetch) => {
-								qEvalStep(bindingSet => {
-									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindingSet)
+								qEvalStep(existingBindings => {
+									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, existingBindings)
+									println(s"{existingBindings.size()}: ${existingBindings.size()}")
+									val objBinds = bindingsForObjectFetch(fetchRequest, doFetch.varNames, existingBindings)
+									// println(s"{objBinds.size}: ${objBinds.size}")
 									val keywords = index.getUniqueKeywords(fetchRequest)
 
-									val bs = new QueryBindingSet(bindingSet)
+									val kwBinds =
+										keywords.map(kw => {
+											val bs = new QueryBindingSet(existingBindings)
+											bs.setBinding("keyword", index.factory.createLiteral(kw))
+											bs
+										})
+
+									(objBinds.toSeq ++ kwBinds).iterator
+
+									/*
+									val fetchRequest = getFilterEnrichedDobjFetch(doFetch, existingBindings)
+									val keywords = index.getUniqueKeywords(fetchRequest)
+
+									val bs = new QueryBindingSet(existingBindings)
 
 									// TODO: Should come from the projection
 									bs.setBinding("keywords", index.factory.createLiteral(keywords.mkString(",")))
 									Seq(bs).iterator
+									 */
 								})
 
 							}
@@ -71,7 +85,7 @@ class CpEvaluationStrategyFactory(
 
 					case expr => {
 						super.precompile(expr, context)
-					} 
+					}
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
 				logger.info("Original query model:\n{}", expr)
@@ -101,74 +115,114 @@ class CpEvaluationStrategyFactory(
 
 		val allStatEntries = index.statEntries(group.filter)
 
-		val statEntries: Iterable[StatEntry] = group.siteVar match{
+		val statEntries: Iterable[StatEntry] = group.siteVar match {
 			case Some(_) => allStatEntries
 			case None =>
-				allStatEntries.groupBy(se => se.key.copy(site = None)).map{
+				allStatEntries.groupBy(se => se.key.copy(site = None)).map {
 					case (key, subEntries) => StatEntry(key, subEntries.map(_.count).sum)
 				}
 		}
-		statEntries.iterator.map{se =>
+		statEntries.iterator.map { se =>
 			val bs = new QueryBindingSet
 			bs.setBinding(countVarName, index.factory.createLiteral(se.count.toString, XSD.INTEGER))
 			bs.setBinding(group.submitterVar, se.key.submitter)
 			bs.setBinding(group.specVar, se.key.spec)
-			for(station <- se.key.station) bs.setBinding(group.stationVar, station)
-			for(siteVar <- group.siteVar; site <- se.key.site) bs.setBinding(siteVar, site)
+			for (station <- se.key.station) bs.setBinding(group.stationVar, station)
+			for (siteVar <- group.siteVar; site <- se.key.site) bs.setBinding(siteVar, site)
 			bs
 		}
 	}
 
-	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
+	private def bindingsForObjectFetch(
+		fetchRequest: DataObjectFetch,
+		varNames: Map[Property, String],
+		bindings: BindingSet
+	): Iterator[BindingSet] = {
 		val f = index.factory
 
-		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
-
+		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = varNames.toSeq.map { case (prop, varName) =>
 			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
 				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
 			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
 				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
-			prop match{
-				case DobjUri         => setter(_.uri(f))
-				case Spec            => setter(_.spec)
-				case Station         => setter(_.station)
-				case Site            => setter(_.site)
-				case Submitter       => setter(_.submitter)
-				case FileName        => setterOpt(_.fileName.map(f.createLiteral))
+			prop match {
+				case DobjUri => setter(_.uri(f))
+				case Spec => setter(_.spec)
+				case Station => setter(_.station)
+				case Site => setter(_.site)
+				case Submitter => setter(_.submitter)
+				case FileName => setterOpt(_.fileName.map(f.createLiteral))
 				case _: BoolProperty => (_, _) => ()
-				case Keyword				 => (_, _) => ()
+				case Keyword => (_, _) => ()
 				case _: StringCategProp => (_, _) => ()
-				case FileSize        => setterOpt(_.sizeInBytes.map(f.createLiteral))
-				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
+				case FileSize => setterOpt(_.sizeInBytes.map(f.createLiteral))
+				case SamplingHeight => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
 				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
-				case SubmissionEnd   => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
-				case DataStart       => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
-				case DataEnd         => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
-				case _: GeoProp      => (_, _) => ()
+				case SubmissionEnd => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
+				case DataStart => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
+				case DataEnd => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
+				case _: GeoProp => (_, _) => ()
 			}
 		}
 
-		val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindings)
-
-		index.fetch(fetchRequest).map{oinfo =>
+		index.fetch(fetchRequest).map { oinfo =>
 			val bs = new QueryBindingSet(bindings)
-			setters.foreach{_(bs, oinfo)}
+			setters.foreach { _(bs, oinfo) }
 			bs
 		}
 
 	}
 
-	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep{
+	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
+		val f = index.factory
+
+		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map { case (prop, varName) =>
+			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
+			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
+				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
+
+			prop match {
+				case DobjUri => setter(_.uri(f))
+				case Spec => setter(_.spec)
+				case Station => setter(_.station)
+				case Site => setter(_.site)
+				case Submitter => setter(_.submitter)
+				case FileName => setterOpt(_.fileName.map(f.createLiteral))
+				case _: BoolProperty => (_, _) => ()
+				case Keyword => (_, _) => ()
+				case _: StringCategProp => (_, _) => ()
+				case FileSize => setterOpt(_.sizeInBytes.map(f.createLiteral))
+				case SamplingHeight => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
+				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
+				case SubmissionEnd => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
+				case DataStart => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
+				case DataEnd => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
+				case _: GeoProp => (_, _) => ()
+			}
+		}
+
+		val fetchRequest = getFilterEnrichedDobjFetch(doFetch, bindings)
+
+		index.fetch(fetchRequest).map { oinfo =>
+			val bs = new QueryBindingSet(bindings)
+			setters.foreach { _(bs, oinfo) }
+			bs
+		}
+
+	}
+
+	def qEvalStep(eval: BindingSet => Iterator[BindingSet]) = new QueryEvaluationStep {
 		override def evaluate(bindings: BindingSet) =
 			new CloseableIteratorIteration[BindingSet](eval(bindings).asJava)
 	}
 
 }
 
-private def findDataObjectFetchNode(expr : TupleExpr) : Option[DataObjectFetchNode]= {
+private def findDataObjectFetchNode(expr: TupleExpr): Option[DataObjectFetchNode] = {
 	expr match {
-		case node: DataObjectFetchNode => 
+		case node: DataObjectFetchNode =>
 			Some(node)
 
 		case join: Join => {
@@ -181,10 +235,9 @@ private def findDataObjectFetchNode(expr : TupleExpr) : Option[DataObjectFetchNo
 	}
 }
 
-
 private def getFilterEnrichedDobjFetch(dofNode: DataObjectFetchNode, bindings: BindingSet): DataObjectFetch = {
 
-	val extraFilters: Seq[Filter] = dofNode.varNames.flatMap{ case (prop, varName) =>
+	val extraFilters: Seq[Filter] = dofNode.varNames.flatMap { case (prop, varName) =>
 		Option(bindings.getValue(varName)).flatMap(
 			FilterPatternSearch.parsePropValueFilter(prop, _)
 		)
@@ -192,7 +245,8 @@ private def getFilterEnrichedDobjFetch(dofNode: DataObjectFetchNode, bindings: B
 
 	val orig = dofNode.fetchRequest
 
-	if(extraFilters.isEmpty) orig else orig.copy(
+	if (extraFilters.isEmpty) orig
+	else orig.copy(
 		filter = And(extraFilters :+ orig.filter).optimize
 	)
 }

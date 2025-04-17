@@ -19,9 +19,10 @@ object DofPattern{
 	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
 }
 
-final case class UniqueKeywordsPattern(innerExpr: Extension, inner: DofPattern) extends DofPattern {
+final case class UniqueKeywordsPattern(bindingName: String, innerExpr: Extension, inner: DofPattern) extends DofPattern {
 
   override protected def joinInner(other: DofPattern): DofPattern = {
+		// TODO: Do something, even if this case should never happen.
 		???
 	}
 

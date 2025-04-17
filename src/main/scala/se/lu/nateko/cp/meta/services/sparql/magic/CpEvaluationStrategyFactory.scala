@@ -41,7 +41,7 @@ class CpEvaluationStrategyFactory(
 						val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 						qEvalStep(_ => statsBindings.iterator)
 
-					case KeywordsExpr(inner) => {
+					case KeywordsExpr(bindingName, inner) => {
 						println(s"")
 						println(s"inner: $inner")
 						println(s"")
@@ -58,7 +58,7 @@ class CpEvaluationStrategyFactory(
 									val kwBinds =
 										keywords.map(kw => {
 											val bs = new QueryBindingSet(existingBindings)
-											bs.setBinding("keyword", index.factory.createLiteral(kw))
+											bs.setBinding(bindingName, index.factory.createLiteral(kw))
 											bs
 										})
 

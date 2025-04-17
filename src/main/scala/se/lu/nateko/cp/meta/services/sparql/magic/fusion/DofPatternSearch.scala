@@ -120,7 +120,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 			getDistinctKeywordsBinding(ext) match {
 				case Some(bindingName) => {
-					UniqueKeywordsPattern(ext, find0(ext.getArg()))
+					UniqueKeywordsPattern(bindingName, ext, find0(ext.getArg()))
 				}
 
 				case None => {

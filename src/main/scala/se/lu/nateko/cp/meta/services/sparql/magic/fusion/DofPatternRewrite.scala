@@ -12,10 +12,10 @@ object DofPatternRewrite{
 
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = 
 		fusions.foreach{
-			case UniqueKeywordsFusion(innerExpr, innerFusions) => {
+			case UniqueKeywordsFusion(bindingName, innerExpr, innerFusions) => {
 				val inner = innerExpr.getArg()
 				rewrite(inner, innerFusions)
-				innerExpr.replaceWith(KeywordsExpr(inner))
+				innerExpr.replaceWith(KeywordsExpr(bindingName, inner))
 			}
 			case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
 			case DobjStatFusion(expr, statsNode) =>
@@ -89,10 +89,10 @@ object DofPatternRewrite{
 	}
 }
 
-case class KeywordsExpr(inner: TupleExpr) extends AbstractQueryModelNode with TupleExpr {
+case class KeywordsExpr(bindingName: String, inner: TupleExpr) extends AbstractQueryModelNode with TupleExpr {
 	private val assuredVars: Seq[String] = Seq()
 
-	override def clone() = new KeywordsExpr(inner.clone())
+	override def clone() = new KeywordsExpr(bindingName, inner.clone())
 
 	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
 		case _: EvaluationStatistics.CardinalityCalculator => // this visitor crashes on 'alien' query nodes

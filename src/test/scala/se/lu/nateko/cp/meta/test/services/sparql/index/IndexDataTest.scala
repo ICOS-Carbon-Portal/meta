@@ -363,7 +363,6 @@ class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSo
 		&& matching(a.obj, b.obj)
 	}
 
-	// Leave unimplemented until used by any test
 	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = {
 		statements.find(statement =>
 			matchingStatement(Rdf4jStatement(subject, predicate, obj), statement)

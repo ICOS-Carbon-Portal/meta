@@ -340,8 +340,7 @@ final class IndexData(nObjects: Int)(
 							if (isSpec) {
 								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
 							} else {
-								val project = subj
-								StatementSource.getStatements(null, vocab.hasAssociatedProject, project)
+								StatementSource.getStatements(null, vocab.hasAssociatedProject, subj)
 									.map(_.getSubject())
 									.foreach(spec =>
 										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
@@ -359,7 +358,7 @@ final class IndexData(nObjects: Int)(
 	)(using StatementSource): Unit = {
 		val existingKeywords: Set[String] = getKeywords(spec)
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] = projKeywords ++ modifyKeywords(isAssertion, existingKeywords, changedSpecKeywords)
+		val newKeywords: Set[String] = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
@@ -368,13 +367,14 @@ final class IndexData(nObjects: Int)(
 		vocab: CpmetaVocab
 	)(using StatementSource): Unit = {
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] = getKeywords(spec) ++ modifyKeywords(isAssertion, projKeywords, changedProjectKeywords)
+		val newKeywords: Set[String] =
+			getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
 
-	private def modifyKeywords(isAssertion: Boolean, existing: Set[String], changed: Set[String]): Set[String] = {
-		if (isAssertion) {
+	private def modifySet[T](add: Boolean, existing: Set[T], changed: Set[T]): Set[T] = {
+		if (add) {
 			existing ++ changed
 		} else {
 			existing -- changed
@@ -397,40 +397,39 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (subject == null) {
-			return Set.empty;
-		}
-
-		StatementSource.getValues(subject, vocab.hasKeywords)
-			.flatMap(parseKeywords)
-			.flatten()
-			.toSet
-	}
 
 	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
-		// Remove old ones
-		for (kw <- keywordsToSpecs.keySet) {
-			if (!newKeywords.contains(kw)) {
-				keywordsToSpecs.updateWith(kw)(specs =>
-					specs.map(_.-(spec))
-				)
-			}
-		}
+		// Existing keywords plus new ones
+		val keys = keywordsToSpecs.keySet ++ newKeywords
 
-		// Add or update new ones
-		for (kw <- newKeywords) {
-			keywordsToSpecs.updateWith(kw)(specs => {
+		for (keyword <- keys) {
+			keywordsToSpecs.updateWith(keyword)(specs => {
 				Some(specs match {
 					case None => Set(spec)
-					case Some(existing) => existing.+(spec)
+					case Some(existing) => {
+						// Add or remove from existing sets
+						val add = newKeywords.contains(keyword)
+						modifySet(add, existing, Set(spec))
+					}
 				})
 			})
 		}
 	}
 
-	private def parseKeywords(obj: Value): Option[Array[String]] = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).map(parseCommaSepList)
+	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
+		if (subject == null) {
+			return Set.empty;
+		}
+
+		Set.concat(
+			StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords)*
+		)
+	}
+
+	private def parseKeywords(obj: Value): Option[Set[String]] = {
+		obj.asOptInstanceOf[Literal]
+			.flatMap(asString)
+			.map((keywords: String) => parseCommaSepList(keywords).toSet)
 	}
 
 	def updateStrArrayProp(

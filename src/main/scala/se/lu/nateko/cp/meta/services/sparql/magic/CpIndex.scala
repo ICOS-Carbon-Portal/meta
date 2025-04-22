@@ -40,6 +40,8 @@ trait ObjInfo extends ObjSpecific{
 	def dataEndTime: Option[Instant]
 	def submissionStartTime: Option[Instant]
 	def submissionEndTime: Option[Instant]
+	def idx: Int
+
 }
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
@@ -124,7 +126,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
-	def getObjEntry = data.getObjEntry
+	def getObjEntry: Sha256Sum => ObjInfo =
+		data.getObjInfo
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

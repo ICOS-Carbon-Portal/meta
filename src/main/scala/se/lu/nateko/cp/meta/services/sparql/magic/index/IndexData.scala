@@ -19,6 +19,7 @@ import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
+import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -432,7 +433,7 @@ final class IndexData(nObjects: Int)(
 			.map((keywords: String) => parseCommaSepList(keywords).toSet)
 	}
 
-	def updateStrArrayProp(
+	private def updateStrArrayProp(
 		obj: Value,
 		prop: StringCategProp,
 		parser: String => Option[Array[String]],
@@ -444,7 +445,14 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	def getObjEntry(hash: Sha256Sum): ObjEntry = {
+	// Retrieves or creates an ObjEntry,
+	// and returns immutable view of it through ObjInfo interface.
+	def getObjInfo(hash: Sha256Sum): ObjInfo = {
+		getObjEntry(hash)
+	}
+
+	// Retrieves or creates a mutable ObjEntry
+	private def getObjEntry(hash: Sha256Sum): ObjEntry = {
 		idLookup.get(hash).fold {
 			val canonicalHash = hash.truncate
 			val oe = new ObjEntry(canonicalHash, objs.length, "")

@@ -398,21 +398,25 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-
 	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
 		// Existing keywords plus new ones
 		val keys = keywordsToSpecs.keySet ++ newKeywords
 
 		for (keyword <- keys) {
 			keywordsToSpecs.updateWith(keyword)(specs => {
-				Some(specs match {
-					case None => Set(spec)
+				specs match {
+					case None => Some(Set(spec))
 					case Some(existing) => {
 						// Add or remove from existing sets
 						val add = newKeywords.contains(keyword)
-						modifySet(add, existing, Set(spec))
+						val newSpecs = modifySet(add, existing, Set(spec))
+						if (newSpecs.isEmpty) {
+							None
+						} else {
+							Some(newSpecs)
+						}
 					}
-				})
+				}
 			})
 		}
 	}

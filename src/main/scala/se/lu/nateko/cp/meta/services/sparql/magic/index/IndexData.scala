@@ -94,7 +94,7 @@ final class IndexData(nObjects: Int)(
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
-				(keywordsToSpecs.keys ++ keywordsToObjs.keys).toSet.map(_.asInstanceOf[prop.ValueType])
+				(keywordsToSpecs.keySet ++ keywordsToObjs.keySet).map(_.asInstanceOf[prop.ValueType])
 			case _ =>
 				categMap(prop).keys
 	}

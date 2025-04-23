@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
-import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
+import se.lu.nateko.cp.meta.utils.{parseCommaSepList, parseJsonStringArray}
 
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
@@ -37,7 +37,7 @@ final class IndexData(nObjects: Int)(
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = new AnyRefMap[String, Set[IRI]](nObjects),
+	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -94,7 +94,7 @@ final class IndexData(nObjects: Int)(
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
-				(keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
+				(keywordsToSpecs.keys ++ keywordsToObjs.keys).toSet.map(_.asInstanceOf[prop.ValueType])
 			case _ =>
 				categMap(prop).keys
 	}
@@ -115,7 +115,7 @@ final class IndexData(nObjects: Int)(
 		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
 	}
 
-	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
+	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -138,8 +138,8 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
-
-						updateSpecKeywords(spec, true, Set.empty)
+						// TODO Make sure the next line is not needed, and remove
+						//updateSpecOwnKeywords(spec, true, Set.empty)
 					}
 				}
 
@@ -311,9 +311,13 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
-					updateHasVarList(oe.idx, isAssertion)
+				asStringLiteral(obj).foreach{ colNamesJsArr =>
+					parseJsonStringArray(colNamesJsArr).toSeq.flatten.foreach { strVal =>
+						updateCategSet(categMap(VariableName), strVal, oe.idx, isAssertion)
+					}
 				}
+				updateHasVarList(oe.idx, isAssertion)
+			}
 
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
@@ -323,12 +327,12 @@ final class IndexData(nObjects: Int)(
 					case _ =>
 				}
 
-			case `hasAssociatedProject` =>
-				val projectKeywords = getKeywords(ensureIRI(obj))
-				updateProjectKeywords(subj, isAssertion, projectKeywords)
+			case `hasAssociatedProject` => obj match
+				case proj: IRI => 
+					updateSpecProjectKeywords(subj, isAssertion, getKeywords(proj))
+				case _ =>
 
-			case `hasKeywords` =>
-				val changedKeywords = obj.asOptInstanceOf[Literal].flatMap(asString).toSet.flatMap(parseCommaSepList)
+			case `hasKeywords` => parseKeywords(obj).foreach: changedKeywords =>
 				getDataObject(subj) match {
 					case Some(oe) => {
 						changedKeywords.foreach { strVal =>
@@ -338,25 +342,23 @@ final class IndexData(nObjects: Int)(
 					case None => if changedKeywords.nonEmpty then {
 							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
 
-							if (isSpec) {
-								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
-							} else {
-								StatementSource.getStatements(null, vocab.hasAssociatedProject, subj)
-									.map(_.getSubject())
-									.foreach(spec =>
-										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
-									)
+							if (isSpec)
+								updateSpecOwnKeywords(subj, isAssertion, changedKeywords)
+							else { // assuming subj is a Project
+								StatementSource.getPropValueHolders(vocab.hasAssociatedProject, subj)
+									.foreach: spec =>
+										updateSpecProjectKeywords(spec, isAssertion, changedKeywords)
 							}
 						}
 				}
 
 			case _ =>
-		}
-	}
+		} // end pred match ...
+	end processUpdate
 
-	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String])(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Unit = {
+	private def updateSpecOwnKeywords(
+		spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String]
+	)(using CpmetaVocab, StatementSource): Unit = {
 		val existingKeywords: Set[String] = getKeywords(spec)
 		val projKeywords = getSpecProjectKeywords(spec)
 		val newKeywords: Set[String] = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
@@ -364,9 +366,9 @@ final class IndexData(nObjects: Int)(
 		setSpecKeywords(spec, newKeywords)
 	}
 
-	private def updateProjectKeywords(spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String])(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Unit = {
+	private def updateSpecProjectKeywords(
+		spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String]
+	)(using CpmetaVocab, StatementSource): Unit = {
 		val projKeywords = getSpecProjectKeywords(spec)
 		val newKeywords: Set[String] =
 			getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
@@ -382,20 +384,11 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def getSpecProjectKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (spec == null) {
-			return Set.empty;
-		}
-
-		StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
+	private def getSpecProjectKeywords(spec: IRI)(using CpmetaVocab, StatementSource): Set[String] = {
+		StatementSource
+			.getUriValues(spec, summon[CpmetaVocab].hasAssociatedProject)
 			.flatMap(project => getKeywords(project))
 			.toSet
-	}
-
-	private def ensureIRI(value: Value): IRI = {
-		value match {
-			case iri: IRI => iri
-		}
 	}
 
 	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
@@ -422,32 +415,17 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (subject == null) {
-			return Set.empty;
-		}
-
 		Set.concat(
 			StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords)*
 		)
 	}
 
 	private def parseKeywords(obj: Value): Option[Set[String]] = {
-		obj.asOptInstanceOf[Literal]
-			.flatMap(asString)
-			.map((keywords: String) => parseCommaSepList(keywords).toSet)
+		asStringLiteral(obj)
+			.map(kwList => parseCommaSepList(kwList).toSet)
+			.filter(_.nonEmpty)
 	}
 
-	private def updateStrArrayProp(
-		obj: Value,
-		prop: StringCategProp,
-		parser: String => Option[Array[String]],
-		idx: Int,
-		isAssertion: Boolean
-	): Unit = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(categMap(prop), strVal, idx, isAssertion)
-		}
-	}
 
 	// Retrieves or creates an ObjEntry,
 	// and returns immutable view of it through ObjInfo interface.
@@ -473,13 +451,15 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 
-		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
+		inline def logWarn(warnPrefix: String): Unit =
+			s"$warnPrefix value $key of property $prop on object ${objs(idx).hash.id}"
+
 		if (isAssertion) {
 			if (!bitmap(prop).add(key, idx)) {
-				log.warn(s"Value already existed: asserted $helpTxt")
+				logWarn("Value already existed: asserted")
 			}
 		} else if (!bitmap(prop).remove(key, idx)) {
-			log.warn(s"Value was not present: tried to retract $helpTxt")
+			logWarn("Value was not present: tried to retract")
 		}
 	}
 
@@ -570,3 +550,7 @@ private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
 		try mod(lit.floatValue)
 		catch case _: Throwable => () // ignoring wrong floats
 	case _ =>
+
+private def asStringLiteral(sl: Value): Option[String] = sl match
+	case lit: Literal => asString(lit)
+	case _ => None

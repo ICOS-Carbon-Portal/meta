@@ -138,8 +138,6 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
-						// TODO Make sure the next line is not needed, and remove
-						//updateSpecOwnKeywords(spec, true, Set.empty)
 					}
 				}
 

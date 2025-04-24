@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*

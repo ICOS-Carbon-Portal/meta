@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate

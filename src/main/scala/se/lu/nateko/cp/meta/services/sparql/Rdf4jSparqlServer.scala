@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
@@ -8,7 +10,7 @@ import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
-import org.eclipse.rdf4j.query.parser.{ParsedBooleanQuery, ParsedGraphQuery, ParsedTupleQuery}
+import org.eclipse.rdf4j.query.parser.{ParsedBooleanQuery, ParsedGraphQuery, ParsedTupleQuery, ParsedQuery}
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
@@ -67,6 +69,10 @@ class Rdf4jSparqlServer(
 
 				case _: ParsedBooleanQuery =>
 					plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
+
+				case _: ParsedQuery =>
+					plainResponse(StatusCodes.NotImplemented, "Unsupported query")
+
 			}
 		} catch {
 			case userErr: MalformedQueryException =>

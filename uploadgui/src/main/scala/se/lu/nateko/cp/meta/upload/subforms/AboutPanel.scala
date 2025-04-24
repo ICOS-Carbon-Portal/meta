@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
+import scala.language.unsafeNulls
+
 import scala.concurrent.Future
 import scala.util.{Try, Success, Failure}
 

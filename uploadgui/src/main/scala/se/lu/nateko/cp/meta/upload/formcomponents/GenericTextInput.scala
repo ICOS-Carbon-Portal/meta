@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
+import scala.language.unsafeNulls
+
 import scala.util.{Try, Success}
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.upload.Utils.*

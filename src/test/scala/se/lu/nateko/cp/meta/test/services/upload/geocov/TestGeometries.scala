@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
+import scala.language.unsafeNulls
+
 import org.locationtech.jts.geom.Coordinate
 import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo

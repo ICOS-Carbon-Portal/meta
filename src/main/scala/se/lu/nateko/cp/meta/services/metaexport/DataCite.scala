@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, StaticCollection, StaticObject}

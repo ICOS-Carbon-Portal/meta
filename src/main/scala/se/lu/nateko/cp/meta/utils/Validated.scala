@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
+import scala.language.unsafeNulls
+
 import scala.collection.mutable.Buffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

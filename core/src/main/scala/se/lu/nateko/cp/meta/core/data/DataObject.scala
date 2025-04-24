@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
+import scala.language.unsafeNulls
+
 import java.net.URI
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import java.time.Instant

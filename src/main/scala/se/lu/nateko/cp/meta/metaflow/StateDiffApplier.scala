@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs

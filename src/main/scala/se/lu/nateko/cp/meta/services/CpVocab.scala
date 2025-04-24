@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
 import se.lu.nateko.cp.meta.services.sparql.index.*

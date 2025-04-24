@@ -1,4 +1,7 @@
+
 package se.lu.nateko.cp.meta.core
+
+import scala.language.unsafeNulls
 
 import java.net.URI
 import java.time.Instant

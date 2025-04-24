@@ -1,5 +1,9 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
+// HTMLElement from scalajs is not written with explicit-null in mind,
+// and we pass `null` to onchange handler.
+import scala.language.unsafeNulls
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js

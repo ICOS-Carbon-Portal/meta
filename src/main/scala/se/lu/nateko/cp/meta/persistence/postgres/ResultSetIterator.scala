@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.meta.api.CloseableIterator
 
 import java.sql.{Connection, ResultSet}

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.utils.async
 
+import scala.language.unsafeNulls
+
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 trait ReadWriteLocking {

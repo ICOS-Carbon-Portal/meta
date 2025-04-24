@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto
 
+import scala.language.unsafeNulls
+
 import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.search.EntitySearcher

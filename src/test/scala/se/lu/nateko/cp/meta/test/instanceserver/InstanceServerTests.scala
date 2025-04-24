@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.instanceserver
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository

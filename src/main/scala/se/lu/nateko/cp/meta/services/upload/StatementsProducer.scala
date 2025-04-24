@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}

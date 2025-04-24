@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer

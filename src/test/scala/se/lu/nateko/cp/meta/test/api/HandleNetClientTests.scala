@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.api
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum.formatByte

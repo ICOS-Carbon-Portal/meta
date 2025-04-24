@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.utils
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.utils.{urlDecode, urlEncode}
 

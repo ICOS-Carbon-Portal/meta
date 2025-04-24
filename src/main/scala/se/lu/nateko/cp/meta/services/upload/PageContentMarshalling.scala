@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.marshalling.Marshalling.*
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshaller, ToResponseMarshaller}
 import akka.http.scaladsl.model.*

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet

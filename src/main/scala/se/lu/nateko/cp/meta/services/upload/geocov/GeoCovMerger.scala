@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.geocov
+
+import scala.language.unsafeNulls
+
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, LineString, Point as JtsPoint, Polygon as JtsPolygon}
 import org.locationtech.jts.index.strtree.STRtree

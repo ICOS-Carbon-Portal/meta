@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.common.iteration.{CloseableIteration, EmptyIteration, SingletonIteration, UnionIteration}
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sparql.federation.CollectionIteration

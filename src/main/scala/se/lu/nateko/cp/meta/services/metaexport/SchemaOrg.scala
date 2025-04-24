@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.metaexport
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI

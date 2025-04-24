@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator, QueryModelNode}
 
 object DofPatternRewrite{

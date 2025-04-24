@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.ingestion.badm
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.ingestion.badm.*
 import se.lu.nateko.cp.meta.ingestion.badm.Parser.*

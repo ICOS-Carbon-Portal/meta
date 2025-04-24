@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import scala.language.unsafeNulls
+
 import spray.json.RootJsonFormat
 
 import akka.Done

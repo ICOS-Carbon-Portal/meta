@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
+import scala.language.unsafeNulls
+
 import org.scalajs.dom.{html, document, DragEvent, DataTransferEffectAllowedKind}
 import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.util.Success

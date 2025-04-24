@@ -327,6 +327,16 @@ class IndexDataTest extends AnyFunSpec {
 
 			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
 		}
+
+		testCase("spec with keywords is added before object association") {
+			val statements = Seq(
+				(true, Rdf4jStatement(spec, hasAssociatedProject, project)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+			)
+
+			assert(runStatements(statements) == Map("spec keyword" -> objectBitmap))
+		}
 	}
 }
 

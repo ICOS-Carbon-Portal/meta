@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId

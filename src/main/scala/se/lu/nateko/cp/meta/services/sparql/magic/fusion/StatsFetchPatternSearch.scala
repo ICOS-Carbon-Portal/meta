@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.algebra.{Count, Extension, Group, ValueExpr, Var}
 import se.lu.nateko.cp.meta.services.sparql.index.Filter
 

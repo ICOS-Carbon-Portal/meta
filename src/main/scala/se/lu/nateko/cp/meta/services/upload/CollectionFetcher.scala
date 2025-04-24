@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload
+
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.RdfLens

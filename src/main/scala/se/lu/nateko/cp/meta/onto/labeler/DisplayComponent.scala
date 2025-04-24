@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
+import scala.language.unsafeNulls
+
 import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.model.parameters.Imports
 

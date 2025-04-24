@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.instanceserver
 
+import scala.language.unsafeNulls
+
 import java.net.URI as JavaUri
 import java.time.{Instant, LocalDate}
 import org.eclipse.rdf4j.model.{IRI, Value, Statement, Literal}

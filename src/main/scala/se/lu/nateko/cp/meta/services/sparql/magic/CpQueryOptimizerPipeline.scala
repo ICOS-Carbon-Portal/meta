@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import org.eclipse.rdf4j.query.algebra.evaluation.optimizer.{OrderLimitOptimizer, QueryJoinOptimizer, StandardQueryOptimizerPipeline}
 import org.eclipse.rdf4j.query.algebra.evaluation.{EvaluationStrategy, QueryOptimizer, QueryOptimizerPipeline, TripleSource}

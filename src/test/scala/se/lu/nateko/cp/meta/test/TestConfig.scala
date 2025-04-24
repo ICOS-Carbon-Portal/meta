@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.semanticweb.owlapi.apibinding.OWLManager

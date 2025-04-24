@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.algo
 
+import scala.language.unsafeNulls
+
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 

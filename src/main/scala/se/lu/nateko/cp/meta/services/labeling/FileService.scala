@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.model.HttpEntity.Chunked
 import akka.http.scaladsl.model.{HttpResponse, MediaTypes, Multipart}
 import org.eclipse.rdf4j.model.IRI

@@ -1,5 +1,6 @@
 package se.lu.nateko.cp.meta.utils.owlapi
 
+import scala.language.unsafeNulls
 
 import org.semanticweb.owlapi.io.XMLUtils
 import org.semanticweb.owlapi.model.*

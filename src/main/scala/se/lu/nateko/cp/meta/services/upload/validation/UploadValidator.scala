@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.validation
 
+import scala.language.unsafeNulls
+
 import akka.NotUsed
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}

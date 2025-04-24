@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}

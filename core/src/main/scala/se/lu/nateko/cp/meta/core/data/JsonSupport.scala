@@ -76,7 +76,7 @@ object JsonSupport extends CommonJsonSupport:
 				case c: Circle => c.toJson
 				case p: Pin => p.toJson
 				case jsgf: FeatureWithGeoJson => jsgf.toJson
-			vanilla.pluss(TypeField -> geo.getClass.getSimpleName)
+			vanilla.pluss(TypeField -> geo.getClass.getSimpleName.nn)
 
 		def read(value: JsValue): GeoFeature = value match
 			case JsObject(fields) =>

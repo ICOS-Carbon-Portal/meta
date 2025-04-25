@@ -1,15 +1,29 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
 import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator}
+import org.eclipse.rdf4j.query.algebra.QueryModelNode
+import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import org.eclipse.rdf4j.query.algebra.AbstractQueryModelNode
+import org.eclipse.rdf4j.query.algebra.Join
+// import org.eclipse.rdf4j.query.algebra.Join
 
 object DofPatternRewrite{
 
-	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = fusions.foreach{
-		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
-		case DobjStatFusion(expr, statsNode) =>
-			expr.getArg.replaceWith(statsNode)
-			expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
-	}
+	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit =
+		fusions.foreach{
+			case UniqueKeywordsFusion(bindingName, ext, innerFusions) => {
+				rewrite(ext.getArg(), innerFusions)
+				val Some(node) = findDataObjectFetchNode(ext.getArg()) : @unchecked
+				node.replaceWith(KeywordsNode(bindingName, node))
+				ext.replaceWith(ext.getArg())
+			}
+			case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
+			case DobjStatFusion(expr, statsNode) =>
+				expr.getArg.replaceWith(statsNode)
+				expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
+		}
 
 	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}
@@ -54,5 +68,48 @@ object DofPatternRewrite{
 			parent.replaceChildNode(expr, replacement)
 			expr.setParentNode(null)
 		}
+	}
+}
+
+case class KeywordsNode(bindingName: String, inner: DataObjectFetchNode) extends AbstractQueryModelNode with TupleExpr {
+	private val assuredVars: Seq[String] = Seq()
+
+	override def clone() = new KeywordsNode(
+		bindingName,
+		inner.clone() match {
+			case clone: DataObjectFetchNode => clone
+		}
+	)
+
+	override def visit[X <: Exception](v: QueryModelVisitor[X]): Unit = v match {
+		case _: EvaluationStatistics.CardinalityCalculator => // this visitor crashes on 'alien' query nodes
+		case _ => v.meetOther(this)
+	}
+	override def visitChildren[X <: Exception](v: QueryModelVisitor[X]): Unit = {}
+
+	override def getAssuredBindingNames() = mkSet(assuredVars)
+	override def getBindingNames() = mkSet(assuredVars)
+
+	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
+
+	override def getSignature(): String = s"KeywordsExpr($inner)"
+
+	private def mkSet(strs: Seq[String]): java.util.Set[String] = new java.util.HashSet[String](strs.asJava)
+}
+
+private def findDataObjectFetchNode(expr: TupleExpr): Option[DataObjectFetchNode] = {
+	println(s"expr: $expr")
+	expr match {
+		case node: DataObjectFetchNode =>
+			Some(node)
+
+		case join: Join => {
+			findDataObjectFetchNode(join.getLeftArg()).orElse(
+				findDataObjectFetchNode(join.getRightArg())
+			)
+		}
+
+		case f : Filter => findDataObjectFetchNode(f.getArg())
+		case _ => None
 	}
 }

@@ -19,11 +19,21 @@ object DofPattern{
 	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
 }
 
+final case class UniqueKeywordsPattern(bindingName: String, innerExpr: Extension, inner: DofPattern) extends DofPattern {
+
+  override protected def joinInner(other: DofPattern): DofPattern = {
+		// TODO: Do something, even if this case should never happen.
+		???
+	}
+
+}
+
 sealed trait QVar{
 	def name: String
 }
-case class NamedVar(name: String) extends QVar
-case class AnonVar(name: String) extends QVar
+
+final case class NamedVar(name: String) extends QVar
+final case class AnonVar(name: String) extends QVar
 
 object QVar{
 	def apply(v: Var): QVar = if(v.isAnonymous) AnonVar(v.getName) else NamedVar(v.getName)
@@ -85,12 +95,12 @@ final case class ProjectionDofPattern(
 	)
 }
 
-final class LeftJoinDofPattern(val left: DofPattern, val optionals: Seq[DofPattern]) extends DofPattern{
+final case class LeftJoinDofPattern(val left: DofPattern, val optionals: Seq[DofPattern]) extends DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern = new LeftJoinDofPattern(left.join(other), optionals)
 	def joinOptional(other: DofPattern) = new LeftJoinDofPattern(left, optionals :+ other)
 }
 
-final class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends DofPattern{
+final case class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern = other match{
 		case lj: LeftJoinDofPattern =>
 			new LeftJoinDofPattern(join(lj.left), lj.optionals)
@@ -117,8 +127,8 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 
 final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolean)
 
-final class OffsetPattern(val slice: Slice){
+final case class OffsetPattern(val slice: Slice){
 	def offset = if(slice.hasOffset) slice.getOffset.toInt else 0
 }
 
-final class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)
+final case class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)

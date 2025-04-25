@@ -36,7 +36,7 @@ final class IndexData(nObjects: Int)(
 	// These members are public only because of serialization, and should not be accessed directly.
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
+	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
 	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
@@ -94,7 +94,8 @@ final class IndexData(nObjects: Int)(
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
-				(keywordsToSpecs.keySet ++ keywordsToObjs.keySet).map(_.asInstanceOf[prop.ValueType])
+				Set.concat(keywordsToSpecs.keySet, keywordsToObjs.keySet)
+					.map(_.asInstanceOf[prop.ValueType])
 			case _ =>
 				categMap(prop).keys
 	}
@@ -139,6 +140,10 @@ final class IndexData(nObjects: Int)(
 							}
 						}
 
+						// Covers the case when keywords have been added to a spec,
+						// before any data object is associated with that spec.
+						// TODO: This makes indexing quite a lot slower, and could be removed
+						// if specs can be reliably identified without relying on hasObjectSpec.
 						updateSpecOwnKeywords(spec, true, Set.empty)
 					}
 				}
@@ -311,13 +316,13 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
-				asStringLiteral(obj).foreach{ colNamesJsArr =>
-					parseJsonStringArray(colNamesJsArr).toSeq.flatten.foreach { strVal =>
-						updateCategSet(categMap(VariableName), strVal, oe.idx, isAssertion)
+					asStringLiteral(obj).foreach { colNamesJsArr =>
+						parseJsonStringArray(colNamesJsArr).toSeq.flatten.foreach(strVal =>
+							updateCategSet(categMap(VariableName), strVal, oe.idx, isAssertion)
+						)
 					}
+					updateHasVarList(oe.idx, isAssertion)
 				}
-				updateHasVarList(oe.idx, isAssertion)
-			}
 
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
@@ -328,50 +333,53 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasAssociatedProject` => obj match
-				case proj: IRI => 
-					updateSpecProjectKeywords(subj, isAssertion, getKeywords(proj))
-				case _ =>
+					case proj: IRI =>
+						updateSpecProjectKeywords(subj, isAssertion, getKeywords(proj))
+					case _ =>
 
 			case `hasKeywords` => parseKeywords(obj).foreach: changedKeywords =>
-				getDataObject(subj) match {
-					case Some(oe) => {
-						changedKeywords.foreach { strVal =>
-							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
-						}
-					}
-					case None => if changedKeywords.nonEmpty then {
-							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
-
-							if (isSpec)
-								updateSpecOwnKeywords(subj, isAssertion, changedKeywords)
-							else { // assuming subj is a Project
-								StatementSource.getPropValueHolders(vocab.hasAssociatedProject, subj)
-									.foreach: spec =>
-										updateSpecProjectKeywords(spec, isAssertion, changedKeywords)
+					getDataObject(subj) match {
+						case Some(oe) => {
+							changedKeywords.foreach { strVal =>
+								updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
 							}
 						}
-				}
+						case None => if (changedKeywords.nonEmpty) {
+								val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
+
+								if (isSpec)
+									updateSpecOwnKeywords(subj, isAssertion, changedKeywords)
+								else { // assuming subj is a Project
+									StatementSource.getPropValueHolders(vocab.hasAssociatedProject, subj)
+										.foreach: spec =>
+											updateSpecProjectKeywords(spec, isAssertion, changedKeywords)
+								}
+							}
+					}
 
 			case _ =>
 		} // end pred match ...
 	end processUpdate
 
 	private def updateSpecOwnKeywords(
-		spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String]
+		spec: IRI,
+		isAssertion: Boolean,
+		changedSpecKeywords: Set[String]
 	)(using CpmetaVocab, StatementSource): Unit = {
-		val existingKeywords: Set[String] = getKeywords(spec)
+		val existingKeywords = getKeywords(spec)
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
+		val newKeywords = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
 
 	private def updateSpecProjectKeywords(
-		spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String]
+		spec: IRI,
+		isAssertion: Boolean,
+		changedProjectKeywords: Set[String]
 	)(using CpmetaVocab, StatementSource): Unit = {
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] =
-			getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
+		val newKeywords = getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
@@ -422,10 +430,9 @@ final class IndexData(nObjects: Int)(
 
 	private def parseKeywords(obj: Value): Option[Set[String]] = {
 		asStringLiteral(obj)
-			.map(kwList => parseCommaSepList(kwList).toSet)
+			.map(parseCommaSepList(_).toSet)
 			.filter(_.nonEmpty)
 	}
-
 
 	// Retrieves or creates an ObjEntry,
 	// and returns immutable view of it through ObjInfo interface.

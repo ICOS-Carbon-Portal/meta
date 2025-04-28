@@ -123,6 +123,11 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
+	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
+		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
+		data.getObjectKeywords(objectIds)
+	}
+
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
 	def getObjEntry: Sha256Sum => ObjInfo =

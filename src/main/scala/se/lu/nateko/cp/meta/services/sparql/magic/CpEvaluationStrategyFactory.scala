@@ -33,10 +33,9 @@ class CpEvaluationStrategyFactory(
 
 			override def precompile(expr: TupleExpr, context: QueryEvaluationContext): QueryEvaluationStep =
 				expr match
-					/*
 					case doFetch: DataObjectFetchNode if indexEnabled =>
 						qEvalStep(bindingsForObjectFetch(doFetch, _))
-					 */
+
 					case statsFetch: StatsFetchNode if indexEnabled =>
 						val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 						qEvalStep(_ => statsBindings.iterator)
@@ -44,22 +43,10 @@ class CpEvaluationStrategyFactory(
 					case KeywordsNode(bindingName, doFetch) => {
 						qEvalStep(existingBindings => {
 							val fetchRequest = getFilterEnrichedDobjFetch(doFetch, existingBindings)
-							// println(s"{existingBindings.size()}: ${existingBindings.size()}")
-							val objBinds = bindingsForObjectFetch(fetchRequest, doFetch.varNames, existingBindings)
-							// println(s"{objBinds.size}: ${objBinds.size}")
 							val keywords = index.getUniqueKeywords(fetchRequest)
-
-							val kwBinds =
-								keywords.map(kw => {
-									val bs = new QueryBindingSet(existingBindings)
-									bs.setBinding(bindingName, index.factory.createLiteral(kw))
-									bs.setBinding("spec", index.factory.createLiteral("http://meta.icos-cp.eu/ye"))
-									bs
-								})
-
-							println(s"kwBinds: $kwBinds")
-
-							kwBinds.iterator
+							val bs = new QueryBindingSet(existingBindings)
+							bs.setBinding(bindingName, index.factory.createLiteral(keywords.mkString(",")))
+							Seq(bs).iterator
 						})
 					}
 
@@ -111,47 +98,6 @@ class CpEvaluationStrategyFactory(
 			for (siteVar <- group.siteVar; site <- se.key.site) bs.setBinding(siteVar, site)
 			bs
 		}
-	}
-
-	private def bindingsForObjectFetch(
-		fetchRequest: DataObjectFetch,
-		varNames: Map[Property, String],
-		bindings: BindingSet
-	): Iterator[BindingSet] = {
-		val f = index.factory
-
-		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = varNames.toSeq.map { case (prop, varName) =>
-			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
-				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
-			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
-				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
-
-			prop match {
-				case DobjUri => setter(_.uri(f))
-				case Spec => setter(_.spec)
-				case Station => setter(_.station)
-				case Site => setter(_.site)
-				case Submitter => setter(_.submitter)
-				case FileName => setterOpt(_.fileName.map(f.createLiteral))
-				case _: BoolProperty => (_, _) => ()
-				case Keyword => (_, _) => ()
-				case _: StringCategProp => (_, _) => ()
-				case FileSize => setterOpt(_.sizeInBytes.map(f.createLiteral))
-				case SamplingHeight => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
-				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
-				case SubmissionEnd => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
-				case DataStart => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
-				case DataEnd => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
-				case _: GeoProp => (_, _) => ()
-			}
-		}
-
-		index.fetch(fetchRequest).map { oinfo =>
-			val bs = new QueryBindingSet(bindings)
-			setters.foreach { _(bs, oinfo) }
-			bs
-		}
-
 	}
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {

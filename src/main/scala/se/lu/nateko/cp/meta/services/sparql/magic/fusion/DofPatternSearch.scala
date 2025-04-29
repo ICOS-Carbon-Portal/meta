@@ -118,11 +118,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 		case ext: Extension =>
 
-			getDistinctKeywordsBinding(ext) match {
-				case Some(bindingName) => {
-					UniqueKeywordsPattern(bindingName, ext, find0(ext.getArg()))
-				}
-
+			findDistinctKeywordsBinding(ext) match {
 				case None => {
 					val groupByOpt = for(
 						(countVar, dobjCandVar) <- singleCountExtension(ext);
@@ -149,6 +145,11 @@ class DofPatternSearch(meta: CpmetaVocab){
 
 					groupByOpt.getOrElse(find0(ext.getArg()))
 				}
+
+				case Some(bindingName) => {
+					UniqueKeywordsPattern(bindingName, ext, find0(ext.getArg()))
+				}
+
 			}
 
 
@@ -163,7 +164,7 @@ class DofPatternSearch(meta: CpmetaVocab){
 	}
 }
 
-def getDistinctKeywordsBinding(ext: Extension): Option[String] = {
+def findDistinctKeywordsBinding(ext: Extension): Option[String] = {
 	ext.getElements().asScala.headOption.flatMap(elem =>
 		elem.getExpr() match {
 			case f: FunctionCall if f.getURI() == "http://meta.icos-cp.eu/ontologies/cpmeta/distinct_keywords" => {

@@ -6,26 +6,22 @@ import org.eclipse.rdf4j.query.algebra.QueryModelVisitor
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import org.eclipse.rdf4j.query.algebra.AbstractQueryModelNode
-import org.eclipse.rdf4j.query.algebra.Join
-// import org.eclipse.rdf4j.query.algebra.Join
 
 object DofPatternRewrite{
 
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit =
 		fusions.foreach{
-			case UniqueKeywordsFusion(bindingName, ext, innerFusions) => {
-				rewrite(ext.getArg(), innerFusions)
-				val Some(node) = findDataObjectFetchNode(ext.getArg()) : @unchecked
-				node.replaceWith(KeywordsNode(bindingName, node))
-				ext.replaceWith(ext.getArg())
+			case UniqueKeywordsFusion(bindingName, expression, fusion) => {
+				val Some(node) = rewriteForDobjListFetches(expression, fusion) : @unchecked
+				expression.replaceWith(KeywordsNode(bindingName, node))
 			}
-			case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
-			case DobjStatFusion(expr, statsNode) =>
-				expr.getArg.replaceWith(statsNode)
-				expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
-		}
+		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
+		case DobjStatFusion(expr, statsNode) =>
+			expr.getArg.replaceWith(statsNode)
+			expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
+	}
 
-	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
+	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion) : Option[DataObjectFetchNode] = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}
 
 		val subsumingParents = exprs.collect{case bto: BinaryTupleOperator => bto}
@@ -46,6 +42,9 @@ object DofPatternRewrite{
 
 		DanglingCleanup.clean(queryTop)
 
+		return Some(fetchExpr)
+	} else {
+		return None
 	}
 
 	def replaceNode(node: TupleExpr): Unit = node match{
@@ -71,8 +70,9 @@ object DofPatternRewrite{
 	}
 }
 
-case class KeywordsNode(bindingName: String, inner: DataObjectFetchNode) extends AbstractQueryModelNode with TupleExpr {
-	private val assuredVars: Seq[String] = Seq()
+// TODO: Find a away round using a completely custom node, or actually thiknk about each method.
+final case class KeywordsNode(bindingName: String, inner: DataObjectFetchNode) extends AbstractQueryModelNode with TupleExpr {
+	private val assuredVars: Seq[String] = Seq() // TODO: ???
 
 	override def clone() = new KeywordsNode(
 		bindingName,
@@ -85,31 +85,11 @@ case class KeywordsNode(bindingName: String, inner: DataObjectFetchNode) extends
 		case _: EvaluationStatistics.CardinalityCalculator => // this visitor crashes on 'alien' query nodes
 		case _ => v.meetOther(this)
 	}
-	override def visitChildren[X <: Exception](v: QueryModelVisitor[X]): Unit = {}
 
+	override def visitChildren[X <: Exception](v: QueryModelVisitor[X]): Unit = {} // TODO: Do something?
 	override def getAssuredBindingNames() = mkSet(assuredVars)
 	override def getBindingNames() = mkSet(assuredVars)
-
-	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {}
-
+	override def replaceChildNode(current: QueryModelNode, replacement: QueryModelNode): Unit = {} // TODO: Do something?
 	override def getSignature(): String = s"KeywordsExpr($inner)"
-
 	private def mkSet(strs: Seq[String]): java.util.Set[String] = new java.util.HashSet[String](strs.asJava)
-}
-
-private def findDataObjectFetchNode(expr: TupleExpr): Option[DataObjectFetchNode] = {
-	println(s"expr: $expr")
-	expr match {
-		case node: DataObjectFetchNode =>
-			Some(node)
-
-		case join: Join => {
-			findDataObjectFetchNode(join.getLeftArg()).orElse(
-				findDataObjectFetchNode(join.getRightArg())
-			)
-		}
-
-		case f : Filter => findDataObjectFetchNode(f.getArg())
-		case _ => None
-	}
 }

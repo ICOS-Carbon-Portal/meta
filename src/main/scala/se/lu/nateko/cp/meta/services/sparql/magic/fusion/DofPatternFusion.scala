@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 import org.eclipse.rdf4j.model.vocabulary.GEO
 import org.eclipse.rdf4j.model.{IRI, Literal, Value}
 import org.eclipse.rdf4j.query.algebra.{Extension, QueryModelNode, StatementPattern, TupleExpr}
+import org.eclipse.rdf4j.query.algebra
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index
 import se.lu.nateko.cp.meta.services.sparql.index.*
@@ -29,9 +30,9 @@ final case class DobjListFusion(
 	def nonMagicNodeIds = nonMagicQMNodes.map(System.identityHashCode).toSet
 }
 
-final case class UniqueKeywordsFusion(bindingName: String, innerExpr: Extension, inner: Seq[FusionPattern]) extends FusionPattern
+final case class UniqueKeywordsFusion(bindingName: String, expression: TupleExpr, fusion: DobjListFusion) extends FusionPattern
 
-class DofPatternFusion(meta: CpmetaVocab){
+final class DofPatternFusion(meta: CpmetaVocab){
 
 	def findFusions(patt: DofPattern): Seq[FusionPattern] = patt match{
 		case DofPattern.Empty => Nil
@@ -81,8 +82,15 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
-		case UniqueKeywordsPattern(bindingName, innerExpr, innerPattern) => {
-			Seq(UniqueKeywordsFusion(bindingName, innerExpr, findFusions(innerPattern)))
+		case UniqueKeywordsPattern(bindingName, expression, innerPattern) => {
+			val fusions : Seq[DobjListFusion] = findFusions(innerPattern).flatMap(fusion =>
+					fusion match {
+						case f: DobjListFusion => Some(f)
+						case _ => None
+					}
+				)
+
+			Seq(UniqueKeywordsFusion(bindingName, expression, fusions.head))
 		}
 	}
 

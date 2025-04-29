@@ -599,40 +599,25 @@ class QueryTests extends AsyncFunSpec {
 		}
 
 		it("sets binding for hasKeyword"){
-			// An object which has the unique keyword: "test keyword"
-			val objectId = "08ArGBmAQHiig_xtrwmprrL7"
+			// An object which has the unique keyword: "test keyword",
+			// associated with project keyword "ICOS" and spec keyword "carbon flux"
 			val objectName = "anthropogenic.persector.201911.nc"
 
-			val keywordsQuery = s"""
-				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?object ?keywords where {
-					?object cpmeta:hasName "$objectName" .
-					?object cpmeta:hasKeywords ?keywords
-				}
-			"""
-
-			/*
-			val List(keywordsResult) = runSparqlSync(keywordsQuery)
-			assert(keywordsResult.getBinding("object").getValue().stringValue().endsWith(objectId))
-			assert(keywordsResult.getBinding("keywords").getValue().stringValue() == "test keyword")
-			*/
-
-			// Include FILTER clause, which will be ignored in the current implementation,
-			// because of implementation difficulty.
+			// Include FILTER clause, which does not get included in magic query,
+			// but is sometimes part of the query from the portal.
 			val magicKeywordQuery = s"""
 				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select (cpmeta:distinct_keywords() AS ?keyword) ?spec where {
+				select (cpmeta:distinct_keywords() AS ?keywords) where {
 					FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/")) .
 					?obj cpmeta:hasObjectSpec ?spec .
+					?obj cpmeta:hasName "$objectName" .
 					?obj cpmeta:hasKeyword ?k
 				}
 				limit 5
 			"""
 
-			val results = runSparqlSync(magicKeywordQuery)
-			info(s"results: $results")
-			// assert(magicResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
-			val resultKeywords = results.map(_.getBinding("keyword").getValue().stringValue()).toSet
+			val List(magicResult) = runSparqlSync(magicKeywordQuery)
+			val resultKeywords = magicResult.getBinding("keywords").getValue().stringValue().split(",").toSet
 			assert(resultKeywords == Set("test keyword", "carbon flux", "ICOS"))
 		}
 	}

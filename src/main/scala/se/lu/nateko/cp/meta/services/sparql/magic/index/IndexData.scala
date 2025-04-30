@@ -140,12 +140,6 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
-
-						// Covers the case when keywords have been added to a spec,
-						// before any data object is associated with that spec.
-						// TODO: This makes indexing quite a lot slower, and could be removed
-						// if specs can be reliably identified without relying on hasObjectSpec.
-						updateSpecOwnKeywords(spec, true, Set.empty)
 					}
 				}
 

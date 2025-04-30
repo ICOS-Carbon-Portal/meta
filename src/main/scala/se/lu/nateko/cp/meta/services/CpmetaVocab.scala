@@ -39,6 +39,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val dataObjectClass = getRelativeRaw("DataObject")
 	val docObjectClass = getRelativeRaw("DocumentObject")
 	val dataObjectSpecClass = getRelativeRaw("DataObjectSpec")
+	val simpleObjectSpecClass = getRelativeRaw("SimpleObjectSpec")
 	val datasetSpecClass = getRelativeRaw("DatasetSpec")
 	val tabularDatasetSpecClass = getRelativeRaw("TabularDatasetSpec")
 	val plainCollectionClass = getRelativeRaw("PlainCollection")

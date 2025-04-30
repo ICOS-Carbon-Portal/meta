@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.index
 
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
@@ -345,7 +346,8 @@ final class IndexData(nObjects: Int)(
 							}
 						}
 						case None => if (changedKeywords.nonEmpty) {
-								val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
+								val isSpec = StatementSource.hasStatement(subj, RDF.TYPE, vocab.dataObjectSpecClass) ||
+									StatementSource.hasStatement(subj, RDF.TYPE, vocab.simpleObjectSpecClass)
 
 								if (isSpec)
 									updateSpecOwnKeywords(subj, isAssertion, changedKeywords)

@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.eclipse.rdf4j.model.Resource
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import scala.util.Random
+import org.eclipse.rdf4j.model.vocabulary.RDF
 
 private val factory = SimpleValueFactory.getInstance()
 
@@ -78,6 +79,8 @@ class IndexDataTest extends AnyFunSpec {
 		// Shuffle the rest of the statements.
 		val statements =
 			Seq(
+				Rdf4jStatement(spec, RDF.TYPE, vocab.dataObjectSpecClass),
+				Rdf4jStatement(otherSpec, RDF.TYPE, vocab.dataObjectSpecClass),
 				Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")),
 				Rdf4jStatement(otherDataObject, hasKeywords, factory.createLiteral("other-object keyword"))
 			)
@@ -162,6 +165,7 @@ class IndexDataTest extends AnyFunSpec {
 
 		// Set up object->spec->project chain
 		val objSpecProj = Random.shuffle(Seq(
+			(true, Rdf4jStatement(spec, RDF.TYPE, vocab.dataObjectSpecClass)),
 			(true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword"))),
 			(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
 			(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),

@@ -42,20 +42,21 @@ class CpEvaluationStrategyFactory(
 					val statsBindings = bindingsForStatsFetch(statsFetch).toIndexedSeq
 					qEvalStep(_ => statsBindings.iterator)
 
-				case KeywordsNode(bindingName, doFetch) => {
-					qEvalStep(existingBindings => {
+				case KeywordsFetchNode(bindingName, doFetch) =>
+					qEvalStep: existingBindings =>
+
 						val fetchRequest = getFilterEnrichedDobjFetch(doFetch, existingBindings)
-						val keywords = index.getUniqueKeywords(fetchRequest)
-						val bs = new QueryBindingSet(existingBindings)
-						bs.setBinding(bindingName, index.factory.createLiteral(keywords.mkString(",")))
-						Seq(bs).iterator
-					})
-				}
+
+						index.getUniqueKeywords(fetchRequest.filter).iterator.map: kw =>
+							val bs = new QueryBindingSet()
+							bs.setBinding(bindingName, index.factory.createLiteral(kw))
+							bs
+
 
 				case _ => super.precompile(expr, context)
 
 			override def optimize(expr: TupleExpr, stats: EvaluationStatistics, bindings: BindingSet): TupleExpr = {
-				logger.debug("Original query model:\n{}", expr)
+				logger.info("Original query model:\n{}", expr)
 
 				val queryExpr: TupleExpr = TupleExprCloner.cloneExpr(expr)
 
@@ -67,11 +68,11 @@ class CpEvaluationStrategyFactory(
 					val fusions = fuser.findFusions(pattern)
 					DofPatternRewrite.rewrite(queryExpr, fusions)
 
-					logger.debug("Fused query model:\n{}", queryExpr)
+					logger.info("Fused query model:\n{}", queryExpr)
 
 				val finalExpr = super.optimize(queryExpr, stats, bindings)
 
-				logger.debug("Fully optimized final query model:\n{}", finalExpr)
+				logger.info("Fully optimized final query model:\n{}", finalExpr)
 				finalExpr
 			}
 		}

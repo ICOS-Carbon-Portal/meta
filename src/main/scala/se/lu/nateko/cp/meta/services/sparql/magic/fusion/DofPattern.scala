@@ -19,8 +19,8 @@ object DofPattern{
 	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
 }
 
-final case class UniqueKeywordsPattern(bindingName: String, expression: Extension, pattern: DofPattern) extends DofPattern {
-  override protected def joinInner(other: DofPattern): DofPattern = {
+final case class UniqueKeywordsPattern(bindingName: String, expression: Extension, inner: PlainDofPattern) extends DofPattern {
+	override protected def joinInner(other: DofPattern): DofPattern = {
 		// TODO: Do something, even if this case should never happen.
 		???
 	}
@@ -93,12 +93,12 @@ final case class ProjectionDofPattern(
 	)
 }
 
-final case class LeftJoinDofPattern(val left: DofPattern, val optionals: Seq[DofPattern]) extends DofPattern{
+final case class LeftJoinDofPattern(left: DofPattern, optionals: Seq[DofPattern]) extends DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern = new LeftJoinDofPattern(left.join(other), optionals)
 	def joinOptional(other: DofPattern) = new LeftJoinDofPattern(left, optionals :+ other)
 }
 
-final case class DofPatternUnion(val subs: Seq[DofPattern], val union: Union) extends DofPattern{
+final case class DofPatternUnion(subs: Seq[DofPattern], union: Union) extends DofPattern{
 	protected def joinInner(other: DofPattern): DofPattern = other match{
 		case lj: LeftJoinDofPattern =>
 			new LeftJoinDofPattern(join(lj.left), lj.optionals)
@@ -125,8 +125,8 @@ final case class ValueInfoPattern(vals: Option[Set[Value]], providers: Seq[Tuple
 
 final case class OrderPattern(expr: Order, sortVar: NamedVar, descending: Boolean)
 
-final case class OffsetPattern(val slice: Slice){
+final case class OffsetPattern(slice: Slice){
 	def offset = if(slice.hasOffset) slice.getOffset.toInt else 0
 }
 
-final case class StatGroupByPattern(val countVar: String, val dobjVar: String, val groupVars: Set[String], val expr: Extension)
+final case class StatGroupByPattern(countVar: String, dobjVar: String, groupVars: Set[String], expr: Extension)

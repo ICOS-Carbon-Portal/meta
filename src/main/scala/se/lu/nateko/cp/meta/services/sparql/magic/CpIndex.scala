@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import CpIndex.*
+import org.roaringbitmap.buffer.MutableRoaringBitmap
 
 trait ObjSpecific{
 	def hash: Sha256Sum
@@ -93,7 +94,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
-		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
+		val filter = mkFilter(req.filter)
 
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
@@ -123,10 +124,12 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWr
 		}
 	}
 
-	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
-		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
-		data.getObjectKeywords(objectIds)
-	}
+	def getUniqueKeywords(filter: Filter): Set[String] = readLocked:
+		data.getObjectKeywords(mkFilter(filter))
+
+
+	private def mkFilter(filter: Filter): MutableRoaringBitmap =
+		filtering(filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
 
 	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 

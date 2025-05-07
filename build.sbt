@@ -25,7 +25,7 @@ lazy val metaCore = (project in file("core"))
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
-			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
+			"org.roaringbitmap"      % "RoaringBitmap"                      % "1.3.0",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
 		),
 		cpTsGenTypeMap := Map(

@@ -116,41 +116,39 @@ class DofPatternSearch(meta: CpmetaVocab){
 				case _ => DofPattern.Empty
 			}
 
-		case ext: Extension =>
+		// this will have to be changed to be used only for the StatsGroupByPattern case
+		// and a new handling/search needs to be done for keywords fetching, using as criterion that
+		// the query is asking for a single distinct variable, and that variable happens to be a keyword var
+		// in the inner PlainDofPattern inside the Projection inside the Distinct
+		case ext: Extension => findDistinctKeywordsBinding(ext).fold{
+			val groupByOpt = for(
+				(countVar, dobjCandVar) <- singleCountExtension(ext);
+				group <- ext.getArg.asOptInstanceOf[Group];
+				grpVars = group.getGroupBindingNames.asScala.toSet;
+				countedVar <- singleVarCountGroup(group)
+					if (countedVar == dobjCandVar) && (grpVars.size == 3 || grpVars.size == 4)
+			) yield {
+				val statGbPatt = Some(new StatGroupByPattern(countVar, dobjCandVar, grpVars, ext))
 
-			findDistinctKeywordsBinding(ext) match {
-				case None => {
-					val groupByOpt = for(
-						(countVar, dobjCandVar) <- singleCountExtension(ext);
-						group <- ext.getArg.asOptInstanceOf[Group];
-						grpVars = group.getGroupBindingNames.asScala.toSet;
-						countedVar <- singleVarCountGroup(group)
-							if (countedVar == dobjCandVar) && (grpVars.size == 3 || grpVars.size == 4);
-						_ = countedVar //to prevent spurious unused warning, see https://github.com/scala/bug/issues/10287
-					) yield {
-						val statGbPatt = Some(new StatGroupByPattern(countVar, dobjCandVar, grpVars, ext))
-
-						def mergeWithInner(patt: DofPattern): DofPattern = patt match{
-							case pdp @ ProjectionDofPattern(_, _, _, _, None) => pdp.groupBy match{
-								case None => pdp.copy(groupBy = statGbPatt)
-								case Some(_) => pdp
-							}
-							case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
-								pdp.copy(outer = Some(mergeWithInner(outer)))
-							case inner =>
-								ProjectionDofPattern(inner, None, statGbPatt, None, None)
-						}
-						mergeWithInner(find0(group.getArg))
+				def mergeWithInner(patt: DofPattern): DofPattern = patt match{
+					case pdp @ ProjectionDofPattern(_, _, _, _, None) => pdp.groupBy match{
+						case None => pdp.copy(groupBy = statGbPatt)
+						case Some(_) => pdp
 					}
-
-					groupByOpt.getOrElse(find0(ext.getArg()))
+					case pdp @ ProjectionDofPattern(_, _, _, _, Some(outer)) =>
+						pdp.copy(outer = Some(mergeWithInner(outer)))
+					case inner =>
+						ProjectionDofPattern(inner, None, statGbPatt, None, None)
 				}
-
-				case Some(bindingName) => {
-					UniqueKeywordsPattern(bindingName, ext, find0(ext.getArg()))
-				}
-
+				mergeWithInner(find0(group.getArg))
 			}
+
+			groupByOpt.getOrElse(find0(ext.getArg()))
+		}{
+			bindingName => find0(ext.getArg()) match
+				case plain: PlainDofPattern => UniqueKeywordsPattern(bindingName, ext, plain)
+				case _ => DofPattern.Empty
+		}
 
 
 		case grp: Group =>

@@ -60,16 +60,19 @@ final class IndexData(nObjects: Int)(
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
 	}
 
-	def getObjectKeywords(objectIds: ImmutableRoaringBitmap): Iterable[String] = {
-		categoryKeys(Keyword).flatMap { kw =>
-			val bitmap = keywordBitmap(Seq(kw))
-			if (BufferFastAggregation.and(objectIds, bitmap).isEmpty()) {
-				None
-			} else {
-				Some(kw)
-			}
-		}
-	}
+	def getObjectKeywords(filter: ImmutableRoaringBitmap): Set[String] =
+
+		def intersectingKeys(prop: CategProp): Iterable[prop.ValueType] =
+			categMap(prop).collect:
+				case (key, bm) if ImmutableRoaringBitmap.intersects(bm, filter) => key
+
+		val specsInScope = intersectingKeys(Spec).toIndexedSeq
+		val directKwsInScope = intersectingKeys(Keyword)
+		val indirectKwsInScope = keywordsToSpecs.collect:
+			case (kw, specs) if specsInScope.exists(specs.contains) => kw
+
+		(directKwsInScope ++ indirectKwsInScope).toSet
+
 
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
@@ -123,7 +126,7 @@ final class IndexData(nObjects: Int)(
 		val objectMap = categMap(Keyword)
 		val objects = keywords.flatMap(objectMap.get)
 
-		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
+		BufferFastAggregation.or(Seq(specObjects, objects).flatten*)
 	}
 
 	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {

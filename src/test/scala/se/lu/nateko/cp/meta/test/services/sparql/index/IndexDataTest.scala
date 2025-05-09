@@ -32,7 +32,6 @@ class IndexDataTest extends AnyFunSpec {
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
 	val seed = Math.abs(Random.nextInt())
-	// val seed = 1594785910
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -185,16 +184,19 @@ class IndexDataTest extends AnyFunSpec {
 		testCase("object keyword is added") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
 
-			val statements = objSpecProj :+ addObjectKeyword
-			assertIndex(
-				statements,
-				Map(
-					"object keyword" -> objectBitmap,
-					"object edited" -> objectBitmap,
-					"spec keyword" -> objectBitmap,
-					"project keyword" -> objectBitmap
+			// Try all permutations of the basic case here, so we don't have to do it in all other tests.
+			objSpecProj.permutations.foreach(baseStatements => {
+				val statements = baseStatements :+ addObjectKeyword
+				assertIndex(
+					statements,
+					Map(
+						"object keyword" -> objectBitmap,
+						"object edited" -> objectBitmap,
+						"spec keyword" -> objectBitmap,
+						"project keyword" -> objectBitmap
+					)
 				)
-			)
+			})
 		}
 
 		testCase("object keyword is removed") {

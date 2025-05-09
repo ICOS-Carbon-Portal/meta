@@ -145,9 +145,7 @@ final class IndexData(nObjects: Int)(
 
 			case RDF.TYPE => {
 				if (obj == vocab.dataObjectSpecClass || obj == vocab.simpleObjectSpecClass) {
-					if (!isSpec(subj)) {
-						categMap(Spec).put(subj, emptyBitmap)
-					}
+					registerSpec(subj)
 				}
 			}
 
@@ -338,6 +336,8 @@ final class IndexData(nObjects: Int)(
 			case `hasAssociatedProject` => obj match
 					case proj: IRI =>
 						updateSpecProjectKeywords(subj, isAssertion, getKeywords(proj))
+						registerSpec(subj)
+
 					case _ =>
 
 			case `hasKeywords` => parseKeywords(obj).foreach: changedKeywords =>
@@ -347,11 +347,11 @@ final class IndexData(nObjects: Int)(
 								updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
 							}
 						}
-						case None => if (changedKeywords.nonEmpty) {
-								if (isSpec(subj))
+						case None =>
+							if (changedKeywords.nonEmpty) {
+								if (isSpec(subj)) {
 									updateSpecOwnKeywords(subj, isAssertion, changedKeywords)
-								else { // assuming subj is a Project
-									println(s"Updating project keywords: $changedKeywords")
+								} else { // assuming subj is a Project
 									StatementSource.getPropValueHolders(vocab.hasAssociatedProject, subj)
 										.foreach: spec =>
 											updateSpecProjectKeywords(spec, isAssertion, changedKeywords)
@@ -513,12 +513,15 @@ final class IndexData(nObjects: Int)(
 			if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
 		initOk.remove(obj.idx)
 
-	private def isSpec(iri: IRI)(using StatementSource, CpmetaVocab): Boolean = {
-		val vocab = summon[CpmetaVocab]
-
+	private def isSpec(iri: IRI): Boolean = {
 		categMap(Spec).contains(iri)
-		|| StatementSource.hasStatement(iri, RDF.TYPE, vocab.dataObjectSpecClass)
-		|| StatementSource.hasStatement(iri, RDF.TYPE, vocab.simpleObjectSpecClass)
+	}
+
+	private def registerSpec(spec: IRI) = {
+		categMap(Spec).updateWith(spec) {
+			case None => Some(emptyBitmap)
+			case existing => existing
+		}
 	}
 
 end IndexData

@@ -324,7 +324,7 @@ object IriSerializer extends Serializer[IRI]:
 class IndexedIriWriter(index: Map[IRI, Int]) extends Serializer[IRI]:
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI = ???
 	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
-		val idx = if iri == null then -1 else index(iri)
+		val idx = if iri == null then -1 else index.getOrElse(iri, -1)
 		output.writeInt(idx)
 
 class IndexedIriReader(index: IndexedSeq[IRI]) extends Serializer[IRI]:

@@ -13,6 +13,8 @@ import org.eclipse.rdf4j.model.Resource
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import scala.util.Random
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.scalatest.AppendedClues.convertToClueful
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 
 private val factory = SimpleValueFactory.getInstance()
 
@@ -30,6 +32,7 @@ class IndexDataTest extends AnyFunSpec {
 	import vocab.{hasKeywords, hasName, hasObjectSpec, hasAssociatedProject}
 
 	val seed = Math.abs(Random.nextInt())
+	// val seed = 1594785910
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
 
@@ -123,7 +126,7 @@ class IndexDataTest extends AnyFunSpec {
 	}
 
 	describe("Data object keywords are kept up-to-date when") {
-		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]) = {
+		def runStatements(statements: Seq[(Boolean, Rdf4jStatement)]): Map[String, ImmutableRoaringBitmap] = {
 			val data = IndexData(100)()
 			var store: Seq[Rdf4jStatement] = Seq()
 
@@ -159,6 +162,10 @@ class IndexDataTest extends AnyFunSpec {
 			).toMap
 		}
 
+		def assertIndex(statements: Seq[(Boolean, Rdf4jStatement)], expectation: Map[String, ImmutableRoaringBitmap]) = {
+			assert(runStatements(statements) == expectation) withClue s"\nStatements:\n${statements.mkString("\n")}"
+		}
+
 		val dataObject: IRI = objectIRI("oAzNtfjXddcnG_irI8fJT7W6")
 		val spec: IRI = projectIRI("spec")
 		val project: IRI = projectIRI("project")
@@ -178,21 +185,28 @@ class IndexDataTest extends AnyFunSpec {
 		testCase("object keyword is added") {
 			val addObjectKeyword = (true, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object edited")))
 
-			assert(runStatements(objSpecProj :+ addObjectKeyword) == Map(
-				"object keyword" -> objectBitmap,
-				"object edited" -> objectBitmap,
-				"spec keyword" -> objectBitmap,
-				"project keyword" -> objectBitmap
-			))
+			val statements = objSpecProj :+ addObjectKeyword
+			assertIndex(
+				statements,
+				Map(
+					"object keyword" -> objectBitmap,
+					"object edited" -> objectBitmap,
+					"spec keyword" -> objectBitmap,
+					"project keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("object keyword is removed") {
 			val removeObjectKeyword = (false, Rdf4jStatement(dataObject, hasKeywords, factory.createLiteral("object keyword")))
 
-			assert(runStatements(objSpecProj :+ removeObjectKeyword) == Map(
-				"spec keyword" -> objectBitmap,
-				"project keyword" -> objectBitmap
-			))
+			assertIndex(
+				objSpecProj :+ removeObjectKeyword,
+				Map(
+					"spec keyword" -> objectBitmap,
+					"project keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("associated spec is edited") {
@@ -201,12 +215,15 @@ class IndexDataTest extends AnyFunSpec {
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword")))
 			)
 
-			assert(runStatements(objSpecProj ++ editSpec) == Map(
-				"object keyword" -> objectBitmap,
-				"spec edited" -> objectBitmap,
-				"spec other edit" -> objectBitmap,
-				"project keyword" -> objectBitmap
-			))
+			assertIndex(
+				objSpecProj ++ editSpec,
+				Map(
+					"object keyword" -> objectBitmap,
+					"spec edited" -> objectBitmap,
+					"spec other edit" -> objectBitmap,
+					"project keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("associated project is edited") {
@@ -215,20 +232,26 @@ class IndexDataTest extends AnyFunSpec {
 				(false, Rdf4jStatement(project, hasKeywords, factory.createLiteral("project keyword")))
 			)
 
-			assert(runStatements(objSpecProj ++ editProject) == Map(
-				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap,
-				"project edited" -> objectBitmap,
-				"project other edit" -> objectBitmap
-			))
+			assertIndex(
+				objSpecProj ++ editProject,
+				Map(
+					"object keyword" -> objectBitmap,
+					"spec keyword" -> objectBitmap,
+					"project edited" -> objectBitmap,
+					"project other edit" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("associated project is removed") {
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
-			assert(runStatements(objSpecProj :+ removeProject) == Map(
-				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap
-			))
+			assertIndex(
+				objSpecProj :+ removeProject,
+				Map(
+					"object keyword" -> objectBitmap,
+					"spec keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("another project is added") {
@@ -239,19 +262,25 @@ class IndexDataTest extends AnyFunSpec {
 					(true, Rdf4jStatement(spec, hasAssociatedProject, otherProject))
 				)
 
-			assert(runStatements((objSpecProj) ++ addOtherProject) == Map(
-				"object keyword" -> objectBitmap,
-				"spec keyword" -> objectBitmap,
-				"project keyword" -> objectBitmap,
-				"other project keyword" -> objectBitmap
-			))
+			assertIndex(
+				(objSpecProj) ++ addOtherProject,
+				Map(
+					"object keyword" -> objectBitmap,
+					"spec keyword" -> objectBitmap,
+					"project keyword" -> objectBitmap,
+					"other project keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("associated spec is removed") {
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
-			assert(runStatements(objSpecProj :+ removeSpec) == Map(
-				"object keyword" -> objectBitmap
-			))
+			assertIndex(
+				objSpecProj :+ removeSpec,
+				Map(
+					"object keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("spec with keywords overlapping data object is removed") {
@@ -262,7 +291,7 @@ class IndexDataTest extends AnyFunSpec {
 			))
 				:+ (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 
-			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
+			assertIndex(statements, Map("overlap" -> objectBitmap))
 		}
 
 		testCase("project with keywords overlapping data object is removed") {
@@ -275,7 +304,7 @@ class IndexDataTest extends AnyFunSpec {
 			)) :+
 				(false, Rdf4jStatement(spec, hasAssociatedProject, project))
 
-			assert(runStatements(statements) == Map("overlap" -> objectBitmap, "spec keyword" -> objectBitmap))
+			assertIndex(statements, Map("overlap" -> objectBitmap, "spec keyword" -> objectBitmap))
 		}
 
 		testCase("spec or project with overlapping keywords is removed") {
@@ -294,15 +323,21 @@ class IndexDataTest extends AnyFunSpec {
 			val removeProject = (false, Rdf4jStatement(spec, hasAssociatedProject, project))
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 
-			assert(runStatements(statements :+ removeProject) == Map(
-				"object keyword" -> objectBitmap,
-				"otherProject keyword" -> objectBitmap,
-				"overlap" -> objectBitmap
-			))
+			assertIndex(
+				statements :+ removeProject,
+				Map(
+					"object keyword" -> objectBitmap,
+					"otherProject keyword" -> objectBitmap,
+					"overlap" -> objectBitmap
+				)
+			)
 
-			assert(runStatements(statements :+ removeSpec) == Map(
-				"object keyword" -> objectBitmap
-			))
+			assertIndex(
+				statements :+ removeSpec,
+				Map(
+					"object keyword" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("overlapping keywords in spec is removed") {
@@ -313,9 +348,12 @@ class IndexDataTest extends AnyFunSpec {
 			)) :+
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap")))
 
-			assert(runStatements(statements) == Map(
-				"overlap" -> objectBitmap
-			))
+			assertIndex(
+				statements,
+				Map(
+					"overlap" -> objectBitmap
+				)
+			)
 		}
 
 		testCase("overlapping keywords in project is removed") {
@@ -329,7 +367,7 @@ class IndexDataTest extends AnyFunSpec {
 			)) :+
 				(false, Rdf4jStatement(project, hasKeywords, overlap))
 
-			assert(runStatements(statements) == Map("overlap" -> objectBitmap))
+			assertIndex(statements, Map("overlap" -> objectBitmap))
 		}
 
 		testCase("spec with keywords is added before object association") {
@@ -339,7 +377,7 @@ class IndexDataTest extends AnyFunSpec {
 				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec))
 			)
 
-			assert(runStatements(statements) == Map("spec keyword" -> objectBitmap))
+			assertIndex(statements, Map("spec keyword" -> objectBitmap))
 		}
 	}
 }

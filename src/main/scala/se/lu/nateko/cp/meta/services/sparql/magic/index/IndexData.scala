@@ -130,14 +130,20 @@ final class IndexData(nObjects: Int)(
 				obj match {
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
-							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+							val specBitmap = categMap(Spec).getOrElseUpdate(spec, emptyBitmap)
+
 							if (isAssertion) {
+								specBitmap.add(oe.idx)
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
 								addStat(oe, initOk)
-							} else if (spec === oe.spec) {
-								removeStat(oe, initOk)
-								oe.spec = null
+							} else {
+								specBitmap.remove(oe.idx)
+
+								if (spec === oe.spec) {
+									removeStat(oe, initOk)
+									oe.spec = null
+								}
 							}
 						}
 					}

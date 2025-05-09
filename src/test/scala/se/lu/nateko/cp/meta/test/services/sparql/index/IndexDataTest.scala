@@ -381,6 +381,21 @@ class IndexDataTest extends AnyFunSpec {
 
 			assertIndex(statements, Map("spec keyword" -> objectBitmap))
 		}
+
+		testCase("keywords are added to spec after last object was removed") {
+			val statements = Seq(
+				// Add spec and object
+				(true, Rdf4jStatement(spec, RDF.TYPE, vocab.dataObjectSpecClass)),
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				// Remove the object, and add keyword to spec
+				(false, Rdf4jStatement(dataObject, hasObjectSpec, spec)),
+				(true, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("spec keyword"))),
+				// Add object again. It should receive the spec keyword
+				(true, Rdf4jStatement(dataObject, hasObjectSpec, spec))
+			)
+
+			assertIndex(statements, Map("spec keyword" -> objectBitmap))
+		}
 	}
 }
 

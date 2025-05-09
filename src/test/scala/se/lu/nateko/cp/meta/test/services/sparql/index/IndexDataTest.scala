@@ -277,12 +277,7 @@ class IndexDataTest extends AnyFunSpec {
 
 		testCase("associated spec is removed") {
 			val removeSpec = (false, Rdf4jStatement(dataObject, hasObjectSpec, spec))
-			assertIndex(
-				objSpecProj :+ removeSpec,
-				Map(
-					"object keyword" -> objectBitmap
-				)
-			)
+			assertIndex(objSpecProj :+ removeSpec, Map("object keyword" -> objectBitmap))
 		}
 
 		testCase("spec with keywords overlapping data object is removed") {
@@ -334,12 +329,7 @@ class IndexDataTest extends AnyFunSpec {
 				)
 			)
 
-			assertIndex(
-				statements :+ removeSpec,
-				Map(
-					"object keyword" -> objectBitmap
-				)
-			)
+			assertIndex(statements :+ removeSpec, Map("object keyword" -> objectBitmap))
 		}
 
 		testCase("overlapping keywords in spec is removed") {
@@ -350,12 +340,7 @@ class IndexDataTest extends AnyFunSpec {
 			)) :+
 				(false, Rdf4jStatement(spec, hasKeywords, factory.createLiteral("overlap")))
 
-			assertIndex(
-				statements,
-				Map(
-					"overlap" -> objectBitmap
-				)
-			)
+			assertIndex(statements, Map("overlap" -> objectBitmap))
 		}
 
 		testCase("overlapping keywords in project is removed") {

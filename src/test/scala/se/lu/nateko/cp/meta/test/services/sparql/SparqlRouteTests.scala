@@ -106,7 +106,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 		it("Syntax error in query"):
 			val query = "selecct * where { ?s ?p ?o }"
-			
+
 			testRoute(query):
 				assert(status === StatusCodes.BadRequest)
 				assertCORS()

@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.test.services.sparql
 
 import se.lu.nateko.cp.meta.test.tags.SlowRoute
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.model.headers.CacheDirectives.*

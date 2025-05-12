@@ -28,9 +28,18 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 	lazy val db = TestDb()
 
-	val numberOfParallelQueries = 2
 	private val reqOrigin = "https://example4567.icos-cp.eu"
-	val sparqlConfig = new SparqlServerConfig(5, 2, 2, numberOfParallelQueries, 0, 10, 8388608, Seq("test@nateko.lu.se"))
+	val sparqlConfig = new SparqlServerConfig(
+		maxQueryRuntimeSec = 5,
+		quotaPerMinute = 2,
+		quotaPerHour = 2,
+		maxParallelQueries = 2,
+		maxQueryQueue = 0,
+		banLength = 10,
+		maxCacheableQuerySize = 8388608,
+		adminUsers = Seq("test@nateko.lu.se")
+	)
+
 	given default(using system: ActorSystem): RouteTestTimeout = RouteTestTimeout(10.seconds)
 
 	// TODO: Changing this signature to just Route and updating tests accordingly breaks things.
@@ -62,7 +71,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 	describe("SparqlRoute"):
 		it("Correct query should produce correct result and get cached"):
 			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
-			val query = s"""select * where { 
+			val query = s"""select * where {
 						VALUES ?s { <$uri> }
 						?s ?p ?o } limit 1"""
 			var firstResponse: String = ""
@@ -171,7 +180,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 
 			val initRequests = Future.sequence(Seq(
 				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.BadRequest), 
+					assert(status == StatusCodes.BadRequest),
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.BadRequest))
 				)

@@ -162,17 +162,28 @@ class SerializationTests extends AsyncFunSpec {
 		it("retains categMaps keys associated with empty bitmaps") {
 			val cpmeta = CpmetaVocab(repo.getValueFactory)
 			val spec = repo.getValueFactory.createIRI("test:spec")
-			val original_data = IndexData(5)()
+			val empty_spec = repo.getValueFactory.createIRI("test:empty_spec")
+			// Must be a valid data object
+			val dataObject = repo.getValueFactory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")
+			val index_data = IndexData(5)()
+
+			// Insert one lonely spec, and one with an associated data object
 			repo.getSail().accessEagerly {
-				original_data.processUpdate(Rdf4jStatement(spec, RDF.TYPE, cpmeta.dataObjectSpecClass), true, cpmeta)
+				index_data.processUpdate(Rdf4jStatement(empty_spec, RDF.TYPE, cpmeta.dataObjectSpecClass), true, cpmeta)
+				index_data.processUpdate(Rdf4jStatement(dataObject, cpmeta.hasObjectSpec, spec), true, cpmeta)
 			}
-			val original_keys = original_data.categoryKeys(Spec)
-			val index = CpIndex(repo.getSail, Future.never, original_data)
+
+			// Serialize index_data through CpIndex in a bit of a roundabout way...
+			val index = CpIndex(repo.getSail, Future.never, index_data)
+
+			// Make sure we start out with the expected spec keys
+			val original_keys = index_data.categoryKeys(Spec)
+			assert(original_keys.toSet == Set(empty_spec, spec))
 
 			for serialized <- saveToBytes(index); loaded <- loadFromBytes(serialized)
 			yield {
-				assert(original_keys.toSet == Set("test:spec"))
-				assert(loaded.categoryKeys(Spec) == original_data.categoryKeys(Spec))
+				// After deserialization, both specs should still be known
+				assert(loaded.categoryKeys(Spec) == original_keys)
 			}
 		}
 	}

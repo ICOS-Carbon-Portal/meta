@@ -11,7 +11,18 @@ import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.{And, CategFilter, ContFilter, DataObjectFetch, Exists, FileName, SortBy, Station, SubmissionEnd}
+import se.lu.nateko.cp.meta.services.sparql.index.{
+	And,
+	CategFilter,
+	ContFilter,
+	DataObjectFetch,
+	Exists,
+	FileName,
+	SortBy,
+	Station,
+	SubmissionEnd,
+	Spec
+}
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpIndex, IndexHandler}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
@@ -21,8 +32,12 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
-class SerializationTests extends AsyncFunSpec{
+import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
+
+class SerializationTests extends AsyncFunSpec {
 
 	def printToBytesAndParseBack[T](obj: T): T =
 		val os = ByteArrayOutputStream()
@@ -43,10 +58,9 @@ class SerializationTests extends AsyncFunSpec{
 		val input = Input(is)
 		kryo.readClassAndObject(input).asInstanceOf[T]
 
-
 	def saveToBytes(idx: CpIndex)(using Kryo): Future[Array[Byte]] = {
 		val os = ByteArrayOutputStream()
-		IndexHandler.storeToStream(idx, os).map{_ => os.toByteArray}
+		IndexHandler.storeToStream(idx, os).map { _ => os.toByteArray }
 	}
 
 	def loadFromBytes(arr: Array[Byte])(using Kryo): Future[IndexData] = {
@@ -54,15 +68,14 @@ class SerializationTests extends AsyncFunSpec{
 		IndexHandler.restoreFromStream(is)
 	}
 
-	def roundTrip(sail: Sail)(using Kryo) = //: Future[(CpIndex, CpIndex)] =
-		for(
+	def roundTrip(sail: Sail)(using Kryo) = // : Future[(CpIndex, CpIndex)] =
+		for (
 			idx <- Future(CpIndex(sail, Future.never, 5));
 			arr <- saveToBytes(idx);
 			data <- loadFromBytes(arr)
 		) yield idx -> CpIndex(sail, Future.never, data)
 
 	def smallRepo = Loading.fromResource("/rdf/someDobjsAndSpecs.ttl", "http://test.icos-cp.eu/blabla", RDFFormat.TURTLE)
-
 
 	describe("Small index created, object deleted, leaving orphan data type"):
 		it("successfully performs serialization/deserialization round trip"):
@@ -76,7 +89,7 @@ class SerializationTests extends AsyncFunSpec{
 			Using(repo.getSail.getConnection): baseconn =>
 				val conn = baseconn.asInstanceOf[NotifyingSailConnection]
 				conn.addConnectionListener(listener)
-				//deleting an object, leaving one data type "an orphan"
+				// deleting an object, leaving one data type "an orphan"
 				val delObj = repo.getValueFactory.createIRI("https://meta.icos-cp.eu/objects/hoidzqcaqmCU3mOZ435r2crG")
 				conn.begin()
 				conn.removeStatements(delObj, null, null)
@@ -84,21 +97,20 @@ class SerializationTests extends AsyncFunSpec{
 			repo.shutDown()
 
 			for arr <- saveToBytes(idx); _ <- loadFromBytes(arr)
-				yield succeed
+			yield succeed
 
-
-	describe("CpIndex created from test RDF in a turtle file, and round-tripped"){
+	describe("CpIndex created from test RDF in a turtle file, and round-tripped") {
 		val repo = smallRepo
 		given Kryo = IndexHandler.makeKryo
-		val idxFut = roundTrip(repo.getSail).andThen{_ =>
+		val idxFut = roundTrip(repo.getSail).andThen { _ =>
 			repo.shutDown()
 		}
 		val toData: CpIndex => IndexData = _.serializableData.asInstanceOf[IndexData]
 		val droughtObjHash = Sha256Sum.fromBase64Url("8KgcKLxNMRE-AtEEEFH6e_yd").get
 		val etcObjHash = Sha256Sum.fromBase64Url("hoidzqcaqmCU3mOZ435r2crG").get
 
-		def origAndCopy[T](title: String, expectation: T)(theTest: CpIndex => T) = it(title){
-			idxFut.map{(idx0, idx1) =>
+		def origAndCopy[T](title: String, expectation: T)(theTest: CpIndex => T) = it(title) {
+			idxFut.map { (idx0, idx1) =>
 				assertResult(expectation, "(original index)")(theTest(idx0))
 				assertResult(expectation, "(de-/serialized index)")(theTest(idx1))
 			}
@@ -116,35 +128,53 @@ class SerializationTests extends AsyncFunSpec{
 
 		origAndCopy("should contain expected number of objects", 2)(_.size)
 
-		origAndCopy("should correctly filter by submission date", 1){idx =>
+		origAndCopy("should correctly filter by submission date", 1) { idx =>
 			val filter = ContFilter(SubmissionEnd, MinFilter(Instant.parse("2019-06-01T00:00:00Z").toEpochMilli, false))
 			val fetch = DataObjectFetch(filter, None, 0)
 			val objs = idx.fetch(fetch).toSeq
 			objs.size
 		}
 
-		origAndCopy("both objects must be marked as initialized", Array(0,1)){
+		origAndCopy("both objects must be marked as initialized", Array(0, 1)) {
 			toData.andThen(_.initOk.toArray)
 		}
 
-		origAndCopy("contain expected hashsums", Set(etcObjHash, droughtObjHash)){
+		origAndCopy("contain expected hashsums", Set(etcObjHash, droughtObjHash)) {
 			toData.andThen(_.objs.map(_.hash).toSet)
 		}
 
-		origAndCopy("correctly filters by station", 1){idx =>
+		origAndCopy("correctly filters by station", 1) { idx =>
 			val fiSii = Values.iri("http://meta.icos-cp.eu/resources/stations/ES_FI-Sii")
 			val filter = CategFilter(Station, Seq(Some(fiSii)))
 			idx.fetch(DataObjectFetch(filter, None, 0)).toSeq.size
 		}
 
-		origAndCopy("correctly fetches dobjs", 2){ idx =>
-			val res = idx.fetch(DataObjectFetch(And(List(Exists(FileName), Exists(SubmissionEnd))), Some(SortBy(SubmissionEnd, true)),0)).toSeq
+		origAndCopy("correctly fetches dobjs", 2) { idx =>
+			val res =
+				idx.fetch(DataObjectFetch(And(List(Exists(FileName), Exists(SubmissionEnd))), Some(SortBy(SubmissionEnd, true)), 0)).toSeq
 			res.size
 		}
 
 		origAndCopy("has two stations", 2)(
 			toData.andThen(_.categoryKeys(Station).size)
 		)
+
+		it("retains categMaps keys associated with empty bitmaps") {
+			val cpmeta = CpmetaVocab(repo.getValueFactory)
+			val spec = repo.getValueFactory.createIRI("test:spec")
+			val original_data = IndexData(5)()
+			repo.getSail().accessEagerly {
+				original_data.processUpdate(Rdf4jStatement(spec, RDF.TYPE, cpmeta.dataObjectSpecClass), true, cpmeta)
+			}
+			val original_keys = original_data.categoryKeys(Spec)
+			val index = CpIndex(repo.getSail, Future.never, original_data)
+
+			for serialized <- saveToBytes(index); loaded <- loadFromBytes(serialized)
+			yield {
+				assert(original_keys.toSet == Set("test:spec"))
+				assert(loaded.categoryKeys(Spec) == original_data.categoryKeys(Spec))
+			}
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.index
 
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
@@ -13,13 +14,18 @@ import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
-import se.lu.nateko.cp.meta.utils.{asOptInstanceOf, parseCommaSepList, parseJsonStringArray}
+import se.lu.nateko.cp.meta.utils.{parseCommaSepList, parseJsonStringArray}
 
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
 import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
 import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
+
+// Categories listed here are retained, even if the associated bitmap is empty.
+// Currently used for keeping track of Specs that have been seen, even if no objects are
+// associed with them, or the last object is removed.
+private val retainedCategoryKeys: Seq[CategProp] = Seq(Spec)
 
 final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataStart)
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
@@ -36,8 +42,8 @@ final class IndexData(nObjects: Int)(
 	// These members are public only because of serialization, and should not be accessed directly.
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap[Sha256Sum, Int](nObjects * 2),
-	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = new AnyRefMap[String, Set[IRI]](nObjects),
+	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
+	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
@@ -90,13 +96,14 @@ final class IndexData(nObjects: Int)(
 		categoryBitmap(prop, categoryKeys(prop).filter(predicate))
 	}
 
-	def categoryKeys(prop: CategProp): Iterable[prop.ValueType] = {
+	def categoryKeys(prop: CategProp): Set[prop.ValueType] = {
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
-				(keywordsToSpecs.keys ++ keywordsToObjs.keys).map(_.asInstanceOf[prop.ValueType])
+				Set.concat(keywordsToSpecs.keySet, keywordsToObjs.keySet)
+					.map(_.asInstanceOf[prop.ValueType])
 			case _ =>
-				categMap(prop).keys
+				categMap(prop).keysIterator.toSet
 	}
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {
@@ -115,7 +122,7 @@ final class IndexData(nObjects: Int)(
 		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
 	}
 
-	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit = {
+	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
@@ -128,7 +135,7 @@ final class IndexData(nObjects: Int)(
 				obj match {
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
-							updateCategSet(categMap(Spec), spec, oe.idx, isAssertion)
+							updateCategSet(Spec, spec, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -138,10 +145,14 @@ final class IndexData(nObjects: Int)(
 								oe.spec = null
 							}
 						}
-
-						updateSpecKeywords(spec, true, Set.empty)
 					}
 				}
+
+			case RDF.TYPE => {
+				if (obj == vocab.dataObjectSpecClass || obj == vocab.simpleObjectSpecClass) {
+					registerSpec(subj)
+				}
+			}
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>
@@ -159,7 +170,7 @@ final class IndexData(nObjects: Int)(
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case subm: IRI => updateCategSet(categMap(Submitter), subm, oe.idx, isAssertion)
+							case subm: IRI => updateCategSet(Submitter, subm, oe.idx, isAssertion)
 
 					case CpVocab.Acquisition(hash) =>
 						val oe = getObjEntry(hash)
@@ -167,7 +178,7 @@ final class IndexData(nObjects: Int)(
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case stat: IRI => updateCategSet(categMap(Station), Some(stat), oe.idx, isAssertion)
+							case stat: IRI => updateCategSet(Station, Some(stat), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -179,7 +190,7 @@ final class IndexData(nObjects: Int)(
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
-							case site: IRI => updateCategSet(categMap(Site), Some(site), oe.idx, isAssertion)
+							case site: IRI => updateCategSet(Site, Some(site), oe.idx, isAssertion)
 
 					case _ =>
 				}
@@ -311,65 +322,71 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasActualColumnNames` => getDataObject(subj).foreach { oe =>
-					updateStrArrayProp(obj, VariableName, parseJsonStringArray, oe.idx, isAssertion)
+					asStringLiteral(obj).foreach { colNamesJsArr =>
+						parseJsonStringArray(colNamesJsArr).toSeq.flatten.foreach(strVal =>
+							updateCategSet(VariableName, strVal, oe.idx, isAssertion)
+						)
+					}
 					updateHasVarList(oe.idx, isAssertion)
 				}
 
 			case `hasActualVariable` => obj match {
 					case CpVocab.VarInfo(hash, varName) =>
 						val oe = getObjEntry(hash)
-						updateCategSet(categMap(VariableName), varName, oe.idx, isAssertion)
+						updateCategSet(VariableName, varName, oe.idx, isAssertion)
 						updateHasVarList(oe.idx, isAssertion)
 					case _ =>
 				}
 
-			case `hasAssociatedProject` =>
-				val projectKeywords = getKeywords(ensureIRI(obj))
-				updateProjectKeywords(subj, isAssertion, projectKeywords)
+			case `hasAssociatedProject` => obj match
+					case proj: IRI =>
+						updateSpecProjectKeywords(subj, isAssertion, getKeywords(proj))
+						registerSpec(subj)
 
-			case `hasKeywords` =>
-				val changedKeywords = obj.asOptInstanceOf[Literal].flatMap(asString).toSet.flatMap(parseCommaSepList)
-				getDataObject(subj) match {
-					case Some(oe) => {
-						changedKeywords.foreach { strVal =>
-							updateCategSet(categMap(Keyword), strVal, oe.idx, isAssertion)
-						}
-					}
-					case None => if changedKeywords.nonEmpty then {
-							val isSpec = StatementSource.hasStatement(null, vocab.hasObjectSpec, subj)
+					case _ =>
 
-							if (isSpec) {
-								updateSpecKeywords(ensureIRI(subj), isAssertion, changedKeywords)
-							} else {
-								StatementSource.getStatements(null, vocab.hasAssociatedProject, subj)
-									.map(_.getSubject())
-									.foreach(spec =>
-										updateProjectKeywords(ensureIRI(spec), isAssertion, changedKeywords)
-									)
+			case `hasKeywords` => parseKeywords(obj).foreach: changedKeywords =>
+					getDataObject(subj) match {
+						case Some(oe) => {
+							changedKeywords.foreach { strVal =>
+								updateCategSet(Keyword, strVal, oe.idx, isAssertion)
 							}
 						}
-				}
+						case None =>
+							if (changedKeywords.nonEmpty) {
+								if (isSpec(subj)) {
+									updateSpecOwnKeywords(subj, isAssertion, changedKeywords)
+								} else { // assuming subj is a Project
+									StatementSource.getPropValueHolders(vocab.hasAssociatedProject, subj)
+										.foreach: spec =>
+											updateSpecProjectKeywords(spec, isAssertion, changedKeywords)
+								}
+							}
+					}
 
 			case _ =>
-		}
-	}
+		} // end pred match ...
+	end processUpdate
 
-	private def updateSpecKeywords(spec: IRI, isAssertion: Boolean, changedSpecKeywords: Set[String])(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Unit = {
-		val existingKeywords: Set[String] = getKeywords(spec)
+	private def updateSpecOwnKeywords(
+		spec: IRI,
+		isAssertion: Boolean,
+		changedSpecKeywords: Set[String]
+	)(using CpmetaVocab, StatementSource): Unit = {
+		val existingKeywords = getKeywords(spec)
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
+		val newKeywords = projKeywords ++ modifySet(isAssertion, existingKeywords, changedSpecKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
 
-	private def updateProjectKeywords(spec: IRI, isAssertion: Boolean, changedProjectKeywords: Set[String])(using
-		vocab: CpmetaVocab
-	)(using StatementSource): Unit = {
+	private def updateSpecProjectKeywords(
+		spec: IRI,
+		isAssertion: Boolean,
+		changedProjectKeywords: Set[String]
+	)(using CpmetaVocab, StatementSource): Unit = {
 		val projKeywords = getSpecProjectKeywords(spec)
-		val newKeywords: Set[String] =
-			getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
+		val newKeywords = getKeywords(spec) ++ modifySet(isAssertion, projKeywords, changedProjectKeywords)
 
 		setSpecKeywords(spec, newKeywords)
 	}
@@ -382,20 +399,23 @@ final class IndexData(nObjects: Int)(
 		}
 	}
 
-	private def getSpecProjectKeywords(spec: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (spec == null) {
-			return Set.empty;
-		}
-
-		StatementSource.getUriValues(spec, vocab.hasAssociatedProject)
-			.flatMap(project => getKeywords(project))
-			.toSet
+	private def updateCategSet[T <: CategProp](prop: T, categ: prop.ValueType, idx: Int, isAssertion: Boolean): Unit = {
+		val mappings = categMap(prop)
+		val bitmap = mappings.getOrElseUpdate(categ, emptyBitmap)
+		if (isAssertion) {
+			bitmap.add(idx)
+		} else
+			bitmap.remove(idx)
+			if (bitmap.isEmpty && !retainedCategoryKeys.contains(prop)) {
+				val _ = mappings.remove(categ)
+			}
 	}
 
-	private def ensureIRI(value: Value): IRI = {
-		value match {
-			case iri: IRI => iri
-		}
+	private def getSpecProjectKeywords(spec: IRI)(using CpmetaVocab, StatementSource): Set[String] = {
+		StatementSource
+			.getUriValues(spec, summon[CpmetaVocab].hasAssociatedProject)
+			.flatMap(project => getKeywords(project))
+			.toSet
 	}
 
 	private def setSpecKeywords(spec: IRI, newKeywords: Set[String]) = {
@@ -422,31 +442,15 @@ final class IndexData(nObjects: Int)(
 	}
 
 	private def getKeywords(subject: IRI)(using vocab: CpmetaVocab)(using StatementSource): Set[String] = {
-		if (subject == null) {
-			return Set.empty;
-		}
-
 		Set.concat(
 			StatementSource.getValues(subject, vocab.hasKeywords).flatMap(parseKeywords)*
 		)
 	}
 
 	private def parseKeywords(obj: Value): Option[Set[String]] = {
-		obj.asOptInstanceOf[Literal]
-			.flatMap(asString)
-			.map((keywords: String) => parseCommaSepList(keywords).toSet)
-	}
-
-	private def updateStrArrayProp(
-		obj: Value,
-		prop: StringCategProp,
-		parser: String => Option[Array[String]],
-		idx: Int,
-		isAssertion: Boolean
-	): Unit = {
-		obj.asOptInstanceOf[Literal].flatMap(asString).flatMap(parser).toSeq.flatten.foreach { strVal =>
-			updateCategSet(categMap(prop), strVal, idx, isAssertion)
-		}
+		asStringLiteral(obj)
+			.map(parseCommaSepList(_).toSet)
+			.filter(_.nonEmpty)
 	}
 
 	// Retrieves or creates an ObjEntry,
@@ -473,13 +477,15 @@ final class IndexData(nObjects: Int)(
 		isAssertion: Boolean
 	): Unit = {
 
-		def helpTxt = s"value $key of property $prop on object ${objs(idx).hash.base64Url}"
+		inline def logWarn(warnPrefix: String): Unit =
+			s"$warnPrefix value $key of property $prop on object ${objs(idx).hash.id}"
+
 		if (isAssertion) {
 			if (!bitmap(prop).add(key, idx)) {
-				log.warn(s"Value already existed: asserted $helpTxt")
+				logWarn("Value already existed: asserted")
 			}
 		} else if (!bitmap(prop).remove(key, idx)) {
-			log.warn(s"Value was not present: tried to retract $helpTxt")
+			logWarn("Value was not present: tried to retract")
 		}
 	}
 
@@ -524,27 +530,23 @@ final class IndexData(nObjects: Int)(
 			if bm.isEmpty then { val _ = stats.remove(key) } // to prevent "orphan" URIs from lingering
 		initOk.remove(obj.idx)
 
+	private def isSpec(iri: IRI): Boolean = {
+		categMap(Spec).contains(iri)
+	}
+
+	private def registerSpec(spec: IRI) = {
+		categMap(Spec).updateWith(spec) {
+			case None => Some(emptyBitmap)
+			case existing => existing
+		}
+	}
+
 end IndexData
 
 private def targetUri(obj: Value, isAssertion: Boolean) =
 	if isAssertion && obj.isInstanceOf[IRI]
 	then obj.asInstanceOf[IRI]
 	else null
-
-private def updateCategSet[T <: AnyRef](
-	set: AnyRefMap[T, MutableRoaringBitmap],
-	categ: T,
-	idx: Int,
-	isAssertion: Boolean
-): Unit = {
-	val bm = set.getOrElseUpdate(categ, emptyBitmap)
-	if isAssertion then bm.add(idx)
-	else
-		bm.remove(idx)
-		if bm.isEmpty then {
-			val _ = set.remove(categ)
-		}
-}
 
 private def keyForDobj(obj: ObjEntry): Option[StatKey] =
 	if obj.spec == null || obj.submitter == null then None
@@ -570,3 +572,7 @@ private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
 		try mod(lit.floatValue)
 		catch case _: Throwable => () // ignoring wrong floats
 	case _ =>
+
+private def asStringLiteral(sl: Value): Option[String] = sl match
+	case lit: Literal => asString(lit)
+	case _ => None

@@ -26,7 +26,8 @@ import se.lu.nateko.cp.meta.services.sparql.index.{
 	FileSizeHierarchicalBitmap,
 	Property,
 	SamplingHeightHierarchicalBitmap,
-	StringHierarchicalBitmap
+	StringHierarchicalBitmap,
+	Spec
 }
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{
 	DataEndGeo,
@@ -179,7 +180,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		registerIriSerializer(kryo, IriSerializer)
 
-		val iriIndex = buildIriIndex(data.objs)
+		val iriIndex = buildIriIndex(data.objs, data.categoryKeys(Spec))
 		kryo.writeObject(output, iriIndex)
 
 		val prefixIndex = buildPrefixIndex(data.objs)
@@ -217,7 +218,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 
 		GeoSerializer.register(kryo, objs)
 
-		val keywordsToSpecs = 
+		val keywordsToSpecs =
 			readObj(classOf[AnyRefMap[String, Array[String]]])
 				.map((kw, iriStrings) => (kw, iriStrings.map(Values.iri).toSet))
 
@@ -245,13 +246,16 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		.distinct
 		.toArray
 
-	private def buildIriIndex(objs: ArrayBuffer[ObjEntry]): Array[IRI] = objs
-		.iterator
-		.flatMap: o =>
-			Iterator(o.spec, o.submitter, o.station, o.site)
-		.filter(_ != null)
-		.distinct
-		.toArray
+	private def buildIriIndex(objs: ArrayBuffer[ObjEntry], specs: Iterable[IRI]): Array[IRI] = {
+		val objectIRIs =
+			objs
+				.iterator
+				.flatMap(o => Iterator(o.submitter, o.station, o.site))
+				.filter(_ != null)
+				.distinct
+
+		objectIRIs.concat(specs.iterator).toArray
+	}
 
 end IndexDataSerializer
 
@@ -324,7 +328,7 @@ object IriSerializer extends Serializer[IRI]:
 class IndexedIriWriter(index: Map[IRI, Int]) extends Serializer[IRI]:
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IRI]): IRI = ???
 	override def write(kryo: Kryo, output: Output, iri: IRI): Unit =
-		val idx = if iri == null then -1 else index.getOrElse(iri, -1)
+		val idx = if iri == null then -1 else index(iri)
 		output.writeInt(idx)
 
 class IndexedIriReader(index: IndexedSeq[IRI]) extends Serializer[IRI]:

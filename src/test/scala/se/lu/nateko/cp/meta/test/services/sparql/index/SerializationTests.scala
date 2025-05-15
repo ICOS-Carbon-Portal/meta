@@ -158,8 +158,11 @@ class SerializationTests extends AsyncFunSpec {
 		origAndCopy("has two stations", 2)(
 			toData.andThen(_.categoryKeys(Station).size)
 		)
+	}
 
-		it("retains categMaps keys associated with empty bitmaps") {
+	describe("Specs associated with empty object bitmaps") {
+		it("are retained during serialization") {
+			val repo = Loading.emptyInMemory
 			val cpmeta = CpmetaVocab(repo.getValueFactory)
 			val spec = repo.getValueFactory.createIRI("test:spec")
 			val empty_spec = repo.getValueFactory.createIRI("test:empty_spec")
@@ -173,6 +176,9 @@ class SerializationTests extends AsyncFunSpec {
 				index_data.processUpdate(Rdf4jStatement(dataObject, cpmeta.hasObjectSpec, spec), true, cpmeta)
 			}
 
+			// Don't need the repo anymore
+			repo.shutDown()
+
 			// Serialize index_data through CpIndex in a bit of a roundabout way...
 			val index = CpIndex(repo.getSail, Future.never, index_data)
 
@@ -180,6 +186,7 @@ class SerializationTests extends AsyncFunSpec {
 			val original_keys = index_data.categoryKeys(Spec)
 			assert(original_keys.toSet == Set(empty_spec, spec))
 
+			given Kryo = IndexHandler.makeKryo
 			for serialized <- saveToBytes(index); loaded <- loadFromBytes(serialized)
 			yield {
 				// After deserialization, both specs should still be known

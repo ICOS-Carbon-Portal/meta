@@ -246,7 +246,7 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		.distinct
 		.toArray
 
-	private def buildIriIndex(objs: ArrayBuffer[ObjEntry], specs: Iterable[IRI]): Array[IRI] = {
+	private def buildIriIndex(objs: ArrayBuffer[ObjEntry], specs: Set[IRI]): Array[IRI] = {
 		val objectIRIs =
 			objs
 				.iterator

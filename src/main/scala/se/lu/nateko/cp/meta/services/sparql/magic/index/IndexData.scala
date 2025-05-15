@@ -96,14 +96,14 @@ final class IndexData(nObjects: Int)(
 		categoryBitmap(prop, categoryKeys(prop).filter(predicate))
 	}
 
-	def categoryKeys(prop: CategProp): Iterable[prop.ValueType] = {
+	def categoryKeys(prop: CategProp): Set[prop.ValueType] = {
 		prop match
 			case Keyword =>
 				val keywordsToObjs = categMap(Keyword)
 				Set.concat(keywordsToSpecs.keySet, keywordsToObjs.keySet)
 					.map(_.asInstanceOf[prop.ValueType])
 			case _ =>
-				categMap(prop).keys
+				categMap(prop).keysIterator.toSet
 	}
 
 	private def categMap(prop: CategProp): AnyRefMap[prop.ValueType, MutableRoaringBitmap] = {

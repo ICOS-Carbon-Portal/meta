@@ -82,7 +82,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
 		case UniqueKeywordsPattern(bindingName, expression, innerPattern) => {
-			// Clauses which are not handled by DobjListFusion are skipped here.
+			// NOTE: Clauses which are not handled by DobjListFusion are skipped here.
 			// Example: FILTER(STRSTARTS(str(?spec), "https://meta.fieldsites.se/")) will be ignored.
 			val fusions : Seq[DobjListFusion] = findFusions(innerPattern).flatMap(fusion =>
 					fusion match {

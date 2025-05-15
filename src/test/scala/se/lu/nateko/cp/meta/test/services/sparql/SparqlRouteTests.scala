@@ -204,16 +204,16 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 					res
 				}
 
-				// Launch several requests than the value of maxParallelQueries,
+				// Launch several more requests than the value of maxParallelQueries,
 				// some of which should be rejected.
-				val requests = Seq.range(0, 6).map(launchRequest)
+				val requests = Seq.range(0, 10).map(launchRequest)
 
 				Future.sequence(requests).map(results =>
 					val statuses = results.map(_.status)
 					info(s"statuses: ${statuses.toString()}")
 					val accepted = statuses.filter(_ == StatusCodes.OK)
 					val rejected = statuses.filter(_ == StatusCodes.BadRequest)
-					assert(accepted.length >= 1)
+					assert(accepted.length >= sparqlConfig.maxParallelQueries)
 					assert(rejected.length >= 1)
 				)
 

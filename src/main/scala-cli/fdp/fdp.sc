@@ -27,7 +27,7 @@ val UploadDatasetFromFile = "uploadDatasetFromFile"
 val DeleteAllDatasets = "deleteAllDatasets"
 
 val sparqlEndpoint: Uri = uri"https://meta.icos-cp.eu/sparql"
-val ConstructQueryFile = os.pwd / os.RelPath("src/main/scala-cli/fdp/resources/secondEcvDemoImport.rq")
+val ConstructQueryFile = os.pwd / os.RelPath("resources/secondEcvDemoImport.rq")
 
 case class Config(
 	host: String = "",

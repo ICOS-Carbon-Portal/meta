@@ -29,6 +29,8 @@ case class DobjListFusion(
 	def nonMagicNodeIds = nonMagicQMNodes.map(System.identityHashCode).toSet
 }
 
+final case class UniqueKeywordsFusion(bindingName: String, expression: TupleExpr, fusion: DobjListFusion) extends FusionPattern
+
 class DofPatternFusion(meta: CpmetaVocab){
 
 	def findFusions(patt: DofPattern): Seq[FusionPattern] = patt match{
@@ -79,6 +81,23 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 		case plain: PlainDofPattern => findPlainFusion(plain).toSeq
 
+		case UniqueKeywordsPattern(bindingName, expression, innerPattern) => {
+			// NOTE: Clauses which are not handled by DobjListFusion are skipped here.
+			// Example: FILTER(STRSTARTS(str(?spec), "https://meta.fieldsites.se/")) will be ignored.
+			val fusions : Seq[DobjListFusion] = findFusions(innerPattern).flatMap(fusion =>
+					fusion match {
+						case f: DobjListFusion => Some(f)
+						case _ => None
+					}
+				)
+
+			fusions match {
+				case Seq(fusion) =>
+					Seq(UniqueKeywordsFusion(bindingName, expression, fusion))
+				case _ =>
+					throw new Exception("Expected a single DobjListFusion in unique keywords query")
+			}
+		}
 	}
 
 	def addOrderByAndOffset(pdp: ProjectionDofPattern, inner: DobjListFusion): DobjListFusion = {

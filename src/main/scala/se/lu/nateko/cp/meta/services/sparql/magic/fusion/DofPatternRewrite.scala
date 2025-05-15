@@ -1,17 +1,25 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
-import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator}
+import org.eclipse.rdf4j.query.algebra.{BinaryTupleOperator, Filter, Group, Order, SingletonSet, Slice, TupleExpr, UnaryTupleOperator, QueryModelNode}
 
 object DofPatternRewrite{
 
 	def rewrite(queryTop: TupleExpr, fusions: Seq[FusionPattern]): Unit = fusions.foreach{
+		case UniqueKeywordsFusion(bindingName, expression, fusion) => {
+			rewriteForDobjListFetches(expression, fusion) match {
+				case Some(node) =>
+					expression.replaceWith(UniqueKeywordsNode(bindingName, node))
+				case None =>
+					throw new Exception("Body of unique keywords query must be a magic data object query")
+			}
+		}
 		case dlf: DobjListFusion => rewriteForDobjListFetches(queryTop, dlf)
 		case DobjStatFusion(expr, statsNode) =>
 			expr.getArg.replaceWith(statsNode)
 			expr.getElements.removeIf(elem => StatsFetchPatternSearch.singleVarCount(elem.getExpr).isDefined)
 	}
 
-	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Unit = if(!fusion.exprsToFuse.isEmpty){
+	def rewriteForDobjListFetches(queryTop: TupleExpr, fusion: DobjListFusion): Option[DataObjectFetchNode] = if(!fusion.exprsToFuse.isEmpty){
 		import fusion.{exprsToFuse => exprs}
 
 		val subsumingParents = exprs.collect{case bto: BinaryTupleOperator => bto}
@@ -31,7 +39,10 @@ object DofPatternRewrite{
 		safelyReplace(deepest, fetchExpr)
 
 		DanglingCleanup.clean(queryTop)
-
+		Some(fetchExpr)
+	}
+	else {
+		None
 	}
 
 	def replaceNode(node: TupleExpr): Unit = node match{

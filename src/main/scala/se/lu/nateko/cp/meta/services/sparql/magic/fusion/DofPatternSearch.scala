@@ -116,6 +116,9 @@ class DofPatternSearch(meta: CpmetaVocab){
 				case _ => DofPattern.Empty
 			}
 
+		case DistinctKeywordsExtension(bindingName, ext) =>
+			UniqueKeywordsPattern(bindingName, ext, find0(ext.getArg()))
+
 		case ext: Extension =>
 			val groupByOpt = for(
 				(countVar, dobjCandVar) <- singleCountExtension(ext);
@@ -150,7 +153,30 @@ class DofPatternSearch(meta: CpmetaVocab){
 		case _ => DofPattern.Empty
 
 	}
+}
 
+final case class DistinctKeywordsExtension(bindingName: String, ext: Extension)
+object DistinctKeywordsExtension {
+	def unapply(expr: TupleExpr): Option[DistinctKeywordsExtension] = {
+		expr match {
+			case ext: Extension => findDistinctKeywordsBinding(ext).map(bindingName =>
+					DistinctKeywordsExtension(bindingName, ext)
+				)
+			case _ => None
+		}
+	}
+
+	private def findDistinctKeywordsBinding(ext: Extension): Option[String] = {
+		ext.getElements().asScala.headOption.flatMap(elem =>
+			elem.getExpr() match {
+				case f: FunctionCall if f.getURI() == "http://meta.icos-cp.eu/ontologies/cpmeta/distinct_keywords" => {
+					Some(elem.getName())
+				}
+				case _ =>
+					None
+			}
+		)
+	}
 }
 
 object DofPatternSearch{

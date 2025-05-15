@@ -66,6 +66,13 @@ final class IndexData(nObjects: Int)(
 		boolMap.getOrElseUpdate(prop, emptyBitmap)
 	}
 
+	def getObjectKeywords(objectIds: ImmutableRoaringBitmap): Iterable[String] = {
+		categoryKeys(Keyword).collect {
+			case keyword if !BufferFastAggregation.and(objectIds, keywordBitmap(Seq(keyword))).isEmpty() =>
+				keyword
+		}
+	}
+
 	def bitmap(prop: ContProp): HierarchicalBitmap[prop.ValueType] =
 		contMap.getOrElseUpdate(
 			prop,

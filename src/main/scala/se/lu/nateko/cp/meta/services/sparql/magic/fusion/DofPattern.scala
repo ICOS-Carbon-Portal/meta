@@ -19,6 +19,12 @@ object DofPattern{
 	val Empty = PlainDofPattern(None, Map.empty, Map.empty, Nil)
 }
 
+final case class UniqueKeywordsPattern(bindingName: String, expression: Extension, pattern: DofPattern) extends DofPattern {
+	override protected def joinInner(other: DofPattern): DofPattern = {
+		throw new Exception("Unique keywords query cannot be joined")
+	}
+}
+
 sealed trait QVar{
 	def name: String
 }

@@ -599,6 +599,33 @@ class QueryTests extends AsyncFunSpec {
 		}
 	}
 
+	describe("Distinct keywords magic query") {
+		it("returns keywords") {
+			// An object which has the unique keyword: "test keyword",
+			// associated with project keyword "ICOS" and spec keyword "carbon flux"
+			val objectName = "anthropogenic.persector.201911.nc"
+
+			// Include FILTER clause, which does not get included in magic query,
+			// but is sometimes part of the query from the portal.
+			// Note: Filter clauses, will currently be IGNORED!
+			//			 This is also true for all other clauses which are not handled by DataObjectFetchNode.
+			val magicKeywordQuery = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+				select (cpmeta:distinct_keywords() AS ?keywords) where {
+					FILTER(STRSTARTS(str(?spec), "this_will_be_ignored")) .
+					?obj cpmeta:hasObjectSpec ?spec .
+					?obj cpmeta:hasName "$objectName" .
+					?obj cpmeta:hasKeyword ?k
+				}
+				limit 5
+			"""
+
+			val List(magicResult) = runSparqlSync(magicKeywordQuery)
+			val resultKeywords = magicResult.getBinding("keywords").getValue().stringValue().split(",").toSet
+			assert(resultKeywords == Set("test keyword", "carbon flux", "ICOS"))
+		}
+	}
+
 	private def runSparqlSync(query: String): List[BindingSet] = {
 		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList
 	}

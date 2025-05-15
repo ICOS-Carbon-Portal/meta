@@ -12,8 +12,7 @@ import sttp.client4.quick.*
 import sttp.model.Uri
 import sttp.client4.Response
 import org.eclipse.rdf4j.model.Model
-import org.eclipse.rdf4j.model.util.Values.iri
-import org.eclipse.rdf4j.model.vocabulary.{RDF,DCAT,LDP}
+import org.eclipse.rdf4j.model.vocabulary.{DCAT,LDP}
 import org.eclipse.rdf4j.rio.{Rio,RDFFormat}
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -50,10 +49,10 @@ val parser =
 		.action((x, c) => c.copy(host = x))
 		.required()
 	val userParser = opt[String]("user")
-		.text("Username for an account with needed permissions")
+		.text("Username. If not provided and required to execute a task, a command prompt will ask for it.")
 		.action((u, c) => c.copy(username = Some(u)))
 	val passwordParser = opt[String]("password")
-		.text("Password that goes with the username")
+		.text("Password. If not provided and required to execute a task, a command prompt will ask for it.")
 		.action((p, c) => c.copy(password = Some(p)))
 	val pathParser = opt[String]("path")
 		.text("Path to the resource on the FAIR Data Point")
@@ -126,7 +125,7 @@ def uploadL2ICOS(config: Config) =
 	val constructQuery = os.read(ConstructQueryFile)
 	val model = importFromIcos(constructQuery)
 	val repo = createRepo(model)
-	Using.Manager: use =>
+	val manager = Using.Manager: use =>
 		val conn = use(repo.getConnection())
 		val limit = if config.nDatasets > 0 then s" LIMIT ${config.nDatasets}" else ""
 		val datasetsQuery = s"SELECT ?dataset WHERE { ?dataset a <${DCAT.DATASET}> }$limit"
@@ -143,6 +142,7 @@ def uploadL2ICOS(config: Config) =
 					val distributionQuery = constructDistributionSparqlQuery(dataset, datasetFdpUri)
 					val distributionTurtle = evaluateGraphQuery(conn, distributionQuery)
 					fdp.postAndPublishDistributions(distributionTurtle)
+	if manager.isFailure then manager.get
 
 def uploadDatasetFromFile(config: Config) =
 	val fdp = initFdp(config)
@@ -178,7 +178,6 @@ def sparqlConstruct(query: String): String = sparql(query, "text/turtle")
 def sparql(query: String, acceptType: String): String =
 	val headers = Map("Accept" -> acceptType, "Content-Type" -> "text/plain")
 	val resp: Response[String] = quickRequest.post(sparqlEndpoint).headers(headers).body(query).send()
-	if (!(resp.code.isSuccess)) println(s"\n\nQuery to SPARQL endpoint failed:\n$query\n\nResponse:\n${resp.body}")
 	resp.body
 
 def importFromIcos(query: String): Model =
@@ -204,6 +203,7 @@ def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 		|	?ds dct:isPartOf <$catalog> .
 		|	?ds ?pred ?obj .
 		|	?ds dct:hasVersion "1.0" .
+		|	?ds dcat:version "1.0" .
 		|	?ds dct:license <https://data.icos-cp.eu/licence> .
 		|	?ds dcat:contactPoint <https://www.icos-ri.eu> .
 		|	?ds dct:publisher <https://www.icos-cp.eu/> .
@@ -232,6 +232,7 @@ def constructDistributionSparqlQuery(dataset: Uri, datasetFdpUri: Uri): String =
 		|	_:dist dcat:downloadURL ?dlUri .
 		|	_:dist dcat:byteSize ?size .
 		|	_:dist dct:hasVersion "1.0" .
+		|	_:dist dcat:version "1.0" .
 		|	_:dist dcat:mediaType ?media .
 		|	_:dist dct:license <https://data.icos-cp.eu/licence> .
 		|	_:dist dct:publisher <https://www.icos-cp.eu/> .

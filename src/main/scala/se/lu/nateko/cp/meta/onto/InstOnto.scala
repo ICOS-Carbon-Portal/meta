@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.UpdateExecutionException

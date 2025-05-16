@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
+import scala.language.unsafeNulls
+
 import scala.util.control.NoStackTrace
 
 sealed class ServiceException(val message: String) extends RuntimeException(

@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
+
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Resource, Value, ValueFactory}
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 

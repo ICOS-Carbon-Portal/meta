@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta
 
+import scala.language.unsafeNulls
+
 import com.scalakml.io.KmzFileReader
 import com.scalakml.kml.*
 import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, GeoFeature, GeoJson, Polygon as GeoPolygon, Position}

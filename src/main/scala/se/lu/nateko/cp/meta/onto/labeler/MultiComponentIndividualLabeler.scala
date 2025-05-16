@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import org.semanticweb.owlapi.model.{IRI as OWLIRI, OWLObjectProperty}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource

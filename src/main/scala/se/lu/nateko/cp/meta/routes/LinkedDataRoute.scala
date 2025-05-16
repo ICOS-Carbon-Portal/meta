@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
+import scala.language.unsafeNulls
+
 import akka.event.{Logging, LoggingBus}
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.*

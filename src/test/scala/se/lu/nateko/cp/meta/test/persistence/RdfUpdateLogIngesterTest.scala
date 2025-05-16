@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.persistence
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.common.iteration.Iterations
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF}

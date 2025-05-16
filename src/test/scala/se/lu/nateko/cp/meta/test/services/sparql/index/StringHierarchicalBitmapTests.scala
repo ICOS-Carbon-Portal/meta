@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.services.sparql.index.*

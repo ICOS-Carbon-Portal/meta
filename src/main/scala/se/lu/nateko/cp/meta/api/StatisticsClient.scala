@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.api
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http

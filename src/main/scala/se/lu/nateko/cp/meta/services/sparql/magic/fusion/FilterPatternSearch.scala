@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.fusion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.GEO
 import org.eclipse.rdf4j.model.{IRI, Literal, Value}
 import org.eclipse.rdf4j.query.algebra.{And, Compare, Exists, Not, Or, Regex as RdfRegex, StatementPattern, ValueConstant, ValueExpr, Var}

@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.services.citation
+
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, Organization, Person, UriResource}

@@ -1,5 +1,8 @@
 package se.lu.nateko.cp.meta.upload
 
+// Using scalajs, which is not written with explicit-null in mind
+import scala.language.unsafeNulls
+
 import java.net.URI
 import eu.icoscp.envri.Envri
 import scala.concurrent.Future

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.query.algebra.{Filter as Rdf4jFilter, FunctionCall, TupleExpr, ValueConstant}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser

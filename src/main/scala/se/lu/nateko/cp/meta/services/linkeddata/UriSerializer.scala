@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.algebra.evaluation.function.TupleFunction
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
 import org.eclipse.rdf4j.query.algebra.{StatementPattern, TupleFunctionCall, ValueConstant}

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
+import scala.language.unsafeNulls
+
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

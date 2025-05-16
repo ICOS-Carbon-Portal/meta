@@ -5,6 +5,7 @@ import scala.language.unsafeNulls
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection, GeometryFactory}
 import org.roaringbitmap.buffer.{ImmutableRoaringBitmap, MutableRoaringBitmap}
+import org.roaringbitmap.IntConsumer
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -139,8 +140,11 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 		else
 			val currentDataCovs = new ArrayBuffer[DataObjCov]()
 
-			objectIds.forEach: objId =>
-				currentDataCovs.addOne(DataObjCov(objId, area))
+			objectIds.forEach(new IntConsumer{
+				def accept(objId: Int) = {
+					currentDataCovs.addOne(DataObjCov(objId, area))
+				}
+			})
 
 			currentDataCovs.addOne(dobjCov)
 

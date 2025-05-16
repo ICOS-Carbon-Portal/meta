@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.roaringbitmap.IntConsumer
 
 import java.io.DataInput
 import java.io.DataOutput
@@ -50,7 +51,11 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
 		if children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)
-		then values.forEach{v => addToChild(geo.keyLookup(v), v)}
+		then values.forEach(new IntConsumer {
+			def accept(v: Int): Unit = {
+				addToChild(geo.keyLookup(v), v)
+			}
+		})
 
 		!wasPresent
 
@@ -135,7 +140,12 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 				val res =
 					if(seenDifferentKeys && amount > 1){
 						val list = new ju.ArrayList[Int](amount)
-						filtered.forEach((i: Int) => {list.add(i);()})
+						filtered.forEach(new IntConsumer {
+							def accept(i: Int): Unit = {
+								list.add(i);
+							}
+						})
+
 						list.sort(iter.valComp)
 						list.iterator.asScala
 					} else
@@ -186,10 +196,13 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 				}
 			} else {
 				val filtered = emptyBitmap
-				values.forEach((v: Int) => {
-					val key = geo.keyLookup(v)
-					if(filterKey(key, req)) filtered.add(v)
+				values.forEach(new IntConsumer{
+					def accept(v: Int) : Unit = {
+						val key = geo.keyLookup(v)
+						if(filterKey(key, req)) filtered.add(v)
+					}
 				})
+
 				//println(s"seen different keys, got ${filtered.getCardinality} results")
 				filtered
 			}

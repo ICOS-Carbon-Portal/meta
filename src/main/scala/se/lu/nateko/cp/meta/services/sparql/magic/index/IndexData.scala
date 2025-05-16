@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
-import scala.language.unsafeNulls
-
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
 import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -70,7 +68,7 @@ final class IndexData(nObjects: Int)(
 
 	def getObjectKeywords(objectIds: ImmutableRoaringBitmap): Iterable[String] = {
 		categoryKeys(Keyword).collect {
-			case keyword if !BufferFastAggregation.and(objectIds, keywordBitmap(Seq(keyword))).isEmpty() =>
+			case keyword if !BufferFastAggregation.and(objectIds, keywordBitmap(Seq(keyword))).nn.isEmpty() =>
 				keyword
 		}
 	}
@@ -577,6 +575,7 @@ private def keyForDobj(obj: ObjEntry): Option[StatKey] =
 				)
 			)
 		}
+		case _ => None
 	}
 
 private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match

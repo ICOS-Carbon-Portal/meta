@@ -46,12 +46,12 @@ final class DataStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dat
 final class DataEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).dataEnd)
 final class SubmStartGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionStart)
 final class SubmEndGeo(objs: IndSeq[ObjEntry]) extends DateTimeGeo(objs(_).submissionEnd)
-final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).fName)
+final class FileNameGeo(objs: IndSeq[ObjEntry]) extends StringGeo(objs.apply(_).nn.fName.nn)
 
 final case class StatKey(spec: IRI, submitter: IRI, station: Option[IRI], site: Option[IRI])
 final case class StatEntry(key: StatKey, count: Int)
 
-def emptyBitmap = MutableRoaringBitmap.bitmapOf()
+def emptyBitmap: MutableRoaringBitmap = MutableRoaringBitmap.bitmapOf().nn
 
 final class IndexData(nObjects: Int)(
 	// These members are public only because of serialization, and should not be accessed directly.
@@ -65,7 +65,7 @@ final class IndexData(nObjects: Int)(
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
 ) extends Serializable:
-	private val log = LoggerFactory.getLogger(getClass())
+	private val log = LoggerFactory.getLogger(getClass()).nn
 
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))
 	private def dataEndBm = DatetimeHierarchicalBitmap(DataEndGeo(objs))
@@ -109,7 +109,7 @@ final class IndexData(nObjects: Int)(
 				keywordBitmap(values.asInstanceOf[Iterable[Keyword.ValueType]])
 			case _ => {
 				val category = categMap(prop)
-				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*)
+				BufferFastAggregation.or(values.map(v => category.getOrElse(v, emptyBitmap)).toSeq*).nn
 			}
 		}
 	}
@@ -141,7 +141,7 @@ final class IndexData(nObjects: Int)(
 		val objectMap = categMap(Keyword)
 		val objects = keywords.flatMap(objectMap.get)
 
-		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
+		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*).nn
 	}
 
 	def processUpdate(
@@ -164,10 +164,13 @@ final class IndexData(nObjects: Int)(
 							if (filterByEnvri) EnvriResolver.infer(subj.toJava).foreach: envri =>
 								updateCategSet(EnvriProp, envri, oe.idx, isAssertion)
 							if (isAssertion) {
-								if (oe.spec != null) removeStat(oe, initOk)
+								if (oe.spec != null) {
+									removeStat(oe, initOk)
+								}
+
 								oe.spec = spec
 								addStat(oe, initOk)
-							} else if (spec === oe.spec) {
+							} else if (spec == oe.spec) {
 								removeStat(oe, initOk)
 								oe.spec = null
 							}
@@ -183,7 +186,7 @@ final class IndexData(nObjects: Int)(
 
 			case `hasName` =>
 				getDataObject(subj).foreach { oe =>
-					val fName = obj.stringValue
+					val fName: String = obj.stringValue.nn
 					if (isAssertion) oe.fName = fName
 					else if (oe.fName == fName) { oe.fName = null }
 					handleContinuousPropUpdate(FileName, fName, oe.idx, isAssertion)
@@ -310,7 +313,7 @@ final class IndexData(nObjects: Int)(
 
 							val directPrevVers: IndexedSeq[Int] =
 								StatementSource.getStatements(subj, isNextVersionOf, null)
-									.flatMap(st => getDataObject(st.getObject).map(_.idx))
+									.flatMap(st => getDataObject(st.getObject.nn).map(_.idx))
 									.toIndexedSeq
 
 							directPrevVers.foreach { oldIdx =>
@@ -437,7 +440,6 @@ final class IndexData(nObjects: Int)(
 				val _ = mappings.remove(categ)
 			}
 	}
-
 	private def getSpecProjectKeywords(spec: IRI)(using CpmetaVocab, StatementSource): Set[String] = {
 		StatementSource
 			.getUriValues(spec, summon[CpmetaVocab].hasAssociatedProject)
@@ -541,7 +543,7 @@ final class IndexData(nObjects: Int)(
 		case CpVocab.DataObject(hash, prefix) =>
 			val entry = getObjEntry(hash)
 			if (entry.prefix == "") {
-				entry.prefix = prefix.intern()
+				entry.prefix = prefix.nn.intern().nn
 			}
 			Some(entry)
 
@@ -575,27 +577,40 @@ private def targetUri(obj: Value, isAssertion: Boolean) =
 	then obj.asInstanceOf[IRI]
 	else null
 
+// TODO: Option.scala isn't currently written for explicit-nulls. Maybe changed in later scalac versions?
+private def makeOption[A](arg: A | Null) = {
+	if (arg == null) { None }
+	else { Some(arg.nn) }
+}
+
 private def keyForDobj(obj: ObjEntry): Option[StatKey] =
-	if obj.spec == null || obj.submitter == null then None
-	else
-		Some(
-			StatKey(obj.spec, obj.submitter, Option(obj.station), Option(obj.site))
-		)
+	(obj.spec, obj.submitter) match {
+		case (spec: IRI, submitter: IRI) => {
+			Some(
+				StatKey(
+					spec,
+					submitter,
+					makeOption(obj.station),
+					makeOption(obj.site)
+				)
+			)
+		}
+	}
 
 private def ifDateTime(dt: Value)(mod: Long => Unit): Unit = dt match
-	case lit: Literal if lit.getDatatype === XSD.DATETIME =>
-		try mod(Instant.parse(lit.stringValue).toEpochMilli)
+	case lit: Literal if lit.getDatatype == XSD.DATETIME =>
+		try mod(Instant.parse(lit.stringValue).nn.toEpochMilli)
 		catch case _: Throwable => () // ignoring wrong dateTimes
 	case _ =>
 
 private def ifLong(dt: Value)(mod: Long => Unit): Unit = dt match
-	case lit: Literal if lit.getDatatype === XSD.LONG =>
+	case lit: Literal if lit.getDatatype == XSD.LONG =>
 		try mod(lit.longValue)
 		catch case _: Throwable => () // ignoring wrong longs
 	case _ =>
 
 private def ifFloat(dt: Value)(mod: Float => Unit): Unit = dt match
-	case lit: Literal if lit.getDatatype === XSD.FLOAT =>
+	case lit: Literal if lit.getDatatype == XSD.FLOAT =>
 		try mod(lit.floatValue)
 		catch case _: Throwable => () // ignoring wrong floats
 	case _ =>

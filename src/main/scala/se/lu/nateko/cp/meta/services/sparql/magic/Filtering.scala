@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import scala.language.unsafeNulls
-
 import org.eclipse.rdf4j.model.IRI
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
 import se.lu.nateko.cp.meta.services.sparql.index.*
@@ -34,7 +32,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 
 		case Exists(prop) => prop match {
 				case cp: ContProp => Some(data.bitmap(cp).all)
-				case optUriProp: OptUriProperty => 
+				case optUriProp: OptUriProperty =>
 					// TODO: Not covered by tests, so unsure if it's correct right now.
 					data.categoryBitmap(optUriProp, Seq(None)) match {
 							case bm if bm.isEmpty => None
@@ -53,7 +51,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 				.collect { case iri: IRI => iri }
 				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
 				.flatten
-			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
+			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*).nn)
 
 		case CategFilter(category, values) =>
 			Some(data.categoryBitmap(category, values))
@@ -94,8 +92,8 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 			case Some(Failure(exc)) =>
 				throw Exception("Geo indexing failed", exc)
 
-	private def negate(bm: ImmutableRoaringBitmap) =
-		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong)
+	private def negate(bm: ImmutableRoaringBitmap): MutableRoaringBitmap =
+		if objs.length == 0 then emptyBitmap else ImmutableRoaringBitmap.flip(bm, 0, objs.length.toLong).nn
 
 	private def collectUnless[T](iter: Iterator[T])(cond: T => Boolean): Option[Seq[T]] = {
 		var condHappened = false
@@ -107,8 +105,8 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 	}
 
 	private def or(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if (bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*))
+		if (bms.isEmpty) Some(emptyBitmap) else Some(BufferFastAggregation.or(bms*).nn)
 
 	private def and(bms: Seq[ImmutableRoaringBitmap]): Option[MutableRoaringBitmap] =
-		if (bms.isEmpty) None else Some(BufferFastAggregation.and(bms*))
+		if (bms.isEmpty) None else Some(BufferFastAggregation.and(bms*).nn)
 }

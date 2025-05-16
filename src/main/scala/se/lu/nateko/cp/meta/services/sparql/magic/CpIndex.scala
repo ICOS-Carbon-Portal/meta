@@ -1,7 +1,5 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import scala.language.unsafeNulls
-
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.Sail
@@ -36,10 +34,10 @@ trait ObjSpecific{
 }
 
 trait ObjInfo extends ObjSpecific{
-	def spec: IRI
-	def submitter: IRI
-	def station: IRI
-	def site: IRI
+	def spec: IRI | Null
+	def submitter: IRI | Null
+	def station: IRI | Null
+	def site: IRI | Null
 	def fileName: Option[String]
 	def sizeInBytes: Option[Long]
 	def samplingHeightMeters: Option[Float]
@@ -51,7 +49,7 @@ trait ObjInfo extends ObjSpecific{
 }
 
 class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriConfigs) extends ReadWriteLocking:
-	private val log = LoggerFactory.getLogger(getClass())
+	private val log = LoggerFactory.getLogger(getClass()).nn
 	private val filtering = Filtering(data, geo)
 
 	import data.{contMap, stats, objs, initOk, idLookup}
@@ -89,7 +87,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 		log.info("CpIndex got initialized with non-empty index data to use")
 		reportDebugInfo()
 
-	given factory: ValueFactory = sail.getValueFactory
+	given factory: ValueFactory = sail.getValueFactory.nn
 	val vocab = new CpmetaVocab(factory)
 
 	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
@@ -100,11 +98,11 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
 
-		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
+		val filter = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk).nn)
 
 		val idxIter: Iterator[Int] = req.sort match{
 			case None =>
-				filter.iterator.asScala.drop(req.offset).map(_.intValue)
+				filter.iterator.nn.asScala.drop(req.offset).map(_.intValue)
 			case Some(SortBy(prop, descending)) =>
 				data.bitmap(prop).iterateSorted(Some(filter), req.offset, descending)
 		}
@@ -131,7 +129,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 	}
 
 	def getUniqueKeywords(req: DataObjectFetch): Iterable[String] = readLocked {
-		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
+		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk).nn)
 		data.getObjectKeywords(objectIds)
 	}
 

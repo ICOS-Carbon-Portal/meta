@@ -3410,6 +3410,7 @@
 
     <owl:NamedIndividual rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/asciiOtcProductCsv">
         <rdf:type rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat"/>
+        <hasGoodFlagValue>1</hasGoodFlagValue>
         <hasGoodFlagValue>2</hasGoodFlagValue>
         <hasGoodFlagValue>9</hasGoodFlagValue>
         <rdfs:comment>Single-line comment, first column is UTC ISO-8601 timestamp, NaN for missing values, comma-separated.</rdfs:comment>

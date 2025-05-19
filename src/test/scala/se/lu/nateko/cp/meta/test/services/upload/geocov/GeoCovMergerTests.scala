@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.upload.geocov
 
+import scala.language.unsafeNulls
+
 import org.locationtech.jts.geom.{Coordinate, Geometry}
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec

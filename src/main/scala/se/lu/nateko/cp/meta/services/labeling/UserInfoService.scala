@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import se.lu.nateko.cp.cpauth.core.UserId

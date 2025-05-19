@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.icos
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.metaflow.{Membership, RolesDiffCalc}

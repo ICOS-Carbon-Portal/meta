@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.views
 
+import scala.language.unsafeNulls
+
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.node.*
 import org.commonmark.parser.Parser

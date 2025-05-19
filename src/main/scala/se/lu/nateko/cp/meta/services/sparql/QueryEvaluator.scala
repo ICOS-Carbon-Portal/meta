@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql
 
+import scala.language.unsafeNulls
+
 import akka.Done
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
 import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryResults, TupleQuery}

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.meta.SparqlServerConfig
 
 import java.time.Instant

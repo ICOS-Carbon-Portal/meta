@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto
 
+import scala.language.unsafeNulls
+
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.{IRI, OWLAnnotationProperty, OWLDataFactory, PrefixManager}
 import org.semanticweb.owlapi.util.DefaultPrefixManager

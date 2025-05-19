@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto.reasoner
 
+import scala.language.unsafeNulls
+
 import org.semanticweb.owlapi.model.parameters.Imports
 import org.semanticweb.owlapi.model.{OWLClass, OWLClassExpression, OWLDataProperty, OWLObjectProperty, OWLOntology, OWLProperty}
 import org.semanticweb.owlapi.search.EntitySearcher

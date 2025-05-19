@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
+import scala.language.unsafeNulls
+
 import akka.stream.scaladsl.Flow
 import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, OutHandler}
 import akka.stream.{Attributes, FlowShape, Inlet, Outlet}

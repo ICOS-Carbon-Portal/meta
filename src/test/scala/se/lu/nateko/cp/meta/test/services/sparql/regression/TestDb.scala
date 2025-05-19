@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.regression
 
+import scala.language.unsafeNulls
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}

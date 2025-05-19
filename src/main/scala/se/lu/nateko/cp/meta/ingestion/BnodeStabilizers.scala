@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{BNode, IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.utils.rdf4j.createIRI
 

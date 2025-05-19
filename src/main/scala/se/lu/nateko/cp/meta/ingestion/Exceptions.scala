@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import scala.language.unsafeNulls
+
 import scala.util.control.NoStackTrace
 
 sealed class IngestionException(val message: String) extends RuntimeException(

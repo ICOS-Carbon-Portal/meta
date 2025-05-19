@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat

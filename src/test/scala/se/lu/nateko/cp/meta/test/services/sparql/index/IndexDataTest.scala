@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.funspec.AnyFunSpec

@@ -135,7 +135,7 @@ function getIcon(iconUrl){
 }
 
 function getLmUrl(layer){
-	return "//api.lantmateriet.se/open/topowebb-ccby/v1/wmts/token/a39d27b8-9fd6-3770-84cb-2589b772b8ca/1.0.0/"
+	return "//maps.icos-cp.eu/lm/open/topowebb-ccby/v1/wmts/1.0.0/"
 		+ layer
 		+ "/default/3857/{z}/{y}/{x}.png";
 }

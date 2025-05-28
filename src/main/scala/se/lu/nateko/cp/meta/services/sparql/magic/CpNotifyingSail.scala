@@ -17,6 +17,7 @@ import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
 
 import index.IndexData
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 
 type MainSail = FederatedServiceResolverClient & NotifyingSail:
@@ -27,7 +28,7 @@ class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
 	citer: CitationProvider
-) extends NotifyingSailWrapper(inner):
+)(using EnvriConfigs) extends NotifyingSailWrapper(inner):
 
 	private val log = LoggerFactory.getLogger(getClass())
 	private val enricher = StatementsEnricher(citer)

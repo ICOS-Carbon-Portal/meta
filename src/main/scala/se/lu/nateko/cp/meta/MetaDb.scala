@@ -156,18 +156,18 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
 			Some(indexHandler -> geoProvider)
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
-		val repo = new SailRepository(sail)
-		repo.init()
-
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
 
+		given EnvriConfigs = config.core.envriConfigs
+
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val repo = new SailRepository(sail)
+		repo.init()
+
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
-
-		given EnvriConfigs = config.core.envriConfigs
 
 		val serversFut =
 			//NativeStore crashes under unrestrained parallel write conditions

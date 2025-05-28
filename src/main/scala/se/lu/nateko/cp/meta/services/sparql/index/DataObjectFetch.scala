@@ -60,6 +60,7 @@ case object GeoIntersects extends GeoProp
 
 sealed trait CategProp extends Property{type ValueType <: AnyRef}
 
+case object EnvriProp extends CategProp{ type ValueType = eu.icoscp.envri.Envri}
 sealed trait StringCategProp extends CategProp{type ValueType = String}
 sealed trait UriProperty extends CategProp{type ValueType = IRI}
 sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}

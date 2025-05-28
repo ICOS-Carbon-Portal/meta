@@ -134,8 +134,9 @@ function getIcon(iconUrl){
 		});
 }
 
-function getLmUrl(layer){
-	return "//maps.icos-cp.eu/lm/open/topowebb-ccby/v1/wmts/1.0.0/"
+function getLmUrl(layer) {
+	var baseUrl = envri === "SITES" ? "fieldsites.se" : "icos-cp.eu";
+	return `//maps.${baseUrl}/lm/open/topowebb-ccby/v1/wmts/1.0.0/`
 		+ layer
 		+ "/default/3857/{z}/{y}/{x}.png";
 }

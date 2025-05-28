@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import DofPatternFusion.*
+import eu.icoscp.envri.Envri
 
 sealed trait FusionPattern
 case class DobjStatFusion(exprToFuse: Extension, node: StatsFetchNode) extends FusionPattern
@@ -31,7 +32,7 @@ case class DobjListFusion(
 
 final case class UniqueKeywordsFusion(bindingName: String, expression: TupleExpr, fusion: DobjListFusion) extends FusionPattern
 
-class DofPatternFusion(meta: CpmetaVocab){
+class DofPatternFusion(meta: CpmetaVocab, envri: Option[Envri]){
 
 	def findFusions(patt: DofPattern): Seq[FusionPattern] = patt match{
 		case DofPattern.Empty => Nil
@@ -120,7 +121,7 @@ class DofPatternFusion(meta: CpmetaVocab){
 
 			val varProps = getVarPropLookup(patt)
 
-			val andOrFilterParser = new FilterPatternSearch(varProps, meta)
+			val andOrFilterParser = new FilterPatternSearch(varProps, meta, envri)
 
 			val filtsAndExprs = patt.filters.flatMap{fexp =>
 				andOrFilterParser.parseFilterExpr(fexp).map(_ -> fexp.getParentNode)
@@ -265,6 +266,7 @@ object DofPatternFusion{
 								strProp,
 								vals.collect{case lit: Literal => asString(lit)}.flatten
 							)
+							case EnvriProp => All
 						}
 
 					case _ =>

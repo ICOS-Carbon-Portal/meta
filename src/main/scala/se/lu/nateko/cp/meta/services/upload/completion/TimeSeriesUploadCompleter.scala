@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.completion
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.HandleNetClient

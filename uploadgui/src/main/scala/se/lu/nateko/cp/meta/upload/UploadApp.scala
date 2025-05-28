@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
+import scala.language.unsafeNulls
+
 import org.scalajs.dom
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.UploadDto

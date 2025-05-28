@@ -1,5 +1,8 @@
 package se.lu.nateko.cp.meta.core.crypto
 
+// Lots of string operations in this file, which does not play well with explicit-nulls currently.
+import scala.language.unsafeNulls
+
 import java.util.Arrays
 import java.util.Base64
 

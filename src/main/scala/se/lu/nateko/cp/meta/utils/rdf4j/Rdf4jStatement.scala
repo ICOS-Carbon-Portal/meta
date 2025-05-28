@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.utils.rdf4j
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Statement, Value}
 
 final case class Rdf4jStatement (

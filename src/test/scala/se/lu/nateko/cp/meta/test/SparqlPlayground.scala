@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 
 object SparqlPlayground extends App {

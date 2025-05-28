@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.instanceserver
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.*
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}

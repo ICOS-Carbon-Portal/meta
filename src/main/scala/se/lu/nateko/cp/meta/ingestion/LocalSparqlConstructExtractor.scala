@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}

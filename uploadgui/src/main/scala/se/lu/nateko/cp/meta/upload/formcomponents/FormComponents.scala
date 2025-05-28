@@ -1,5 +1,8 @@
 package se.lu.nateko.cp.meta.upload.formcomponents
 
+// Lots of string operations in this file, which does not play well with explicit-nulls currently.
+import scala.language.unsafeNulls
+
 import java.time.Instant
 
 import scala.util.{ Success, Try, Failure }

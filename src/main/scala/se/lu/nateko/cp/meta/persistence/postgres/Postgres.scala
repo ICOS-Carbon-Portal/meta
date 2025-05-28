@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
+import scala.language.unsafeNulls
+
 import java.sql.{Connection, DriverManager}
 import scala.util.Try
 

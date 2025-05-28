@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.locationtech.jts.geom.{Coordinate, GeometryCollection}
 import org.locationtech.jts.io.geojson.GeoJsonReader

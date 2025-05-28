@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.model.Uri
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

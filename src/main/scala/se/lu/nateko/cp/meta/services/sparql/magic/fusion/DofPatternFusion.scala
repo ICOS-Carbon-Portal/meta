@@ -139,7 +139,8 @@ class DofPatternFusion(meta: CpmetaVocab, envri: Option[Envri]){
 					case cp: ContProp => cp
 					case optp: OptUriProperty => optp
 				}.distinct.toSeq
-			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_))).optimize
+			val envriFilter = envri.map(e => CategFilter(EnvriProp, Seq(e)))
+			val allFilts = And(categFilts ++ filts ++ reqProps.map(index.Exists(_)) ++ envriFilter).optimize
 
 			val namedVarProps = varProps.collect:
 				case (nv: NamedVar, prop) => nv -> prop

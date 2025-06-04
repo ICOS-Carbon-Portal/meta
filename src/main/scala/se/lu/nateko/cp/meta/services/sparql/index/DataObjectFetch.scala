@@ -80,7 +80,7 @@ object Property{
 	/** TODO ATTENTION Fragile code. findSubSingletons should be re-written to support automatic discovery of all singletons
 	 * inheriting from Property. Then the explicit listing will not be needed.*/
 	val allConcrete: Set[ConcreteProp] = {
-		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight)
+		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight, EnvriProp)
 		Iterable(
 			findSubSingletons[StringCategProp],
 			findSubSingletons[UriProperty],

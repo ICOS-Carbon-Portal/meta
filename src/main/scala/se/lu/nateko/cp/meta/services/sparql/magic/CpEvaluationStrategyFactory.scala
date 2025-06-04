@@ -30,13 +30,14 @@ class CpEvaluationStrategyFactory(
 	index: CpIndex,
 	enricher: StatementsEnricher,
 	indexEnabled: Boolean
-)(using EnvriConfigs) extends DefaultEvaluationStrategyFactory(fedResolver){
+)(using envConf: EnvriConfigs) extends DefaultEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
 
 		val envriOpt = Option(dataSet)
+			.filter(_ => envConf.size > 1) // no need for ENVRI filtering if there is only one
 			.flatMap(_.getDefaultGraphs.iterator.asScala.nextOption())
 			.flatMap(iri => EnvriResolver.infer(iri.toJava))
 

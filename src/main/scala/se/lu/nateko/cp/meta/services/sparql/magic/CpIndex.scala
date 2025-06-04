@@ -1,15 +1,20 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
-import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.sail.Sail
-import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
+import org.roaringbitmap.buffer.BufferFastAggregation
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource}
-import se.lu.nateko.cp.meta.services.sparql.index.*
-import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, StatEntry}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.index.*
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -43,12 +48,12 @@ trait ObjInfo extends ObjSpecific{
 	def idx: Int
 }
 
-class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData) extends ReadWriteLocking:
+class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriConfigs) extends ReadWriteLocking:
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
 
 	import data.{contMap, stats, objs, initOk, idLookup}
-	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000) = {
+	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using EnvriConfigs) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
 		var statementCount = 0

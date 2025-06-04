@@ -1,20 +1,26 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
-import org.eclipse.rdf4j.model.{IRI, Statement, Value}
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Resource
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
+import org.roaringbitmap.buffer.MutableRoaringBitmap
+import org.scalatest.AppendedClues.convertToClueful
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.Keyword
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
-import org.eclipse.rdf4j.model.Resource
-import org.roaringbitmap.buffer.MutableRoaringBitmap
+
 import scala.util.Random
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.scalatest.AppendedClues.convertToClueful
-import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 
 private val factory = SimpleValueFactory.getInstance()
 
@@ -34,6 +40,8 @@ class IndexDataTest extends AnyFunSpec {
 	val seed = Math.abs(Random.nextInt())
 	Random.setSeed(seed)
 	info(s"Random seed: $seed")
+
+	given EnvriConfigs = MetaCoreConfig.default.envriConfigs
 
 	test("ObjEntry.fileName is cleared hasName statement is deleted") {
 		val subject: IRI = factory.createIRI("https://meta.icos-cp.eu/objects/oAzNtfjXddcnG_irI8fJT7W6")

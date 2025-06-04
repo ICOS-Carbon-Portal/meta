@@ -1,14 +1,20 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Value}
+import org.eclipse.rdf4j.query.BindingSet
+import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.algebra.TupleExpr
+import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
+import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
+import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
-import org.eclipse.rdf4j.query.algebra.evaluation.{QueryBindingSet, QueryEvaluationStep, TripleSource}
-import org.eclipse.rdf4j.query.{BindingSet, Dataset}
 import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.services.sparql.TupleExprCloner
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.*
@@ -16,6 +22,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsJava
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 
 class CpEvaluationStrategyFactory(
@@ -23,11 +30,17 @@ class CpEvaluationStrategyFactory(
 	index: CpIndex,
 	enricher: StatementsEnricher,
 	indexEnabled: Boolean
-) extends DefaultEvaluationStrategyFactory(fedResolver){
+)(using envConf: EnvriConfigs) extends DefaultEvaluationStrategyFactory(fedResolver){
 	import index.{vocab => metaVocab}
 	private val logger = LoggerFactory.getLogger(this.getClass)
 
 	override def createEvaluationStrategy(dataSet: Dataset, baseTripleSrc: TripleSource, stats: EvaluationStatistics) = {
+
+		val envriOpt = Option(dataSet)
+			.filter(_ => envConf.size > 1) // no need for ENVRI filtering if there is only one
+			.flatMap(_.getDefaultGraphs.iterator.asScala.nextOption())
+			.flatMap(iri => EnvriResolver.infer(iri.toJava))
+
 		val tripleSrc = CpEnrichedTripleSource(baseTripleSrc, enricher)
 		new DefaultEvaluationStrategy(tripleSrc, dataSet, fedResolver, 0, stats){strat =>
 
@@ -48,7 +61,7 @@ class CpEvaluationStrategyFactory(
 						val keywords = index.getUniqueKeywords(fetchRequest)
 						val bs = new QueryBindingSet(existingBindings)
 						bs.setBinding(bindingName, index.factory.createLiteral(keywords.mkString(",")))
-						Seq(bs).iterator
+						Iterator.single(bs)
 					})
 				}
 
@@ -61,7 +74,7 @@ class CpEvaluationStrategyFactory(
 
 				if indexEnabled then
 					val dofps = new DofPatternSearch(metaVocab)
-					val fuser = new DofPatternFusion(metaVocab)
+					val fuser = new DofPatternFusion(metaVocab, envriOpt)
 
 					val pattern = dofps.find(queryExpr)
 					val fusions = fuser.findFusions(pattern)
@@ -102,12 +115,14 @@ class CpEvaluationStrategyFactory(
 
 	private def bindingsForObjectFetch(doFetch: DataObjectFetchNode, bindings: BindingSet): Iterator[BindingSet] = {
 		val f = index.factory
+		type BindingSetter = (QueryBindingSet, ObjInfo) => Unit
+		val noopSetter: BindingSetter = (_, _) => ()
 
-		val setters: Seq[(QueryBindingSet, ObjInfo) => Unit] = doFetch.varNames.toSeq.map{case (prop, varName) =>
+		val setters: Seq[BindingSetter] = doFetch.varNames.toSeq.map{case (prop, varName) =>
 
-			def setter(accessor: ObjInfo => Value): (QueryBindingSet, ObjInfo) => Unit =
+			def setter(accessor: ObjInfo => Value): BindingSetter =
 				(bs, oinfo) => bs.setBinding(varName, accessor(oinfo))
-			def setterOpt(accessor: ObjInfo => Option[Value]): (QueryBindingSet, ObjInfo) => Unit =
+			def setterOpt(accessor: ObjInfo => Option[Value]): BindingSetter =
 				(bs, oinfo) => accessor(oinfo).foreach(bs.setBinding(varName, _))
 
 			prop match{
@@ -117,15 +132,16 @@ class CpEvaluationStrategyFactory(
 				case Site            => setter(_.site)
 				case Submitter       => setter(_.submitter)
 				case FileName        => setterOpt(_.fileName.map(f.createLiteral))
-				case _: BoolProperty => (_, _) => ()
-				case _: StringCategProp => (_, _) => ()
+				case _: BoolProperty => noopSetter
+				case _: StringCategProp => noopSetter
+				case EnvriProp       => noopSetter
 				case FileSize        => setterOpt(_.sizeInBytes.map(f.createLiteral))
 				case SamplingHeight  => setterOpt(_.samplingHeightMeters.map(f.createLiteral))
 				case SubmissionStart => setterOpt(_.submissionStartTime.map(f.createDateTimeLiteral))
 				case SubmissionEnd   => setterOpt(_.submissionEndTime.map(f.createDateTimeLiteral))
 				case DataStart       => setterOpt(_.dataStartTime.map(f.createDateTimeLiteral))
 				case DataEnd         => setterOpt(_.dataEndTime.map(f.createDateTimeLiteral))
-				case _: GeoProp      => (_, _) => ()
+				case _: GeoProp      => noopSetter
 			}
 		}
 

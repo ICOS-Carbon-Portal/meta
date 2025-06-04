@@ -13,8 +13,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.util.Try
 import scala.util.matching.Regex
+import eu.icoscp.envri.Envri
 
-class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
+class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab, envri: Option[Envri]){
 	import FilterPatternSearch.*
 
 	def parseFilterExpr(expr: ValueExpr): Option[index.Filter] = expr match {
@@ -54,7 +55,7 @@ class FilterPatternSearch(varProps: Map[QVar, Property], meta: CpmetaVocab){
 					dobjVar = varProps.collectFirst{ case (qvar: NamedVar, DobjUri) => qvar}
 				)
 				val dofPatt = dofPatt0.join(DofPatternSearch(meta).find(expr))
-				val fusions = DofPatternFusion(meta).findFusions(dofPatt)
+				val fusions = DofPatternFusion(meta, envri).findFusions(dofPatt)
 
 				fusions match
 					case Seq(fus: DobjListFusion) if fus.isPureCpIndexQuery => Some(fus.fetch.filter)
@@ -145,6 +146,8 @@ object FilterPatternSearch{
 			v.asOptInstanceOf[Literal].flatMap(asFloat).map(sh => ContFilter(SamplingHeight, EqualsFilter(sh)))
 
 		case _: BoolProperty => None
+
+		case EnvriProp => None
 
 		case GeoIntersects => v.asOptInstanceOf[Literal].flatMap: lit =>
 			val dt = lit.getDatatype()

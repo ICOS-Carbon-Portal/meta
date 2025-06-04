@@ -13,6 +13,7 @@ import org.eclipse.rdf4j.sail.memory.model.MemIRI
 import org.eclipse.rdf4j.sail.nativerdf.model.NativeIRI
 import org.eclipse.rdf4j.sail.{Sail, SailConnectionListener}
 import org.roaringbitmap.buffer.MutableRoaringBitmap
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.Geo
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -100,6 +101,8 @@ object IndexHandler{
 		kryo.register(classOf[Array[IRI]])
 		kryo.register(classOf[Array[ObjEntry]])
 		kryo.register(classOf[Array[String]])
+		Envri.values.foreach: envri =>
+			kryo.register(envri.getClass, EnvriSerializer)
 		kryo.register(classOf[HashMap[?,?]], HashmapSerializer)
 		kryo.register(classOf[AnyRefMap[?,?]], AnyRefMapSerializer)
 		kryo.register(classOf[Sha256Sum], Sha256HashSerializer)
@@ -150,6 +153,14 @@ object IndexHandler{
 	}
 
 }
+
+object EnvriSerializer extends Serializer[Envri]:
+	override def write(kryo: Kryo, output: Output, envri: Envri): Unit =
+		output.writeInt(envri.ordinal)
+
+	override def read(kryo: Kryo, input: Input, tpe: Class[? <: Envri]): Envri =
+		Envri.fromOrdinal(input.readInt())
+
 
 object RoaringSerializer extends Serializer[MutableRoaringBitmap] {
 	override def write(kryo: Kryo, output: Output, bitmap: MutableRoaringBitmap): Unit =

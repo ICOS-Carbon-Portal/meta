@@ -9,6 +9,8 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
@@ -58,6 +60,8 @@ class TestDb {
 }
 
 private object TestRepo {
+	given EnvriConfigs = MetaCoreConfig.default.envriConfigs
+
 	lazy val repo = Await.result(initRepo(), Duration.Inf)
 	private var reference_count = 0
 	private var open = false
@@ -153,6 +157,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
+	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer)
 }
 

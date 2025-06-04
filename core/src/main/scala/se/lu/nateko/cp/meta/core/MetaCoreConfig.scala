@@ -1,10 +1,14 @@
 package se.lu.nateko.cp.meta.core
 
-import java.net.URI
+import com.typesafe.config.ConfigFactory
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import spray.json.RootJsonFormat
 import spray.json.DefaultJsonProtocol.*
+import spray.json.RootJsonFormat
+
+import java.net.URI
+
 
 
 case class MetaCoreConfig(
@@ -20,4 +24,6 @@ object MetaCoreConfig extends CommonJsonSupport{
 	given RootJsonFormat[Envri] = enumFormat(Envri.valueOf, Envri.values)
 	given RootJsonFormat[EnvriConfig] = jsonFormat6(EnvriConfig.apply)
 	given RootJsonFormat[MetaCoreConfig] = jsonFormat2(MetaCoreConfig.apply)
+
+	def default = ConfigFactory.defaultReference().getValue("metacore").parseAs[MetaCoreConfig]
 }

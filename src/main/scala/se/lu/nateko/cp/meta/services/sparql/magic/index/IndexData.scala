@@ -1,26 +1,39 @@
 package se.lu.nateko.cp.meta.services.sparql.magic.index
 
-import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value}
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Literal
+import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.XSD
+import org.roaringbitmap.buffer.BufferFastAggregation
+import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.slf4j.LoggerFactory
+import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
-import se.lu.nateko.cp.meta.core.algo.{DatetimeHierarchicalBitmap, HierarchicalBitmap}
+import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.utils.rdf4j.{===, Rdf4jStatement, asString, toJava}
-import se.lu.nateko.cp.meta.utils.{parseCommaSepList, parseJsonStringArray}
+import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
+import se.lu.nateko.cp.meta.utils.parseCommaSepList
+import se.lu.nateko.cp.meta.utils.parseJsonStringArray
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import se.lu.nateko.cp.meta.utils.rdf4j.asString
+import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
 import java.time.Instant
 import scala.collection.IndexedSeq as IndSeq
-import scala.collection.mutable.{AnyRefMap, ArrayBuffer}
-import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap}
-import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
+import scala.collection.mutable.AnyRefMap
+import scala.collection.mutable.ArrayBuffer
 
 // Categories listed here are retained, even if the associated bitmap is empty.
 // Currently used for keeping track of Specs that have been seen, even if no objects are
@@ -129,13 +142,16 @@ final class IndexData(nObjects: Int)(
 		BufferFastAggregation.or(LazyList(specObjects, objects).flatten*)
 	}
 
-	def processUpdate(statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab)(using StatementSource): Unit =
+	def processUpdate(
+		statement: Rdf4jStatement, isAssertion: Boolean, vocab: CpmetaVocab
+	)(using StatementSource, EnvriConfigs): Unit =
 		import vocab.*
 		import vocab.prov.{wasAssociatedWith, startedAtTime, endedAtTime}
 		import vocab.dcterms.hasPart
 		import statement.{subj, pred, obj}
 
 		given CpmetaVocab = vocab
+		val filterByEnvri: Boolean = summon[EnvriConfigs].size > 1
 
 		pred match {
 			case `hasObjectSpec` =>
@@ -143,6 +159,8 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
 							updateCategSet(Spec, spec, oe.idx, isAssertion)
+							if (filterByEnvri) EnvriResolver.infer(subj.toJava).foreach: envri =>
+								updateCategSet(EnvriProp, envri, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec

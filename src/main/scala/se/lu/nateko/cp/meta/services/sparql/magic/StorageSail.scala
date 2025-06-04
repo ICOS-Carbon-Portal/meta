@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore

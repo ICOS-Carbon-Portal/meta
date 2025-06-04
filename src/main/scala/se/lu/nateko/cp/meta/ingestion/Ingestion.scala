@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.vocabulary.LOCN

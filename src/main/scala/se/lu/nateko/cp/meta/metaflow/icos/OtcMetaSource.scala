@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorRef
 import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.XSD

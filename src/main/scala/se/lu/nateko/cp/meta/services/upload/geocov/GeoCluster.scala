@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.geocov
 
+import scala.language.unsafeNulls
+
 import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.operation.union.UnaryUnionOp

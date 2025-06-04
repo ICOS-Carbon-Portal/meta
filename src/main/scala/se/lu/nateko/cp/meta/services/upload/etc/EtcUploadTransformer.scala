@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.upload.etc
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner, UriId}

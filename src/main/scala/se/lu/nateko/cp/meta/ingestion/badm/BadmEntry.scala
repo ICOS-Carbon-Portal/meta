@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion.badm
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 
 import java.text.{NumberFormat, ParseException}

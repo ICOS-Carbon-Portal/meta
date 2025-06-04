@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.drought
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.services.citation.CitationClient

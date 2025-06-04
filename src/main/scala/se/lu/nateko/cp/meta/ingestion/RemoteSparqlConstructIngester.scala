@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.ingestion
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, MediaTypes, StatusCodes, headers}

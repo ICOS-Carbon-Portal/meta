@@ -58,7 +58,7 @@ class CpEvaluationStrategyFactory(
 				case UniqueKeywordsNode(bindingName, doFetch) => {
 					qEvalStep(existingBindings => {
 						val fetchRequest = getFilterEnrichedDobjFetch(doFetch, existingBindings)
-						val keywords = index.getUniqueKeywords(fetchRequest)
+						val keywords = index.getUniqueKeywords(fetchRequest).toSeq.sorted
 						val bs = new QueryBindingSet(existingBindings)
 						bs.setBinding(bindingName, index.factory.createLiteral(keywords.mkString(",")))
 						Iterator.single(bs)

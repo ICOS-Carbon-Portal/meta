@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.services.sparql.magic.fusion.{DobjStatFusion, DofPat
 class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
 	private val dofps = new DofPatternSearch(meta)
-	private val fuser = new DofPatternFusion(meta)
+	private val fuser = new DofPatternFusion(meta, None)
 
 	private def parseQuery(q: String) = (new SPARQLParser).parseQuery(q, "http://dummy.org").getTupleExpr
 

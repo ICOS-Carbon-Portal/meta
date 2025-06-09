@@ -19,7 +19,7 @@ object ChosenTest extends Tag("fusion.ChosenTest")
 class DofPatternFusionTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)
 	private val dofps = new DofPatternSearch(meta)
-	private val fuser = new DofPatternFusion(meta)
+	private val fuser = new DofPatternFusion(meta, None)
 	private val parser = new SPARQLParser
 
 	private def parseQuery(q: String): TupleExpr = parser.parseQuery(q, "http://dummy.org").getTupleExpr

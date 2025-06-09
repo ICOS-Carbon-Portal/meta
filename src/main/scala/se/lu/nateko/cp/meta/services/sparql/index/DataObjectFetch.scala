@@ -60,6 +60,7 @@ case object GeoIntersects extends GeoProp
 
 sealed trait CategProp extends Property{type ValueType <: AnyRef}
 
+case object EnvriProp extends CategProp{ type ValueType = eu.icoscp.envri.Envri}
 sealed trait StringCategProp extends CategProp{type ValueType = String}
 sealed trait UriProperty extends CategProp{type ValueType = IRI}
 sealed trait OptUriProperty extends CategProp{ type ValueType = Option[IRI]}
@@ -79,7 +80,7 @@ object Property{
 	/** TODO ATTENTION Fragile code. findSubSingletons should be re-written to support automatic discovery of all singletons
 	 * inheriting from Property. Then the explicit listing will not be needed.*/
 	val allConcrete: Set[ConcreteProp] = {
-		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight)
+		val specials: Iterable[ConcreteProp] = Iterable(FileName, FileSize, SamplingHeight, EnvriProp)
 		Iterable(
 			findSubSingletons[StringCategProp],
 			findSubSingletons[UriProperty],

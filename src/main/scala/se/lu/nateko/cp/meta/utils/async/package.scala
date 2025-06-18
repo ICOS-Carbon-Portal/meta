@@ -17,7 +17,8 @@ def errorLite[T](msg: String): Future[T] = Future.failed(new Exception(msg) with
 def timeLimit[T](
 	future: Future[T],
 	duration: FiniteDuration,
-	using: Scheduler
+	using: Scheduler,
+	errContext: String
 )(using ExecutionContext): Future[T] = if(future.isCompleted) future else {
 
 	val p = Promise[T]()
@@ -25,7 +26,7 @@ def timeLimit[T](
 
 	using.scheduleOnce(duration){
 
-		p.tryFailure(new TimeoutException(s"Future timed out after $duration"))
+		p.tryFailure(new TimeoutException(s"Future timed out after $duration ($errContext)"))
 
 	}
 

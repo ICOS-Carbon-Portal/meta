@@ -86,12 +86,10 @@ class CitationClientImpl (
 		withTimeout(fetchIfNeeded(doi, doiCache, fetchDoiMeta), s"DOI metadata for $doi")
 
 	private def withTimeout[T](fut: Future[T], serviceName: String): Future[T] =
-		timeLimit(fut, config.timeoutSec.seconds, scheduler).recoverWith{
-			case _: TimeoutException =>
-				val msg = serviceName + " service timed out"
-				log.warning(msg)
-				Future.failed(new Exception(msg) with NoStackTrace)
-		}
+		timeLimit(fut, config.timeoutSec.seconds, scheduler, serviceName).andThen:
+			case Failure(_: TimeoutException) =>
+				log.warning(s"$serviceName service timed out")
+
 
 	private def fetchIfNeeded[K, V](key: K, cache: TrieMap[K, Future[V]], fetchValue: K => Future[V]): Future[V] =
 

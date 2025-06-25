@@ -1,0 +1,9 @@
+# to make the dump: $ curl -X POST --data-binary "@src/test/resources/sparql/allDobjDump.rq" -H "Content-Type: text/plain" -H "Accept: text/csv" https://meta.icos-cp.eu/sparql -o dobjDump.csv
+# then to sort by submission time: $ tail -n +2 dobjDump.csv | cut -d',' -f2- | sort > dobjDumpSorted.csv
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select (str(?submTime) as ?time) ?dobj ?fileName where{
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasName ?fileName .
+}

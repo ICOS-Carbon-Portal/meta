@@ -18,9 +18,11 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 	import maker.sparqlHelper.sparql
 
 	def makeColls(): Future[Done] = for(
-		stationToColl <- sparql.select(stationCollsQuery("2023-07-03", "2023-07-11")).map(parseStationColls);
+		stationToColl <- sparql.select(stationCollsQuery("2024-06-25", "2024-06-30")).map(parseStationColls);
 		//_ = println(stationToColl);
-		stationToItems <- sparql.select(dobjStationQuery).map(parseStationObjs);
+		stationToItems <- sparql.select(dobjStationQuery("2024-06-15")).map(parseStationObjs);
+		count = stationToItems.values.map(_.map.values.map(_.size)).flatten.sum;
+		_ = println(s"Total number of data objects: $count");
 		done <- executeSequentially(stationToItems){
 			(makeStationColl(stationToColl) _).tupled
 		}
@@ -109,7 +111,7 @@ object AtcCollMaker{
 			creators = creators :+ icosRiCreator,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(2024),
+			publicationYear = Some(2025),
 			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
@@ -132,11 +134,11 @@ object AtcCollMaker{
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2024-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2025-1",
 		description = Some(
 			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, meteorology, " +
-			"and flask samples analyzed for CO2, CH4, N2O, CO, H2 and SF6, " +
-			s"period up to March 2024, station ${station.org.name}, final quality controlled Level 2 data, release 2024-1"
+			"and flask samples analyzed for CO2, CH4, N2O, CO, H2, SF6, delta O2N2 and 14C" +
+			s"period up to March 2025, station ${station.org.name}, final quality controlled Level 2 data, release 2025-1"
 		),
 		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi),
@@ -149,7 +151,7 @@ object AtcCollMaker{
 			case Seq(_, spec, dobj) => new SpecDobjs(spec, dobj)
 		}(_ merge _)
 
-	val dobjStationQuery = """prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	def dobjStationQuery(submittedAfter: String) = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix prov: <http://www.w3.org/ns/prov#>
 select ?dobj ?station ?spec #?fileName
 where {
@@ -166,6 +168,8 @@ where {
 	?dobj cpmeta:hasSizeInBytes ?size .
 	#?dobj cpmeta:hasName ?fileName .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	filter(?submTime > '${submittedAfter}T00:00:00.000Z'^^xsd:dateTime)
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 }"""
 

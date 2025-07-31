@@ -202,7 +202,7 @@ As with data object uploads, this metadata package must be HTTP-POSTed to `https
 
 When scripting uploads of multiple objects, it can be convenient to use an upload-metadata package of an existing object as an example or a template. The reconstructed package can be fetched using the following request:
 
-`curl https://meta.icos-cp.eu/dtodownload?uri=<langing page URL>`
+`curl https://meta.icos-cp.eu/dtodownload?uri=<landing page URL>`
 
 In bash shell, one can also format the JSON after fetching, as in this example:
 

@@ -27,8 +27,8 @@ function initMap(locations) {
 			const className = 'leaflet-control-layers';
 			L.Control.Layers.prototype._initLayout.call(this);
 
-
 			const buttonNone = this._selectNoneButton = L.DomUtil.create('button', `${className}-button`, this._section);
+			buttonNone.classList.add(`${className}-button-hidden`)
 			buttonNone.title = "Select none";
 			buttonNone.innerHTML = "Select none";
 			buttonNone.setAttribute("type", "button");
@@ -44,7 +44,10 @@ function initMap(locations) {
 					}
 				);
 			});
+
 			const buttonAll = this._selectAllButton = L.DomUtil.create('button', `${className}-button`, this._section);
+			buttonAll.classList.add(`${className}-button-hidden`)
+
 			buttonAll.title = "Select all";
 			buttonAll.innerHTML = "Select all";
 			buttonAll.setAttribute("type", "button");
@@ -60,6 +63,32 @@ function initMap(locations) {
 					}
 				);
 			});
+		},
+
+		_showButtons: function() {
+			const className = 'leaflet-control-layers';
+
+			this._selectNoneButton.classList.remove(`${className}-button-hidden`);
+			this._selectAllButton.classList.remove(`${className}-button-hidden`);
+		},
+
+		_hideButtons: function() {
+			const className = 'leaflet-control-layers';
+
+			this._selectNoneButton.classList.add(`${className}-button-hidden`);
+			this._selectAllButton.classList.add(`${className}-button-hidden`);
+		},
+
+		_update() {
+			L.Control.Layers.prototype._update.call(this);
+
+			if (this._overlaysList.children.length <= 3) {
+				this._hideButtons();
+			} else {
+				this._showButtons();
+			}
+
+			return this;
 		}
 	});
 

@@ -28,15 +28,17 @@ function initMap(locations) {
 			L.Control.Layers.prototype._initLayout.call(this);
 
 			const buttonNone = this._selectNoneButton = L.DomUtil.create('button', `${className}-button`, this._section);
-			buttonNone.classList.add(`${className}-button-hidden`)
+
 			buttonNone.title = "Select none";
 			buttonNone.innerHTML = "Select none";
+
 			buttonNone.setAttribute("type", "button");
 			buttonNone.setAttribute("aria-label", "Select none");
+
 			L.DomEvent.disableClickPropagation(buttonNone);
 			L.DomEvent.on(buttonNone, 'click', L.DomEvent.stop);
 			L.DomEvent.on(buttonNone, 'click', () => {
-				this._section.querySelectorAll(`.${className}-overlays .${className}-selector`).forEach(
+				this._overlaysList.querySelectorAll(`.${className}-selector`).forEach(
 					(layer) => {
 						if (layer.checked) {
 							layer.click()
@@ -46,16 +48,17 @@ function initMap(locations) {
 			});
 
 			const buttonAll = this._selectAllButton = L.DomUtil.create('button', `${className}-button`, this._section);
-			buttonAll.classList.add(`${className}-button-hidden`)
 
 			buttonAll.title = "Select all";
 			buttonAll.innerHTML = "Select all";
+
 			buttonAll.setAttribute("type", "button");
 			buttonAll.setAttribute("aria-label", "Select all");
+
 			L.DomEvent.disableClickPropagation(buttonAll);
 			L.DomEvent.on(buttonAll, 'click', L.DomEvent.stop);
 			L.DomEvent.on(buttonAll, 'click', () => {
-				this._section.querySelectorAll(`.${className}-overlays .${className}-selector`).forEach(
+				this._overlaysList.querySelectorAll(`.${className}-selector`).forEach(
 					(layer) => {
 						if (!layer.checked) {
 							layer.click()

@@ -22,7 +22,81 @@ function initMap(locations) {
 	map.addLayer(baseMaps.Topographic);
 	const icon = getIcon(queryParams.icon);
 	var overlays = [];
-	var layercontrol = L.control.layers(baseMaps, overlays).addTo(map);
+	L.Control.CustomLayers = L.Control.Layers.extend({
+		_initLayout: function() {
+			const className = 'leaflet-control-layers';
+			L.Control.Layers.prototype._initLayout.call(this);
+
+			const buttonNone = this._selectNoneButton = L.DomUtil.create('button', `${className}-button`, this._section);
+
+			buttonNone.title = "Select none";
+			buttonNone.innerHTML = "Select none";
+
+			buttonNone.setAttribute("type", "button");
+			buttonNone.setAttribute("aria-label", "Select none");
+
+			L.DomEvent.disableClickPropagation(buttonNone);
+			L.DomEvent.on(buttonNone, 'click', L.DomEvent.stop);
+			L.DomEvent.on(buttonNone, 'click', () => {
+				this._overlaysList.querySelectorAll(`.${className}-selector`).forEach(
+					(layer) => {
+						if (layer.checked) {
+							layer.click()
+						}
+					}
+				);
+			});
+
+			const buttonAll = this._selectAllButton = L.DomUtil.create('button', `${className}-button`, this._section);
+
+			buttonAll.title = "Select all";
+			buttonAll.innerHTML = "Select all";
+
+			buttonAll.setAttribute("type", "button");
+			buttonAll.setAttribute("aria-label", "Select all");
+
+			L.DomEvent.disableClickPropagation(buttonAll);
+			L.DomEvent.on(buttonAll, 'click', L.DomEvent.stop);
+			L.DomEvent.on(buttonAll, 'click', () => {
+				this._overlaysList.querySelectorAll(`.${className}-selector`).forEach(
+					(layer) => {
+						if (!layer.checked) {
+							layer.click()
+						}
+					}
+				);
+			});
+		},
+
+		_showButtons: function() {
+			const className = 'leaflet-control-layers';
+
+			this._selectNoneButton.classList.remove(`${className}-button-hidden`);
+			this._selectAllButton.classList.remove(`${className}-button-hidden`);
+		},
+
+		_hideButtons: function() {
+			const className = 'leaflet-control-layers';
+
+			this._selectNoneButton.classList.add(`${className}-button-hidden`);
+			this._selectAllButton.classList.add(`${className}-button-hidden`);
+		},
+
+		_update() {
+			L.Control.Layers.prototype._update.call(this);
+
+			if (this._overlaysList.children.length <= 3) {
+				this._hideButtons();
+			} else {
+				this._showButtons();
+			}
+
+			return this;
+		}
+	});
+
+	var layercontrol = new L.Control.CustomLayers(baseMaps, overlays);
+	layercontrol.addTo(map);
 
 	const featureGroups = locations.map(function ({ label, description, geoJson }) {
 		const fg = new L.FeatureGroup();

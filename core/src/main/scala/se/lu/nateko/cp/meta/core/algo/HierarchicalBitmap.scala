@@ -4,7 +4,6 @@ import scala.language.unsafeNulls
 
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
-import org.roaringbitmap.IntConsumer
 
 import java.io.DataInput
 import java.io.DataOutput
@@ -14,16 +13,7 @@ import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap.*
-
-// Work-around because of -Yexplicit-nulls, which makes the existing overloads of
-// ImmutableRoaringBitmap.forEach fail.
-// In the end, the final result is an IntConsumer anyway when using those overloads,
-// so all we're doing here is making the type-system happy.
-extension (bitmap: ImmutableRoaringBitmap)
-	def forEach(f: Int => Unit): Unit =
-		bitmap.forEach(new IntConsumer {
-			def accept(i: Int): Unit = f(i)
-		})
+import BitmapExtension.forEach
 
 /**
  * Assumptions:

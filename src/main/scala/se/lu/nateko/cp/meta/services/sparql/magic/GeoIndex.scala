@@ -5,11 +5,12 @@ import scala.language.unsafeNulls
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection, GeometryFactory}
 import org.roaringbitmap.buffer.{ImmutableRoaringBitmap, MutableRoaringBitmap}
-import org.roaringbitmap.IntConsumer
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IteratorHasAsJava
+
+import se.lu.nateko.cp.meta.core.algo.BitmapExtension.forEach
 
 val JtsGeoFactory = new GeometryFactory()
 val ConcaveHullLengthRatio = 0.8
@@ -138,11 +139,8 @@ class DenseCluster(val area: Geometry, objectIds: MutableRoaringBitmap) extends 
 		else
 			val currentDataCovs = new ArrayBuffer[DataObjCov]()
 
-			objectIds.forEach(new IntConsumer{
-				def accept(objId: Int) = {
-					currentDataCovs.addOne(DataObjCov(objId, area))
-				}
-			})
+			objectIds.forEach: objId =>
+				currentDataCovs.addOne(DataObjCov(objId, area))
 
 			currentDataCovs.addOne(dobjCov)
 

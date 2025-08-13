@@ -15,6 +15,16 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap.*
 
+// Work-around because of -Yexplicit-nulls, which makes the existing overloads of
+// ImmutableRoaringBitmap.forEach fail.
+// In the end, the final result is an IntConsumer anyway when using those overloads,
+// so all we're doing here is making the type-system happy.
+extension (bitmap: ImmutableRoaringBitmap)
+	def forEach(f: Int => Unit): Unit =
+		bitmap.forEach(new IntConsumer {
+			def accept(i: Int): Unit = f(i)
+		})
+
 /**
  * Assumptions:
  * - only adding, never removing;
@@ -51,11 +61,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 		if(!seenDifferentKeys) assessDiversityOfKeys(key)
 
 		if children.isEmpty && seenDifferentKeys && (n >= geo.spilloverThreshold)
-		then values.forEach(new IntConsumer {
-			def accept(v: Int): Unit = {
-				addToChild(geo.keyLookup(v), v)
-			}
-		})
+		then values.forEach{v => addToChild(geo.keyLookup(v), v)}
 
 		!wasPresent
 
@@ -140,12 +146,7 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 				val res =
 					if(seenDifferentKeys && amount > 1){
 						val list = new ju.ArrayList[Int](amount)
-						filtered.forEach(new IntConsumer {
-							def accept(i: Int): Unit = {
-								list.add(i);
-							}
-						})
-
+						filtered.forEach((i: Int) => {list.add(i);()})
 						list.sort(iter.valComp)
 						list.iterator.asScala
 					} else
@@ -196,13 +197,10 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 				}
 			} else {
 				val filtered = emptyBitmap
-				values.forEach(new IntConsumer{
-					def accept(v: Int) : Unit = {
-						val key = geo.keyLookup(v)
-						if(filterKey(key, req)) filtered.add(v)
-					}
+				values.forEach((v: Int) => {
+					val key = geo.keyLookup(v)
+					if(filterKey(key, req)) filtered.add(v)
 				})
-
 				//println(s"seen different keys, got ${filtered.getCardinality} results")
 				filtered
 			}

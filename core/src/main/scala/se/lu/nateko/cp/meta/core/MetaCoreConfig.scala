@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core
 
+import scala.language.unsafeNulls
+
 import com.typesafe.config.ConfigFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs

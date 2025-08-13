@@ -13,5 +13,4 @@ object BitmapExtension {
 			bitmap.forEach(new IntConsumer {
 				def accept(i: Int): Unit = f(i)
 			})
-
 }

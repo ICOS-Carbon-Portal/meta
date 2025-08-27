@@ -116,12 +116,13 @@ PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?dobj WHERE {
-	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> }
-	VALUES ?station { <http://meta.icos-cp.eu/resources/stations/AS_OXK> <http://meta.icos-cp.eu/resources/stations/AS_JUE> <http://meta.icos-cp.eu/resources/stations/AS_OPE> <http://meta.icos-cp.eu/resources/stations/AS_TRN> <http://meta.icos-cp.eu/resources/stations/AS_HPB> <http://meta.icos-cp.eu/resources/stations/AS_TOH> <http://meta.icos-cp.eu/resources/stations/AS_SSL> <http://meta.icos-cp.eu/resources/stations/AS_IZO> <http://meta.icos-cp.eu/resources/stations/AS_LMP> <http://meta.icos-cp.eu/resources/stations/AS_PUI> <http://meta.icos-cp.eu/resources/stations/AS_LUT> <http://meta.icos-cp.eu/resources/stations/AS_HTM> <http://meta.icos-cp.eu/resources/stations/AS_RUN> <http://meta.icos-cp.eu/resources/stations/AS_SVB> <http://meta.icos-cp.eu/resources/stations/AS_IPR> <http://meta.icos-cp.eu/resources/stations/AS_SMR> <http://meta.icos-cp.eu/resources/stations/AS_BIR> <http://meta.icos-cp.eu/resources/stations/AS_WAO> <http://meta.icos-cp.eu/resources/stations/AS_ZSF> <http://meta.icos-cp.eu/resources/stations/AS_KRE> <http://meta.icos-cp.eu/resources/stations/AS_KIT> <http://meta.icos-cp.eu/resources/stations/AS_PRS> <http://meta.icos-cp.eu/resources/stations/AS_UTO> <http://meta.icos-cp.eu/resources/stations/AS_STE> <http://meta.icos-cp.eu/resources/stations/AS_PAL> <http://meta.icos-cp.eu/resources/stations/AS_GAT> <http://meta.icos-cp.eu/resources/stations/AS_WES> <http://meta.icos-cp.eu/resources/stations/AS_HUN> <http://meta.icos-cp.eu/resources/stations/AS_HEL> <http://meta.icos-cp.eu/resources/stations/AS_SNO> <http://meta.icos-cp.eu/resources/stations/AS_LIN> <http://meta.icos-cp.eu/resources/stations/AS_CBW> <http://meta.icos-cp.eu/resources/stations/AS_SAC> <http://meta.icos-cp.eu/resources/stations/AS_RGL> <http://meta.icos-cp.eu/resources/stations/AS_ZEP> <http://meta.icos-cp.eu/resources/stations/AS_JFJ> <http://meta.icos-cp.eu/resources/stations/AS_CMN> <http://meta.icos-cp.eu/resources/stations/AS_PUY> <http://meta.icos-cp.eu/resources/stations/AS_NOR> }
+	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> }
 	?dobj cpmeta:hasObjectSpec ?spec .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?station cpmeta:hasStationClass ?stationClass .
 	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 	FILTER( ?submTime >= '%s'^^xsd:dateTime && ?submTime <= '%s'^^xsd:dateTime )
+	FILTER( ?stationClass = "1" || ?stationClass = "2" )
 }
 	""" % submission_window_to_utc_str(submission_window, "%Y-%m-%dT%H:%M:%SZ")
 

@@ -1,0 +1,4 @@
+numpy
+pandas
+netCDF4
+icoscp_core

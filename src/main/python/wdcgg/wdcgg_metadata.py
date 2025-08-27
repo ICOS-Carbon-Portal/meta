@@ -18,12 +18,13 @@ class InstrumentMethod:
 	method: str
 	code: str
 
-CONTRIBUTOR = "159"
-WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003"}
+CONTRIBUTOR = "162"
+WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", "CO": "3001"}
 SCALES = {
 	"CO2": CalibrationScale(name="WMO CO2 X2019", wdcgg_code="158"),
 	"CH4": CalibrationScale(name="WMO CH4 X2004A", wdcgg_code="3"),
-	"N2O": CalibrationScale(name="NOAA-2006A", wdcgg_code="200")
+	"N2O": CalibrationScale(name="WMO N2O X2006A", wdcgg_code="5"),
+	"CO": CalibrationScale(name="WMO CO X2014A", wdcgg_code="8")
 }
 WDCGG_METHODS = {
 	"Picarro": InstrumentMethod(method="CRDS", code="18"),
@@ -33,7 +34,9 @@ WDCGG_METHODS = {
 	"Maihak": InstrumentMethod(method="NDIR", code="9"),
 	"Ecotech, Spectronus": InstrumentMethod(method="Fourier Transform Spectrometer", code="50"),
 	"ABB, URAS": InstrumentMethod(method="NDIR", code="9"),
-	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": InstrumentMethod(method="NDIR", code="9")
+	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": InstrumentMethod(method="NDIR", code="9"),
+	"PerkinElmer, Clarus 500": InstrumentMethod(method="Gas chromatography (ECD)", code="1"),
+	"HP, HP_LUT": InstrumentMethod(method="Gas chromatography (ECD)", code="1")
 }
 WDCGG_PLATFORMS = {
 	"surface": "01", "tower": "02", "balloon": "03", "aircraft": "05",
@@ -44,7 +47,7 @@ WDCGG_SAMPLING_TYPES = {
 	"bag": "06", "PFP": "07", "remote": "08"
 }
 MAX_INSTRUMENTS = 5
-OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o"}
+OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o", "CO": "icosObspackCo"}
 
 
 @dataclass
@@ -78,6 +81,21 @@ class SamplingHeightHistoryItem:
 	sh_start_date_time: str
 	sh_end_date_time: str
 	sh_sampling_height: str
+
+@dataclass
+class ValueUncertaintyHistory:
+	vh_start_datetime_1: str
+	vh_end_datetime_1: str
+	vm_value_unc_method_code_1: str
+	vm_value_unc_method_1: str
+	vh_start_datetime_2: str
+	vh_end_datetime_2: str
+	vm_value_unc_method_code_2: str
+	vm_value_unc_method_2: str
+	vh_start_datetime_3: str
+	vh_end_datetime_3: str
+	vm_value_unc_method_code_3: str
+	vm_value_unc_method_3: str
 
 @dataclass
 class OrganizationId:
@@ -211,6 +229,9 @@ class WdcggMetadata:
 	dc_doi_category_code:       WDCGG code of the DOI status of the data. 1: Request for WDCGG DOI issuance, 2: Original DOI already present, 9: Undecided
 	dc_doi_category:            If code "2" is selected, the original DOI must be provided.
 	md_description:             [OPTIONAL] Any additional information that cannot be provided elsewhere.
+	ri_reporting_interval_code
+	ri_reporting_interval
+	vh_value_unc_history
 	"""
 	Contributor: str
 	Submission_date: str
@@ -248,12 +269,14 @@ class WdcggMetadata:
 	dc_doi_category_code: str
 	dc_doi_category: str
 	md_description: str
+	ri_reporting_interval_code: str
+	ri_reporting_interval: str
+	vh_value_unc_history: list[ValueUncertaintyHistory]
 
 
 class WdcggMetadataClient:
-	def __init__(self, submission_window: sparql.SubmissionWindow, gawsis_to_wdcgg_station_id: dict[str, str]):
+	def __init__(self, submission_window: sparql.SubmissionWindow):
 		self.submission_window = submission_window
-		self.gawsis_to_wdcgg_station_id = gawsis_to_wdcgg_station_id
 		self.metadata: list[dict[str, Any]] = []
 		self.contacts: list[dict[str, Any]] = []
 		self.contact_ids: dict[str, str] = {}
@@ -261,7 +284,7 @@ class WdcggMetadataClient:
 		self.organization_ids: dict[str, str] = {}
 		self.instruments: dict[int, str] = {}
 
-	def dobj_metadata(self, dobj_info: DobjInfo, netcdf_data: ObspackNetcdf) -> None:
+	def dobj_metadata(self, dobj_info: DobjInfo, netcdf_data: ObspackNetcdf, wdcgg_station_id: str) -> None:
 		"""Structure metadata according to WDCGG template for dataset metadata.
 
 		Returns
@@ -300,9 +323,11 @@ class WdcggMetadataClient:
 				"rg_reference_group",
 				"st_status",
 				"dc_doi_category",
-				"md_description"
+				"md_description",
+				"ri_reporting_interval",
+				"vh_value_unc_history"
 			],
-			wc_wdcgg_catalogue_id = self.wdcgg_catalog_id(dobj_info.url, dobj_info.station, dobj_info.file_name, dobj_info.gas_species),
+			wc_wdcgg_catalogue_id = self.wdcgg_catalog_id(dobj_info.url, wdcgg_station_id, dobj_info.file_name, dobj_info.gas_species),
 			or_organization_code = CONTRIBUTOR,
 			or_organization = "ICOS",
 			jl_joint_laboratory = [],
@@ -348,7 +373,9 @@ class WdcggMetadataClient:
 				DataFlagItem(df_data_flag_code="3", df_data_flag="Invalid", dg_data_flag="H"),
 			],
 			rg_reference_group = [
-				Reference(rg_reference="Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016.")
+				Reference(rg_reference="Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016."),
+				Reference(rg_reference="Yver Kwok, C., Laurent, O., Guemri, A., Philippon, C., Wastine, B., Rella, C. W., Vuillemin, C., Truong, F., Delmotte, M., Kazan, V., Darding, M., Lebègue, B., Kaiser, C., Xueref-Rémy, I., and Ramonet, M.: Comprehensive laboratory and field testing of cavity ring-down spectroscopy analyzers measuring H2O, CO2, CH4 and CO, Atmos. Meas. Tech., 8, 3867–3892, https://doi.org/10.5194/amt-8-3867-2015, 2015."),
+				Reference(rg_reference="Yver-Kwok, C., Philippon, C., Bergamaschi, P., Biermann, T., Calzolari, F., Chen, H., Conil, S., Cristofanelli, P., Delmotte, M., Hatakka, J., Heliasz, M., Hermansen, O., Komínková, K., Kubistin, D., Kumps, N., Laurent, O., Laurila, T., Lehner, I., Levula, J., Lindauer, M., Lopez, M., Mammarella, I., Manca, G., Marklund, P., Metzger, J.-M., Mölder, M., Platt, S. M., Ramonet, M., Rivier, L., Scheeren, B., Sha, M. K., Smith, P., Steinbacher, M., Vítková, G., and Wyss, S.: Evaluation and optimization of ICOS atmosphere station data as part of the labeling process, Atmos. Meas. Tech., 14, 89–116, https://doi.org/10.5194/amt-14-89-2021, 2021.")
 			],
 			st_status_code = "1",
 			st_status = "Operational/Reporting",
@@ -360,7 +387,23 @@ class WdcggMetadataClient:
 				"Citation:\n"
 				f"{dobj_info.citation_string}\n\n"
 				"DATA POLICY:\n"
-				"ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence.")
+				"ICOS data is licensed under a Creative Commons Attribution 4.0 international licence (https://creativecommons.org/licenses/by/4.0/). ICOS data licence is described at https://data.icos-cp.eu/licence."),
+			ri_reporting_interval_code = "3001",
+			ri_reporting_interval = "1 hour",
+			vh_value_unc_history = [ValueUncertaintyHistory(
+				vh_start_datetime_1="9999-12-31T00:00:00",
+				vh_end_datetime_1="9999-12-31T23:59:59",
+				vm_value_unc_method_code_1="10",
+				vm_value_unc_method_1="short term repeatability",
+				vh_start_datetime_2="9999-12-31T00:00:00",
+				vh_end_datetime_2="9999-12-31T23:59:59",
+				vm_value_unc_method_code_2="10",
+				vm_value_unc_method_2="short term repeatability",
+				vh_start_datetime_3="9999-12-31T00:00:00",
+				vh_end_datetime_3="9999-12-31T23:59:59",
+				vm_value_unc_method_code_3="10",
+				vm_value_unc_method_3="short term repeatability"
+			)]
 		)))
 
 	def get_contacts_metadata(self, authors: list[Person], station: Station) -> list[ContactPersonId]:
@@ -437,7 +480,7 @@ class WdcggMetadataClient:
 		return ContactPersonDetails(role=role, role_code=role_code, organization=org_id, country=country)
 
 
-	def wdcgg_catalog_id(self, url: str, station: Station, file_name: str, gas_species: str) -> str:
+	def wdcgg_catalog_id(self, url: str, wdcgg_station_id: str, file_name: str, gas_species: str) -> str:
 		"""Produce a string containing the data object's catalog ID.
 
 		Returns
@@ -457,14 +500,6 @@ class WdcggMetadataClient:
 		  - BUF is the four-digit buffer item ID according to
 			https://gaw.kishou.go.jp/documents/db_list/buffer
 		"""
-
-		# Station ID
-		station_name = station.org.self.label or station.org.self.uri.split("/")[-1]
-		if station_name not in self.gawsis_to_wdcgg_station_id.keys():
-			warnings.warn(f"Station {station.org.self.label} is not registered in GAWSIS.")
-			wdcgg_station_id = ""
-		else:
-			wdcgg_station_id = self.gawsis_to_wdcgg_station_id[station_name]
 
 		# Observational platform ID and sampling type ID
 		platform = file_name.split("_")[2].split("-")[0]
@@ -613,7 +648,7 @@ def get_dobj_info(dobj_url: str) -> Optional[DobjInfo]:
 		else:
 			dobj_gas_species = set(keywords).intersection(WDCGG_GAS_SPECIES_CODES.keys())
 			if len(dobj_gas_species) == 0:
-				raise ValueError(f"{prefix_msg} because none of 'CO2', 'CH4' or 'N2O' appear in the keywords.")
+				raise ValueError(f"{prefix_msg} because none of 'CO2', 'CH4', 'N2O' and 'CO' appear in the keywords.")
 			elif len(dobj_gas_species) == 1:
 				gas_species = list(dobj_gas_species)[0]
 			else:

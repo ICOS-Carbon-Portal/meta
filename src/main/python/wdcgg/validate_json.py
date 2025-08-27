@@ -1,4 +1,4 @@
-#!/home/jonathan-schenk/miniconda3/envs/data/bin/python
+#!/usr/bin/python3
 
 import sys
 import json

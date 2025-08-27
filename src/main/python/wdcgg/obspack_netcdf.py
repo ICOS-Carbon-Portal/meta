@@ -8,7 +8,7 @@ from icoscp_core.icos import data
 
 Dataset: TypeAlias = Any
 
-CONTRIBUTOR = "159"
+CONTRIBUTOR = "162"
 
 @dataclass
 class TimePeriod:
@@ -60,7 +60,7 @@ class ObspackNetcdf:
 
 		return deployments
 
-	def wdcgg_data_table(self) -> Tuple[str, pd.DataFrame]:
+	def wdcgg_data_table(self, wdcgg_station_id: str) -> Tuple[str, pd.DataFrame]:
 		"""Structure the data in a table complying with WDCGG requirements.
 		
 		Returns
@@ -72,35 +72,49 @@ class ObspackNetcdf:
 		conv_factor = 1e6 if self.dataset.dataset_parameter == "co2" else 1e9
 		filename = "_".join(self.dataset.dataset_name.split("_")[:3] + [f"{int(float(self.dataset.dataset_intake_ht))}magl", CONTRIBUTOR, "hourly.txt"])
 		table = pd.DataFrame({
-			"site_gaw_id": self.dataset.site_code,
-			"year": [tc[0] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"month": [tc[1] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"day": [tc[2] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"hour": [tc[3] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"minute": [tc[4] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"second": [tc[5] for tc in self.dataset.variables["time_components"][:].tolist()],
-			"year_final": -999,
-			"month_final": -9,
-			"day_final": -9,
-			"hour_final": -9,
-			"minute_final": -9,
-			"second_final": -9,
-			"value": self.dataset.variables['value'][:]*conv_factor,
-			"value_unc": self.dataset.variables['value_std_dev'][:]*conv_factor,
-			"nvalue": self.dataset.variables['nvalue'][:],
-			"latitude": self.dataset.site_latitude,
-			"longitude": self.dataset.site_longitude,
-			"altitude": float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht),
-			"elevation": float(self.dataset.site_elevation),
-			"intake_height": float(self.dataset.dataset_intake_ht),
+			"site_wdcgg_id": wdcgg_station_id,
+			"st_year": [tc[0] or -999 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"st_month": [tc[1] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"st_day": [tc[2] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"st_hour": [tc[3] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"st_minute": [tc[4] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"st_second": [tc[5] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
+			"end_year": -999,
+			"end_month": -9,
+			"end_day": -9,
+			"end_hour": -9,
+			"end_minute": -9,
+			"end_second": -9,
+			"value": self.dataset.variables["value"][:]*conv_factor,
+			"value_wmo_scale": self.dataset.variables["value"][:]*conv_factor,
+			"value_sd": self.dataset.variables["value_std_dev"][:]*conv_factor,
+			"value_unc_1": self.dataset.variables["icos_SMR"][:]*conv_factor,     # continuous measurement repeatability
+			"value_unc_1_id": -9,
+			"value_unc_1_method": 10,
+			"value_unc_2": self.dataset.variables["icos_LTR"][:]*conv_factor,     # long term repeatability
+			"value_unc_2_id": -9,
+			"value_unc_2_method": 10,
+			"value_unc_3": self.dataset.variables["icos_STTB"][:]*conv_factor,    # short term target bias
+			"value_unc_3_id": -9,
+			"value_unc_3_method": 10,
+			"nvalue": self.dataset.variables["nvalue"][:],
+			"latitude": self.dataset.site_latitude or -999.999999999,
+			"longitude": self.dataset.site_longitude or -999.999999999,
+			"altitude": float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht) or -999999.999,
+			"elevation": float(self.dataset.site_elevation) or -999999.999,
+			"intake_height": float(self.dataset.dataset_intake_ht) or -999999.999,
 			"flask_no": -999.999,
-			"ORG_QCflag": [flag.decode() for flag in self.dataset.variables["qc_flag"][:].tolist()],
-			"QCflag": -9
+			"ORG_QCflag": [flag.decode() or -9 for flag in self.dataset.variables["qc_flag"][:].tolist()],
+			"QCflag": -9,
+			"instrument": -9,
+			"measurement_method": -9,
+			"scale": -9
 		})
-		table["value"] = table["value"].replace(np.nan, -999.999)
-		table["value_unc"] = table["value_unc"].replace(np.nan, -999.999)
+		value_columns = ["value", "value_wmo_scale", "value_sd", "value_unc_1", "value_unc_2", "value_unc_3"]
+		for col in value_columns:
+			table[col] = table[col].replace(np.nan, -999.999)
 		table["nvalue"] = table["nvalue"].replace(np.nan, -9)
-		table = table.astype({"value": np.float64, "value_unc": np.float64})
+		table = table.astype({col: np.float64 for col in value_columns})
 		table.loc[table["nvalue"] == 0, "value"] = -999.999
-		table.loc[np.logical_or(table["nvalue"] == 0, table["nvalue"] == 1), "value_unc"] = -999.999
+		table.loc[np.logical_or(table["nvalue"] == 0, table["nvalue"] == 1), "value_sd"] = -999.999
 		return filename, table

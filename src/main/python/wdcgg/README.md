@@ -14,7 +14,7 @@ Once all data objects could be processed, check the file containing metadata abo
 
 `./correct_metadata.py {path_to_organizations_metadata_file} {path_to_contacts_metadata_file}`
 
-This will produce two additional files with corrected metadata about organizations and contact persons, respectively. Check these two files and manually change whatever typos, wrong acronyms or email addresses, etc. might have been fetched from the ICOS metadata.
+This will produce two additional files with corrected metadata about organizations and contact persons, respectively. Check these two files and make sure that no obvious error, typo or unclarity remains. Please report any error that you might find in the metadata to the data steward and/or to ATC, so that it can be corrected as soon as possible.
 
 As a last step, check whether the `JSON` metadata files match the WDCGG metadata templates. For each one of the three metadata files, run:
 

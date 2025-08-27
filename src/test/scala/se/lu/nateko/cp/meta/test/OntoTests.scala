@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.*
 import se.lu.nateko.cp.meta.onto.Onto

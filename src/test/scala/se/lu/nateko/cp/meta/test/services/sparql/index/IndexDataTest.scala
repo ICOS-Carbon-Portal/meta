@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement

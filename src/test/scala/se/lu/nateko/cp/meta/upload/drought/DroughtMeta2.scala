@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.drought
 
+import scala.language.unsafeNulls
+
 import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum

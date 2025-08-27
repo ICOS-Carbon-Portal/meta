@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.meta.test.tags.SlowRoute
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToResponseMarshaller

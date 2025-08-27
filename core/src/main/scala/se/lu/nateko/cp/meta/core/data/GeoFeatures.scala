@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.data
 
+import scala.language.unsafeNulls
+
 import java.text.DecimalFormat
 import java.net.URI
 

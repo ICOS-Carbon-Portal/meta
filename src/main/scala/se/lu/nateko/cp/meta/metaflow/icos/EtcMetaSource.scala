@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow.icos
 
+import scala.language.unsafeNulls
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging

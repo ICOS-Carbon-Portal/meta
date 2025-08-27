@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.api
 
+import scala.language.unsafeNulls
+
 import akka.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuite

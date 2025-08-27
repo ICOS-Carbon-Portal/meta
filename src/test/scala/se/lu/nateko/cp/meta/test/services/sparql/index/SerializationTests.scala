@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import scala.language.unsafeNulls
+
 import akka.actor.{Cancellable, Scheduler}
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}

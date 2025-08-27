@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.citation
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDFS, SKOS}

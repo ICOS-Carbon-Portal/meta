@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.routes
+
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route

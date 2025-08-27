@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.algo
 
+import scala.language.unsafeNulls
+
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
@@ -11,6 +13,7 @@ import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import HierarchicalBitmap.*
+import BitmapExtension.forEach
 
 /**
  * Assumptions:

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test
 
+import scala.language.unsafeNulls
+
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.Materializer

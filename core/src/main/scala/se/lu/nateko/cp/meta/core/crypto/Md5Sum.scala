@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.crypto
 
+import scala.language.unsafeNulls
+
 import java.util.Arrays
 
 import scala.util.Failure

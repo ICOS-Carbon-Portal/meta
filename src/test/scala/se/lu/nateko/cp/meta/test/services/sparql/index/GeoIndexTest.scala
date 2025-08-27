@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.index
 
+import scala.language.unsafeNulls
+
 import com.opencsv.{CSVParserBuilder, CSVReaderBuilder}
 import org.locationtech.jts.algorithm.hull.ConcaveHull
 import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, Point}

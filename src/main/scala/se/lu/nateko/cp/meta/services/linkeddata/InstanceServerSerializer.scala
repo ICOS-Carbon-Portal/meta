@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.linkeddata
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes}
 import akka.stream.StreamDetachedException

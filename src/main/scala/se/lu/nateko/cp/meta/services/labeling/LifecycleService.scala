@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.slf4j.LoggerFactory
 import play.twirl.api.Html

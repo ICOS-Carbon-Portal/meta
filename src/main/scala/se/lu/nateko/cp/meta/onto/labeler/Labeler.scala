@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.onto.labeler
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.semanticweb.owlapi.model.{OWLAnnotationProperty, OWLEntity, OWLOntology}

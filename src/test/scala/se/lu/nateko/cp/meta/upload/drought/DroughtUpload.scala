@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.drought
 
+import scala.language.unsafeNulls
+
 import akka.Done
 import com.opencsv.CSVReader
 import se.lu.nateko.cp.doi.*

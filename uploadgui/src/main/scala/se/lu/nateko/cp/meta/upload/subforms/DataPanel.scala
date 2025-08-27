@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload.subforms
 
+import scala.language.unsafeNulls
+
 import scala.util.Try
 
 import se.lu.nateko.cp.meta.upload.*

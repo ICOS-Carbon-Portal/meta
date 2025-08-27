@@ -1,4 +1,6 @@
 package se.lu.nateko.cp.meta.upload.drought
+
+import scala.language.unsafeNulls
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.etcupload.StationId
 import se.lu.nateko.cp.meta.upload.CpUploadClient

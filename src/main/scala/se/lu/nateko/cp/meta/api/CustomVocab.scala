@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.api
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 

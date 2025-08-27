@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}

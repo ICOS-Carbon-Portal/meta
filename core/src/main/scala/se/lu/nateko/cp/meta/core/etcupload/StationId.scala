@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.core.etcupload
 
+import scala.language.unsafeNulls
+
 import java.util.regex.Pattern
 
 class StationId private (val id: String){

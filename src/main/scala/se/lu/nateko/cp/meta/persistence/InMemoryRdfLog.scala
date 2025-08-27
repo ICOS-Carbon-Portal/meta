@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.persistence
 
+import scala.language.unsafeNulls
+
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 

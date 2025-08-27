@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.icos
 
+import scala.language.unsafeNulls
+
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{Statement, ValueFactory}
 import org.scalatest.GivenWhenThen

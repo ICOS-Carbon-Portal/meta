@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.utils
 
+import scala.language.unsafeNulls
+
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path.{Empty, Segment, Slash}
 

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.routes
 
+import scala.language.unsafeNulls
+
 import akka.http.javadsl.server.MissingCookieRejection
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{HttpCookie, SameSite, `X-Forwarded-For`}

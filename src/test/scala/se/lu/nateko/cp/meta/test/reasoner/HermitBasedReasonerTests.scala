@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.reasoner
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.reasoner.HermitBasedReasoner
 import se.lu.nateko.cp.meta.test.TestConfig

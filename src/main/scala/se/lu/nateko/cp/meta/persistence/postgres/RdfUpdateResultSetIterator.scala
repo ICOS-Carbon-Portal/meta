@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.persistence.postgres
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 

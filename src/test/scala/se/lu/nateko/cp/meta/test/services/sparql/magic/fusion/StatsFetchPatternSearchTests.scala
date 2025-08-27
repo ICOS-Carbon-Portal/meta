@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.services.sparql.magic.fusion
 
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.sail.memory.model.MemValueFactory

@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.upload
 
+import scala.language.unsafeNulls
+
 import java.time.Instant
 
 import play.api.libs.json.*

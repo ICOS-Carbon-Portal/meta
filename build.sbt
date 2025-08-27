@@ -11,6 +11,7 @@ val commonScalacOptions = Seq(
 	"-feature",
 	"-deprecation",
 	"-Werror",
+	"-Yexplicit-nulls",
 	"-Wunused:imports"
 )
 

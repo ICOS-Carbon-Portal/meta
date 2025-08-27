@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.metaflow
 
+import scala.language.unsafeNulls
+
 import akka.actor.{ActorRef, ActorSystem, Status}
 import akka.event.Logging
 import akka.stream.IOResult

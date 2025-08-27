@@ -1,4 +1,7 @@
 package se.lu.nateko.cp.meta.test.persistence.postgres
+
+import scala.language.unsafeNulls
+
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}

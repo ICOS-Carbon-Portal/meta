@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.services.sparql.magic
 
+import scala.language.unsafeNulls
+
 import akka.Done
 import akka.actor.Scheduler
 import com.esotericsoftware.kryo.io.{Input, KryoDataInput, KryoDataOutput, Output}

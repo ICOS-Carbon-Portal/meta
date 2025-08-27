@@ -1,5 +1,7 @@
 package se.lu.nateko.cp.meta.test.metaflow.cities
 
+import scala.language.unsafeNulls
+
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.metaflow.cities.MidLowCostMetaSource.parseStation

@@ -25,7 +25,6 @@ import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.Strin
 import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.parseJsonStringArray
-import se.lu.nateko.cp.meta.utils.rdf4j.===
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import se.lu.nateko.cp.meta.utils.rdf4j.asString
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava

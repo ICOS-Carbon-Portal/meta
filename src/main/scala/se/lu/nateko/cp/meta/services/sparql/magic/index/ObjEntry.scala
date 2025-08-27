@@ -26,10 +26,7 @@ final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) exte
 		else Some(Instant.ofEpochMilli(dt).nn)
 
 	def sizeInBytes: Option[Long] = if (size >= 0) Some(size) else None
-	def fileName: Option[String] = {
-		if (fName == null) { None }
-		else { Some(fName.nn) }
-	}
+	def fileName: Option[String] = makeOption(fName)
 	def samplingHeightMeters: Option[Float] = if (samplingHeight == Float.NaN) None else Some(samplingHeight)
 	def dataStartTime: Option[Instant] = dateTimeFromLong(dataStart)
 	def dataEndTime: Option[Instant] = dateTimeFromLong(dataEnd)
@@ -37,4 +34,9 @@ final class ObjEntry(val hash: Sha256Sum, val idx: Int, var prefix: String) exte
 	def submissionEndTime: Option[Instant] = dateTimeFromLong(submissionEnd)
 
 	def uri(factory: ValueFactory): IRI = factory.createIRI(prefix + hash.base64Url).nn
+
+	private def makeOption[T](arg: T | Null) : Option[T] = {
+		if (arg == null) { None }
+		else { Some(arg.nn) }
+	}
 }

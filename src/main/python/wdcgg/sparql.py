@@ -116,7 +116,7 @@ PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?dobj WHERE {
-	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> }
+	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> }
 	?dobj cpmeta:hasObjectSpec ?spec .
 	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
 	?station cpmeta:hasStationClass ?stationClass .

@@ -89,14 +89,14 @@ class ObspackNetcdf:
 			"value_wmo_scale": self.dataset.variables["value"][:]*conv_factor,
 			"value_sd": self.dataset.variables["value_std_dev"][:]*conv_factor,
 			"value_unc_1": self.dataset.variables["icos_SMR"][:]*conv_factor,     # continuous measurement repeatability
-			"value_unc_1_id": 1,
-			"value_unc_1_method": 1,
+			"value_unc_1_id": -9,
+			"value_unc_1_method": 10,
 			"value_unc_2": self.dataset.variables["icos_LTR"][:]*conv_factor,     # long term repeatability
-			"value_unc_2_id": 1,
-			"value_unc_2_method": 1,
+			"value_unc_2_id": -9,
+			"value_unc_2_method": 10,
 			"value_unc_3": self.dataset.variables["icos_STTB"][:]*conv_factor,    # short term target bias
-			"value_unc_3_id": 1,
-			"value_unc_3_method": 1,
+			"value_unc_3_id": -9,
+			"value_unc_3_method": 10,
 			"nvalue": self.dataset.variables["nvalue"][:],
 			"latitude": self.dataset.site_latitude or -999.999999999,
 			"longitude": self.dataset.site_longitude or -999.999999999,
@@ -106,9 +106,9 @@ class ObspackNetcdf:
 			"flask_no": -999.999,
 			"ORG_QCflag": [flag.decode() or -9 for flag in self.dataset.variables["qc_flag"][:].tolist()],
 			"QCflag": -9,
-			"Instrument": -9,
-			"Measurement_method": -9,
-			"Scale": -9
+			"instrument": -9,
+			"measurement_method": -9,
+			"scale": -9
 		})
 		value_columns = ["value", "value_wmo_scale", "value_sd", "value_unc_1", "value_unc_2", "value_unc_3"]
 		for col in value_columns:

@@ -19,11 +19,12 @@ class InstrumentMethod:
 	code: str
 
 CONTRIBUTOR = "162"
-WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003"}
+WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", "CO": "3001"}
 SCALES = {
 	"CO2": CalibrationScale(name="WMO CO2 X2019", wdcgg_code="158"),
 	"CH4": CalibrationScale(name="WMO CH4 X2004A", wdcgg_code="3"),
-	"N2O": CalibrationScale(name="WMO N2O X2006A", wdcgg_code="5")
+	"N2O": CalibrationScale(name="WMO N2O X2006A", wdcgg_code="5"),
+	"CO": CalibrationScale(name="WMO CO X2014A", wdcgg_code="8")
 }
 WDCGG_METHODS = {
 	"Picarro": InstrumentMethod(method="CRDS", code="18"),
@@ -46,7 +47,7 @@ WDCGG_SAMPLING_TYPES = {
 	"bag": "06", "PFP": "07", "remote": "08"
 }
 MAX_INSTRUMENTS = 5
-OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o"}
+OBJECT_SPECS_OBSPACK_RELEASE = {"CO2": "icosObspackCo2", "CH4": "icosObspackCh4", "N2O": "icosObspackN2o", "CO": "icosObspackCo"}
 
 
 @dataclass
@@ -372,7 +373,9 @@ class WdcggMetadataClient:
 				DataFlagItem(df_data_flag_code="3", df_data_flag="Invalid", dg_data_flag="H"),
 			],
 			rg_reference_group = [
-				Reference(rg_reference="Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016.")
+				Reference(rg_reference="Hazan, L., Tarniewicz, J., Ramonet, M., Laurent, O., and Abbaris, A.: Automatic processing of atmospheric CO2 and CH4 mole fractions at the ICOS Atmosphere Thematic Centre, Atmos. Meas. Tech., 9, 4719-4736, doi:10.5194/amt-9-4719-2016, 2016."),
+				Reference(rg_reference="Yver Kwok, C., Laurent, O., Guemri, A., Philippon, C., Wastine, B., Rella, C. W., Vuillemin, C., Truong, F., Delmotte, M., Kazan, V., Darding, M., Lebègue, B., Kaiser, C., Xueref-Rémy, I., and Ramonet, M.: Comprehensive laboratory and field testing of cavity ring-down spectroscopy analyzers measuring H2O, CO2, CH4 and CO, Atmos. Meas. Tech., 8, 3867–3892, https://doi.org/10.5194/amt-8-3867-2015, 2015."),
+				Reference(rg_reference="Yver-Kwok, C., Philippon, C., Bergamaschi, P., Biermann, T., Calzolari, F., Chen, H., Conil, S., Cristofanelli, P., Delmotte, M., Hatakka, J., Heliasz, M., Hermansen, O., Komínková, K., Kubistin, D., Kumps, N., Laurent, O., Laurila, T., Lehner, I., Levula, J., Lindauer, M., Lopez, M., Mammarella, I., Manca, G., Marklund, P., Metzger, J.-M., Mölder, M., Platt, S. M., Ramonet, M., Rivier, L., Scheeren, B., Sha, M. K., Smith, P., Steinbacher, M., Vítková, G., and Wyss, S.: Evaluation and optimization of ICOS atmosphere station data as part of the labeling process, Atmos. Meas. Tech., 14, 89–116, https://doi.org/10.5194/amt-14-89-2021, 2021.")
 			],
 			st_status_code = "1",
 			st_status = "Operational/Reporting",
@@ -645,7 +648,7 @@ def get_dobj_info(dobj_url: str) -> Optional[DobjInfo]:
 		else:
 			dobj_gas_species = set(keywords).intersection(WDCGG_GAS_SPECIES_CODES.keys())
 			if len(dobj_gas_species) == 0:
-				raise ValueError(f"{prefix_msg} because none of 'CO2', 'CH4' or 'N2O' appear in the keywords.")
+				raise ValueError(f"{prefix_msg} because none of 'CO2', 'CH4', 'N2O' and 'CO' appear in the keywords.")
 			elif len(dobj_gas_species) == 1:
 				gas_species = list(dobj_gas_species)[0]
 			else:

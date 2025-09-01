@@ -33,7 +33,7 @@ class OrcidTests extends AnyFunSuite{
 		val Orcid(orc3) = "0000-0002-1694-233X": @unchecked
 		assert(orc1.equals(orc2))
 		assert(!orc1.equals(orc3))
-		val badNull: Orcid = null
+		val badNull: Orcid | Null = null
 		assert(!orc1.equals(badNull))
 	}
 }

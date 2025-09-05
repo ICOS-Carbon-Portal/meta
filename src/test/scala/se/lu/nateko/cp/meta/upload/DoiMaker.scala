@@ -37,7 +37,7 @@ class DoiMaker(password: String)(implicit val system: ActorSystem){
 
 object DoiMaker{
 
-	val ccby4 = Rights("CC BY 4.0", Some(CpVocab.CCBY4.toString))
+	val ccby4 = Rights("CC BY 4.0", Some(CpVocab.CCBY4.toString), None)
 	val etc = GenericName("ICOS Ecosystem Thematic Centre")
 	val atc = GenericName("ICOS Atmosphere Thematic Centre")
 

@@ -88,13 +88,14 @@ class CitationClientImpl (
 		withTimeout(fetchIfNeeded(doi, doiCache, fetchDoiMeta), s"DOI metadata for $doi")
 
 	private def withTimeout[T](fut: Future[T], serviceName: String): Future[T] =
-		timeLimit(fut, config.timeoutSec.seconds, scheduler, serviceName).andThen:
-			case Failure(_: TimeoutException) =>
-				log.warning(s"$serviceName service timed out")
+		timeLimit(fut, config.timeoutSec.seconds, scheduler, serviceName).recoverWith:
+			case _: TimeoutException =>
+				val msg = s"$serviceName service timed out"
+				log.warning(msg)
+				Future.failed(new Exception(msg) with NoStackTrace)
 
 
 	private def fetchIfNeeded[K, V](key: K, cache: TrieMap[K, Future[V]], fetchValue: K => Future[V]): Future[V] =
-
 		def recache(): Future[V] = {
 			val res = fetchValue(key)
 			cache += key -> res
@@ -161,7 +162,7 @@ class CitationClientImpl (
 					case CitationStyle.bibtex => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
 					case CitationStyle.ris    => s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
 					case CitationStyle.HTML   => s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-					case CitationStyle.TEXT   => s"https://citation.crosscite.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+					case CitationStyle.TEXT   => s"https://citation.doi.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
 				}
 			),
 			settings = ConnectionPoolSettings(system).withMaxConnections(6).withMaxOpenRequests(10000)

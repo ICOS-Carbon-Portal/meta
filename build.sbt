@@ -24,7 +24,7 @@ lazy val metaCore = (project in file("core"))
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
@@ -141,7 +141,7 @@ lazy val meta = (project in file("."))
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
 			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.7.16",
-			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.4",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
@@ -219,7 +219,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"eu.icoscp"         %%% "envri"             % "0.1.0",
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
 			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC7",
-			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.0",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.1",
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)
 	)

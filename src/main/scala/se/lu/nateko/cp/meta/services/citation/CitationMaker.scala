@@ -130,7 +130,7 @@ class CitationMaker(
 	end getLicence
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
-		case None => "Fetching... try [refreshing the page] again in a few seconds"
+		case None => "Fetching... try refreshing the page in a few seconds"
 		case Some(Success(cit)) => cit
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}

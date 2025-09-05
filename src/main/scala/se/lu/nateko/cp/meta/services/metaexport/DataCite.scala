@@ -14,8 +14,8 @@ import java.time.{Instant, Year}
 class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
 	import DataCite.{*, given}
 
-	private val ccby4 = Rights("CC BY 4.0", Some("https://creativecommons.org/licenses/by/4.0"))
-	private val cc0 = Rights("CC0", Some("https://creativecommons.org/publicdomain/zero/1.0/"))
+	private val ccby4 = Rights(rights = "Creative Commons Attribution 4.0 International", rightsUri = Some("https://creativecommons.org/licenses/by/4.0"), rightsIdentifier = Some("CC-BY-4.0"))
+	private val cc0 = Rights(rights = "Creative Commons Zero v1.0 Universal", rightsUri = Some("https://creativecommons.org/publicdomain/zero/1.0/"), rightsIdentifier = Some("CC0-1.0"))
 
 	def getCreators(obj: StaticObject) = obj.references.authors.fold(Seq.empty[Creator])(_.map(toDoiCreator))
 
@@ -34,7 +34,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 	}
 
 	def makeDataObjectDoi(dobj: DataObject): DoiMeta = {
-		val licence: Rights = dobj.references.licence.fold(ccby4)(lic => Rights(lic.name, Some(lic.url.toString)))
+		val licence: Rights = dobj.references.licence.fold(ccby4)(lic => Rights(lic.name, Some(lic.url.toString), rightsIdentifier = None))
 		val pubYear = dobj.submission.stop.getOrElse(dobj.submission.start).toString.take(4).toInt
 
 		DoiMeta(

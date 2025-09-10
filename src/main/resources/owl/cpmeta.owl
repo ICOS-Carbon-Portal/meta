@@ -340,7 +340,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
-        <rdfs:label>has data theme</rdfs:label>
+        <rdfs:label>data theme</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -357,7 +357,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject"/>
-        <rdfs:label>has documentation</rdfs:label>
+        <rdfs:label>documentation</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -429,7 +429,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Funding"/>
-        <rdfs:label>has funding</rdfs:label>
+        <rdfs:label>funding</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -469,7 +469,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership">
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Person"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Membership"/>
-        <rdfs:label>has membership</rdfs:label>
+        <rdfs:label>membership</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -1294,7 +1294,7 @@
         <rdfs:subPropertyOf rdf:resource="http://schema.org/image"/>
         <rdfs:domain rdf:resource="http://www.w3.org/ns/prov#Agent"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
-        <rdfs:label>has depiction</rdfs:label>
+        <rdfs:label>depiction</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1496,7 +1496,7 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
         <rdfs:comment>URL link to SVG icon to be used in user interfaces</rdfs:comment>
-        <rdfs:label>has icon</rdfs:label>
+        <rdfs:label>icon</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1507,6 +1507,7 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:comment>A &quot;virtual&quot; property, created for keyword search in SPARQL. A multi-value counterpart of cpmeta:hasKeywords, which contains a string with comma-separated list of keywords.</rdfs:comment>
+        <rdfs:label>keyword</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1526,6 +1527,7 @@
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:comment>String representing a comma-separated list of keywords</rdfs:comment>
+        <rdfs:label>keywords</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1628,7 +1630,7 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
         <rdfs:comment>URL link to an icon that can be used by web apps to show e.g. locations of stations</rdfs:comment>
-        <rdfs:label>has marker icon</rdfs:label>
+        <rdfs:label>marker icon</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1894,6 +1896,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#long"/>
+        <rdfs:label>size in bytes</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -2066,6 +2069,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>temporal resolution</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -2228,6 +2232,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:label>regex</rdfs:label>
     </owl:DatatypeProperty>
     
 

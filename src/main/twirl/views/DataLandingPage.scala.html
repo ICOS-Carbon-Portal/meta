@@ -59,6 +59,9 @@
 			@if(dobj.previousVersion) {
 				@htmlProperty{Previous version}{@previousVersionLink(dobj.previousVersion.flattenToSeq)}
 			}
+			@if(dobj.nextVersion) {
+				@htmlProperty{Next version}{@previousNextVersionLink{View next version}(dobj.nextVersion.flattenToSeq)}
+			}
 			@property("File name", dobj.fileName)
 			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium) {
 				@htmlProperty{Zip contents}{@zipContents(dobj)}

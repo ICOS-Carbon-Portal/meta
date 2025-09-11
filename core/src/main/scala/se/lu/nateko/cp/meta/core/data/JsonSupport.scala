@@ -245,10 +245,10 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
 	given JsonFormat[CityNetwork] with
-		def write(cn: CityNetwork): JsValue = JsString(cn)
+		def write(cn: CityNetwork): JsValue = JsString(cn.toString)
 		def read(js: JsValue): CityNetwork = js match
 			case JsString(s) => cityNetworkFromStr(s)
-			case _ => "Unspecified"
+			case _ => CityNetwork.Unspecified
 
 	given RootJsonFormat[IcosCitiesStationSpecifics] = jsonFormat2(IcosCitiesStationSpecifics.apply)
 

@@ -1,0 +1,18 @@
+@import java.net.URI
+
+@(label: Html)(vers: Iterable[URI])
+@vers.toList match{
+	case Nil => {
+		none
+	}
+	case uri :: Nil => {
+		<a href=@{uri.getRawPath}>@label</a>
+	}
+	case _ => {
+		<span>
+			@for((uri, i) <- vers.zipWithIndex){
+				<a href=@{uri.getRawPath}>@{s"view #${i + 1}"}</a>@if(i < vers.size - 1){<span>,</span>} else {}
+			}
+		</span>
+	}
+}

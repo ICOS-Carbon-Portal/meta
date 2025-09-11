@@ -171,7 +171,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				networkStr <- getOptionalString(stat, metaVocab.belongsToNetwork)
 			yield IcosCitiesStationSpecifics(
 				timeZoneOffset,
-				networkStr.fold("Unspecified")(cityNetworkFromStr)
+				networkStr.fold(CityNetwork.Unspecified)(cityNetworkFromStr)
 			)
 		else Validated.ok(NoStationSpecifics)
 	end getStationSpecifics

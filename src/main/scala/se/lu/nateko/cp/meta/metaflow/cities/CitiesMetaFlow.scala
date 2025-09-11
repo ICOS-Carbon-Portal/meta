@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.core.data.{AtcStationSpecifics, CountryCode, EnvriConfigs, IcosCitiesStationSpecifics}
+import se.lu.nateko.cp.meta.core.data.{AtcStationSpecifics, CityNetwork, CountryCode, EnvriConfigs, IcosCitiesStationSpecifics}
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.metaflow.icos.{ATC, AtcConf, AtcMetaSource}
 import se.lu.nateko.cp.meta.services.MetadataException
@@ -40,7 +40,7 @@ object CitiesMetaFlow:
 	def injectNetworkInfo(state: TcState[ATC.type]): TcState[ATC.type] =
 		val stations = state.stations.map: s =>
 			val citySpec = s.core.specificInfo match
-				case atc: AtcStationSpecifics => IcosCitiesStationSpecifics(atc.timeZoneOffset, "Paris")
+				case atc: AtcStationSpecifics => IcosCitiesStationSpecifics(atc.timeZoneOffset, CityNetwork.Paris)
 				case _ => throw MetadataException("Unexpected station-specific info, must be AtcStationSpecifics")
 			s.copy(core = s.core.copy(specificInfo = citySpec))
 		TcState(stations, state.roles, state.instruments)

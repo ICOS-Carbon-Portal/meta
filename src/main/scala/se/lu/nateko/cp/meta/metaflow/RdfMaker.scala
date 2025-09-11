@@ -220,7 +220,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		case icos: IcosStationSpecifics =>
 			plainIcosStationSpecTriples(iri, icos)
 		case cities: IcosCitiesStationSpecifics =>
-			(iri, meta.belongsToNetwork, vocab.lit(cities.network)) +:
+			(iri, meta.belongsToNetwork, vocab.lit(cities.network.toString)) +:
 			cities.timeZoneOffset.toSeq.map: tzoff =>
 				(iri, meta.hasTimeZoneOffset, vocab.lit(tzoff))
 		case other: (SitesStationSpecifics | NoStationSpecifics.type) => Seq.empty

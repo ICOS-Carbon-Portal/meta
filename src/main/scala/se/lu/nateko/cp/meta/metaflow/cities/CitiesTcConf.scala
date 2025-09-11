@@ -8,17 +8,17 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 sealed trait CitiesTC(val network: CityNetwork) extends TC
 
-case object MunichMidLow extends CitiesTC("Munich")
-case object ParisMidLow extends CitiesTC("Paris")
-case object ZurichMidLow extends CitiesTC("Zurich")
+case object MunichMidLow extends CitiesTC(CityNetwork.Munich)
+case object ParisMidLow extends CitiesTC(CityNetwork.Paris)
+case object ZurichMidLow extends CitiesTC(CityNetwork.Zurich)
 
 sealed class CityTcConf[CTC <: CitiesTC](
 	val tc: CTC,
 	classGetter: CpmetaVocab => IRI,
 	predGetter: CpmetaVocab => IRI
 ) extends TcConf[CTC]:
-	val stationPrefix = tc.network
-	val tcPrefix = tc.network
+	val stationPrefix = tc.network.toString
+	val tcPrefix = tc.network.toString
 	def stationClass(meta: CpmetaVocab): IRI = classGetter(meta)
 	def tcIdPredicate(meta: CpmetaVocab): IRI = predGetter(meta)
 

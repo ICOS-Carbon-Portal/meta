@@ -27,7 +27,14 @@
 					@property("File name", doc.fileName)
 				}
 				@if(doc.previousVersion) {
-					@htmlProperty{Previous version}{@previousVersionLink(doc.previousVersion.flattenToSeq)}
+					@htmlProperty{Previous version}{
+						@previousVersionLink(doc.previousVersion.flattenToSeq)
+					}
+				}
+				@if(doc.nextVersion) {
+					@htmlProperty{Next version}{
+						@nextVersionLink(doc.nextVersion.flattenToSeq)
+					}
 				}
 				@if(doc.fileName.toLowerCase.endsWith(".zip") && uploadComplete) {
 					@htmlProperty{Zip contents}{@zipContents(doc)}

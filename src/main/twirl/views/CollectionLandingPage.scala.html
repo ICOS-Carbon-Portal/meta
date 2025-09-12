@@ -23,7 +23,14 @@
 					@agentLink(coll.creator)
 				}
 				@if(coll.previousVersion) {
-					@htmlProperty{Previous version}{@previousVersionLink(coll.previousVersion)}
+					@htmlProperty{Previous version}{
+						@previousVersionLink(coll.previousVersion)
+					}
+				}
+				@if(coll.nextVersion) {
+					@htmlProperty{Next version}{
+						@nextVersionLink(coll.nextVersion.flattenToSeq)
+					}
 				}
 				@citations(coll.references)
 

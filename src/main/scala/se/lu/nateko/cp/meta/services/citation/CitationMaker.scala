@@ -276,21 +276,23 @@ class CitationMaker(
 		import doc.{references => refs}
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val yearOpt = doc.submission.stop.map(getYear(zoneId))
-		val authorString = refs.authors.fold("")(_.distinct.collect{
+		val authors: Seq[String] = refs.authors.fold(Seq())(_.distinct.collect{
 			case p: Person => s"${p.lastName}, ${p.firstName.head}."
 			case o: Organization => o.name
-		}.mkString("", ", ", " "))
+		})
+
+		val authorString = if (authors.nonEmpty) Some(authors.mkString("", ", ", " ").trim) else None
 
 		val pidUrlOpt = getPidUrl(doc)
 		val citString = for
 			year <- yearOpt
-			title <- refs.title
+			title <- refs.title.orElse(Some(doc.fileName))
 			pidUrl <- pidUrlOpt
 		yield envri match
 			case Envri.SITES =>
-				s"${authorString}($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
+				s"${authorString.getOrElse(s"${envri.shortName} ")}($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
 			case Envri.ICOS | Envri.ICOSCities =>
-				s"${authorString}ICOS RI, $year. $title, $pidUrl"
+				s"${authorString.getOrElse("ICOS RI")}, $year. $title, $pidUrl"
 
 		CitationInfo(pidUrlOpt, refs.authors, refs.title, yearOpt, None, citString)
 

@@ -286,7 +286,7 @@ class CitationMaker(
 			case o: Organization => o.name
 		})
 
-		val authorString = if (authors.nonEmpty) Some(authors.mkString("", ", ", " ").trim) else None
+		val authorString = if (authors.nonEmpty) Some(authors.mkString(", ")) else None
 
 		val pidUrlOpt = getPidUrl(doc)
 		val citString = for
@@ -295,7 +295,7 @@ class CitationMaker(
 			pidUrl <- pidUrlOpt
 		yield envri match
 			case Envri.SITES =>
-				s"${authorString.getOrElse(s"${envri.shortName} ")}($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
+				s"${authorString.getOrElse(envri.shortName)} ($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
 			case Envri.ICOS | Envri.ICOSCities =>
 				s"${authorString.getOrElse("ICOS RI")}, $year. $title, $pidUrl"
 

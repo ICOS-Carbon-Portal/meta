@@ -159,6 +159,7 @@ class CitationMaker(
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
+		val isMiscProject = dobj.specification.project.self.uri === vocab.miscProject
 		val isIcosLikeStationMeas = dobj.specificInfo.fold(
 			_ => false,
 			_.acquisition.station.specificInfo match
@@ -202,22 +203,26 @@ class CitationMaker(
 			else Validated.ok(productionAgents)
 
 		val pidUrlOpt = getPidUrl(dobj)
-		val projName = if(isIcosProject) Some("ICOS RI") else dobj.specification.project.self.label
+		val projectOpt =
+			if isIcosProject then Some("ICOS RI")
+			else if isMiscProject then None
+			else dobj.specification.project.self.label
 		val yearOpt = productionTime(dobj).map(getYear(zoneId))
+
+		val project = if projectOpt.nonEmpty then projectOpt.mkString("", "", ",") else ""
 
 		authorsV.map: authors =>
 			val citText = for(
 				title <- titleOpt;
 				pidUrl <- pidUrlOpt;
 				time <- tempCov;
-				year <- yearOpt;
-				projName <- projName
+				year <- yearOpt
 			) yield {
 				val authorsStr = authors.map{
 					case p: Person => s"${p.lastName}, ${p.firstName.head}."
 					case o: Organization => o.name
 				}.mkString(", ")
-				s"${authorsStr} ($year). $title, $time, $projName, $pidUrl"
+				s"${authorsStr} ($year). $title, $time, $project $pidUrl"
 			}
 
 			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)

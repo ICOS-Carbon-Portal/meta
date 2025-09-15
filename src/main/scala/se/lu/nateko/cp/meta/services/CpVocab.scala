@@ -57,8 +57,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(using Envri.ICOS))
 
-	val Seq(icosProject, atmoTheme, ecoTheme, oceanTheme) = Seq(
-		"projects/icos", "themes/atmosphere", "themes/ecosystem", "themes/ocean"
+	val Seq(icosProject, miscProject, atmoTheme, ecoTheme, oceanTheme) = Seq(
+		"projects/icos", "projects/misc", "themes/atmosphere", "themes/ecosystem", "themes/ocean"
 	).map(getRelativeRaw(_)(using icosBup))
 
 	def hasOceanTheme(icosSpec: IcosStationSpecifics): Boolean = icosSpec.theme.exists(_.self.uri === oceanTheme)

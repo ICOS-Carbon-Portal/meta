@@ -20,7 +20,6 @@ import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}
 
 import scala.language.postfixOps
 import akka.http.scaladsl.server.RejectionHandler
-import akka.http.javadsl.server.directives.RouteAdapter
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -57,7 +56,7 @@ object LinkedDataRoute {
 			}
 		}
 
-		val route = handleRejections(linkedDataRejectionHandler) {
+		handleRejections(linkedDataRejectionHandler) {
 			get{
 				path(("ontologies" | "resources") / Segment /){_ =>
 					extractUri{uri =>
@@ -135,7 +134,6 @@ object LinkedDataRoute {
 				}
 			}
 		}
-		RouteAdapter(route).delegate
 	}
 
 	private val FileNameWithExtension = "^(.+)(\\.[a-z]+)$".r

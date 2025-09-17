@@ -26,7 +26,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 	import PageContentMarshalling.*
 
-	given staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
+	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
 		import statisticsClient.executionContext
 		val template: PageTemplate[StaticObject] = (obj, errors) =>
 			for(
@@ -39,7 +39,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		makeMarshaller(template, messagePage("Data object not found", _))
 
 
-	given statCollMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
+	def statCollMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
 		import statisticsClient.executionContext
 		val template: PageTemplate[StaticCollection] = (coll, errors) =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))

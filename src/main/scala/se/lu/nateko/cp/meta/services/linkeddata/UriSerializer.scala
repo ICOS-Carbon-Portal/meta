@@ -35,9 +35,12 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.{
+	PageContentMarshalling,
+	StaticObjectMarshaller,
+	StaticCollectionMarshaller,
+	StaticObjectReader
+}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -107,12 +110,13 @@ class Rdf4jUriSerializer(
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
-	private val pcm =
+	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
 
-	given CpVocab = vocab
-	import pcm.{staticObjectMarshaller, statCollMarshaller}
+	private given CpVocab = vocab
+	import pageContentMarshalling.{given StaticObjectMarshaller}
+	import pageContentMarshalling.{given StaticCollectionMarshaller}
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -222,7 +226,7 @@ class Rdf4jUriSerializer(
 
 		def resourceMarshallings[T : JsonWriter](
 			resId: String, resourceType: String, fetcher: Uri => Validated[T],
-			pageTemplate: (T, ErrorList) => Html
+			pageTemplate: (T, PageContentMarshalling.ErrorList) => Html
 		): FLMHR =
 			lazy val itemV = fetcher(uri.withQuery(Uri.Query.Empty))
 			oneOf(

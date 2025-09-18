@@ -41,6 +41,9 @@
 				@htmlProperty{Description}(Html(renderMarkdown(specComm)))
 			}
 			@doiDescriptions(dobj, dobj.specificInfo.left.toOption.flatMap(_.description))
+			@for(comment <- dobj.production.flatMap(_.comment)){
+				@property("Comment", comment)
+			}
 			@for(l3meta <- dobj.specificInfo.left.toOption){
 				@property(s"Temporal coverage from (${conf.defaultTimezoneId})", l3meta.temporal.interval.start.getDateTimeStr)
 				@property(s"Temporal coverage to (${conf.defaultTimezoneId})", l3meta.temporal.interval.stop.getDateTimeStr)
@@ -121,9 +124,6 @@
 					@agentproperty("Host organization", host)
 				}
 				@property(s"Production time (${conf.defaultTimezoneId})", production.dateTime.getDateTimeStr)
-				@for(comment <- production.comment){
-					@property("Comment", comment)
-				}
 				@if(production.contributors){
 					@htmlProperty{Contributors}{
 						@contributors(production.contributors)

@@ -206,7 +206,7 @@ class Rdf4jUriSerializer(
 				status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
 				entity = HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
-					if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "").body else views.html.UriResourcePage(viewInfo).body
+					if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "The requested page could not be found").body else views.html.UriResourcePage(viewInfo).body
 				)
 			)
 		)

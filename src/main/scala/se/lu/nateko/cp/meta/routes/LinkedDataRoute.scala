@@ -36,10 +36,6 @@ object LinkedDataRoute {
 		given ToResponseMarshaller[Uri] = uriSerializer.marshaller
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
-		val linkedDataRejectionHandler = RejectionHandler.newBuilder().handleNotFound {
-			complete(StatusCodes.NotFound, "Not found; invalid path")
-		}.result()
-
 		def canonicalize(uri: Uri, envri: Envri): Uri = {
 			val envriConf = envriConfs(envri)//will not fail, as envri extraction is based on EnvriConfigs
 			val itemPrefix = uri.path match{
@@ -55,6 +51,10 @@ object LinkedDataRoute {
 				complete(canonicalUri)
 			}
 		}
+
+		val linkedDataRejectionHandler = RejectionHandler.newBuilder().handleNotFound {
+			genericRdfUriResourcePage
+		}.result()
 
 		handleRejections(linkedDataRejectionHandler) {
 			get{

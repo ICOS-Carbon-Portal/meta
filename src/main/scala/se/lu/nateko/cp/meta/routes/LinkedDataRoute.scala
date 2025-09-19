@@ -119,8 +119,7 @@ object LinkedDataRoute {
 				} ~
 				pathPrefix("ontologies" | "resources" | "files"){
 					genericRdfUriResourcePage
-				} //~
-				//complete(StatusCodes.NotFound -> "invalid path")
+				}
 			} ~
 			options{
 				pathPrefix("objects" | "collections" | "resources") {

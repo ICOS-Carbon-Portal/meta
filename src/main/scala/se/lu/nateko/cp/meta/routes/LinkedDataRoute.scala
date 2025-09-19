@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.services.metaexport.Inspire
 import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}
 
 import scala.language.postfixOps
+import akka.http.scaladsl.server.RejectionHandler
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -51,78 +52,85 @@ object LinkedDataRoute {
 			}
 		}
 
-		get{
-			path(("ontologies" | "resources") / Segment /){_ =>
-				extractUri{uri =>
-					val path = uri.path.toString
+		val linkedDataRejectionHandler = RejectionHandler.newBuilder().handleNotFound {
+			genericRdfUriResourcePage
+		}.result()
 
-					val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
-						case (id, instServConf)
-							if instServConf.writeContext.toString.endsWith(path) =>
-								instanceServers.get(id).map((id, _))
-					}.flatten
+		handleRejections(linkedDataRejectionHandler) {
+			get{
+				path(("ontologies" | "resources") / Segment /){_ =>
+					extractUri{uri =>
+						val path = uri.path.toString
 
-					serverOpt match{
-						case None =>
-							complete(StatusCodes.NotFound)
-						case Some((id, instServer)) =>
-							respondWithHeader(attachmentHeader(id + ".rdf")){
-								complete(instServer)
-							}
-					}
-				}
-			} ~
-			pathPrefix(("objects" | "collections") / Sha256Segment){hash =>
-				pathEnd{
-					genericRdfUriResourcePage
-				} ~
-				path(Segment){
-					case fileName if InspireXmlFilename.matches(fileName) =>
-						(extractUri & extractEnvri){(uri, envri) =>
-							val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
-							val objV = uriSerializer.fetchStaticObject(canonUri)
-							objV.result match
-								case Some(dobj: DataObject) =>
-									if objV.errors.nonEmpty then
-										log.warning(s"Problems while reading data object $canonUri\n${objV.errors.mkString("\n")}")
+						val serverOpt: Option[(String, InstanceServer)] = instServerConfs.collectFirst{
+							case (id, instServConf)
+								if instServConf.writeContext.toString.endsWith(path) =>
+									instanceServers.get(id).map((id, _))
+						}.flatten
 
-									val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
-									val printer = new scala.xml.PrettyPrinter(120, 3)
-									val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-										printer.format(scala.xml.XML.loadString(xml.body))
-									val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
-									respondWithHeader(attachmentHeader(fileName)){
-										complete(HttpEntity(contentType, fineXml))
-									}
-								case _ =>
-									val msg = s"No data object with SHA-256 hashsum of ${hash.base64Url}\n${objV.errors.mkString("\n")}"
-									complete(StatusCodes.NotFound -> msg)
+						serverOpt match{
+							case None =>
+								complete(StatusCodes.NotFound)
+							case Some((id, instServer)) =>
+								respondWithHeader(attachmentHeader(id + ".rdf")){
+									complete(instServer)
+								}
 						}
+					}
+				} ~
+				pathPrefix(("objects" | "collections") / Sha256Segment){hash =>
+					pathEnd{
+						genericRdfUriResourcePage
+					} ~
+					path(Segment){
+						case fileName if InspireXmlFilename.matches(fileName) =>
+							(extractUri & extractEnvri){(uri, envri) =>
+								val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
+								val objV = uriSerializer.fetchStaticObject(canonUri)
+								objV.result match
+									case Some(dobj: DataObject) =>
+										if objV.errors.nonEmpty then
+											log.warning(s"Problems while reading data object $canonUri\n${objV.errors.mkString("\n")}")
 
-					case fileName @ FileNameWithExtension(_, ext) =>
-						extToMime.get(ext).fold[Route](reject){mime =>
-							mapRequest(rewriteObjRequest(mime)){
-								respondWithHeader(attachmentHeader(fileName)){
-									genericRdfUriResourcePage
+										val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
+										val printer = new scala.xml.PrettyPrinter(120, 3)
+										val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+											printer.format(scala.xml.XML.loadString(xml.body))
+										val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
+										respondWithHeader(attachmentHeader(fileName)){
+											complete(HttpEntity(contentType, fineXml))
+										}
+									case _ =>
+										val msg = s"No data object with SHA-256 hashsum of ${hash.base64Url}\n${objV.errors.mkString("\n")}"
+										complete(StatusCodes.NotFound -> msg)
+							}
+
+						case fileName @ FileNameWithExtension(_, ext) =>
+							extToMime.get(ext).fold[Route](reject){mime =>
+								mapRequest(rewriteObjRequest(mime)){
+									respondWithHeader(attachmentHeader(fileName)){
+										genericRdfUriResourcePage
+									}
 								}
 							}
-						}
-					case _ =>
-						reject
-				}
+						case _ =>
+							reject
+					}
+				} ~
+				pathPrefix("ontologies" | "resources" | "files"){
+					genericRdfUriResourcePage
+				} //~
+				//complete(StatusCodes.NotFound -> "invalid path")
 			} ~
-			pathPrefix("ontologies" | "resources" | "files"){
-				genericRdfUriResourcePage
-			}
-		} ~
-		options{
-			pathPrefix("objects" | "collections" | "resources") {
-				respondWithHeaders(
-					`Access-Control-Allow-Origin`.*,
-					`Access-Control-Allow-Methods`(HttpMethods.GET),
-					`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
-				) {
-					complete(StatusCodes.OK)
+			options{
+				pathPrefix("objects" | "collections" | "resources") {
+					respondWithHeaders(
+						`Access-Control-Allow-Origin`.*,
+						`Access-Control-Allow-Methods`(HttpMethods.GET),
+						`Access-Control-Allow-Headers`(`Content-Type`.name, `Cache-Control`.name)
+					) {
+						complete(StatusCodes.OK)
+					}
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import warnings
 from typing import Optional, Tuple, Any
 from dataclasses import dataclass, asdict
@@ -553,7 +553,7 @@ class WdcggMetadataClient:
 		changed more than a predefined number of times.
 		"""
 
-		instr_hist = netcdf_data.instrument_history("time", "instrument")
+		instr_hist = netcdf_data.instrument_history("start_time", "instrument")
 		if len(instr_hist) == 0 or len(instr_hist) > MAX_INSTRUMENTS:
 			return []
 		instr_hist_wdcgg: list[InstrumentDeploymentWdcgg] = []
@@ -696,4 +696,4 @@ def get_dobj_info(dobj_url: str) -> Optional[DobjInfo]:
 
 
 def timestamp_to_str(timestamp: float, fmt: str) -> str:
-	return datetime.fromtimestamp(timestamp).strftime(fmt)
+	return datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime(fmt)

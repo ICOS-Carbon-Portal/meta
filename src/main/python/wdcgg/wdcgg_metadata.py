@@ -26,17 +26,26 @@ SCALES = {
 	"N2O": CalibrationScale(name="WMO N2O X2006A", wdcgg_code="5"),
 	"CO": CalibrationScale(name="WMO CO X2014A", wdcgg_code="8")
 }
+# In WDCGG_METHODS, code "0" is used to indicate that the specific measurement method depends
+# on the gas species and is determined in the method "get_wdcgg_instrument_method".
 WDCGG_METHODS = {
 	"Picarro": InstrumentMethod(method="CRDS", code="18"),
 	"LI-COR": InstrumentMethod(method="NDIR", code="9"),
 	"Los Gatos Research": InstrumentMethod(method="off-axis integrated cavity output spectroscopy (OA-ICOS)", code="25"),
 	"Siemens, ULTRAMAT": InstrumentMethod(method="NDIR", code="9"),
-	"Maihak": InstrumentMethod(method="NDIR", code="9"),
+	"Maihak, Maihak S710": InstrumentMethod(method="NDIR", code="9"),
 	"Ecotech, Spectronus": InstrumentMethod(method="Fourier Transform Spectrometer", code="50"),
 	"ABB, URAS": InstrumentMethod(method="NDIR", code="9"),
 	"Laboratoire des Sciences du Climat et de l'Environnement, Caribou": InstrumentMethod(method="NDIR", code="9"),
-	"PerkinElmer, Clarus 500": InstrumentMethod(method="Gas chromatography (ECD)", code="1"),
-	"HP, HP_LUT": InstrumentMethod(method="Gas chromatography (ECD)", code="1")
+	"Agilent, 6890N Network Gas Chromatograph": InstrumentMethod(method="Gas chromatography", code="0"),
+	"Agilent, 6890 Network Gas Chromatograph": InstrumentMethod(method="Gas chromatography", code="0"),
+	"Agilent, 7890A Gas Chromatograph": InstrumentMethod(method="Gas chromatography", code="0"),
+	"PerkinElmer, Clarus 500": InstrumentMethod(method="Gas chromatography", code="0"),
+	"Siemens, Sichromat-2": InstrumentMethod(method="Gas chromatography", code="0"),
+	"HP, HP 5890 II Gas Chromatograph": InstrumentMethod(method="Gas chromatography", code="0"),
+	"HP, HP_LUT": InstrumentMethod(method="Gas chromatography", code="0"),
+	"Varian, Inc, Varian 3800": InstrumentMethod(method="Gas chromatography", code="0"),
+	"DANI, Dani 3800": InstrumentMethod(method="Gas chromatography", code="0")
 }
 WDCGG_PLATFORMS = {
 	"surface": "01", "tower": "02", "balloon": "03", "aircraft": "05",
@@ -345,7 +354,7 @@ class WdcggMetadataClient:
 				sc_scale_code=scale.wdcgg_code,
 				sc_scale=scale.name
 			)],
-			ih_instrument_history = self.instrument_history(dobj_info.url, netcdf_data),
+			ih_instrument_history = self.instrument_history(netcdf_data, dobj_info.gas_species),
 			sh_sampling_height_history = [SamplingHeightHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",
@@ -526,7 +535,8 @@ class WdcggMetadataClient:
 			"9999"
 		])
 
-	def instrument_history(self, url: str, netcdf_data: ObspackNetcdf) -> list[InstrumentDeploymentWdcgg]:
+	def instrument_history(
+			self, netcdf_data: ObspackNetcdf, gas_species: str) -> list[InstrumentDeploymentWdcgg]:
 		"""Format the instrument history according to WDCGG requirements.
 
 		Returns
@@ -542,12 +552,13 @@ class WdcggMetadataClient:
 			return []
 		instr_hist_wdcgg: list[InstrumentDeploymentWdcgg] = []
 		for deployment in instr_hist:
-			instr_hist_wdcgg.append(self.instrument_deployment_to_wdcgg_format(deployment))
+			instr_hist_wdcgg.append(self.instrument_deployment_to_wdcgg_format(deployment, gas_species))
 		instr_hist_wdcgg[0].ih_start_date_time = "9999-12-31T00:00:00"
 		instr_hist_wdcgg[-1].ih_end_date_time = "9999-12-31T23:59:59"
 		return instr_hist_wdcgg
 
-	def instrument_deployment_to_wdcgg_format(self, deployment: InstrumentDeployment) -> InstrumentDeploymentWdcgg:
+	def instrument_deployment_to_wdcgg_format(
+			self, deployment: InstrumentDeployment, gas_species: str) -> InstrumentDeploymentWdcgg:
 		if deployment.atc_id in self.instruments.keys():
 			instr_label = self.instruments[deployment.atc_id]
 		else:
@@ -564,7 +575,7 @@ class WdcggMetadataClient:
 				)
 			instr_label = instr_label[0]
 			self.instruments[deployment.atc_id] = instr_label
-		wdcgg_method_code, wdcgg_method = self.get_wdcgg_instrument_method(instr_label)
+		wdcgg_method_code, wdcgg_method = self.get_wdcgg_instrument_method(instr_label, gas_species)
 		return InstrumentDeploymentWdcgg(
 			ih_start_date_time=timestamp_to_str(deployment.time_period.start_time, "%Y-%m-%dT%H:%M:%S"),
 			ih_end_date_time=timestamp_to_str(deployment.time_period.end_time, "%Y-%m-%dT%H:%M:%S"),
@@ -573,10 +584,16 @@ class WdcggMetadataClient:
 			mm_measurement_method=wdcgg_method
 		)
 
-	def get_wdcgg_instrument_method(self, instr_label: str) -> Tuple[str, str]:
+	def get_wdcgg_instrument_method(self, instr_label: str, gas_species: str) -> Tuple[str, str]:
 		for vendor_or_model, wdcgg_method_info in WDCGG_METHODS.items():
 			if instr_label.startswith(vendor_or_model):
-				return wdcgg_method_info.method, wdcgg_method_info.code
+				if wdcgg_method_info.code != "0":
+					return wdcgg_method_info.method, wdcgg_method_info.code
+				elif wdcgg_method_info.method == "Gas chromatography":
+					if gas_species.lower() in ["co2", "ch4"]:
+						return "Gas chromatography (FID)", "2"
+					elif gas_species.lower() == "n2o":
+						return "Gas chromatography (ECD)", "1"
 		else:
 			return "", ""
 

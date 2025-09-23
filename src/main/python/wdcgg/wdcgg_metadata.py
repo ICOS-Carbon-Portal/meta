@@ -392,6 +392,12 @@ class WdcggMetadataClient:
 			dc_doi_category = doi_info.doi,
 			md_description = ("ICOS atmospheric station\n"
 				f"Observational timeseries of ambient mole fraction of {dobj_info.gas_species} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.\n\n"
+				"The following uncertainty estimates are used:\n"
+				"  a. Continuous Measurement Repeatability: monthly average of the standard deviations of short-term target raw data over 1-minute intervals\n"
+				"  b. Long Term Repeatability: standard deviation of the averaged short-term target measurement intervals (of 10 minutes every 5 hours approximately) over three days\n"
+				"  c. Short Term Target Bias: difference between the hourly average of the short-term target injections and the value assigned by the calibration lab\n"
+				'The method used for "value_unc_1" is "Continuous Measurement Repeatability". The method used for "value_unc_2" is "Long Term Repeatability". The method used for "value_unc_3" is "Short Term Target Bias".\n'
+				"More information about the uncertainty estimates can be found in Yver Kwok et al. (2015) (https://doi.org/10.5194/amt-8-3867-2015) and Yver-Kwok et al. (2021) (https://amt.copernicus.org/articles/14/89/2021/).\n\n"
 				f"PID: {dobj_info.pid}\n\n"
 				"Citation:\n"
 				f"{dobj_info.citation_string}\n\n"

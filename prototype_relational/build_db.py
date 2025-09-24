@@ -10,7 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 import os
 
-csv_path = "./dump_full.csv"
+# csv_path = "./dump_full.csv"
+# csv_path = "./dump_mini.csv"
 csv_path = "./dump_partial.csv"
 
 def get_connection():
@@ -33,26 +34,7 @@ def execute_sql_file(conn, path):
 def recreate_dependent_tables():
     conn = get_connection()
     print("Recreating dependent tables")
-    execute_sql_file(conn, 'psql/tables.sql')
-
-def create_entities_table():
-    print("Creating entities table")
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("DROP TABLE IF EXISTS entities CASCADE")
-
-    cursor.execute("""
-        CREATE TABLE entities (
-            id SERIAL PRIMARY KEY,
-            subject TEXT UNIQUE NOT NULL,
-            properties JSONB NOT NULL
-        )
-    """)
-
-    cursor.execute("CREATE INDEX idx_subject ON entities(subject)")
-    cursor.execute("CREATE INDEX idx_properties_gin ON entities USING GIN (properties)")
-    conn.commit()
+    execute_sql_file(conn, 'psql/create_dependent_tables.sql')
 
 
 def process_triples(csv_path, limit=None):
@@ -94,7 +76,7 @@ def process_triples(csv_path, limit=None):
 
     return processed_data
 
-def populate_entities(limit):
+def populate_triples(limit):
     data = process_triples(csv_path, limit)
     conn = get_connection()
     cursor = conn.cursor()
@@ -105,82 +87,40 @@ def populate_entities(limit):
         batch = data[i:i+batch_size]
         execute_batch(
             cursor,
-            "INSERT INTO entities (subject, properties) VALUES (%s, %s)",
-            batch,
-            page_size=1000
+            "INSERT INTO triples (subject, properties) VALUES (%s, %s)",
+            batch
         )
         total_inserted += len(batch)
 
         if total_inserted % 10000 == 0:
-            print(f"Inserted {total_inserted} entities...")
+            print(f"Inserted {total_inserted} triples...")
             conn.commit()
 
     conn.commit()
-    print(f"Total entities inserted: {total_inserted}")
+    print(f"Total triples inserted: {total_inserted}")
 
-
-# Helper function to get temporal data from related entity
-def get_temporal_data(cursor, related_uri):
-    if not related_uri:
-        return None, None
-
-    if isinstance(related_uri, list):
-        related_uri = related_uri[0] if related_uri else None
-
-    if not related_uri:
-        return None, None
-
+def get_temporal_data(cursor, subject):
     started_at_time_pred = "http://www.w3.org/ns/prov#startedAtTime"
     ended_at_time_pred = "http://www.w3.org/ns/prov#endedAtTime"
 
     cursor.execute("""
         SELECT properties->>%s as start_time,
                properties->>%s as end_time
-        FROM entities WHERE subject = %s
-    """, (started_at_time_pred, ended_at_time_pred, related_uri))
+        FROM triples WHERE subject = %s
+    """, (started_at_time_pred, ended_at_time_pred, subject))
 
     result = cursor.fetchone()
     if result:
-        start_time, end_time = result
-        # Handle list values
-        if isinstance(start_time, str) and start_time.startswith('['):
-            start_time = json.loads(start_time)[0] if start_time != '[]' else None
-        if isinstance(end_time, str) and end_time.startswith('['):
-            end_time = json.loads(end_time)[0] if end_time != '[]' else None
-
-        # Convert ISO datetime strings to PostgreSQL timestamp format
-        def parse_datetime(dt_str):
-            if not dt_str:
-                return None
-            try:
-                # Handle various ISO formats and convert to PostgreSQL timestamp format
-                import datetime
-                # Remove timezone info for PostgreSQL compatibility (or use TIMESTAMPTZ)
-                if dt_str.endswith('Z'):
-                    dt_str = dt_str[:-1] + '+00:00'
-
-                # Parse the datetime
-                if '+' in dt_str or dt_str.endswith('Z'):
-                    # Has timezone info
-                    from datetime import datetime as dt
-                    try:
-                        parsed = dt.fromisoformat(dt_str.replace('Z', '+00:00'))
-                    except:
-                        # Fallback for older Python versions or malformed strings
-                        parsed = dt.strptime(dt_str.replace('Z', '').replace('+00:00', ''), '%Y-%m-%dT%H:%M:%S')
-                else:
-                    # No timezone info
-                    from datetime import datetime as dt
-                    parsed = dt.fromisoformat(dt_str)
-
-                # Return in PostgreSQL timestamp format (YYYY-MM-DD HH:MM:SS)
-                return parsed.strftime('%Y-%m-%d %H:%M:%S')
-            except Exception as e:
-                print(f"Warning: Could not parse datetime '{dt_str}': {e}")
-                return None
-
-        return parse_datetime(start_time), parse_datetime(end_time)
+        return result
     return None, None
+
+
+def get_property_value(properties, predicate, convert_type=None):
+    value = properties.get(predicate)
+    if convert_type == 'int' and value != None:
+        return int(value)
+
+    return value
 
 def populate_data_objects_table(conn, object_spec_mapping=None):
     print("Populating data_objects table")
@@ -204,97 +144,47 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
         cursor.execute("SELECT subject, id FROM object_specs")
         object_spec_mapping = dict(cursor.fetchall())
 
-    # Create mapping of data object subjects to their entity IDs for foreign key resolution
-    # We need this for isNextVersionOf foreign key lookups
     print("Building data object URI mapping for foreign key resolution...")
     query = """
         SELECT subject, id
-        FROM entities
+        FROM triples
         WHERE properties->%s IS NOT NULL
     """
     cursor.execute(query, (object_spec_pred,))
-    data_object_uri_to_entity_id = dict(cursor.fetchall())
-    print(f"Built mapping for {len(data_object_uri_to_entity_id):,} data object URIs")
+    data_object_uri_to_triple_id = dict(cursor.fetchall())
+    print(f"Built mapping for {len(data_object_uri_to_triple_id):,} data object URIs")
 
     query = """
         SELECT id, subject, properties
-        FROM entities
+        FROM triples
         WHERE properties->%s IS NOT NULL
     """
 
     cursor.execute(query, (object_spec_pred,))
     data_objects = cursor.fetchall()
 
-    print(f"\nFound {len(data_objects)} entities with hasObjectSpec predicate")
+    print(f"\nFound {len(data_objects)} triples with hasObjectSpec predicate")
 
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
+    insertion_query = "INSERT INTO data_objects (triple_id, subject, object_spec_id, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-    # Helper function to parse datetime from direct properties
-    def parse_direct_datetime(value):
-        if not value:
-            return None
-        if isinstance(value, list):
-            value = value[0] if value else None
-        if not value:
-            return None
+    for triple_id, subject, properties in data_objects:
+        object_spec_uri = get_property_value(properties, object_spec_pred)
+        object_spec_id = object_spec_mapping.get(object_spec_uri) if object_spec_uri else None
 
-        try:
-            import datetime
-            # Handle various ISO formats and convert to PostgreSQL timestamp format
-            if value.endswith('Z'):
-                value = value[:-1] + '+00:00'
-
-            # Parse the datetime
-            if '+' in value or value.endswith('Z'):
-                # Has timezone info
-                from datetime import datetime as dt
-                try:
-                    parsed = dt.fromisoformat(value.replace('Z', '+00:00'))
-                except:
-                    # Fallback for older Python versions or malformed strings
-                    parsed = dt.strptime(value.replace('Z', '').replace('+00:00', ''), '%Y-%m-%dT%H:%M:%S')
-            else:
-                # No timezone info
-                from datetime import datetime as dt
-                parsed = dt.fromisoformat(value)
-
-            # Return in PostgreSQL timestamp format (YYYY-MM-DD HH:MM:SS)
-            return parsed.strftime('%Y-%m-%d %H:%M:%S')
-        except Exception as e:
-            print(f"Warning: Could not parse datetime '{value}': {e}")
-            return None
-
-    # Helper function to extract and convert property values
-    def get_property_value(properties, predicate, convert_type=None):
-        value = properties.get(predicate)
-        if not value:
-            return None
-        if isinstance(value, list):
-            value = value[0] if value else None
-        if not value:
-            return None
-
-        if convert_type == 'int':
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                print(f"Warning: Could not convert '{value}' to integer for {predicate}")
-                return None
-
-        return value
-
-    for entity_id, subject, properties_json in data_objects:
-        properties = properties_json
+        # Object spec for this data object was cut from data-set.
+        # Very likely, when using a partial rdf log
+        if object_spec_id == None:
+            continue
 
         # Extract core properties
-        object_spec_uri = get_property_value(properties, object_spec_pred)
         name = get_property_value(properties, name_pred)
         acquisition_uri = get_property_value(properties, was_acquired_by_pred)
         submission_uri = get_property_value(properties, was_submitted_by_pred)
-        data_start_raw = properties.get(has_start_time_pred)
-        data_end_raw = properties.get(has_end_time_pred)
+        data_start = properties.get(has_start_time_pred)
+        data_end = properties.get(has_end_time_pred)
 
         # Extract new properties
         sha256sum = get_property_value(properties, has_sha256sum_pred)
@@ -307,36 +197,19 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
 
         # Store isNextVersionOf URI as None for now - will be resolved in second pass
         next_version_of_id = None
-
-        object_spec_id = object_spec_mapping.get(object_spec_uri) if object_spec_uri else None
-
-        # Object spec for this data object was cut from data-set.
-        # Very likely, when using a partial rdf log
-        if object_spec_id == None:
-            continue
-
-        # Get temporal data from acquisition and submission entities
+        # Get temporal data from acquisition and submission triples
         acq_start, acq_end = get_temporal_data(cursor, acquisition_uri)
         sub_start, sub_end = get_temporal_data(cursor, submission_uri)
 
-        # Get direct ICOS temporal data from the data object itself
-        data_start = parse_direct_datetime(data_start_raw)
-        data_end = parse_direct_datetime(data_end_raw)
-
         data_to_insert.append((
-            entity_id, subject, object_spec_id, name,
+            triple_id, subject, object_spec_id, name,
             acq_start, acq_end, sub_start, sub_end, data_start, data_end,
             sha256sum, number_of_rows, size_in_bytes, column_names,
             next_version_of_id, produced_by, doi
         ))
 
         if len(data_to_insert) >= batch_size:
-            execute_batch(
-                cursor,
-                "INSERT INTO data_objects (entity_id, subject, object_spec_id, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                data_to_insert,
-                page_size=10000
-            )
+            execute_batch(cursor, insertion_query, data_to_insert)
             total_inserted += len(data_to_insert)
             data_to_insert = []
 
@@ -344,14 +217,8 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
                 print(f"Inserted {total_inserted} data objects...")
                 conn.commit()
 
-    if data_to_insert:
-        execute_batch(
-            cursor,
-            "INSERT INTO data_objects (entity_id, subject, object_spec_id, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            data_to_insert,
-            page_size=100
-        )
-        total_inserted += len(data_to_insert)
+    execute_batch(cursor,insertion_query, data_to_insert)
+    total_inserted += len(data_to_insert)
 
     conn.commit()
     print(f"Total data objects inserted: {total_inserted}")
@@ -374,8 +241,8 @@ def update_next_version(conn):
     # Find all data objects that have isNextVersionOf relationships to update
     cursor.execute("""
         SELECT e.subject, e.properties->>%s as next_version_uri
-        FROM entities e
-        JOIN data_objects data_object ON e.id = data_object.entity_id
+        FROM triples e
+        JOIN data_objects data_object ON e.id = data_object.triple_id
         WHERE e.properties->%s IS NOT NULL
     """, (is_next_version_of_pred, is_next_version_of_pred))
 
@@ -400,8 +267,7 @@ def update_next_version(conn):
         execute_batch(
             cursor,
             "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
-            updates_to_make,
-            page_size=100
+            updates_to_make
         )
         conn.commit()
 
@@ -416,8 +282,8 @@ def update_next_version(conn):
     # Find all data objects that have isNextVersionOf relationships to update
     cursor.execute("""
         SELECT e.subject, e.properties->>%s as next_version_uri
-        FROM entities e
-        JOIN data_objects data_object ON e.id = data_object.entity_id
+        FROM triples e
+        JOIN data_objects data_object ON e.id = data_object.triple_id
         WHERE e.properties->%s IS NOT NULL
     """, (is_next_version_of_pred, is_next_version_of_pred))
 
@@ -442,13 +308,12 @@ def update_next_version(conn):
         execute_batch(
             cursor,
             "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
-            updates_to_make,
-            page_size=100
+            updates_to_make
         )
         conn.commit()
 
     print("Foreign key relationships updated successfully")
-    
+
 
 def populate_keywords_tables(conn):
     print("Step 8: Populating keywords")
@@ -456,25 +321,23 @@ def populate_keywords_tables(conn):
 
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
-    # Get all entities with keywords
     query = """
         SELECT id, subject, properties->>%s as keywords_str
-        FROM entities
+        FROM triples
         WHERE properties->%s IS NOT NULL
     """
 
     cursor.execute(query, (keywords_pred, keywords_pred))
-    entities_with_keywords = cursor.fetchall()
+    triples_with_keywords = cursor.fetchall()
 
-    print(f"\nFound {len(entities_with_keywords)} entities with keywords")
+    print(f"\nFound {len(triples_with_keywords)} triples with keywords")
 
     # Dictionary to cache keyword IDs
     keyword_to_id = {}
 
-    # Process each entity's keywords
-    entity_keyword_pairs = []
+    triple_keyword_pairs = []
 
-    for entity_id, subject, keywords_str in entities_with_keywords:
+    for triple_id, subject, keywords_str in triples_with_keywords:
         if keywords_str:
             # Handle case where keywords might be a list
             if isinstance(keywords_str, str) and keywords_str.startswith('['):
@@ -493,17 +356,13 @@ def populate_keywords_tables(conn):
                     cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
                     keyword_to_id[keyword] = cursor.fetchone()[0]
 
-                # Add entity-keyword pair
-                entity_keyword_pairs.append((entity_id, keyword_to_id[keyword]))
+                triple_keyword_pairs.append((triple_id, keyword_to_id[keyword]))
 
-    # Batch insert entity-keyword relationships
-    if entity_keyword_pairs:
-        execute_batch(
-            cursor,
-            "INSERT INTO entity_keywords (entity_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            entity_keyword_pairs,
-            page_size=1000
-        )
+    execute_batch(
+        cursor,
+        "INSERT INTO triple_keywords (triple_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        triple_keyword_pairs
+    )
 
     conn.commit()
 
@@ -511,17 +370,17 @@ def populate_keywords_tables(conn):
     cursor.execute("SELECT COUNT(DISTINCT id) FROM keywords")
     unique_keywords = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM entity_keywords")
+    cursor.execute("SELECT COUNT(*) FROM triple_keywords")
     total_relationships = cursor.fetchone()[0]
 
     print(f"Total unique keywords: {unique_keywords}")
-    print(f"Total entity-keyword relationships: {total_relationships}")
+    print(f"Total triple-keyword relationships: {total_relationships}")
 
     # Show top keywords
     cursor.execute("""
-        SELECT k.keyword, COUNT(ek.entity_id) as count
+        SELECT k.keyword, COUNT(ek.triple_id) as count
         FROM keywords k
-        JOIN entity_keywords ek ON k.id = ek.keyword_id
+        JOIN triple_keywords ek ON k.id = ek.keyword_id
         GROUP BY k.keyword
         ORDER BY count DESC
         LIMIT 10
@@ -529,7 +388,7 @@ def populate_keywords_tables(conn):
 
     print("\nTop 10 keywords by frequency:")
     for keyword, count in cursor.fetchall():
-        print(f"  {keyword}: {count} entities")
+        print(f"  {keyword}: {count} triples")
 
     # Populate object spec keywords if object_specs table exists
     cursor.execute("""
@@ -554,11 +413,10 @@ def populate_object_spec_keywords(conn, keyword_to_id):
 
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
-    # Get all object specs with keywords by joining with entities table
     query = """
         SELECT os.id, os.subject, e.properties->>%s as keywords_str
         FROM object_specs os
-        JOIN entities e ON os.entity_id = e.id
+        JOIN triples e ON os.triple_id = e.id
         WHERE e.properties->%s IS NOT NULL
     """
 
@@ -567,7 +425,6 @@ def populate_object_spec_keywords(conn, keyword_to_id):
 
     print(f"\nFound {len(object_specs_with_keywords)} object specs with keywords")
 
-    # Process each object spec's keywords
     object_spec_keyword_pairs = []
 
     for object_spec_id, subject, keywords_str in object_specs_with_keywords:
@@ -586,14 +443,11 @@ def populate_object_spec_keywords(conn, keyword_to_id):
                 if keyword in keyword_to_id:
                     object_spec_keyword_pairs.append((object_spec_id, keyword_to_id[keyword]))
 
-    # Batch insert object_spec-keyword relationships
-    if object_spec_keyword_pairs:
-        execute_batch(
-            cursor,
-            "INSERT INTO object_spec_keywords (object_spec_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            object_spec_keyword_pairs,
-            page_size=1000
-        )
+    execute_batch(
+        cursor,
+        "INSERT INTO object_spec_keywords (object_spec_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        object_spec_keyword_pairs
+    )
 
     conn.commit()
 
@@ -624,12 +478,12 @@ def populate_project_keywords(conn, keyword_to_id):
 
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
-    # Get all projects with keywords (only those that exist as entities)
+    # Get all projects with keywords (only those that exist as triples)
     query = """
         SELECT p.id, p.subject, e.properties->>%s as keywords_str
         FROM projects p
-        JOIN entities e ON p.entity_id = e.id
-        WHERE p.entity_id IS NOT NULL
+        JOIN triples e ON p.triple_id = e.id
+        WHERE p.triple_id IS NOT NULL
         AND e.properties->%s IS NOT NULL
     """
 
@@ -662,8 +516,7 @@ def populate_project_keywords(conn, keyword_to_id):
         execute_batch(
             cursor,
             "INSERT INTO project_keywords (project_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            project_keyword_pairs,
-            page_size=1000
+            project_keyword_pairs
         )
 
     conn.commit()
@@ -701,7 +554,7 @@ def populate_object_specs_table(conn):
     # First, find all unique object spec URIs referenced by data objects
     cursor.execute("""
         SELECT DISTINCT properties->>%s as object_spec_uri
-        FROM entities e
+        FROM triples e
         WHERE properties->>%s = %s
           AND properties->%s IS NOT NULL
     """, (object_spec_pred, rdf_type_pred, data_object_type, object_spec_pred))
@@ -720,31 +573,30 @@ def populate_object_specs_table(conn):
 
     print(f"\nFound {len(referenced_spec_uris)} unique object spec URIs referenced by data objects")
 
-    # Now find all entities that match these URIs
+    # Now find all triples that match these URIs
     object_specs = []
     for spec_uri in referenced_spec_uris:
-        cursor.execute("SELECT id, subject FROM entities WHERE subject = %s", (spec_uri,))
+        cursor.execute("SELECT id, subject FROM triples WHERE subject = %s", (spec_uri,))
         result = cursor.fetchone()
         if result:
             object_specs.append(result)
         else:
-            print(f"Warning: Referenced object spec not found in entities: {spec_uri}")
+            print(f"Warning: Referenced object spec not found in triples: {spec_uri}")
 
-    print(f"Found {len(object_specs)} object spec entities in database")
+    print(f"Found {len(object_specs)} object spec triples in database")
 
     batch_size = 1000
     total_inserted = 0
     data_to_insert = []
 
-    for entity_id, subject in object_specs:
-        data_to_insert.append((entity_id, subject))
+    for triple_id, subject in object_specs:
+        data_to_insert.append((triple_id, subject))
 
         if len(data_to_insert) >= batch_size:
             execute_batch(
                 cursor,
-                "INSERT INTO object_specs (entity_id, subject) VALUES (%s, %s)",
-                data_to_insert,
-                page_size=100
+                "INSERT INTO object_specs (triple_id, subject) VALUES (%s, %s)",
+                data_to_insert
             )
             total_inserted += len(data_to_insert)
             data_to_insert = []
@@ -756,9 +608,8 @@ def populate_object_specs_table(conn):
     if data_to_insert:
         execute_batch(
             cursor,
-            "INSERT INTO object_specs (entity_id, subject) VALUES (%s, %s)",
-            data_to_insert,
-            page_size=100
+            "INSERT INTO object_specs (triple_id, subject) VALUES (%s, %s)",
+            data_to_insert
         )
         total_inserted += len(data_to_insert)
 
@@ -781,7 +632,7 @@ def populate_projects_table(conn):
     query = """
         SELECT DISTINCT e.properties->>%s as project_uri
         FROM object_specs os
-        JOIN entities e ON os.entity_id = e.id
+        JOIN triples e ON os.triple_id = e.id
         WHERE e.properties->%s IS NOT NULL
     """
 
@@ -806,23 +657,23 @@ def populate_projects_table(conn):
     # Insert projects
     total_inserted = 0
     for project_uri in unique_project_uris:
-        # Check if this project exists as an entity
-        cursor.execute("SELECT id, properties FROM entities WHERE subject = %s", (project_uri,))
-        entity_row = cursor.fetchone()
+        # Check if this project exists as an triple
+        cursor.execute("SELECT id, properties FROM triples WHERE subject = %s", (project_uri,))
+        triple_row = cursor.fetchone()
 
-        entity_id = None
+        triple_id = None
         name = None
 
-        if entity_row:
-            entity_id = entity_row[0]
-            properties = entity_row[1]
+        if triple_row:
+            triple_id = triple_row[0]
+            properties = triple_row[1]
             name = properties.get(name_pred)
             if isinstance(name, list):
                 name = name[0] if name else None
 
         cursor.execute(
-            "INSERT INTO projects (entity_id, subject, name) VALUES (%s, %s, %s) ON CONFLICT (subject) DO NOTHING",
-            (entity_id, project_uri, name)
+            "INSERT INTO projects (triple_id, subject, name) VALUES (%s, %s, %s) ON CONFLICT (subject) DO NOTHING",
+            (triple_id, project_uri, name)
         )
         total_inserted += 1
 
@@ -849,7 +700,7 @@ def populate_object_spec_projects(conn, project_mapping=None):
     query = """
         SELECT os.id, os.subject, e.properties->>%s as project_uris
         FROM object_specs os
-        JOIN entities e ON os.entity_id = e.id
+        JOIN triples e ON os.triple_id = e.id
         WHERE e.properties->%s IS NOT NULL
     """
 
@@ -878,8 +729,7 @@ def populate_object_spec_projects(conn, project_mapping=None):
         execute_batch(
             cursor,
             "INSERT INTO object_spec_projects (object_spec_id, project_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            relationships,
-            page_size=1000
+            relationships
         )
 
     conn.commit()
@@ -916,10 +766,10 @@ def populate_aggregate_keywords(conn):
         FROM data_objects data_object
         JOIN keywords k ON 1=1  -- Cross join, we'll filter in the UNIONs
         WHERE k.id IN (
-            -- Direct keywords from data object entity
+            -- Direct keywords from data object triple
             SELECT ek.keyword_id
-            FROM entity_keywords ek
-            WHERE ek.entity_id = data_object.entity_id
+            FROM triple_keywords ek
+            WHERE ek.triple_id = data_object.triple_id
 
             UNION
 
@@ -954,8 +804,7 @@ def populate_aggregate_keywords(conn):
         execute_batch(
             cursor,
             "INSERT INTO data_object_all_keywords (data_object_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            batch,
-            page_size=1000
+            batch
         )
         total_inserted += len(batch)
 
@@ -996,9 +845,9 @@ def verify_database(limit=5):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM entities")
+    cursor.execute("SELECT COUNT(*) FROM triples")
     count = cursor.fetchone()[0]
-    print(f"\nDatabase contains {count} entities")
+    print(f"\nDatabase contains {count} triples")
 
     cursor.execute("SELECT COUNT(*) FROM object_specs")
     obj_spec_count = cursor.fetchone()[0]
@@ -1032,9 +881,9 @@ def verify_database(limit=5):
         keyword_count = cursor.fetchone()[0]
         print(f"Database contains {keyword_count} unique keywords")
 
-        cursor.execute("SELECT COUNT(*) FROM entity_keywords")
-        entity_keyword_count = cursor.fetchone()[0]
-        print(f"Database contains {entity_keyword_count} entity-keyword relationships")
+        cursor.execute("SELECT COUNT(*) FROM triple_keywords")
+        triple_keyword_count = cursor.fetchone()[0]
+        print(f"Database contains {triple_keyword_count} triple-keyword relationships")
 
         # Check object spec keywords if table exists
         cursor.execute("""
@@ -1058,16 +907,16 @@ def verify_database(limit=5):
 
     print(f"\nFirst {limit} data objects with their object specs:")
     cursor.execute("""
-        SELECT data_object.id, data_object.subject, os.subject as object_spec_subject, data_object.name, data_object.entity_id
+        SELECT data_object.id, data_object.subject, os.subject as object_spec_subject, data_object.name, data_object.triple_id
         FROM data_objects data_object
         LEFT JOIN object_specs os ON data_object.object_spec_id = os.id
         LIMIT %s
     """, (limit,))
 
     for row in cursor.fetchall():
-        id_val, subject, spec_subject, name, entity_id = row
+        id_val, subject, spec_subject, name, triple_id = row
         print(f"\nData Object ID: {id_val}")
-        print(f"  Entity ID: {entity_id}")
+        print(f"  triple ID: {triple_id}")
         print(f"  Subject: {subject}")
         print(f"  Object Spec: {spec_subject}")
         print(f"  Name: {name}")
@@ -1144,15 +993,6 @@ def verify_database(limit=5):
 
     conn.close()
 
-# def check_entities_table_exists(conn):
-#     """Check if the entities table exists in the database."""
-#     cursor = conn.cursor()
-#     cursor.execute("""
-#         SELECT COUNT(*) FROM information_schema.tables
-#         WHERE table_name = 'entities'
-#     """)
-#     return cursor.fetchone()[0] > 0
-
 def populate_dependent():
     conn = get_connection()
     object_spec_mapping = populate_object_specs_table(conn)
@@ -1164,7 +1004,7 @@ def populate_dependent():
     populate_aggregate_keywords(conn)
 
     print("Creating indices")
-    execute_sql_file(conn, "psql/indices.sql")
+    execute_sql_file(conn, "psql/create_indices.sql")
 
 def rebuild_dependent():
     recreate_dependent_tables()
@@ -1172,8 +1012,9 @@ def rebuild_dependent():
 
 
 def rebuild_all(csv_path, limit=None):
-    create_entities_table()
-    populate_entities(limit)
+    print("Creating triples table")
+    execute_sql_file(get_connection(), "psql/create_triples_table.sql")
+    populate_triples(limit)
     rebuild_dependent()
 
     print("\nStep 10: Verifying database...")
@@ -1194,7 +1035,7 @@ def main():
     rebuild_group.add_argument(
         "--dependent",
         action="store_true",
-        help="Rebuild all tables except entities (object_specs + projects + data_objects + keywords + aggregated)"
+        help="Rebuild all tables except triples (object_specs + projects + data_objects + keywords + aggregated)"
     )
 
     rebuild_group.add_argument(
@@ -1212,7 +1053,7 @@ def main():
         "--limit",
         type=int,
         metavar="N",
-        help="Process only the first N triples from CSV (applies to entities rebuilding)"
+        help="Process only the first N triples from CSV (applies to triples rebuilding)"
     )
 
     args = parser.parse_args()

@@ -114,10 +114,6 @@ class Rdf4jUriSerializer(
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
 
-	private given CpVocab = vocab
-	import pageContentMarshalling.{given StaticObjectMarshaller}
-	import pageContentMarshalling.{given StaticCollectionMarshaller}
-
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
 
@@ -253,10 +249,11 @@ class Rdf4jUriSerializer(
 
 		uri.path match
 			case Hash.Object(hash) =>
-				delegatedRepr(() => fetchStaticObj(hash))
+				given CpVocab = vocab
+				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
 
 			case Hash.Collection(hash) =>
-				delegatedRepr(() => fetchStaticColl(hash))
+				pageContentMarshalling.statCollMarshaller(() => fetchStaticColl(hash))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,
@@ -294,10 +291,6 @@ class Rdf4jUriSerializer(
 	end getMarshallings
 
 	private def oneOf(opts: Marshalling[HttpResponse]*): FLMHR  = Future.successful(opts.toList)
-
-	private def delegatedRepr[T](fetchDto: () => Validated[T])(
-		using trm: ToResponseMarshaller[() => Validated[T]], ctxt: ExecutionContext
-	): FLMHR = trm(fetchDto)
 
 	private def customJson[T : JsonWriter](fetchDto: () => Validated[T]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))

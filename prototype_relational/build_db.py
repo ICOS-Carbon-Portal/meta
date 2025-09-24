@@ -263,13 +263,12 @@ def update_next_version(conn):
 
     print(f"Updating {len(updates_to_make)} isNextVersionOf foreign key relationships...")
 
-    if updates_to_make:
-        execute_batch(
-            cursor,
-            "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
-            updates_to_make
-        )
-        conn.commit()
+    execute_batch(
+        cursor,
+        "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
+        updates_to_make
+    )
+    conn.commit()
 
     print("Foreign key relationships updated successfully")
     # Second pass: Update isNextVersionOf foreign keys
@@ -304,13 +303,13 @@ def update_next_version(conn):
 
     print(f"Updating {len(updates_to_make)} isNextVersionOf foreign key relationships...")
 
-    if updates_to_make:
-        execute_batch(
-            cursor,
-            "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
-            updates_to_make
-        )
-        conn.commit()
+    execute_batch(
+        cursor,
+        "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
+        updates_to_make
+    )
+
+    conn.commit()
 
     print("Foreign key relationships updated successfully")
 

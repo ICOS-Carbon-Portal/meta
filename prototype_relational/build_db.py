@@ -841,158 +841,6 @@ def populate_aggregate_keywords(conn):
 
     return total_inserted
 
-def verify_database(limit=5):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT COUNT(*) FROM triples")
-    count = cursor.fetchone()[0]
-    print(f"\nDatabase contains {count} triples")
-
-    cursor.execute("SELECT COUNT(*) FROM object_specs")
-    obj_spec_count = cursor.fetchone()[0]
-    print(f"Database contains {obj_spec_count} object specs")
-
-    cursor.execute("SELECT COUNT(*) FROM data_objects")
-    data_obj_count = cursor.fetchone()[0]
-    print(f"Database contains {data_obj_count} data objects")
-
-    # Check if projects tables exist and show stats
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'projects'
-    """)
-    if cursor.fetchone()[0] > 0:
-        cursor.execute("SELECT COUNT(*) FROM projects")
-        project_count = cursor.fetchone()[0]
-        print(f"Database contains {project_count} projects")
-
-        cursor.execute("SELECT COUNT(*) FROM object_spec_projects")
-        obj_spec_proj_count = cursor.fetchone()[0]
-        print(f"Database contains {obj_spec_proj_count} object spec-project relationships")
-
-    # Check if keyword tables exist and show stats
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'keywords'
-    """)
-    if cursor.fetchone()[0] > 0:
-        cursor.execute("SELECT COUNT(*) FROM keywords")
-        keyword_count = cursor.fetchone()[0]
-        print(f"Database contains {keyword_count} unique keywords")
-
-        cursor.execute("SELECT COUNT(*) FROM triple_keywords")
-        triple_keyword_count = cursor.fetchone()[0]
-        print(f"Database contains {triple_keyword_count} triple-keyword relationships")
-
-        # Check object spec keywords if table exists
-        cursor.execute("""
-            SELECT COUNT(*) FROM information_schema.tables
-            WHERE table_name = 'object_spec_keywords'
-        """)
-        if cursor.fetchone()[0] > 0:
-            cursor.execute("SELECT COUNT(*) FROM object_spec_keywords")
-            obj_spec_keyword_count = cursor.fetchone()[0]
-            print(f"Database contains {obj_spec_keyword_count} object spec-keyword relationships")
-
-        # Check project keywords if table exists
-        cursor.execute("""
-            SELECT COUNT(*) FROM information_schema.tables
-            WHERE table_name = 'project_keywords'
-        """)
-        if cursor.fetchone()[0] > 0:
-            cursor.execute("SELECT COUNT(*) FROM project_keywords")
-            proj_keyword_count = cursor.fetchone()[0]
-            print(f"Database contains {proj_keyword_count} project-keyword relationships")
-
-    print(f"\nFirst {limit} data objects with their object specs:")
-    cursor.execute("""
-        SELECT data_object.id, data_object.subject, os.subject as object_spec_subject, data_object.name, data_object.triple_id
-        FROM data_objects data_object
-        LEFT JOIN object_specs os ON data_object.object_spec_id = os.id
-        LIMIT %s
-    """, (limit,))
-
-    for row in cursor.fetchall():
-        id_val, subject, spec_subject, name, triple_id = row
-        print(f"\nData Object ID: {id_val}")
-        print(f"  triple ID: {triple_id}")
-        print(f"  Subject: {subject}")
-        print(f"  Object Spec: {spec_subject}")
-        print(f"  Name: {name}")
-
-    # Show sample object specs with keywords if available
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'object_spec_keywords'
-    """)
-    if cursor.fetchone()[0] > 0:
-        print(f"\nFirst {limit} object specs with keywords:")
-        cursor.execute("""
-            SELECT DISTINCT os.id, os.subject,
-                   string_agg(k.keyword, ', ') as keywords
-            FROM object_specs os
-            JOIN object_spec_keywords osk ON os.id = osk.object_spec_id
-            JOIN keywords k ON osk.keyword_id = k.id
-            GROUP BY os.id, os.subject
-            LIMIT %s
-        """, (limit,))
-
-        for row in cursor.fetchall():
-            obj_spec_id, subject, keywords = row
-            print(f"\nObject Spec ID: {obj_spec_id}")
-            print(f"  Subject: {subject}")
-            print(f"  Keywords: {keywords}")
-
-    # Show sample object specs with projects if available
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'object_spec_projects'
-    """)
-    if cursor.fetchone()[0] > 0:
-        print(f"\nFirst {limit} object specs with associated projects:")
-        cursor.execute("""
-            SELECT DISTINCT os.id, os.subject,
-                   string_agg(p.name || ' (' || p.subject || ')', ', ') as projects
-            FROM object_specs os
-            JOIN object_spec_projects osp ON os.id = osp.object_spec_id
-            JOIN projects p ON osp.project_id = p.id
-            GROUP BY os.id, os.subject
-            LIMIT %s
-        """, (limit,))
-
-        for row in cursor.fetchall():
-            obj_spec_id, subject, projects = row
-            print(f"\nObject Spec ID: {obj_spec_id}")
-            print(f"  Subject: {subject}")
-            print(f"  Projects: {projects}")
-
-    # Show sample projects with keywords if available
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'project_keywords'
-    """)
-    if cursor.fetchone()[0] > 0:
-        print(f"\nFirst {limit} projects with keywords:")
-        cursor.execute("""
-            SELECT DISTINCT p.id, p.subject, p.name,
-                   string_agg(k.keyword, ', ') as keywords
-            FROM projects p
-            JOIN project_keywords pk ON p.id = pk.project_id
-            JOIN keywords k ON pk.keyword_id = k.id
-            GROUP BY p.id, p.subject, p.name
-            LIMIT %s
-        """, (limit,))
-
-        for row in cursor.fetchall():
-            proj_id, subject, name, keywords = row
-            print(f"\nProject ID: {proj_id}")
-            print(f"  Name: {name if name else 'N/A'}")
-            print(f"  Subject: {subject}")
-            print(f"  Keywords: {keywords}")
-
-    conn.close()
-
 def populate_dependent():
     conn = get_connection()
     object_spec_mapping = populate_object_specs_table(conn)
@@ -1017,12 +865,6 @@ def rebuild_all(csv_path, limit=None):
     populate_triples(limit)
     rebuild_dependent()
 
-    print("\nStep 10: Verifying database...")
-    verify_database()
-
-    print(f"\nDatabase successfully created")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Build and manage PostgreSQL database from RDF triples CSV",
@@ -1044,11 +886,6 @@ def main():
         help="Rebuild the entire database"
     )
 
-    rebuild_group.add_argument(
-        "--verify",
-        action="store_true"
-    )
-
     parser.add_argument(
         "--limit",
         type=int,
@@ -1060,8 +897,6 @@ def main():
 
     if args.dependent:
         rebuild_dependent()
-    elif args.verify:
-        verify_database()
     elif args.rebuild_all:
         rebuild_all(csv_path, args.limit)
 

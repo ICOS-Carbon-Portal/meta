@@ -4,10 +4,8 @@
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
 <div class="d-flex gap-1 flex-shrink-0">
-	@dobj.accessUrl.map{link =>
-		<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
-		<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
-		<a class="btn btn-warning" href="@link">Download</a>
-	}
+	<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
+	<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
+	<a class="btn btn-warning" href='https://@{envriConf.dataHost}/objects?ids=%5B"@{dobj.hash.id}"%5D&fileName=@{dobj.fileName.replaceAll("\\.[^.]*$", "")}'>Download</a>
 </div>
 

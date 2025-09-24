@@ -21,6 +21,8 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
+type StaticObjectMarshaller = ToResponseMarshaller[() => Validated[StaticObject]]
+type StaticCollectionMarshaller = ToResponseMarshaller[() => Validated[StaticCollection]]
 
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
 

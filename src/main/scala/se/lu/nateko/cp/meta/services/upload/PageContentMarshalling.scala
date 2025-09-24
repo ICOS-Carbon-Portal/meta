@@ -21,9 +21,6 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
-type StaticObjectMarshaller = ToResponseMarshaller[() => Validated[StaticObject]]
-type StaticCollectionMarshaller = ToResponseMarshaller[() => Validated[StaticCollection]]
-
 class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
 
 	import PageContentMarshalling.*
@@ -41,7 +38,7 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		makeMarshaller(template, messagePage("Data object not found", _))
 
 
-	def statCollMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
+	def staticCollectionMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
 		import statisticsClient.executionContext
 		val template: PageTemplate[StaticCollection] = (coll, errors) =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))

@@ -35,12 +35,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.{
-	PageContentMarshalling,
-	StaticObjectMarshaller,
-	StaticCollectionMarshaller,
-	StaticObjectReader
-}
+import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -253,7 +248,7 @@ class Rdf4jUriSerializer(
 				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
 
 			case Hash.Collection(hash) =>
-				pageContentMarshalling.statCollMarshaller(() => fetchStaticColl(hash))
+				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticColl(hash))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,

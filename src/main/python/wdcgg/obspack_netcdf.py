@@ -113,6 +113,8 @@ class ObspackNetcdf:
 				[float32_to_str_with_conversion(v, conv_factor) for v in self.dataset.variables[var][:].data],
 				dtype="=U12")
 			for var in ["value", "value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]}
+		for var in ["value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]:
+			values[var][values["value"] == "-999.999"] = "-999.999"
 		values["value_std_dev"][nvalue == 1] = "-999.999"
 		latitude = to_str_with_default(self.dataset.site_latitude, "-999.999999999")
 		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")

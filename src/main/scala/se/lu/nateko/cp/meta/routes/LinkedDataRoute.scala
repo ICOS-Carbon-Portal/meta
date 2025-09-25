@@ -122,10 +122,6 @@ object LinkedDataRoute {
 										}
 									case _ =>
 										reject
-										/*
-										val msg = s"No data object with SHA-256 hashsum of ${hash.base64Url}\n${objV.errors.mkString("\n")}"
-										complete(StatusCodes.NotFound -> msg)
-										*/
 							}
 
 						case fileName @ FileNameWithExtension(_, ext) =>

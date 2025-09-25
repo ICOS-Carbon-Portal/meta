@@ -62,9 +62,8 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 					charset => HttpResponse(entity = getHtml(html, charset))
 
 			case None =>
-				val status = if itemV.errors.isEmpty then StatusCodes.NotFound else StatusCodes.InternalServerError
 				Future.successful:
-					charset => HttpResponse(status, entity = getHtml(notFoundPage(itemV.errors), charset))
+					charset => HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage(itemV.errors), charset))
 
 
 		Marshaller {exeCtxt => producer =>

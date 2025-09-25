@@ -1,5 +1,6 @@
 [PrefixDeclaration]
 cpmeta: http://meta.icos-cp.eu/ontologies/cpmeta/
+metaobjects: http://meta.icos-cp.eu/objects/
 cpres: <http://meta.icos-cp.eu/resources/> .
 prov: <http://www.w3.org/ns/prov#> .
 
@@ -12,5 +13,59 @@ source		SELECT hasSha256sum, name FROM data_objects WHERE name IS NOT NULL
 mappingId	data-objects-object-spec
 target		cpmeta:objects/{hasSha256sum} cpmeta:hasObjectSpec <{spec_subject}>  .
 source		SELECT hasSha256sum, spec.subject as spec_subject FROM data_objects obj JOIN object_specs spec ON obj.object_spec_id = spec.id
+
+mappingId	data-objects-uri
+target		cpmeta:objects/{hasSha256sum} a cpmeta:DataObject .
+source		SELECT hasSha256sum FROM data_objects
+
+mappingId	data-objects-acquisition-start-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasAcquisitionStartTime {acquisition_start_time} .
+source		SELECT hasSha256sum, acquisition_start_time FROM data_objects WHERE acquisition_start_time IS NOT NULL
+
+mappingId	data-objects-acquisition-end-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasAcquisitionEndTime {acquisition_end_time} .
+source		SELECT hasSha256sum, acquisition_end_time FROM data_objects WHERE acquisition_end_time IS NOT NULL
+
+mappingId	data-objects-submission-start-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasSubmissionStartTime {submission_start_time} .
+source		SELECT hasSha256sum, submission_start_time FROM data_objects WHERE submission_start_time IS NOT NULL
+
+mappingId	data-objects-submission-end-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasSubmissionEndTime {submission_end_time} .
+source		SELECT hasSha256sum, submission_end_time FROM data_objects WHERE submission_end_time IS NOT NULL
+
+mappingId	data-objects-data-start-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasDataStartTime {data_start_time} .
+source		SELECT hasSha256sum, data_start_time FROM data_objects WHERE data_start_time IS NOT NULL
+
+mappingId	data-objects-data-end-time
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasDataEndTime {data_end_time} .
+source		SELECT hasSha256sum, data_end_time FROM data_objects WHERE data_end_time IS NOT NULL
+
+mappingId	data-objects-number-of-rows
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasNumberOfRows {hasNumberOfRows}^^xsd:long .
+source		SELECT hasSha256sum, hasNumberOfRows FROM data_objects WHERE hasNumberOfRows IS NOT NULL
+
+mappingId	data-objects-size-in-bytes
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasSizeInBytes {hasSizeInBytes}^^xsd:long .
+source		SELECT hasSha256sum, hasSizeInBytes FROM data_objects WHERE hasSizeInBytes IS NOT NULL
+
+mappingId	data-objects-actual-column-names
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasActualColumnNames {hasActualColumnNames} .
+source		SELECT hasSha256sum, hasActualColumnNames FROM data_objects WHERE hasActualColumnNames IS NOT NULL
+
+mappingId	data-objects-doi
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasDoi {hasDoi} .
+source		SELECT hasSha256sum, hasDoi FROM data_objects WHERE hasDoi IS NOT NULL
+
+mappingId	data-objects-is-next-version-of
+target		cpmeta:objects/{hasSha256sum} cpmeta:isNextVersionOf cpmeta:objects/{prev_sha256sum} .
+source		SELECT curr.hasSha256sum, prev.hasSha256sum as prev_sha256sum
+		FROM data_objects curr
+		JOIN data_objects prev ON curr.isNextVersionOf = prev.id
+
+mappingId	data-objects-was-produced-by
+target		cpmeta:objects/{hasSha256sum} prov:wasProducedBy {wasProducedBy} .
+source		SELECT hasSha256sum, wasProducedBy FROM data_objects WHERE wasProducedBy IS NOT NULL
 
 ]]

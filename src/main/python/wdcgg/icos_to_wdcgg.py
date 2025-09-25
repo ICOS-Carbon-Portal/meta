@@ -63,8 +63,8 @@ if __name__ == "__main__":
 			wdcgg_station_id = gawsis_to_wdcgg_station_id[dobj_meta.station.id]["wdcgg-id"]
 			old_wdcgg_station_id = gawsis_to_wdcgg_station_id[dobj_meta.station.id]["4-digit"]
 		netcdf_data = ObspackNetcdf(dobj_url)
-		data_file, data_table = netcdf_data.wdcgg_data_table(wdcgg_station_id)
-		data_table.to_csv(os.path.join(out_dir, data_file), sep=" ", index=False)
+		with open(os.path.join(out_dir, netcdf_data.wdcgg_filename()), "w") as f:
+			f.write(netcdf_data.wdcgg_data_table(wdcgg_station_id))
 		wdcgg_metadata_client.dobj_metadata(dobj_meta, netcdf_data, old_wdcgg_station_id)
 	write_json_to_file(wdcgg_metadata_client.metadata, out_dir, "wdcgg_metadata.json")
 	write_json_to_file(wdcgg_metadata_client.contacts, out_dir, "wdcgg_contacts.json")

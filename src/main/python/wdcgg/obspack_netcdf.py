@@ -118,7 +118,7 @@ class ObspackNetcdf:
 		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")
 		elevation = to_str_with_default(self.dataset.site_elevation, "-999999.999")
 		intake_height = to_str_with_default(self.dataset.dataset_intake_ht, "-999999.999")
-		altitude = str(float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht)) \
+		altitude = str(np.round(float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht), 3)) \
 			if self.dataset.site_elevation is not None and self.dataset.dataset_intake_ht is not None else "-999999.999"
 
 		# Content of the table

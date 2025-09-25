@@ -219,7 +219,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"eu.icoscp"         %%% "envri"             % "0.1.0",
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
 			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC7",
-			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.1",
+			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.2",
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)
 	)

@@ -1,13 +1,12 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 @import se.lu.nateko.cp.meta.core.data.DataObject
 @import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
+@import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDownloadURL
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
 <div class="d-flex gap-1 flex-shrink-0">
-	@dobj.accessUrl.map{link =>
-		<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
-		<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
-		<a class="btn btn-warning" href="@link">Download</a>
-	}
+	<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
+	<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
+	<a class="btn btn-warning" href="@{getDownloadURL(dobj)}">Download</a>
 </div>
 

@@ -100,6 +100,11 @@ object LandingPageHelpers:
 		s"""https://${conf.dataHost}/portal/#${params}"""
 	}
 
+	def getDownloadURL(dobj: DataObject)(using conf: EnvriConfig) = {
+		val query = urlEncode(s"""ids=["${dobj.hash.id}"]&fileName=${dobj.fileName.replaceAll("\\.[^.]*$", "")}""")
+		s"https://${conf.dataHost}/objects?${query}"
+	}
+
 	def renderMarkdown(md: String): String = {
 		val extensions = Iterable(AutolinkExtension.create()).asJava
 		val parser: Parser = Parser.builder().extensions(extensions).build()

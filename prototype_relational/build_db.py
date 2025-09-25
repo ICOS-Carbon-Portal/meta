@@ -18,7 +18,7 @@ csv_path = "./dump_full.csv"
 def get_connection():
     """Create and return a PostgreSQL database connection."""
     return psycopg2.connect(
-        host="localhost",
+        host="db",
         user="postgres",
         port=5432,
         password="ontop"
@@ -894,6 +894,11 @@ def main():
         help="Rebuild the entire database"
     )
 
+    rebuild_group.add_argument(
+        "--create-tables",
+        action="store_true"
+    )
+
     parser.add_argument(
         "--limit",
         type=int,
@@ -905,6 +910,8 @@ def main():
 
     if args.dependent:
         rebuild_dependent()
+    elif args.create_tables:
+        recreate_dependent_tables()
     elif args.rebuild_all:
         rebuild_all(csv_path, args.limit)
 

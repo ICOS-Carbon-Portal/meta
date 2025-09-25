@@ -11,3 +11,14 @@ services:
     command: >
         -c max_wal_size=8GB
         -c synchronous_commit=off
+
+
+  ontop:
+    tty: true
+    stdin_open: true
+    image: rdfsql-ontop
+    volumes:
+      - .:/source
+    build:
+      context: .
+      dockerfile: Dockerfile

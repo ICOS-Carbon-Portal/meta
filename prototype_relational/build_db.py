@@ -9,10 +9,11 @@ import argparse
 from collections import defaultdict
 from pathlib import Path
 import os
+from datetime import datetime
 
-# csv_path = "./dump_full.csv"
+csv_path = "./dump_full.csv"
 # csv_path = "./dump_mini.csv"
-csv_path = "./dump_partial.csv"
+# csv_path = "./dump_partial.csv"
 
 def get_connection():
     """Create and return a PostgreSQL database connection."""
@@ -111,7 +112,15 @@ def get_temporal_data(cursor, subject):
 
     result = cursor.fetchone()
     if result:
-        return result
+        start_time, end_time = result
+        if start_time and start_time.startswith('['):
+            print(f"ERROR: Multiple start times for {subject}")
+            return None, None
+        if end_time and end_time.startswith('['):
+            print(f"ERROR: Multiple end times for {subject}")
+            return None, None
+        return start_time, end_time
+
     return None, None
 
 

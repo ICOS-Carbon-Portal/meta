@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, TypeAlias, Tuple
+from typing import Any, TypeAlias, Callable
 import numpy as np
+from numpy.typing import ArrayLike
 import netCDF4
-import pandas as pd
 from icoscp_core.icos import data
 
 
@@ -60,61 +60,105 @@ class ObspackNetcdf:
 
 		return deployments
 
-	def wdcgg_data_table(self, wdcgg_station_id: str) -> Tuple[str, pd.DataFrame]:
-		"""Structure the data in a table complying with WDCGG requirements.
-		
+	def wdcgg_filename(self) -> str:
+		"""Build a file name according to WDCGG convention.
+
 		Returns
 		-------
-		The name of the file according to WDCGG convention and the data
-		formatted according to WDCGG template.
+		The file name according to WDCGG convention.
+		"""
+		first_components = self.dataset.dataset_name.split("_")[:3]
+		last_components = [f"{int(float(self.dataset.dataset_intake_ht))}magl", CONTRIBUTOR, "hourly.txt"]
+		return "_".join(first_components + last_components)
+
+	def wdcgg_data_table(self, wdcgg_station_id: str) -> str:
+		"""Structure the data in a table complying with WDCGG requirements.
+		
+		Parameters
+		----------
+		wdcgg_station_id : str
+			WDCGG ID of the station.
+
+		Returns
+		-------
+		The data formatted according to WDCGG's template.
 		"""
 
+		# Helper functions
+		to_str: Callable[[int | float | str, int], str] = lambda x, n: str(x).zfill(n)
+		to_str = np.vectorize(to_str)
+		replace_no_value_placeholder: Callable[[str, str, str], str] = lambda x, old, new: new if x == old else x
+		replace_no_value_placeholder = np.vectorize(replace_no_value_placeholder)
+		# Conversion from 4-bytes float used in ObsPack netCDF files to Python native 8-bytes float,
+		# conversion to proper units and text formatting for consistency.
+		float32_to_str_with_conversion: Callable[[np.float32, float], str] = \
+			lambda v, conv_factor: f"{float(str(v))*conv_factor:.3f}" if not np.isnan(v) else "-999.999"
+		to_str_with_default: Callable[[float | int | str | None, str], str] = \
+			lambda x, default: str(x) if x is not None else default
+
+		# Conversion from netCDF content to various values, lists and NumPy arrays
+		n: int = self.dataset.variables["time"].shape[0]
+		time_components: list[ArrayLike] = list(
+			map(
+				lambda tup: to_str(np.array(tup), 2),
+				zip(*self.dataset.variables["time_components"][:].tolist())))
 		conv_factor = 1e6 if self.dataset.dataset_parameter == "co2" else 1e9
-		filename = "_".join(self.dataset.dataset_name.split("_")[:3] + [f"{int(float(self.dataset.dataset_intake_ht))}magl", CONTRIBUTOR, "hourly.txt"])
-		table = pd.DataFrame({
-			"site_wdcgg_id": wdcgg_station_id,
-			"st_year": [tc[0] or -999 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"st_month": [tc[1] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"st_day": [tc[2] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"st_hour": [tc[3] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"st_minute": [tc[4] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"st_second": [tc[5] or -9 for tc in self.dataset.variables["time_components"][:].tolist()],
-			"end_year": -999,
-			"end_month": -9,
-			"end_day": -9,
-			"end_hour": -9,
-			"end_minute": -9,
-			"end_second": -9,
-			"value": self.dataset.variables["value"][:]*conv_factor,
-			"value_wmo_scale": self.dataset.variables["value"][:]*conv_factor,
-			"value_sd": self.dataset.variables["value_std_dev"][:]*conv_factor,
-			"value_unc_1": self.dataset.variables["icos_SMR"][:]*conv_factor,     # continuous measurement repeatability
-			"value_unc_1_id": -9,
-			"value_unc_1_method": 10,
-			"value_unc_2": self.dataset.variables["icos_LTR"][:]*conv_factor,     # long term repeatability
-			"value_unc_2_id": -9,
-			"value_unc_2_method": 10,
-			"value_unc_3": self.dataset.variables["icos_STTB"][:]*conv_factor,    # short term target bias
-			"value_unc_3_id": -9,
-			"value_unc_3_method": 10,
-			"nvalue": self.dataset.variables["nvalue"][:],
-			"latitude": self.dataset.site_latitude or -999.999999999,
-			"longitude": self.dataset.site_longitude or -999.999999999,
-			"altitude": float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht) or -999999.999,
-			"elevation": float(self.dataset.site_elevation) or -999999.999,
-			"intake_height": float(self.dataset.dataset_intake_ht) or -999999.999,
-			"flask_no": -999.999,
-			"ORG_QCflag": [flag.decode() or -9 for flag in self.dataset.variables["qc_flag"][:].tolist()],
-			"QCflag": -9,
-			"instrument": -9,
-			"measurement_method": -9,
-			"scale": -9
-		})
-		value_columns = ["value", "value_wmo_scale", "value_sd", "value_unc_1", "value_unc_2", "value_unc_3"]
-		for col in value_columns:
-			table[col] = table[col].replace(np.nan, -999.999)
-		table["nvalue"] = table["nvalue"].replace(np.nan, -9)
-		table = table.astype({col: np.float64 for col in value_columns})
-		table.loc[table["nvalue"] == 0, "value"] = -999.999
-		table.loc[np.logical_or(table["nvalue"] == 0, table["nvalue"] == 1), "value_sd"] = -999.999
-		return filename, table
+		values = {
+			var: np.array(
+				[float32_to_str_with_conversion(v, conv_factor) for v in self.dataset.variables[var][:].data],
+				dtype="=U12")
+			for var in ["value", "value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]}
+		nvalue = self.dataset.variables["nvalue"][:].data
+		qc_flag = np.array([
+			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].tolist()])
+		valid = np.logical_or(np.logical_or(qc_flag == "U", qc_flag == "O"), qc_flag == "R")
+		nvalue[np.logical_and(valid, nvalue == 0)] = -9
+		values["value_std_dev"][nvalue == 1] = "-999.999"
+		latitude = to_str_with_default(self.dataset.site_latitude, "-999.999999999")
+		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")
+		elevation = to_str_with_default(self.dataset.site_elevation, "-999999.999")
+		intake_height = to_str_with_default(self.dataset.dataset_intake_ht, "-999999.999")
+		altitude = str(float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht)) \
+			if self.dataset.site_elevation is not None and self.dataset.dataset_intake_ht is not None else "-999999.999"
+
+		# Content of the table
+		columns: dict[str, ArrayLike | list[str]] = {
+			"site_wdcgg_id": [wdcgg_station_id]*n,
+			"st_year": replace_no_value_placeholder(time_components[0], "-9", "-999"),
+			"st_month": time_components[1],
+			"st_day": time_components[2],
+			"st_hour": time_components[3],
+			"st_minute": time_components[4],
+			"st_second": time_components[5],
+			"end_year": ["-999"]*n,
+			"end_month": ["-9"]*n,
+			"end_day": ["-9"]*n,
+			"end_hour": ["-9"]*n,
+			"end_minute": ["-9"]*n,
+			"end_second": ["-9"]*n,
+			"value": values["value"],
+			"value_wmo_scale": values["value"],
+			"value_sd": values["value_std_dev"],
+			"value_unc_1": values["icos_SMR"],     # continuous measurement repeatability
+			"value_unc_1_id": ["1"]*n,
+			"value_unc_1_method": ["10"]*n,
+			"value_unc_2": values["icos_LTR"],     # long term repeatability
+			"value_unc_2_id": ["1"]*n,
+			"value_unc_2_method": ["10"]*n,
+			"value_unc_3": values["icos_STTB"],    # short term target bias
+			"value_unc_3_id": ["1"]*n,
+			"value_unc_3_method": ["10"]*n,
+			"nvalue": to_str(nvalue, 0),
+			"latitude": [latitude]*n,
+			"longitude": [longitude]*n,
+			"altitude": [altitude]*n,
+			"elevation": [elevation]*n,
+			"intake_height": [intake_height]*n,
+			"flask_no": ["-999.999"]*n,
+			"ORG_QCflag": qc_flag,
+			"QCflag": ["-9"]*n,
+			"instrument": ["-9"]*n,
+			"measurement_method": ["-9"]*n,
+			"scale": ["-9"]*n
+		}
+		return "\n".join([" ".join(columns.keys())] + [" ".join(vals) for vals in zip(*columns.values())])

@@ -55,20 +55,26 @@ object LinkedDataRoute {
 		}
 
 		val linkedDataRejectionHandler = RejectionHandler.newBuilder().handleNotFound {
-			//genericRdfUriResourcePage
-			given envri: Envri = Envri.ICOS
-			given EnvriConfig = envriConfs(envri)
-			complete(
-				HttpEntity(
-					ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
-					views.html.MessagePage("Page not found", "The requested page could not be found").body
-				)
-			)
+			(extractUri & extractEnvri) {
+				(uri, envri) => {
+					respondWithHeaders(`Access-Control-Allow-Origin`.*) {
+						given envri: Envri = EnvriResolver.infer(new java.net.URI(uri.toString))
+							.getOrElse(
+								throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
+							)
+						given EnvriConfig = envriConfs(envri)
+						complete(
+							HttpEntity(
+								ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
+								views.html.MessagePage(
+									"Page not found", "The requested page could not be found"
+								).body
+							)
+						)
+					}
+				}
+			}
 		}.result()
-
-		def inferEnvri(uri: Uri) = EnvriResolver.infer(new java.net.URI(uri.toString)).getOrElse(
-			throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
-		)
 
 		handleRejections(linkedDataRejectionHandler) {
 			get{

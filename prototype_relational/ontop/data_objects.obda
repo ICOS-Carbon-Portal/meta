@@ -68,4 +68,11 @@ mappingId	data-objects-was-produced-by
 target		metaobjects:/{hasSha256sum} prov:wasProducedBy {wasProducedBy} .
 source		SELECT hasSha256sum, wasProducedBy FROM data_objects WHERE wasProducedBy IS NOT NULL
 
+mappingId	data-objects-hasKeyword
+target		metaobjects:/{hash} cpmeta:hasKeyword {kw} .
+source		SELECT obj.hasSha256sum as hash, keyword.keyword as kw
+		FROM data_objects obj
+		JOIN data_object_all_keywords keywords ON obj.id = keywords.data_object_id
+		JOIN keywords keyword ON keywords.keyword_id = keyword.id
+
 ]]

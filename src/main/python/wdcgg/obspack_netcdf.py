@@ -85,34 +85,34 @@ class ObspackNetcdf:
 		"""
 
 		# Helper functions
-		to_str: Callable[[int | float | str, int], str] = lambda x, n: str(x).zfill(n)
-		to_str = np.vectorize(to_str)
+		to_str_with_zfill: Callable[[int | float | str, int], str] = lambda x, n: str(x).zfill(n)
+		to_str_with_zfill = np.vectorize(to_str_with_zfill)
+		to_str_with_default: Callable[[int | float | str | None, str], str] = \
+			lambda x, default: str(x) if x is not None else default
 		replace_no_value_placeholder: Callable[[str, str, str], str] = lambda x, old, new: new if x == old else x
 		replace_no_value_placeholder = np.vectorize(replace_no_value_placeholder)
 		# Conversion from 4-bytes float used in ObsPack netCDF files to Python native 8-bytes float,
 		# conversion to proper units and text formatting for consistency.
 		float32_to_str_with_conversion: Callable[[np.float32, float], str] = \
 			lambda v, conv_factor: f"{float(str(v))*conv_factor:.3f}" if not np.isnan(v) else "-999.999"
-		to_str_with_default: Callable[[float | int | str | None, str], str] = \
-			lambda x, default: str(x) if x is not None else default
 
 		# Conversion from netCDF content to various values, lists and NumPy arrays
 		n: int = self.dataset.variables["time"].shape[0]
 		time_components: list[ArrayLike] = list(
 			map(
-				lambda tup: to_str(np.array(tup), 2),
+				lambda tup: to_str_with_zfill(np.array(tup), 2),
 				zip(*self.dataset.variables["time_components"][:].tolist())))
+		qc_flag = np.array([
+			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].tolist()])
+		valid = np.logical_or(np.logical_or(qc_flag == "U", qc_flag == "O"), qc_flag == "R")
+		nvalue = to_str_with_zfill(self.dataset.variables["nvalue"][:].data, 0)
+		nvalue[np.logical_and(valid, nvalue == "0")] = "-9"
 		conv_factor = 1e6 if self.dataset.dataset_parameter == "co2" else 1e9
 		values = {
 			var: np.array(
 				[float32_to_str_with_conversion(v, conv_factor) for v in self.dataset.variables[var][:].data],
 				dtype="=U12")
 			for var in ["value", "value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]}
-		nvalue = self.dataset.variables["nvalue"][:].data
-		qc_flag = np.array([
-			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].tolist()])
-		valid = np.logical_or(np.logical_or(qc_flag == "U", qc_flag == "O"), qc_flag == "R")
-		nvalue[np.logical_and(valid, nvalue == 0)] = -9
 		values["value_std_dev"][nvalue == 1] = "-999.999"
 		latitude = to_str_with_default(self.dataset.site_latitude, "-999.999999999")
 		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")
@@ -148,7 +148,7 @@ class ObspackNetcdf:
 			"value_unc_3": values["icos_STTB"],    # short term target bias
 			"value_unc_3_id": ["1"]*n,
 			"value_unc_3_method": ["10"]*n,
-			"nvalue": to_str(nvalue, 0),
+			"nvalue": nvalue,
 			"latitude": [latitude]*n,
 			"longitude": [longitude]*n,
 			"altitude": [altitude]*n,

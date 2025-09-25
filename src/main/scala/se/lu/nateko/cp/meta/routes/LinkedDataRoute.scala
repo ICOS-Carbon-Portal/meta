@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfigs, EnvriResolver}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -20,6 +20,8 @@ import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}
 
 import scala.language.postfixOps
 import akka.http.scaladsl.server.RejectionHandler
+import se.lu.nateko.cp.meta.core.data.EnvriConfig
+import se.lu.nateko.cp.meta.services.MetadataException
 
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
@@ -53,8 +55,20 @@ object LinkedDataRoute {
 		}
 
 		val linkedDataRejectionHandler = RejectionHandler.newBuilder().handleNotFound {
-			genericRdfUriResourcePage
+			//genericRdfUriResourcePage
+			given envri: Envri = Envri.ICOS
+			given EnvriConfig = envriConfs(envri)
+			complete(
+				HttpEntity(
+					ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
+					views.html.MessagePage("Page not found", "The requested page could not be found").body
+				)
+			)
 		}.result()
+
+		def inferEnvri(uri: Uri) = EnvriResolver.infer(new java.net.URI(uri.toString)).getOrElse(
+			throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
+		)
 
 		handleRejections(linkedDataRejectionHandler) {
 			get{
@@ -101,8 +115,11 @@ object LinkedDataRoute {
 											complete(HttpEntity(contentType, fineXml))
 										}
 									case _ =>
+										reject
+										/*
 										val msg = s"No data object with SHA-256 hashsum of ${hash.base64Url}\n${objV.errors.mkString("\n")}"
 										complete(StatusCodes.NotFound -> msg)
+										*/
 							}
 
 						case fileName @ FileNameWithExtension(_, ext) =>

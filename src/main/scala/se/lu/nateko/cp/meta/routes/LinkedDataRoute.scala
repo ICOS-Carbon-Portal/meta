@@ -67,7 +67,7 @@ object LinkedDataRoute {
 							HttpEntity(
 								ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
 								views.html.MessagePage(
-									"Page not found", "The requested page could not be found"
+									"Page not found", "The requested page could not be found."
 								).body
 							)
 						)

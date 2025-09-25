@@ -1,0 +1,10 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select ?obj ?name ?hasNumberOfRows ?hasSizeInBytes ?hasDoi ?hasKeyword
+  where{
+    ?obj cpmeta:hasObjectSpec ?spec .
+    ?obj cpmeta:hasName ?name .
+    ?obj cpmeta:hasNumberOfRows ?hasNumberOfRows .
+    ?obj cpmeta:hasDoi ?hasDoi .
+    ?obj cpmeta:hasSizeInBytes ?hasSizeInBytes .
+  }
+  LIMIT 1000000

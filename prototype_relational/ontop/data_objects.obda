@@ -1,0 +1,16 @@
+[PrefixDeclaration]
+cpmeta: http://meta.icos-cp.eu/ontologies/cpmeta/
+cpres: <http://meta.icos-cp.eu/resources/> .
+prov: <http://www.w3.org/ns/prov#> .
+
+[MappingDeclaration] @collection [[
+
+mappingId	data-objects-name
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasName {name} .
+source		SELECT hasSha256sum, name FROM data_objects WHERE name IS NOT NULL
+
+mappingId	data-objects-object-spec
+target		cpmeta:objects/{hasSha256sum} cpmeta:hasObjectSpec <{spec_subject}>  .
+source		SELECT hasSha256sum, spec.subject as spec_subject FROM data_objects obj JOIN object_specs spec ON obj.object_spec_id = spec.id
+
+]]

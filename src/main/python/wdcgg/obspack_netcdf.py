@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, TypeAlias, Callable
 import numpy as np
 from numpy.typing import ArrayLike
@@ -85,6 +86,11 @@ class ObspackNetcdf:
 		"""
 
 		# Helper functions
+		def timestamp_to_components(ts: int | float | None):
+			if ts is None:
+				return None
+			dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+			return dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
 		to_str_with_zfill: Callable[[int | float | str, int], str] = lambda x, n: str(x).zfill(n)
 		to_str_with_zfill = np.vectorize(to_str_with_zfill)
 		to_str_with_default: Callable[[int | float | str | None, str], str] = \
@@ -101,7 +107,7 @@ class ObspackNetcdf:
 		time_components: list[ArrayLike] = list(
 			map(
 				lambda tup: to_str_with_zfill(np.array(tup), 2),
-				zip(*self.dataset.variables["time_components"][:].tolist())))
+				zip(*[timestamp_to_components(ts) for ts in self.dataset.variables["start_time"][:].data])))
 		qc_flag = np.array([
 			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].tolist()])
 		valid = np.logical_or(np.logical_or(qc_flag == "U", qc_flag == "O"), qc_flag == "R")

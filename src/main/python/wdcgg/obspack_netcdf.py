@@ -94,8 +94,13 @@ class ObspackNetcdf:
 		@np.vectorize
 		def to_str_with_zfill(x: int | float | str, n: int) -> str:
 			return str(x).zfill(n)
-		def to_str_with_default(x: int | float | str | None, default: str) -> str:
-			return str(x) if x is not None else default
+		def to_str_with_default(
+				x: int | float | list[int | float], default: str, decimals: int | None = None) -> str:
+			if isinstance(x, list):
+				x = sum(x)
+			if decimals is not None:
+				x = np.round(x, decimals)
+			return str(x) if not np.isnan(x) else default
 		@np.vectorize
 		def replace_no_value_placeholder(x: str, old: str, new: str) -> str:
 			return new if x == old else x
@@ -128,8 +133,7 @@ class ObspackNetcdf:
 		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")
 		elevation = to_str_with_default(self.dataset.site_elevation, "-999999.999")
 		intake_height = to_str_with_default(self.dataset.dataset_intake_ht, "-999999.999")
-		altitude = str(np.round(float(self.dataset.site_elevation) + float(self.dataset.dataset_intake_ht), 3)) \
-			if self.dataset.site_elevation is not None and self.dataset.dataset_intake_ht is not None else "-999999.999"
+		altitude = to_str_with_default([self.dataset.site_elevation, self.dataset.dataset_intake_ht], "-999999.999", 3)
 
 		# Content of the table
 		columns: dict[str, ArrayLike | list[str]] = {

@@ -4194,6 +4194,15 @@
     
 
 
+    <!-- https://creativecommons.org/licenses/by-nc/4.0/ -->
+
+    <owl:NamedIndividual rdf:about="https://creativecommons.org/licenses/by-nc/4.0/">
+        <rdf:type rdf:resource="http://purl.org/dc/terms/LicenseDocument"/>
+        <rdfs:label>Creative Commons Attribution Non Commercial 4.0 International</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://creativecommons.org/licenses/by/4.0 -->
 
     <owl:NamedIndividual rdf:about="https://creativecommons.org/licenses/by/4.0">

@@ -95,9 +95,13 @@ class ObspackNetcdf:
 		def to_str_with_zfill(x: int | float | str, n: int) -> str:
 			return str(x).zfill(n)
 		def to_str_with_default(
-				x: int | float | list[int | float], default: str, decimals: int | None = None) -> str:
-			if isinstance(x, list):
-				x = sum(x)
+				x: int | float | str | list[int | float | str],
+				default: str,
+				decimals: int | None = None) -> str:
+			if isinstance(x, str):
+				x = float(x)
+			elif isinstance(x, list):
+				x = sum([float(v) for v in x])
 			if decimals is not None:
 				x = np.round(x, decimals)
 			return str(x) if not np.isnan(x) else default

@@ -110,25 +110,29 @@ class ObspackNetcdf:
 			return f"{float(str(x))*conv_factor:.3f}" if not np.isnan(x) else "-999.999"
 
 		# Conversion from netCDF content to various values, lists and NumPy arrays
+		conv_factors = {"co2": 1e6, "ch4": 1e9, "n2o": 1e9, "co": 1e9}
+		conv_factor = conv_factors[self.dataset.dataset_parameter]
 		n: int = self.dataset.variables["time"].shape[0]
 		time_components: list[ArrayLike] = list(
 			map(
 				lambda tup: to_str_with_zfill(np.array(tup), 2),
 				zip(*[timestamp_to_components(ts) for ts in self.dataset.variables["start_time"][:].data])))
 		qc_flag = np.array([
-			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].tolist()])
+			flag.decode() if flag is not None else "-999.999" for flag in self.dataset.variables["qc_flag"][:].data])
+		qc_flag[qc_flag == "-"] = "-999.999"
 		valid = np.logical_or(np.logical_or(qc_flag == "U", qc_flag == "O"), qc_flag == "R")
 		nvalue = to_str_with_zfill(self.dataset.variables["nvalue"][:].data, 0)
 		nvalue[np.logical_and(valid, nvalue == "0")] = "-9"
-		conv_factor = 1e6 if self.dataset.dataset_parameter == "co2" else 1e9
 		values = {
 			var: np.array(
 				[float32_to_str_with_conversion(v, conv_factor) for v in self.dataset.variables[var][:].data],
 				dtype="=U12")
 			for var in ["value", "value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]}
-		for var in ["value_std_dev", "icos_SMR", "icos_LTR", "icos_STTB"]:
-			values[var][values["value"] == "-999.999"] = "-999.999"
-		values["value_std_dev"][nvalue == 1] = "-999.999"
+		for var in values.keys():
+			values[var][nvalue == "0"] = "-999.999"
+			if var != "value":
+				values[var][values["value"] == "-999.999"] = "-999.999"
+		values["value_std_dev"][nvalue == "1"] = "-999.999"
 		latitude = to_str_with_default(self.dataset.site_latitude, "-999.999999999")
 		longitude = to_str_with_default(self.dataset.site_longitude, "-999.999999999")
 		elevation = to_str_with_default(self.dataset.site_elevation, "-999999.999")

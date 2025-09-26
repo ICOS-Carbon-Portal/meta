@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, TypeAlias, Callable
+from typing import Any, TypeAlias
 import numpy as np
 from numpy.typing import ArrayLike
 import netCDF4
@@ -91,16 +91,18 @@ class ObspackNetcdf:
 				return None
 			dt = datetime.fromtimestamp(ts, tz=timezone.utc)
 			return dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
-		to_str_with_zfill: Callable[[int | float | str, int], str] = lambda x, n: str(x).zfill(n)
-		to_str_with_zfill = np.vectorize(to_str_with_zfill)
-		to_str_with_default: Callable[[int | float | str | None, str], str] = \
-			lambda x, default: str(x) if x is not None else default
-		replace_no_value_placeholder: Callable[[str, str, str], str] = lambda x, old, new: new if x == old else x
-		replace_no_value_placeholder = np.vectorize(replace_no_value_placeholder)
+		@np.vectorize
+		def to_str_with_zfill(x: int | float | str, n: int) -> str:
+			return str(x).zfill(n)
+		def to_str_with_default(x: int | float | str | None, default: str) -> str:
+			return str(x) if x is not None else default
+		@np.vectorize
+		def replace_no_value_placeholder(x: str, old: str, new: str) -> str:
+			return new if x == old else x
 		# Conversion from 4-bytes float used in ObsPack netCDF files to Python native 8-bytes float,
 		# conversion to proper units and text formatting for consistency.
-		float32_to_str_with_conversion: Callable[[np.float32, float], str] = \
-			lambda v, conv_factor: f"{float(str(v))*conv_factor:.3f}" if not np.isnan(v) else "-999.999"
+		def float32_to_str_with_conversion(x: np.float32, conv_factor: float) -> str:
+			return f"{float(str(x))*conv_factor:.3f}" if not np.isnan(x) else "-999.999"
 
 		# Conversion from netCDF content to various values, lists and NumPy arrays
 		n: int = self.dataset.variables["time"].shape[0]

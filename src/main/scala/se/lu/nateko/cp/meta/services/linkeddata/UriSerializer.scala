@@ -35,9 +35,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
-import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.ErrorList
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -107,12 +105,9 @@ class Rdf4jUriSerializer(
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
-	private val pcm =
+	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
-
-	given CpVocab = vocab
-	import pcm.{staticObjectMarshaller, statCollMarshaller}
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -222,7 +217,7 @@ class Rdf4jUriSerializer(
 
 		def resourceMarshallings[T : JsonWriter](
 			resId: String, resourceType: String, fetcher: Uri => Validated[T],
-			pageTemplate: (T, ErrorList) => Html
+			pageTemplate: (T, PageContentMarshalling.ErrorList) => Html
 		): FLMHR =
 			lazy val itemV = fetcher(uri.withQuery(Uri.Query.Empty))
 			oneOf(
@@ -249,10 +244,11 @@ class Rdf4jUriSerializer(
 
 		uri.path match
 			case Hash.Object(hash) =>
-				delegatedRepr(() => fetchStaticObj(hash))
+				given CpVocab = vocab
+				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
 
 			case Hash.Collection(hash) =>
-				delegatedRepr(() => fetchStaticColl(hash))
+				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticColl(hash))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,
@@ -290,10 +286,6 @@ class Rdf4jUriSerializer(
 	end getMarshallings
 
 	private def oneOf(opts: Marshalling[HttpResponse]*): FLMHR  = Future.successful(opts.toList)
-
-	private def delegatedRepr[T](fetchDto: () => Validated[T])(
-		using trm: ToResponseMarshaller[() => Validated[T]], ctxt: ExecutionContext
-	): FLMHR = trm(fetchDto)
 
 	private def customJson[T : JsonWriter](fetchDto: () => Validated[T]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))

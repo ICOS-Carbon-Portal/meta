@@ -69,13 +69,13 @@ object MainRoute {
 			filesRoute ~
 			authRoute ~
 			staticRoute ~
-			linkedDataRoute ~
 			sitemapRoute ~
 			adminRoute ~
 			dtoDlRoute ~
 			path("buildInfo"){
 				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
-			}
+			} ~
+			linkedDataRoute
 		}
 	end apply
 

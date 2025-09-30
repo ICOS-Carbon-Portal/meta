@@ -82,10 +82,7 @@
 			@resourceproperty("Data type", dobj.specification.self)
 			@property("Data level", dobj.specification.dataLevel.toString)
 
-			@documentationLink(dobj.specification.documentation)
-			@for(acquisition <- dobj.acquisition; documentation <- stationDocs(acquisition.station)){
-				@documentationLink(documentation)
-			}
+			@documentationLink(dobj.documentation)
 
 			@for(licence <- dobj.references.licence){
 				@licenceProperty(licence)
@@ -131,9 +128,6 @@
 				}
 				@for(source <- production.sources.sorted){
 					@resourceproperty("Source object", source.asUriResource)
-				}
-				@for(doc <- production.documentation){
-					@resourceproperty("Documentation", doc.asUriResource)
 				}
 			}
 
@@ -382,13 +376,6 @@
 			("ICOS Cities Data Portal", s"//${conf.dataHost}/portal")
 		)
 	)
-}
-
-@stationDocs(station: Station) = @{
-	station.specificInfo match {
-		case sites: SitesStationSpecifics => Some(sites.documentation)
-		case _ => None
-	}
 }
 
 @previewTab = {

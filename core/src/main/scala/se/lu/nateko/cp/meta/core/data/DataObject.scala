@@ -209,6 +209,14 @@ case class DataObject(
 		spatioTemporal => spatioTemporal.variables.nonEmpty,
 		stationTimeSeries => stationTimeSeries.columns.nonEmpty
 	)
+
+	def documentation: Seq[PlainStaticObject] =
+		specification.documentation ++
+		acquisition.toSeq.flatMap(_.station.specificInfo match
+			case sites: SitesStationSpecifics => sites.documentation
+			case _ => Seq.empty
+		) ++
+		production.toSeq.flatMap(_.documentation)
 }
 
 case class DocObject(

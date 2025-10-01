@@ -211,12 +211,16 @@ case class DataObject(
 	)
 
 	def documentation: Seq[PlainStaticObject] =
-		specification.documentation ++
-		acquisition.toSeq.flatMap(_.station.specificInfo match
+		val acquisitionDocs = acquisition.map(_.station.specificInfo).collect{
 			case sites: SitesStationSpecifics => sites.documentation
-			case _ => Seq.empty
-		) ++
-		production.toSeq.flatMap(_.documentation)
+		}.getOrElse(Seq.empty)
+
+		Seq.concat(
+			specification.documentation,
+			acquisitionDocs,
+			production.flatMap(_.documentation)
+		)
+	end documentation
 }
 
 case class DocObject(

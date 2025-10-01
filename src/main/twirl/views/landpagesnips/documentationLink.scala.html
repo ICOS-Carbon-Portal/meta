@@ -9,7 +9,7 @@
 				<span>
 					@for((document, i) <- documents.zipWithIndex){
 						@if(i > 0) {
-							<span>, </span>
+							<br>
 						} else {}
 						<a href=@{document.res.getRawPath}>@{document.name}</a>
 					}

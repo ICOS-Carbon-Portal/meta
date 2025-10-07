@@ -19,6 +19,9 @@ class InstrumentMethod:
 	code: str
 
 CONTRIBUTOR = "162"
+SUBMISSION_DATE = "2025-10-08 12:00:00"
+EDITOR_NAME = "Jonathan Schenk"
+EDITOR_EMAIL = "jonathan.schenk@nateko.lu.se"
 WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", "CO": "3001"}
 SCALES = {
 	"CO2": CalibrationScale(name="WMO CO2 X2019", wdcgg_code="158"),
@@ -307,9 +310,9 @@ class WdcggMetadataClient:
 
 		self.metadata.append(asdict(WdcggMetadata(
 			Contributor = CONTRIBUTOR,
-			Submission_date = "2024-08-01 12:00:00",
-			md_editor_name = "Jonathan Schenk",
-			md_editor_email = "jonathan.schenk@nateko.lu.se",
+			Submission_date = SUBMISSION_DATE,
+			md_editor_name = EDITOR_NAME,
+			md_editor_email = EDITOR_EMAIL,
 			Option = "1",
 			Update = [
 				"or_organization",
@@ -364,7 +367,7 @@ class WdcggMetadataClient:
 			sf_sampling_frequency = "",
 			md_measurement_calibration = "Measurement calibration at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
 			md_data_processing = "Data processing at ICOS ATC is described in [Hazan et al., 2016], doi:10.5194/amt-9-4719-2016",
-			md_hr_mean_processing = "Time-averaged values are reported at the middle time of the averaging interval. The document 'ICOS Atmospheric Station specifications' (doi:10.18160/GK28-2188) provides more detailed explanations about the sampling frequency.",
+			md_hr_mean_processing = "Time-averaged values are reported at the start time of the averaging interval. The document 'ICOS Atmospheric Station specifications' (doi:10.18160/GK28-2188) provides more detailed explanations about the sampling frequency.",
 			md_da_mean_processing = "",
 			md_mo_mean_processing = "",
 			md_original_data_flag = ("- Flag 'U' = data correct before manual quality control\n"

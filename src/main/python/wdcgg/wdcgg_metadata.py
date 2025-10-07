@@ -406,7 +406,7 @@ class WdcggMetadataClient:
 			dc_doi_category_code = doi_info.doi_category_code,
 			dc_doi_category = doi_info.doi,
 			md_description = ("ICOS atmospheric station\n"
-				f"Observational timeseries of ambient mole fraction of {dobj_info.gas_species} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data and ICOS NRT data.\n\n"
+				f"Observational timeseries of ambient mole fraction of {dobj_info.gas_species} in dry air, composed of (all whenever available) historical PI quality-checked data, ICOS Level 2 data, ICOS FastTrack data and ICOS NRT data.\n\n"
 				"The following uncertainty estimates are used:\n"
 				"  a. Continuous Measurement Repeatability: monthly average of the standard deviations of short-term target raw data over 1-minute intervals\n"
 				"  b. Long Term Repeatability: standard deviation of the averaged short-term target measurement intervals (of 10 minutes every 5 hours approximately) over three days\n"

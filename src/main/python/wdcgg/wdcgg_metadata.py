@@ -9,6 +9,11 @@ from obspack_netcdf import ObspackNetcdf, InstrumentDeployment
 
 
 @dataclass
+class MeasurementUnit:
+	unit: str
+	wdcgg_code: str
+
+@dataclass
 class CalibrationScale:
 	name: str
 	wdcgg_code: str
@@ -23,6 +28,12 @@ SUBMISSION_DATE = "2025-10-08 12:00:00"
 EDITOR_NAME = "Jonathan Schenk"
 EDITOR_EMAIL = "jonathan.schenk@nateko.lu.se"
 WDCGG_GAS_SPECIES_CODES = {"CO2": "1001", "CH4": "1002", "N2O": "1003", "CO": "3001"}
+MEASUREMENT_UNITS = {
+	"CO2": MeasurementUnit(unit="ppm", wdcgg_code="1"),
+	"CH4": MeasurementUnit(unit="ppb", wdcgg_code="2"),
+	"N2O": MeasurementUnit(unit="ppb", wdcgg_code="2"),
+	"CO": MeasurementUnit(unit="ppb", wdcgg_code="2")
+}
 SCALES = {
 	"CO2": CalibrationScale(name="WMO CO2 X2019", wdcgg_code="158"),
 	"CH4": CalibrationScale(name="WMO CH4 X2004A", wdcgg_code="3"),
@@ -305,6 +316,7 @@ class WdcggMetadataClient:
 		according to the WDCGG JSON template.
 		"""
 
+		measurement_unit = MEASUREMENT_UNITS[dobj_info.gas_species]
 		scale = SCALES[dobj_info.gas_species]
 		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[dobj_info.gas_species])
 
@@ -349,8 +361,8 @@ class WdcggMetadataClient:
 			ao_aim_of_observation = "Background observation",
 			tz_time_zone_code = "1",
 			tz_time_zone = "UTC",
-			un_unit_code = "1" if dobj_info.gas_species == "CO2" else "2",
-			un_unit = "ppm" if dobj_info.gas_species == "CO2" else "ppb",
+			un_unit_code = measurement_unit.wdcgg_code,
+			un_unit = measurement_unit.wdcgg_code,
 			sh_scale_history = [ScaleHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",

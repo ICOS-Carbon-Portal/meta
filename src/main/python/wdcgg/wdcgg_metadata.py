@@ -362,7 +362,7 @@ class WdcggMetadataClient:
 			tz_time_zone_code = "1",
 			tz_time_zone = "UTC",
 			un_unit_code = measurement_unit.wdcgg_code,
-			un_unit = measurement_unit.wdcgg_code,
+			un_unit = measurement_unit.unit,
 			sh_scale_history = [ScaleHistoryItem(
 				sh_start_date_time="9999-12-31T00:00:00",
 				sh_end_date_time="9999-12-31T23:59:59",

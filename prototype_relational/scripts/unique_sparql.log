@@ -1,0 +1,2178 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+                  prefix prov: <http://www.w3.org/ns/prov#>
+                  prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                  select (str(?submTime) as ?time) ?object ?spec ?fileName ?station ?samplingHeight ?stationId ?stationName ?latitude ?longitude ?altitude where{
+                    ?object cpmeta:hasObjectSpec ?specUri .
+                    ?object cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+                    ?object cpmeta:hasName ?fileName .
+                    ?object cpmeta:wasAcquiredBy ?acquisition .
+                    ?acquisition prov:wasAssociatedWith ?station .
+                    ?acquisition cpmeta:hasSamplingHeight ?samplingHeight .
+                    ?station cpmeta:hasLatitude ?latitude .
+                    ?station cpmeta:hasLongitude ?longitude .
+                    ?station cpmeta:hasElevation ?altitude .
+                    ?station cpmeta:hasStationId ?stationId .
+                    ?station cpmeta:hasName ?stationName .
+                    ?specUri rdfs:label ?spec .
+                    filter contains(?spec, "CO2 data")
+                    filter (?submTime > "2025-10-04T22:00:12Z"^^xsd:dateTime)
+                  }
+                  order by desc(?submTime)
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+
+select ?station ?dobj ?dataEnd ?columnName ?samplingHeight ?level where{
+	?station cpmeta:hasStationId "CMN"^^xsd:string .
+	VALUES ?spec {
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject>
+		<http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject>
+	}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:wasAcquiredBy/prov:endedAtTime ?dataEnd .
+	?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingHeight .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	filter not exists {[] cpmeta:isNextVersionOf ?dobj}
+	VALUES ?columnName { "co2" "ch4" "n2o" "co" }
+	?column cpmeta:hasColumnTitle ?columnName .
+	?spec cpmeta:containsDataset/cpmeta:hasColumn ?column ;
+		cpmeta:hasDataLevel ?level .
+}
+order by desc(?dataEnd)
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	select * where {
+	values ?dobj { <https://meta.icos-cp.eu/objects/z70KsTLwMGvtwp47xxiwH2dU> <https://meta.icos-cp.eu/objects/YoFfgGMlgSdYRJWOziR6Hxcb> }
+	?dobj cpmeta:hasObjectSpec ?objSpec ;
+	cpmeta:hasNumberOfRows ?nRows ;
+	cpmeta:hasName ?fileName .
+	?objSpec rdfs:label ?specLabel ;
+	cpmeta:hasDataLevel ?level .
+	OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
+	}
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+SELECT distinct ?objFormat ?goodFlags ?colName ?valueType ?valFormat ?unit ?qKind ?colTip ?isRegex ?flagColName
+WHERE {
+	{
+		select ?objFormat (group_concat(?goodFlag; separator=";") as ?goodFlags) where{
+			<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> cpmeta:hasFormat ?objFormat .
+			optional {?objFormat cpmeta:hasGoodFlagValue ?goodFlag}
+		}
+		group by ?objFormat
+	}
+	<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> cpmeta:containsDataset ?dset .
+	?dset cpmeta:hasColumn ?column .
+	?column cpmeta:hasColumnTitle ?colName ;
+		cpmeta:hasValueFormat ?valFormat ;
+		cpmeta:hasValueType ?valType .
+	optional{?column cpmeta:isRegexColumn ?isRegex}
+	optional{
+		?flagCol cpmeta:isQualityFlagFor ?column ; cpmeta:hasColumnTitle ?flagColName .
+		?dset cpmeta:hasColumn ?flagCol .
+	}
+	?valType rdfs:label ?valueType .
+	optional{?valType rdfs:comment ?colTip }
+	optional{
+		?valType cpmeta:hasUnit ?unit .
+		?valType cpmeta:hasQuantityKind/rdfs:label ?qKind .
+	}
+} order by ?colName
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select distinct ?spec ?variable ?varTitle ?valType ?quantityKind
+(if(bound(?unit), ?unit, "(not applicable)") as ?quantityUnit)
+where{
+	{
+		?spec cpmeta:containsDataset ?datasetSpec .
+		FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+		FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+	}
+	{
+		{
+			?datasetSpec cpmeta:hasColumn ?variable .
+			?variable cpmeta:hasColumnTitle ?varTitle .
+		} UNION {
+			?datasetSpec cpmeta:hasVariable ?variable .
+			?variable cpmeta:hasVariableTitle ?varTitle .
+		}
+	}
+	FILTER NOT EXISTS {?variable cpmeta:isQualityFlagFor [] }
+	?variable cpmeta:hasValueType ?valType .
+	OPTIONAL{?valType cpmeta:hasUnit ?unit }
+	OPTIONAL{?valType cpmeta:hasQuantityKind ?quantityKind }
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?spec ?countryCode ?submitter ?count ?station ?ecosystem ?location ?site ?stationclass
+where{
+	{
+		select ?station ?site ?submitter ?spec (count(?dobj) as ?count) where{
+			?dobj cpmeta:wasSubmittedBy/prov:wasAssociatedWith ?submitter .
+			?dobj cpmeta:hasObjectSpec ?spec .
+			OPTIONAL {?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station }
+			OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:wasPerformedAt ?site }
+			?dobj cpmeta:hasSizeInBytes ?size .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+		}
+		group by ?spec ?submitter ?station ?site
+	}
+	FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+	BIND (COALESCE(?station, <http://dummy>) as ?boundStation)
+	OPTIONAL {?boundStation cpmeta:hasEcosystemType ?ecosystem}
+	OPTIONAL {?boundStation cpmeta:countryCode ?countryCode}
+	OPTIONAL {?boundStation cpmeta:hasStationClass ?stClassOpt}
+	BIND (IF(
+		bound(?stClassOpt),
+		IF(strstarts(?stClassOpt, "Ass"), "Associated", "ICOS"),
+		IF(bound(?station), "Other", ?stClassOpt)
+	) as ?stationclass)
+	}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?spec ?keywords
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+where{
+	?spec cpmeta:hasAssociatedProject ?proj
+	{
+		{?proj cpmeta:hasKeywords ?keywords }
+		UNION
+		{?spec cpmeta:hasKeywords ?keywords }
+	}
+	filter not exists {?proj cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?spec ?project (?spec as ?type) ?level ?dataset ?format ?theme ?temporalResolution
+where{
+	?spec cpmeta:hasDataLevel ?level ; cpmeta:hasAssociatedProject ?project .
+	FILTER NOT EXISTS {?project cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+	FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+	?spec cpmeta:hasDataTheme ?theme .
+	OPTIONAL{
+		?spec cpmeta:containsDataset ?dataset .
+		OPTIONAL{?dataset cpmeta:hasTemporalResolution ?temporalResolution}
+	}
+	?spec cpmeta:hasFormat ?format .
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+where {
+	?spec cpmeta:hasDataLevel [] .
+			FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/"))
+			FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	?dobj cpmeta:hasSizeInBytes ?size .
+?dobj cpmeta:hasName ?fileName .
+?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+                 prefix otcmeta: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+                 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                 prefix prov: <http://www.w3.org/ns/prov#>
+                 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+    SELECT ?dobj ?fileName ?timeStart ?timeEnd WHERE {
+    VALUES ?spec { 
+    <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product>
+    <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product>
+ }
+    ?dobj cpmeta:hasObjectSpec ?spec .
+    ?dobj cpmeta:hasSizeInBytes ?size .
+    ?dobj cpmeta:hasName ?fileName .
+    ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+    ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+    FILTER (!CONTAINS(str(?fileName), "SOCAT"))
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+    }
+
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+                 prefix otcmeta: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+                 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                 prefix prov: <http://www.w3.org/ns/prov#>
+                 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select * where { <http://meta.icos-cp.eu/resources/stations/OS_11SS> cpmeta:hasOtcId ?otcId }
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix otcmeta: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?station ?stationName ?stationLabel ?responsibleOrgId ?responsibleOrgName ?personId ?title ?firstName ?middleName ?lastName ?email ?orcid ?attributionWeight ?personRole ?personRoleOrg ?personRoleOrgName ?platformId ?platformName ?platformCode ?deploymentSchedule ?discreteSamplingSchedule ?instrumentSetup ?retrievalMethod ?airIntakePosition ?exhaustPosition ?portOfCall ?platformOwner ?instrumentId ?instrumentDeviceId ?instrumentManufacturer ?instrumentModel ?instrumentSerialNumber ?instrumentDocumentationReference ?instrumentDocumentationComment ?instrumentSamplingFrequency ?instrumentReportingFrequency ?instrumentDeviceSkos ?instrumentMeasuresSkos ?sensorId ?sensorManufacturer ?sensorModel ?sensorSerialNumber ?sensorSamplingFrequency ?sensorReportingFrequency ?sensorDeviceSkos ?variableId ?variableName ?variableSkosMatch WHERE {
+	# Station of interest
+	VALUES ?station { <http://meta.icos-cp.eu/resources/otcmeta/SimonStevin> }
+
+	# Station details
+	?station otcmeta:hasName ?stationName .
+	?station rdfs:label ?stationLabel .
+ 	OPTIONAL { ?station otcmeta:hasResponsibleOrg ?responsibleOrgId . }
+ 	OPTIONAL { ?responsibleOrgId otcmeta:hasName ?responsibleOrgName . }
+
+	# People attached to station
+	?stationPerson otcmeta:atOrganization ?station .
+ 	?stationPerson otcmeta:hasHolder ?personId .
+ 	OPTIONAL { ?stationPerson otcmeta:hasStartTime ?personStationStart . }
+ 	FILTER(!BOUND(?personStationStart) || ?personStationStart <= '2024-08-01'^^xsd:date)
+	OPTIONAL { ?stationPerson otcmeta:hasEndTime ?personStationEnd . }
+	FILTER(!BOUND(?personStationEnd) || ?personStationEnd >= '2024-07-01'^^xsd:date)
+
+	# Person Details
+	OPTIONAL { ?personId otcmeta:hasTitle ?title . }
+ 	?personId otcmeta:hasFirstName ?firstName .
+ 	OPTIONAL { ?personId otcmeta:hasMiddleName ?middleName . }
+ 	?personId otcmeta:hasLastName ?lastName .
+ 	OPTIONAL { ?personId otcmeta:hasEmail ?email . }
+ 	OPTIONAL { ?personId otcmeta:hasOrcidId ?orcid . }
+ 	OPTIONAL { ?stationPerson otcmeta:hasAttributionWeight ?aw_base . }
+ 	BIND (COALESCE(?aw_base, 0) AS ?attributionWeight) .
+
+	# Person's employment
+	?personRole otcmeta:hasHolder ?personId .
+	?personRole otcmeta:atOrganization ?personRoleOrg .
+	?personRoleOrg otcmeta:hasName ?personRoleOrgName .
+	VALUES ?personRoles {
+		otcmeta:AcademicInstitution
+		otcmeta:CommercialCompany
+	}
+	?personRoleOrg a ?personRoles
+	OPTIONAL { ?personRole otcmeta:hasStartTime ?employmentStart . }
+	FILTER(!BOUND(?employmentStart) || ?employmentStart <= '2024-08-01'^^xsd:date)
+ 	OPTIONAL { ?personRole otcmeta:hasEndTime ?employmentEnd . }
+ 	FILTER(!BOUND(?employmentEnd) || ?employmentEnd >= '2024-07-01'^^xsd:date)
+
+	# Platform deployment
+	?platformDeployment otcmeta:toStation ?station
+	OPTIONAL { ?platformDeployment otcmeta:hasStartTime ?platformDeploymentStart . }
+	FILTER(!BOUND(?platformDeploymentStart) || ?platformDeploymentStart <= '2024-08-01'^^xsd:date)
+	OPTIONAL { ?platformDeployment otcmeta:hasEndTime ?platformDeploymentEnd . }
+	FILTER(!BOUND(?platformDeploymentEnd) || ?platformDeploymentEnd >= '2024-07-01'^^xsd:date)
+	?platformDeployment otcmeta:ofPlatform ?platformId .
+
+	# Platform details
+	?platformId otcmeta:hasName ?platformName .
+	?platformId otcmeta:hasIcesPlatformCode ?platformCode .
+	OPTIONAL { ?platformId otcmeta:hasDeploymentSchedule ?deploymentSchedule . }
+	OPTIONAL { ?platformId otcmeta:hasDiscreteSamplingSchedule ?discreteSamplingSchedule . }
+	OPTIONAL { ?platformId otcmeta:hasInstrumentSetup ?instrumentSetup . }
+	OPTIONAL { ?platformId otcmeta:hasRetrievalMethod ?retrievalMethod . }
+	OPTIONAL { ?platformId otcmeta:airIntakePosition ?airIntakePosition . }
+	OPTIONAL { ?platformId otcmeta:exhaustPosition ?exhaustPosition . }
+	OPTIONAL { ?platformId otcmeta:hasPortOfCall ?portOfCall . }
+	OPTIONAL {
+		?platformId otcmeta:hasOwner ?platformOwnerId .
+		?platformOwnerId otcmeta:hasName ?platformOwner .
+	}
+
+	# Instrument deployment
+	?instrumentDeployment otcmeta:toPlatform ?platformId .
+	OPTIONAL { ?instrumentDeployment otcmeta:hasStartTime ?instrumentDeploymentStart . }
+	FILTER(!BOUND(?instrumentDeploymentStart) || ?instrumentDeploymentStart <= '2024-08-01'^^xsd:date)
+	OPTIONAL { ?instrumentDeployment otcmeta:hasEndTime ?instrumentDeploymentEnd . }
+	FILTER(!BOUND(?instrumentDeploymentEnd) || ?instrumentDeploymentEnd >= '2024-07-01'^^xsd:date)
+	?instrumentDeployment otcmeta:ofInstrument ?instrumentId .
+
+	# Instrument details
+	?instrumentId otcmeta:device ?instrumentDeviceId .
+	?instrumentDeviceId otcmeta:hasManufacturer ?instrumentManufacturerId .
+	?instrumentManufacturerId otcmeta:hasName ?instrumentManufacturer .
+	?instrumentDeviceId otcmeta:hasModelName ?instrumentModel .
+	OPTIONAL { ?instrumentId otcmeta:hasSerialNumber ?instrumentSerialNumber . }
+	OPTIONAL { ?instrumentDeviceId otcmeta:hasDocumnentationReference ?instrumentDocumentationReference . }
+	OPTIONAL { ?instrumentDeviceId otcmeta:hasDocumnentationComment ?instrumentDocumentationComment . }
+	OPTIONAL { ?instrumentDeviceId otcmeta:hasSamplingFrequency ?instrumentSamplingFrequency . }
+	OPTIONAL { ?instrumentDeviceId otcmeta:hasReportingFrequency ?instrumentReportingFrequency . }
+	OPTIONAL { ?instrumentDeviceId skos:exactMatch ?instrumentDeviceSkos .}
+	OPTIONAL { ?instrumentDeviceId otcmeta:measuresSkos ?instrumentMeasuresSkos . }
+
+	# Instrument Sensor Deployments
+	OPTIONAL {
+		?sensorDeployment otcmeta:toInstrument ?instrumentId .
+		OPTIONAL { ?sensorDeployment otcmeta:hasStartTime ?sensorDeploymentStart . }
+		FILTER(!BOUND(?sensorDeploymentStart) || ?sensorDeploymentStart <= '2024-08-01'^^xsd:date)
+		OPTIONAL { ?sensorDeployment otcmeta:hasEndTime ?sensorDeploymentEnd . }
+		FILTER(!BOUND(?sensorDeploymentEnd) || ?sensorDeploymentEnd >= '2024-07-01'^^xsd:date)
+		?sensorDeployment otcmeta:ofSensor ?sensorId .
+
+		# Sensor details
+		?sensorId otcmeta:device ?sensorDeviceId .
+		?sensorDeviceId otcmeta:hasManufacturer ?sensorManufacturerId .
+		?sensorManufacturerId otcmeta:hasName ?sensorManufacturer .
+		?sensorDeviceId otcmeta:hasModelName ?sensorModel .
+		OPTIONAL { ?sensorId otcmeta:hasSerialNumber ?sensorSerialNumber . }
+		OPTIONAL { ?sensorDeviceId otcmeta:hasSamplingFrequency ?sensorSamplingFrequency . }
+		OPTIONAL { ?sensorDeviceId otcmeta:hasReportingFrequency ?sensorReportingFrequency . }
+		OPTIONAL { ?sensorDeviceId skos:exactMatch ?sensorDeviceSkos .}
+
+		OPTIONAL {
+			?sensorDeployment otcmeta:measuresVariable ?variableId .
+			?variableId otcmeta:hasName ?variableName .
+			OPTIONAL { ?variableId skos:exactMatch ?variableSkosMatch . }
+		}
+	}
+}
+ORDER BY DESC(?attributionWeight)
+
+--------------------------------------------------------------------------------
+
+# query to return total number of datasets per site as well as latest five datasets
+# landing page for all datasets https://data.icos-cp.eu/portal/#%7B%22filterCategories%22%3A%7B%22station%22%3A%5B%22iES_SE-Sto%22%5D%7D%7D
+
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+
+SELECT (?dobj AS ?url)
+       ?datasetTitle
+       ?total
+WHERE {
+  {
+    # Subquery: Total number of datasets
+    SELECT (COUNT(?allDobj) AS ?total)
+    WHERE {
+      VALUES ?station {
+        <http://meta.icos-cp.eu/resources/stations/ES_GL-NuF> 
+      }
+      ?spec cpmeta:hasDataLevel [] ;
+            cpmeta:hasAssociatedProject ?project .
+      FILTER(STRSTARTS(STR(?spec), "http://meta.icos-cp.eu/"))
+      FILTER NOT EXISTS {
+        ?project cpmeta:hasHideFromSearchPolicy true
+      }
+      ?allDobj cpmeta:hasObjectSpec ?spec ;
+               cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+      FILTER NOT EXISTS { [] cpmeta:isNextVersionOf ?allDobj }
+    }
+  }
+
+  {
+    # Subquery: Latest 5 datasets
+    SELECT ?dobj ?datasetTitle
+    WHERE {
+      VALUES ?station {
+        <http://meta.icos-cp.eu/resources/stations/ES_GL-NuF> 
+      }
+      ?spec cpmeta:hasDataLevel [] ;
+            rdfs:label ?datasetTitle ;
+            cpmeta:hasAssociatedProject ?project .
+      FILTER(STRSTARTS(STR(?spec), "http://meta.icos-cp.eu/"))
+      FILTER NOT EXISTS {
+        ?project cpmeta:hasHideFromSearchPolicy true
+      }
+      ?dobj cpmeta:hasObjectSpec ?spec ;
+            cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station ;
+            cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+      FILTER NOT EXISTS { [] cpmeta:isNextVersionOf ?dobj }
+    }
+    ORDER BY DESC(?submTime)
+    LIMIT 5
+  }
+}
+
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select distinct ?dobj ?objSpec ?nRows ?fileName ?specLabel ?startedAtTime ?columnNames where {
+	values ?dobj { <https://meta.icos-cp.eu/objects/Cr-JDShDipHoRjx4A1u2Ztg_> }
+	?dobj cpmeta:hasObjectSpec ?objSpec ;
+	cpmeta:hasNumberOfRows ?nRows ;
+	cpmeta:hasName ?fileName .
+	?objSpec rdfs:label ?specLabel .
+	?dobj cpmeta:wasAcquiredBy ?acquisition .
+	?acquisition prov:startedAtTime ?startedAtTime
+	OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
+}
+
+--------------------------------------------------------------------------------
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+
+select ?dobj ?spec ?station ?samplingHeight ?fileName ?size ?submTime ?timeStart ?timeEnd
+where {
+	VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> }
+	?dobj cpmeta:hasObjectSpec ?spec .
+	VALUES ?station { <http://meta.icos-cp.eu/resources/stations/AS_CBW> }
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	OPTIONAL{ ?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingHeight . }
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	
+	FILTER(?submTime > "2025-10-04T22:15:00.445182+00:00"^^xsd:dateTime)
+	
+}
+order by desc(?submTime)
+offset 0 limit 20
+
+--------------------------------------------------------------------------------
+
+PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+SELECT *
+FROM <http://meta.icos-cp.eu/resources/stationentry/>
+FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
+WHERE {
+	{
+		select ?s (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
+		where{ ?s cpst:hasPi/cpst:hasLastName ?piLname }
+		group by ?s
+	}
+	?s a ?owlClass .
+	BIND(REPLACE(str(?owlClass),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)
+	?s cpst:hasShortName ?Id .
+	?s cpst:hasLongName ?Name .
+	OPTIONAL{?s cpst:hasLat ?lat . ?s cpst:hasLon ?lon }
+	OPTIONAL{?s cpst:hasSpatialReference ?geoJson }
+	OPTIONAL{?s cpst:hasCountry ?Country }
+	OPTIONAL{?s cpst:hasSiteType ?Site_type }
+	OPTIONAL{?s cpst:hasElevationAboveSea ?Elevation_above_sea }
+	OPTIONAL{?s cpst:hasStationClass ?Station_class }
+	OPTIONAL{
+		GRAPH <http://meta.icos-cp.eu/resources/stationlabeling/> {
+			?s cpst:hasAppStatusDate ?labelDt .
+			?s cpst:hasApplicationStatus "STEP3APPROVED"^^xsd:string .
+			BIND(SUBSTR(str(?labelDt), 1, 10) AS ?Labeling_date)
+		}
+	}
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT *
+FROM <http://meta.icos-cp.eu/resources/icos/>
+FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+FROM <http://meta.icos-cp.eu/resources/stationentry/>
+WHERE{
+	{
+		select ?s ?ps (GROUP_CONCAT(?lname; separator=";") AS ?PI_names) where {
+			?s cpst:hasProductionCounterpart ?psStr .
+			bind(iri(?psStr) as ?ps)
+			?memb cpmeta:atOrganization ?ps ; cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+			filter not exists {?memb cpmeta:hasEndTime []}
+			?pers cpmeta:hasMembership ?memb ; cpmeta:hasLastName ?lname .
+		}
+		group by ?s ?ps
+	}
+	?ps cpmeta:hasStationId ?Id ; cpmeta:hasName ?Name .
+	OPTIONAL{ ?ps cpmeta:hasElevation ?Elevation_above_sea }
+	OPTIONAL{ ?ps cpmeta:hasLatitude ?lat}
+	OPTIONAL{ ?ps cpmeta:hasLongitude ?lon}
+	OPTIONAL{ ?ps cpmeta:hasEcosystemType/rdfs:label ?Site_type }
+	OPTIONAL{ ?ps cpmeta:hasSpatialCoverage/cpmeta:asGeoJSON ?geoJson}
+	OPTIONAL{ ?ps cpmeta:countryCode ?Country}
+	OPTIONAL{ ?ps cpmeta:hasStationClass  ?Station_class}
+	BIND(?ps as ?prodUri)
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+where {
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_PUY> <http://meta.icos-cp.eu/resources/stations/AS_PUI> <http://meta.icos-cp.eu/resources/stations/AS_ZEP> <http://meta.icos-cp.eu/resources/stations/AS_LIN> <http://meta.icos-cp.eu/resources/stations/AS_IPR> <http://meta.icos-cp.eu/resources/stations/AS_UTO> <http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_CBW> <http://meta.icos-cp.eu/resources/stations/AS_WAO> <http://meta.icos-cp.eu/resources/stations/AS_STE> <http://meta.icos-cp.eu/resources/stations/AS_JUE> <http://meta.icos-cp.eu/resources/stations/AS_KIT> <http://meta.icos-cp.eu/resources/stations/AS_RUN> <http://meta.icos-cp.eu/resources/stations/AS_SNO> <http://meta.icos-cp.eu/resources/stations/AS_PAL> <http://meta.icos-cp.eu/resources/stations/AS_HTM> <http://meta.icos-cp.eu/resources/stations/AS_OXK> <http://meta.icos-cp.eu/resources/stations/AS_TOH> <http://meta.icos-cp.eu/resources/stations/AS_JFJ> <http://meta.icos-cp.eu/resources/stations/AS_PRS> <http://meta.icos-cp.eu/resources/stations/AS_SVB> <http://meta.icos-cp.eu/resources/stations/AS_TRN> <http://meta.icos-cp.eu/resources/stations/AS_IZO> <http://meta.icos-cp.eu/resources/stations/AS_BIR> <http://meta.icos-cp.eu/resources/stations/AS_LUT> <http://meta.icos-cp.eu/resources/stations/AS_SMR> <http://meta.icos-cp.eu/resources/stations/AS_HPB> <http://meta.icos-cp.eu/resources/stations/AS_HEL> <http://meta.icos-cp.eu/resources/stations/AS_KRE> <http://meta.icos-cp.eu/resources/stations/AS_ZSF> <http://meta.icos-cp.eu/resources/stations/AS_SAC> <http://meta.icos-cp.eu/resources/stations/AS_GAT> <http://meta.icos-cp.eu/resources/stations/AS_LMP> <http://meta.icos-cp.eu/resources/stations/AS_RGL> <http://meta.icos-cp.eu/resources/stations/AS_SSL> <http://meta.icos-cp.eu/resources/stations/AS_CMN> <http://meta.icos-cp.eu/resources/stations/AS_WES> <http://meta.icos-cp.eu/resources/stations/AS_OPE>}
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:hasSizeInBytes ?size .
+?dobj cpmeta:hasName ?fileName .
+?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	{
+		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
+		UNION
+		{
+			?dobj cpmeta:hasVariableName ?varName
+			FILTER (?varName = "co2")
+		}
+	}
+}
+order by desc(?submTime)
+offset 0 limit 20000
+
+--------------------------------------------------------------------------------
+
+# stationPositions
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?station ?lat ?lon
+WHERE {
+	?station cpmeta:hasStationId [] .
+	filter exists {?station a <https://meta.fieldsites.se/ontologies/sites/Station>}
+	?station cpmeta:hasLatitude ?lat ; cpmeta:hasLongitude ?lon .
+}
+
+--------------------------------------------------------------------------------
+
+# extendedDataObjectInfo
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.fieldsites.se/objects/UquDBWAmrVRzRJ-C0HkAzXXX> <https://meta.fieldsites.se/objects/9tNJ7aaPkgcViNo01F02g0P0> <https://meta.fieldsites.se/objects/GZW1TGjN6aJbAwhpN8hfMWUX> <https://meta.fieldsites.se/objects/VGRl3pJhfNW472Jd3YlgLoCg> <https://meta.fieldsites.se/objects/i0UAa46VImWBdpYT9tgeKWOb> <https://meta.fieldsites.se/objects/p1FiQ4HVyCB8fvmsopZ9NtN7> <https://meta.fieldsites.se/objects/SRo2JB1eUkVYNAO4TwW0tzMx> <https://meta.fieldsites.se/objects/92Md3PzNNN5YoNi1E9RbvvSs> <https://meta.fieldsites.se/objects/HHmoC_meCcfnTatKJoY91GhT> <https://meta.fieldsites.se/objects/w1di9Z4rHVXirQR7FxM02TRB> <https://meta.fieldsites.se/objects/UsKPUlrPihVXXsWOUv7qlEal> <https://meta.fieldsites.se/objects/iB_rzm-CZ7NUiXRofSCgpdac> <https://meta.fieldsites.se/objects/HMMwqHWX0i0sUocC_nB-EExR> <https://meta.fieldsites.se/objects/iPOMtV4sUOEVxtlCWarQ9DD9> <https://meta.fieldsites.se/objects/Kb0BEoo1fzF8aHMJC4qlbJBZ> <https://meta.fieldsites.se/objects/mb01Qsj7sRkJZiQsFzaUJgVS> <https://meta.fieldsites.se/objects/3bmzs0zInWJqRwWlyA55JW5x> <https://meta.fieldsites.se/objects/SrGVudsrioJpJkNlRGXyGvYR> <https://meta.fieldsites.se/objects/2p7P4ZbtWVDY5gYTuLvFzmIN> <https://meta.fieldsites.se/objects/GDUSsXTyp9CjdyhIfaJANAdv> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					{
+						{?newerColl cpmeta:hasDoi ?doi }
+						UNION
+						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					}
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+
+--------------------------------------------------------------------------------
+
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?station ?lat ?lon ?name ?cc
+FROM <http://meta.icos-cp.eu/resources/icos/>
+WHERE {
+	?station cpmeta:hasWebpageElements ?el; cpmeta:hasLatitude ?lat; cpmeta:hasLongitude ?lon; cpmeta:hasName ?name; cpmeta:countryCode ?cc
+}
+
+--------------------------------------------------------------------------------
+
+# labelLookup
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+select ?uri ?label ?comment ?stationId ?webpage
+from <http://meta.icos-cp.eu/ontologies/cpmeta/>
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	?class a owl:Class .
+	filter (?class not in (cpmeta:DataObject, cpmeta:DataSubmission, cpmeta:DataAcquisition, cpmeta:DataProduction,
+		cpmeta:DocumentObject, cpmeta:Instrument, cpmeta:Membership, owl:Thing)
+	)
+	?uri a ?class .
+	optional {?uri rdfs:label ?rdfsLabel }
+	optional {?uri cpmeta:hasName ?name}
+	bind(coalesce(?name, ?rdfsLabel) as ?label)
+	filter(
+		bound(?label) &&
+		?class != cpmeta:Instrument && ?class != cpmeta:Membership &&
+		!strstarts(str(?class), "http://www.w3.org/2002/07/owl#")
+	)
+	optional {?uri cpmeta:hasStationId ?stationId }
+	optional {?uri rdfs:comment ?comment }
+	optional {?uri rdfs:seeAlso ?webpage}
+}
+
+--------------------------------------------------------------------------------
+
+# extendedDataObjectInfo
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.icos-cp.eu/objects/RVXXNV-k0Idmc1Xg8wgICVDt> <https://meta.icos-cp.eu/objects/0R8f0Jh4q3UFq-cEB7TDeHoF> <https://meta.icos-cp.eu/objects/g7CFswjiVoPjbUFh2G1837pp> <https://meta.icos-cp.eu/objects/BrS6c9KJWVQoyntPgON29a_J> <https://meta.icos-cp.eu/objects/TBSQbU-eCFujhU3Yy7bVtfGZ> <https://meta.icos-cp.eu/objects/wP4E1Sb1W2vQWHB14_Vd3SUX> <https://meta.icos-cp.eu/objects/ivSWgJvr_QrXmEPfy_M3uJFc> <https://meta.icos-cp.eu/objects/_a6KGRLdoc1vI3IQ8NEDaEoM> <https://meta.icos-cp.eu/objects/b0h-ZtkbfQiF0ectI76NmEul> <https://meta.icos-cp.eu/objects/e6qwcqEfR8oWCMqU-_KUPu_P> <https://meta.icos-cp.eu/objects/n88B61wNmuiFL-SvEm-IkenH> <https://meta.icos-cp.eu/objects/XNFeLw02sRuk70BITDjNZBSF> <https://meta.icos-cp.eu/objects/4F9xHICEnSUAOr7FV1jpEtZH> <https://meta.icos-cp.eu/objects/5InuRcdRawew1TGuz1IMdjqf> <https://meta.icos-cp.eu/objects/rsxlB-Ov7D2yhQJW2eGZ6mTs> <https://meta.icos-cp.eu/objects/DarFlN2kLCXM_Xx6iQB5xYPZ> <https://meta.icos-cp.eu/objects/NtuKc2Iz9PCxd_5hfypLnchf> <https://meta.icos-cp.eu/objects/5T1fiCZrXuicK4r1AKpOCgIK> <https://meta.icos-cp.eu/objects/ed7ezHsZT68cJpllHvF2qsII> <https://meta.icos-cp.eu/objects/S3mOuKvlvF1l2H4ARp7PvkcU> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					{
+						{?newerColl cpmeta:hasDoi ?doi }
+						UNION
+						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					}
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+
+--------------------------------------------------------------------------------
+
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+		prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		prefix prov: <http://www.w3.org/ns/prov#>
+		select ?dobj ?station ?samplingHeight ?start ?end
+		where {
+			?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> .
+			FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+			filter exists {?dobj cpmeta:wasSubmittedBy/prov:endedAtTime []}
+			?dobj cpmeta:wasAcquiredBy [prov:startedAtTime ?start ; prov:endedAtTime ?end] .
+			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith/cpmeta:hasName ?station .
+			
+			
+		}
+		order by ?station  ?start
+
+--------------------------------------------------------------------------------
+
+
+  prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+  prefix prov: <http://www.w3.org/ns/prov#>
+  select ?dobj ?spec ?timeStart ?timeEnd
+  where {
+  	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes>}
+  	?dobj cpmeta:hasObjectSpec ?spec .
+  	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_BE-Lon>}
+  			?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+  ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+  ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+  	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+  }
+
+
+--------------------------------------------------------------------------------
+
+
+      PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+
+      SELECT
+      (IF(bound(?lat), str(?lat), "?") AS ?latstr)
+      (IF(bound(?lon), str(?lon), "?") AS ?lonstr)
+      (REPLACE(str(?class),"http://meta.icos-cp.eu/ontologies/stationentry/", "") AS ?themeShort)
+      (str(?country) AS ?Country)
+      (str(?sName) AS ?Short_name)
+      (str(?lName) AS ?Long_name)
+      (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
+      (str(?siteType) AS ?Site_type)
+      
+      FROM <http://meta.icos-cp.eu/resources/stationentry/>
+      
+      WHERE {
+        ?s cpst:hasCountry ?country .
+        ?s cpst:hasShortName ?sName .
+        ?s cpst:hasLongName ?lName .
+        ?s cpst:hasSiteType ?siteType .
+        ?s cpst:hasPi ?pi .
+        ?pi cpst:hasLastName ?piLname .
+        ?s a ?class .
+        OPTIONAL{?s cpst:hasLat ?lat } .
+        OPTIONAL{?s cpst:hasLon ?lon } .
+        OPTIONAL{?s cpst:hasSpatialReference ?spatRef } .
+        OPTIONAL{?pi cpst:hasFirstName ?piFname } .
+      }
+      
+      GROUP BY
+      ?lat
+      ?lon
+      ?class
+      ?country
+      ?sName
+      ?lName
+      ?siteType
+      
+      ORDER BY
+      ?themeShort
+      ?sName
+
+--------------------------------------------------------------------------------
+
+
+        prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+        prefix prov: <http://www.w3.org/ns/prov#>
+        select ?dobj ?fileName ?timeEnd
+        where {
+        ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject> .
+        ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/AS_SMR> .
+        ?dobj cpmeta:hasName ?fileName .
+        ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+        FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+        ?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight "125.0"^^xsd:float .
+        }
+        order by desc(?timeEnd)
+        limit 1
+
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix cpres: <http://meta.icos-cp.eu/resources/cpmeta/>
+prefix esstation: <http://meta.icos-cp.eu/resources/stations/ES_>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?pid ?fileName
+where {
+{
+SELECT ?spec WHERE {
+VALUES (?ftype ?spec){
+("DHP" cpres:digHemispherPics )
+("EC" cpres:etcEddyFluxRawSeriesBin )
+("EC" cpres:etcEddyFluxRawSeriesCsv )
+("ST" cpres:etcStorageFluxRawSeriesBin )
+("ST" cpres:etcStorageFluxRawSeriesCsv )
+("BM" cpres:etcBioMeteoRawSeriesBin )
+("BM" cpres:etcBioMeteoRawSeriesCsv )
+("SAHEAT" cpres:etcSaheatFlagFile )
+("CEP" cpres:ceptometerMeasurements )
+}
+
+}
+}
+?dobj cpmeta:hasObjectSpec ?spec .
+?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith esstation:DE-Geb .
+?dobj cpmeta:wasAcquiredBy/prov:startedAtTime ?startTime .
+FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj }
+BIND(substr(str(?dobj), strlen(str(?dobj)) - 23) AS ?pid)
+?dobj cpmeta:hasName ?fileName .
+?dobj cpmeta:hasSizeInBytes ?size .
+FILTER((?startTime > "2025-09-28T12:00:00Z"^^xsd:dateTime))
+}
+order by ?startTime
+
+
+--------------------------------------------------------------------------------
+
+
+        prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+        prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+        prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
+        select distinct ?uri ?id ?name ?icosClass ?country ?lat ?lon ?elevation ?stationTheme ?firstName ?lastName ?email ?siteType
+        from <http://meta.icos-cp.eu/resources/icos/>
+        from <http://meta.icos-cp.eu/resources/extrastations/>
+        from <http://meta.icos-cp.eu/resources/cpmeta/>
+        from <http://meta.icos-cp.eu/resources/stationentry/>
+        where {
+            {
+                select ?uri ?id ?stationTheme (sample(?pers) as ?piOpt)  where
+                {
+                    
+                    ?uri cpmeta:hasStationId ?id .
+                    
+                    ?uri a ?stationTheme .
+                    OPTIONAL{
+                        ?memb cpmeta:atOrganization ?uri ; cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+                        optional {?memb cpmeta:hasEndTime ?membEnd}
+                        filter(!bound(?membEnd) || ?membEnd > now())
+                        ?pers cpmeta:hasMembership ?memb
+                    }
+                }
+                group by ?uri ?id ?stationTheme
+            }
+            bind(coalesce(?piOpt, <http://dummy>) as ?pi)
+            OPTIONAL{
+                ?pi cpmeta:hasFirstName ?firstName .
+                ?pi cpmeta:hasLastName ?lastName
+            }
+            OPTIONAL{?pi cpmeta:hasEmail ?email}
+            OPTIONAL {
+                    {
+                        ?provSt cpst:hasProductionCounterpart ?prodUriLit .
+                        bind((?uri = iri(?prodUriLit)) as ?areEqual)
+                        filter(?areEqual)
+                    }
+                ?provSt cpst:hasSiteType ?siteType .
+            }
+            OPTIONAL {?uri cpmeta:hasStationClass ?icosClass}
+            OPTIONAL {?uri cpmeta:hasName ?name  }
+            OPTIONAL {?uri cpmeta:countryCode ?country }
+            OPTIONAL {?uri cpmeta:hasLatitude ?lat }
+            OPTIONAL {?uri cpmeta:hasLongitude ?lon }
+            OPTIONAL {?uri cpmeta:hasElevation ?elevation }
+        }
+        order by ?stationTheme ?id
+
+
+--------------------------------------------------------------------------------
+
+	   prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+     prefix prov: <http://www.w3.org/ns/prov#>
+    	select ?station ?dobj ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+    	where {
+        		VALUES ?spec {
+        			<http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> 
+        			<http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject>
+        			<http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product>
+        			<http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject>
+        			<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject>}
+        	?dobj cpmeta:hasObjectSpec ?spec .
+        	?dobj cpmeta:hasSizeInBytes ?size .
+        	?dobj cpmeta:hasName ?fileName .
+        	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+        	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+        	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+        	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+        	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+        	{
+        		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
+        		UNION
+        		{
+        			?dobj cpmeta:hasVariableName ?varName
+        			FILTER (?varName = "co2" || ?varName = "ch4" || ?varName = "co" || ?varName = "n2o" || ?varName = "RH" || ?varName = "WD" || ?varName = "WS")
+        		}
+        	}
+        }
+
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\x0D
+prefix prov: <http://www.w3.org/ns/prov#>\x0D
+select ?dobj\x0D
+where {\x0D
+    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> ;\x0D
+        cpmeta:wasAcquiredBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> ;\x0D
+        cpmeta:hasSizeInBytes [] .\x0D
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}\x0D
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	?spec cpmeta:hasDataLevel [] .
+	FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_FI-Var>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select ?id where
+{
+    ?station a cpmeta:ES ; cpmeta:hasStationId ?id .
+}
+order by ?id
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/AS_HPB> <http://meta.icos-cp.eu/resources/stations/AS_PUY> <http://meta.icos-cp.eu/resources/stations/AS_KIT> <http://meta.icos-cp.eu/resources/stations/AS_STE> <http://meta.icos-cp.eu/resources/stations/AS_TOH> <http://meta.icos-cp.eu/resources/stations/AS_ZSF> <http://meta.icos-cp.eu/resources/stations/AS_CMN> <http://meta.icos-cp.eu/resources/stations/AS_CBW> <http://meta.icos-cp.eu/resources/stations/AS_KRE> <http://meta.icos-cp.eu/resources/stations/AS_SAC> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/AS_JUE> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/AS_TRN> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/AS_JFJ> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/AS_IPR> <http://meta.icos-cp.eu/resources/stations/AS_ZEP> <http://meta.icos-cp.eu/resources/stations/OS_PALOMA> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/AS_PUI> <http://meta.icos-cp.eu/resources/stations/AS_WES> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/AS_PAL> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/AS_PRS> <http://meta.icos-cp.eu/resources/stations/AS_LUT> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/AS_OPE> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/AS_RUN> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/AS_LIN> <http://meta.icos-cp.eu/resources/stations/AS_HEL> <http://meta.icos-cp.eu/resources/stations/AS_GAT> <http://meta.icos-cp.eu/resources/stations/OS_48MB> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/OS_26RA> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/AS_IZO> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/AS_OXK> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/OS_1199> <http://meta.icos-cp.eu/resources/stations/AS_UTO> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/AS_SSL> <http://meta.icos-cp.eu/resources/stations/OS_PS-VOS> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/AS_SVB> <http://meta.icos-cp.eu/resources/stations/AS_WAO> <http://meta.icos-cp.eu/resources/stations/AS_HTM> <http://meta.icos-cp.eu/resources/stations/AS_HUN> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/AS_RGL> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/AS_LMP> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_BIR> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/AS_SMR> <http://meta.icos-cp.eu/resources/stations/OS_11SS> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/OS_687B> <http://meta.icos-cp.eu/resources/stations/OS_BALTIC-VOS> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/AS_SNO> <http://meta.icos-cp.eu/resources/stations/OS_26NA> <http://meta.icos-cp.eu/resources/stations/OS_TCarrier> <http://meta.icos-cp.eu/resources/stations/OS_74FS> <http://meta.icos-cp.eu/resources/stations/OS_IT-FOS-W1M3A> <http://meta.icos-cp.eu/resources/stations/OS_VOS%20France-Brazil> <http://meta.icos-cp.eu/resources/stations/OS_GOSars> <http://meta.icos-cp.eu/resources/stations/OS_58US>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select ?uri
+from <http://meta.icos-cp.eu/resources/icos/>
+where {
+    ?uri a cpmeta:OS ; cpmeta:hasStationId "IT-FOS-MIRAMARE"^^xsd:string .
+}
+
+
+--------------------------------------------------------------------------------
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?dobj ?fileName ?hashSum ?dataLevel ?timeStart ?timeEnd ?next_version 
+where {
+  ?dobj cpmeta:hasObjectSpec ?spec .
+  ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/OS_48MB> .
+  ?dobj cpmeta:hasSizeInBytes ?size .
+  ?dobj cpmeta:hasName ?fileName .
+  ?dobj cpmeta:hasSha256sum ?hashSum .
+  ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+  ?dobj cpmeta:wasAcquiredBy [prov:startedAtTime ?timeStart ; prov:endedAtTime ?timeEnd ] .
+  FILTER(?timeEnd >= "2024-12-03T00:00:00Z"^^xsd:dateTime && ?timeStart <= "2025-10-05T20:00:00Z"^^xsd:dateTime)
+  ?spec cpmeta:hasDataLevel ?dataLevel ; cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> .
+  FILTER(?dataLevel in ("1"^^xsd:integer, "2"^^xsd:integer))
+  OPTIONAL{?next_version cpmeta:isNextVersionOf ?dobj}
+}
+order by DESC(?submTime)
+
+
+--------------------------------------------------------------------------------
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?hasNextVersion ?timeStart ?timeEnd ?dataLevel
+where {
+    VALUES ?dobj {<https://meta.icos-cp.eu/objects/gbKECX-Ynn8RVSj2z8tIhdII>}
+    ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+    ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+    ?dobj cpmeta:hasObjectSpec ?spec .
+    ?spec cpmeta:hasDataLevel ?dataLevel .
+    BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+}
+
+
+--------------------------------------------------------------------------------
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?dobj ?hasNextVersion ?fileName ?hashSum ?submTime
+where {
+  VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject>}
+  ?dobj cpmeta:hasObjectSpec ?spec .
+  ?dobj cpmeta:hasSha256sum ?hashSum .
+  BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+  VALUES ?station {<http://meta.icos-cp.eu/resources/stations/OS_74FS>}
+  ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+  ?dobj cpmeta:hasName ?fileName .
+  FILTER(?fileName in ("PAP_MAY2025.mt3"^^xsd:string,"PAP_MAY2025.sbo"^^xsd:string,"PAP_MAY2025.gps"^^xsd:string,"PAP_MAY2025.ICA"^^xsd:string,"PAP_MAY2025.ox2"^^xsd:string))
+  ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+}
+order by desc(?submTime)
+
+
+--------------------------------------------------------------------------------
+
+query=%0A++++prefix+cpmeta%3A+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fontologies%2Fcpmeta%2F%3E%0A++++prefix+prov%3A+%3Chttp%3A%2F%2Fwww.w3.org%2Fns%2Fprov%23%3E%0A++++select+%3Fdobj+%3Fspec+%3FfileName+%3Fsize+%3FsubmTime+%3FtimeStart+%3FtimeEnd%0A++++where+%7B%0A++++++++VALUES+%3Fspec+%7B%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCo2NrtGrowingDataObject%3E+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCh4NrtGrowingDataObject%3E+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCoNrtGrowingDataObject%3E%7D%0A++++++++%3Fdobj+cpmeta%3AhasObjectSpec+%3Fspec+.%0A++++++++%3Fdobj+cpmeta%3AhasSizeInBytes+%3Fsize+.%0A++++%3Fdobj+cpmeta%3AhasName+%3FfileName+.%0A++++%3Fdobj+cpmeta%3AwasSubmittedBy%2Fprov%3AendedAtTime+%3FsubmTime+.%0A++++%3Fdobj+cpmeta%3AhasStartTime+%7C+%28cpmeta%3AwasAcquiredBy+%2F+prov%3AstartedAtTime%29+%3FtimeStart+.%0A++++%3Fdobj+cpmeta%3AhasEndTime+%7C+%28cpmeta%3AwasAcquiredBy+%2F+prov%3AendedAtTime%29+%3FtimeEnd+.%0A++++++++FILTER+NOT+EXISTS+%7B%5B%5D+cpmeta%3AisNextVersionOf+%3Fdobj%7D%0A++++%7D%0A++++order+by+desc%28%3FsubmTime%29%0A++++
+
+--------------------------------------------------------------------------------
+
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\x0D
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\x0D
+prefix prov: <http://www.w3.org/ns/prov#>\x0D
+select ?dobj\x0D
+where {\x0D
+    ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .\x0D
+    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> ;        \x0D
+        cpmeta:hasSizeInBytes [] .\x0D
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}\x0D
+    FILTER( ?submTime > "2025-10-05T05:00:00.000Z"^^xsd:dateTime && ?submTime < "2025-10-06T06:00:00.000Z"^^xsd:dateTime)\x0D
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_HPB> <http://meta.icos-cp.eu/resources/stations/AS_PUY> <http://meta.icos-cp.eu/resources/stations/AS_KIT> <http://meta.icos-cp.eu/resources/stations/AS_STE> <http://meta.icos-cp.eu/resources/stations/AS_TOH> <http://meta.icos-cp.eu/resources/stations/AS_ZSF> <http://meta.icos-cp.eu/resources/stations/AS_CMN> <http://meta.icos-cp.eu/resources/stations/AS_CBW> <http://meta.icos-cp.eu/resources/stations/AS_KRE> <http://meta.icos-cp.eu/resources/stations/AS_SAC> <http://meta.icos-cp.eu/resources/stations/AS_JUE> <http://meta.icos-cp.eu/resources/stations/AS_TRN> <http://meta.icos-cp.eu/resources/stations/AS_JFJ> <http://meta.icos-cp.eu/resources/stations/AS_IPR> <http://meta.icos-cp.eu/resources/stations/AS_ZEP> <http://meta.icos-cp.eu/resources/stations/AS_PUI> <http://meta.icos-cp.eu/resources/stations/AS_WES> <http://meta.icos-cp.eu/resources/stations/AS_PAL> <http://meta.icos-cp.eu/resources/stations/AS_PRS> <http://meta.icos-cp.eu/resources/stations/AS_LUT> <http://meta.icos-cp.eu/resources/stations/AS_OPE> <http://meta.icos-cp.eu/resources/stations/AS_RUN> <http://meta.icos-cp.eu/resources/stations/AS_LIN> <http://meta.icos-cp.eu/resources/stations/AS_HEL> <http://meta.icos-cp.eu/resources/stations/AS_GAT> <http://meta.icos-cp.eu/resources/stations/AS_IZO> <http://meta.icos-cp.eu/resources/stations/AS_OXK> <http://meta.icos-cp.eu/resources/stations/AS_UTO> <http://meta.icos-cp.eu/resources/stations/AS_SSL> <http://meta.icos-cp.eu/resources/stations/AS_SVB> <http://meta.icos-cp.eu/resources/stations/AS_WAO> <http://meta.icos-cp.eu/resources/stations/AS_HTM> <http://meta.icos-cp.eu/resources/stations/AS_HUN> <http://meta.icos-cp.eu/resources/stations/AS_RGL> <http://meta.icos-cp.eu/resources/stations/AS_LMP> <http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_BIR> <http://meta.icos-cp.eu/resources/stations/AS_SMR> <http://meta.icos-cp.eu/resources/stations/AS_SNO>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_JFJ>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_JFJ>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# listKnownDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
+where {
+	VALUES ?dobj { <https://meta.icos-cp.eu/objects/xW0Z6MDqlm2jsCfaIk4kEduT> <https://meta.icos-cp.eu/objects/AxBiepIChcZfqUpz7ARfrUNB> <https://meta.icos-cp.eu/objects/03R7h41BOnWO4o1O0B0OIOt5> <https://meta.icos-cp.eu/objects/pwgPIF4zCA3Q9xl1xBNLc62I> <https://meta.icos-cp.eu/objects/HaMVdmwshvd4J8WOxAZhzdMP> <https://meta.icos-cp.eu/objects/6j1HOSZsK5WRnGysepF_zGAZ> <https://meta.icos-cp.eu/objects/wr-j4p6_n-JD9pLj_5ej2bJM> <https://meta.icos-cp.eu/objects/VoHwzGy0XaDo9jiYz4avRUzh> }
+	?dobj cpmeta:hasObjectSpec ?spec .
+
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+}
+
+--------------------------------------------------------------------------------
+
+# extendedDataObjectInfo
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.icos-cp.eu/objects/JoA_9IECRD78OFeMms-AbRKQ> <https://meta.icos-cp.eu/objects/t27OLCGq3cKJ-GlRFYh0-3N0> <https://meta.icos-cp.eu/objects/ThjSdsqoejtL2N3i2BOqG039> <https://meta.icos-cp.eu/objects/UpHonimEzYCbLfW-aAn_m-g7> <https://meta.icos-cp.eu/objects/-l8T_dK139skH3RndYyMzGQl> <https://meta.icos-cp.eu/objects/5Iv4eNDu8L7Ur6YwWMWSZO7A> <https://meta.icos-cp.eu/objects/WydnbVMt4GmNBYrxSxacjPcQ> <https://meta.icos-cp.eu/objects/xsOZ-CaSvYI19C5FKvT2-a8n> <https://meta.icos-cp.eu/objects/vrmNvoUH-PDYkuXB6e-xnDyX> <https://meta.icos-cp.eu/objects/Q4nUx2mqUHOyqQma8wXuFmrr> <https://meta.icos-cp.eu/objects/l_I_OFS9VdtZPEqk4r7Zy2GG> <https://meta.icos-cp.eu/objects/SERGQ2az7-EwBCvJUjaa1E2X> <https://meta.icos-cp.eu/objects/zQsSn8Zd4WuFZTbkFaCRuPBC> <https://meta.icos-cp.eu/objects/JDtWq-4NC26zTMIZ-4BZZX0D> <https://meta.icos-cp.eu/objects/AVszBCjfeaEav2V4ZHPR8gMp> <https://meta.icos-cp.eu/objects/_v-exAjHQVIhvgpDxiECmQRa> <https://meta.icos-cp.eu/objects/2iDXoCYlzLWJX8VuyIl2AQrx> <https://meta.icos-cp.eu/objects/CpqAZhRaq56qp9fq0i3Np0O-> <https://meta.icos-cp.eu/objects/UqxjjG2-Kvo3YIUa9EChx9ax> <https://meta.icos-cp.eu/objects/bt0q4nOPQ9JKwgBM55tLKxHE> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					{
+						{?newerColl cpmeta:hasDoi ?doi }
+						UNION
+						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					}
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+
+--------------------------------------------------------------------------------
+
+# listKnownDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
+where {
+	VALUES ?dobj { <https://meta.icos-cp.eu/objects/bxYYOEGvho7rqQFdVhrAQhO6> <https://meta.icos-cp.eu/objects/4xrck-NsENR-GUsX8sHZ3WC7> <https://meta.icos-cp.eu/objects/5z4DPxGZ54tOc8x1rZltnt0f> <https://meta.icos-cp.eu/objects/tq-oj1nRyuuBOE_PG2ujFVfO> <https://meta.icos-cp.eu/objects/VelIYM-xchJaxcWJMT5ItnEn> <https://meta.icos-cp.eu/objects/nDJkrg720_4Y2bFGzteVRII9> <https://meta.icos-cp.eu/objects/n5Gc7Jqo-V6D2PT_RQ39vji5> }
+	?dobj cpmeta:hasObjectSpec ?spec .
+
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+}
+
+--------------------------------------------------------------------------------
+
+# listKnownDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd ?hasVarInfo
+where {
+	VALUES ?dobj { <https://meta.icos-cp.eu/objects/oNVmsG8WyqDDxKnEQL39tXrE> <https://meta.icos-cp.eu/objects/wBpmGdTjHuZdTZjHPJyEaESY> <https://meta.icos-cp.eu/objects/jc6ed49roHa1EZq2aQbBfVMB> <https://meta.icos-cp.eu/objects/2W441Ibiqfb8QOEg50UW56u2> <https://meta.icos-cp.eu/objects/SgqT4zQIWHHWOKBwirVdU16t> <https://meta.icos-cp.eu/objects/ZclNLSWetjFVAXzgG1IQotEr> <https://meta.icos-cp.eu/objects/uRJDvhUe5CvgukzV8Q7U_LJ_> <https://meta.icos-cp.eu/objects/MbRNvon5DW2RUIA9pZCDhc7l> <https://meta.icos-cp.eu/objects/CoAhEC3G-a4TbSPvY7_HHcgw> <https://meta.icos-cp.eu/objects/gBR7uGz2H_Cwibf4DNJUIdpH> }
+	?dobj cpmeta:hasObjectSpec ?spec .
+
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select distinct ?dobj ?objSpec ?nRows ?fileName ?specLabel ?startedAtTime ?columnNames where {
+	values ?dobj { <https://meta.icos-cp.eu/objects/oNVmsG8WyqDDxKnEQL39tXrE> <https://meta.icos-cp.eu/objects/wBpmGdTjHuZdTZjHPJyEaESY> <https://meta.icos-cp.eu/objects/jc6ed49roHa1EZq2aQbBfVMB> <https://meta.icos-cp.eu/objects/2W441Ibiqfb8QOEg50UW56u2> <https://meta.icos-cp.eu/objects/SgqT4zQIWHHWOKBwirVdU16t> <https://meta.icos-cp.eu/objects/ZclNLSWetjFVAXzgG1IQotEr> <https://meta.icos-cp.eu/objects/uRJDvhUe5CvgukzV8Q7U_LJ_> <https://meta.icos-cp.eu/objects/MbRNvon5DW2RUIA9pZCDhc7l> <https://meta.icos-cp.eu/objects/CoAhEC3G-a4TbSPvY7_HHcgw> <https://meta.icos-cp.eu/objects/gBR7uGz2H_Cwibf4DNJUIdpH> }
+	?dobj cpmeta:hasObjectSpec ?objSpec ;
+	cpmeta:hasNumberOfRows ?nRows ;
+	cpmeta:hasName ?fileName .
+	?objSpec rdfs:label ?specLabel .
+	?dobj cpmeta:wasAcquiredBy ?acquisition .
+	?acquisition prov:startedAtTime ?startedAtTime
+	OPTIONAL{?dobj cpmeta:hasActualColumnNames ?columnNames }
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select *
+FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+where{
+	{{?cov a cpmeta:SpatialCoverage } union {?cov a cpmeta:LatLonBox}}
+	?cov rdfs:label ?label
+}
+
+
+--------------------------------------------------------------------------------
+
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+SELECT *
+FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+WHERE {
+	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ; cpmeta:hasFormat ?format ;
+		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project ;
+		cpmeta:hasSpecificDatasetType ?dsType .
+	OPTIONAL{?spec cpmeta:hasKeywords ?keywords}
+	OPTIONAL{?project cpmeta:hasKeywords ?projKeywords}
+	OPTIONAL{
+		?spec cpmeta:containsDataset ?dataset .
+	}
+} order by ?name
+
+--------------------------------------------------------------------------------
+
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+SELECT *
+FROM <http://meta.icos-cp.eu/resources/icos/>
+FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
+FROM <http://meta.icos-cp.eu/resources/extrastations/>
+WHERE {
+	
+	?station cpmeta:hasStationId ?id; cpmeta:hasName ?name .
+}
+order by ?name
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcSaheatFlagFile> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcLosGatosL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer> <http://meta.icos-cp.eu/resources/cpmeta/lagrangianTransportModelResult> <http://meta.icos-cp.eu/resources/cpmeta/anthropogenicEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/biosphericModelResults> <http://meta.icos-cp.eu/resources/cpmeta/fireEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+	prefix prov: <http://www.w3.org/ns/prov#>
+	select ?isIcos ?stationId ?spec ?dobj ?samplingHeight ?nRows ?acqStartTime ?acqEndTime
+	where {
+		VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult>}
+		?dobj cpmeta:hasObjectSpec ?spec ;
+			cpmeta:hasNumberOfRows ?nRows .
+		?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+		?dobj cpmeta:hasSizeInBytes ?size .
+		?dobj cpmeta:wasAcquiredBy [
+			prov:startedAtTime ?acqStartTime ;
+			prov:endedAtTime ?acqEndTime ;
+			cpmeta:hasSamplingHeight ?samplingHeight
+		]
+		FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+		?station cpmeta:hasStationId ?stationId .
+		bind(exists{?station cpmeta:hasStationClass ?stClass} as ?isIcos)
+	}
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+	{
+		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
+		UNION
+		{
+			?dobj cpmeta:hasVariableName ?varName
+			FILTER (regex(?varName, "^PPFD_BC_IN_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$"))
+		}
+	}
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <https://meta.fieldsites.se/resources/sites/>
+where {
+	
+	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/stationHourlyMeteorological> <https://meta.fieldsites.se/resources/objspecs/waterHourlyMeteorological> <https://meta.fieldsites.se/resources/objspecs/stationDailyMeteorological> <https://meta.fieldsites.se/resources/objspecs/waterDailyMeteorological>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <https://meta.fieldsites.se/resources/sites/>
+where {
+	
+	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/stream-water-level> <https://meta.fieldsites.se/resources/objspecs/stream-discharge> <https://meta.fieldsites.se/resources/objspecs/lake-temperature> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors> <https://meta.fieldsites.se/resources/objspecs/lake-profile> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-stream> <https://meta.fieldsites.se/resources/objspecs/lake-temperature-daily> <https://meta.fieldsites.se/resources/objspecs/lake-water-level> <https://meta.fieldsites.se/resources/objspecs/lake-manual-sample> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-lake> <https://meta.fieldsites.se/resources/objspecs/stream-additional> <https://meta.fieldsites.se/resources/objspecs/daily-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/hourly-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/lake-sonde> <https://meta.fieldsites.se/resources/objspecs/lake-sonde-profiling> <https://meta.fieldsites.se/resources/objspecs/lake-ice-coverage> <https://meta.fieldsites.se/resources/objspecs/16s-bacteria-reads> <https://meta.fieldsites.se/resources/objspecs/18s-eukaryotes-reads> <https://meta.fieldsites.se/resources/objspecs/chemistry-fish> <https://meta.fieldsites.se/resources/objspecs/zooplankton> <https://meta.fieldsites.se/resources/objspecs/bacterial-abundance> <https://meta.fieldsites.se/resources/objspecs/disinfection-byproduct-parameters> <https://meta.fieldsites.se/resources/objspecs/parafac-component-parameters> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors-daily> <https://meta.fieldsites.se/resources/objspecs/phytoplankton> <https://meta.fieldsites.se/resources/objspecs/stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/daily-stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/lake-sediment-characteristics> <https://meta.fieldsites.se/resources/objspecs/lake-chlorophyll> <https://meta.fieldsites.se/resources/objspecs/lake-chlorophyll-calibration>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/ingosArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release> <http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease> <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct> <http://meta.icos-cp.eu/resources/cpmeta/soopL2Product> <http://meta.icos-cp.eu/resources/cpmeta/AirCoreProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasArchive> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+	{
+		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
+		UNION
+		{
+			?dobj cpmeta:hasVariableName ?varName
+			FILTER (regex(?varName, "^PPFD_IN(_\x5C\x5Cd{1,2})?$") || regex(?varName, "^PPFD_IN_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$"))
+		}
+	}
+}
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <https://meta.fieldsites.se/resources/sites/>
+where {
+
+	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/lake-temperature> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors> <https://meta.fieldsites.se/resources/objspecs/lake-profile> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-stream> <https://meta.fieldsites.se/resources/objspecs/lake-temperature-daily> <https://meta.fieldsites.se/resources/objspecs/lake-manual-sample> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-lake> <https://meta.fieldsites.se/resources/objspecs/daily-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/16s-bacteria-reads> <https://meta.fieldsites.se/resources/objspecs/18s-eukaryotes-reads> <https://meta.fieldsites.se/resources/objspecs/chemistry-fish> <https://meta.fieldsites.se/resources/objspecs/zooplankton> <https://meta.fieldsites.se/resources/objspecs/bacterial-abundance> <https://meta.fieldsites.se/resources/objspecs/stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/daily-stream-water-level-discharge>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<https://meta.fieldsites.se/resources/stations/Svartberget>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# extendedDataObjectInfo
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.icos-cp.eu/objects/euuGN3ivkjRnPRP5G2XCmuXZ> <https://meta.icos-cp.eu/objects/FcwebKMRHvKZqLeBabH7Q5Xf> <https://meta.icos-cp.eu/objects/YUKNKCmydDgLFhwr_cGvB1Uw> <https://meta.icos-cp.eu/objects/MZ_eUO-C-05HJll2Kro5Yh-d> <https://meta.icos-cp.eu/objects/yq3u2mko1dGhD0sOeqHR6dlz> <https://meta.icos-cp.eu/objects/z70KsTLwMGvtwp47xxiwH2dU> <https://meta.icos-cp.eu/objects/28YtMqrQjj-krJCuxhRHQTlG> <https://meta.icos-cp.eu/objects/0Luc1rB0XxAbCOj7Ija1cAcc> <https://meta.icos-cp.eu/objects/uChrOHcnk8PjQUKdQypGSqf5> <https://meta.icos-cp.eu/objects/03GXiF84hCmwo7jZo_IFyDJj> <https://meta.icos-cp.eu/objects/FbYezxBd3h_dqNTO4ZLcoTWq> <https://meta.icos-cp.eu/objects/WhIRisqKSpLPP6iPaF6r9ATY> <https://meta.icos-cp.eu/objects/iMywE4aE1m9dXz2XlmDtDVhp> <https://meta.icos-cp.eu/objects/nuF-hLTHWqBVfNZXXaARRjwe> <https://meta.icos-cp.eu/objects/2ums6rEMaZ7gQK8XHuN1F3xh> <https://meta.icos-cp.eu/objects/MTcnlCsk8tcnhS-k7Kj2mqgG> <https://meta.icos-cp.eu/objects/Dqvrzbj9XZ6hlFw3g1Xn8_OO> <https://meta.icos-cp.eu/objects/pcAQ9WW_zM853j9saKcB0xkE> <https://meta.icos-cp.eu/objects/ASoFGiYwn8KvM_pg4MoWY3a3> <https://meta.icos-cp.eu/objects/0LwYP5j8nRdUMoSnp7D_AmFA> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					{
+						{?newerColl cpmeta:hasDoi ?doi }
+						UNION
+						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					}
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_BE-Lon>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+query=prefix%20rdfs%3A%20%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23%3E%0Aprefix%20cpmeta%3A%20%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fontologies%2Fcpmeta%2F%3E%0Aselect%20%3Fvar%20%3Flabel%20%3Ftitle%20%3FvalueType%20%3Funit%20%3Foptional%20%3Fregex%0Awhere%7B%0A%09%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FbiosphereModelingSpatial%3E%20cpmeta%3AhasVariable%20%3Fvar%20.%0A%09%3Fvar%20rdfs%3Alabel%20%3Flabel%3B%20cpmeta%3AhasVariableTitle%20%3Ftitle%20%3B%20cpmeta%3AhasValueType%20%3FvalueTypeRes%20.%0A%09%3FvalueTypeRes%20rdfs%3Alabel%20%3FvalueType%20.%0A%09optional%20%7B%20%3Fvar%20cpmeta%3AisOptionalVariable%20%3Foptional%20%7D%0A%09optional%20%7B%20%3Fvar%20cpmeta%3AisRegexVariable%20%3Fregex%20%7D%0A%09optional%20%7B%20%3FvalueTypeRes%20cpmeta%3AhasUnit%20%3Funit%20%7D%0A%7D
+
+--------------------------------------------------------------------------------
+
+# extendedDataObjectInfo
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.icos-cp.eu/objects/MFv5mM_1ZCOscs4KNqoGh5nY> <https://meta.icos-cp.eu/objects/4PRjJ9tyfY4v0i12Dr_SQS4p> <https://meta.icos-cp.eu/objects/F1iRJg7_b2Olw54ZlMvdGNtv> <https://meta.icos-cp.eu/objects/k_d9L2FP2mi9I76Jd5I6WyQQ> <https://meta.icos-cp.eu/objects/CSGWRKXL9501HlHpft0achmp> <https://meta.icos-cp.eu/objects/vHTO87N5Q3DjANRfcTQqpz09> <https://meta.icos-cp.eu/objects/_1VD4bRhnoqSLx5zqtoP-zty> <https://meta.icos-cp.eu/objects/cOKFlIXpVvrh_IY3uSYPy505> <https://meta.icos-cp.eu/objects/dEjeOcnNrv0S11xDh_kiEL6t> <https://meta.icos-cp.eu/objects/TaZSHraRRJjNUQ4mOjZ9uWFG> <https://meta.icos-cp.eu/objects/3yFIpPcHTiOyX9y97393UKWZ> <https://meta.icos-cp.eu/objects/IxhDSAa2Oes84hxh-ryI5tTJ> <https://meta.icos-cp.eu/objects/m9T8UKpV0tx41iFjpyNB7ivA> <https://meta.icos-cp.eu/objects/gcZxw_SK3lujn-NsefYfukp9> <https://meta.icos-cp.eu/objects/-tMjEa1hXiobbeG4UK1ZaLdX> <https://meta.icos-cp.eu/objects/caqpKzDUZjfxmvKmzFVLjlO9> <https://meta.icos-cp.eu/objects/pcQMfWkdn1XcwnWbUXalgqqv> <https://meta.icos-cp.eu/objects/_UEW3CCXFEILHDVxQuuBmCNG> <https://meta.icos-cp.eu/objects/DKIoyRjw-YuaasZBo8l7ZOrj> <https://meta.icos-cp.eu/objects/8RCIkPH6CD9yEveYEKN1-v4l> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					{
+						{?newerColl cpmeta:hasDoi ?doi }
+						UNION
+						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					}
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+
+--------------------------------------------------------------------------------
+
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+    prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+    prefix prov: <http://www.w3.org/ns/prov#>
+    select *
+    where {
+	    {
+            ?spec cpmeta:hasDataLevel ?datalevel .
+            FILTER (?datalevel  >0)
+            FILTER NOT EXISTS {?spec cpmeta:hasAssociatedProject/cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean}
+            ?spec rdfs:label ?specLabel .
+    	}	
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_BIK>}
+	?dobj cpmeta:hasObjectSpec ?spec .	
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}				
+	?dobj cpmeta:wasAcquiredBy [
+		prov:startedAtTime ?timeStart ;
+   		prov:endedAtTime ?timeEnd ;
+	 	prov:wasAssociatedWith ?station 
+	] .
+	?dobj cpmeta:hasSizeInBytes ?bytes .
+	OPTIONAL {?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingheight} .
+    }
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?station ?countryCode where{
+			?station cpmeta:countryCode ?countryCode .
+		}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?station ?label where{
+			values ?station { <http://meta.icos-cp.eu/resources/organizations/ATC> <http://meta.icos-cp.eu/resources/organizations/CP> <http://meta.icos-cp.eu/resources/organizations/ETC> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/organizations/OTC> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/organizations/icosSweden> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lcr> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/organizations/OTC_SOCAT> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/ES_FA-Lso> }
+			?station cpmeta:hasStationId ?id ; cpmeta:hasName ?name .
+			bind (concat("(", ?id, ") ", ?name) as ?label)
+		}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?spec ?specLabel ?level ?project ?projectLabel where {
+		VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/GCP_BudgetResult> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/biosphereModelingSpatial> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/anthropogenicEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/biosphericModelResults> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/globalCarbonBudget> <http://meta.icos-cp.eu/resources/cpmeta/modelDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults> <http://meta.icos-cp.eu/resources/cpmeta/fireEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/inversionModelingSpatial> <http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcSaheatFlagFile> <http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release> <http://meta.icos-cp.eu/resources/cpmeta/nonStandardSpatialNetcdf> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer> <http://meta.icos-cp.eu/resources/cpmeta/inversionModelingTimeseries> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/globalCarbonProjectResultArchive> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/arbitraryCfNetcdf> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/oceanL3zip> <http://meta.icos-cp.eu/resources/cpmeta/oceanPco2CarbonFluxMaps> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/lagrangianTransportModelResult> <http://meta.icos-cp.eu/resources/cpmeta/ingosInversionResult> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasArchive> <http://meta.icos-cp.eu/resources/cpmeta/ch4EmissionInventory> <http://meta.icos-cp.eu/resources/cpmeta/ingosArchive> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/sunInducedFluorescence> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/soopL2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/AirCoreProduct> <http://meta.icos-cp.eu/resources/cpmeta/cpObspackCo2Netcdf> <http://meta.icos-cp.eu/resources/cpmeta/genericDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcLosGatosL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/nationalCarbonEmissions> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo> }
+		?spec rdfs:label ?specLabel .
+		?spec cpmeta:hasDataLevel ?level ; cpmeta:hasAssociatedProject ?project .
+		?project rdfs:label ?projectLabel .
+	}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select * where{
+			values ?dobj { <https://meta.icos-cp.eu/objects/xUUehljs1oTazlGlmigAhvfe> <https://meta.icos-cp.eu/objects/6QlPjfn_7uuJtAeuGGFXuPwz> <https://meta.icos-cp.eu/objects/lApekzcmd4DRC34oGXQqOxbJ> <https://meta.icos-cp.eu/objects/1umMtgeUlhS2Y1YW_Qp94bu3> <https://meta.icos-cp.eu/objects/Ayyw1HeihXdTUoO000dGcxrP> <https://meta.icos-cp.eu/objects/Z6S-dJJHB4RCe07mcmhMYxwx> <https://meta.icos-cp.eu/objects/7yV2z2CffZT8d65qndeQZztL> <https://meta.icos-cp.eu/objects/OT_YY6iORypk2yAcwjMpUQpo> <https://meta.icos-cp.eu/objects/zL1wtJrG7Q5xdvF39Ylg3lUw> <https://meta.icos-cp.eu/objects/rmU_viZcddCV7LdflaFGN-My> <https://meta.icos-cp.eu/objects/zLixg_KdbUFw2cRvRJ2GMGZh> <https://meta.icos-cp.eu/objects/4mKODq6pdGLSebFBueFFvkxW> <https://meta.icos-cp.eu/objects/axNWlHezpbMiXg1Z1VyFI9Fa> <https://meta.icos-cp.eu/objects/mtuoxtXq4VhQaZmS4hPJuoQZ> <https://meta.icos-cp.eu/objects/IuLZ5Dkg7UoiSt_ZLskXbwGw> <https://meta.icos-cp.eu/objects/G6PjIjYC6Ka_nummSJ5lO8SV> <https://meta.icos-cp.eu/objects/NMvAsIKjrLx4KUeha_ckfVPP> <https://meta.icos-cp.eu/objects/0ST81nXCND5VfAQdOCSJDveT> <https://meta.icos-cp.eu/objects/_9U_AMxuaV1EtI58ZJlOguF9> <https://meta.icos-cp.eu/objects/5TBCAEB_A3ZwiZ7aeNLP3wCW> <https://meta.icos-cp.eu/objects/5BCT4nKCoGaYQh77DW6OW7gs> <https://meta.icos-cp.eu/objects/I3Ya2WzgvI5VItHoWvR93bag> <https://meta.icos-cp.eu/objects/-OrQ3afxxWEwG-LMJDyfVRot> <https://meta.icos-cp.eu/objects/a8OW2wWfAYqZrj31S8viVLUS> <https://meta.icos-cp.eu/objects/SrHbuvftaN6gk3OrkTN2sCHa> <https://meta.icos-cp.eu/objects/PjBw_YJoPb_jPh7OpeAYgjo3> <https://meta.icos-cp.eu/objects/URIAsjYz5-1CoewJ3zzNF59K> <https://meta.icos-cp.eu/objects/zzxYRkb10enYVYruZXN0Dr1z> <https://meta.icos-cp.eu/objects/jj6XKOTi8v0NFqA8vPylKMPX> <https://meta.icos-cp.eu/objects/NEt3tFUV47QdjvJ-rgKgaiTE> <https://meta.icos-cp.eu/objects/XDMRHSIoybcj5UAnRE9Y62pn> <https://meta.icos-cp.eu/objects/sdfRNhhI5EN_BckuQQfGpdvE> <https://meta.icos-cp.eu/objects/sFaiiz5zR6xQptdXMmyKmuok> <https://meta.icos-cp.eu/objects/roUnkgssFKhxi3o9zcIP00Cw> <https://meta.icos-cp.eu/objects/-C7VDYrq2a4_XF1veXiBILdV> <https://meta.icos-cp.eu/objects/VkGrjtW55kqwRA5NVaarqoTu> <https://meta.icos-cp.eu/objects/mqFGBbnviCPvS_Vhben9pjsa> <https://meta.icos-cp.eu/objects/7i_v9UXL8pEZz8raKJX-3IqK> <https://meta.icos-cp.eu/objects/BlmyC43RrLhzqezyaEPJcJDs> <https://meta.icos-cp.eu/objects/LaXYKv7nUEOYLD62wr43PK7H> <https://meta.icos-cp.eu/objects/HBESS1d6o-q7Y1popzfIDBWJ> <https://meta.icos-cp.eu/objects/koB6mqHO4cQwzJsGsisB0ZDG> <https://meta.icos-cp.eu/objects/_9OUPl0C-LChCxEpZMmdg-00> <https://meta.icos-cp.eu/objects/e8GBwlcZZWWDFrQ3nvUx4yLe> <https://meta.icos-cp.eu/objects/Ru01KATyDlvqFkOzvB7eBcrY> <https://meta.icos-cp.eu/objects/V3G-S_iwbySBt8JqKJPtEWAQ> <https://meta.icos-cp.eu/objects/EZHo_gAaLBVl-IVi1vQkbMXC> <https://meta.icos-cp.eu/objects/sBVCFgtbGsIf7OefkrQ0Ahnp> <https://meta.icos-cp.eu/objects/0as8x1Ute1KMtHqRXUY76ViJ> <https://meta.icos-cp.eu/objects/sP9OtIyD_7YN2cqVm1hiL8C3> <https://meta.icos-cp.eu/objects/Jh-5n8jmckZX96mRSbLlYlZp> <https://meta.icos-cp.eu/objects/Zwr-j8cZAl6fSS1YSwrWsnlB> <https://meta.icos-cp.eu/objects/WqomSESPhl5v4kSBTaptjFgD> <https://meta.icos-cp.eu/objects/-kQhLRmom_xBsI_1nZISHXvN> <https://meta.icos-cp.eu/objects/cBd7YjpjwFq48VDUgnbsG6aC> <https://meta.icos-cp.eu/objects/lttDaMaEVOvI2O0C5QEReMic> <https://meta.icos-cp.eu/objects/dk2fz16o17KBGIToFlaJ1Oh5> <https://meta.icos-cp.eu/objects/yT6Yil9juot9Gffo111sBous> <https://meta.icos-cp.eu/objects/-WFim63uPpLX_IiRm9IxrOg9> <https://meta.icos-cp.eu/objects/WzyCGq6j5iu16szOJl4sbhQc> <https://meta.icos-cp.eu/objects/hogAkuOsIxDDMlv7lkiNap5q> <https://meta.icos-cp.eu/objects/bCMzJsYq9gzcE4pHNpJjToEp> <https://meta.icos-cp.eu/objects/5vXGqp4aeQL0y5AOycJDkW_6> <https://meta.icos-cp.eu/objects/KXggvEeI1HvTU3VHnPn7Z6un> <https://meta.icos-cp.eu/objects/ujM7vxk12vKCoquLSToLG18z> <https://meta.icos-cp.eu/objects/MGHiBv3bVHG5CXI2QkIAhrnP> <https://meta.icos-cp.eu/objects/Gbm7LqjxKe_wzyNQseM66UJc> <https://meta.icos-cp.eu/objects/-4TMRFcN7N-iM4cR3MDSbeq0> <https://meta.icos-cp.eu/objects/xHa8KDN6XZIasACt6yoA6-Xw> <https://meta.icos-cp.eu/objects/S6GQYuCCMzWV2v06mJ_lwbo4> <https://meta.icos-cp.eu/objects/TpS_6HENQSySMMG8jkkAmaJp> <https://meta.icos-cp.eu/objects/wEkQAxJYVZmr-NQHAVbUWGmM> <https://meta.icos-cp.eu/objects/ItMjdK8gpDRCkYo0o_Zfwj4B> <https://meta.icos-cp.eu/objects/YJkrKWJx317TTXKmMk4XZRif> <https://meta.icos-cp.eu/objects/9TbbJgk29oNc2pyEZtvgAF5a> <https://meta.icos-cp.eu/objects/rzi8u2i04Cyk9N2CROurUkRf> <https://meta.icos-cp.eu/objects/U4VYazHdmZwzr7DxUowMtUu-> <https://meta.icos-cp.eu/objects/CFikoPKuAOjWQmgvHhVASAXk> <https://meta.icos-cp.eu/objects/-MqGCn38zUlEi4_aQm-1_w2I> <https://meta.icos-cp.eu/objects/uGqcLzQu62mNqNU5X7YMqm_a> <https://meta.icos-cp.eu/objects/lM-nq-nQl9rVregwPNL1KMm7> <https://meta.icos-cp.eu/objects/Tn3SEuWLHZ9HVO2lWqKrLaBd> <https://meta.icos-cp.eu/objects/JAE0OodUqPX35Q-R27nWZv3s> <https://meta.icos-cp.eu/objects/FftQL1DiZRGGLO7apld7s78r> <https://meta.icos-cp.eu/objects/53qn4laROOqSBKxCOn5rrzeP> <https://meta.icos-cp.eu/objects/PcGjrGMzcBDAg1YXNa4oUjC8> <https://meta.icos-cp.eu/objects/MbStB_hwtaAPl42T5vW4TnVW> <https://meta.icos-cp.eu/objects/sGAyjVH6yGkMrbzo-VSfMS3T> <https://meta.icos-cp.eu/objects/ODQzjQxrSmJI1BDRAlfZcqE6> <https://meta.icos-cp.eu/objects/f1tLJAI708YA5w37gX6UNQbY> <https://meta.icos-cp.eu/objects/vNhmXYVa08fqcXSNBCHGKtmQ> <https://meta.icos-cp.eu/objects/huIG1mpj1r-HKNNv0CGmUuuR> <https://meta.icos-cp.eu/objects/IziBQAo8rgbXJ0KhUomC0731> <https://meta.icos-cp.eu/objects/CrYHN-JxG96WzA6oid09bTBf> <https://meta.icos-cp.eu/objects/wGSIOST0QIgkTsRm6Iol-G0Q> <https://meta.icos-cp.eu/objects/bqA7N1QkO90Oz0QqzsUWsKnK> <https://meta.icos-cp.eu/objects/yeLwO-pGSO9injJBUHYC5O6U> <https://meta.icos-cp.eu/objects/jyXAQxa1W0AJKsbcNjRSVEVw> <https://meta.icos-cp.eu/objects/a5GK4dWHrmGQRdlXV-NKQltv> <https://meta.icos-cp.eu/objects/vv4AI_swzR0RA_O44r7ivHGF> }
+			?dobj cpmeta:hasName ?fname .
+		}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?spec ?specLabel ?level ?project ?projectLabel where {
+		VALUES ?spec { <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject> <http://meta.icos-cp.eu/resources/cpmeta/fireEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/nonStandardSpatialNetcdf> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/GCP_BudgetResult> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/globalCarbonBudget> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ingosArchive> <http://meta.icos-cp.eu/resources/cpmeta/modelDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/ingosInversionResult> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/AirCoreProduct> <http://meta.icos-cp.eu/resources/cpmeta/inversionModelingTimeseries> <http://meta.icos-cp.eu/resources/cpmeta/globalCarbonProjectResultArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/nationalCarbonEmissions> <http://meta.icos-cp.eu/resources/cpmeta/biosphereModelingSpatial> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/etcSaheatFlagFile> <http://meta.icos-cp.eu/resources/cpmeta/ch4EmissionInventory> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product> <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/biosphericModelResults> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/oceanL3zip> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/anthropogenicEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/oceanPco2CarbonFluxMaps> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/radonFluxSpatialL3> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults> <http://meta.icos-cp.eu/resources/cpmeta/cpObspackCo2Netcdf> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/co2EmissionInventory> <http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/sunInducedFluorescence> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/lagrangianTransportModelResult> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/inversionModelingSpatial> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/soopL2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/genericDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/arbitraryCfNetcdf> <http://meta.icos-cp.eu/resources/cpmeta/atcLosGatosL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release> }
+		?spec rdfs:label ?specLabel .
+		?spec cpmeta:hasDataLevel ?level ; cpmeta:hasAssociatedProject ?project .
+		?project rdfs:label ?projectLabel .
+	}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select ?station ?label where{
+			values ?station { <http://meta.icos-cp.eu/resources/organizations/ETC> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/organizations/CP> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lcr> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/organizations/ATC> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_SE-Myc> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_FI-Lom> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/organizations/icosSweden> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/organizations/OTC_SOCAT> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/organizations/OTC> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_FA-Lso> }
+			?station cpmeta:hasStationId ?id ; cpmeta:hasName ?name .
+			bind (concat("(", ?id, ") ", ?name) as ?label)
+		}
+
+--------------------------------------------------------------------------------
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		select * where{
+			values ?dobj { <https://meta.icos-cp.eu/objects/ODQzjQxrSmJI1BDRAlfZcqE6> <https://meta.icos-cp.eu/objects/RBCbz-90sYz_EdeHFihT-mz3> <https://meta.icos-cp.eu/objects/oi2D0CfTQAwCCDbP5fnU2-PD> <https://meta.icos-cp.eu/objects/wEeiJBwNxQJ_pMGzCbu2-0fw> <https://meta.icos-cp.eu/objects/mvXJe0_IET0ga5mBGlv5ozmh> <https://meta.icos-cp.eu/objects/KZ2gtJDuconZ6oeWAqDtDw4d> <https://meta.icos-cp.eu/objects/XwbcYOdyxusMzKVy_Le2d8T_> <https://meta.icos-cp.eu/objects/M7947LRyY2eLFJI8gPPpG0q8> <https://meta.icos-cp.eu/objects/WxXEHHGPk05j-ZcPxdj7DVog> <https://meta.icos-cp.eu/objects/MkMR1R2Dzaw1wctJpFvs-afx> <https://meta.icos-cp.eu/objects/bwJLPmK49QL00u-7py-gnuY0> <https://meta.icos-cp.eu/objects/PTqpBO2GTlteaV8SUOO5Um7X> <https://meta.icos-cp.eu/objects/0K2uT9MfYPXETvHMBejba2gS> <https://meta.icos-cp.eu/objects/x0_eCKpEyPLLN9d985EIOz3B> <https://meta.icos-cp.eu/objects/o5N51Cgf5x79yRjOA7fxyqS4> <https://meta.icos-cp.eu/objects/VpfIV-qkAaa2pK3pEOjpKVb6> <https://meta.icos-cp.eu/objects/Y3Y_6Em1gJO45JP9YFCmpB7C> <https://meta.icos-cp.eu/objects/x5E7TysTfNPL1OC3d4vX2ydg> <https://meta.icos-cp.eu/objects/W-LLFsdRlhKczWgFrzAkpC2_> <https://meta.icos-cp.eu/objects/aNh51OSW8l8KSGTGmlKqLEsq> <https://meta.icos-cp.eu/objects/qI4B6rOo6j5i7p0qBGiinZFC> <https://meta.icos-cp.eu/objects/-fRtA8FO2hlOo-vpXE-k_hKW> <https://meta.icos-cp.eu/objects/mwmxtIT2aq_zQQCGRvKB0nZq> <https://meta.icos-cp.eu/objects/iusWa2Us1qmgcx6UApIYk2b-> <https://meta.icos-cp.eu/objects/ZAU2evfq5HLFN_qqTGkf7XJb> <https://meta.icos-cp.eu/objects/TfcmcTrDMwYL56nAXGJbMXZw> <https://meta.icos-cp.eu/objects/q_Orb8yhAd0Qn6UATUzGCWJ6> <https://meta.icos-cp.eu/objects/IoGRHhxNtKURvrWtYwpD0ZSb> <https://meta.icos-cp.eu/objects/DBroWgU8ONpt4inhNEtLaGhB> <https://meta.icos-cp.eu/objects/_LWP1mPhymNOiU1WtsVzigBg> <https://meta.icos-cp.eu/objects/nKjqYzaZwIURS_7i5z68FJUh> <https://meta.icos-cp.eu/objects/zte7eFHFX-V47nDqL9D9xAZQ> <https://meta.icos-cp.eu/objects/cnztBgnqmJHaCIilogx17NsG> <https://meta.icos-cp.eu/objects/pI2dbiYxteWisjrFGk7IysZY> <https://meta.icos-cp.eu/objects/ruktw861uI88s0Bu56HaZrlP> <https://meta.icos-cp.eu/objects/8oRr_XvWa-NoDpVg0dkjYm1M> <https://meta.icos-cp.eu/objects/ryLVyf_AR2q5oMHL2xQuORBU> <https://meta.icos-cp.eu/objects/wPTdNXuH01ZLyWjChryYIIjb> <https://meta.icos-cp.eu/objects/tq9R0dJMBlFUVozz1umz42mK> <https://meta.icos-cp.eu/objects/2QDrIYPdhBJU48B_Sh0CCne2> <https://meta.icos-cp.eu/objects/UlWTdaFFbFcfr9H7c9xekv2G> <https://meta.icos-cp.eu/objects/BCCzfJXHI2ZB0PJg7glM5FVw> <https://meta.icos-cp.eu/objects/Pc3BCD4XoDgxcfxTTgLYyQd9> <https://meta.icos-cp.eu/objects/RQRbq6gvQv9_uT8WX_Jg2TWC> <https://meta.icos-cp.eu/objects/766RP1TGg1z0niIgr70ihMWj> <https://meta.icos-cp.eu/objects/wY-B-AEIkU8SkBmKBnrQPYtt> <https://meta.icos-cp.eu/objects/z0wZw4hwGRYUD-4UVveqj7nv> <https://meta.icos-cp.eu/objects/-UDp1yKM4gZDX4ypo5r4p39e> <https://meta.icos-cp.eu/objects/DIedHv0NkcDqIjqGwu97EQKe> <https://meta.icos-cp.eu/objects/90ds9ctZFxXF0RlhxqiHMk3F> <https://meta.icos-cp.eu/objects/tSnqx05OQBaskeOytjsd4Cy1> <https://meta.icos-cp.eu/objects/LsRTB266LgTFBklKvJ0V1He_> <https://meta.icos-cp.eu/objects/3clLEc76nuRpmudfOJ_iTZWT> <https://meta.icos-cp.eu/objects/aoi5IwqnEW9HfqP12MZUhWES> <https://meta.icos-cp.eu/objects/xkrW4CuVjG0DIGXdgi8-PvZ1> <https://meta.icos-cp.eu/objects/_pZFo5MqrREJRfqQKWvGZqWz> <https://meta.icos-cp.eu/objects/lL4ZKfAAz-tPivtGSMFARn4w> <https://meta.icos-cp.eu/objects/QnJROBQ6v3WkZOqZVBiJSyg1> <https://meta.icos-cp.eu/objects/CpkO2DgVdv8f8hkffr3hJyl8> <https://meta.icos-cp.eu/objects/sHWsMGdtE_nklt3zIuV_cMoc> <https://meta.icos-cp.eu/objects/vLJznH8infhGOyJBxEzJ0X3U> <https://meta.icos-cp.eu/objects/lIBVMOOcysaF5kiVZch7AhYc> <https://meta.icos-cp.eu/objects/Ra-dPrk_6YPvQjLctiLxKpnr> <https://meta.icos-cp.eu/objects/uMJSz6lZdDS5zC5fkFARftYQ> <https://meta.icos-cp.eu/objects/LpAVK6W-t6fdMvHY8ooi0VtP> <https://meta.icos-cp.eu/objects/NLTOw0cWFcTttlalX3-UOeR5> <https://meta.icos-cp.eu/objects/YYSMoEs0Dsfz7VQnu6tL0mwb> <https://meta.icos-cp.eu/objects/25Be_TdfnLSUqQ06yIZ8jg-r> <https://meta.icos-cp.eu/objects/FEj-wpDwXz7BkGqbxlcRIbDA> <https://meta.icos-cp.eu/objects/6Kmss2Pg9XgxdZWwUnrQSdXp> <https://meta.icos-cp.eu/objects/dFGj6xek3sLfsQzPOCLc1yQs> <https://meta.icos-cp.eu/objects/K43Ckur05l0iooGAPV-Yl3Ic> <https://meta.icos-cp.eu/objects/DRuvwkJQWPTY4_9dxsClTCJp> <https://meta.icos-cp.eu/objects/_OiR5zN02aTlXHufHXiCKRno> <https://meta.icos-cp.eu/objects/VLxnXsZzcLKWTVZYDTC503ua> <https://meta.icos-cp.eu/objects/GxeiszlnF4OHhueciZ9p1m8q> <https://meta.icos-cp.eu/objects/VVxt7dz8HXIMSBXDj-UxzmWb> <https://meta.icos-cp.eu/objects/oKhsgEcrB8fYIDD1MvgH42Z2> <https://meta.icos-cp.eu/objects/DvcZeWdl9JmBBQ546v3ht5sz> <https://meta.icos-cp.eu/objects/WjfeW9jyLDgqfkc8KCJZjj8A> <https://meta.icos-cp.eu/objects/RDXWXrHd7pCU2clrdsfjqQ1_> <https://meta.icos-cp.eu/objects/9C9sPH--hIUmB_xHvrzrLL59> <https://meta.icos-cp.eu/objects/KdkHOYcqqIePwOVz0pG0T-P0> <https://meta.icos-cp.eu/objects/a8kXXMiYuBSx7HbnY4euiohI> <https://meta.icos-cp.eu/objects/RsiAaayBjfgAxNJeVgKZ-jt4> <https://meta.icos-cp.eu/objects/2eDo--U_xjxFERd2u2N0Fzmc> <https://meta.icos-cp.eu/objects/QZxA478QdJBYiMfQ8SlKEHWA> <https://meta.icos-cp.eu/objects/ueCRJg_sH8EvP5F38hy7arLj> <https://meta.icos-cp.eu/objects/OcZnqFfnWb54b7RVHMkYSeFK> <https://meta.icos-cp.eu/objects/rX4UYLIaJwWFgE87H331WE3D> <https://meta.icos-cp.eu/objects/yh9MOeFOZd8phozEBD3uVUUC> <https://meta.icos-cp.eu/objects/-0IDbOu2qFAc0vzbw1xss-0j> <https://meta.icos-cp.eu/objects/JImngtysXuWAmi4a0uNVax9c> <https://meta.icos-cp.eu/objects/7eo7vHLyIDuAuBFgTIvgBewD> <https://meta.icos-cp.eu/objects/od4jd3gGuYS7h1UH4e1gzkLR> <https://meta.icos-cp.eu/objects/2oOT0NBlCxx8BXAlMQ3n2zNp> <https://meta.icos-cp.eu/objects/DgCO3ucfBO7tDqsBXT_qt5WH> <https://meta.icos-cp.eu/objects/NTZiPcLHKCi6I9TG0iu_poiV> <https://meta.icos-cp.eu/objects/EbAUcqg3LcG_AbsN166kXPbc> <https://meta.icos-cp.eu/objects/iNYMQXBDBc03CekD7kQUfRsh> }
+			?dobj cpmeta:hasName ?fname .
+		}
+
+--------------------------------------------------------------------------------
+
+# listFilteredDataObjects
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_DE-Hzd> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lcr> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuW> <http://meta.icos-cp.eu/resources/stations/ES_DE-GsB> <http://meta.icos-cp.eu/resources/stations/ES_IT-BFt> <http://meta.icos-cp.eu/resources/stations/ES_GR-HeM> <http://meta.icos-cp.eu/resources/stations/ES_GL-Dsk> <http://meta.icos-cp.eu/resources/stations/ES_FI-Tvm> <http://meta.icos-cp.eu/resources/stations/ES_IT-Lsn> <http://meta.icos-cp.eu/resources/stations/ES_DK-Skj> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaH> <http://meta.icos-cp.eu/resources/stations/ES_DE-Brs> <http://meta.icos-cp.eu/resources/stations/ES_GF-Guy> <http://meta.icos-cp.eu/resources/stations/ES_DE-Kli> <http://meta.icos-cp.eu/resources/stations/ES_DE-BeR> <http://meta.icos-cp.eu/resources/stations/ES_FR-Aur> <http://meta.icos-cp.eu/resources/stations/ES_FI-Ken> <http://meta.icos-cp.eu/resources/stations/ES_FR-EM2> <http://meta.icos-cp.eu/resources/stations/ES_GL-NuF> <http://meta.icos-cp.eu/resources/stations/ES_FI-Kvr> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuR> <http://meta.icos-cp.eu/resources/stations/ES_FR-LGt> <http://meta.icos-cp.eu/resources/stations/ES_IT-OXm> <http://meta.icos-cp.eu/resources/stations/ES_DK-RCW> <http://meta.icos-cp.eu/resources/stations/ES_IT-Sas> <http://meta.icos-cp.eu/resources/stations/ES_CH-BaK> <http://meta.icos-cp.eu/resources/stations/ES_CD-Ygb> <http://meta.icos-cp.eu/resources/stations/ES_CZ-wet> <http://meta.icos-cp.eu/resources/stations/ES_DE-Har> <http://meta.icos-cp.eu/resources/stations/ES_IT-TrF> <http://meta.icos-cp.eu/resources/stations/ES_DE-Hai> <http://meta.icos-cp.eu/resources/stations/ES_GR-HeK> <http://meta.icos-cp.eu/resources/stations/ES_DE-Msr> <http://meta.icos-cp.eu/resources/stations/ES_IT-Tor> <http://meta.icos-cp.eu/resources/stations/ES_FR-Tou> <http://meta.icos-cp.eu/resources/stations/ES_FR-CLt> <http://meta.icos-cp.eu/resources/stations/ES_FI-Kmp> <http://meta.icos-cp.eu/resources/stations/ES_IT-Niv> <http://meta.icos-cp.eu/resources/stations/ES_DE-Amv> <http://meta.icos-cp.eu/resources/stations/ES_IT-Noe> <http://meta.icos-cp.eu/resources/stations/ES_FI-Let> <http://meta.icos-cp.eu/resources/stations/ES_DK-Gds> <http://meta.icos-cp.eu/resources/stations/ES_ES-LMa> <http://meta.icos-cp.eu/resources/stations/ES_FR-Mej> <http://meta.icos-cp.eu/resources/stations/ES_DE-Gri> <http://meta.icos-cp.eu/resources/stations/ES_FI-Var>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+order by desc(?submTime)
+offset 0 limit 61
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+	{
+		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
+		UNION
+		{
+			?dobj cpmeta:hasVariableName ?varName
+			FILTER (?varName = "WS_1_1_1" || ?varName = "WS" || regex(?varName, "^WS(_\x5C\x5Cd{1,2})?$") || regex(?varName, "^WS_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$") || ?varName = "WS_F" || ?varName = "wind.speed")
+		}
+	}
+}
+
+--------------------------------------------------------------------------------
+
+# filteredKeywordsQuery
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select (cpmeta:distinct_keywords() as ?keywords)
+from <http://meta.icos-cp.eu/resources/cpmeta/>
+from <http://meta.icos-cp.eu/resources/icos/>
+from <http://meta.icos-cp.eu/resources/extrastations/>
+where {
+	
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	
+	
+	
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+
+
+}
+
+--------------------------------------------------------------------------------
+
+
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX dcterms: <http://purl.org/dc/terms/>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+    #PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+
+    SELECT ?dobj
+    WHERE {
+        VALUES ?externalVar { <http://vocab.nerc.ac.uk/collection/P07/current/CFSN0381/> <http://vocab.nerc.ac.uk/collection/P07/current/CFV9N3/> <http://vocab.nerc.ac.uk/collection/P07/current/CFSN0335/> }
+        ?valueType skos:exactMatch ?externalVar .
+        ?spec cpmeta:containsDataset/cpmeta:hasColumn/cpmeta:hasValueType ?valueType .
+        ?spec cpmeta:hasDataLevel ?level .
+        ?dobj cpmeta:hasObjectSpec ?spec .
+        ?dobj cpmeta:wasAcquiredBy ?acq .
+        ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy/prov:startedAtTime) ?start .
+        ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy/prov:endedAtTime) ?end .
+        ?acq prov:wasAssociatedWith ?station .
+        ?acq cpmeta:hasSamplingHeight ?height .
+        ?station cpmeta:hasLatitude ?lat .
+        ?station cpmeta:hasLongitude ?lon .
+        FILTER ( ?end > '2020-01-01T00:00:00Z'^^xsd:dateTime && ?start < '2020-01-31T00:00:00Z'^^xsd:dateTime && ?lon > -10 && ?lon < 45 && ?lat > 30 && ?lat < 60 && ?height > 0 && ?height < 10 )
+        FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+        FILTER (?level = 2)
+    }
+
+
+--------------------------------------------------------------------------------
+

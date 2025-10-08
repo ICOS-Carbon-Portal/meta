@@ -5,7 +5,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=ontop
     volumes:
-      - /data/staging/prototype-rdfsql/postgres-data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
     command: >
         -c max_wal_size=8GB
         -c synchronous_commit=off

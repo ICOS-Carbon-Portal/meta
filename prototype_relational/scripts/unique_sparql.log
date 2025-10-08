@@ -1553,7 +1553,7 @@ where {
 		UNION
 		{
 			?dobj cpmeta:hasVariableName ?varName
-			FILTER (regex(?varName, "^PPFD_BC_IN_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$"))
+			FILTER (regex(?varName, "^PPFD_BC_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
 		}
 	}
 }
@@ -1779,7 +1779,7 @@ where {
 		UNION
 		{
 			?dobj cpmeta:hasVariableName ?varName
-			FILTER (regex(?varName, "^PPFD_IN(_\x5C\x5Cd{1,2})?$") || regex(?varName, "^PPFD_IN_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$"))
+			FILTER (regex(?varName, "^PPFD_IN(_\\d{1,2})?$") || regex(?varName, "^PPFD_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
 		}
 	}
 }
@@ -2107,7 +2107,7 @@ where {
 		UNION
 		{
 			?dobj cpmeta:hasVariableName ?varName
-			FILTER (?varName = "WS_1_1_1" || ?varName = "WS" || regex(?varName, "^WS(_\x5C\x5Cd{1,2})?$") || regex(?varName, "^WS_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}_\x5C\x5Cd{1,2}$") || ?varName = "WS_F" || ?varName = "wind.speed")
+			FILTER (?varName = "WS_1_1_1" || ?varName = "WS" || regex(?varName, "^WS(_\\d{1,2})?$") || regex(?varName, "^WS_\\d{1,2}_\\d{1,2}_\\d{1,2}$") || ?varName = "WS_F" || ?varName = "wind.speed")
 		}
 	}
 }

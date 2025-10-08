@@ -11,6 +11,14 @@ def print_query(query, index):
     print(f"{'='*80}")
     print(query.strip())
 
+
+def rewrite_query(query):
+    return query.replace("filter not exists", "FILTER NOT EXISTS") \
+            .replace("FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}",
+                     "MINUS {?newer cpmeta:isNextVersionOf ?dobj}") \
+                             .replace("BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)",
+                                      "OPTIONAL{?newer cpmeta:isNextVersionOf ?dobj}\n\tBIND(bound(?newer) AS ?hasNextVersion)")
+
 def run_query(query, host='http://localhost:65432/sparql'):
     """
     Execute a SPARQL query against an Ontop endpoint.
@@ -79,7 +87,7 @@ def extract_queries(input_file='unique_sparql.log'):
     return queries
 
 
-def main(input_file='unique_sparql.log'):
+def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
     """Main function to read queries and print each one."""
     print(f"Reading queries from: {input_file}")
 
@@ -87,16 +95,24 @@ def main(input_file='unique_sparql.log'):
 
     print(f"\nFound {len(queries)} queries\n")
 
-    # Track failed queries
+    # Track failed queries and rewritten queries
     failed_queries = []
+    rewritten_queries = []
 
     # Call print function on each query
     for idx, query in enumerate(queries, start=1):
         print_query(query, idx)
+
+        query = rewrite_query(query)
+        print("rewritten query: "+query)
+        print(query)
+
+        rewritten_queries.append(f"Query #{idx}\n{'='*80}\n{query}\n{'='*80}\n")
         success, response_text, error_msg = run_query(query)
 
         # Print response length
-        print(f"Response length: {len(response_text)} characters")
+        line_count = len(response_text.splitlines())
+        print(f"Response: {line_count} lines, {len(response_text)} characters")
 
         # Track failures
         if not success:
@@ -109,6 +125,11 @@ def main(input_file='unique_sparql.log'):
             print(f"⚠️  Query FAILED: {error_msg}")
         else:
             print("✓ Query succeeded")
+
+    # Save all rewritten queries to file
+    with open(output_file, 'w') as f:
+        f.write('\n'.join(rewritten_queries))
+    print(f"\n✓ Saved {len(rewritten_queries)} rewritten queries to: {output_file}")
 
     print(f"\n{'='*80}")
 
@@ -141,4 +162,9 @@ if __name__ == '__main__':
     else:
         input_file = 'unique_sparql.log'
 
-    main(input_file)
+    if len(sys.argv) > 2:
+        output_file = sys.argv[2]
+    else:
+        output_file = 'rewritten_queries.txt'
+
+    main(input_file, output_file)

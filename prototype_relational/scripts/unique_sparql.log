@@ -575,57 +575,6 @@ WHERE {
 
 --------------------------------------------------------------------------------
 
-# extendedDataObjectInfo
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-prefix prov: <http://www.w3.org/ns/prov#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-prefix dcterms: <http://purl.org/dc/terms/>
-select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
-	{
-		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
-			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
-			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
-		where{
-			VALUES ?dobj { <https://meta.fieldsites.se/objects/UquDBWAmrVRzRJ-C0HkAzXXX> <https://meta.fieldsites.se/objects/9tNJ7aaPkgcViNo01F02g0P0> <https://meta.fieldsites.se/objects/GZW1TGjN6aJbAwhpN8hfMWUX> <https://meta.fieldsites.se/objects/VGRl3pJhfNW472Jd3YlgLoCg> <https://meta.fieldsites.se/objects/i0UAa46VImWBdpYT9tgeKWOb> <https://meta.fieldsites.se/objects/p1FiQ4HVyCB8fvmsopZ9NtN7> <https://meta.fieldsites.se/objects/SRo2JB1eUkVYNAO4TwW0tzMx> <https://meta.fieldsites.se/objects/92Md3PzNNN5YoNi1E9RbvvSs> <https://meta.fieldsites.se/objects/HHmoC_meCcfnTatKJoY91GhT> <https://meta.fieldsites.se/objects/w1di9Z4rHVXirQR7FxM02TRB> <https://meta.fieldsites.se/objects/UsKPUlrPihVXXsWOUv7qlEal> <https://meta.fieldsites.se/objects/iB_rzm-CZ7NUiXRofSCgpdac> <https://meta.fieldsites.se/objects/HMMwqHWX0i0sUocC_nB-EExR> <https://meta.fieldsites.se/objects/iPOMtV4sUOEVxtlCWarQ9DD9> <https://meta.fieldsites.se/objects/Kb0BEoo1fzF8aHMJC4qlbJBZ> <https://meta.fieldsites.se/objects/mb01Qsj7sRkJZiQsFzaUJgVS> <https://meta.fieldsites.se/objects/3bmzs0zInWJqRwWlyA55JW5x> <https://meta.fieldsites.se/objects/SrGVudsrioJpJkNlRGXyGvYR> <https://meta.fieldsites.se/objects/2p7P4ZbtWVDY5gYTuLvFzmIN> <https://meta.fieldsites.se/objects/GDUSsXTyp9CjdyhIfaJANAdv> }
-			OPTIONAL{
-				?dobj cpmeta:wasAcquiredBy ?acq.
-				?acq prov:wasAssociatedWith ?stationUri .
-				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
-				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
-				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
-			}
-			OPTIONAL{
-				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
-				optional{
-					?newerColl cpmeta:isNextVersionOf ?coll .
-					{
-						{?newerColl cpmeta:hasDoi ?doi }
-						UNION
-						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
-					}
-				}
-				filter(!bound(?newerColl))
-			}
-			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
-		}
-		group by ?dobj
-	}
-	OPTIONAL{
-		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
-		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
-	}
-	OPTIONAL{ ?dobj dcterms:title ?title }
-	OPTIONAL{ ?dobj dcterms:description ?description }
-	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
-	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
-	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
-}
-
---------------------------------------------------------------------------------
-
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?station ?lat ?lon ?name ?cc
@@ -662,57 +611,6 @@ where {
 	optional {?uri cpmeta:hasStationId ?stationId }
 	optional {?uri rdfs:comment ?comment }
 	optional {?uri rdfs:seeAlso ?webpage}
-}
-
---------------------------------------------------------------------------------
-
-# extendedDataObjectInfo
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-prefix prov: <http://www.w3.org/ns/prov#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-prefix dcterms: <http://purl.org/dc/terms/>
-select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
-	{
-		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
-			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
-			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
-		where{
-			VALUES ?dobj { <https://meta.icos-cp.eu/objects/RVXXNV-k0Idmc1Xg8wgICVDt> <https://meta.icos-cp.eu/objects/0R8f0Jh4q3UFq-cEB7TDeHoF> <https://meta.icos-cp.eu/objects/g7CFswjiVoPjbUFh2G1837pp> <https://meta.icos-cp.eu/objects/BrS6c9KJWVQoyntPgON29a_J> <https://meta.icos-cp.eu/objects/TBSQbU-eCFujhU3Yy7bVtfGZ> <https://meta.icos-cp.eu/objects/wP4E1Sb1W2vQWHB14_Vd3SUX> <https://meta.icos-cp.eu/objects/ivSWgJvr_QrXmEPfy_M3uJFc> <https://meta.icos-cp.eu/objects/_a6KGRLdoc1vI3IQ8NEDaEoM> <https://meta.icos-cp.eu/objects/b0h-ZtkbfQiF0ectI76NmEul> <https://meta.icos-cp.eu/objects/e6qwcqEfR8oWCMqU-_KUPu_P> <https://meta.icos-cp.eu/objects/n88B61wNmuiFL-SvEm-IkenH> <https://meta.icos-cp.eu/objects/XNFeLw02sRuk70BITDjNZBSF> <https://meta.icos-cp.eu/objects/4F9xHICEnSUAOr7FV1jpEtZH> <https://meta.icos-cp.eu/objects/5InuRcdRawew1TGuz1IMdjqf> <https://meta.icos-cp.eu/objects/rsxlB-Ov7D2yhQJW2eGZ6mTs> <https://meta.icos-cp.eu/objects/DarFlN2kLCXM_Xx6iQB5xYPZ> <https://meta.icos-cp.eu/objects/NtuKc2Iz9PCxd_5hfypLnchf> <https://meta.icos-cp.eu/objects/5T1fiCZrXuicK4r1AKpOCgIK> <https://meta.icos-cp.eu/objects/ed7ezHsZT68cJpllHvF2qsII> <https://meta.icos-cp.eu/objects/S3mOuKvlvF1l2H4ARp7PvkcU> }
-			OPTIONAL{
-				?dobj cpmeta:wasAcquiredBy ?acq.
-				?acq prov:wasAssociatedWith ?stationUri .
-				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
-				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
-				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
-			}
-			OPTIONAL{
-				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
-				optional{
-					?newerColl cpmeta:isNextVersionOf ?coll .
-					{
-						{?newerColl cpmeta:hasDoi ?doi }
-						UNION
-						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
-					}
-				}
-				filter(!bound(?newerColl))
-			}
-			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
-		}
-		group by ?dobj
-	}
-	OPTIONAL{
-		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
-		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
-	}
-	OPTIONAL{ ?dobj dcterms:title ?title }
-	OPTIONAL{ ?dobj dcterms:description ?description }
-	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
-	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
-	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
 }
 
 --------------------------------------------------------------------------------
@@ -1217,57 +1115,6 @@ where {
 	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
 	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
-}
-
---------------------------------------------------------------------------------
-
-# extendedDataObjectInfo
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-prefix prov: <http://www.w3.org/ns/prov#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-prefix dcterms: <http://purl.org/dc/terms/>
-select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
-	{
-		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
-			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
-			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
-		where{
-			VALUES ?dobj { <https://meta.icos-cp.eu/objects/JoA_9IECRD78OFeMms-AbRKQ> <https://meta.icos-cp.eu/objects/t27OLCGq3cKJ-GlRFYh0-3N0> <https://meta.icos-cp.eu/objects/ThjSdsqoejtL2N3i2BOqG039> <https://meta.icos-cp.eu/objects/UpHonimEzYCbLfW-aAn_m-g7> <https://meta.icos-cp.eu/objects/-l8T_dK139skH3RndYyMzGQl> <https://meta.icos-cp.eu/objects/5Iv4eNDu8L7Ur6YwWMWSZO7A> <https://meta.icos-cp.eu/objects/WydnbVMt4GmNBYrxSxacjPcQ> <https://meta.icos-cp.eu/objects/xsOZ-CaSvYI19C5FKvT2-a8n> <https://meta.icos-cp.eu/objects/vrmNvoUH-PDYkuXB6e-xnDyX> <https://meta.icos-cp.eu/objects/Q4nUx2mqUHOyqQma8wXuFmrr> <https://meta.icos-cp.eu/objects/l_I_OFS9VdtZPEqk4r7Zy2GG> <https://meta.icos-cp.eu/objects/SERGQ2az7-EwBCvJUjaa1E2X> <https://meta.icos-cp.eu/objects/zQsSn8Zd4WuFZTbkFaCRuPBC> <https://meta.icos-cp.eu/objects/JDtWq-4NC26zTMIZ-4BZZX0D> <https://meta.icos-cp.eu/objects/AVszBCjfeaEav2V4ZHPR8gMp> <https://meta.icos-cp.eu/objects/_v-exAjHQVIhvgpDxiECmQRa> <https://meta.icos-cp.eu/objects/2iDXoCYlzLWJX8VuyIl2AQrx> <https://meta.icos-cp.eu/objects/CpqAZhRaq56qp9fq0i3Np0O-> <https://meta.icos-cp.eu/objects/UqxjjG2-Kvo3YIUa9EChx9ax> <https://meta.icos-cp.eu/objects/bt0q4nOPQ9JKwgBM55tLKxHE> }
-			OPTIONAL{
-				?dobj cpmeta:wasAcquiredBy ?acq.
-				?acq prov:wasAssociatedWith ?stationUri .
-				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
-				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
-				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
-			}
-			OPTIONAL{
-				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
-				optional{
-					?newerColl cpmeta:isNextVersionOf ?coll .
-					{
-						{?newerColl cpmeta:hasDoi ?doi }
-						UNION
-						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
-					}
-				}
-				filter(!bound(?newerColl))
-			}
-			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
-		}
-		group by ?dobj
-	}
-	OPTIONAL{
-		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
-		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
-	}
-	OPTIONAL{ ?dobj dcterms:title ?title }
-	OPTIONAL{ ?dobj dcterms:description ?description }
-	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
-	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
-	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
 }
 
 --------------------------------------------------------------------------------
@@ -1892,57 +1739,6 @@ where {
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 
 
-}
-
---------------------------------------------------------------------------------
-
-# extendedDataObjectInfo
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-prefix prov: <http://www.w3.org/ns/prov#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-prefix dcterms: <http://purl.org/dc/terms/>
-select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
-	{
-		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
-			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
-			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
-		where{
-			VALUES ?dobj { <https://meta.icos-cp.eu/objects/MFv5mM_1ZCOscs4KNqoGh5nY> <https://meta.icos-cp.eu/objects/4PRjJ9tyfY4v0i12Dr_SQS4p> <https://meta.icos-cp.eu/objects/F1iRJg7_b2Olw54ZlMvdGNtv> <https://meta.icos-cp.eu/objects/k_d9L2FP2mi9I76Jd5I6WyQQ> <https://meta.icos-cp.eu/objects/CSGWRKXL9501HlHpft0achmp> <https://meta.icos-cp.eu/objects/vHTO87N5Q3DjANRfcTQqpz09> <https://meta.icos-cp.eu/objects/_1VD4bRhnoqSLx5zqtoP-zty> <https://meta.icos-cp.eu/objects/cOKFlIXpVvrh_IY3uSYPy505> <https://meta.icos-cp.eu/objects/dEjeOcnNrv0S11xDh_kiEL6t> <https://meta.icos-cp.eu/objects/TaZSHraRRJjNUQ4mOjZ9uWFG> <https://meta.icos-cp.eu/objects/3yFIpPcHTiOyX9y97393UKWZ> <https://meta.icos-cp.eu/objects/IxhDSAa2Oes84hxh-ryI5tTJ> <https://meta.icos-cp.eu/objects/m9T8UKpV0tx41iFjpyNB7ivA> <https://meta.icos-cp.eu/objects/gcZxw_SK3lujn-NsefYfukp9> <https://meta.icos-cp.eu/objects/-tMjEa1hXiobbeG4UK1ZaLdX> <https://meta.icos-cp.eu/objects/caqpKzDUZjfxmvKmzFVLjlO9> <https://meta.icos-cp.eu/objects/pcQMfWkdn1XcwnWbUXalgqqv> <https://meta.icos-cp.eu/objects/_UEW3CCXFEILHDVxQuuBmCNG> <https://meta.icos-cp.eu/objects/DKIoyRjw-YuaasZBo8l7ZOrj> <https://meta.icos-cp.eu/objects/8RCIkPH6CD9yEveYEKN1-v4l> }
-			OPTIONAL{
-				?dobj cpmeta:wasAcquiredBy ?acq.
-				?acq prov:wasAssociatedWith ?stationUri .
-				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
-				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
-				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
-				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
-			}
-			OPTIONAL{
-				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
-				optional{
-					?newerColl cpmeta:isNextVersionOf ?coll .
-					{
-						{?newerColl cpmeta:hasDoi ?doi }
-						UNION
-						{?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
-					}
-				}
-				filter(!bound(?newerColl))
-			}
-			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
-		}
-		group by ?dobj
-	}
-	OPTIONAL{
-		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
-		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
-	}
-	OPTIONAL{ ?dobj dcterms:title ?title }
-	OPTIONAL{ ?dobj dcterms:description ?description }
-	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
-	BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)
-	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
 }
 
 --------------------------------------------------------------------------------

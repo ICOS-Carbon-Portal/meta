@@ -95,6 +95,7 @@ def format_entry(entry):
     formatted = formatted.replace('\\x09', '\t')
     formatted = formatted.replace('\\x22', '"')
     formatted = formatted.replace('\\x5C', '\\')
+    formatted = formatted.replace('\\x0D', '')
 
     return formatted
 

@@ -830,14 +830,14 @@ order by ?startTime
 
 --------------------------------------------------------------------------------
 
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\x0D
-prefix prov: <http://www.w3.org/ns/prov#>\x0D
-select ?dobj\x0D
-where {\x0D
-    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> ;\x0D
-        cpmeta:wasAcquiredBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> ;\x0D
-        cpmeta:hasSizeInBytes [] .\x0D
-    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}\x0D
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?dobj
+where {
+    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> ;
+        cpmeta:wasAcquiredBy/prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> ;
+        cpmeta:hasSizeInBytes [] .
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 }
 
 --------------------------------------------------------------------------------
@@ -989,16 +989,16 @@ order by desc(?submTime)
 
 --------------------------------------------------------------------------------
 
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\x0D
-prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\x0D
-prefix prov: <http://www.w3.org/ns/prov#>\x0D
-select ?dobj\x0D
-where {\x0D
-    ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .\x0D
-    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> ;        \x0D
-        cpmeta:hasSizeInBytes [] .\x0D
-    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}\x0D
-    FILTER( ?submTime > "2025-10-05T05:00:00.000Z"^^xsd:dateTime && ?submTime < "2025-10-06T06:00:00.000Z"^^xsd:dateTime)\x0D
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+select ?dobj
+where {
+    ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+    ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> ;        
+        cpmeta:hasSizeInBytes [] .
+    FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+    FILTER( ?submTime > "2025-10-05T05:00:00.000Z"^^xsd:dateTime && ?submTime < "2025-10-06T06:00:00.000Z"^^xsd:dateTime)
 }
 
 --------------------------------------------------------------------------------

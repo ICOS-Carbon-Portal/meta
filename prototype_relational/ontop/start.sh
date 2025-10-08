@@ -6,4 +6,4 @@
   --ontology="cpmeta.ttl" \
   --port=8080 \
   --cors-allowed-origins=* \
-  --mapping="data_objects.obda"
+  --mapping="mappings/data_objects.obda"

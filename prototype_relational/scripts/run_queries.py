@@ -14,8 +14,8 @@ def print_query(query, index):
 
 def rewrite_query(query):
     return query.replace("filter not exists", "FILTER NOT EXISTS") \
-            .replace("FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}",
-                     "MINUS {?newer cpmeta:isNextVersionOf ?dobj}") \
+            .replace("FILTER NOT EXISTS",
+                     "MINUS") \
                              .replace("BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)",
                                       "OPTIONAL{?newer cpmeta:isNextVersionOf ?dobj}\n\tBIND(bound(?newer) AS ?hasNextVersion)")
 

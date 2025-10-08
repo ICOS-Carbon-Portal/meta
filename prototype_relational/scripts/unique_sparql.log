@@ -1091,10 +1091,6 @@ order by desc(?submTime)
 
 --------------------------------------------------------------------------------
 
-query=%0A++++prefix+cpmeta%3A+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fontologies%2Fcpmeta%2F%3E%0A++++prefix+prov%3A+%3Chttp%3A%2F%2Fwww.w3.org%2Fns%2Fprov%23%3E%0A++++select+%3Fdobj+%3Fspec+%3FfileName+%3Fsize+%3FsubmTime+%3FtimeStart+%3FtimeEnd%0A++++where+%7B%0A++++++++VALUES+%3Fspec+%7B%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCo2NrtGrowingDataObject%3E+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCh4NrtGrowingDataObject%3E+%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FatcCoNrtGrowingDataObject%3E%7D%0A++++++++%3Fdobj+cpmeta%3AhasObjectSpec+%3Fspec+.%0A++++++++%3Fdobj+cpmeta%3AhasSizeInBytes+%3Fsize+.%0A++++%3Fdobj+cpmeta%3AhasName+%3FfileName+.%0A++++%3Fdobj+cpmeta%3AwasSubmittedBy%2Fprov%3AendedAtTime+%3FsubmTime+.%0A++++%3Fdobj+cpmeta%3AhasStartTime+%7C+%28cpmeta%3AwasAcquiredBy+%2F+prov%3AstartedAtTime%29+%3FtimeStart+.%0A++++%3Fdobj+cpmeta%3AhasEndTime+%7C+%28cpmeta%3AwasAcquiredBy+%2F+prov%3AendedAtTime%29+%3FtimeEnd+.%0A++++++++FILTER+NOT+EXISTS+%7B%5B%5D+cpmeta%3AisNextVersionOf+%3Fdobj%7D%0A++++%7D%0A++++order+by+desc%28%3FsubmTime%29%0A++++
-
---------------------------------------------------------------------------------
-
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\x0D
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\x0D
 prefix prov: <http://www.w3.org/ns/prov#>\x0D
@@ -1897,10 +1893,6 @@ where {
 
 
 }
-
---------------------------------------------------------------------------------
-
-query=prefix%20rdfs%3A%20%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23%3E%0Aprefix%20cpmeta%3A%20%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fontologies%2Fcpmeta%2F%3E%0Aselect%20%3Fvar%20%3Flabel%20%3Ftitle%20%3FvalueType%20%3Funit%20%3Foptional%20%3Fregex%0Awhere%7B%0A%09%3Chttp%3A%2F%2Fmeta.icos-cp.eu%2Fresources%2Fcpmeta%2FbiosphereModelingSpatial%3E%20cpmeta%3AhasVariable%20%3Fvar%20.%0A%09%3Fvar%20rdfs%3Alabel%20%3Flabel%3B%20cpmeta%3AhasVariableTitle%20%3Ftitle%20%3B%20cpmeta%3AhasValueType%20%3FvalueTypeRes%20.%0A%09%3FvalueTypeRes%20rdfs%3Alabel%20%3FvalueType%20.%0A%09optional%20%7B%20%3Fvar%20cpmeta%3AisOptionalVariable%20%3Foptional%20%7D%0A%09optional%20%7B%20%3Fvar%20cpmeta%3AisRegexVariable%20%3Fregex%20%7D%0A%09optional%20%7B%20%3FvalueTypeRes%20cpmeta%3AhasUnit%20%3Funit%20%7D%0A%7D
 
 --------------------------------------------------------------------------------
 

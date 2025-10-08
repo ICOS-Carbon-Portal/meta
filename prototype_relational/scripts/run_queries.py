@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-"""
-Script to extract and print SPARQL queries from unique_sparql.log.
-Reads the log file, extracts each query, and calls a print function on each.
-"""
+
+import requests
 
 def print_query(query, index):
-    """Print a single SPARQL query with formatting."""
     print(f"\n{'='*80}")
     print(f"Query #{index}")
     print(f"{'='*80}")
@@ -18,24 +15,11 @@ def rewrite_query(query):
             .replace("BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)",
                       "OPTIONAL{?newer cpmeta:isNextVersionOf ?dobj}\n\tBIND(bound(?newer) AS ?hasNextVersion)") \
             .replace("BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)",
-                      "OPTIONAL{?dobj cpmeta:hasActualVariable ?varName}\n\tBIND(bound(?varName) AS ?hasVarInfo)")
+                      "OPTIONAL{?dobj cpmeta:hasActualVariable ?varName}\n\tBIND(bound(?varName) AS ?hasVarInfo)") \
+            .replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
+            # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
 
 def run_query(query, host='http://localhost:65432/sparql'):
-    """
-    Execute a SPARQL query against an Ontop endpoint.
-
-    Args:
-        query: The SPARQL query string to execute
-        host: The SPARQL endpoint URL (default: http://localhost:8080/sparql)
-
-    Returns:
-        A tuple of (success, response_text, error_message)
-        - success: Boolean indicating if the request succeeded
-        - response_text: The response text from the endpoint
-        - error_message: Error message if failed, None otherwise
-    """
-    import requests
-
     headers = {
         'accept': 'application/csv',
         'content-type': 'application/sparql-query'
@@ -89,9 +73,7 @@ def extract_queries(input_file='unique_sparql.log'):
 
 
 def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
-    """Main function to read queries and print each one."""
     print(f"Reading queries from: {input_file}")
-
     queries = extract_queries(input_file)
 
     print(f"\nFound {len(queries)} queries\n")
@@ -99,6 +81,7 @@ def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
     # Track failed queries and rewritten queries
     failed_queries = []
     rewritten_queries = []
+    small_result_queries = []
 
     # Call print function on each query
     for idx, query in enumerate(queries, start=1):
@@ -126,6 +109,9 @@ def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
             print(f"⚠️  Query FAILED: {error_msg}")
         else:
             print("✓ Query succeeded")
+            # Track queries with 1 or fewer rows (CSV: header=1 line, +0 or 1 data rows = 1-2 lines)
+            if line_count <= 2:
+                small_result_queries.append(idx)
 
     # Save all rewritten queries to file
     with open(output_file, 'w') as f:
@@ -154,6 +140,9 @@ def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
     print(f"\n{'='*80}")
     print(f"Total queries processed: {len(queries)}")
     print(f"Failed queries: {len(failed_queries)}")
+    print(f"Queries returning ≤1 row: {len(small_result_queries)}")
+    if small_result_queries:
+        print(f"Query indices with ≤1 row: {', '.join(map(str, small_result_queries))}")
 
 if __name__ == '__main__':
     import sys
@@ -163,9 +152,4 @@ if __name__ == '__main__':
     else:
         input_file = 'unique_sparql.log'
 
-    if len(sys.argv) > 2:
-        output_file = sys.argv[2]
-    else:
-        output_file = 'rewritten_queries.txt'
-
-    main(input_file, output_file)
+    main(input_file, 'rewritten_queries.txt')

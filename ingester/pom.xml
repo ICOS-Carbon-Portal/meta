@@ -12,7 +12,7 @@
 	<artifactId>ingester</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ingester</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Prototype data ingester for meta</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -37,6 +37,15 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework.boot</groupId>
+		  <artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.postgresql</groupId>
+		  <artifactId>postgresql</artifactId>
+		  <scope>runtime</scope>
 		</dependency>
 
 		<dependency>

@@ -78,26 +78,10 @@ def deduplicate_entries(entries, similarity_threshold=None, verbose=False):
 
 
 def format_entry(entry):
-    """Format a single entry by replacing escape sequences.
-
-    Args:
-        entry: Raw log entry string
-
-    Returns:
-        Formatted entry string
-    """
-    # Handle separator lines
     if entry == '-':
         return '\n' + '='*80 + '\n'
 
-    # Replace escape sequences
-    formatted = entry.replace('\\x0A', '\n')
-    formatted = formatted.replace('\\x09', '\t')
-    formatted = formatted.replace('\\x22', '"')
-    formatted = formatted.replace('\\x5C', '\\')
-    formatted = formatted.replace('\\x0D', '')
-
-    return formatted
+    return codecs.decode(entry, 'unicode_escape')
 
 
 def process_log(input_file, output_file=None, similarity_threshold=0.70, verbose=False):

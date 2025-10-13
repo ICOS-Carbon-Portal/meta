@@ -39,7 +39,7 @@ def run_query(query, host='http://localhost:65432/sparql'):
         return False, "", str(e)
 
 
-def extract_queries(input_file='unique_sparql.log'):
+def extract_queries(input_file):
     """
     Extract individual SPARQL queries from the log file.
 
@@ -87,11 +87,8 @@ def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
 
     # Call print function on each query
     for idx, query in enumerate(queries, start=1):
-        print_query(query, idx)
-
         query = rewrite_query(query)
-        print("rewritten query: "+query)
-        print(query)
+        print_query(query, idx)
 
         rewritten_queries.append(f"Query #{idx}\n{'='*80}\n{query}\n{'='*80}\n")
         success, response_text, error_msg = run_query(query)

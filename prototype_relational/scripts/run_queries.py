@@ -10,15 +10,7 @@ def print_query(query, index):
 
 
 def rewrite_query(query):
-    return query.replace("filter not exists", "FILTER NOT EXISTS") \
-            .replace("FILTER NOT EXISTS", "MINUS") \
-            .replace("BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)",
-                      "OPTIONAL{?newer cpmeta:isNextVersionOf ?dobj}\n\tBIND(bound(?newer) AS ?hasNextVersion)") \
-            .replace("BIND(EXISTS{?dobj cpmeta:hasActualVariable [] } AS ?hasVarInfo)",
-                      "OPTIONAL{?dobj cpmeta:hasActualVariable ?varName}\n\tBIND(bound(?varName) AS ?hasVarInfo)") \
-            .replace("bind(exists{?station cpmeta:hasStationClass ?stClass} as ?isIcos)",
-                      "OPTIONAL{?station cpmeta:hasStationClass ?stClass}\n\tBIND(bound(?stClass) AS ?isIcos)") \
-            .replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
+    return query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
             # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
 
 def run_query(query, host='http://localhost:65432/sparql'):
@@ -152,3 +144,4 @@ if __name__ == '__main__':
         input_file = 'unique_sparql.log'
 
     main(input_file, 'rewritten_queries.txt')
+    print("DONE")

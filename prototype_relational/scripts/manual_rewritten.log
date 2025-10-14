@@ -548,14 +548,8 @@ where {
 ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-	{
-		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
-		UNION
-		{
-			?dobj cpmeta:hasVariableName ?varName
-			FILTER (?varName = "co2")
-		}
-	}
+	OPTIONAL {?dobj cpmeta:hasVariableName ?varName}
+	FILTER (!bound(?varName) || ?varName = "co2")
 }
 order by desc(?submTime)
 offset 0 limit 20000
@@ -817,14 +811,8 @@ order by ?startTime
         	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
         	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
         	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-        	{
-        		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
-        		UNION
-        		{
-        			?dobj cpmeta:hasVariableName ?varName
-        			FILTER (?varName = "co2" || ?varName = "ch4" || ?varName = "co" || ?varName = "n2o" || ?varName = "RH" || ?varName = "WD" || ?varName = "WS")
-        		}
-        	}
+					OPTIONAL{?dobj cpmeta:hasVariableName ?varName}
+					FILTER (!bound(?varName) ||?varName = "co2" || ?varName = "ch4" || ?varName = "co" || ?varName = "n2o" || ?varName = "RH" || ?varName = "WD" || ?varName = "WS")
         }
 
 
@@ -1389,16 +1377,8 @@ where {
 	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-
-
-	{
-		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
-		UNION
-		{
-			?dobj cpmeta:hasVariableName ?varName
-			FILTER (regex(?varName, "^PPFD_BC_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
-		}
-	}
+	OPTIONAL {?dobj cpmeta:hasVariableName ?varName}
+	FILTER (!bound(?varName) || regex(?varName, "^PPFD_BC_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
 }
 
 --------------------------------------------------------------------------------
@@ -1617,14 +1597,8 @@ where {
 	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 
 
-	{
-		{FILTER NOT EXISTS {?dobj cpmeta:hasVariableName ?varName}}
-		UNION
-		{
-			?dobj cpmeta:hasVariableName ?varName
-			FILTER (regex(?varName, "^PPFD_IN(_\\d{1,2})?$") || regex(?varName, "^PPFD_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
-		}
-	}
+	OPTIONAL {?dobj cpmeta:hasVariableName ?varName}
+	FILTER (!bound(?varName) || regex(?varName, "^PPFD_IN(_\\d{1,2})?$") || regex(?varName, "^PPFD_IN_\\d{1,2}_\\d{1,2}_\\d{1,2}$"))
 }
 
 --------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
-from query_rewriter import rewrite_optional_pattern
+from query_rewriter import rewrite_query as apply_sparql_rewrites
 
 def print_query(query, index):
     print(f"\n{'='*80}")
@@ -15,8 +15,8 @@ def rewrite_query(query):
     query = query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
     # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
 
-    # Apply FILTER NOT EXISTS + UNION -> OPTIONAL + FILTER rewrite
-    query = rewrite_optional_pattern(query)
+    # Apply all SPARQL pattern rewrites (FILTER NOT EXISTS + UNION, and simple UNION patterns)
+    query = apply_sparql_rewrites(query)
 
     return query
 
@@ -89,7 +89,7 @@ def main(input_file, output_file):
         query = rewrite_query(query)
         print_query(query, idx)
 
-        rewritten_queries.append(f"Query #{idx}\n{'='*80}\n{query}\n{'='*80}\n")
+        rewritten_queries.append(f"Query #{idx}\n{'-'*80}\n{query}\n{'-'*80}\n")
         success, response_text, error_msg = run_query(query)
 
         # Print response length

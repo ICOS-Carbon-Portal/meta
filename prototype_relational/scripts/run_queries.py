@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import requests
-from query_rewriter import rewrite_query as apply_sparql_rewrites
 
 def print_query(query, index):
     print(f"\n{'='*80}")
@@ -9,16 +8,9 @@ def print_query(query, index):
     print(f"{'='*80}")
     print(query.strip())
 
-
-def rewrite_query(query):
+def rewrite_distinct_keywords(query):
     # Apply distinct_keywords rewrite
-    query = query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
-    # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
-
-    # Apply all SPARQL pattern rewrites (FILTER NOT EXISTS + UNION, and simple UNION patterns)
-    query = apply_sparql_rewrites(query)
-
-    return query
+    return query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
 
 def run_query(query, host='http://localhost:65432/sparql'):
     headers = {
@@ -86,7 +78,7 @@ def main(input_file, output_file):
 
     # Call print function on each query
     for idx, query in enumerate(queries, start=1):
-        query = rewrite_query(query)
+        query = rewrite_distinct_keywords(query)
         print_query(query, idx)
 
         rewritten_queries.append(f"Query #{idx}\n{'-'*80}\n{query}\n{'-'*80}\n")
@@ -115,6 +107,23 @@ def main(input_file, output_file):
     with open(output_file, 'w') as f:
         f.write('\n'.join(rewritten_queries))
     print(f"\n✓ Saved {len(rewritten_queries)} rewritten queries to: {output_file}")
+
+    # Save failed queries to file
+    if failed_queries:
+        failed_queries_file = 'failed_queries.txt'
+        with open(failed_queries_file, 'w') as f:
+            for failed in failed_queries:
+                f.write(f"Query #{failed['index']}\n")
+                f.write(f"{'='*80}\n")
+                f.write(f"Error: {failed['error']}\n")
+                f.write(f"{'-'*80}\n")
+                f.write("Query:\n")
+                f.write(f"{failed['query'].strip()}\n")
+                f.write(f"{'-'*80}\n")
+                f.write("Response:\n")
+                f.write(f"{failed['response'] if failed['response'] else '(empty response)'}\n")
+                f.write(f"{'='*80}\n\n")
+        print(f"✓ Saved {len(failed_queries)} failed queries to: {failed_queries_file}")
 
     print(f"\n{'='*80}")
 
@@ -148,7 +157,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         input_file = sys.argv[1]
     else:
-        input_file = 'unique_sparql.log'
+        # input_file = 'unique_sparql.log'
+        input_file = 'manual_rewritten.log'
 
     main(input_file, 'rewritten_queries.txt')
     print("DONE")

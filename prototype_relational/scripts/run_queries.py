@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+from query_rewriter import rewrite_optional_pattern
 
 def print_query(query, index):
     print(f"\n{'='*80}")
@@ -10,8 +11,14 @@ def print_query(query, index):
 
 
 def rewrite_query(query):
-    return query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
-            # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
+    # Apply distinct_keywords rewrite
+    query = query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
+    # TODO: Rewrite distinct_keywords() to something proper instead of dropping it
+
+    # Apply FILTER NOT EXISTS + UNION -> OPTIONAL + FILTER rewrite
+    query = rewrite_optional_pattern(query)
+
+    return query
 
 def run_query(query, host='http://localhost:65432/sparql'):
     headers = {
@@ -66,7 +73,7 @@ def extract_queries(input_file):
     return queries
 
 
-def main(input_file='unique_sparql.log', output_file='rewritten_queries.txt'):
+def main(input_file, output_file):
     print(f"Reading queries from: {input_file}")
     queries = extract_queries(input_file)
 

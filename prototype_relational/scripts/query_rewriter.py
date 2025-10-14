@@ -355,20 +355,13 @@ def rewrite_union_to_optional(query: str) -> str:
         # Construct the rewritten pattern
         leading_ws = match.group(1)
 
-        # Calculate sub-indentation
-        if '\t' in leading_ws:
-            sub_indent = leading_ws + '\t'
-        else:
-            sub_indent = leading_ws + '    '
-
         # Build FILTER clause with BOUND checks
         bound_checks = ' || '.join(f'BOUND({var})' for var in sorted(filter_vars))
 
-        rewritten = f'''{leading_ws}{{
-{sub_indent}OPTIONAL {{{pattern1_content}}}
-{sub_indent}OPTIONAL {{{pattern2_content}}}
-{sub_indent}FILTER ({bound_checks})
-{leading_ws}}}'''
+        # Don't add outer braces - just replace with the OPTIONAL statements
+        rewritten = f'''{leading_ws}OPTIONAL {{{pattern1_content}}}
+{leading_ws}OPTIONAL {{{pattern2_content}}}
+{leading_ws}FILTER ({bound_checks})'''
 
         result.append(rewritten)
 
@@ -376,6 +369,50 @@ def rewrite_union_to_optional(query: str) -> str:
     result.append(query[last_end:])
 
     return ''.join(result)
+
+
+def rewrite_exists_to_optional(query: str) -> str:
+    """
+    Rewrite BIND(EXISTS{...} AS ?var) to OPTIONAL + BOUND pattern.
+
+    Transforms:
+        BIND(EXISTS{?x prop ?y} AS ?var)
+
+    Into:
+        OPTIONAL {?x prop ?y AS ?varCheck}
+        BIND(BOUND(?varCheck) AS ?var)
+
+    Args:
+        query: The SPARQL query string to rewrite
+
+    Returns:
+        The rewritten query string
+    """
+    # Pattern to match BIND(EXISTS{...} AS ?var)
+    pattern = re.compile(
+        r'(\s*)BIND\s*\(\s*EXISTS\s*\{([^}]+)\}\s+AS\s+(\?[a-zA-Z_][a-zA-Z0-9_]*)\s*\)',
+        re.IGNORECASE | re.DOTALL
+    )
+
+    def replace_exists(match):
+        leading_ws = match.group(1)
+        exists_pattern = match.group(2).strip()
+        result_var = match.group(3)
+
+        # Create a check variable name
+        check_var = result_var + 'Check'
+
+        # Replace blank nodes [] with the check variable
+        # This allows us to check if the pattern exists
+        optional_pattern = exists_pattern.replace('[]', check_var)
+
+        # Build the replacement
+        replacement = f'''{leading_ws}OPTIONAL {{ {optional_pattern} }}
+{leading_ws}BIND(BOUND({check_var}) AS {result_var})'''
+
+        return replacement
+
+    return pattern.sub(replace_exists, query)
 
 
 def rewrite_query(query: str) -> str:
@@ -396,6 +433,9 @@ def rewrite_query(query: str) -> str:
 
     # Then, rewrite remaining simple UNION patterns
     query = rewrite_union_to_optional(query)
+
+    # Finally, rewrite EXISTS in BIND statements
+    query = rewrite_exists_to_optional(query)
 
     return query
 

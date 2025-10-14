@@ -873,66 +873,52 @@ def rebuild_all(csv_path, limit=None):
     populate_triples(limit)
     rebuild_dependent()
 
-def populate_rdf_triples(csv_path, limit=None):
-    """Populate rdf_triples table from CSV dump."""
+def populate_rdf_triples(csv_path):
+    from io import StringIO
     print("Populating RDF triples table")
     conn = get_connection()
     cursor = conn.cursor()
 
-    batch_size = 10000
-    total_inserted = 0
-    data_to_insert = []
+    buffer = StringIO()
 
     with open(csv_path, 'r', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
+        rows_read = 0
 
         for row in reader:
-            subject = row['subj']
-            predicate = row['pred']
-            obj = row['obj']
+            # Write TSV format (COPY default)
+            buffer.write(f"{row['subj']}\t{row['pred']}\t{row['obj']}\n")
+            rows_read += 1
 
-            data_to_insert.append((subject, predicate, obj))
+            if rows_read % 100000 == 0:
+                print(f"Prepared {rows_read} rows for COPY...")
 
-            if len(data_to_insert) >= batch_size:
-                execute_batch(
-                    cursor,
-                    "INSERT INTO rdf_triples (subject, predicate, object) VALUES (%s, %s, %s)",
-                    data_to_insert
-                )
-                total_inserted += len(data_to_insert)
-                data_to_insert = []
+    print(f"Prepared {rows_read} rows, executing COPY...")
+    buffer.seek(0)  # Reset to beginning for reading
 
-                if total_inserted % 100000 == 0:
-                    print(f"Inserted {total_inserted} RDF triples...")
-                    conn.commit()
-
-            if limit and total_inserted >= limit:
-                print(f"Reached limit of {limit} triples")
-                break
-
-    # Insert remaining data
-    if data_to_insert:
-        execute_batch(
-            cursor,
-            "INSERT INTO rdf_triples (subject, predicate, object) VALUES (%s, %s, %s)",
-            data_to_insert
-        )
-        total_inserted += len(data_to_insert)
+    cursor.copy_expert(
+        "COPY rdf_triples (subject, predicate, object) FROM STDIN",
+        buffer
+    )
+    total_inserted = rows_read
 
     conn.commit()
+    cursor.execute("CREATE INDEX idx_rdf_triples_subject ON rdf_triples(subject)")
+    conn.commit()
+
     cursor.close()
     conn.close()
 
     print(f"Total RDF triples inserted: {total_inserted}")
     return total_inserted
 
-def rebuild_rdf_triples(csv_path, limit=None):
+def rebuild_rdf_triples(csv_path):
     """Rebuild the RDF triples table from scratch."""
     conn = get_connection()
     print("Creating RDF triples table")
     execute_sql_file(conn, "psql/create_rdf_triples_table.sql")
     conn.close()
-    populate_rdf_triples(csv_path, limit)
+    populate_rdf_triples(csv_path)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -982,7 +968,7 @@ def main():
     elif args.rebuild_all:
         rebuild_all(csv_path, args.limit)
     elif args.rdf_triples:
-        rebuild_rdf_triples(csv_path, args.limit)
+        rebuild_rdf_triples(csv_path)
 
 if __name__ == "__main__":
     main()

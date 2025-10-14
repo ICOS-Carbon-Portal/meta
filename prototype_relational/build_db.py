@@ -18,7 +18,7 @@ csv_path = "./dump_full.csv"
 def get_connection():
     """Create and return a PostgreSQL database connection."""
     return psycopg2.connect(
-        host="localhost",
+        host="db",
         user="postgres",
         port=5432,
         password="ontop"
@@ -873,53 +873,6 @@ def rebuild_all(csv_path, limit=None):
     populate_triples(limit)
     rebuild_dependent()
 
-def populate_rdf_triples(csv_path):
-    from io import StringIO
-    print("Populating RDF triples table")
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    buffer = StringIO()
-
-    with open(csv_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        rows_read = 0
-
-        for row in reader:
-            # Write TSV format (COPY default)
-            buffer.write(f"{row['subj']}\t{row['pred']}\t{row['obj']}\n")
-            rows_read += 1
-
-            if rows_read % 100000 == 0:
-                print(f"Prepared {rows_read} rows for COPY...")
-
-    print(f"Prepared {rows_read} rows, executing COPY...")
-    buffer.seek(0)  # Reset to beginning for reading
-
-    cursor.copy_expert(
-        "COPY rdf_triples (subject, predicate, object) FROM STDIN",
-        buffer
-    )
-    total_inserted = rows_read
-
-    conn.commit()
-    cursor.execute("CREATE INDEX idx_rdf_triples_subject ON rdf_triples(subject)")
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    print(f"Total RDF triples inserted: {total_inserted}")
-    return total_inserted
-
-def rebuild_rdf_triples(csv_path):
-    """Rebuild the RDF triples table from scratch."""
-    conn = get_connection()
-    print("Creating RDF triples table")
-    execute_sql_file(conn, "psql/create_rdf_triples_table.sql")
-    conn.close()
-    populate_rdf_triples(csv_path)
-
 def main():
     parser = argparse.ArgumentParser(
         description="Build and manage PostgreSQL database from RDF triples CSV",
@@ -946,12 +899,6 @@ def main():
         action="store_true"
     )
 
-    rebuild_group.add_argument(
-        "--rdf-triples",
-        action="store_true",
-        help="Rebuild the RDF triples table (subject-predicate-object format)"
-    )
-
     parser.add_argument(
         "--limit",
         type=int,
@@ -967,8 +914,6 @@ def main():
         recreate_dependent_tables()
     elif args.rebuild_all:
         rebuild_all(csv_path, args.limit)
-    elif args.rdf_triples:
-        rebuild_rdf_triples(csv_path)
 
 if __name__ == "__main__":
     main()

@@ -13,7 +13,7 @@ public class SpatioTemporalDto implements SpecificInfoDto {
 	private Optional<URI> forStation;
 	private Optional<Float> samplingHeight;
 	private Optional<URI> customLandingPage;
-	private Optional<List<String>> variables;
+	private List<String> variables;
 
 	public SpatioTemporalDto(
 		String title,
@@ -24,7 +24,7 @@ public class SpatioTemporalDto implements SpecificInfoDto {
 		Optional<URI> forStation,
 		Optional<Float> samplingHeight,
 		Optional<URI> customLandingPage,
-		Optional<List<String>> variables
+		List<String> variables
 	) {
 		this.title = title;
 		this.description = description;
@@ -69,7 +69,7 @@ public class SpatioTemporalDto implements SpecificInfoDto {
 		return customLandingPage;
 	}
 
-	public Optional<List<String>> getVariables() {
+	public List<String> getVariables() {
 		return variables;
 	}
 }

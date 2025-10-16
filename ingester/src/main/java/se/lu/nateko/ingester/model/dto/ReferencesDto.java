@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class ReferencesDto {
-	private Optional<List<String>> keywords;
+	private List<String> keywords;
 	private Optional<URI> license;
 	private Optional<Instant> moratorium;
 	private Optional<Boolean> duplicateFileNameAllowed;
@@ -14,7 +14,7 @@ public class ReferencesDto {
 	private Optional<Boolean> partialUpload;
 
 	public ReferencesDto(
-		Optional<List<String>> keywords,
+		List<String> keywords,
 		Optional<URI> license,
 		Optional<Instant> moratorium,
 		Optional<Boolean> duplicateFileNameAllowed,
@@ -29,7 +29,7 @@ public class ReferencesDto {
 		this.partialUpload = partialUpload;
 	}
 
-	public Optional<List<String>> getKeywords() {
+	public List<String> getKeywords() {
 		return keywords;
 	}
 

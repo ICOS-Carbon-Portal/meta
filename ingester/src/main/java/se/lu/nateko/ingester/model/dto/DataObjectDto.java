@@ -10,9 +10,9 @@ public class DataObjectDto {
 	private URI objectSpecification;
 	private String fileName;
 	private SpecificInfoDto specificInfo;
-	private Optional<List<String>> isNextVersionOf;
+	private List<String> isNextVersionOf;
 	private Optional<DoiDto> preExistingDio;
-	private Optional<List<ReferencesDto>> references;
+	private List<ReferencesDto> references;
 
 	public DataObjectDto(
 		String hashSum,
@@ -20,9 +20,9 @@ public class DataObjectDto {
 		URI objectSpecification,
 		String fileName,
 		SpecificInfoDto specificInfo,
-		Optional<List<String>> isNextVersionOf,
+		List<String> isNextVersionOf,
 		Optional<DoiDto> preExistingDio,
-		Optional<List<ReferencesDto>> references
+		List<ReferencesDto> references
 	) {
 		this.hashSum = hashSum;
 		this.submitterId = submitterId;
@@ -54,7 +54,7 @@ public class DataObjectDto {
 		return specificInfo;
 	}
 
-	public Optional<List<String>> getIsNextVersionOf() {
+	public List<String> getIsNextVersionOf() {
 		return isNextVersionOf;
 	}
 
@@ -62,7 +62,7 @@ public class DataObjectDto {
 		return preExistingDio;
 	}
 
-	public Optional<List<ReferencesDto>> getReferences() {
+	public List<ReferencesDto> getReferences() {
 		return references;
 	}
 }

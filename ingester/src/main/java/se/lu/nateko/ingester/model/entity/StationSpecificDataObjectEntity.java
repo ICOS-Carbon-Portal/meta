@@ -1,6 +1,6 @@
 package se.lu.nateko.ingester.model.entity;
 
-import java.sql.Date;
+import java.time.Instant;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -13,9 +13,9 @@ public class StationSpecificDataObjectEntity {
 	private String hashSum;
 	private String fileName;
 	private String specificStation;
-	private Date acquisitionStartDate;
-	private Date acquisitionStopDate;
-	private Double specificSamplingHeight;
+	private Instant acquisitionStartDate;
+	private Instant acquisitionStopDate;
+	private Float specificSamplingHeight;
 
 	public StationSpecificDataObjectEntity(
 		Integer id,
@@ -23,9 +23,9 @@ public class StationSpecificDataObjectEntity {
 		String hashSum,
 		String fileName,
 		String specificStation,
-		Date acquisitionStartDate,
-		Date acquisitionStopDate,
-		Double specificSamplingHeight
+		Instant acquisitionStartDate,
+		Instant acquisitionStopDate,
+		Float specificSamplingHeight
 	) {
 		this.id = id;
 		this.submitterId = submitterId;
@@ -57,15 +57,15 @@ public class StationSpecificDataObjectEntity {
 		return specificStation;
 	}
 
-	public Date getAcquisitionStartDate() {
+	public Instant getAcquisitionStartDate() {
 		return acquisitionStartDate;
 	}
 
-	public Date getAcquisitionStopDate() {
+	public Instant getAcquisitionStopDate() {
 		return acquisitionStopDate;
 	}
 
-	public Double getSpecificSamplingHeight() {
+	public Float getSpecificSamplingHeight() {
 		return specificSamplingHeight;
 	}
 }

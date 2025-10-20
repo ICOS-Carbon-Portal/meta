@@ -205,7 +205,7 @@ $(function () {
 	});
 
 	$("#result").hide();
-	$("#messDiv").hide();
+	$("#messDiv").css({opacity: 0});
 
 	var queryParams = processQuery(window.location.search);
 	var state = {
@@ -259,11 +259,11 @@ $(function () {
 
 			postProcessing(getResult(response), state.type, duration);
 
-			$("#messSpan").text("Query was successfull").show().delay(3000).fadeOut();
+			$("#messSpan").text("Query was successful").css({ opacity: 1 }).delay(3000).fadeTo(1000, 0);
 		
 		} else {
 			$("#statusSpan").text("");
-			$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
+			$("#messSpan").text("Could not execute query").css({ opacity: 1 }).delay(3000).fadeTo(1000, 0);
 			$("#result").html(response.response.text);
 		}
 	});

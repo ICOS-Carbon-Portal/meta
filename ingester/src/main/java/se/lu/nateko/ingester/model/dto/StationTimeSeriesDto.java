@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
-public class StationTimeSeriesDto implements SpecificInfoDto {
+public class StationTimeSeriesDto implements SpecificInfo {
 	private URI station;
 	private Optional<URI> site;
 	private List<URI> instrument;

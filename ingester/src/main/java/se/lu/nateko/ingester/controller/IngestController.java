@@ -8,11 +8,15 @@ import org.springframework.web.bind.annotation.RestController;
 import se.lu.nateko.ingester.model.dto.DataObjectDto;
 import se.lu.nateko.ingester.service.IngestService;
 
-@RestController("/ingest")
+@RestController
 public class IngestController {
 	private IngestService ingestService;
 
-	@PostMapping("/uploaded")
+	public IngestController(IngestService ingestService) {
+		this.ingestService = ingestService;
+	}
+
+	@PostMapping("/ingest/uploaded")
 	public ResponseEntity<String> ingestUploadPayload(@RequestBody DataObjectDto dataObject) {
 		ingestService.saveStationSpecificDataObject(dataObject);
 		return ResponseEntity.ok("");

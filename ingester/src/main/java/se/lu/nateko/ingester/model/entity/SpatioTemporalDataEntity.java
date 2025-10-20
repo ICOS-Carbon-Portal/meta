@@ -11,4 +11,7 @@ public class SpatioTemporalDataEntity {
 	public SpatioTemporalDataEntity(Integer id) {
 		this.id = id;
 	}
+
+	public SpatioTemporalDataEntity() {
+	}
 }

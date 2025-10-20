@@ -8,18 +8,25 @@ import se.lu.nateko.ingester.model.dto.StationTimeSeriesDto;
 import se.lu.nateko.ingester.model.entity.SpatioTemporalDataEntity;
 import se.lu.nateko.ingester.model.entity.StationSpecificDataObjectEntity;
 import se.lu.nateko.ingester.repository.IngestRepository;
+import se.lu.nateko.ingester.repository.SpatioTemporalDataRepository;
 
 @Service
 public class IngestService {
 	private IngestRepository ingestRepository;
+	private SpatioTemporalDataRepository spatioTemporalDataRepository;
+
+	public IngestService(IngestRepository ingestRepository, SpatioTemporalDataRepository spatioTemporalDataRepository) {
+		this.ingestRepository = ingestRepository;
+		this.spatioTemporalDataRepository = spatioTemporalDataRepository;
+	}
 
 	public void saveStationSpecificDataObject(DataObjectDto dataObject) {
 		if (dataObject.getSpecificInfo() instanceof StationTimeSeriesDto stationTimeSeriesDto) {
-			ingestRepository.saveStationTimeSeriesData(
+			ingestRepository.save(
 				toStationTimeSeriesEntity(dataObject, stationTimeSeriesDto)
 			);
 		} else if (dataObject.getSpecificInfo() instanceof SpatioTemporalDto spatioTemporalDto) {
-			ingestRepository.saveSpatioTemporalData(
+			spatioTemporalDataRepository.save(
 				toSpatioTemporalEntity(dataObject, spatioTemporalDto)
 			);
 		}

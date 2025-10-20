@@ -5,7 +5,7 @@ import java.time.Instant;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
-@Entity
+@Entity(name = "StationSpecificDataObject")
 public class StationSpecificDataObjectEntity {
 	@Id
 	private Integer id;
@@ -16,6 +16,8 @@ public class StationSpecificDataObjectEntity {
 	private Instant acquisitionStartDate;
 	private Instant acquisitionStopDate;
 	private Float specificSamplingHeight;
+
+	StationSpecificDataObjectEntity() {}
 
 	public StationSpecificDataObjectEntity(
 		Integer id,

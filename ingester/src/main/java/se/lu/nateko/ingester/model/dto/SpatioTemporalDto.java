@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
-public class SpatioTemporalDto implements SpecificInfoDto {
+public class SpatioTemporalDto implements SpecificInfo {
 	private String title;
 	private Optional<String> description;
 	private String spatial;

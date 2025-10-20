@@ -60,6 +60,23 @@ def generate_prefix_name(namespace):
         candidate = re.sub(r'[^a-z0-9]', '', candidate.lower())
 
         if candidate:
+            # If starts with number, find a meaningful word from other parts
+            if candidate[0].isdigit():
+                prefix_word = None
+                # Look through other parts (backwards) to find a non-numeric word
+                for part in reversed(parts[:-1]):  # Skip the last part (candidate)
+                    clean_part = re.sub(r'[^a-z0-9]', '', part.lower())
+                    # Check if it's a meaningful word (has letters and doesn't start with digit)
+                    if clean_part and not clean_part[0].isdigit() and len(clean_part) > 1:
+                        prefix_word = clean_part
+                        break
+
+                # Fall back to 'ns' if no meaningful word found
+                if not prefix_word:
+                    prefix_word = "ns"
+
+                candidate = f"{prefix_word}{candidate}"
+
             return candidate
 
     # Fall back to a hash-based prefix
@@ -271,13 +288,26 @@ def populate_predicate_table(cursor, table_name, predicate, limit=None):
     return cursor.rowcount
 
 
-def process_predicates(conn, limit=None):
+def create_index_on_subj(cursor, table_name):
+    """
+    Create an index on the subj column for faster subject lookups.
+
+    Args:
+        cursor: Database cursor
+        table_name: Name of the predicate table
+    """
+    index_name = f"idx_{table_name}_subj"
+    cursor.execute(f"CREATE INDEX {index_name} ON {table_name}(subj);")
+
+
+def process_predicates(conn, limit=None, add_index=False):
     """
     Main processing function to create and populate all predicate tables.
 
     Args:
         conn: Database connection
         limit: Optional limit on triples per predicate
+        add_index: Whether to create indexes on subj column
     """
     cursor = conn.cursor()
 
@@ -295,6 +325,7 @@ def process_predicates(conn, limit=None):
         # Process each predicate
         total_rows = 0
         mapping_count = 0
+        index_count = 0
         for predicate in predicates:
             if predicate == 'pred':
                 continue
@@ -316,6 +347,12 @@ def process_predicates(conn, limit=None):
             print(f"  -> Inserted {row_count} rows")
             total_rows += row_count
 
+            # Create index if requested
+            if add_index:
+                print("  -> Creating index on subj...")
+                create_index_on_subj(cursor, table_name)
+                index_count += 1
+
             # Insert mapping
             insert_mapping(cursor, table_name, predicate)
             mapping_count += 1
@@ -326,6 +363,8 @@ def process_predicates(conn, limit=None):
         print(f"\n✓ Successfully created and populated all predicate tables!")
         print(f"Total rows inserted: {total_rows}")
         print(f"Total mappings created: {mapping_count}")
+        if add_index:
+            print(f"Total indexes created: {index_count}")
 
     except psycopg2.Error as e:
         print(f"\nError processing predicates: {e}")
@@ -355,6 +394,8 @@ Environment variables:
 Examples:
   %(prog)s                        # Create tables from all predicates
   %(prog)s --limit 1000           # Create tables with max 1000 rows per table
+  %(prog)s --index                # Create tables with indexes on subj column
+  %(prog)s --index --limit 1000   # Create tables with indexes and row limit
   %(prog)s --clear                # Clear existing tables only (no recreation)
   %(prog)s --clear --limit 1000   # Clear then recreate tables with limit
   LIMIT=500 DB_HOST=myhost %(prog)s
@@ -405,12 +446,21 @@ Examples:
         help='Clear all existing predicate tables and mapping table (when used alone, only clears; use with --limit to clear and recreate)'
     )
 
+    # Index argument
+    parser.add_argument(
+        '--index',
+        action='store_true',
+        help='Create indexes on subj column for each predicate table for faster subject lookups'
+    )
+
     args = parser.parse_args()
 
     # Display configuration
     print(f"Connecting to PostgreSQL at {args.host}:{args.port} as {args.user}...")
     if args.limit:
         print(f"Limiting to {args.limit} triples per predicate table")
+    if args.index:
+        print("Creating indexes on subj column for each table")
 
     # Connect to database
     conn = get_connection()
@@ -435,7 +485,7 @@ Examples:
             print()
 
         # Process all predicates to create and populate tables
-        process_predicates(conn, args.limit)
+        process_predicates(conn, args.limit, args.index)
 
         cursor.close()
 

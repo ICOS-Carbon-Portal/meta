@@ -11,7 +11,65 @@ import sys
 import re
 
 
-def get_connection(host, port, user, dbname):
+def extract_namespace(uri):
+    """
+    Extract the namespace (base URI) from a full URI.
+    Returns everything before the last / or #.
+    """
+    match = re.match(r'^(.*[/#])[^/#]+$', uri)
+    if match:
+        return match.group(1)
+    return uri
+
+
+def generate_prefix_name(namespace):
+    """
+    Generate a short prefix name for a namespace.
+    Uses common conventions or extracts from the URI.
+    """
+    # Common known prefixes
+    known_prefixes = {
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+        'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+        'http://www.w3.org/2002/07/owl#': 'owl',
+        'http://www.w3.org/ns/prov#': 'prov',
+        'http://www.w3.org/2001/XMLSchema#': 'xsd',
+        'http://purl.org/dc/elements/1.1/': 'dc',
+        'http://purl.org/dc/terms/': 'dcterms',
+        'http://xmlns.com/foaf/0.1/': 'foaf',
+        'http://meta.icos-cp.eu/ontologies/cpmeta/': 'cpmeta',
+        'https://meta.icos-cp.eu/objects/': 'metaobjects',
+        'http://meta.icos-cp.eu/resources/': 'cpres',
+    }
+
+    if namespace in known_prefixes:
+        return known_prefixes[namespace]
+
+    # Try to extract a meaningful name from the URI
+    # Remove protocol and common patterns
+    clean = namespace.replace('http://', '').replace('https://', '')
+    clean = clean.rstrip('/#')
+
+    # Try to extract the last meaningful component
+    parts = [p for p in clean.split('/') if p]
+    if parts:
+        # Use the last part or a combination
+        candidate = parts[-1]
+        # Remove common suffixes
+        candidate = re.sub(r'(ontology|ontologies|vocab|vocabulary)$', '', candidate)
+        candidate = re.sub(r'[^a-z0-9]', '', candidate.lower())
+
+        if candidate:
+            return candidate
+
+    # Fall back to a hash-based prefix
+    # Use a simple hash of the namespace to ensure uniqueness
+    import hashlib
+    hash_val = hashlib.md5(namespace.encode()).hexdigest()[:6]
+    return f"ns{hash_val}"
+
+
+def get_connection():
     """Create and return a PostgreSQL database connection."""
     try:
         return psycopg2.connect(
@@ -28,31 +86,97 @@ def get_connection(host, port, user, dbname):
 def sanitize_predicate(predicate):
     """
     Sanitize predicate URIs into valid PostgreSQL table names.
+    Includes the namespace prefix to prevent collisions.
 
     Args:
         predicate: URI string like 'http://example.com/ontology/hasName'
 
     Returns:
-        Sanitized table name like 'hasname'
+        Sanitized table name like 'prefix_hasname'
     """
-    # Extract the last component after the last / or #
+    # Extract namespace and generate prefix
+    namespace = extract_namespace(predicate)
+    prefix = generate_prefix_name(namespace)
+
+    # Extract the last component (local name) after the last / or #
     match = re.search(r'[/#]([^/#]+)$', predicate)
     if match:
-        name = match.group(1)
+        local_name = match.group(1)
     else:
-        name = predicate
+        local_name = predicate
 
     # Replace any non-alphanumeric characters with underscores
-    name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+    local_name = re.sub(r'[^a-zA-Z0-9_]', '_', local_name)
 
-    # Ensure it doesn't start with a number
-    if name and name[0].isdigit():
-        name = f"pred_{name}"
+    # Ensure local name doesn't start with a number
+    if local_name and local_name[0].isdigit():
+        local_name = f"pred_{local_name}"
 
     # Convert to lowercase for consistency
-    name = name.lower()
+    local_name = local_name.lower()
 
-    return name
+    # Combine prefix and local name
+    table_name = f"{prefix}_{local_name}"
+
+    return table_name
+
+
+def clear_predicate_tables(cursor):
+    """
+    Drop all predicate tables and the mapping table.
+
+    Args:
+        cursor: Database cursor
+
+    Returns:
+        Number of tables dropped
+    """
+    print("Clearing all predicate tables...")
+
+    # Check if mapping table exists
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables
+            WHERE table_name = 'predicate_table_mappings'
+        );
+    """)
+
+    mapping_table_exists = cursor.fetchone()[0]
+
+    if not mapping_table_exists:
+        print("No predicate_table_mappings table found. Nothing to clear.")
+        return 0
+
+    # Get all table names from the mapping table
+    cursor.execute("SELECT table_name FROM predicate_table_mappings ORDER BY table_name;")
+    table_names = [row[0] for row in cursor.fetchall()]
+
+    if not table_names:
+        print("No predicate tables found in mapping table.")
+        # Still drop the empty mapping table
+        cursor.execute("DROP TABLE IF EXISTS predicate_table_mappings CASCADE;")
+        print("Dropped predicate_table_mappings table.")
+        return 1
+
+    print(f"Found {len(table_names)} predicate tables to drop...")
+
+    # Drop each predicate table
+    dropped_count = 0
+    for table_name in table_names:
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+            dropped_count += 1
+            if dropped_count % 10 == 0:
+                print(f"  Dropped {dropped_count}/{len(table_names)} tables...")
+        except psycopg2.Error as e:
+            print(f"  Warning: Could not drop table {table_name}: {e}")
+
+    # Drop the mapping table
+    cursor.execute("DROP TABLE IF EXISTS predicate_table_mappings CASCADE;")
+    dropped_count += 1
+
+    print(f"✓ Cleared {dropped_count} tables (including predicate_table_mappings)")
+    return dropped_count
 
 
 def fetch_predicates(cursor):
@@ -172,6 +296,9 @@ def process_predicates(conn, limit=None):
         total_rows = 0
         mapping_count = 0
         for predicate in predicates:
+            if predicate == 'pred':
+                continue
+
             # Sanitize the predicate to create a valid table name
             table_name = sanitize_predicate(predicate)
 
@@ -226,7 +353,10 @@ Environment variables:
   LIMIT           Limit triples per predicate (optional)
 
 Examples:
-  %(prog)s --limit 1000
+  %(prog)s                        # Create tables from all predicates
+  %(prog)s --limit 1000           # Create tables with max 1000 rows per table
+  %(prog)s --clear                # Clear existing tables only (no recreation)
+  %(prog)s --clear --limit 1000   # Clear then recreate tables with limit
   LIMIT=500 DB_HOST=myhost %(prog)s
   %(prog)s --host db --port 5433 --limit 10000
         """
@@ -268,6 +398,13 @@ Examples:
         help='Limit the number of triples inserted per predicate table'
     )
 
+    # Clear argument
+    parser.add_argument(
+        '--clear',
+        action='store_true',
+        help='Clear all existing predicate tables and mapping table (when used alone, only clears; use with --limit to clear and recreate)'
+    )
+
     args = parser.parse_args()
 
     # Display configuration
@@ -276,11 +413,31 @@ Examples:
         print(f"Limiting to {args.limit} triples per predicate table")
 
     # Connect to database
-    conn = get_connection(args.host, args.port, args.user, args.dbname)
+    conn = get_connection()
 
     try:
-        # Process all predicates
+        cursor = conn.cursor()
+
+        # Determine if we should create tables
+        # If only --clear is given (no --limit), just clear and exit
+        should_create = not (args.clear and args.limit is None)
+
+        # Clear existing tables if requested
+        if args.clear:
+            clear_predicate_tables(cursor)
+            conn.commit()
+
+            if not should_create:
+                print("\n✓ Cleared all predicate tables. No new tables created.")
+                cursor.close()
+                return
+
+            print()
+
+        # Process all predicates to create and populate tables
         process_predicates(conn, args.limit)
+
+        cursor.close()
 
         # Show how to view created tables
         print("\nTo view all created tables, run:")

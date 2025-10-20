@@ -10,6 +10,12 @@ import os
 import sys
 import re
 
+try:
+    from rdflib import Graph, RDF, RDFS, OWL
+    HAS_RDFLIB = True
+except ImportError:
+    HAS_RDFLIB = False
+
 
 def extract_namespace(uri):
     """
@@ -84,6 +90,91 @@ def generate_prefix_name(namespace):
     import hashlib
     hash_val = hashlib.md5(namespace.encode()).hexdigest()[:6]
     return f"ns{hash_val}"
+
+
+def parse_ontology_for_types(ontology_path='ontop/cpmeta.ttl'):
+    """
+    Parse the ontology file to determine property ranges for type mapping.
+
+    Args:
+        ontology_path: Path to the TTL ontology file
+
+    Returns:
+        Dictionary mapping property URIs to their range URIs
+    """
+    property_ranges = {}
+
+    if not HAS_RDFLIB:
+        return property_ranges
+
+    if not os.path.exists(ontology_path):
+        return property_ranges
+
+    try:
+        g = Graph()
+        g.parse(ontology_path, format='turtle')
+
+        # Get ranges for both ObjectProperty and DatatypeProperty
+        for prop in g.subjects(RDF.type, OWL.ObjectProperty):
+            prop_uri = str(prop)
+            for obj in g.objects(prop, RDFS.range):
+                range_uri = str(obj)
+                if range_uri.startswith('http://') or range_uri.startswith('https://'):
+                    property_ranges[prop_uri] = range_uri
+                break
+
+        for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
+            prop_uri = str(prop)
+            for obj in g.objects(prop, RDFS.range):
+                range_uri = str(obj)
+                if range_uri.startswith('http://') or range_uri.startswith('https://'):
+                    property_ranges[prop_uri] = range_uri
+                break
+
+        return property_ranges
+
+    except Exception:
+        return {}
+
+
+def xsd_to_postgres_type(range_uri):
+    """
+    Map XSD datatype URIs to PostgreSQL column types.
+
+    Args:
+        range_uri: XSD datatype URI (e.g., 'http://www.w3.org/2001/XMLSchema#long')
+
+    Returns:
+        PostgreSQL type string (e.g., 'BIGINT')
+    """
+    if not range_uri:
+        return 'TEXT'
+
+    # Extract the local part after the #
+    if '#' in range_uri:
+        xsd_type = range_uri.split('#')[-1]
+    else:
+        return 'TEXT'
+
+    # Map XSD types to PostgreSQL types
+    type_mapping = {
+        'long': 'BIGINT',
+        'integer': 'INTEGER',
+        'int': 'INTEGER',
+        'short': 'SMALLINT',
+        'byte': 'SMALLINT',
+        'float': 'REAL',
+        'double': 'DOUBLE PRECISION',
+        'decimal': 'NUMERIC',
+        'boolean': 'BOOLEAN',
+        'date': 'DATE',
+        'dateTime': 'TIMESTAMP',
+        'time': 'TIME',
+        'string': 'TEXT',
+        'anyURI': 'TEXT',
+    }
+
+    return type_mapping.get(xsd_type, 'TEXT')
 
 
 def get_connection():
@@ -244,7 +335,7 @@ def insert_mapping(cursor, table_name, predicate_uri):
     """, (table_name, predicate_uri))
 
 
-def create_predicate_table(cursor, table_name):
+def create_predicate_table(cursor, table_name, typ):
     """Create a predicate table with subj and obj columns."""
     # Drop existing table
     cursor.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
@@ -253,7 +344,7 @@ def create_predicate_table(cursor, table_name):
     cursor.execute(f"""
         CREATE TABLE {table_name} (
             subj TEXT NOT NULL,
-            obj TEXT
+            obj {typ}
         );
     """)
 
@@ -336,9 +427,14 @@ def process_predicates(conn, limit=None, add_index=False):
             print(f"\nProcessing predicate: {predicate}")
             print(f"  -> Table name: {table_name}")
 
+            otypes = parse_ontology_for_types()
+            # print(otypes.keys())
+            # print(otypes.get(predicate))
+            pg_type = xsd_to_postgres_type(otypes.get(predicate))
+            print("type", pg_type)
             # Create the table
             print("  -> Creating table...")
-            create_predicate_table(cursor, table_name)
+            create_predicate_table(cursor, table_name, "TEXT")
 
             # Populate the table
             print("  -> Populating table...")

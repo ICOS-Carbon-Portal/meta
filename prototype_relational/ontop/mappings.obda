@@ -75,4 +75,18 @@ source		SELECT obj.hasSha256sum as hash, keyword.keyword as kw
 		JOIN data_object_all_keywords keywords ON obj.id = keywords.data_object_id
 		JOIN keywords keyword ON keywords.keyword_id = keyword.id
 
+
+
+mappingId	generic-label
+target		<{subj}> rdfs:label {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+mappingId	generic-hasName
+target		<{subj}> cpmeta:hasName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+mappingId	generic-wasAcquiredBy
+target		<{subj}> cpmeta:wasAcquiredBy <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy'
+
 ]]

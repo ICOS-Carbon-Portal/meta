@@ -6,12 +6,11 @@ services:
       - POSTGRES_PASSWORD=ontop
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
     command: >
         -c max_wal_size=8GB
         -c synchronous_commit=off
-    ports:
-      - "5432:5432"
-
 
   ontop:
     tty: true

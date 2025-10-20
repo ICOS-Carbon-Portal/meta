@@ -1,8 +1,8 @@
 [PrefixDeclaration]
-11: http://purl.org/dc/elements/1.1/
 core: http://www.w3.org/2004/02/skos/core#
 cpmeta: http://meta.icos-cp.eu/ontologies/cpmeta/
 dcat: http://www.w3.org/ns/dcat#
+elements11: http://purl.org/dc/elements/1.1/
 files: http://meta.icos-cp.eu/files/
 ns: http://www.w3.org/2006/vcard/ns#
 otcmeta: http://meta.icos-cp.eu/ontologies/otcmeta/
@@ -47,10 +47,6 @@ mappingId	cpmeta_awardtitle
 target		<{subj}> cpmeta:awardTitle {obj} .
 source		SELECT subj, obj FROM cpmeta_awardtitle
 
-mappingId	cpmeta_awarduri
-target		<{subj}> cpmeta:awardURI <{obj}> .
-source		SELECT subj, obj FROM cpmeta_awarduri
-
 mappingId	cpmeta_containsdataset
 target		<{subj}> cpmeta:containsDataset <{obj}> .
 source		SELECT subj, obj FROM cpmeta_containsdataset
@@ -75,17 +71,10 @@ mappingId	cpmeta_hasassociatedproject
 target		<{subj}> cpmeta:hasAssociatedProject <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasassociatedproject
 
-mappingId	cpmeta_hasassociatedpublication
-target		<{subj}> cpmeta:hasAssociatedPublication <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasassociatedpublication
-
 mappingId	cpmeta_hasatcid
 target		<{subj}> cpmeta:hasAtcId {obj} .
 source		SELECT subj, obj FROM cpmeta_hasatcid
 
-mappingId	cpmeta_hasattributionweight
-target		<{subj}> cpmeta:hasAttributionWeight {obj} .
-source		SELECT subj, obj FROM cpmeta_hasattributionweight
 
 mappingId	cpmeta_hasclimatezone
 target		<{subj}> cpmeta:hasClimateZone <{obj}> .
@@ -99,10 +88,6 @@ mappingId	cpmeta_hascolumntitle
 target		<{subj}> cpmeta:hasColumnTitle {obj} .
 source		SELECT subj, obj FROM cpmeta_hascolumntitle
 
-mappingId	cpmeta_hascoverimage
-target		<{subj}> cpmeta:hasCoverImage <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hascoverimage
-
 mappingId	cpmeta_hasdatalevel
 target		<{subj}> cpmeta:hasDataLevel {obj} .
 source		SELECT subj, obj FROM cpmeta_hasdatalevel
@@ -111,17 +96,10 @@ mappingId	cpmeta_hasdatatheme
 target		<{subj}> cpmeta:hasDataTheme <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasdatatheme
 
-mappingId	cpmeta_hasdepiction
-target		<{subj}> cpmeta:hasDepiction <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasdepiction
 
 mappingId	cpmeta_hasdocumentationobject
 target		<{subj}> cpmeta:hasDocumentationObject <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasdocumentationobject
-
-mappingId	cpmeta_hasdocumentationuri
-target		<{subj}> cpmeta:hasDocumentationUri <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasdocumentationuri
 
 mappingId	cpmeta_hasdoi
 target		<{subj}> cpmeta:hasDoi {obj} .
@@ -151,9 +129,6 @@ mappingId	cpmeta_hasenddate
 target		<{subj}> cpmeta:hasEndDate {obj} .
 source		SELECT subj, obj FROM cpmeta_hasenddate
 
-mappingId	cpmeta_hasendtime
-target		<{subj}> cpmeta:hasEndTime {obj} .
-source		SELECT subj, obj FROM cpmeta_hasendtime
 
 mappingId	cpmeta_hasetcid
 target		<{subj}> cpmeta:hasEtcId {obj} .
@@ -187,10 +162,6 @@ mappingId	cpmeta_hashidefromsearchpolicy
 target		<{subj}> cpmeta:hasHideFromSearchPolicy {obj} .
 source		SELECT subj, obj FROM cpmeta_hashidefromsearchpolicy
 
-mappingId	cpmeta_hasicon
-target		<{subj}> cpmeta:hasIcon <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasicon
-
 mappingId	cpmeta_hasinstrumentcomponent
 target		<{subj}> cpmeta:hasInstrumentComponent <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasinstrumentcomponent
@@ -222,10 +193,6 @@ source		SELECT subj, obj FROM cpmeta_haslinkbox
 mappingId	cpmeta_haslongitude
 target		<{subj}> cpmeta:hasLongitude {obj} .
 source		SELECT subj, obj FROM cpmeta_haslongitude
-
-mappingId	cpmeta_hasmarkericon
-target		<{subj}> cpmeta:hasMarkerIcon <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasmarkericon
 
 mappingId	cpmeta_hasmaxvalue
 target		<{subj}> cpmeta:hasMaxValue {obj} .
@@ -263,10 +230,6 @@ mappingId	cpmeta_hasnorthernbound
 target		<{subj}> cpmeta:hasNorthernBound {obj} .
 source		SELECT subj, obj FROM cpmeta_hasnorthernbound
 
-mappingId	cpmeta_hasnumberofrows
-target		<{subj}> cpmeta:hasNumberOfRows {obj} .
-source		SELECT subj, obj FROM cpmeta_hasnumberofrows
-
 mappingId	cpmeta_hasobjectspec
 target		<{subj}> cpmeta:hasObjectSpec <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasobjectspec
@@ -275,13 +238,6 @@ mappingId	cpmeta_hasoperationalperiod
 target		<{subj}> cpmeta:hasOperationalPeriod {obj} .
 source		SELECT subj, obj FROM cpmeta_hasoperationalperiod
 
-mappingId	cpmeta_hasorcidid
-target		<{subj}> cpmeta:hasOrcidId <{obj}> .
-source		SELECT subj, obj FROM cpmeta_hasorcidid
-
-mappingId	cpmeta_hasorderweight
-target		<{subj}> cpmeta:hasOrderWeight {obj} .
-source		SELECT subj, obj FROM cpmeta_hasorderweight
 
 mappingId	cpmeta_hasotcid
 target		<{subj}> cpmeta:hasOtcId {obj} .
@@ -491,10 +447,6 @@ mappingId	otcmeta_awardtitle
 target		<{subj}> otcmeta:awardTitle {obj} .
 source		SELECT subj, obj FROM otcmeta_awardtitle
 
-mappingId	otcmeta_awarduri
-target		<{subj}> otcmeta:awardURI <{obj}> .
-source		SELECT subj, obj FROM otcmeta_awarduri
-
 mappingId	otcmeta_countrycode
 target		<{subj}> otcmeta:countryCode {obj} .
 source		SELECT subj, obj FROM otcmeta_countrycode
@@ -502,10 +454,6 @@ source		SELECT subj, obj FROM otcmeta_countrycode
 mappingId	otcmeta_device
 target		<{subj}> otcmeta:device <{obj}> .
 source		SELECT subj, obj FROM otcmeta_device
-
-mappingId	otcmeta_hasattributionweight
-target		<{subj}> otcmeta:hasAttributionWeight {obj} .
-source		SELECT subj, obj FROM otcmeta_hasattributionweight
 
 mappingId	otcmeta_hasdate
 target		<{subj}> otcmeta:hasDate {obj} .
@@ -595,9 +543,6 @@ mappingId	otcmeta_hasname
 target		<{subj}> otcmeta:hasName {obj} .
 source		SELECT subj, obj FROM otcmeta_hasname
 
-mappingId	otcmeta_hasorcidid
-target		<{subj}> otcmeta:hasOrcidId {obj} .
-source		SELECT subj, obj FROM otcmeta_hasorcidid
 
 mappingId	otcmeta_hasowner
 target		<{subj}> otcmeta:hasOwner <{obj}> .
@@ -1076,35 +1021,35 @@ target		<{subj}> wdcgg:TIME%20INTERVAL {obj} .
 source		SELECT subj, obj FROM wdcgg_time_20interval
 
 mappingId	dc_creator
-target		<{subj}> 11:creator <{obj}> .
+target		<{subj}> elements11:creator <{obj}> .
 source		SELECT subj, obj FROM dc_creator
 
 mappingId	dc_description
-target		<{subj}> 11:description {obj} .
+target		<{subj}> elements11:description {obj} .
 source		SELECT subj, obj FROM dc_description
 
 mappingId	dc_issued
-target		<{subj}> 11:issued {obj} .
+target		<{subj}> elements11:issued {obj} .
 source		SELECT subj, obj FROM dc_issued
 
 mappingId	dc_modified
-target		<{subj}> 11:modified {obj} .
+target		<{subj}> elements11:modified {obj} .
 source		SELECT subj, obj FROM dc_modified
 
 mappingId	dc_publisher
-target		<{subj}> 11:publisher <{obj}> .
+target		<{subj}> elements11:publisher <{obj}> .
 source		SELECT subj, obj FROM dc_publisher
 
 mappingId	dc_rights
-target		<{subj}> 11:rights {obj} .
+target		<{subj}> elements11:rights {obj} .
 source		SELECT subj, obj FROM dc_rights
 
 mappingId	dc_title
-target		<{subj}> 11:title {obj} .
+target		<{subj}> elements11:title {obj} .
 source		SELECT subj, obj FROM dc_title
 
 mappingId	dc_type
-target		<{subj}> 11:type <{obj}> .
+target		<{subj}> elements11:type <{obj}> .
 source		SELECT subj, obj FROM dc_type
 
 mappingId	dcterms_creator
@@ -1522,9 +1467,5 @@ source		SELECT subj, obj FROM ssn_forproperty
 mappingId	ssn_hasdeployment
 target		<{subj}> ssn:hasDeployment <{obj}> .
 source		SELECT subj, obj FROM ssn_hasdeployment
-
-mappingId	pred_pred
-target		<{subj}> <pred> {obj} .
-source		SELECT subj, obj FROM pred_pred
 
 ]]

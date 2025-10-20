@@ -32,7 +32,7 @@ target		<{subj}> files:hasType {obj} .
 source		SELECT subj, obj FROM files_hastype
 
 mappingId	cpmeta_asgeojson
-target		<{subj}> cpmeta:asGeoJSON {obj} .
+target		<{subj}> cpmeta:asGeoJSON {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_asgeojson
 
 mappingId	cpmeta_atorganization
@@ -40,12 +40,16 @@ target		<{subj}> cpmeta:atOrganization <{obj}> .
 source		SELECT subj, obj FROM cpmeta_atorganization
 
 mappingId	cpmeta_awardnumber
-target		<{subj}> cpmeta:awardNumber {obj} .
+target		<{subj}> cpmeta:awardNumber {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_awardnumber
 
 mappingId	cpmeta_awardtitle
-target		<{subj}> cpmeta:awardTitle {obj} .
+target		<{subj}> cpmeta:awardTitle {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_awardtitle
+
+mappingId	cpmeta_awarduri
+target		<{subj}> cpmeta:awardURI {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_awarduri
 
 mappingId	cpmeta_containsdataset
 target		<{subj}> cpmeta:containsDataset <{obj}> .
@@ -60,7 +64,7 @@ target		<{subj}> cpmeta:countryCode {obj} .
 source		SELECT subj, obj FROM cpmeta_countrycode
 
 mappingId	cpmeta_hasactualcolumnnames
-target		<{subj}> cpmeta:hasActualColumnNames {obj} .
+target		<{subj}> cpmeta:hasActualColumnNames {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasactualcolumnnames
 
 mappingId	cpmeta_hasactualvariable
@@ -71,10 +75,17 @@ mappingId	cpmeta_hasassociatedproject
 target		<{subj}> cpmeta:hasAssociatedProject <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasassociatedproject
 
+mappingId	cpmeta_hasassociatedpublication
+target		<{subj}> cpmeta:hasAssociatedPublication {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hasassociatedpublication
+
 mappingId	cpmeta_hasatcid
-target		<{subj}> cpmeta:hasAtcId {obj} .
+target		<{subj}> cpmeta:hasAtcId {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasatcid
 
+mappingId	cpmeta_hasattributionweight
+target		<{subj}> cpmeta:hasAttributionWeight {obj}^^xsd:integer .
+source		SELECT subj, obj FROM cpmeta_hasattributionweight
 
 mappingId	cpmeta_hasclimatezone
 target		<{subj}> cpmeta:hasClimateZone <{obj}> .
@@ -85,8 +96,12 @@ target		<{subj}> cpmeta:hasColumn <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hascolumn
 
 mappingId	cpmeta_hascolumntitle
-target		<{subj}> cpmeta:hasColumnTitle {obj} .
+target		<{subj}> cpmeta:hasColumnTitle {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hascolumntitle
+
+mappingId	cpmeta_hascoverimage
+target		<{subj}> cpmeta:hasCoverImage {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hascoverimage
 
 mappingId	cpmeta_hasdatalevel
 target		<{subj}> cpmeta:hasDataLevel {obj} .
@@ -96,13 +111,20 @@ mappingId	cpmeta_hasdatatheme
 target		<{subj}> cpmeta:hasDataTheme <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasdatatheme
 
+mappingId	cpmeta_hasdepiction
+target		<{subj}> cpmeta:hasDepiction {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hasdepiction
 
 mappingId	cpmeta_hasdocumentationobject
 target		<{subj}> cpmeta:hasDocumentationObject <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasdocumentationobject
 
+mappingId	cpmeta_hasdocumentationuri
+target		<{subj}> cpmeta:hasDocumentationUri {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hasdocumentationuri
+
 mappingId	cpmeta_hasdoi
-target		<{subj}> cpmeta:hasDoi {obj} .
+target		<{subj}> cpmeta:hasDoi {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasdoi
 
 mappingId	cpmeta_haseasternbound
@@ -114,7 +136,7 @@ target		<{subj}> cpmeta:hasEcosystemType <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasecosystemtype
 
 mappingId	cpmeta_haselevation
-target		<{subj}> cpmeta:hasElevation {obj} .
+target		<{subj}> cpmeta:hasElevation {obj}^^xsd:float .
 source		SELECT subj, obj FROM cpmeta_haselevation
 
 mappingId	cpmeta_hasemail
@@ -126,12 +148,15 @@ target		<{subj}> cpmeta:hasEncoding <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasencoding
 
 mappingId	cpmeta_hasenddate
-target		<{subj}> cpmeta:hasEndDate {obj} .
+target		<{subj}> cpmeta:hasEndDate {obj}^^xsd:date .
 source		SELECT subj, obj FROM cpmeta_hasenddate
 
+mappingId	cpmeta_hasendtime
+target		<{subj}> cpmeta:hasEndTime {obj}^^xsd:dateTime .
+source		SELECT subj, obj FROM cpmeta_hasendtime
 
 mappingId	cpmeta_hasetcid
-target		<{subj}> cpmeta:hasEtcId {obj} .
+target		<{subj}> cpmeta:hasEtcId {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasetcid
 
 mappingId	cpmeta_hasextraroleinfo
@@ -139,7 +164,7 @@ target		<{subj}> cpmeta:hasExtraRoleInfo {obj} .
 source		SELECT subj, obj FROM cpmeta_hasextraroleinfo
 
 mappingId	cpmeta_hasfirstname
-target		<{subj}> cpmeta:hasFirstName {obj} .
+target		<{subj}> cpmeta:hasFirstName {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasfirstname
 
 mappingId	cpmeta_hasformat
@@ -155,12 +180,16 @@ target		<{subj}> cpmeta:hasFunding <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasfunding
 
 mappingId	cpmeta_hasgoodflagvalue
-target		<{subj}> cpmeta:hasGoodFlagValue {obj} .
+target		<{subj}> cpmeta:hasGoodFlagValue {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasgoodflagvalue
 
 mappingId	cpmeta_hashidefromsearchpolicy
-target		<{subj}> cpmeta:hasHideFromSearchPolicy {obj} .
+target		<{subj}> cpmeta:hasHideFromSearchPolicy {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_hashidefromsearchpolicy
+
+mappingId	cpmeta_hasicon
+target		<{subj}> cpmeta:hasIcon {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hasicon
 
 mappingId	cpmeta_hasinstrumentcomponent
 target		<{subj}> cpmeta:hasInstrumentComponent <{obj}> .
@@ -171,15 +200,15 @@ target		<{subj}> cpmeta:hasInstrumentOwner <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasinstrumentowner
 
 mappingId	cpmeta_haskeywords
-target		<{subj}> cpmeta:hasKeywords {obj} .
+target		<{subj}> cpmeta:hasKeywords {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_haskeywords
 
 mappingId	cpmeta_haslabelingdate
-target		<{subj}> cpmeta:hasLabelingDate {obj} .
+target		<{subj}> cpmeta:hasLabelingDate {obj}^^xsd:date .
 source		SELECT subj, obj FROM cpmeta_haslabelingdate
 
 mappingId	cpmeta_haslastname
-target		<{subj}> cpmeta:hasLastName {obj} .
+target		<{subj}> cpmeta:hasLastName {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_haslastname
 
 mappingId	cpmeta_haslatitude
@@ -194,20 +223,24 @@ mappingId	cpmeta_haslongitude
 target		<{subj}> cpmeta:hasLongitude {obj} .
 source		SELECT subj, obj FROM cpmeta_haslongitude
 
+mappingId	cpmeta_hasmarkericon
+target		<{subj}> cpmeta:hasMarkerIcon {obj}^^xsd:anyURI .
+source		SELECT subj, obj FROM cpmeta_hasmarkericon
+
 mappingId	cpmeta_hasmaxvalue
-target		<{subj}> cpmeta:hasMaxValue {obj} .
+target		<{subj}> cpmeta:hasMaxValue {obj}^^xsd:double .
 source		SELECT subj, obj FROM cpmeta_hasmaxvalue
 
 mappingId	cpmeta_hasmeanannualprecip
-target		<{subj}> cpmeta:hasMeanAnnualPrecip {obj} .
+target		<{subj}> cpmeta:hasMeanAnnualPrecip {obj}^^xsd:float .
 source		SELECT subj, obj FROM cpmeta_hasmeanannualprecip
 
 mappingId	cpmeta_hasmeanannualradiation
-target		<{subj}> cpmeta:hasMeanAnnualRadiation {obj} .
+target		<{subj}> cpmeta:hasMeanAnnualRadiation {obj}^^xsd:float .
 source		SELECT subj, obj FROM cpmeta_hasmeanannualradiation
 
 mappingId	cpmeta_hasmeanannualtemp
-target		<{subj}> cpmeta:hasMeanAnnualTemp {obj} .
+target		<{subj}> cpmeta:hasMeanAnnualTemp {obj}^^xsd:float .
 source		SELECT subj, obj FROM cpmeta_hasmeanannualtemp
 
 mappingId	cpmeta_hasmembership
@@ -215,32 +248,43 @@ target		<{subj}> cpmeta:hasMembership <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasmembership
 
 mappingId	cpmeta_hasminvalue
-target		<{subj}> cpmeta:hasMinValue {obj} .
+target		<{subj}> cpmeta:hasMinValue {obj}^^xsd:double .
 source		SELECT subj, obj FROM cpmeta_hasminvalue
 
 mappingId	cpmeta_hasmodel
-target		<{subj}> cpmeta:hasModel {obj} .
+target		<{subj}> cpmeta:hasModel {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasmodel
 
 mappingId	cpmeta_hasname
-target		<{subj}> cpmeta:hasName {obj} .
+target		<{subj}> cpmeta:hasName {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasname
 
 mappingId	cpmeta_hasnorthernbound
 target		<{subj}> cpmeta:hasNorthernBound {obj} .
 source		SELECT subj, obj FROM cpmeta_hasnorthernbound
 
+mappingId	cpmeta_hasnumberofrows
+target		<{subj}> cpmeta:hasNumberOfRows {obj}^^xsd:long .
+source		SELECT subj, obj FROM cpmeta_hasnumberofrows
+
 mappingId	cpmeta_hasobjectspec
 target		<{subj}> cpmeta:hasObjectSpec <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasobjectspec
 
 mappingId	cpmeta_hasoperationalperiod
-target		<{subj}> cpmeta:hasOperationalPeriod {obj} .
+target		<{subj}> cpmeta:hasOperationalPeriod {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasoperationalperiod
 
+mappingId	cpmeta_hasorcidid
+target		<{subj}> cpmeta:hasOrcidId {obj}^^xsd:string .
+source		SELECT subj, obj FROM cpmeta_hasorcidid
+
+mappingId	cpmeta_hasorderweight
+target		<{subj}> cpmeta:hasOrderWeight {obj}^^xsd:integer .
+source		SELECT subj, obj FROM cpmeta_hasorderweight
 
 mappingId	cpmeta_hasotcid
-target		<{subj}> cpmeta:hasOtcId {obj} .
+target		<{subj}> cpmeta:hasOtcId {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasotcid
 
 mappingId	cpmeta_hasquantitykind
@@ -256,7 +300,7 @@ target		<{subj}> cpmeta:hasRole <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasrole
 
 mappingId	cpmeta_hassamplingheight
-target		<{subj}> cpmeta:hasSamplingHeight {obj} .
+target		<{subj}> cpmeta:hasSamplingHeight {obj}^^xsd:float .
 source		SELECT subj, obj FROM cpmeta_hassamplingheight
 
 mappingId	cpmeta_hassamplingpoint
@@ -264,7 +308,7 @@ target		<{subj}> cpmeta:hasSamplingPoint <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hassamplingpoint
 
 mappingId	cpmeta_hasserialnumber
-target		<{subj}> cpmeta:hasSerialNumber {obj} .
+target		<{subj}> cpmeta:hasSerialNumber {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasserialnumber
 
 mappingId	cpmeta_hassha256sum
@@ -272,15 +316,15 @@ target		<{subj}> cpmeta:hasSha256sum {obj} .
 source		SELECT subj, obj FROM cpmeta_hassha256sum
 
 mappingId	cpmeta_hassizeinbytes
-target		<{subj}> cpmeta:hasSizeInBytes {obj} .
+target		<{subj}> cpmeta:hasSizeInBytes {obj}^^xsd:long .
 source		SELECT subj, obj FROM cpmeta_hassizeinbytes
 
 mappingId	cpmeta_hasskippidmintingpolicy
-target		<{subj}> cpmeta:hasSkipPidMintingPolicy {obj} .
+target		<{subj}> cpmeta:hasSkipPidMintingPolicy {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_hasskippidmintingpolicy
 
 mappingId	cpmeta_hasskipstoragepolicy
-target		<{subj}> cpmeta:hasSkipStoragePolicy {obj} .
+target		<{subj}> cpmeta:hasSkipStoragePolicy {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_hasskipstoragepolicy
 
 mappingId	cpmeta_hassouthernbound
@@ -296,11 +340,11 @@ target		<{subj}> cpmeta:hasSpecificDatasetType <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasspecificdatasettype
 
 mappingId	cpmeta_hasstartdate
-target		<{subj}> cpmeta:hasStartDate {obj} .
+target		<{subj}> cpmeta:hasStartDate {obj}^^xsd:date .
 source		SELECT subj, obj FROM cpmeta_hasstartdate
 
 mappingId	cpmeta_hasstarttime
-target		<{subj}> cpmeta:hasStartTime {obj} .
+target		<{subj}> cpmeta:hasStartTime {obj}^^xsd:dateTime .
 source		SELECT subj, obj FROM cpmeta_hasstarttime
 
 mappingId	cpmeta_hasstationclass
@@ -308,19 +352,19 @@ target		<{subj}> cpmeta:hasStationClass {obj} .
 source		SELECT subj, obj FROM cpmeta_hasstationclass
 
 mappingId	cpmeta_hasstationid
-target		<{subj}> cpmeta:hasStationId {obj} .
+target		<{subj}> cpmeta:hasStationId {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasstationid
 
 mappingId	cpmeta_hastemporalresolution
-target		<{subj}> cpmeta:hasTemporalResolution {obj} .
+target		<{subj}> cpmeta:hasTemporalResolution {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hastemporalresolution
 
 mappingId	cpmeta_hastimezoneoffset
-target		<{subj}> cpmeta:hasTimeZoneOffset {obj} .
+target		<{subj}> cpmeta:hasTimeZoneOffset {obj}^^xsd:integer .
 source		SELECT subj, obj FROM cpmeta_hastimezoneoffset
 
 mappingId	cpmeta_hasunit
-target		<{subj}> cpmeta:hasUnit {obj} .
+target		<{subj}> cpmeta:hasUnit {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasunit
 
 mappingId	cpmeta_hasvalueformat
@@ -336,11 +380,11 @@ target		<{subj}> cpmeta:hasVariable <{obj}> .
 source		SELECT subj, obj FROM cpmeta_hasvariable
 
 mappingId	cpmeta_hasvariablename
-target		<{subj}> cpmeta:hasVariableName {obj} .
+target		<{subj}> cpmeta:hasVariableName {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasvariablename
 
 mappingId	cpmeta_hasvariabletitle
-target		<{subj}> cpmeta:hasVariableTitle {obj} .
+target		<{subj}> cpmeta:hasVariableTitle {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_hasvariabletitle
 
 mappingId	cpmeta_hasvendor
@@ -352,7 +396,7 @@ target		<{subj}> cpmeta:hasWebpageElements <{obj}> .
 source		SELECT subj, obj FROM cpmeta_haswebpageelements
 
 mappingId	cpmeta_haswebpagelink
-target		<{subj}> cpmeta:hasWebpageLink <{obj}> .
+target		<{subj}> cpmeta:hasWebpageLink {obj}^^xsd:anyURI .
 source		SELECT subj, obj FROM cpmeta_haswebpagelink
 
 mappingId	cpmeta_haswesternbound
@@ -360,7 +404,7 @@ target		<{subj}> cpmeta:hasWesternBound {obj} .
 source		SELECT subj, obj FROM cpmeta_haswesternbound
 
 mappingId	cpmeta_haswigosid
-target		<{subj}> cpmeta:hasWigosId {obj} .
+target		<{subj}> cpmeta:hasWigosId {obj}^^xsd:string .
 source		SELECT subj, obj FROM cpmeta_haswigosid
 
 mappingId	cpmeta_impliesdefaultlicence
@@ -368,7 +412,7 @@ target		<{subj}> cpmeta:impliesDefaultLicence <{obj}> .
 source		SELECT subj, obj FROM cpmeta_impliesdefaultlicence
 
 mappingId	cpmeta_isdiscontinued
-target		<{subj}> cpmeta:isDiscontinued {obj} .
+target		<{subj}> cpmeta:isDiscontinued {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_isdiscontinued
 
 mappingId	cpmeta_isnextversionof
@@ -376,11 +420,11 @@ target		<{subj}> cpmeta:isNextVersionOf <{obj}> .
 source		SELECT subj, obj FROM cpmeta_isnextversionof
 
 mappingId	cpmeta_isoptionalcolumn
-target		<{subj}> cpmeta:isOptionalColumn {obj} .
+target		<{subj}> cpmeta:isOptionalColumn {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_isoptionalcolumn
 
 mappingId	cpmeta_isoptionalvariable
-target		<{subj}> cpmeta:isOptionalVariable {obj} .
+target		<{subj}> cpmeta:isOptionalVariable {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_isoptionalvariable
 
 mappingId	cpmeta_isqualityflagfor
@@ -388,7 +432,7 @@ target		<{subj}> cpmeta:isQualityFlagFor <{obj}> .
 source		SELECT subj, obj FROM cpmeta_isqualityflagfor
 
 mappingId	cpmeta_isregexcolumn
-target		<{subj}> cpmeta:isRegexColumn {obj} .
+target		<{subj}> cpmeta:isRegexColumn {obj}^^xsd:boolean .
 source		SELECT subj, obj FROM cpmeta_isregexcolumn
 
 mappingId	cpmeta_operateson
@@ -447,6 +491,10 @@ mappingId	otcmeta_awardtitle
 target		<{subj}> otcmeta:awardTitle {obj} .
 source		SELECT subj, obj FROM otcmeta_awardtitle
 
+mappingId	otcmeta_awarduri
+target		<{subj}> otcmeta:awardURI <{obj}> .
+source		SELECT subj, obj FROM otcmeta_awarduri
+
 mappingId	otcmeta_countrycode
 target		<{subj}> otcmeta:countryCode {obj} .
 source		SELECT subj, obj FROM otcmeta_countrycode
@@ -454,6 +502,10 @@ source		SELECT subj, obj FROM otcmeta_countrycode
 mappingId	otcmeta_device
 target		<{subj}> otcmeta:device <{obj}> .
 source		SELECT subj, obj FROM otcmeta_device
+
+mappingId	otcmeta_hasattributionweight
+target		<{subj}> otcmeta:hasAttributionWeight {obj} .
+source		SELECT subj, obj FROM otcmeta_hasattributionweight
 
 mappingId	otcmeta_hasdate
 target		<{subj}> otcmeta:hasDate {obj} .
@@ -543,6 +595,9 @@ mappingId	otcmeta_hasname
 target		<{subj}> otcmeta:hasName {obj} .
 source		SELECT subj, obj FROM otcmeta_hasname
 
+mappingId	otcmeta_hasorcidid
+target		<{subj}> otcmeta:hasOrcidId {obj} .
+source		SELECT subj, obj FROM otcmeta_hasorcidid
 
 mappingId	otcmeta_hasowner
 target		<{subj}> otcmeta:hasOwner <{obj}> .
@@ -1441,7 +1496,7 @@ target		<{subj}> <http://www.w3.org/ns/locn#geometry> {obj} .
 source		SELECT subj, obj FROM locn_geometry
 
 mappingId	prov_endedattime
-target		<{subj}> prov:endedAtTime {obj} .
+target		<{subj}> prov:endedAtTime {obj}^^xsd:dateTime .
 source		SELECT subj, obj FROM prov_endedattime
 
 mappingId	prov_hadprimarysource
@@ -1449,7 +1504,7 @@ target		<{subj}> prov:hadPrimarySource <{obj}> .
 source		SELECT subj, obj FROM prov_hadprimarysource
 
 mappingId	prov_startedattime
-target		<{subj}> prov:startedAtTime {obj} .
+target		<{subj}> prov:startedAtTime {obj}^^xsd:dateTime .
 source		SELECT subj, obj FROM prov_startedattime
 
 mappingId	prov_wasassociatedwith

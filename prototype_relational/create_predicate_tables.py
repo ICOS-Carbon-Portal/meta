@@ -379,7 +379,7 @@ def populate_predicate_table(cursor, table_name, predicate, limit=None):
     return cursor.rowcount
 
 
-def create_index_on_subj(cursor, table_name):
+def create_index(cursor, table_name, with_obj):
     """
     Create an index on the subj column for faster subject lookups.
 
@@ -389,6 +389,9 @@ def create_index_on_subj(cursor, table_name):
     """
     index_name = f"idx_{table_name}_subj"
     cursor.execute(f"CREATE INDEX {index_name} ON {table_name}(subj);")
+    if with_obj:
+        index_name = f"idx_{table_name}_obj"
+        cursor.execute(f"CREATE INDEX {index_name} ON {table_name}(obj);")
 
 
 def process_predicates(conn, limit=None, add_index=False):
@@ -446,7 +449,7 @@ def process_predicates(conn, limit=None, add_index=False):
             # Create index if requested
             if add_index:
                 print("  -> Creating index on subj...")
-                create_index_on_subj(cursor, table_name)
+                create_index(cursor, table_name, table_name not in ['cpmeta_asgeojson', 'dcterms_description'])
                 index_count += 1
 
             # Insert mapping

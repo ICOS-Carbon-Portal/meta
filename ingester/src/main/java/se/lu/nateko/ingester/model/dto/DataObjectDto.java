@@ -14,6 +14,7 @@ public class DataObjectDto {
 	private URI objectSpecification;
 	private String fileName;
 	private SpecificInfoDto specificInfo;
+	@JsonDeserialize(using = ListStringDeserializer.class)
 	private List<String> isNextVersionOf;
 	private Optional<DoiDto> preExistingDio;
 	private Optional<ReferencesDto> references;
@@ -24,7 +25,6 @@ public class DataObjectDto {
 		URI objectSpecification,
 		String fileName,
 		SpecificInfoDto specificInfo,
-		@JsonDeserialize(using = ListStringDeserializer.class)
 		List<String> isNextVersionOf,
 		Optional<DoiDto> preExistingDio,
 		Optional<ReferencesDto> references

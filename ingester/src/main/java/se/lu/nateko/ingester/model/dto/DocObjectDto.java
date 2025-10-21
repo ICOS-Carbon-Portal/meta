@@ -4,6 +4,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import se.lu.nateko.ingester.deserialize.ListStringDeserializer;
+
 public class DocObjectDto {
 	private String hashSum;
 	private String submitterId;
@@ -11,6 +15,7 @@ public class DocObjectDto {
 	private Optional<String> title;
 	private Optional<String> description;
 	private List<URI> authors;
+	@JsonDeserialize(using = ListStringDeserializer.class)
 	private List<String> isNextVersionOf;
 	private Optional<DoiDto> preExistingDoi;
 	private Optional<ReferencesDto> references;

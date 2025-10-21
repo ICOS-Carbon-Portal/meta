@@ -4,11 +4,16 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import se.lu.nateko.ingester.deserialize.ListStringDeserializer;
+
 public class StaticCollectionDto {
 	private String submitterId;
 	private List<URI> members;
 	private String title;
 	private Optional<String> description;
+	@JsonDeserialize(using = ListStringDeserializer.class)
 	private List<String> isNextVersionOf;
 	private Optional<DoiDto> preExistingDoi;
 	private Optional<String> documentation;

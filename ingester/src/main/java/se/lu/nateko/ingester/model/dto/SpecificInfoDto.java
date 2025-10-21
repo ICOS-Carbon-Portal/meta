@@ -4,9 +4,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import se.lu.nateko.ingester.deserialize.ListUriDeserializer;
+
 public class SpecificInfoDto {
 	private URI station;
 	private Optional<URI> site;
+	@JsonDeserialize(using = ListUriDeserializer.class)
 	private List<URI> instrument;
 	private Optional<PositionDto> position;
 	private Optional<Float> samplingHeight;

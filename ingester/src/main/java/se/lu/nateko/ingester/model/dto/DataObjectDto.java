@@ -4,6 +4,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import se.lu.nateko.ingester.deserialize.ListStringDeserializer;
+
 public class DataObjectDto {
 	private String hashSum;
 	private String submitterId;
@@ -12,7 +16,7 @@ public class DataObjectDto {
 	private SpecificInfoDto specificInfo;
 	private List<String> isNextVersionOf;
 	private Optional<DoiDto> preExistingDio;
-	private List<ReferencesDto> references;
+	private Optional<ReferencesDto> references;
 
 	public DataObjectDto(
 		String hashSum,
@@ -20,9 +24,10 @@ public class DataObjectDto {
 		URI objectSpecification,
 		String fileName,
 		SpecificInfoDto specificInfo,
+		@JsonDeserialize(using = ListStringDeserializer.class)
 		List<String> isNextVersionOf,
 		Optional<DoiDto> preExistingDio,
-		List<ReferencesDto> references
+		Optional<ReferencesDto> references
 	) {
 		this.hashSum = hashSum;
 		this.submitterId = submitterId;
@@ -62,7 +67,7 @@ public class DataObjectDto {
 		return preExistingDio;
 	}
 
-	public List<ReferencesDto> getReferences() {
+	public Optional<ReferencesDto> getReferences() {
 		return references;
 	}
 }

@@ -205,7 +205,6 @@ $(function () {
 	});
 
 	$("#result").hide();
-	$("#messDiv").css({opacity: 0, visibility: "hidden"});
 
 	var queryParams = processQuery(window.location.search);
 	var state = {

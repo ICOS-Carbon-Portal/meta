@@ -16,7 +16,7 @@
 	@if(webpageDetailsPresent) {
 		@for(details <- station.org.webpageDetails) {
 			@for(cover <- details.coverImage) {
-			<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -2rem;">
+			<div class="row cover-image position-relative" style="background: url(@{cover}) center/cover; height: 558px; margin-top: -1.5rem;">
 				<div class="col">
 						<h1 class="text-light text-center" style="margin-top: 8vw;">
 							@envri STATION<br><strong style="font-size: calc(1.375rem + 6.5vw);">@{stationShortName(station)}</strong>

@@ -205,7 +205,6 @@ $(function () {
 	});
 
 	$("#result").hide();
-	$("#messDiv").hide();
 
 	var queryParams = processQuery(window.location.search);
 	var state = {
@@ -253,17 +252,20 @@ $(function () {
 	window.yasqe.on("queryResponse", function (yasqe, response, duration) {
 		
 		$("#result").show();
+		$("#messSpan").css({ opacity: 1, visibility: "visible" }).delay(3000)
+			.fadeTo(1000, 0, function() { $("#messSpan").css({visibility: "hidden"})});
 
 		if (response.ok) {
 			$("#copyTxtBtn").show();
 
 			postProcessing(getResult(response), state.type, duration);
 
-			$("#messSpan").text("Query was successfull").show().delay(3000).fadeOut();
+			$("#messSpan").text("Query was successful").css({ color: "darkgreen" });
+							
 		
 		} else {
 			$("#statusSpan").text("");
-			$("#messSpan").text("Could not execute query").show().delay(3000).fadeOut();
+			$("#messSpan").text("Could not execute query").css({ color: "darkred" });
 			$("#result").html(response.response.text);
 		}
 	});

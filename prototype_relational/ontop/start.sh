@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-../ontop-cli-5.4.0/ontop endpoint \
+ONTOP_LOG_LEVEL=debug ../ontop-cli-5.4.0/ontop endpoint \
   --properties="ontop.properties" \
   --dev \
   --ontology="cpmeta.ttl" \

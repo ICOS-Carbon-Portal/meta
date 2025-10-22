@@ -344,7 +344,7 @@ def create_predicate_table(cursor, table_name, typ):
     cursor.execute(f"""
         CREATE TABLE {table_name} (
             subj TEXT NOT NULL,
-            obj {typ}
+            obj {typ} NOT NULL
         );
     """)
 
@@ -362,18 +362,19 @@ def populate_predicate_table(cursor, table_name, predicate, limit=None):
     Returns:
         Number of rows inserted
     """
+
     if limit:
         cursor.execute(f"""
             INSERT INTO {table_name} (subj, obj)
             SELECT subj, obj FROM rdf_triples
-            WHERE pred = %s
+            WHERE obj IS NOT NULL AND pred = %s
             LIMIT %s;
         """, (predicate, limit))
     else:
         cursor.execute(f"""
             INSERT INTO {table_name} (subj, obj)
             SELECT subj, obj FROM rdf_triples
-            WHERE pred = %s;
+            WHERE obj IS NOT NULL AND pred = %s;
         """, (predicate,))
 
     return cursor.rowcount
@@ -426,6 +427,9 @@ def process_predicates(conn, limit=None, add_index=False):
 
             # Sanitize the predicate to create a valid table name
             table_name = sanitize_predicate(predicate)
+            if 'rdf-syntax-ns' in predicate :
+                print(f'Skipping rdf-syntax predicate: {predicate}')
+                continue
 
             print(f"\nProcessing predicate: {predicate}")
             print(f"  -> Table name: {table_name}")

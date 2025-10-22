@@ -1,0 +1,31 @@
+{
+  "fileName": "ICOS_ATC_NRT_ZSF_2025-04-01_2025-10-19_3.0_1482_N2O.zip",
+  "hashSum": "pE6_c1HW87iQwCzYPgeBPEb3wLu7FHR3ZCHitB-ymH8",
+  "isNextVersionOf": [
+    "KW0lHcgTsqlm2-jLYuxDE_x1"
+  ],
+  "objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject",
+  "references": {
+    "licence": "http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"
+  },
+  "specificInfo": {
+    "acquisitionInterval": {
+      "start": "2025-04-01T00:00:00Z",
+      "stop": "2025-10-19T23:00:00Z"
+    },
+    "instrument": "http://meta.icos-cp.eu/resources/instruments/ATC_1482",
+    "nRows": 4848,
+    "production": {
+      "contributors": [
+        "http://meta.icos-cp.eu/resources/organizations/ICOS-CAL-FCL"
+      ],
+      "creationDate": "2025-10-20T10:12:20Z",
+      "creator": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "sources": []
+    },
+    "samplingHeight": 3.0,
+    "station": "http://meta.icos-cp.eu/resources/stations/AS_ZSF"
+  },
+  "submitterId": ""
+}

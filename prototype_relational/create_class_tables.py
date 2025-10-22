@@ -1,0 +1,1160 @@
+#!/usr/bin/env python3
+"""
+Script to create and populate class-based tables from rdf_triples.
+Uses a normalized relational schema with one table per major OWL class.
+
+This approach is significantly faster for SPARQL queries via Ontop compared
+to the predicate-table approach, as it minimizes JOINs and enables better
+query optimization.
+"""
+
+import psycopg2
+import psycopg2.extras
+import argparse
+import os
+import sys
+import json
+from collections import defaultdict
+
+# Configuration for which table to read from
+TRIPLES_TABLE = os.environ.get('TRIPLES_TABLE', 'rdf_triples')
+
+# Namespace definitions
+NS = {
+    'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
+    'xsd': 'http://www.w3.org/2001/XMLSchema#',
+    'cpmeta': 'http://meta.icos-cp.eu/ontologies/cpmeta/',
+    'prov': 'http://www.w3.org/ns/prov#',
+}
+
+# Type URIs for main classes
+TYPE_URIS = {
+    'Station': f"{NS['cpmeta']}Station",
+    'IcosStation': f"{NS['cpmeta']}IcosStation",
+    'ES': f"{NS['cpmeta']}ES",
+    'AS': f"{NS['cpmeta']}AS",
+    'OS': f"{NS['cpmeta']}OS",
+    'Organization': f"{NS['cpmeta']}Organization",
+    'Person': f"{NS['cpmeta']}Person",
+    'DataObject': f"{NS['cpmeta']}DataObject",
+    'SimpleDataObject': f"{NS['cpmeta']}SimpleDataObject",
+    'SpatialDataObject': f"{NS['cpmeta']}SpatialDataObject",
+    'DataObjectSpec': f"{NS['cpmeta']}DataObjectSpec",
+    'SimpleObjectSpec': f"{NS['cpmeta']}SimpleObjectSpec",
+    'Project': f"{NS['cpmeta']}Project",
+    'DataAcquisition': f"{NS['cpmeta']}DataAcquisition",
+    'Instrument': f"{NS['cpmeta']}Instrument",
+    'Membership': f"{NS['cpmeta']}Membership",
+}
+
+
+def get_connection(host='localhost', port=5432, user='postgres', dbname='postgres', password='ontop'):
+    """Create and return a PostgreSQL database connection."""
+    try:
+        return psycopg2.connect(
+            host=host,
+            port=port,
+            user=user,
+            dbname=dbname,
+            password=password
+        )
+    except psycopg2.Error as e:
+        print(f"Error connecting to database: {e}")
+        sys.exit(1)
+
+
+def check_triples_table(cursor):
+    """Check which triples table exists and return its name."""
+    global TRIPLES_TABLE
+
+    # Try both possible table names
+    for table_name in ['rdf_triples', 'triples']:
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = %s
+            );
+        """, (table_name,))
+
+        if cursor.fetchone()[0]:
+            TRIPLES_TABLE = table_name
+            print(f"Using triples table: {TRIPLES_TABLE}")
+            return TRIPLES_TABLE
+
+    print("Error: No triples table found (tried 'rdf_triples' and 'triples')")
+    sys.exit(1)
+
+
+def drop_class_tables(cursor):
+    """Drop all class-based tables in proper order (respecting foreign keys)."""
+    print("Dropping existing class-based tables...")
+
+    tables_to_drop = [
+        # Junction tables first (they reference other tables)
+        'station_ecosystem_types',
+        'station_responsible_organizations',
+        'data_object_keywords',
+        'data_object_acquisitions',
+        'memberships',
+
+        # Main tables
+        'data_acquisitions',
+        'data_objects',
+        'object_specs',
+        'instruments',
+        'persons',
+        'stations',
+        'organizations',
+
+        # Lookup tables
+        'data_themes',
+        'object_formats',
+        'object_encodings',
+        'climate_zones',
+        'projects',
+        'keywords',
+        'specific_dataset_types',
+    ]
+
+    dropped_count = 0
+    for table in tables_to_drop:
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+            dropped_count += 1
+        except psycopg2.Error as e:
+            print(f"Warning: Could not drop table {table}: {e}")
+
+    print(f"✓ Dropped {dropped_count} tables")
+
+
+def create_schema(cursor):
+    """Create all class-based tables with proper structure and indexes."""
+    print("\nCreating class-based table schema...")
+
+    # Lookup/vocabulary tables
+    print("  Creating lookup tables...")
+
+    cursor.execute("""
+        CREATE TABLE keywords (
+            id SERIAL PRIMARY KEY,
+            keyword TEXT UNIQUE NOT NULL
+        );
+        CREATE INDEX idx_keywords_keyword ON keywords(keyword);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE data_themes (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT,
+            icon TEXT,
+            marker_icon TEXT
+        );
+        CREATE INDEX idx_data_themes_uri ON data_themes(uri);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE object_formats (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT
+        );
+        CREATE INDEX idx_object_formats_uri ON object_formats(uri);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE object_encodings (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT
+        );
+        CREATE INDEX idx_object_encodings_uri ON object_encodings(uri);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE climate_zones (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT
+        );
+        CREATE INDEX idx_climate_zones_uri ON climate_zones(uri);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE specific_dataset_types (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT
+        );
+        CREATE INDEX idx_specific_dataset_types_uri ON specific_dataset_types(uri);
+    """)
+
+    # Organizations table
+    print("  Creating organizations table...")
+    cursor.execute("""
+        CREATE TABLE organizations (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            name TEXT,
+            email TEXT,
+            country_code TEXT,
+            location_latitude DOUBLE PRECISION,
+            location_longitude DOUBLE PRECISION,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_organizations_uri ON organizations(uri);
+        CREATE INDEX idx_organizations_type ON organizations(type);
+        CREATE INDEX idx_organizations_name ON organizations(name);
+    """)
+
+    # Persons table
+    print("  Creating persons table...")
+    cursor.execute("""
+        CREATE TABLE persons (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT,
+            orcid_id TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_persons_uri ON persons(uri);
+        CREATE INDEX idx_persons_orcid ON persons(orcid_id);
+        CREATE INDEX idx_persons_name ON persons(last_name, first_name);
+    """)
+
+    # Stations table
+    print("  Creating stations table...")
+    cursor.execute("""
+        CREATE TABLE stations (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            name TEXT,
+            station_id TEXT,
+            country_code TEXT,
+            latitude DOUBLE PRECISION,
+            longitude DOUBLE PRECISION,
+            elevation FLOAT,
+            mean_annual_temp FLOAT,
+            mean_annual_precip FLOAT,
+            mean_annual_radiation FLOAT,
+            time_zone_offset INTEGER,
+            operational_period TEXT,
+            is_discontinued BOOLEAN DEFAULT FALSE,
+            station_class TEXT,
+            labeling_date DATE,
+            wigos_id TEXT,
+            responsible_organization_id INTEGER REFERENCES organizations(id),
+            climate_zone_id INTEGER REFERENCES climate_zones(id),
+            responsible_org_name TEXT,
+            climate_zone_label TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_stations_uri ON stations(uri);
+        CREATE INDEX idx_stations_type ON stations(type);
+        CREATE INDEX idx_stations_station_id ON stations(station_id);
+        CREATE INDEX idx_stations_country ON stations(country_code);
+        CREATE INDEX idx_stations_lat_lon ON stations(latitude, longitude);
+        CREATE INDEX idx_stations_resp_org ON stations(responsible_organization_id);
+    """)
+
+    # Projects table
+    print("  Creating projects table...")
+    cursor.execute("""
+        CREATE TABLE projects (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            name TEXT,
+            keywords TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_projects_uri ON projects(uri);
+        CREATE INDEX idx_projects_name ON projects(name);
+    """)
+
+    # Object specs table
+    print("  Creating object_specs table...")
+    cursor.execute("""
+        CREATE TABLE object_specs (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            label TEXT,
+            description TEXT,
+            data_level INTEGER,
+            theme_id INTEGER REFERENCES data_themes(id),
+            format_id INTEGER REFERENCES object_formats(id),
+            encoding_id INTEGER REFERENCES object_encodings(id),
+            project_id INTEGER REFERENCES projects(id),
+            dataset_type_id INTEGER REFERENCES specific_dataset_types(id),
+            theme_uri TEXT,
+            theme_label TEXT,
+            format_uri TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_object_specs_uri ON object_specs(uri);
+        CREATE INDEX idx_object_specs_theme ON object_specs(theme_id);
+        CREATE INDEX idx_object_specs_format ON object_specs(format_id);
+        CREATE INDEX idx_object_specs_data_level ON object_specs(data_level);
+    """)
+
+    # Data objects table
+    print("  Creating data_objects table...")
+    cursor.execute("""
+        CREATE TABLE data_objects (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            sha256 TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            name TEXT,
+            doi TEXT,
+            acquisition_start_time TIMESTAMP WITH TIME ZONE,
+            acquisition_end_time TIMESTAMP WITH TIME ZONE,
+            submission_start_time TIMESTAMP WITH TIME ZONE,
+            submission_end_time TIMESTAMP WITH TIME ZONE,
+            data_start_time TIMESTAMP WITH TIME ZONE,
+            data_end_time TIMESTAMP WITH TIME ZONE,
+            size_in_bytes BIGINT,
+            number_of_rows BIGINT,
+            actual_column_names JSONB,
+            object_spec_id INTEGER REFERENCES object_specs(id),
+            previous_version_id INTEGER REFERENCES data_objects(id),
+            spec_label TEXT,
+            data_level INTEGER,
+            theme_uri TEXT,
+            theme_label TEXT,
+            theme_icon TEXT,
+            format_uri TEXT,
+            project_uri TEXT,
+            was_produced_by TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_data_objects_uri ON data_objects(uri);
+        CREATE INDEX idx_data_objects_sha256 ON data_objects(sha256);
+        CREATE INDEX idx_data_objects_spec ON data_objects(object_spec_id);
+        CREATE INDEX idx_data_objects_theme ON data_objects(theme_uri);
+        CREATE INDEX idx_data_objects_acq_times ON data_objects(acquisition_start_time, acquisition_end_time);
+        CREATE INDEX idx_data_objects_data_times ON data_objects(data_start_time, data_end_time);
+        CREATE INDEX idx_data_objects_size ON data_objects(size_in_bytes);
+        CREATE INDEX idx_data_objects_column_names_gin ON data_objects USING GIN (actual_column_names);
+    """)
+
+    # Instruments table
+    print("  Creating instruments table...")
+    cursor.execute("""
+        CREATE TABLE instruments (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            name TEXT,
+            model TEXT,
+            serial_number TEXT,
+            vendor_id INTEGER REFERENCES organizations(id),
+            owner_id INTEGER REFERENCES organizations(id),
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_instruments_uri ON instruments(uri);
+        CREATE INDEX idx_instruments_model ON instruments(model);
+        CREATE INDEX idx_instruments_serial ON instruments(serial_number);
+    """)
+
+    # Data acquisitions table
+    print("  Creating data_acquisitions table...")
+    cursor.execute("""
+        CREATE TABLE data_acquisitions (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            station_id INTEGER REFERENCES stations(id),
+            sampling_height FLOAT,
+            sampling_point_uri TEXT,
+            sampling_point_label TEXT,
+            station_uri TEXT,
+            station_name TEXT,
+            station_id_value TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_acquisitions_uri ON data_acquisitions(uri);
+        CREATE INDEX idx_acquisitions_station ON data_acquisitions(station_id);
+    """)
+
+    # Junction tables
+    print("  Creating junction tables...")
+
+    cursor.execute("""
+        CREATE TABLE station_ecosystem_types (
+            station_id INTEGER REFERENCES stations(id),
+            ecosystem_type_uri TEXT NOT NULL,
+            PRIMARY KEY (station_id, ecosystem_type_uri)
+        );
+        CREATE INDEX idx_station_ecosystem_station ON station_ecosystem_types(station_id);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE station_responsible_organizations (
+            station_id INTEGER REFERENCES stations(id),
+            organization_id INTEGER REFERENCES organizations(id),
+            PRIMARY KEY (station_id, organization_id)
+        );
+        CREATE INDEX idx_station_resp_org_station ON station_responsible_organizations(station_id);
+        CREATE INDEX idx_station_resp_org_org ON station_responsible_organizations(organization_id);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE data_object_keywords (
+            data_object_id INTEGER REFERENCES data_objects(id),
+            keyword_id INTEGER REFERENCES keywords(id),
+            PRIMARY KEY (data_object_id, keyword_id)
+        );
+        CREATE INDEX idx_data_object_keywords_obj ON data_object_keywords(data_object_id);
+        CREATE INDEX idx_data_object_keywords_kw ON data_object_keywords(keyword_id);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE data_object_acquisitions (
+            data_object_id INTEGER REFERENCES data_objects(id),
+            acquisition_id INTEGER REFERENCES data_acquisitions(id),
+            PRIMARY KEY (data_object_id, acquisition_id)
+        );
+        CREATE INDEX idx_data_object_acq_obj ON data_object_acquisitions(data_object_id);
+        CREATE INDEX idx_data_object_acq_acq ON data_object_acquisitions(acquisition_id);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE memberships (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            person_id INTEGER NOT NULL REFERENCES persons(id),
+            organization_id INTEGER NOT NULL REFERENCES organizations(id),
+            role_uri TEXT NOT NULL,
+            role_label TEXT,
+            start_time TIMESTAMP WITH TIME ZONE,
+            end_time TIMESTAMP WITH TIME ZONE,
+            attribution_weight INTEGER
+        );
+        CREATE INDEX idx_memberships_uri ON memberships(uri);
+        CREATE INDEX idx_memberships_person ON memberships(person_id);
+        CREATE INDEX idx_memberships_org ON memberships(organization_id);
+    """)
+
+    print("✓ Schema created successfully")
+
+
+def get_entities_by_type(cursor, type_uri, limit=None):
+    """
+    Fetch all entities of a specific rdf:type from the triples table.
+
+    Args:
+        cursor: Database cursor
+        type_uri: RDF type URI to filter by
+        limit: Optional limit on number of entities
+
+    Returns:
+        List of (subject_uri, properties_dict) tuples
+    """
+    rdf_type_pred = f"{NS['rdf']}type"
+
+    if limit:
+        cursor.execute(f"""
+            SELECT subj, obj
+            FROM {TRIPLES_TABLE}
+            WHERE pred = %s AND obj = %s
+            LIMIT %s
+        """, (rdf_type_pred, type_uri, limit))
+    else:
+        cursor.execute(f"""
+            SELECT subj, obj
+            FROM {TRIPLES_TABLE}
+            WHERE pred = %s AND obj = %s
+        """, (rdf_type_pred, type_uri))
+
+    subjects = [row[0] for row in cursor.fetchall()]
+
+    # Now fetch all properties for these subjects
+    if not subjects:
+        return []
+
+    # Use a dictionary to accumulate properties
+    entity_props = {subj: {} for subj in subjects}
+
+    # Fetch all triples for these subjects
+    cursor.execute(f"""
+        SELECT subj, pred, obj
+        FROM {TRIPLES_TABLE}
+        WHERE subj = ANY(%s)
+    """, (subjects,))
+
+    for subj, pred, obj in cursor:
+        # Handle multi-valued properties
+        if pred in entity_props[subj]:
+            # Convert to list if not already
+            if not isinstance(entity_props[subj][pred], list):
+                entity_props[subj][pred] = [entity_props[subj][pred]]
+            entity_props[subj][pred].append(obj)
+        else:
+            entity_props[subj][pred] = obj
+
+    return [(subj, props) for subj, props in entity_props.items()]
+
+
+def get_property_value(props, *predicates, default=None):
+    """
+    Get a single property value, trying multiple predicate URIs in order.
+    Returns the first found value or default.
+    """
+    for pred in predicates:
+        if pred in props:
+            val = props[pred]
+            # If it's a list, return the first element
+            if isinstance(val, list):
+                return val[0] if val else default
+            return val
+    return default
+
+
+def get_property_values(props, predicate):
+    """
+    Get all values for a multi-valued property.
+    Always returns a list.
+    """
+    if predicate not in props:
+        return []
+
+    val = props[predicate]
+    if isinstance(val, list):
+        return val
+    return [val]
+
+
+def populate_keywords(cursor, limit=None):
+    """Populate the keywords table from all hasKeyword predicates."""
+    print("\nPopulating keywords table...")
+
+    keyword_pred = f"{NS['cpmeta']}hasKeyword"
+
+    if limit:
+        cursor.execute(f"""
+            INSERT INTO keywords (keyword)
+            SELECT DISTINCT obj
+            FROM {TRIPLES_TABLE}
+            WHERE pred = %s
+            LIMIT %s
+            ON CONFLICT (keyword) DO NOTHING
+        """, (keyword_pred, limit))
+    else:
+        cursor.execute(f"""
+            INSERT INTO keywords (keyword)
+            SELECT DISTINCT obj
+            FROM {TRIPLES_TABLE}
+            WHERE pred = %s
+            ON CONFLICT (keyword) DO NOTHING
+        """, (keyword_pred,))
+
+    count = cursor.rowcount
+    print(f"  Inserted {count} keywords")
+    return count
+
+
+def populate_data_themes(cursor, limit=None):
+    """Populate data_themes lookup table."""
+    print("\nPopulating data_themes table...")
+
+    entities = get_entities_by_type(cursor, f"{NS['cpmeta']}DataTheme", limit)
+
+    if not entities:
+        print("  No DataTheme entities found")
+        return 0
+
+    for uri, props in entities:
+        label = get_property_value(props, f"{NS['rdfs']}label")
+        icon = get_property_value(props, f"{NS['cpmeta']}hasIcon")
+        marker_icon = get_property_value(props, f"{NS['cpmeta']}hasMarkerIcon")
+
+        cursor.execute("""
+            INSERT INTO data_themes (uri, label, icon, marker_icon)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET label = EXCLUDED.label,
+                icon = EXCLUDED.icon,
+                marker_icon = EXCLUDED.marker_icon
+        """, (uri, label, icon, marker_icon))
+
+    print(f"  Inserted {len(entities)} data themes")
+    return len(entities)
+
+
+def populate_object_formats(cursor, limit=None):
+    """Populate object_formats lookup table."""
+    print("\nPopulating object_formats table...")
+
+    entities = get_entities_by_type(cursor, f"{NS['cpmeta']}ObjectFormat", limit)
+
+    if not entities:
+        print("  No ObjectFormat entities found")
+        return 0
+
+    for uri, props in entities:
+        label = get_property_value(props, f"{NS['rdfs']}label")
+
+        cursor.execute("""
+            INSERT INTO object_formats (uri, label)
+            VALUES (%s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET label = EXCLUDED.label
+        """, (uri, label))
+
+    print(f"  Inserted {len(entities)} object formats")
+    return len(entities)
+
+
+def populate_climate_zones(cursor, limit=None):
+    """Populate climate_zones lookup table."""
+    print("\nPopulating climate_zones table...")
+
+    entities = get_entities_by_type(cursor, f"{NS['cpmeta']}ClimateZone", limit)
+
+    if not entities:
+        print("  No ClimateZone entities found")
+        return 0
+
+    for uri, props in entities:
+        label = get_property_value(props, f"{NS['rdfs']}label")
+
+        cursor.execute("""
+            INSERT INTO climate_zones (uri, label)
+            VALUES (%s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET label = EXCLUDED.label
+        """, (uri, label))
+
+    print(f"  Inserted {len(entities)} climate zones")
+    return len(entities)
+
+
+def populate_organizations(cursor, limit=None):
+    """Populate organizations table."""
+    print("\nPopulating organizations table...")
+
+    # Get all Organization entities (including subclasses)
+    entities = []
+    for type_name in ['Organization', 'CentralFacility', 'ThematicCenter', 'Funder']:
+        type_uri = TYPE_URIS.get(type_name, f"{NS['cpmeta']}{type_name}")
+        entities.extend(get_entities_by_type(cursor, type_uri, limit))
+
+    if not entities:
+        print("  No Organization entities found")
+        return 0
+
+    for uri, props in entities:
+        # Determine the most specific type
+        types = get_property_values(props, f"{NS['rdf']}type")
+        type_name = 'Organization'
+        for t in types:
+            if 'ThematicCenter' in t:
+                type_name = 'ThematicCenter'
+                break
+            elif 'CentralFacility' in t:
+                type_name = 'CentralFacility'
+                break
+            elif 'Funder' in t:
+                type_name = 'Funder'
+                break
+
+        name = get_property_value(props, f"{NS['cpmeta']}hasName")
+        email = get_property_value(props, f"{NS['cpmeta']}hasEmail")
+        country_code = get_property_value(props, f"{NS['cpmeta']}countryCode")
+
+        cursor.execute("""
+            INSERT INTO organizations (uri, type, name, email, country_code)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET type = EXCLUDED.type,
+                name = EXCLUDED.name,
+                email = EXCLUDED.email,
+                country_code = EXCLUDED.country_code
+            RETURNING id
+        """, (uri, type_name, name, email, country_code))
+
+    print(f"  Inserted {len(entities)} organizations")
+    return len(entities)
+
+
+def populate_persons(cursor, limit=None):
+    """Populate persons table."""
+    print("\nPopulating persons table...")
+
+    entities = get_entities_by_type(cursor, TYPE_URIS['Person'], limit)
+
+    if not entities:
+        print("  No Person entities found")
+        return 0
+
+    for uri, props in entities:
+        first_name = get_property_value(props, f"{NS['cpmeta']}hasFirstName")
+        last_name = get_property_value(props, f"{NS['cpmeta']}hasLastName")
+        email = get_property_value(props, f"{NS['cpmeta']}hasEmail")
+        orcid_id = get_property_value(props, f"{NS['cpmeta']}hasOrcidId")
+
+        cursor.execute("""
+            INSERT INTO persons (uri, first_name, last_name, email, orcid_id)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET first_name = EXCLUDED.first_name,
+                last_name = EXCLUDED.last_name,
+                email = EXCLUDED.email,
+                orcid_id = EXCLUDED.orcid_id
+            RETURNING id
+        """, (uri, first_name, last_name, email, orcid_id))
+
+    print(f"  Inserted {len(entities)} persons")
+    return len(entities)
+
+
+def populate_stations(cursor, limit=None):
+    """Populate stations table."""
+    print("\nPopulating stations table...")
+
+    # Get all Station entities (including subclasses)
+    entities = []
+    for type_name in ['Station', 'IcosStation', 'ES', 'AS', 'OS']:
+        type_uri = TYPE_URIS.get(type_name, f"{NS['cpmeta']}{type_name}")
+        entities.extend(get_entities_by_type(cursor, type_uri, limit))
+
+    if not entities:
+        print("  No Station entities found")
+        return 0
+
+    for uri, props in entities:
+        # Determine the most specific type
+        types = get_property_values(props, f"{NS['rdf']}type")
+        type_name = 'Station'
+        for t in types:
+            if 'ES' in t:
+                type_name = 'ES'
+                break
+            elif 'AS' in t:
+                type_name = 'AS'
+                break
+            elif 'OS' in t:
+                type_name = 'OS'
+                break
+            elif 'IcosStation' in t:
+                type_name = 'IcosStation'
+                break
+
+        name = get_property_value(props, f"{NS['cpmeta']}hasName")
+        station_id = get_property_value(props, f"{NS['cpmeta']}hasStationId")
+        country_code = get_property_value(props, f"{NS['cpmeta']}countryCode")
+        latitude = get_property_value(props, f"{NS['cpmeta']}hasLatitude")
+        longitude = get_property_value(props, f"{NS['cpmeta']}hasLongitude")
+        elevation = get_property_value(props, f"{NS['cpmeta']}hasElevation")
+        mean_annual_temp = get_property_value(props, f"{NS['cpmeta']}hasMeanAnnualTemp")
+        mean_annual_precip = get_property_value(props, f"{NS['cpmeta']}hasMeanAnnualPrecip")
+        mean_annual_radiation = get_property_value(props, f"{NS['cpmeta']}hasMeanAnnualRadiation")
+        time_zone_offset = get_property_value(props, f"{NS['cpmeta']}hasTimeZoneOffset")
+        operational_period = get_property_value(props, f"{NS['cpmeta']}hasOperationalPeriod")
+        is_discontinued = get_property_value(props, f"{NS['cpmeta']}isDiscontinued")
+        station_class = get_property_value(props, f"{NS['cpmeta']}hasStationClass")
+        labeling_date = get_property_value(props, f"{NS['cpmeta']}hasLabelingDate")
+        wigos_id = get_property_value(props, f"{NS['cpmeta']}hasWigosId")
+
+        # Get responsible organization URI
+        resp_org_uri = get_property_value(props, f"{NS['cpmeta']}hasResponsibleOrganization")
+        resp_org_id = None
+        if resp_org_uri:
+            cursor.execute("SELECT id FROM organizations WHERE uri = %s", (resp_org_uri,))
+            result = cursor.fetchone()
+            if result:
+                resp_org_id = result[0]
+
+        # Get climate zone URI
+        climate_zone_uri = get_property_value(props, f"{NS['cpmeta']}hasClimateZone")
+        climate_zone_id = None
+        if climate_zone_uri:
+            cursor.execute("SELECT id FROM climate_zones WHERE uri = %s", (climate_zone_uri,))
+            result = cursor.fetchone()
+            if result:
+                climate_zone_id = result[0]
+
+        cursor.execute("""
+            INSERT INTO stations (
+                uri, type, name, station_id, country_code,
+                latitude, longitude, elevation,
+                mean_annual_temp, mean_annual_precip, mean_annual_radiation,
+                time_zone_offset, operational_period, is_discontinued,
+                station_class, labeling_date, wigos_id,
+                responsible_organization_id, climate_zone_id
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET type = EXCLUDED.type,
+                name = EXCLUDED.name,
+                station_id = EXCLUDED.station_id,
+                country_code = EXCLUDED.country_code,
+                latitude = EXCLUDED.latitude,
+                longitude = EXCLUDED.longitude,
+                elevation = EXCLUDED.elevation,
+                responsible_organization_id = EXCLUDED.responsible_organization_id,
+                climate_zone_id = EXCLUDED.climate_zone_id,
+                updated_at = NOW()
+            RETURNING id
+        """, (
+            uri, type_name, name, station_id, country_code,
+            latitude, longitude, elevation,
+            mean_annual_temp, mean_annual_precip, mean_annual_radiation,
+            time_zone_offset, operational_period, is_discontinued,
+            station_class, labeling_date, wigos_id,
+            resp_org_id, climate_zone_id
+        ))
+
+    print(f"  Inserted {len(entities)} stations")
+    return len(entities)
+
+
+def populate_projects(cursor, limit=None):
+    """Populate projects table."""
+    print("\nPopulating projects table...")
+
+    entities = get_entities_by_type(cursor, TYPE_URIS['Project'], limit)
+
+    if not entities:
+        print("  No Project entities found")
+        return 0
+
+    for uri, props in entities:
+        name = get_property_value(props, f"{NS['cpmeta']}hasName")
+        keywords = get_property_value(props, f"{NS['cpmeta']}hasKeywords")
+
+        cursor.execute("""
+            INSERT INTO projects (uri, name, keywords)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET name = EXCLUDED.name,
+                keywords = EXCLUDED.keywords
+            RETURNING id
+        """, (uri, name, keywords))
+
+    print(f"  Inserted {len(entities)} projects")
+    return len(entities)
+
+
+def populate_object_specs(cursor, limit=None):
+    """Populate object_specs table."""
+    print("\nPopulating object_specs table...")
+
+    # Get all DataObjectSpec entities
+    entities = []
+    for type_name in ['DataObjectSpec', 'SimpleObjectSpec']:
+        type_uri = TYPE_URIS.get(type_name, f"{NS['cpmeta']}{type_name}")
+        entities.extend(get_entities_by_type(cursor, type_uri, limit))
+
+    if not entities:
+        print("  No DataObjectSpec entities found")
+        return 0
+
+    for uri, props in entities:
+        # Determine type
+        types = get_property_values(props, f"{NS['rdf']}type")
+        type_name = 'DataObjectSpec'
+        for t in types:
+            if 'SimpleObjectSpec' in t:
+                type_name = 'SimpleObjectSpec'
+                break
+
+        label = get_property_value(props, f"{NS['rdfs']}label")
+        description = get_property_value(props, f"{NS['rdfs']}comment")
+        data_level = get_property_value(props, f"{NS['cpmeta']}hasDataLevel")
+
+        # Get foreign key IDs
+        theme_uri = get_property_value(props, f"{NS['cpmeta']}hasDataTheme")
+        format_uri = get_property_value(props, f"{NS['cpmeta']}hasFormat")
+        encoding_uri = get_property_value(props, f"{NS['cpmeta']}hasEncoding")
+        project_uri = get_property_value(props, f"{NS['cpmeta']}hasAssociatedProject")
+
+        theme_id = None
+        if theme_uri:
+            cursor.execute("SELECT id FROM data_themes WHERE uri = %s", (theme_uri,))
+            result = cursor.fetchone()
+            if result:
+                theme_id = result[0]
+
+        format_id = None
+        if format_uri:
+            cursor.execute("SELECT id FROM object_formats WHERE uri = %s", (format_uri,))
+            result = cursor.fetchone()
+            if result:
+                format_id = result[0]
+
+        project_id = None
+        if project_uri:
+            cursor.execute("SELECT id FROM projects WHERE uri = %s", (project_uri,))
+            result = cursor.fetchone()
+            if result:
+                project_id = result[0]
+
+        cursor.execute("""
+            INSERT INTO object_specs (
+                uri, type, label, description, data_level,
+                theme_id, format_id, project_id,
+                theme_uri, format_uri
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET type = EXCLUDED.type,
+                label = EXCLUDED.label,
+                description = EXCLUDED.description,
+                data_level = EXCLUDED.data_level,
+                theme_id = EXCLUDED.theme_id,
+                format_id = EXCLUDED.format_id,
+                project_id = EXCLUDED.project_id,
+                theme_uri = EXCLUDED.theme_uri,
+                format_uri = EXCLUDED.format_uri
+            RETURNING id
+        """, (
+            uri, type_name, label, description, data_level,
+            theme_id, format_id, project_id,
+            theme_uri, format_uri
+        ))
+
+    print(f"  Inserted {len(entities)} object specs")
+    return len(entities)
+
+
+def populate_data_objects(cursor, limit=None):
+    """Populate data_objects table."""
+    print("\nPopulating data_objects table...")
+
+    # Get all DataObject entities
+    entities = []
+    for type_name in ['DataObject', 'SimpleDataObject', 'SpatialDataObject']:
+        type_uri = TYPE_URIS.get(type_name, f"{NS['cpmeta']}{type_name}")
+        entities.extend(get_entities_by_type(cursor, type_uri, limit))
+
+    if not entities:
+        print("  No DataObject entities found")
+        return 0
+
+    inserted = 0
+    for uri, props in entities:
+        # Determine type
+        types = get_property_values(props, f"{NS['rdf']}type")
+        type_name = 'DataObject'
+        for t in types:
+            if 'SimpleDataObject' in t:
+                type_name = 'SimpleDataObject'
+                break
+            elif 'SpatialDataObject' in t:
+                type_name = 'SpatialDataObject'
+                break
+
+        # Required fields
+        sha256 = get_property_value(props, f"{NS['cpmeta']}hasSha256sum")
+        if not sha256:
+            continue  # Skip if no SHA256
+
+        name = get_property_value(props, f"{NS['cpmeta']}hasName")
+        doi = get_property_value(props, f"{NS['cpmeta']}hasDoi")
+
+        # Temporal properties
+        acq_start = get_property_value(props, f"{NS['cpmeta']}hasAcquisitionStartTime")
+        acq_end = get_property_value(props, f"{NS['cpmeta']}hasAcquisitionEndTime")
+        sub_start = get_property_value(props, f"{NS['cpmeta']}hasSubmissionStartTime")
+        sub_end = get_property_value(props, f"{NS['cpmeta']}hasSubmissionEndTime")
+        data_start = get_property_value(props, f"{NS['cpmeta']}hasDataStartTime")
+        data_end = get_property_value(props, f"{NS['cpmeta']}hasDataEndTime")
+
+        # Size properties
+        size_in_bytes = get_property_value(props, f"{NS['cpmeta']}hasSizeInBytes")
+        number_of_rows = get_property_value(props, f"{NS['cpmeta']}hasNumberOfRows")
+
+        # Column names (stored as JSONB)
+        actual_column_names = get_property_value(props, f"{NS['cpmeta']}hasActualColumnNames")
+        column_names_json = None
+        if actual_column_names:
+            try:
+                # Try to parse as JSON if it's already JSON
+                column_names_json = json.dumps(json.loads(actual_column_names))
+            except:
+                # Otherwise wrap as a JSON string
+                column_names_json = json.dumps(actual_column_names)
+
+        # Object spec
+        spec_uri = get_property_value(props, f"{NS['cpmeta']}hasObjectSpec")
+        spec_id = None
+        if spec_uri:
+            cursor.execute("SELECT id FROM object_specs WHERE uri = %s", (spec_uri,))
+            result = cursor.fetchone()
+            if result:
+                spec_id = result[0]
+
+        if not spec_id:
+            continue  # Skip if no object spec
+
+        # Provenance
+        was_produced_by = get_property_value(props, f"{NS['prov']}wasProducedBy")
+
+        cursor.execute("""
+            INSERT INTO data_objects (
+                uri, sha256, type, name, doi,
+                acquisition_start_time, acquisition_end_time,
+                submission_start_time, submission_end_time,
+                data_start_time, data_end_time,
+                size_in_bytes, number_of_rows, actual_column_names,
+                object_spec_id, was_produced_by
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET sha256 = EXCLUDED.sha256,
+                type = EXCLUDED.type,
+                name = EXCLUDED.name,
+                doi = EXCLUDED.doi,
+                acquisition_start_time = EXCLUDED.acquisition_start_time,
+                acquisition_end_time = EXCLUDED.acquisition_end_time,
+                submission_start_time = EXCLUDED.submission_start_time,
+                submission_end_time = EXCLUDED.submission_end_time,
+                data_start_time = EXCLUDED.data_start_time,
+                data_end_time = EXCLUDED.data_end_time,
+                size_in_bytes = EXCLUDED.size_in_bytes,
+                number_of_rows = EXCLUDED.number_of_rows,
+                actual_column_names = EXCLUDED.actual_column_names,
+                object_spec_id = EXCLUDED.object_spec_id,
+                was_produced_by = EXCLUDED.was_produced_by,
+                updated_at = NOW()
+            RETURNING id
+        """, (
+            uri, sha256, type_name, name, doi,
+            acq_start, acq_end, sub_start, sub_end, data_start, data_end,
+            size_in_bytes, number_of_rows, column_names_json,
+            spec_id, was_produced_by
+        ))
+        inserted += 1
+
+    print(f"  Inserted {inserted} data objects")
+    return inserted
+
+
+def populate_data_object_keywords(cursor):
+    """Populate data_object_keywords junction table."""
+    print("\nPopulating data_object_keywords table...")
+
+    keyword_pred = f"{NS['cpmeta']}hasKeyword"
+
+    cursor.execute(f"""
+        INSERT INTO data_object_keywords (data_object_id, keyword_id)
+        SELECT DISTINCT d.id, k.id
+        FROM {TRIPLES_TABLE} t
+        JOIN data_objects d ON t.subj = d.uri
+        JOIN keywords k ON t.obj = k.keyword
+        WHERE t.pred = %s
+        ON CONFLICT DO NOTHING
+    """, (keyword_pred,))
+
+    count = cursor.rowcount
+    print(f"  Inserted {count} data object-keyword relationships")
+    return count
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="Create and populate class-based tables from RDF triples",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                    # Full schema creation and population
+  %(prog)s --limit 1000       # Limit entities per class
+  %(prog)s --drop-only        # Only drop existing tables
+        """
+    )
+
+    parser.add_argument('--host', default='localhost', help='Database host')
+    parser.add_argument('--port', type=int, default=5432, help='Database port')
+    parser.add_argument('--user', default='postgres', help='Database user')
+    parser.add_argument('--dbname', default='postgres', help='Database name')
+    parser.add_argument('--password', default='ontop', help='Database password')
+    parser.add_argument('--limit', type=int, help='Limit entities per class')
+    parser.add_argument('--drop-only', action='store_true', help='Only drop tables')
+
+    args = parser.parse_args()
+
+    print(f"Connecting to PostgreSQL at {args.host}:{args.port}...")
+    conn = get_connection(args.host, args.port, args.user, args.dbname, args.password)
+
+    try:
+        cursor = conn.cursor()
+
+        # Check which triples table exists
+        check_triples_table(cursor)
+
+        # Drop existing tables
+        drop_class_tables(cursor)
+        conn.commit()
+
+        if args.drop_only:
+            print("\n✓ Dropped all class-based tables")
+            return
+
+        # Create schema
+        create_schema(cursor)
+        conn.commit()
+
+        # Populate tables in dependency order
+        print("\n" + "="*60)
+        print("POPULATING TABLES")
+        print("="*60)
+
+        populate_keywords(cursor, args.limit)
+        conn.commit()
+
+        populate_data_themes(cursor, args.limit)
+        conn.commit()
+
+        populate_object_formats(cursor, args.limit)
+        conn.commit()
+
+        populate_climate_zones(cursor, args.limit)
+        conn.commit()
+
+        populate_organizations(cursor, args.limit)
+        conn.commit()
+
+        populate_persons(cursor, args.limit)
+        conn.commit()
+
+        populate_stations(cursor, args.limit)
+        conn.commit()
+
+        populate_projects(cursor, args.limit)
+        conn.commit()
+
+        populate_object_specs(cursor, args.limit)
+        conn.commit()
+
+        populate_data_objects(cursor, args.limit)
+        conn.commit()
+
+        populate_data_object_keywords(cursor)
+        conn.commit()
+
+        print("\n" + "="*60)
+        print("✓ SUCCESSFULLY COMPLETED")
+        print("="*60)
+
+        cursor.close()
+
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()
+        conn.rollback()
+        sys.exit(1)
+    finally:
+        conn.close()
+
+
+if __name__ == "__main__":
+    main()

@@ -508,16 +508,16 @@ def populate_predicate_table(cursor, table_name, predicate, pg_type, obj_is_iri=
 
 
     if obj_is_iri:
-        # Both subj and obj are IRI references - join with iris table twice
+        # Both subj and obj are IRI references - join with iris table twice using hash comparison
         cursor.execute(f"""
             INSERT INTO {table_name} (subj, obj)
             SELECT i1.id, i2.id
             FROM rdf_triples rt
-            JOIN iris i1 ON rt.subj = i1.iri
-            JOIN iris i2 ON rt.obj = i2.iri
+            JOIN iris i1 ON decode(md5(rt.subj), 'hex') = i1.iri_hash
+            JOIN iris i2 ON decode(md5(rt.obj), 'hex') = i2.iri_hash
             WHERE rt.obj IS NOT NULL AND rt.pred = %s
-            %s;
-        """, (predicate, limit_clause))
+            {limit_clause};
+        """, (predicate,))
     else:
         # Cast rt.obj to the target type if it's not TEXT
         if pg_type.upper() == 'TEXT':
@@ -525,11 +525,12 @@ def populate_predicate_table(cursor, table_name, predicate, pg_type, obj_is_iri=
         else:
             obj_expr = f"rt.obj::{pg_type}"
 
+        # Join with iris table using hash comparison for better performance
         cursor.execute(f"""
             INSERT INTO {table_name} (subj, obj)
             SELECT i1.id, {obj_expr}
             FROM rdf_triples rt
-            JOIN iris i1 ON rt.subj = i1.iri
+            JOIN iris i1 ON decode(md5(rt.subj), 'hex') = i1.iri_hash
             WHERE rt.obj IS NOT NULL AND rt.pred = %s
             {limit_clause};
         """, (predicate,))

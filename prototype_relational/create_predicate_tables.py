@@ -323,26 +323,26 @@ def create_mapping_table(cursor):
 
 
 def create_iris_table(cursor):
-    """Create a table to store unique IRIs with integer IDs."""
+    """Create a table to store unique IRIs with integer IDs and MD5 hash index."""
     print("Creating iris reference table...")
 
     # Drop existing table
     cursor.execute("DROP TABLE IF EXISTS iris CASCADE;")
 
     # Create new iris table with auto-incrementing ID
+    # Uses MD5 hash (as BYTEA) for uniqueness index instead of full IRI text
+    # This provides much faster uniqueness checks and smaller index size
     cursor.execute("""
         CREATE TABLE iris (
             id SERIAL PRIMARY KEY,
-            iri TEXT UNIQUE NOT NULL
+            iri TEXT NOT NULL,
+            iri_hash BYTEA UNIQUE NOT NULL
         );
     """)
-
-    # Create index on iri column for fast lookups
-    # cursor.execute("CREATE INDEX idx_iris_iri ON iris(iri);")
-    # print("  -> Created iris table with index on iri column")
+    print("  -> Created iris table with UNIQUE index on MD5 hash (16 bytes)")
 
 
-def populate_iris_table(cursor):
+def populate_iris_table(conn):
     """
     Populate the iris table with all unique IRIs from rdf_triples.
     Includes all subjects and objects that are IRIs (not literals).
@@ -351,6 +351,8 @@ def populate_iris_table(cursor):
         Number of unique IRIs inserted
     """
     print("Populating iris table from rdf_triples...")
+
+    cursor = conn.cursor()
 
     # Parse ontology to determine which predicates have IRI objects
     property_ranges = parse_ontology_for_types()
@@ -367,10 +369,12 @@ def populate_iris_table(cursor):
     # Insert all unique subjects
     print("  -> Inserting unique subjects...")
     cursor.execute("""
-        INSERT INTO iris (iri)
-        SELECT DISTINCT subj FROM rdf_triples
+        INSERT INTO iris (iri, iri_hash)
+        SELECT DISTINCT subj, decode(md5(subj), 'hex')
+        FROM rdf_triples
         WHERE subj IS NOT NULL
-        ON CONFLICT (iri) DO NOTHING;
+        LIMIT 1000
+        ON CONFLICT (iri_hash) DO NOTHING;
     """)
     subj_count = cursor.rowcount
     print(f"     Inserted {subj_count} subject IRIs")
@@ -381,11 +385,13 @@ def populate_iris_table(cursor):
         # Create a parameterized query with the list of object property predicates
         placeholders = ','.join(['%s'] * len(object_property_predicates))
         cursor.execute(f"""
-            INSERT INTO iris (iri)
-            SELECT DISTINCT obj FROM rdf_triples
+            INSERT INTO iris (iri, iri_hash)
+            SELECT DISTINCT obj, decode(md5(obj), 'hex')
+            FROM rdf_triples
             WHERE obj IS NOT NULL
               AND pred IN ({placeholders})
-            ON CONFLICT (iri) DO NOTHING;
+            LIMIT 1000
+            ON CONFLICT (iri_hash) DO NOTHING;
         """, object_property_predicates)
         obj_count = cursor.rowcount
         print(f"     Inserted {obj_count} object IRIs")
@@ -393,33 +399,38 @@ def populate_iris_table(cursor):
         obj_count = 0
         print("  -> No object properties found, skipping object IRIs")
 
-    # Also insert objects from predicates not in the ontology (assume they might be IRIs)
-    print("  -> Inserting objects from unknown predicates (potential IRIs)...")
-    known_predicates = list(property_ranges.keys())
-    if known_predicates:
-        placeholders = ','.join(['%s'] * len(known_predicates))
-        cursor.execute(f"""
-            INSERT INTO iris (iri)
-            SELECT DISTINCT obj FROM rdf_triples
-            WHERE obj IS NOT NULL
-              AND pred NOT IN ({placeholders})
-              AND obj LIKE 'http%'
-            ON CONFLICT (iri) DO NOTHING;
-        """, known_predicates)
-        unknown_count = cursor.rowcount
-        print(f"     Inserted {unknown_count} IRIs from unknown predicates")
-    else:
-        # No known predicates, so all objects that look like IRIs should be included
-        cursor.execute("""
-            INSERT INTO iris (iri)
-            SELECT DISTINCT obj FROM rdf_triples
-            WHERE obj IS NOT NULL
-              AND obj LIKE 'http%'
-            ON CONFLICT (iri) DO NOTHING;
-        """)
-        unknown_count = cursor.rowcount
-        print(f"     Inserted {unknown_count} IRIs from all predicates")
+    ## Also insert objects from predicates not in the ontology (assume they might be IRIs)
+    # print("  -> Inserting objects from unknown predicates (potential IRIs)...")
+    # known_predicates = list(property_ranges.keys())
+    # if known_predicates:
+    #     placeholders = ','.join(['%s'] * len(known_predicates))
+    #     cursor.execute(f"""
+    #         INSERT INTO iris (iri, iri_hash)
+    #         SELECT DISTINCT obj, decode(md5(obj), 'hex')
+    #         FROM rdf_triples
+    #         WHERE obj IS NOT NULL
+    #           AND pred NOT IN ({placeholders})
+    #           AND obj LIKE 'http%'
+    #         LIMIT 1000
+    #         ON CONFLICT (iri_hash) DO NOTHING;
+    #     """, known_predicates)
+    #     unknown_count = cursor.rowcount
+    #     print(f"     Inserted {unknown_count} IRIs from unknown predicates")
+    # else:
+    #     # No known predicates, so all objects that look like IRIs should be included
+    #     cursor.execute("""
+    #         INSERT INTO iris (iri, iri_hash)
+    #         SELECT DISTINCT obj, decode(md5(obj), 'hex')
+    #         FROM rdf_triples
+    #         WHERE obj IS NOT NULL
+    #           AND obj LIKE 'http%'
+    #         LIMIT 1000
+    #         ON CONFLICT (iri_hash) DO NOTHING;
+    #     """)
+    #     unknown_count = cursor.rowcount
+    #     print(f"     Inserted {unknown_count} IRIs from all predicates")
 
+    conn.commit()
     # Get total count
     cursor.execute("SELECT COUNT(*) FROM iris;")
     total_count = cursor.fetchone()[0]
@@ -463,25 +474,21 @@ def create_predicate_table(cursor, table_name, typ, obj_is_iri=False):
     if obj_is_iri:
         cursor.execute(f"""
             CREATE TABLE {table_name} (
-                subj INTEGER NOT NULL,
-                obj INTEGER NOT NULL,
-                FOREIGN KEY (subj) REFERENCES iris(id),
-                FOREIGN KEY (obj) REFERENCES iris(id)
+                subj INTEGER NOT NULL REFERENCES iris(id),
+                obj INTEGER NOT NULL REFERENCES iris(id)
             );
         """)
     else:
         cursor.execute(f"""
             CREATE TABLE {table_name} (
-                subj INTEGER NOT NULL,
-                obj {typ} NOT NULL,
-                FOREIGN KEY (subj) REFERENCES iris(id),
+                subj INTEGER NOT NULL REFERENCES iris(id),
+                obj {typ} NOT NULL
             );
         """)
-
     # Create new table
 
 
-def populate_predicate_table(cursor, table_name, predicate, obj_is_iri=False, limit=None):
+def populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit=None):
     """
     Populate a predicate table from rdf_triples using IRI references.
 
@@ -496,46 +503,30 @@ def populate_predicate_table(cursor, table_name, predicate, obj_is_iri=False, li
         Number of rows inserted
     """
 
+    limit_clause = ""
+    if limit:
+        limit_clause = f"LIMIT {limit}"
+
     if obj_is_iri:
         # Both subj and obj are IRI references - join with iris table twice
-        if limit:
-            cursor.execute(f"""
-                INSERT INTO {table_name} (subj, obj)
-                SELECT i1.id, i2.id
-                FROM rdf_triples rt
-                JOIN iris i1 ON rt.subj = i1.iri
-                JOIN iris i2 ON rt.obj = i2.iri
-                WHERE rt.obj IS NOT NULL AND rt.pred = %s
-                LIMIT %s;
-            """, (predicate, limit))
-        else:
-            cursor.execute(f"""
-                INSERT INTO {table_name} (subj, obj)
-                SELECT i1.id, i2.id
-                FROM rdf_triples rt
-                JOIN iris i1 ON rt.subj = i1.iri
-                JOIN iris i2 ON rt.obj = i2.iri
-                WHERE rt.obj IS NOT NULL AND rt.pred = %s;
-            """, (predicate,))
+        cursor.execute(f"""
+            INSERT INTO {table_name} (subj, obj)
+            SELECT i1.id, i2.id
+            FROM rdf_triples rt
+            JOIN iris i1 ON rt.subj = i1.iri
+            JOIN iris i2 ON rt.obj = i2.iri
+            WHERE rt.obj IS NOT NULL AND rt.pred = %s
+            %s;
+        """, (predicate, limit_clause))
     else:
-        # Only subj is an IRI reference - join with iris table once
-        if limit:
-            cursor.execute(f"""
-                INSERT INTO {table_name} (subj, obj)
-                SELECT i1.id, rt.obj
-                FROM rdf_triples rt
-                JOIN iris i1 ON rt.subj = i1.iri
-                WHERE rt.obj IS NOT NULL AND rt.pred = %s
-                LIMIT %s;
-            """, (predicate, limit))
-        else:
-            cursor.execute(f"""
-                INSERT INTO {table_name} (subj, obj)
-                SELECT i1.id, rt.obj
-                FROM rdf_triples rt
-                JOIN iris i1 ON rt.subj = i1.iri
-                WHERE rt.obj IS NOT NULL AND rt.pred = %s;
-            """, (predicate,))
+        cursor.execute(f"""
+            INSERT INTO {table_name} (subj, obj)
+            SELECT i1.id, rt.obj
+            FROM rdf_triples rt
+            JOIN iris i1 ON rt.subj = i1.iri
+            WHERE rt.obj IS NOT NULL AND rt.pred = %s
+            %s;
+        """, (predicate, limit_clause))
 
     return cursor.rowcount
 
@@ -582,8 +573,7 @@ def process_predicates(conn, limit=None, add_index=False):
         conn.commit()
 
         # Populate the iris table with all unique IRIs
-        populate_iris_table(cursor)
-        conn.commit()
+        populate_iris_table(conn)
 
         # Parse ontology once to determine object property types
         print("\nAnalyzing ontology to determine property types...")
@@ -621,16 +611,16 @@ def process_predicates(conn, limit=None, add_index=False):
                     # Object property - obj is an IRI reference
                     obj_is_iri = True
                     pg_type = "INTEGER"  # Will be ignored when obj_is_iri=True
-            else:
-                # Unknown predicate - check if objects look like IRIs
-                cursor.execute("""
-                    SELECT obj FROM rdf_triples
-                    WHERE pred = %s AND obj IS NOT NULL
-                    LIMIT 1;
-                """, (predicate,))
-                sample_obj = cursor.fetchone()
-                if sample_obj and sample_obj[0].startswith('http'):
-                    obj_is_iri = True
+            # else:
+                # # Unknown predicate - check if objects look like IRIs
+                # cursor.execute("""
+                #     SELECT obj FROM rdf_triples
+                #     WHERE pred = %s AND obj IS NOT NULL
+                #     LIMIT 1;
+                # """, (predicate,))
+                # sample_obj = cursor.fetchone()
+                # if sample_obj and sample_obj[0].startswith('http'):
+                #     obj_is_iri = True
 
             print(f"  -> Object type: {'IRI reference' if obj_is_iri else f'Literal ({pg_type})'}")
 

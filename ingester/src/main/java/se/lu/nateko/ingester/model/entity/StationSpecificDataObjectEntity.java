@@ -17,7 +17,7 @@ public class StationSpecificDataObjectEntity {
 	private Instant acquisitionStopDate;
 	private Float specificSamplingHeight;
 
-	StationSpecificDataObjectEntity() {}
+	public StationSpecificDataObjectEntity() {}
 
 	public StationSpecificDataObjectEntity(
 		Integer id,

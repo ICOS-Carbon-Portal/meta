@@ -27,9 +27,9 @@ public class IngestService {
 			dataObject.getHashSum(),
 			dataObject.getFileName(),
 			dataObject.getSpecificInfo().getStation().toString(),
-			dataObject.getSpecificInfo().getAcquisitionInterval().get().getStart(),
-			dataObject.getSpecificInfo().getAcquisitionInterval().get().getStop(),
-			dataObject.getSpecificInfo().getSamplingHeight().get()
+			dataObject.getSpecificInfo().getAcquisitionInterval().orElse(null).getStart(),
+			dataObject.getSpecificInfo().getAcquisitionInterval().orElse(null).getStop(),
+			dataObject.getSpecificInfo().getSamplingHeight().orElse(null)
 		);
 	}
 }

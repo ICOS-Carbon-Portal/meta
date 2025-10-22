@@ -20,11 +20,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import se.lu.nateko.ingester.model.entity.StationSpecificDataObjectEntity;
 import se.lu.nateko.ingester.repository.IngestRepository;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -41,12 +44,18 @@ class IngesterApplicationTests {
 	@ParameterizedTest
 	@MethodSource("provideJsons")
 	public void testThings(JsonNode jsonNode) throws JSONException, IOException, Exception {
-		Mockito.doNothing().when(ingestRepository.save(Mockito.any()));
-		List<String> values = new ArrayList<>();
-		if (jsonNode.has("fileName")) {
-			values.add(jsonNode.get("fileName").asText());
-		}
-		Assertions.assertFalse(values.get(0).isBlank());
+		Mockito.when(ingestRepository.save(Mockito.any()))
+			.thenReturn(new StationSpecificDataObjectEntity());
+
+		String url = "http://localhost:" + port + "/ingest/uploaded";
+		HttpEntity<JsonNode> request = new HttpEntity<>(jsonNode);
+
+		Assertions.assertEquals(
+			HttpStatusCode.valueOf(200),
+			this.restTemplate.postForEntity(
+			url, request, String.class
+			).getStatusCode()
+		);
 	}
 
 	private static Stream<JsonNode> provideJsons() throws IOException {

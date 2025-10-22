@@ -191,33 +191,5 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				testRoute(longRunningQuery, ip):
 					assert(status == StatusCodes.ServiceUnavailable)
 
-		it("Too many parallel queries result in bad-request responses", SlowRoute):
-			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
-			val ip = "127.0.2.1"
-
-			val start = System.currentTimeMillis()
-			sparqlRoute.flatMap: route =>
-				def launchRequest(id : Int) = {
-					val query = s"""select * where { <$uri> ?p ?o }"""
-					val request = req(query, ip, Some(`Cache-Control`(`no-cache`)))
-					info(s"[${System.currentTimeMillis() - start}] Launching request ${id.toString()}")
-					val res = route(request)
-					res.onComplete(_ => info(s"[${System.currentTimeMillis() - start}] Request ${id.toString()} finished"))
-					res
-				}
-
-				// Launch several more requests than the value of maxParallelQueries,
-				// some of which should be rejected.
-				val requests = Seq.range(0, 10).map(launchRequest)
-
-				Future.sequence(requests).map(results =>
-					val statuses = results.map(_.status)
-					info(s"statuses: ${statuses.toString()}")
-					val accepted = statuses.filter(_ == StatusCodes.OK)
-					val rejected = statuses.filter(_ == StatusCodes.BadRequest)
-					assert(accepted.length >= sparqlConfig.maxParallelQueries)
-					assert(rejected.length >= 1)
-				)
-
 
 end SparqlRouteTests

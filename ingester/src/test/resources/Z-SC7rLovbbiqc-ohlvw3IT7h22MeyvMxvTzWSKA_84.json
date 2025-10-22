@@ -1,0 +1,32 @@
+{
+  "fileName": "ICOS_ATC_NRT_WAO_2025-10-20_2025-10-20_10.0_505-1400_CO2.zip",
+  "hashSum": "Z-SC7rLovbbiqc-ohlvw3IT7h22MeyvMxvTzWSKA_84",
+  "isNextVersionOf": [],
+  "objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
+  "references": {
+    "licence": "http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"
+  },
+  "specificInfo": {
+    "acquisitionInterval": {
+      "start": "2025-10-20T00:00:00Z",
+      "stop": "2025-10-20T23:00:00Z"
+    },
+    "instrument": [
+      "http://meta.icos-cp.eu/resources/instruments/ATC_505",
+      "http://meta.icos-cp.eu/resources/instruments/ATC_1400"
+    ],
+    "nRows": 24,
+    "production": {
+      "contributors": [
+        "http://meta.icos-cp.eu/resources/organizations/ICOS-CAL-FCL"
+      ],
+      "creationDate": "2025-10-21T05:17:48Z",
+      "creator": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "sources": []
+    },
+    "samplingHeight": 10.0,
+    "station": "http://meta.icos-cp.eu/resources/stations/AS_WAO"
+  },
+  "submitterId": ""
+}

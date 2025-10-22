@@ -1,0 +1,29 @@
+{
+  "fileName": "ICOS_ATC_NRT_ZEP_2025-10-20_2025-10-20_15.0_1272_CH4.zip",
+  "hashSum": "ahEACdRzIs_ffhMXJhDpgRg4r8YCu6mhZbQk773oraM",
+  "isNextVersionOf": [],
+  "objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject",
+  "references": {
+    "licence": "http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"
+  },
+  "specificInfo": {
+    "acquisitionInterval": {
+      "start": "2025-10-20T00:00:00Z",
+      "stop": "2025-10-20T23:00:00Z"
+    },
+    "instrument": "http://meta.icos-cp.eu/resources/instruments/ATC_1272",
+    "nRows": 24,
+    "production": {
+      "contributors": [
+        "http://meta.icos-cp.eu/resources/organizations/ICOS-CAL-FCL"
+      ],
+      "creationDate": "2025-10-21T05:17:51Z",
+      "creator": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "hostOrganization": "http://meta.icos-cp.eu/resources/organizations/ATC",
+      "sources": []
+    },
+    "samplingHeight": 15.0,
+    "station": "http://meta.icos-cp.eu/resources/stations/AS_ZEP"
+  },
+  "submitterId": ""
+}

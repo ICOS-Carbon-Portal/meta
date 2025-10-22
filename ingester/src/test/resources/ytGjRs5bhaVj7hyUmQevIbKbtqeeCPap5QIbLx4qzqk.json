@@ -1,0 +1,27 @@
+{
+  "fileName": "ICOSETC_SE-Sto_METEOSENS_NRT.zip",
+  "hashSum": "ytGjRs5bhaVj7hyUmQevIbKbtqeeCPap5QIbLx4qzqk",
+  "isNextVersionOf": [
+    "Ci_MoS-8bTYh9pjwKutF6t86"
+  ],
+  "objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens",
+  "references": {
+    "licence": "http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"
+  },
+  "specificInfo": {
+    "acquisitionInterval": {
+      "start": "2024-12-31T22:30:00Z",
+      "stop": "2025-10-20T23:00:00Z"
+    },
+    "nRows": 14065,
+    "production": {
+      "comment": " ",
+      "contributors": [],
+      "creationDate": "2025-10-21T09:41:40Z",
+      "creator": "http://meta.icos-cp.eu/resources/organizations/ETC",
+      "sources": []
+    },
+    "station": "http://meta.icos-cp.eu/resources/stations/ES_SE-Sto"
+  },
+  "submitterId": ""
+}

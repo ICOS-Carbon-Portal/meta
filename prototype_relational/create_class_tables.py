@@ -309,7 +309,7 @@ def create_schema(cursor):
         CREATE TABLE data_objects (
             id SERIAL PRIMARY KEY,
             uri TEXT UNIQUE NOT NULL,
-            sha256 TEXT UNIQUE NOT NULL,
+            sha256 TEXT NOT NULL,
             type TEXT NOT NULL,
             name TEXT,
             doi TEXT,
@@ -335,15 +335,15 @@ def create_schema(cursor):
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
-        CREATE INDEX idx_data_objects_uri ON data_objects(uri);
-        CREATE INDEX idx_data_objects_sha256 ON data_objects(sha256);
-        CREATE INDEX idx_data_objects_spec ON data_objects(object_spec_id);
-        CREATE INDEX idx_data_objects_theme ON data_objects(theme_uri);
-        CREATE INDEX idx_data_objects_acq_times ON data_objects(acquisition_start_time, acquisition_end_time);
-        CREATE INDEX idx_data_objects_data_times ON data_objects(data_start_time, data_end_time);
-        CREATE INDEX idx_data_objects_size ON data_objects(size_in_bytes);
-        CREATE INDEX idx_data_objects_column_names_gin ON data_objects USING GIN (actual_column_names);
     """)
+        # CREATE INDEX idx_data_objects_uri ON data_objects(uri);
+        # CREATE INDEX idx_data_objects_sha256 ON data_objects(sha256);
+        # CREATE INDEX idx_data_objects_spec ON data_objects(object_spec_id);
+        # CREATE INDEX idx_data_objects_theme ON data_objects(theme_uri);
+        # CREATE INDEX idx_data_objects_acq_times ON data_objects(acquisition_start_time, acquisition_end_time);
+        # CREATE INDEX idx_data_objects_data_times ON data_objects(data_start_time, data_end_time);
+        # CREATE INDEX idx_data_objects_size ON data_objects(size_in_bytes);
+        # CREATE INDEX idx_data_objects_column_names_gin ON data_objects USING GIN (actual_column_names);
 
     # Instruments table
     print("  Creating instruments table...")
@@ -925,116 +925,129 @@ def populate_object_specs(cursor, limit=None):
 
 
 def populate_data_objects(cursor, limit=None):
-    """Populate data_objects table."""
+    """Populate data_objects table using a single optimized SQL query."""
     print("\nPopulating data_objects table...")
 
-    # Get all DataObject entities
-    entities = []
-    for type_name in ['DataObject', 'SimpleDataObject', 'SpatialDataObject']:
-        type_uri = TYPE_URIS.get(type_name, f"{NS['cpmeta']}{type_name}")
-        entities.extend(get_entities_by_type(cursor, type_uri, limit))
+    # Build the type filter
+    type_filter = "', '".join([
+        TYPE_URIS['DataObject'],
+        TYPE_URIS['SimpleDataObject'],
+        TYPE_URIS['SpatialDataObject']
+    ])
 
-    if not entities:
-        print("  No DataObject entities found")
-        return 0
+    # Build the LIMIT clause if specified
+    limit_clause = f"LIMIT {limit}" if limit else ""
 
-    inserted = 0
-    for uri, props in entities:
-        # Determine type
-        types = get_property_values(props, f"{NS['rdf']}type")
-        type_name = 'DataObject'
-        for t in types:
-            if 'SimpleDataObject' in t:
-                type_name = 'SimpleDataObject'
-                break
-            elif 'SpatialDataObject' in t:
-                type_name = 'SpatialDataObject'
-                break
+    # Single SQL query that pivots RDF triples into relational columns
+    query = f"""
+        WITH data_object_subjects AS (
+            -- Find all subjects that are DataObjects (or subclasses)
+            SELECT DISTINCT subj
+            FROM {TRIPLES_TABLE}
+            WHERE pred = %s
+              AND obj IN ('{type_filter}')
+            {limit_clause}
+        )
+        INSERT INTO data_objects (
+            uri, sha256, type, name, doi,
+            acquisition_start_time, acquisition_end_time,
+            submission_start_time, submission_end_time,
+            data_start_time, data_end_time,
+            size_in_bytes, number_of_rows, actual_column_names,
+            object_spec_id, was_produced_by
+        )
+        SELECT
+            t.subj as uri,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as sha256,
+            -- Determine most specific type
+            CASE
+                WHEN bool_or(t.pred = %s AND t.obj = %s) THEN 'SimpleDataObject'
+                WHEN bool_or(t.pred = %s AND t.obj = %s) THEN 'SpatialDataObject'
+                ELSE 'DataObject'
+            END as type,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as name,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as doi,
+            -- Temporal properties (cast to timestamp with time zone)
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as acquisition_start_time,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as acquisition_end_time,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as submission_start_time,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as submission_end_time,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as data_start_time,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::timestamp with time zone as data_end_time,
+            -- Size properties (cast to bigint)
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::bigint as size_in_bytes,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END)::bigint as number_of_rows,
+            -- Column names as JSONB
+            CASE
+                WHEN MAX(CASE WHEN t.pred = %s THEN t.obj END) IS NOT NULL
+                THEN to_jsonb(MAX(CASE WHEN t.pred = %s THEN t.obj END))
+                ELSE NULL
+            END as actual_column_names,
+            -- Foreign key to object_specs
+            spec.id as object_spec_id,
+            -- Provenance
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as was_produced_by
+        FROM data_object_subjects dos
+        JOIN {TRIPLES_TABLE} t ON dos.subj = t.subj
+        LEFT JOIN object_specs spec ON spec.uri = (
+            SELECT obj
+            FROM {TRIPLES_TABLE}
+            WHERE subj = dos.subj
+              AND pred = %s
+            LIMIT 1
+        )
+        GROUP BY t.subj, spec.id
+        HAVING MAX(CASE WHEN t.pred = %s THEN t.obj END) IS NOT NULL
+           AND spec.id IS NOT NULL
+        ON CONFLICT (uri) DO UPDATE
+        SET sha256 = EXCLUDED.sha256,
+            type = EXCLUDED.type,
+            name = EXCLUDED.name,
+            doi = EXCLUDED.doi,
+            acquisition_start_time = EXCLUDED.acquisition_start_time,
+            acquisition_end_time = EXCLUDED.acquisition_end_time,
+            submission_start_time = EXCLUDED.submission_start_time,
+            submission_end_time = EXCLUDED.submission_end_time,
+            data_start_time = EXCLUDED.data_start_time,
+            data_end_time = EXCLUDED.data_end_time,
+            size_in_bytes = EXCLUDED.size_in_bytes,
+            number_of_rows = EXCLUDED.number_of_rows,
+            actual_column_names = EXCLUDED.actual_column_names,
+            object_spec_id = EXCLUDED.object_spec_id,
+            was_produced_by = EXCLUDED.was_produced_by,
+            updated_at = NOW()
+    """
 
-        # Required fields
-        sha256 = get_property_value(props, f"{NS['cpmeta']}hasSha256sum")
-        if not sha256:
-            continue  # Skip if no SHA256
+    # Define all the predicate URIs
+    params = [
+        f"{NS['rdf']}type",                              # CTE WHERE clause
+        f"{NS['cpmeta']}hasSha256sum",                   # sha256
+        f"{NS['rdf']}type",                              # type check 1 - SimpleDataObject
+        TYPE_URIS['SimpleDataObject'],
+        f"{NS['rdf']}type",                              # type check 2 - SpatialDataObject
+        TYPE_URIS['SpatialDataObject'],
+        f"{NS['cpmeta']}hasName",                        # name
+        f"{NS['cpmeta']}hasDoi",                         # doi
+        f"{NS['cpmeta']}hasAcquisitionStartTime",        # acquisition_start_time
+        f"{NS['cpmeta']}hasAcquisitionEndTime",          # acquisition_end_time
+        f"{NS['cpmeta']}hasSubmissionStartTime",         # submission_start_time
+        f"{NS['cpmeta']}hasSubmissionEndTime",           # submission_end_time
+        f"{NS['cpmeta']}hasDataStartTime",               # data_start_time
+        f"{NS['cpmeta']}hasDataEndTime",                 # data_end_time
+        f"{NS['cpmeta']}hasSizeInBytes",                 # size_in_bytes
+        f"{NS['cpmeta']}hasNumberOfRows",                # number_of_rows
+        f"{NS['cpmeta']}hasActualColumnNames",           # actual_column_names (1)
+        f"{NS['cpmeta']}hasActualColumnNames",           # actual_column_names (2)
+        f"{NS['prov']}wasProducedBy",                    # was_produced_by
+        f"{NS['cpmeta']}hasObjectSpec",                  # object spec subquery
+        f"{NS['cpmeta']}hasSha256sum",                   # HAVING clause
+    ]
 
-        name = get_property_value(props, f"{NS['cpmeta']}hasName")
-        doi = get_property_value(props, f"{NS['cpmeta']}hasDoi")
+    cursor.execute(query, params)
+    count = cursor.rowcount
 
-        # Temporal properties
-        acq_start = get_property_value(props, f"{NS['cpmeta']}hasAcquisitionStartTime")
-        acq_end = get_property_value(props, f"{NS['cpmeta']}hasAcquisitionEndTime")
-        sub_start = get_property_value(props, f"{NS['cpmeta']}hasSubmissionStartTime")
-        sub_end = get_property_value(props, f"{NS['cpmeta']}hasSubmissionEndTime")
-        data_start = get_property_value(props, f"{NS['cpmeta']}hasDataStartTime")
-        data_end = get_property_value(props, f"{NS['cpmeta']}hasDataEndTime")
-
-        # Size properties
-        size_in_bytes = get_property_value(props, f"{NS['cpmeta']}hasSizeInBytes")
-        number_of_rows = get_property_value(props, f"{NS['cpmeta']}hasNumberOfRows")
-
-        # Column names (stored as JSONB)
-        actual_column_names = get_property_value(props, f"{NS['cpmeta']}hasActualColumnNames")
-        column_names_json = None
-        if actual_column_names:
-            try:
-                # Try to parse as JSON if it's already JSON
-                column_names_json = json.dumps(json.loads(actual_column_names))
-            except:
-                # Otherwise wrap as a JSON string
-                column_names_json = json.dumps(actual_column_names)
-
-        # Object spec
-        spec_uri = get_property_value(props, f"{NS['cpmeta']}hasObjectSpec")
-        spec_id = None
-        if spec_uri:
-            cursor.execute("SELECT id FROM object_specs WHERE uri = %s", (spec_uri,))
-            result = cursor.fetchone()
-            if result:
-                spec_id = result[0]
-
-        if not spec_id:
-            continue  # Skip if no object spec
-
-        # Provenance
-        was_produced_by = get_property_value(props, f"{NS['prov']}wasProducedBy")
-
-        cursor.execute("""
-            INSERT INTO data_objects (
-                uri, sha256, type, name, doi,
-                acquisition_start_time, acquisition_end_time,
-                submission_start_time, submission_end_time,
-                data_start_time, data_end_time,
-                size_in_bytes, number_of_rows, actual_column_names,
-                object_spec_id, was_produced_by
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (uri) DO UPDATE
-            SET sha256 = EXCLUDED.sha256,
-                type = EXCLUDED.type,
-                name = EXCLUDED.name,
-                doi = EXCLUDED.doi,
-                acquisition_start_time = EXCLUDED.acquisition_start_time,
-                acquisition_end_time = EXCLUDED.acquisition_end_time,
-                submission_start_time = EXCLUDED.submission_start_time,
-                submission_end_time = EXCLUDED.submission_end_time,
-                data_start_time = EXCLUDED.data_start_time,
-                data_end_time = EXCLUDED.data_end_time,
-                size_in_bytes = EXCLUDED.size_in_bytes,
-                number_of_rows = EXCLUDED.number_of_rows,
-                actual_column_names = EXCLUDED.actual_column_names,
-                object_spec_id = EXCLUDED.object_spec_id,
-                was_produced_by = EXCLUDED.was_produced_by,
-                updated_at = NOW()
-            RETURNING id
-        """, (
-            uri, sha256, type_name, name, doi,
-            acq_start, acq_end, sub_start, sub_end, data_start, data_end,
-            size_in_bytes, number_of_rows, column_names_json,
-            spec_id, was_produced_by
-        ))
-        inserted += 1
-
-    print(f"  Inserted {inserted} data objects")
-    return inserted
+    print(f"  Inserted {count} data objects")
+    return count
 
 
 def populate_data_object_keywords(cursor):

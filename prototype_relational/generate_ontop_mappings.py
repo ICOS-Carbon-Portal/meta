@@ -383,12 +383,12 @@ class MappingGenerator:
 
     def generate_all(self, include_tables=None, exclude_tables=None):
         """Generate all mappings."""
-        tables = self.db.get_tables()
+        # Pass exclude patterns to get_tables for regex-based filtering
+        tables = self.db.get_tables(exclude_patterns=exclude_tables)
 
+        # Apply include filter if specified
         if include_tables:
             tables = [t for t in tables if t in include_tables]
-        if exclude_tables:
-            tables = [t for t in tables if t not in exclude_tables]
 
         for table in tables:
             if self.db.is_junction_table(table):
@@ -398,13 +398,8 @@ class MappingGenerator:
 
     def generate_table_mappings(self, table):
         """Generate all mappings for a table."""
-        if self.with_comments:
-            self.add_comment(f"\n{'='*60}")
-            self.add_comment(f"TABLE: {table}")
-            row_count = self.db.get_table_row_count(table)
-            if row_count > 0:
-                self.add_comment(f"Estimated rows: {row_count:,}")
-            self.add_comment(f"{'='*60}\n")
+        # Track mappings count before generation
+        mappings_before = len([m for m in self.mappings if 'id' in m])
 
         # Type mapping
         columns = self.db.get_columns(table)
@@ -417,6 +412,26 @@ class MappingGenerator:
         # Object properties (foreign keys)
         self.generate_object_property_mappings(table)
 
+        # Check if any mappings were generated
+        mappings_after = len([m for m in self.mappings if 'id' in m])
+        mappings_generated = mappings_after - mappings_before
+
+        # Only add header comment if mappings were actually generated
+        if mappings_generated > 0 and self.with_comments:
+            # Insert header comment before the new mappings
+            header_comments = []
+            header_comments.append({'comment': f"\n{'='*60}"})
+            header_comments.append({'comment': f"TABLE: {table}"})
+            row_count = self.db.get_table_row_count(table)
+            if row_count > 0:
+                header_comments.append({'comment': f"Estimated rows: {row_count:,}"})
+            header_comments.append({'comment': f"{'='*60}\n"})
+
+            # Insert comments before the mappings we just added
+            insert_position = mappings_before
+            for comment in reversed(header_comments):
+                self.mappings.insert(insert_position, comment)
+
     def generate_type_mapping(self, table):
         """Generate rdf:type mapping using type column."""
         uri_col = self.db.get_uri_column(table)
@@ -424,7 +439,7 @@ class MappingGenerator:
             return
 
         mapping_id = f"{table}-type"
-        target = "{%s} a cpmeta:{type} ." % uri_col
+        target = "<{%s}> a cpmeta:{type} ." % uri_col
         source = f"SELECT {uri_col}, type FROM {table}"
 
         self.add_mapping(mapping_id, target, source)
@@ -503,7 +518,7 @@ class MappingGenerator:
                 triple = f"{prop} {{{col_name}}}"
             target_parts.append(triple)
 
-        target = "{%s} %s ." % (uri_col, " ;\n                ".join(target_parts))
+        target = "<{%s}> %s ." % (uri_col, " ;\n                ".join(target_parts))
 
         # Build source query
         col_names = [uri_col] + [col['name'] for col in columns]
@@ -558,7 +573,7 @@ class MappingGenerator:
 
             prop_base_name = prop_base if col_name.endswith('_id') else col_name
             mapping_id = f"{table}-{prop_base_name}"
-            target = "{%s_uri} %s {%s_uri} ." % (table, prop, ref_table)
+            target = "<{%s_uri}> %s {%s_uri} ." % (table, prop, ref_table)
 
             source = f"""SELECT
                  s.{uri_col} as {table}_uri,
@@ -571,9 +586,6 @@ class MappingGenerator:
 
     def generate_junction_mapping(self, table):
         """Generate mapping for junction table (many-to-many relationship)."""
-        if self.with_comments:
-            self.add_comment(f"\n# Junction table: {table}")
-
         fks = self.db.get_foreign_keys(table)
         if len(fks) != 2:
             return
@@ -600,7 +612,7 @@ class MappingGenerator:
             # Special case: keywords table has keyword column
             mapping_id = f"{table}-keywords"
             prop = "cpmeta:hasKeyword"
-            target = "{subj_uri} %s {keyword} ." % prop
+            target = "<{subj_uri}> %s {keyword} ." % prop
             source = f"""SELECT
                  s.{uri_col1} as subj_uri,
                  k.keyword
@@ -615,13 +627,17 @@ class MappingGenerator:
             prop = f"cpmeta:has{camel}"
 
             mapping_id = f"{table}"
-            target = "{subj_uri} %s {obj_uri} ." % prop
+            target = "<{subj_uri}> %s {obj_uri} ." % prop
             source = f"""SELECT
                  s.{uri_col1} as subj_uri,
                  o.{uri_col2} as obj_uri
              FROM {table} jt
              JOIN {table1} s ON jt.{fk1['column']} = s.id
              JOIN {table2} o ON jt.{fk2['column']} = o.id"""
+
+        # Add comment before mapping
+        if self.with_comments:
+            self.add_comment(f"\n# Junction table: {table}")
 
         self.add_mapping(mapping_id, target, source)
         self.stats['junction_mappings'] += 1
@@ -653,10 +669,10 @@ class MappingGenerator:
             f.write("[MappingDeclaration] @collection [[\n\n")
 
             # Write header comment
-            f.write(f"# Auto-generated Ontop mappings\n")
-            f.write(f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"# Total mappings: {len([m for m in self.mappings if 'id' in m])}\n")
-            f.write("\n")
+            # f.write(f"# Auto-generated Ontop mappings\n")
+            # f.write(f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            # f.write(f"# Total mappings: {len([m for m in self.mappings if 'id' in m])}\n")
+            # f.write("\n")
 
             # Write mappings
             for mapping in self.mappings:
@@ -702,6 +718,7 @@ Examples:
   %(prog)s --output ontop/auto_mappings.obda
   %(prog)s --include-tables data_objects,stations
   %(prog)s --strategy grouped --with-comments
+  %(prog)s --include-predicate-tables  # Include old predicate tables
         """
     )
 
@@ -719,9 +736,11 @@ Examples:
                         help='Output file (default: ontop/generated_mappings.obda)')
     parser.add_argument('--include-tables', help='Comma-separated list of tables to include')
     parser.add_argument('--exclude-tables', help='Comma-separated list of tables to exclude')
+    parser.add_argument('--include-predicate-tables', action='store_true',
+                        help='Include old predicate-table pattern tables (default: exclude)')
     parser.add_argument('--strategy', choices=['grouped', 'split'], default='grouped',
                         help='Mapping strategy (default: grouped)')
-    parser.add_argument('--with-comments', action='store_true', default=True,
+    parser.add_argument('--with-comments', action='store_true', default=False,
                         help='Include explanatory comments (default: True)')
     parser.add_argument('--dry-run', action='store_true',
                         help='Print statistics without writing file')
@@ -731,6 +750,46 @@ Examples:
     # Parse table lists
     include_tables = args.include_tables.split(',') if args.include_tables else None
     exclude_tables = args.exclude_tables.split(',') if args.exclude_tables else None
+
+    # Add default exclusions for predicate tables and system tables unless explicitly including them
+    if not args.include_predicate_tables:
+        default_exclusions = [
+            # Predicate-table pattern (namespace_property)
+            r'^cpmeta_',
+            r'^prov_',
+            r'^rdfs_',
+            r'^owl_',
+            r'^xsd_',
+            r'^rdf_',
+            r'^dc_',
+            r'^dcat_',
+            r'^dcterms_',
+            r'^ssn_',
+            r'^vann_',
+            r'^locn_',
+            r'^ns_',
+            r'^files_',
+            r'^core_',
+            r'^wdcgg_',
+            r'^otcmeta_',
+            r'^stationentry_',
+            r'^sites_',
+            # System/utility tables
+            r'^triples$',
+            r'^rdf_triples$',
+            r'^iris$',
+            r'^predicate_table_mappings$',
+            r'^triple_keywords$',
+            r'^entity_keywords$',
+            r'^data_object_all_keywords$',
+            r'^object_spec_keywords$',
+            r'^object_spec_projects$',
+            r'^project_keywords$',
+        ]
+        if exclude_tables:
+            exclude_tables.extend(default_exclusions)
+        else:
+            exclude_tables = default_exclusions
 
     print("=" * 60)
     print("ONTOP MAPPING GENERATOR")

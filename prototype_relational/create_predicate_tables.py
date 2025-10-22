@@ -373,7 +373,6 @@ def populate_iris_table(conn):
         SELECT DISTINCT subj, decode(md5(subj), 'hex')
         FROM rdf_triples
         WHERE subj IS NOT NULL
-        LIMIT 1000
         ON CONFLICT (iri_hash) DO NOTHING;
     """)
     subj_count = cursor.rowcount
@@ -390,7 +389,6 @@ def populate_iris_table(conn):
             FROM rdf_triples
             WHERE obj IS NOT NULL
               AND pred IN ({placeholders})
-            LIMIT 1000
             ON CONFLICT (iri_hash) DO NOTHING;
         """, object_property_predicates)
         obj_count = cursor.rowcount
@@ -488,7 +486,7 @@ def create_predicate_table(cursor, table_name, typ, obj_is_iri=False):
     # Create new table
 
 
-def populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit=None):
+def populate_predicate_table(cursor, table_name, predicate, pg_type, obj_is_iri=False, limit=None):
     """
     Populate a predicate table from rdf_triples using IRI references.
 
@@ -507,6 +505,8 @@ def populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit=No
     if limit:
         limit_clause = f"LIMIT {limit}"
 
+
+
     if obj_is_iri:
         # Both subj and obj are IRI references - join with iris table twice
         cursor.execute(f"""
@@ -519,14 +519,20 @@ def populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit=No
             %s;
         """, (predicate, limit_clause))
     else:
+        # Cast rt.obj to the target type if it's not TEXT
+        if pg_type.upper() == 'TEXT':
+            obj_expr = "rt.obj"
+        else:
+            obj_expr = f"rt.obj::{pg_type}"
+
         cursor.execute(f"""
             INSERT INTO {table_name} (subj, obj)
-            SELECT i1.id, rt.obj
+            SELECT i1.id, {obj_expr}
             FROM rdf_triples rt
             JOIN iris i1 ON rt.subj = i1.iri
             WHERE rt.obj IS NOT NULL AND rt.pred = %s
-            %s;
-        """, (predicate, limit_clause))
+            {limit_clause};
+        """, (predicate,))
 
     return cursor.rowcount
 
@@ -612,15 +618,15 @@ def process_predicates(conn, limit=None, add_index=False):
                     obj_is_iri = True
                     pg_type = "INTEGER"  # Will be ignored when obj_is_iri=True
             # else:
-                # # Unknown predicate - check if objects look like IRIs
-                # cursor.execute("""
-                #     SELECT obj FROM rdf_triples
-                #     WHERE pred = %s AND obj IS NOT NULL
-                #     LIMIT 1;
-                # """, (predicate,))
-                # sample_obj = cursor.fetchone()
-                # if sample_obj and sample_obj[0].startswith('http'):
-                #     obj_is_iri = True
+            #     # Unknown predicate - check if objects look like IRIs
+            #     cursor.execute("""
+            #         SELECT obj FROM rdf_triples
+            #         WHERE pred = %s AND obj IS NOT NULL
+            #         LIMIT 1;
+            #     """, (predicate,))
+            #     sample_obj = cursor.fetchone()
+            #     if sample_obj and sample_obj[0].startswith('http'):
+            #         obj_is_iri = True
 
             print(f"  -> Object type: {'IRI reference' if obj_is_iri else f'Literal ({pg_type})'}")
 
@@ -630,7 +636,7 @@ def process_predicates(conn, limit=None, add_index=False):
 
             # Populate the table
             print("  -> Populating table...")
-            row_count = populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit)
+            row_count = populate_predicate_table(cursor, table_name, predicate, pg_type, obj_is_iri, limit)
 
             print(f"  -> Inserted {row_count} rows")
             total_rows += row_count

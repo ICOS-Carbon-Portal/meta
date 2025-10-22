@@ -283,7 +283,11 @@ def clear_predicate_tables(cursor):
     cursor.execute("DROP TABLE IF EXISTS predicate_table_mappings CASCADE;")
     dropped_count += 1
 
-    print(f"✓ Cleared {dropped_count} tables (including predicate_table_mappings)")
+    # Drop the iris table
+    cursor.execute("DROP TABLE IF EXISTS iris CASCADE;")
+    dropped_count += 1
+
+    print(f"✓ Cleared {dropped_count} tables (including predicate_table_mappings and iris)")
     return dropped_count
 
 
@@ -318,6 +322,112 @@ def create_mapping_table(cursor):
     """)
 
 
+def create_iris_table(cursor):
+    """Create a table to store unique IRIs with integer IDs."""
+    print("Creating iris reference table...")
+
+    # Drop existing table
+    cursor.execute("DROP TABLE IF EXISTS iris CASCADE;")
+
+    # Create new iris table with auto-incrementing ID
+    cursor.execute("""
+        CREATE TABLE iris (
+            id SERIAL PRIMARY KEY,
+            iri TEXT UNIQUE NOT NULL
+        );
+    """)
+
+    # Create index on iri column for fast lookups
+    # cursor.execute("CREATE INDEX idx_iris_iri ON iris(iri);")
+    # print("  -> Created iris table with index on iri column")
+
+
+def populate_iris_table(cursor):
+    """
+    Populate the iris table with all unique IRIs from rdf_triples.
+    Includes all subjects and objects that are IRIs (not literals).
+
+    Returns:
+        Number of unique IRIs inserted
+    """
+    print("Populating iris table from rdf_triples...")
+
+    # Parse ontology to determine which predicates have IRI objects
+    property_ranges = parse_ontology_for_types()
+
+    # Build a list of predicates that have object properties (IRI objects)
+    # A predicate has IRI objects if its range is NOT an XSD type
+    object_property_predicates = []
+    for pred, range_uri in property_ranges.items():
+        if range_uri and not range_uri.startswith('http://www.w3.org/2001/XMLSchema#'):
+            object_property_predicates.append(pred)
+
+    print(f"  -> Found {len(object_property_predicates)} object properties with IRI objects")
+
+    # Insert all unique subjects
+    print("  -> Inserting unique subjects...")
+    cursor.execute("""
+        INSERT INTO iris (iri)
+        SELECT DISTINCT subj FROM rdf_triples
+        WHERE subj IS NOT NULL
+        ON CONFLICT (iri) DO NOTHING;
+    """)
+    subj_count = cursor.rowcount
+    print(f"     Inserted {subj_count} subject IRIs")
+
+    # Insert unique objects that are IRIs (from object properties)
+    if object_property_predicates:
+        print("  -> Inserting unique object IRIs...")
+        # Create a parameterized query with the list of object property predicates
+        placeholders = ','.join(['%s'] * len(object_property_predicates))
+        cursor.execute(f"""
+            INSERT INTO iris (iri)
+            SELECT DISTINCT obj FROM rdf_triples
+            WHERE obj IS NOT NULL
+              AND pred IN ({placeholders})
+            ON CONFLICT (iri) DO NOTHING;
+        """, object_property_predicates)
+        obj_count = cursor.rowcount
+        print(f"     Inserted {obj_count} object IRIs")
+    else:
+        obj_count = 0
+        print("  -> No object properties found, skipping object IRIs")
+
+    # Also insert objects from predicates not in the ontology (assume they might be IRIs)
+    print("  -> Inserting objects from unknown predicates (potential IRIs)...")
+    known_predicates = list(property_ranges.keys())
+    if known_predicates:
+        placeholders = ','.join(['%s'] * len(known_predicates))
+        cursor.execute(f"""
+            INSERT INTO iris (iri)
+            SELECT DISTINCT obj FROM rdf_triples
+            WHERE obj IS NOT NULL
+              AND pred NOT IN ({placeholders})
+              AND obj LIKE 'http%'
+            ON CONFLICT (iri) DO NOTHING;
+        """, known_predicates)
+        unknown_count = cursor.rowcount
+        print(f"     Inserted {unknown_count} IRIs from unknown predicates")
+    else:
+        # No known predicates, so all objects that look like IRIs should be included
+        cursor.execute("""
+            INSERT INTO iris (iri)
+            SELECT DISTINCT obj FROM rdf_triples
+            WHERE obj IS NOT NULL
+              AND obj LIKE 'http%'
+            ON CONFLICT (iri) DO NOTHING;
+        """)
+        unknown_count = cursor.rowcount
+        print(f"     Inserted {unknown_count} IRIs from all predicates")
+
+    # Get total count
+    cursor.execute("SELECT COUNT(*) FROM iris;")
+    total_count = cursor.fetchone()[0]
+
+    print(f"  -> Total unique IRIs in table: {total_count}")
+    return total_count
+
+
 def insert_mapping(cursor, table_name, predicate_uri):
     """
     Insert a mapping between table name and predicate URI.
@@ -335,47 +445,97 @@ def insert_mapping(cursor, table_name, predicate_uri):
     """, (table_name, predicate_uri))
 
 
-def create_predicate_table(cursor, table_name, typ):
-    """Create a predicate table with subj and obj columns."""
+def create_predicate_table(cursor, table_name, typ, obj_is_iri=False):
+    """
+    Create a predicate table with subj and obj columns.
+
+    Args:
+        cursor: Database cursor
+        table_name: Name of the table to create
+        typ: PostgreSQL type for obj column (e.g., 'TEXT', 'BIGINT', 'BOOLEAN')
+        obj_is_iri: If True, obj references iris table; if False, obj is typed literal
+    """
     # Drop existing table
     cursor.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
 
+    # subj is always a reference to iris table
+    # obj is either a reference to iris (for object properties) or a typed literal
+    if obj_is_iri:
+        cursor.execute(f"""
+            CREATE TABLE {table_name} (
+                subj INTEGER NOT NULL,
+                obj INTEGER NOT NULL,
+                FOREIGN KEY (subj) REFERENCES iris(id),
+                FOREIGN KEY (obj) REFERENCES iris(id)
+            );
+        """)
+    else:
+        cursor.execute(f"""
+            CREATE TABLE {table_name} (
+                subj INTEGER NOT NULL,
+                obj {typ} NOT NULL,
+                FOREIGN KEY (subj) REFERENCES iris(id),
+            );
+        """)
+
     # Create new table
-    cursor.execute(f"""
-        CREATE TABLE {table_name} (
-            subj TEXT NOT NULL,
-            obj {typ} NOT NULL
-        );
-    """)
 
 
-def populate_predicate_table(cursor, table_name, predicate, limit=None):
+def populate_predicate_table(cursor, table_name, predicate, obj_is_iri=False, limit=None):
     """
-    Populate a predicate table from rdf_triples.
+    Populate a predicate table from rdf_triples using IRI references.
 
     Args:
         cursor: Database cursor
         table_name: Name of the table to populate
         predicate: Predicate URI to filter by
+        obj_is_iri: If True, obj is an IRI reference; if False, obj is a literal
         limit: Optional limit on number of rows to insert
 
     Returns:
         Number of rows inserted
     """
 
-    if limit:
-        cursor.execute(f"""
-            INSERT INTO {table_name} (subj, obj)
-            SELECT subj, obj FROM rdf_triples
-            WHERE obj IS NOT NULL AND pred = %s
-            LIMIT %s;
-        """, (predicate, limit))
+    if obj_is_iri:
+        # Both subj and obj are IRI references - join with iris table twice
+        if limit:
+            cursor.execute(f"""
+                INSERT INTO {table_name} (subj, obj)
+                SELECT i1.id, i2.id
+                FROM rdf_triples rt
+                JOIN iris i1 ON rt.subj = i1.iri
+                JOIN iris i2 ON rt.obj = i2.iri
+                WHERE rt.obj IS NOT NULL AND rt.pred = %s
+                LIMIT %s;
+            """, (predicate, limit))
+        else:
+            cursor.execute(f"""
+                INSERT INTO {table_name} (subj, obj)
+                SELECT i1.id, i2.id
+                FROM rdf_triples rt
+                JOIN iris i1 ON rt.subj = i1.iri
+                JOIN iris i2 ON rt.obj = i2.iri
+                WHERE rt.obj IS NOT NULL AND rt.pred = %s;
+            """, (predicate,))
     else:
-        cursor.execute(f"""
-            INSERT INTO {table_name} (subj, obj)
-            SELECT subj, obj FROM rdf_triples
-            WHERE obj IS NOT NULL AND pred = %s;
-        """, (predicate,))
+        # Only subj is an IRI reference - join with iris table once
+        if limit:
+            cursor.execute(f"""
+                INSERT INTO {table_name} (subj, obj)
+                SELECT i1.id, rt.obj
+                FROM rdf_triples rt
+                JOIN iris i1 ON rt.subj = i1.iri
+                WHERE rt.obj IS NOT NULL AND rt.pred = %s
+                LIMIT %s;
+            """, (predicate, limit))
+        else:
+            cursor.execute(f"""
+                INSERT INTO {table_name} (subj, obj)
+                SELECT i1.id, rt.obj
+                FROM rdf_triples rt
+                JOIN iris i1 ON rt.subj = i1.iri
+                WHERE rt.obj IS NOT NULL AND rt.pred = %s;
+            """, (predicate,))
 
     return cursor.rowcount
 
@@ -417,6 +577,18 @@ def process_predicates(conn, limit=None, add_index=False):
         create_mapping_table(cursor)
         conn.commit()
 
+        # Create the iris table first
+        create_iris_table(cursor)
+        conn.commit()
+
+        # Populate the iris table with all unique IRIs
+        populate_iris_table(cursor)
+        conn.commit()
+
+        # Parse ontology once to determine object property types
+        print("\nAnalyzing ontology to determine property types...")
+        property_ranges = parse_ontology_for_types()
+
         # Process each predicate
         total_rows = 0
         mapping_count = 0
@@ -434,18 +606,41 @@ def process_predicates(conn, limit=None, add_index=False):
             print(f"\nProcessing predicate: {predicate}")
             print(f"  -> Table name: {table_name}")
 
-            otypes = parse_ontology_for_types()
-            # print(otypes.keys())
-            # print(otypes.get(predicate))
-            pg_type = xsd_to_postgres_type(otypes.get(predicate))
-            print("type", pg_type)
+            # Determine if this predicate has IRI objects or literal objects
+            range_uri = property_ranges.get(predicate)
+            obj_is_iri = False
+            pg_type = "TEXT"
+
+            if range_uri:
+                # Check if the range is an XSD type (datatype property) or not (object property)
+                if range_uri.startswith('http://www.w3.org/2001/XMLSchema#'):
+                    # Datatype property - obj is a typed literal
+                    obj_is_iri = False
+                    pg_type = xsd_to_postgres_type(range_uri)
+                else:
+                    # Object property - obj is an IRI reference
+                    obj_is_iri = True
+                    pg_type = "INTEGER"  # Will be ignored when obj_is_iri=True
+            else:
+                # Unknown predicate - check if objects look like IRIs
+                cursor.execute("""
+                    SELECT obj FROM rdf_triples
+                    WHERE pred = %s AND obj IS NOT NULL
+                    LIMIT 1;
+                """, (predicate,))
+                sample_obj = cursor.fetchone()
+                if sample_obj and sample_obj[0].startswith('http'):
+                    obj_is_iri = True
+
+            print(f"  -> Object type: {'IRI reference' if obj_is_iri else f'Literal ({pg_type})'}")
+
             # Create the table
             print("  -> Creating table...")
-            create_predicate_table(cursor, table_name, "TEXT")
+            create_predicate_table(cursor, table_name, pg_type, obj_is_iri)
 
             # Populate the table
             print("  -> Populating table...")
-            row_count = populate_predicate_table(cursor, table_name, predicate, limit)
+            row_count = populate_predicate_table(cursor, table_name, predicate, obj_is_iri, limit)
 
             print(f"  -> Inserted {row_count} rows")
             total_rows += row_count
@@ -578,6 +773,7 @@ Examples:
         # Clear existing tables if requested
         if args.clear:
             clear_predicate_tables(cursor)
+            cursor.execute(f"DROP TABLE IF EXISTS iris CASCADE;")
             conn.commit()
 
             if not should_create:

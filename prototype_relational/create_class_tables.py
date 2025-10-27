@@ -250,8 +250,6 @@ def create_schema(cursor):
             wigos_id TEXT,
             responsible_organization_id INTEGER REFERENCES organizations(id),
             climate_zone_id INTEGER REFERENCES climate_zones(id),
-            responsible_org_name TEXT,
-            climate_zone_label TEXT,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
@@ -292,9 +290,6 @@ def create_schema(cursor):
             encoding_id INTEGER REFERENCES object_encodings(id),
             project_id INTEGER REFERENCES projects(id),
             dataset_type_id INTEGER REFERENCES specific_dataset_types(id),
-            theme_uri TEXT,
-            theme_label TEXT,
-            format_uri TEXT,
             dataset_spec_uri TEXT,
             documentation_object_uri TEXT,
             keywords TEXT,
@@ -328,13 +323,6 @@ def create_schema(cursor):
             actual_column_names JSONB,
             object_spec_id INTEGER REFERENCES object_specs(id),
             previous_version_id INTEGER REFERENCES data_objects(id),
-            spec_label TEXT,
-            data_level INTEGER,
-            theme_uri TEXT,
-            theme_label TEXT,
-            theme_icon TEXT,
-            format_uri TEXT,
-            project_uri TEXT,
             was_produced_by TEXT,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
@@ -376,10 +364,6 @@ def create_schema(cursor):
             station_id INTEGER REFERENCES stations(id),
             sampling_height FLOAT,
             sampling_point_uri TEXT,
-            sampling_point_label TEXT,
-            station_uri TEXT,
-            station_name TEXT,
-            station_id_value TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE INDEX idx_acquisitions_uri ON data_acquisitions(uri);
@@ -435,7 +419,6 @@ def create_schema(cursor):
             person_id INTEGER NOT NULL REFERENCES persons(id),
             organization_id INTEGER NOT NULL REFERENCES organizations(id),
             role_uri TEXT NOT NULL,
-            role_label TEXT,
             start_time TIMESTAMP WITH TIME ZONE,
             end_time TIMESTAMP WITH TIME ZONE,
             attribution_weight INTEGER
@@ -923,10 +906,9 @@ def populate_object_specs(cursor, limit=None):
             INSERT INTO object_specs (
                 uri, type, label, description, data_level,
                 theme_id, format_id, encoding_id, project_id, dataset_type_id,
-                theme_uri, format_uri,
                 dataset_spec_uri, documentation_object_uri, keywords, see_also
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (uri) DO UPDATE
             SET type = EXCLUDED.type,
                 label = EXCLUDED.label,
@@ -937,8 +919,6 @@ def populate_object_specs(cursor, limit=None):
                 encoding_id = EXCLUDED.encoding_id,
                 project_id = EXCLUDED.project_id,
                 dataset_type_id = EXCLUDED.dataset_type_id,
-                theme_uri = EXCLUDED.theme_uri,
-                format_uri = EXCLUDED.format_uri,
                 dataset_spec_uri = EXCLUDED.dataset_spec_uri,
                 documentation_object_uri = EXCLUDED.documentation_object_uri,
                 keywords = EXCLUDED.keywords,
@@ -947,7 +927,6 @@ def populate_object_specs(cursor, limit=None):
         """, (
             uri, type_name, label, description, data_level,
             theme_id, format_id, encoding_id, project_id, dataset_type_id,
-            theme_uri, format_uri,
             dataset_spec_uri, documentation_object_uri, keywords, see_also
         ))
 

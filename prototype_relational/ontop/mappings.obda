@@ -37,8 +37,6 @@ target       <{uri}> cpmeta:hasName {name} ;
                cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
                cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
                cpmeta:hasActualColumnNames {actual_column_names}^^xsd:string ;
-               cpmeta:hasDataLevel {data_level}^^xsd:integer ;
-               rdfs:label {spec_label} ;
                prov:wasProducedBy {was_produced_by} .
 source       SELECT
                uri,
@@ -54,8 +52,6 @@ source       SELECT
                data_start_time,
                data_end_time,
                actual_column_names,
-               data_level,
-               spec_label,
                was_produced_by
             FROM data_objects
             WHERE name IS NOT NULL
@@ -69,34 +65,7 @@ source       SELECT
                OR size_in_bytes IS NOT NULL
                OR number_of_rows IS NOT NULL
                OR actual_column_names IS NOT NULL
-               OR data_level IS NOT NULL
-               OR spec_label IS NOT NULL
                OR was_produced_by IS NOT NULL
-
-mappingId    data-object-denormalized-uris
-target       <{uri}> cpmeta:hasDataTheme <{theme_uri}> ;
-               cpmeta:hasFormat <{format_uri}> ;
-               cpmeta:hasAssociatedProject <{project_uri}> .
-source       SELECT
-               uri,
-               theme_uri,
-               format_uri,
-               project_uri
-            FROM data_objects
-            WHERE theme_uri IS NOT NULL
-               OR format_uri IS NOT NULL
-               OR project_uri IS NOT NULL
-
-mappingId    data-object-theme-labels
-target       <{theme_uri}> rdfs:label {theme_label} ;
-               cpmeta:hasIcon {theme_icon}^^xsd:anyURI .
-source       SELECT
-               theme_uri,
-               theme_label,
-               theme_icon
-            FROM data_objects
-            WHERE theme_uri IS NOT NULL
-               AND (theme_label IS NOT NULL OR theme_icon IS NOT NULL)
 
 mappingId    data-object-spec
 target       <{data_object_uri}> cpmeta:hasObjectSpec <{spec_uri}> .
@@ -152,10 +121,10 @@ source       SELECT
 mappingId    object-spec-theme
 target       <{spec_uri}> cpmeta:hasDataTheme <{theme_uri}> .
 source       SELECT
-               uri as spec_uri,
-               theme_uri
-            FROM object_specs
-            WHERE theme_uri IS NOT NULL
+               os.uri as spec_uri,
+               dt.uri as theme_uri
+            FROM object_specs os
+            JOIN data_themes dt ON os.theme_id = dt.id
 
 mappingId    object-spec-format
 target       <{spec_uri}> cpmeta:hasFormat <{format_uri}> .
@@ -188,4 +157,241 @@ source       SELECT
                sdt.uri as dataset_type_uri
             FROM object_specs os
             JOIN specific_dataset_types sdt ON os.dataset_type_id = sdt.id
+
+mappingId    station-type
+target       <{uri}> a cpmeta:{type} .
+source       SELECT uri, type FROM stations
+
+mappingId    station-fields
+target       <{uri}> cpmeta:hasName {name} ;
+               cpmeta:hasStationId {station_id} ;
+               cpmeta:countryCode {country_code} ;
+               cpmeta:hasLatitude {latitude}^^xsd:double ;
+               cpmeta:hasLongitude {longitude}^^xsd:double ;
+               cpmeta:hasElevation {elevation}^^xsd:float ;
+               cpmeta:hasMeanAnnualTemp {mean_annual_temp}^^xsd:float ;
+               cpmeta:hasMeanAnnualPrecip {mean_annual_precip}^^xsd:float ;
+               cpmeta:hasMeanAnnualRadiation {mean_annual_radiation}^^xsd:float ;
+               cpmeta:hasTimeZoneOffset {time_zone_offset}^^xsd:integer ;
+               cpmeta:hasOperationalPeriod {operational_period} ;
+               cpmeta:isDiscontinued {is_discontinued}^^xsd:boolean ;
+               cpmeta:hasStationClass {station_class} ;
+               cpmeta:hasLabelingDate {labeling_date}^^xsd:date ;
+               cpmeta:hasWigosId {wigos_id} .
+source       SELECT
+               uri, name, station_id, country_code,
+               latitude, longitude, elevation,
+               mean_annual_temp, mean_annual_precip, mean_annual_radiation,
+               time_zone_offset, operational_period, is_discontinued,
+               station_class, labeling_date, wigos_id
+            FROM stations
+            WHERE name IS NOT NULL
+               OR station_id IS NOT NULL
+               OR country_code IS NOT NULL
+               OR latitude IS NOT NULL
+               OR longitude IS NOT NULL
+               OR elevation IS NOT NULL
+               OR mean_annual_temp IS NOT NULL
+               OR mean_annual_precip IS NOT NULL
+               OR mean_annual_radiation IS NOT NULL
+               OR time_zone_offset IS NOT NULL
+               OR operational_period IS NOT NULL
+               OR is_discontinued IS NOT NULL
+               OR station_class IS NOT NULL
+               OR labeling_date IS NOT NULL
+               OR wigos_id IS NOT NULL
+
+mappingId    station-responsible-organization
+target       <{station_uri}> cpmeta:hasResponsibleOrganization <{org_uri}> .
+source       SELECT
+               s.uri as station_uri,
+               o.uri as org_uri
+            FROM stations s
+            JOIN organizations o ON s.responsible_organization_id = o.id
+
+mappingId    station-climate-zone
+target       <{station_uri}> cpmeta:hasClimateZone <{climate_zone_uri}> .
+source       SELECT
+               s.uri as station_uri,
+               cz.uri as climate_zone_uri
+            FROM stations s
+            JOIN climate_zones cz ON s.climate_zone_id = cz.id
+
+mappingId    organization-type
+target       <{uri}> a cpmeta:{type} .
+source       SELECT uri, type FROM organizations
+
+mappingId    organization-fields
+target       <{uri}> cpmeta:hasName {name} ;
+               cpmeta:hasEmail {email} ;
+               cpmeta:countryCode {country_code} ;
+               cpmeta:hasLocationLatitude {location_latitude}^^xsd:double ;
+               cpmeta:hasLocationLongitude {location_longitude}^^xsd:double .
+source       SELECT
+               uri, name, email, country_code,
+               location_latitude, location_longitude
+            FROM organizations
+            WHERE name IS NOT NULL
+               OR email IS NOT NULL
+               OR country_code IS NOT NULL
+               OR location_latitude IS NOT NULL
+               OR location_longitude IS NOT NULL
+
+mappingId    person-fields
+target       <{uri}> a cpmeta:Person ;
+               cpmeta:hasFirstName {first_name} ;
+               cpmeta:hasLastName {last_name} ;
+               cpmeta:hasEmail {email} ;
+               cpmeta:hasOrcidId {orcid_id} .
+source       SELECT
+               uri, first_name, last_name, email, orcid_id
+            FROM persons
+            WHERE first_name IS NOT NULL
+               OR last_name IS NOT NULL
+               OR email IS NOT NULL
+               OR orcid_id IS NOT NULL
+
+mappingId    data-acquisition-fields
+target       <{uri}> a cpmeta:DataAcquisition ;
+               cpmeta:hasSamplingHeight {sampling_height}^^xsd:float ;
+               cpmeta:hasSamplingPoint <{sampling_point_uri}> .
+source       SELECT
+               uri, sampling_height, sampling_point_uri
+            FROM data_acquisitions
+            WHERE sampling_height IS NOT NULL
+               OR sampling_point_uri IS NOT NULL
+
+mappingId    data-acquisition-station
+target       <{acquisition_uri}> prov:wasAssociatedWith <{station_uri}> .
+source       SELECT
+               a.uri as acquisition_uri,
+               s.uri as station_uri
+            FROM data_acquisitions a
+            JOIN stations s ON a.station_id = s.id
+
+mappingId    data-object-keywords
+target       <{data_object_uri}> cpmeta:hasKeyword {keyword} .
+source       SELECT
+               d.uri as data_object_uri,
+               k.keyword
+            FROM data_objects d
+            JOIN data_object_keywords dok ON d.id = dok.data_object_id
+            JOIN keywords k ON dok.keyword_id = k.id
+
+mappingId    data-object-acquisitions
+target       <{data_object_uri}> cpmeta:wasAcquiredBy <{acquisition_uri}> .
+source       SELECT
+               d.uri as data_object_uri,
+               a.uri as acquisition_uri
+            FROM data_objects d
+            JOIN data_object_acquisitions doa ON d.id = doa.data_object_id
+            JOIN data_acquisitions a ON doa.acquisition_id = a.id
+
+mappingId    membership-fields
+target       <{uri}> a cpmeta:Membership ;
+               cpmeta:hasRole <{role_uri}> ;
+               cpmeta:hasStartTime {start_time}^^xsd:dateTime ;
+               cpmeta:hasEndTime {end_time}^^xsd:dateTime ;
+               cpmeta:hasAttributionWeight {attribution_weight}^^xsd:integer .
+source       SELECT
+               uri, role_uri, start_time, end_time, attribution_weight
+            FROM memberships
+            WHERE role_uri IS NOT NULL
+               OR start_time IS NOT NULL
+               OR end_time IS NOT NULL
+               OR attribution_weight IS NOT NULL
+
+mappingId    membership-person
+target       <{person_uri}> cpmeta:hasMembership <{membership_uri}> .
+source       SELECT
+               p.uri as person_uri,
+               m.uri as membership_uri
+            FROM persons p
+            JOIN memberships m ON p.id = m.person_id
+
+mappingId    membership-organization
+target       <{membership_uri}> cpmeta:atOrganization <{org_uri}> .
+source       SELECT
+               m.uri as membership_uri,
+               o.uri as org_uri
+            FROM memberships m
+            JOIN organizations o ON m.organization_id = o.id
+
+mappingId    project-fields
+target       <{uri}> a cpmeta:Project ;
+               cpmeta:hasName {name} ;
+               cpmeta:hasKeywords {keywords} .
+source       SELECT
+               uri, name, keywords
+            FROM projects
+            WHERE name IS NOT NULL
+               OR keywords IS NOT NULL
+
+mappingId    instrument-fields
+target       <{uri}> a cpmeta:Instrument ;
+               cpmeta:hasName {name} ;
+               cpmeta:hasModel {model} ;
+               cpmeta:hasSerialNumber {serial_number} .
+source       SELECT
+               uri, name, model, serial_number
+            FROM instruments
+            WHERE name IS NOT NULL
+               OR model IS NOT NULL
+               OR serial_number IS NOT NULL
+
+mappingId    instrument-vendor
+target       <{instrument_uri}> cpmeta:hasVendor <{vendor_uri}> .
+source       SELECT
+               i.uri as instrument_uri,
+               o.uri as vendor_uri
+            FROM instruments i
+            JOIN organizations o ON i.vendor_id = o.id
+
+mappingId    instrument-owner
+target       <{instrument_uri}> cpmeta:hasOwner <{owner_uri}> .
+source       SELECT
+               i.uri as instrument_uri,
+               o.uri as owner_uri
+            FROM instruments i
+            JOIN organizations o ON i.owner_id = o.id
+
+mappingId    data-theme-fields
+target       <{uri}> a cpmeta:DataTheme ;
+               rdfs:label {label} ;
+               cpmeta:hasIcon {icon}^^xsd:anyURI ;
+               cpmeta:hasMarkerIcon {marker_icon}^^xsd:anyURI .
+source       SELECT
+               uri, label, icon, marker_icon
+            FROM data_themes
+            WHERE label IS NOT NULL
+               OR icon IS NOT NULL
+               OR marker_icon IS NOT NULL
+
+mappingId    object-format-fields
+target       <{uri}> a cpmeta:ObjectFormat ;
+               rdfs:label {label} .
+source       SELECT uri, label
+            FROM object_formats
+            WHERE label IS NOT NULL
+
+mappingId    object-encoding-fields
+target       <{uri}> a cpmeta:ObjectEncoding ;
+               rdfs:label {label} .
+source       SELECT uri, label
+            FROM object_encodings
+            WHERE label IS NOT NULL
+
+mappingId    climate-zone-fields
+target       <{uri}> a cpmeta:ClimateZone ;
+               rdfs:label {label} .
+source       SELECT uri, label
+            FROM climate_zones
+            WHERE label IS NOT NULL
+
+mappingId    specific-dataset-type-fields
+target       <{uri}> a cpmeta:SpecificDatasetType ;
+               rdfs:label {label} .
+source       SELECT uri, label
+            FROM specific_dataset_types
+            WHERE label IS NOT NULL
 ]]

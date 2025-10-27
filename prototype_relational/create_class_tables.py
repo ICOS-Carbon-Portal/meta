@@ -295,6 +295,10 @@ def create_schema(cursor):
             theme_uri TEXT,
             theme_label TEXT,
             format_uri TEXT,
+            dataset_spec_uri TEXT,
+            documentation_object_uri TEXT,
+            keywords TEXT,
+            see_also TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE INDEX idx_object_specs_uri ON object_specs(uri);
@@ -868,12 +872,16 @@ def populate_object_specs(cursor, limit=None):
         label = get_property_value(props, f"{NS['rdfs']}label")
         description = get_property_value(props, f"{NS['rdfs']}comment")
         data_level = get_property_value(props, f"{NS['cpmeta']}hasDataLevel")
+        keywords = get_property_value(props, f"{NS['cpmeta']}hasKeywords")
+        see_also = get_property_value(props, f"{NS['rdfs']}seeAlso")
 
-        # Get foreign key IDs
+        # Get foreign key IDs and URIs
         theme_uri = get_property_value(props, f"{NS['cpmeta']}hasDataTheme")
         format_uri = get_property_value(props, f"{NS['cpmeta']}hasFormat")
         encoding_uri = get_property_value(props, f"{NS['cpmeta']}hasEncoding")
         project_uri = get_property_value(props, f"{NS['cpmeta']}hasAssociatedProject")
+        dataset_spec_uri = get_property_value(props, f"{NS['cpmeta']}containsDataset")
+        documentation_object_uri = get_property_value(props, f"{NS['cpmeta']}hasDocumentationObject")
 
         theme_id = None
         if theme_uri:
@@ -889,6 +897,13 @@ def populate_object_specs(cursor, limit=None):
             if result:
                 format_id = result[0]
 
+        encoding_id = None
+        if encoding_uri:
+            cursor.execute("SELECT id FROM object_encodings WHERE uri = %s", (encoding_uri,))
+            result = cursor.fetchone()
+            if result:
+                encoding_id = result[0]
+
         project_id = None
         if project_uri:
             cursor.execute("SELECT id FROM projects WHERE uri = %s", (project_uri,))
@@ -896,13 +911,22 @@ def populate_object_specs(cursor, limit=None):
             if result:
                 project_id = result[0]
 
+        dataset_type_id = None
+        dataset_type_uri = get_property_value(props, f"{NS['cpmeta']}hasSpecificDatasetType")
+        if dataset_type_uri:
+            cursor.execute("SELECT id FROM specific_dataset_types WHERE uri = %s", (dataset_type_uri,))
+            result = cursor.fetchone()
+            if result:
+                dataset_type_id = result[0]
+
         cursor.execute("""
             INSERT INTO object_specs (
                 uri, type, label, description, data_level,
-                theme_id, format_id, project_id,
-                theme_uri, format_uri
+                theme_id, format_id, encoding_id, project_id, dataset_type_id,
+                theme_uri, format_uri,
+                dataset_spec_uri, documentation_object_uri, keywords, see_also
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (uri) DO UPDATE
             SET type = EXCLUDED.type,
                 label = EXCLUDED.label,
@@ -910,14 +934,21 @@ def populate_object_specs(cursor, limit=None):
                 data_level = EXCLUDED.data_level,
                 theme_id = EXCLUDED.theme_id,
                 format_id = EXCLUDED.format_id,
+                encoding_id = EXCLUDED.encoding_id,
                 project_id = EXCLUDED.project_id,
+                dataset_type_id = EXCLUDED.dataset_type_id,
                 theme_uri = EXCLUDED.theme_uri,
-                format_uri = EXCLUDED.format_uri
+                format_uri = EXCLUDED.format_uri,
+                dataset_spec_uri = EXCLUDED.dataset_spec_uri,
+                documentation_object_uri = EXCLUDED.documentation_object_uri,
+                keywords = EXCLUDED.keywords,
+                see_also = EXCLUDED.see_also
             RETURNING id
         """, (
             uri, type_name, label, description, data_level,
-            theme_id, format_id, project_id,
-            theme_uri, format_uri
+            theme_id, format_id, encoding_id, project_id, dataset_type_id,
+            theme_uri, format_uri,
+            dataset_spec_uri, documentation_object_uri, keywords, see_also
         ))
 
     print(f"  Inserted {len(entities)} object specs")

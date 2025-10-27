@@ -113,4 +113,79 @@ source       SELECT
                prev.uri as previous_version_uri
             FROM data_objects d
             JOIN data_objects prev ON d.previous_version_id = prev.id
+
+mappingId    object-spec-type
+target       <{uri}> a cpmeta:{type} .
+source       SELECT uri, type FROM object_specs
+
+mappingId    object-spec-fields
+target       <{uri}> rdfs:label {label} ;
+               rdfs:comment {description} ;
+               cpmeta:hasDataLevel {data_level}^^xsd:integer ;
+               cpmeta:hasKeywords {keywords} ;
+               rdfs:seeAlso {see_also} .
+source       SELECT
+               uri,
+               label,
+               description,
+               data_level,
+               keywords,
+               see_also
+            FROM object_specs
+            WHERE label IS NOT NULL
+               OR description IS NOT NULL
+               OR data_level IS NOT NULL
+               OR keywords IS NOT NULL
+               OR see_also IS NOT NULL
+
+mappingId    object-spec-uris
+target       <{uri}> cpmeta:containsDataset <{dataset_spec_uri}> ;
+               cpmeta:hasDocumentationObject <{documentation_object_uri}> .
+source       SELECT
+               uri,
+               dataset_spec_uri,
+               documentation_object_uri
+            FROM object_specs
+            WHERE dataset_spec_uri IS NOT NULL
+               OR documentation_object_uri IS NOT NULL
+
+mappingId    object-spec-theme
+target       <{spec_uri}> cpmeta:hasDataTheme <{theme_uri}> .
+source       SELECT
+               uri as spec_uri,
+               theme_uri
+            FROM object_specs
+            WHERE theme_uri IS NOT NULL
+
+mappingId    object-spec-format
+target       <{spec_uri}> cpmeta:hasFormat <{format_uri}> .
+source       SELECT
+               os.uri as spec_uri,
+               of.uri as format_uri
+            FROM object_specs os
+            JOIN object_formats of ON os.format_id = of.id
+
+mappingId    object-spec-encoding
+target       <{spec_uri}> cpmeta:hasEncoding <{encoding_uri}> .
+source       SELECT
+               os.uri as spec_uri,
+               oe.uri as encoding_uri
+            FROM object_specs os
+            JOIN object_encodings oe ON os.encoding_id = oe.id
+
+mappingId    object-spec-project
+target       <{spec_uri}> cpmeta:hasAssociatedProject <{project_uri}> .
+source       SELECT
+               os.uri as spec_uri,
+               p.uri as project_uri
+            FROM object_specs os
+            JOIN projects p ON os.project_id = p.id
+
+mappingId    object-spec-dataset-type
+target       <{spec_uri}> cpmeta:hasSpecificDatasetType <{dataset_type_uri}> .
+source       SELECT
+               os.uri as spec_uri,
+               sdt.uri as dataset_type_uri
+            FROM object_specs os
+            JOIN specific_dataset_types sdt ON os.dataset_type_id = sdt.id
 ]]

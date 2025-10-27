@@ -37,7 +37,10 @@ target       <{uri}> cpmeta:hasName {name} ;
                cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
                cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
                cpmeta:hasActualColumnNames {actual_column_names}^^xsd:string ;
-               prov:wasProducedBy {was_produced_by} .
+               prov:wasProducedBy {was_produced_by} ;
+               cpmeta:wasSubmittedBy <{was_submitted_by}> ;
+               cpmeta:hasActualVariable <{actual_variable_uri}> ;
+               cpmeta:hasTemporalResolution {temporal_resolution} .
 source       SELECT
                uri,
                sha256,
@@ -52,7 +55,10 @@ source       SELECT
                data_start_time,
                data_end_time,
                actual_column_names,
-               was_produced_by
+               was_produced_by,
+               was_submitted_by,
+               actual_variable_uri,
+               temporal_resolution
             FROM data_objects
             WHERE name IS NOT NULL
                OR doi IS NOT NULL
@@ -66,6 +72,9 @@ source       SELECT
                OR number_of_rows IS NOT NULL
                OR actual_column_names IS NOT NULL
                OR was_produced_by IS NOT NULL
+               OR was_submitted_by IS NOT NULL
+               OR actual_variable_uri IS NOT NULL
+               OR temporal_resolution IS NOT NULL
 
 mappingId    data-object-spec
 target       <{data_object_uri}> cpmeta:hasObjectSpec <{spec_uri}> .
@@ -74,14 +83,6 @@ source       SELECT
                os.uri as spec_uri
             FROM data_objects d
             JOIN object_specs os ON d.object_spec_id = os.id
-
-mappingId    data-object-previous-version
-target       <{data_object_uri}> cpmeta:hasPreviousVersion <{previous_version_uri}> .
-source       SELECT
-               d.uri as data_object_uri,
-               prev.uri as previous_version_uri
-            FROM data_objects d
-            JOIN data_objects prev ON d.previous_version_id = prev.id
 
 mappingId    object-spec-type
 target       <{uri}> a cpmeta:{type} .

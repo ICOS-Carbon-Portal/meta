@@ -322,8 +322,10 @@ def create_schema(cursor):
             number_of_rows BIGINT,
             actual_column_names JSONB,
             object_spec_id INTEGER REFERENCES object_specs(id),
-            previous_version_id INTEGER REFERENCES data_objects(id),
             was_produced_by TEXT,
+            was_submitted_by TEXT,
+            actual_variable_uri TEXT,
+            temporal_resolution TEXT,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
@@ -964,7 +966,8 @@ def populate_data_objects(cursor, limit=None):
             submission_start_time, submission_end_time,
             data_start_time, data_end_time,
             size_in_bytes, number_of_rows, actual_column_names,
-            object_spec_id, was_produced_by
+            object_spec_id, was_produced_by, was_submitted_by,
+            actual_variable_uri, temporal_resolution
         )
         SELECT
             t.subj as uri,
@@ -996,7 +999,11 @@ def populate_data_objects(cursor, limit=None):
             -- Foreign key to object_specs
             spec.id as object_spec_id,
             -- Provenance
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as was_produced_by
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as was_produced_by,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as was_submitted_by,
+            -- Additional properties
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as actual_variable_uri,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as temporal_resolution
         FROM data_object_subjects dos
         JOIN {TRIPLES_TABLE} t ON dos.subj = t.subj
         LEFT JOIN object_specs spec ON spec.uri = (
@@ -1025,6 +1032,9 @@ def populate_data_objects(cursor, limit=None):
             actual_column_names = EXCLUDED.actual_column_names,
             object_spec_id = EXCLUDED.object_spec_id,
             was_produced_by = EXCLUDED.was_produced_by,
+            was_submitted_by = EXCLUDED.was_submitted_by,
+            actual_variable_uri = EXCLUDED.actual_variable_uri,
+            temporal_resolution = EXCLUDED.temporal_resolution,
             updated_at = NOW()
     """
 
@@ -1049,6 +1059,9 @@ def populate_data_objects(cursor, limit=None):
         f"{NS['cpmeta']}hasActualColumnNames",           # actual_column_names (1)
         f"{NS['cpmeta']}hasActualColumnNames",           # actual_column_names (2)
         f"{NS['prov']}wasProducedBy",                    # was_produced_by
+        f"{NS['cpmeta']}wasSubmittedBy",                 # was_submitted_by
+        f"{NS['cpmeta']}hasActualVariable",              # actual_variable_uri
+        f"{NS['cpmeta']}hasTemporalResolution",          # temporal_resolution
         f"{NS['cpmeta']}hasObjectSpec",                  # object spec subquery
         f"{NS['cpmeta']}hasSha256sum",                   # HAVING clause
     ]

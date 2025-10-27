@@ -20,24 +20,63 @@ metaobjects: https://meta.icos-cp.eu/objects/
 
 [MappingDeclaration] @collection [[
 
+mappingId    data-object-type
+target       <{uri}> a cpmeta:{type} .
+source       SELECT uri, type FROM data_objects
+
 mappingId    data-object-full
-target       metaobjects:/{sha256} a cpmeta:DataObject ;
-               cpmeta:hasName {name} ;
+target       <{uri}> cpmeta:hasName {name} ;
                cpmeta:hasSha256sum {sha256} ;
                cpmeta:hasSizeInBytes {size_in_bytes}^^xsd:long ;
                cpmeta:hasNumberOfRows {number_of_rows}^^xsd:long ;
-               cpmeta:hasObjectSpec <{spec_uri}> ;
-               prov:wasProducedBy {was_produced_by} ;
-               cpmeta:hasDoi {doi} .
+               cpmeta:hasDoi {doi} ;
+               cpmeta:hasAcquisitionStartTime {acquisition_start_time}^^xsd:dateTime ;
+               cpmeta:hasAcquisitionEndTime {acquisition_end_time}^^xsd:dateTime ;
+               cpmeta:hasSubmissionStartTime {submission_start_time}^^xsd:dateTime ;
+               cpmeta:hasSubmissionEndTime {submission_end_time}^^xsd:dateTime ;
+               cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
+               cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
+               prov:wasProducedBy {was_produced_by} .
 source       SELECT
-               d.sha256,
-               d.name,
-               d.size_in_bytes ,
-               d.number_of_rows,
-               d.doi ,
-               d.was_produced_by,
+               uri,
+               sha256,
+               name,
+               size_in_bytes,
+               number_of_rows,
+               doi,
+               acquisition_start_time,
+               acquisition_end_time,
+               submission_start_time,
+               submission_end_time,
+               data_start_time,
+               data_end_time,
+               was_produced_by
+            FROM data_objects
+            WHERE name IS NOT NULL
+               OR doi IS NOT NULL
+               OR acquisition_start_time IS NOT NULL
+               OR acquisition_end_time IS NOT NULL
+               OR submission_start_time IS NOT NULL
+               OR submission_end_time IS NOT NULL
+               OR data_start_time IS NOT NULL
+               OR data_end_time IS NOT NULL
+               OR size_in_bytes IS NOT NULL
+               OR number_of_rows IS NOT NULL
+               OR was_produced_by IS NOT NULL
+
+mappingId    data-object-spec
+target       <{data_object_uri}> cpmeta:hasObjectSpec <{spec_uri}> .
+source       SELECT
+               d.uri as data_object_uri,
                os.uri as spec_uri
             FROM data_objects d
             JOIN object_specs os ON d.object_spec_id = os.id
-            WHERE d.name IS NOT NULL
+
+mappingId    data-object-previous-version
+target       <{data_object_uri}> cpmeta:hasPreviousVersion <{previous_version_uri}> .
+source       SELECT
+               d.uri as data_object_uri,
+               prev.uri as previous_version_uri
+            FROM data_objects d
+            JOIN data_objects prev ON d.previous_version_id = prev.id
 ]]

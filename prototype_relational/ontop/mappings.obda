@@ -24,7 +24,7 @@ mappingId    data-object-type
 target       <{uri}> a cpmeta:{type} .
 source       SELECT uri, type FROM data_objects
 
-mappingId    data-object-full
+mappingId    data-object-fields
 target       <{uri}> cpmeta:hasName {name} ;
                cpmeta:hasSha256sum {sha256} ;
                cpmeta:hasSizeInBytes {size_in_bytes}^^xsd:long ;
@@ -36,6 +36,8 @@ target       <{uri}> cpmeta:hasName {name} ;
                cpmeta:hasSubmissionEndTime {submission_end_time}^^xsd:dateTime ;
                cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
                cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
+               cpmeta:hasDataLevel {data_level}^^xsd:integer ;
+               rdfs:label {spec_label} ;
                prov:wasProducedBy {was_produced_by} .
 source       SELECT
                uri,
@@ -50,6 +52,8 @@ source       SELECT
                submission_end_time,
                data_start_time,
                data_end_time,
+               data_level,
+               spec_label,
                was_produced_by
             FROM data_objects
             WHERE name IS NOT NULL
@@ -62,7 +66,34 @@ source       SELECT
                OR data_end_time IS NOT NULL
                OR size_in_bytes IS NOT NULL
                OR number_of_rows IS NOT NULL
+               OR data_level IS NOT NULL
+               OR spec_label IS NOT NULL
                OR was_produced_by IS NOT NULL
+
+mappingId    data-object-denormalized-uris
+target       <{uri}> cpmeta:hasDataTheme <{theme_uri}> ;
+               cpmeta:hasFormat <{format_uri}> ;
+               cpmeta:hasAssociatedProject <{project_uri}> .
+source       SELECT
+               uri,
+               theme_uri,
+               format_uri,
+               project_uri
+            FROM data_objects
+            WHERE theme_uri IS NOT NULL
+               OR format_uri IS NOT NULL
+               OR project_uri IS NOT NULL
+
+mappingId    data-object-theme-labels
+target       <{theme_uri}> rdfs:label {theme_label} ;
+               cpmeta:hasIcon {theme_icon}^^xsd:anyURI .
+source       SELECT
+               theme_uri,
+               theme_label,
+               theme_icon
+            FROM data_objects
+            WHERE theme_uri IS NOT NULL
+               AND (theme_label IS NOT NULL OR theme_icon IS NOT NULL)
 
 mappingId    data-object-spec
 target       <{data_object_uri}> cpmeta:hasObjectSpec <{spec_uri}> .

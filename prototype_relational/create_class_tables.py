@@ -97,8 +97,10 @@ def drop_class_tables(cursor):
         'data_object_keywords',
         'data_object_acquisitions',
         'memberships',
+        'object_spec_columns',
 
         # Main tables
+        'dataset_columns',
         'data_acquisitions',
         'data_objects',
         'object_specs',
@@ -364,12 +366,38 @@ def create_schema(cursor):
             id SERIAL PRIMARY KEY,
             uri TEXT UNIQUE NOT NULL,
             station_id INTEGER REFERENCES stations(id),
+            instrument_id INTEGER REFERENCES instruments(id),
             sampling_height FLOAT,
             sampling_point_uri TEXT,
+            was_performed_at TEXT,
+            started_at_time TIMESTAMP WITH TIME ZONE,
+            ended_at_time TIMESTAMP WITH TIME ZONE,
             created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE INDEX idx_acquisitions_uri ON data_acquisitions(uri);
         CREATE INDEX idx_acquisitions_station ON data_acquisitions(station_id);
+        CREATE INDEX idx_acquisitions_instrument ON data_acquisitions(instrument_id);
+    """)
+
+    # Dataset columns table
+    print("  Creating dataset_columns table...")
+    cursor.execute("""
+        CREATE TABLE dataset_columns (
+            id SERIAL PRIMARY KEY,
+            uri TEXT UNIQUE NOT NULL,
+            label TEXT,
+            description TEXT,
+            column_title TEXT,
+            value_type_uri TEXT,
+            value_format_uri TEXT,
+            is_optional_column BOOLEAN,
+            is_regex_column BOOLEAN,
+            is_quality_flag_for_uri TEXT,
+            see_also TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX idx_dataset_columns_uri ON dataset_columns(uri);
+        CREATE INDEX idx_dataset_columns_title ON dataset_columns(column_title);
     """)
 
     # Junction tables
@@ -412,6 +440,16 @@ def create_schema(cursor):
         );
         CREATE INDEX idx_data_object_acq_obj ON data_object_acquisitions(data_object_id);
         CREATE INDEX idx_data_object_acq_acq ON data_object_acquisitions(acquisition_id);
+    """)
+
+    cursor.execute("""
+        CREATE TABLE object_spec_columns (
+            object_spec_id INTEGER REFERENCES object_specs(id),
+            column_id INTEGER REFERENCES dataset_columns(id),
+            PRIMARY KEY (object_spec_id, column_id)
+        );
+        CREATE INDEX idx_object_spec_columns_spec ON object_spec_columns(object_spec_id);
+        CREATE INDEX idx_object_spec_columns_col ON object_spec_columns(column_id);
     """)
 
     cursor.execute("""
@@ -700,6 +738,54 @@ def populate_persons(cursor, limit=None):
         """, (uri, first_name, last_name, email, orcid_id))
 
     print(f"  Inserted {len(entities)} persons")
+    return len(entities)
+
+
+def populate_instruments(cursor, limit=None):
+    """Populate instruments table."""
+    print("\nPopulating instruments table...")
+
+    entities = get_entities_by_type(cursor, TYPE_URIS['Instrument'], limit)
+
+    if not entities:
+        print("  No Instrument entities found")
+        return 0
+
+    for uri, props in entities:
+        name = get_property_value(props, f"{NS['rdfs']}label")
+        model = get_property_value(props, f"{NS['cpmeta']}hasModel")
+        serial_number = get_property_value(props, f"{NS['cpmeta']}hasSerialNumber")
+
+        # Get vendor organization URI
+        vendor_uri = get_property_value(props, f"{NS['cpmeta']}hasVendor")
+        vendor_id = None
+        if vendor_uri:
+            cursor.execute("SELECT id FROM organizations WHERE uri = %s", (vendor_uri,))
+            result = cursor.fetchone()
+            if result:
+                vendor_id = result[0]
+
+        # Get owner organization URI
+        owner_uri = get_property_value(props, f"{NS['cpmeta']}hasInstrumentOwner")
+        owner_id = None
+        if owner_uri:
+            cursor.execute("SELECT id FROM organizations WHERE uri = %s", (owner_uri,))
+            result = cursor.fetchone()
+            if result:
+                owner_id = result[0]
+
+        cursor.execute("""
+            INSERT INTO instruments (uri, name, model, serial_number, vendor_id, owner_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (uri) DO UPDATE
+            SET name = EXCLUDED.name,
+                model = EXCLUDED.model,
+                serial_number = EXCLUDED.serial_number,
+                vendor_id = EXCLUDED.vendor_id,
+                owner_id = EXCLUDED.owner_id
+        """, (uri, name, model, serial_number, vendor_id, owner_id))
+
+    print(f"  Inserted {len(entities)} instruments")
     return len(entities)
 
 
@@ -1073,6 +1159,75 @@ def populate_data_objects(cursor, limit=None):
     return count
 
 
+def populate_data_acquisitions(cursor, limit=None):
+    """Populate data_acquisitions table."""
+    print("\nPopulating data_acquisitions table...")
+
+    type_filter = f"'{TYPE_URIS['DataAcquisition']}'"
+    limit_clause = f"LIMIT {limit}" if limit else ""
+
+    query = f"""
+        INSERT INTO data_acquisitions (
+            uri, station_id, instrument_id, sampling_height, sampling_point_uri,
+            was_performed_at, started_at_time, ended_at_time
+        )
+        SELECT
+            acq_uri,
+            s.id as station_id,
+            i.id as instrument_id,
+            sampling_height,
+            sampling_point_uri,
+            was_performed_at,
+            started_at_time,
+            ended_at_time
+        FROM (
+            SELECT
+                subj as acq_uri,
+                MAX(CASE WHEN pred = %s THEN obj END) as station_uri,
+                MAX(CASE WHEN pred = %s THEN obj END) as instrument_uri,
+                MAX(CASE WHEN pred = %s THEN obj END)::float as sampling_height,
+                MAX(CASE WHEN pred = %s THEN obj END) as sampling_point_uri,
+                MAX(CASE WHEN pred = %s THEN obj END) as was_performed_at,
+                MAX(CASE WHEN pred = %s THEN obj::timestamp with time zone END) as started_at_time,
+                MAX(CASE WHEN pred = %s THEN obj::timestamp with time zone END) as ended_at_time
+            FROM {TRIPLES_TABLE}
+            WHERE subj IN (
+                SELECT subj FROM {TRIPLES_TABLE}
+                WHERE pred = '{NS['rdf']}type'
+                AND obj IN ({type_filter})
+                {limit_clause}
+            )
+            GROUP BY subj
+        ) acq
+        LEFT JOIN stations s ON s.uri = acq.station_uri
+        LEFT JOIN instruments i ON i.uri = acq.instrument_uri
+        ON CONFLICT (uri) DO UPDATE
+        SET station_id = EXCLUDED.station_id,
+            instrument_id = EXCLUDED.instrument_id,
+            sampling_height = EXCLUDED.sampling_height,
+            sampling_point_uri = EXCLUDED.sampling_point_uri,
+            was_performed_at = EXCLUDED.was_performed_at,
+            started_at_time = EXCLUDED.started_at_time,
+            ended_at_time = EXCLUDED.ended_at_time
+    """
+
+    params = [
+        f"{NS['prov']}wasAssociatedWith",                 # station_uri
+        f"{NS['cpmeta']}wasPerformedWith",                # instrument_uri
+        f"{NS['cpmeta']}hasSamplingHeight",               # sampling_height
+        f"{NS['cpmeta']}hasSamplingPoint",                # sampling_point_uri
+        f"{NS['cpmeta']}wasPerformedAt",                  # was_performed_at
+        f"{NS['prov']}startedAtTime",                     # started_at_time
+        f"{NS['prov']}endedAtTime",                       # ended_at_time
+    ]
+
+    cursor.execute(query, params)
+    count = cursor.rowcount
+
+    print(f"  Inserted {count} data acquisitions")
+    return count
+
+
 def populate_data_object_keywords(cursor):
     """Populate data_object_keywords junction table."""
     print("\nPopulating data_object_keywords table...")
@@ -1091,6 +1246,27 @@ def populate_data_object_keywords(cursor):
 
     count = cursor.rowcount
     print(f"  Inserted {count} data object-keyword relationships")
+    return count
+
+
+def populate_data_object_acquisitions(cursor):
+    """Populate data_object_acquisitions junction table."""
+    print("\nPopulating data_object_acquisitions table...")
+
+    was_acquired_by_pred = f"{NS['cpmeta']}wasAcquiredBy"
+
+    cursor.execute(f"""
+        INSERT INTO data_object_acquisitions (data_object_id, acquisition_id)
+        SELECT DISTINCT d.id, a.id
+        FROM {TRIPLES_TABLE} t
+        JOIN data_objects d ON t.subj = d.uri
+        JOIN data_acquisitions a ON t.obj = a.uri
+        WHERE t.pred = %s
+        ON CONFLICT DO NOTHING
+    """, (was_acquired_by_pred,))
+
+    count = cursor.rowcount
+    print(f"  Inserted {count} data object-acquisition relationships")
     return count
 
 
@@ -1161,6 +1337,9 @@ Examples:
         populate_persons(cursor, args.limit)
         conn.commit()
 
+        populate_instruments(cursor, args.limit)
+        conn.commit()
+
         populate_stations(cursor, args.limit)
         conn.commit()
 
@@ -1173,7 +1352,13 @@ Examples:
         populate_data_objects(cursor, args.limit)
         conn.commit()
 
+        populate_data_acquisitions(cursor, args.limit)
+        conn.commit()
+
         populate_data_object_keywords(cursor)
+        conn.commit()
+
+        populate_data_object_acquisitions(cursor)
         conn.commit()
 
         print("\n" + "="*60)

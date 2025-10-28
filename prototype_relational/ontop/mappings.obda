@@ -255,12 +255,19 @@ source       SELECT
 mappingId    data-acquisition-fields
 target       <{uri}> a cpmeta:DataAcquisition ;
                cpmeta:hasSamplingHeight {sampling_height}^^xsd:float ;
-               cpmeta:hasSamplingPoint <{sampling_point_uri}> .
+               cpmeta:hasSamplingPoint <{sampling_point_uri}> ;
+               cpmeta:wasPerformedAt <{was_performed_at}> ;
+               prov:startedAtTime {started_at_time}^^xsd:dateTime ;
+               prov:endedAtTime {ended_at_time}^^xsd:dateTime .
 source       SELECT
-               uri, sampling_height, sampling_point_uri
+               uri, sampling_height, sampling_point_uri, was_performed_at,
+               started_at_time, ended_at_time
             FROM data_acquisitions
             WHERE sampling_height IS NOT NULL
                OR sampling_point_uri IS NOT NULL
+               OR was_performed_at IS NOT NULL
+               OR started_at_time IS NOT NULL
+               OR ended_at_time IS NOT NULL
 
 mappingId    data-acquisition-station
 target       <{acquisition_uri}> prov:wasAssociatedWith <{station_uri}> .
@@ -269,6 +276,14 @@ source       SELECT
                s.uri as station_uri
             FROM data_acquisitions a
             JOIN stations s ON a.station_id = s.id
+
+mappingId    data-acquisition-instrument
+target       <{acquisition_uri}> cpmeta:wasPerformedWith <{instrument_uri}> .
+source       SELECT
+               a.uri as acquisition_uri,
+               i.uri as instrument_uri
+            FROM data_acquisitions a
+            JOIN instruments i ON a.instrument_id = i.id
 
 mappingId    data-object-keywords
 target       <{data_object_uri}> cpmeta:hasKeyword {keyword} .
@@ -395,4 +410,42 @@ target       <{uri}> a cpmeta:SpecificDatasetType ;
 source       SELECT uri, label
             FROM specific_dataset_types
             WHERE label IS NOT NULL
+
+mappingId    dataset-column-type
+target       <{uri}> a cpmeta:DatasetColumn .
+source       SELECT uri FROM dataset_columns
+
+mappingId    dataset-column-fields
+target       <{uri}> rdfs:label {label} ;
+               rdfs:comment {description} ;
+               rdfs:seeAlso {see_also} ;
+               cpmeta:hasColumnTitle {column_title} ;
+               cpmeta:hasValueType <{value_type_uri}> ;
+               cpmeta:hasValueFormat <{value_format_uri}> ;
+               cpmeta:isOptionalColumn {is_optional_column}^^xsd:boolean ;
+               cpmeta:isRegexColumn {is_regex_column}^^xsd:boolean ;
+               cpmeta:isQualityFlagFor <{is_quality_flag_for_uri}> .
+source       SELECT
+               uri, label, description, see_also, column_title,
+               value_type_uri, value_format_uri, is_optional_column,
+               is_regex_column, is_quality_flag_for_uri
+            FROM dataset_columns
+            WHERE label IS NOT NULL
+               OR description IS NOT NULL
+               OR see_also IS NOT NULL
+               OR column_title IS NOT NULL
+               OR value_type_uri IS NOT NULL
+               OR value_format_uri IS NOT NULL
+               OR is_optional_column IS NOT NULL
+               OR is_regex_column IS NOT NULL
+               OR is_quality_flag_for_uri IS NOT NULL
+
+mappingId    object-spec-column
+target       <{spec_uri}> cpmeta:hasColumn <{column_uri}> .
+source       SELECT
+               os.uri as spec_uri,
+               dc.uri as column_uri
+            FROM object_spec_columns osc
+            JOIN object_specs os ON osc.object_spec_id = os.id
+            JOIN dataset_columns dc ON osc.column_id = dc.id
 ]]

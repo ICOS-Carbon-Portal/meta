@@ -442,10 +442,5 @@ source       SELECT
 
 mappingId    object-spec-column
 target       <{spec_uri}> cpmeta:hasColumn <{column_uri}> .
-source       SELECT
-               os.uri as spec_uri,
-               dc.uri as column_uri
-            FROM object_spec_columns osc
-            JOIN object_specs os ON osc.object_spec_id = os.id
-            JOIN dataset_columns dc ON osc.column_id = dc.id
+source	     SELECT subj as spec_uri, obj as column_uri FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn'
 ]]

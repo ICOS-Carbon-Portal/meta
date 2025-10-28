@@ -8,7 +8,9 @@ import psycopg2
 import argparse
 import os
 import sys
+import json
 from collections import defaultdict
+from datetime import datetime
 
 # Configuration
 TRIPLES_TABLE = os.environ.get('TRIPLES_TABLE', 'rdf_triples')
@@ -20,6 +22,9 @@ NS = {
     'xsd': 'http://www.w3.org/2001/XMLSchema#',
     'cpmeta': 'http://meta.icos-cp.eu/ontologies/cpmeta/',
     'prov': 'http://www.w3.org/ns/prov#',
+    'purl': 'http://purl.org/dc/terms/',
+    'dcat': 'http://www.w3.org/ns/prov#',
+    'wdcgg': 'http://meta.icos-cp.eu/resources/wdcgg/'
 }
 
 
@@ -189,6 +194,20 @@ Examples:
         print("=" * 80)
         print()
 
+        # Initialize results structure for JSON output
+        results = {
+            "analysis_metadata": {
+                "timestamp": datetime.now().isoformat(),
+                "triples_table": TRIPLES_TABLE,
+                "filters": {
+                    "class_filter": args.class_filter,
+                    "min_instances": args.min_instances
+                },
+                "detailed": args.detailed
+            },
+            "classes": []
+        }
+
         # Analyze each class
         for class_uri in all_classes:
             instance_count = count_instances(cursor, class_uri)
@@ -203,10 +222,20 @@ Examples:
             print(f"Instances: {instance_count:,}")
             print(f"{'=' * 80}")
 
+            # Initialize class data for JSON output
+            class_data = {
+                "class_uri": class_uri,
+                "class_name": class_name,
+                "instance_count": instance_count,
+                "predicates": []
+            }
+
             predicates = get_predicates_for_class(cursor, class_uri)
 
             if not predicates:
                 print("  No predicates found")
+                # Still add class data even if no predicates found
+                results["classes"].append(class_data)
                 continue
 
             # Group predicates by namespace
@@ -223,15 +252,43 @@ Examples:
                     coverage_pct = (usage_count / instance_count) * 100
                     print(f"    {pred_short:50s} ({usage_count:,} uses, {coverage_pct:.1f}% coverage)")
 
+                    # Collect predicate data for JSON output
+                    pred_data = {
+                        "predicate_uri": pred_uri,
+                        "predicate_short": pred_short,
+                        "namespace": namespace,
+                        "usage_count": usage_count,
+                        "coverage_percentage": round(coverage_pct, 1)
+                    }
+
                     if args.detailed:
                         stats = analyze_predicate_values(cursor, class_uri, pred_uri)
                         if stats and stats[0] > 0:
                             total, distinct, min_len, max_len = stats
                             print(f"      → {distinct:,} distinct values, length: {min_len}-{max_len}")
+                            pred_data["value_statistics"] = {
+                                "total_values": total,
+                                "distinct_values": distinct,
+                                "min_length": min_len,
+                                "max_length": max_len
+                            }
+
+                    class_data["predicates"].append(pred_data)
+
+            # Add class data to results after processing all predicates
+            results["classes"].append(class_data)
 
         print("\n" + "=" * 80)
         print("ANALYSIS COMPLETE")
         print("=" * 80)
+
+        # Write results to JSON file
+        output_filename = "class_predicates_analysis.json"
+        with open(output_filename, 'w') as f:
+            json.dump(results, f, indent=2)
+
+        print(f"\nResults saved to: {output_filename}")
+        print(f"Total classes analyzed: {len(results['classes'])}")
 
         cursor.close()
 

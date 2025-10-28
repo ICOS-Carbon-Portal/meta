@@ -1,0 +1,11 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?prod rdfs:comment ?comment .
+}
+where{
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasProducedBy ?prod .
+	?prod rdfs:comment ?comment .
+	FILTER(?comment = ""^^xsd:string)
+}

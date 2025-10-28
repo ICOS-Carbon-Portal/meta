@@ -1,0 +1,11 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+construct{
+	?prod rdfs:comment ?comment .
+}
+where{
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	?dobj cpmeta:wasProducedBy ?prod .
+	?prod rdfs:comment ?comment .
+	FILTER(?comment = " "^^xsd:string)
+}

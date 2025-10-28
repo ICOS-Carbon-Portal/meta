@@ -147,6 +147,53 @@ def analyze_predicate_values(cursor, class_uri, predicate):
     return cursor.fetchone()
 
 
+def get_class_references(cursor, class_uri):
+    """Get classes that reference this class (incoming) and classes this class references (outgoing)."""
+    rdf_type = f"{NS['rdf']}type"
+
+    # Incoming references: Find classes whose instances point TO this class
+    incoming_query = f"""
+        SELECT DISTINCT referring_class.obj as class_uri, COUNT(*) as reference_count
+        FROM {TRIPLES_TABLE} t
+        -- t.obj are instances of the target class (class_uri)
+        JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.obj
+            AND class_instances.pred = %s AND class_instances.obj = %s
+        -- Find what classes the subjects (t.subj) belong to
+        JOIN {TRIPLES_TABLE} referring_class ON referring_class.subj = t.subj
+            AND referring_class.pred = %s
+        -- Exclude self-references
+        WHERE referring_class.obj != %s
+        GROUP BY referring_class.obj
+        ORDER BY reference_count DESC
+    """
+
+    cursor.execute(incoming_query, (rdf_type, class_uri, rdf_type, class_uri))
+    incoming = [{"class_uri": row[0], "class_name": shorten_uri(row[0]), "reference_count": row[1]}
+                for row in cursor.fetchall()]
+
+    # Outgoing references: Find classes that instances of this class point TO
+    outgoing_query = f"""
+        SELECT DISTINCT target_class.obj as class_uri, COUNT(*) as reference_count
+        FROM {TRIPLES_TABLE} t
+        -- t.subj are instances of the source class (class_uri)
+        JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.subj
+            AND class_instances.pred = %s AND class_instances.obj = %s
+        -- Find what classes the objects (t.obj) belong to
+        JOIN {TRIPLES_TABLE} target_class ON target_class.subj = t.obj
+            AND target_class.pred = %s
+        -- Exclude self-references
+        WHERE target_class.obj != %s
+        GROUP BY target_class.obj
+        ORDER BY reference_count DESC
+    """
+
+    cursor.execute(outgoing_query, (rdf_type, class_uri, rdf_type, class_uri))
+    outgoing = [{"class_uri": row[0], "class_name": shorten_uri(row[0]), "reference_count": row[1]}
+                for row in cursor.fetchall()]
+
+    return incoming, outgoing
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -230,6 +277,19 @@ Examples:
                 "predicates": []
             }
 
+            # Get class references (incoming and outgoing)
+            incoming_refs, outgoing_refs = get_class_references(cursor, class_uri)
+            class_data["referenced_by"] = incoming_refs
+            class_data["references_to"] = outgoing_refs
+
+            # Print reference summary
+            if incoming_refs or outgoing_refs:
+                print(f"\nClass Relationships:")
+                if incoming_refs:
+                    print(f"  Referenced by {len(incoming_refs)} class(es): {', '.join([ref['class_name'] for ref in incoming_refs[:3]])}{'...' if len(incoming_refs) > 3 else ''}")
+                if outgoing_refs:
+                    print(f"  References {len(outgoing_refs)} class(es): {', '.join([ref['class_name'] for ref in outgoing_refs[:3]])}{'...' if len(outgoing_refs) > 3 else ''}")
+
             predicates = get_predicates_for_class(cursor, class_uri)
 
             if not predicates:
@@ -281,6 +341,14 @@ Examples:
         print("\n" + "=" * 80)
         print("ANALYSIS COMPLETE")
         print("=" * 80)
+
+        # Sort results before writing to JSON
+        # Sort classes by instance_count (descending - most instances first)
+        results["classes"].sort(key=lambda x: x["instance_count"], reverse=True)
+
+        # Sort predicates by coverage_percentage (descending - highest coverage first)
+        for class_data in results["classes"]:
+            class_data["predicates"].sort(key=lambda x: x["coverage_percentage"], reverse=True)
 
         # Write results to JSON file
         output_filename = "class_predicates_analysis.json"

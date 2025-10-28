@@ -1,851 +1,524 @@
 #!/usr/bin/env python3
 """
-Automatic Ontop Mapping Generator for Class-Based Tables
-
-Generates Ontop .obda mappings from the class-based database schema
-and OWL ontology. Intelligently creates mappings for:
-- rdf:type assertions
-- Datatype properties
-- Object properties (foreign keys)
-- Multi-valued properties (junction tables)
-
-The generator introspects the database schema and parses the ontology
-to create optimized, well-documented Ontop mappings.
+Script to generate Ontop mappings file from rdf_triples predicates.
+Creates one mapping per predicate using the predicate tables.
 """
 
 import psycopg2
-import psycopg2.extras
 import argparse
-import sys
 import os
+import sys
 import re
-from datetime import datetime
-from collections import defaultdict
+from collections import Counter
+from urllib.parse import urlparse
+from create_predicate_tables import sanitize_predicate, get_connection
 
 try:
-    from rdflib import Graph, RDF, RDFS, OWL, Namespace
+    from rdflib import Graph, Namespace, RDF, RDFS, OWL
     HAS_RDFLIB = True
 except ImportError:
     HAS_RDFLIB = False
-    print("Warning: rdflib not installed. Ontology parsing disabled.")
-    print("Install with: pip install rdflib")
+    print("Warning: rdflib not installed. Install with: pip install rdflib")
+    print("Falling back to heuristic-based object type detection.")
+
+def extract_namespace(uri):
+    """
+    Extract the namespace (base URI) from a full URI.
+    Returns everything before the last / or #.
+    """
+    match = re.match(r'^(.*[/#])[^/#]+$', uri)
+    if match:
+        return match.group(1)
+    return uri
 
 
-# ============================================================
-# Configuration
-# ============================================================
+def generate_prefix_name(namespace, existing_prefixes):
+    """
+    Generate a short prefix name for a namespace.
+    Tries to use common conventions or extracts from the URI.
+    """
+    # Common known prefixes
+    known_prefixes = {
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+        'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+        'http://www.w3.org/2002/07/owl#': 'owl',
+        'http://www.w3.org/ns/prov#': 'prov',
+        'http://www.w3.org/2001/XMLSchema#': 'xsd',
+        'http://meta.icos-cp.eu/ontologies/cpmeta/': 'cpmeta',
+        'https://meta.icos-cp.eu/objects/': 'metaobjects',
+        'http://meta.icos-cp.eu/resources/': 'cpres',
+    }
 
-NAMESPACES = {
-    'cpmeta': 'http://meta.icos-cp.eu/ontologies/cpmeta/',
-    'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-    'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
-    'xsd': 'http://www.w3.org/2001/XMLSchema#',
-    'prov': 'http://www.w3.org/ns/prov#',
-    'owl': 'http://www.w3.org/2002/07/owl#',
-}
+    if namespace in known_prefixes:
+        return known_prefixes[namespace]
 
-# Columns to skip (internal/denormalized)
-SKIP_COLUMNS = {
-    'id', 'created_at', 'updated_at',
-    # Denormalized columns (documented in comments)
-    'spec_label', 'theme_label', 'theme_icon', 'format_uri',
-    'responsible_org_name', 'climate_zone_label',
-    'station_uri', 'station_name', 'station_id_value',
-}
+    # Try to extract a meaningful name from the URI
+    # Remove protocol and common patterns
+    clean = namespace.replace('http://', '').replace('https://', '')
+    clean = clean.rstrip('/#')
 
-# PostgreSQL to XSD type mapping
-PG_TO_XSD = {
-    'bigint': 'xsd:long',
-    'integer': 'xsd:integer',
-    'smallint': 'xsd:integer',
-    'real': 'xsd:float',
-    'double precision': 'xsd:double',
-    'numeric': 'xsd:decimal',
-    'boolean': 'xsd:boolean',
-    'date': 'xsd:date',
-    'timestamp with time zone': 'xsd:dateTime',
-    'timestamp without time zone': 'xsd:dateTime',
-    'time': 'xsd:time',
-    'text': None,  # No type cast for strings
-    'character varying': None,
-    'jsonb': None,
-}
+    # Try to extract the last meaningful component
+    parts = [p for p in clean.split('/') if p]
+    if parts:
+        # Use the last part or a combination
+        candidate = parts[-1]
+        # Remove common suffixes
+        candidate = re.sub(r'(ontology|ontologies|vocab|vocabulary)$', '', candidate)
+        candidate = re.sub(r'[^a-z0-9]', '', candidate.lower())
+
+        if candidate:
+            # If starts with number, find a meaningful word from other parts
+            if candidate[0].isdigit():
+                prefix_word = None
+                # Look through other parts (backwards) to find a non-numeric word
+                for part in reversed(parts[:-1]):  # Skip the last part (candidate)
+                    clean_part = re.sub(r'[^a-z0-9]', '', part.lower())
+                    # Check if it's a meaningful word (has letters and doesn't start with digit)
+                    if clean_part and not clean_part[0].isdigit() and len(clean_part) > 1:
+                        prefix_word = clean_part
+                        break
+
+                # Fall back to 'ns' if no meaningful word found
+                if not prefix_word:
+                    prefix_word = "ns"
+
+                candidate = f"{prefix_word}{candidate}"
+
+            if candidate not in existing_prefixes.values():
+                return candidate
+
+    # Fall back to generating a sequential prefix
+    for i in range(1, 1000):
+        prefix = f"ns{i}"
+        if prefix not in existing_prefixes.values():
+            return prefix
+
+    return "ns"
 
 
-# ============================================================
-# Database Introspection
-# ============================================================
+def detect_prefixes(predicates, min_count=2):
+    """
+    Auto-detect common prefixes from predicates.
 
-class DatabaseIntrospector:
-    """Introspects PostgreSQL database schema."""
+    Args:
+        predicates: List of predicate URIs
+        min_count: Minimum number of predicates to warrant a prefix
 
-    def __init__(self, conn):
-        self.conn = conn
-        self.cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        self._tables_cache = None
-        self._columns_cache = {}
-        self._fks_cache = {}
+    Returns:
+        Dictionary mapping namespace URIs to prefix names
+    """
+    print("Auto-detecting prefixes from predicates...")
 
-    def get_tables(self, exclude_patterns=None):
-        """Get all user tables."""
-        if self._tables_cache is not None:
-            return self._tables_cache
+    # Count namespace occurrences
+    namespace_counts = Counter()
+    for pred in predicates:
+        namespace = extract_namespace(pred)
+        if namespace != pred:  # Only count if we extracted a namespace
+            namespace_counts[namespace] += 1
 
-        self.cursor.execute("""
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_type = 'BASE TABLE'
-            ORDER BY table_name
+    # Generate prefixes for common namespaces
+    prefixes = {}
+    for namespace, count in namespace_counts.most_common():
+        if count >= min_count:
+            prefix_name = generate_prefix_name(namespace, prefixes)
+            prefixes[namespace] = prefix_name
+
+    print(f"Detected {len(prefixes)} prefixes:")
+    for namespace, prefix in prefixes.items():
+        print(f"  {prefix}: {namespace}")
+
+    return prefixes
+
+
+def shorten_uri(uri, prefixes):
+    """
+    Shorten a URI using detected prefixes.
+
+    Args:
+        uri: Full URI to shorten
+        prefixes: Dictionary of namespace -> prefix mappings
+
+    Returns:
+        Shortened URI (e.g., "cpmeta:hasName") or original if no prefix found
+    """
+    for namespace, prefix in prefixes.items():
+        if uri.startswith(namespace):
+            local_part = uri[len(namespace):]
+            return f"{prefix}:{local_part}"
+
+    # If no prefix found, return the full URI in angle brackets
+    return f"<{uri}>"
+
+
+def parse_ontology(ontology_path='ontop/cpmeta.ttl'):
+    """
+    Parse the ontology file to determine property types and ranges.
+
+    Args:
+        ontology_path: Path to the TTL ontology file
+
+    Returns:
+        Dictionary mapping property URIs to dict with 'is_object' (bool) and 'range' (str or None)
+        Example: {uri: {'is_object': False, 'range': 'http://www.w3.org/2001/XMLSchema#long'}}
+    """
+    property_info = {}
+
+    if not HAS_RDFLIB:
+        print("Warning: Cannot parse ontology without rdflib. Using heuristics.")
+        return property_info
+
+    if not os.path.exists(ontology_path):
+        print(f"Warning: Ontology file not found at {ontology_path}. Using heuristics.")
+        return property_info
+
+    try:
+        print(f"Parsing ontology from {ontology_path}...")
+        g = Graph()
+        g.parse(ontology_path, format='turtle')
+
+        # Query for all ObjectProperty instances
+        for prop in g.subjects(RDF.type, OWL.ObjectProperty):
+            prop_uri = str(prop)
+            # Get range if available
+            range_uri = None
+            for obj in g.objects(prop, RDFS.range):
+                range_uri = str(obj)
+                break  # Take first range
+
+            property_info[prop_uri] = {
+                'is_object': True,
+                'range': range_uri
+            }
+
+        # Query for all DatatypeProperty instances
+        for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
+            prop_uri = str(prop)
+            # Get range if available
+            range_uri = None
+            for obj in g.objects(prop, RDFS.range):
+                range_uri = str(obj)
+                break  # Take first range
+
+            property_info[prop_uri] = {
+                'is_object': False,
+                'range': range_uri
+            }
+
+        obj_count = sum(1 for v in property_info.values() if v['is_object'])
+        data_count = sum(1 for v in property_info.values() if not v['is_object'])
+
+        print(f"  Found {obj_count} ObjectProperties")
+        print(f"  Found {data_count} DatatypeProperties")
+
+        return property_info
+
+    except Exception as e:
+        print(f"Warning: Error parsing ontology: {e}")
+        print("Falling back to heuristics.")
+        return {}
+
+
+def check_if_uri_column(cursor, table_name, sample_size=100):
+    """
+    Check if the 'obj' column in a table contains primarily URIs or literals.
+
+    Args:
+        cursor: Database cursor
+        table_name: Name of the predicate table
+        sample_size: Number of rows to sample
+
+    Returns:
+        True if objects are primarily URIs, False if literals
+    """
+    try:
+        cursor.execute(f"""
+            SELECT obj FROM {table_name}
+            WHERE obj IS NOT NULL
+            LIMIT {sample_size};
         """)
 
-        tables = [row['table_name'] for row in self.cursor.fetchall()]
-
-        # Filter out excluded patterns
-        if exclude_patterns:
-            filtered = []
-            for table in tables:
-                skip = False
-                for pattern in exclude_patterns:
-                    if re.search(pattern, table):
-                        skip = True
-                        break
-                if not skip:
-                    filtered.append(table)
-            tables = filtered
-
-        self._tables_cache = tables
-        return tables
-
-    def get_columns(self, table):
-        """Get columns for a table with types."""
-        if table in self._columns_cache:
-            return self._columns_cache[table]
-
-        self.cursor.execute("""
-            SELECT
-                column_name,
-                data_type,
-                udt_name,
-                is_nullable,
-                column_default
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = %s
-            ORDER BY ordinal_position
-        """, (table,))
-
-        columns = []
-        for row in self.cursor.fetchall():
-            col_info = {
-                'name': row['column_name'],
-                'type': row['data_type'],
-                'udt_name': row['udt_name'],
-                'nullable': row['is_nullable'] == 'YES',
-                'default': row['column_default'],
-            }
-            columns.append(col_info)
-
-        self._columns_cache[table] = columns
-        return columns
-
-    def get_foreign_keys(self, table):
-        """Get foreign key relationships for a table."""
-        if table in self._fks_cache:
-            return self._fks_cache[table]
-
-        self.cursor.execute("""
-            SELECT
-                kcu.column_name,
-                ccu.table_name AS foreign_table_name,
-                ccu.column_name AS foreign_column_name,
-                tc.constraint_name
-            FROM information_schema.table_constraints AS tc
-            JOIN information_schema.key_column_usage AS kcu
-              ON tc.constraint_name = kcu.constraint_name
-              AND tc.table_schema = kcu.table_schema
-            JOIN information_schema.constraint_column_usage AS ccu
-              ON ccu.constraint_name = tc.constraint_name
-              AND ccu.table_schema = tc.table_schema
-            WHERE tc.constraint_type = 'FOREIGN KEY'
-              AND tc.table_schema = 'public'
-              AND tc.table_name = %s
-        """, (table,))
-
-        fks = []
-        for row in self.cursor.fetchall():
-            fk_info = {
-                'column': row['column_name'],
-                'ref_table': row['foreign_table_name'],
-                'ref_column': row['foreign_column_name'],
-                'constraint': row['constraint_name'],
-            }
-            fks.append(fk_info)
-
-        self._fks_cache[table] = fks
-        return fks
-
-    def is_junction_table(self, table):
-        """
-        Detect if table is a junction table (many-to-many relationship).
-        Junction tables typically:
-        - Have exactly 2 foreign keys
-        - Composite primary key
-        - Few or no other columns
-        """
-        fks = self.get_foreign_keys(table)
-        if len(fks) != 2:
+        rows = cursor.fetchall()
+        if not rows:
             return False
 
-        columns = self.get_columns(table)
-        # Should have mostly just the FK columns
-        return len(columns) <= 4
+        # Count how many look like URIs
+        uri_count = 0
+        for (obj_value,) in rows:
+            if obj_value and (obj_value.startswith('http://') or obj_value.startswith('https://')):
+                uri_count += 1
+
+        # If more than 50% are URIs, treat as URI column
+        return uri_count > len(rows) / 2
 
-    def get_uri_column(self, table):
-        """Get the URI column name (usually 'uri' or 'subject')."""
-        columns = self.get_columns(table)
-        for col in columns:
-            if col['name'] in ['uri', 'subject', 'subj']:
-                return col['name']
-        return None
-
-    def get_table_row_count(self, table):
-        """Get approximate row count for a table."""
-        try:
-            self.cursor.execute(f"""
-                SELECT reltuples::bigint AS estimate
-                FROM pg_class
-                WHERE relname = %s
-            """, (table,))
-            result = self.cursor.fetchone()
-            return int(result['estimate']) if result else 0
-        except:
-            return 0
-
-
-# ============================================================
-# Ontology Parsing
-# ============================================================
-
-class OntologyParser:
-    """Parses OWL ontology to understand classes and properties."""
-
-    def __init__(self, ontology_file):
-        self.ontology_file = ontology_file
-        self.graph = None
-        self.property_ranges = {}
-        self.property_domains = {}
-        self.functional_properties = set()
-
-        if HAS_RDFLIB:
-            self.parse()
-
-    def parse(self):
-        """Parse the ontology file."""
-        if not os.path.exists(self.ontology_file):
-            print(f"Warning: Ontology file not found: {self.ontology_file}")
-            return
-
-        try:
-            self.graph = Graph()
-            self.graph.parse(self.ontology_file, format='turtle')
-
-            # Extract property information
-            cpmeta = Namespace(NAMESPACES['cpmeta'])
-
-            # Get ranges for object and datatype properties
-            for prop in self.graph.subjects(RDF.type, OWL.ObjectProperty):
-                for obj in self.graph.objects(prop, RDFS.range):
-                    self.property_ranges[str(prop)] = str(obj)
-                for obj in self.graph.objects(prop, RDFS.domain):
-                    self.property_domains[str(prop)] = str(obj)
-
-            for prop in self.graph.subjects(RDF.type, OWL.DatatypeProperty):
-                for obj in self.graph.objects(prop, RDFS.range):
-                    self.property_ranges[str(prop)] = str(obj)
-                for obj in self.graph.objects(prop, RDFS.domain):
-                    self.property_domains[str(prop)] = str(obj)
-
-            # Get functional properties
-            for prop in self.graph.subjects(RDF.type, OWL.FunctionalProperty):
-                self.functional_properties.add(str(prop))
-
-            print(f"✓ Parsed ontology: {len(self.property_ranges)} properties")
-
-        except Exception as e:
-            print(f"Warning: Could not parse ontology: {e}")
-
-    def get_property_for_column(self, column_name, table_name=None):
-        """
-        Map a database column name to an ontology property.
-        Uses heuristics and naming conventions.
-        """
-        # Direct column name to property mappings
-        mappings = {
-            'uri': None,  # Not a property
-            'type': None,  # Used for rdf:type
-            'name': 'hasName',
-            'label': 'rdfs:label',
-            'description': 'rdfs:comment',
-            'email': 'hasEmail',
-            'first_name': 'hasFirstName',
-            'last_name': 'hasLastName',
-            'orcid_id': 'hasOrcidId',
-            'station_id': 'hasStationId',
-            'country_code': 'countryCode',
-            'latitude': 'hasLatitude',
-            'longitude': 'hasLongitude',
-            'elevation': 'hasElevation',
-            'sha256': 'hasSha256sum',
-            'doi': 'hasDoi',
-            'size_in_bytes': 'hasSizeInBytes',
-            'number_of_rows': 'hasNumberOfRows',
-            'actual_column_names': 'hasActualColumnNames',
-            'model': 'hasModel',
-            'serial_number': 'hasSerialNumber',
-            'sampling_height': 'hasSamplingHeight',
-            'keywords': 'hasKeywords',
-            'mean_annual_temp': 'hasMeanAnnualTemp',
-            'mean_annual_precip': 'hasMeanAnnualPrecip',
-            'mean_annual_radiation': 'hasMeanAnnualRadiation',
-            'time_zone_offset': 'hasTimeZoneOffset',
-            'operational_period': 'hasOperationalPeriod',
-            'is_discontinued': 'isDiscontinued',
-            'station_class': 'hasStationClass',
-            'labeling_date': 'hasLabelingDate',
-            'wigos_id': 'hasWigosId',
-            'data_level': 'hasDataLevel',
-            'attribution_weight': 'hasAttributionWeight',
-            'role_uri': 'hasRole',
-            'role_label': None,  # Derived from role_uri
-            'was_produced_by': 'prov:wasProducedBy',
-        }
-
-        # Temporal properties
-        temporal_mappings = {
-            'acquisition_start_time': 'hasAcquisitionStartTime',
-            'acquisition_end_time': 'hasAcquisitionEndTime',
-            'submission_start_time': 'hasSubmissionStartTime',
-            'submission_end_time': 'hasSubmissionEndTime',
-            'data_start_time': 'hasDataStartTime',
-            'data_end_time': 'hasDataEndTime',
-            'start_time': 'hasStartTime',
-            'end_time': 'hasEndTime',
-        }
-        mappings.update(temporal_mappings)
-
-        if column_name in mappings:
-            prop_name = mappings[column_name]
-            if prop_name:
-                # Check if it's a prefixed property
-                if ':' in prop_name:
-                    return prop_name
-                return f"cpmeta:{prop_name}"
-            return None
-
-        # Try camelCase conversion
-        # e.g., some_property -> hasSomeProperty
-        if '_' in column_name and not column_name.endswith('_id'):
-            parts = column_name.split('_')
-            camel = 'has' + ''.join(p.capitalize() for p in parts)
-            return f"cpmeta:{camel}"
-
-        return None
-
-    def get_xsd_type(self, pg_type):
-        """Get XSD type for a PostgreSQL column type."""
-        # Normalize type name
-        pg_type = pg_type.lower()
-        return PG_TO_XSD.get(pg_type)
-
-
-# ============================================================
-# Mapping Generator
-# ============================================================
-
-class MappingGenerator:
-    """Generates Ontop mappings from database schema and ontology."""
-
-    def __init__(self, db, onto, strategy='grouped', with_comments=True):
-        self.db = db
-        self.onto = onto
-        self.strategy = strategy
-        self.with_comments = with_comments
-        self.mappings = []
-        self.stats = {
-            'type_mappings': 0,
-            'datatype_mappings': 0,
-            'object_mappings': 0,
-            'junction_mappings': 0,
-            'skipped_columns': 0,
-            'skipped_tables': 0,
-        }
-
-    def generate_all(self, include_tables=None, exclude_tables=None):
-        """Generate all mappings."""
-        # Pass exclude patterns to get_tables for regex-based filtering
-        tables = self.db.get_tables(exclude_patterns=exclude_tables)
-
-        # Apply include filter if specified
-        if include_tables:
-            tables = [t for t in tables if t in include_tables]
-
-        for table in tables:
-            if self.db.is_junction_table(table):
-                self.generate_junction_mapping(table)
-            else:
-                self.generate_table_mappings(table)
-
-    def generate_table_mappings(self, table):
-        """Generate all mappings for a table."""
-        # Track mappings count before generation
-        mappings_before = len([m for m in self.mappings if 'id' in m])
-
-        # Type mapping
-        columns = self.db.get_columns(table)
-        if any(col['name'] == 'type' for col in columns):
-            self.generate_type_mapping(table)
-
-        # Datatype properties
-        self.generate_datatype_mappings(table)
-
-        # Object properties (foreign keys)
-        self.generate_object_property_mappings(table)
-
-        # Check if any mappings were generated
-        mappings_after = len([m for m in self.mappings if 'id' in m])
-        mappings_generated = mappings_after - mappings_before
-
-        # Only add header comment if mappings were actually generated
-        if mappings_generated > 0 and self.with_comments:
-            # Insert header comment before the new mappings
-            header_comments = []
-            header_comments.append({'comment': f"\n{'='*60}"})
-            header_comments.append({'comment': f"TABLE: {table}"})
-            row_count = self.db.get_table_row_count(table)
-            if row_count > 0:
-                header_comments.append({'comment': f"Estimated rows: {row_count:,}"})
-            header_comments.append({'comment': f"{'='*60}\n"})
-
-            # Insert comments before the mappings we just added
-            insert_position = mappings_before
-            for comment in reversed(header_comments):
-                self.mappings.insert(insert_position, comment)
-
-    def generate_type_mapping(self, table):
-        """Generate rdf:type mapping using type column."""
-        uri_col = self.db.get_uri_column(table)
-        if not uri_col:
-            return
-
-        mapping_id = f"{table}-type"
-        target = "<{%s}> a cpmeta:{type} ." % uri_col
-        source = f"SELECT {uri_col}, type FROM {table}"
-
-        self.add_mapping(mapping_id, target, source)
-        self.stats['type_mappings'] += 1
-
-    def generate_datatype_mappings(self, table):
-        """Generate mappings for datatype properties."""
-        uri_col = self.db.get_uri_column(table)
-        if not uri_col:
-            return
-
-        columns = self.db.get_columns(table)
-        fks = {fk['column'] for fk in self.db.get_foreign_keys(table)}
-
-        # Group columns by required vs optional
-        required_cols = []
-        optional_cols = []
-
-        for col in columns:
-            col_name = col['name']
-
-            # Skip certain columns
-            if col_name in SKIP_COLUMNS or col_name == uri_col or col_name in fks:
-                if col_name in SKIP_COLUMNS:
-                    self.stats['skipped_columns'] += 1
-                continue
-
-            # Get property mapping
-            prop = self.onto.get_property_for_column(col_name, table)
-            if not prop:
-                continue
-
-            # Get XSD type
-            xsd_type = self.onto.get_xsd_type(col['type'])
-
-            col_info = {
-                'name': col_name,
-                'property': prop,
-                'xsd_type': xsd_type,
-            }
-
-            if col['nullable']:
-                optional_cols.append(col_info)
-            else:
-                required_cols.append(col_info)
-
-        # Generate mapping for required columns
-        if required_cols:
-            self.generate_column_group_mapping(
-                table, uri_col, required_cols, 'basic', required=True
-            )
-
-        # Generate mapping for optional columns
-        if optional_cols:
-            self.generate_column_group_mapping(
-                table, uri_col, optional_cols, 'optional', required=False
-            )
-
-    def generate_column_group_mapping(self, table, uri_col, columns, suffix, required=True):
-        """Generate a mapping for a group of columns."""
-        if not columns:
-            return
-
-        mapping_id = f"{table}-{suffix}"
-
-        # Build target triples
-        target_parts = []
-        for col in columns:
-            prop = col['property']
-            col_name = col['name']
-            xsd_type = col['xsd_type']
-
-            if xsd_type:
-                triple = f"{prop} {{{col_name}}}^^{xsd_type}"
-            else:
-                triple = f"{prop} {{{col_name}}}"
-            target_parts.append(triple)
-
-        target = "<{%s}> %s ." % (uri_col, " ;\n                ".join(target_parts))
-
-        # Build source query
-        col_names = [uri_col] + [col['name'] for col in columns]
-        source_parts = [f"SELECT {', '.join(col_names)}"]
-        source_parts.append(f"FROM {table}")
-
-        if not required:
-            # Add WHERE clause for at least one non-null optional column
-            where_parts = [f"{col['name']} IS NOT NULL" for col in columns]
-            source_parts.append(f"WHERE {' OR '.join(where_parts)}")
-
-        source = "\n             ".join(source_parts)
-
-        self.add_mapping(mapping_id, target, source)
-        self.stats['datatype_mappings'] += 1
-
-    def generate_object_property_mappings(self, table):
-        """Generate mappings for object properties (foreign keys)."""
-        uri_col = self.db.get_uri_column(table)
-        if not uri_col:
-            return
-
-        fks = self.db.get_foreign_keys(table)
-
-        for fk in fks:
-            # Infer property name from column name
-            col_name = fk['column']
-            ref_table = fk['ref_table']
-
-            # Skip internal FKs
-            if col_name in SKIP_COLUMNS:
-                continue
-
-            # Map column to property
-            # e.g., object_spec_id -> hasObjectSpec
-            # e.g., responsible_organization_id -> hasResponsibleOrganization
-            if col_name.endswith('_id'):
-                prop_base = col_name[:-3]  # Remove _id
-                # Convert snake_case to CamelCase
-                parts = prop_base.split('_')
-                camel = ''.join(p.capitalize() for p in parts)
-                prop = f"cpmeta:has{camel}"
-            else:
-                prop = self.onto.get_property_for_column(col_name, table)
-                if not prop:
-                    continue
-
-            # Get referenced table's URI column
-            ref_uri_col = self.db.get_uri_column(ref_table)
-            if not ref_uri_col:
-                continue
-
-            prop_base_name = prop_base if col_name.endswith('_id') else col_name
-            mapping_id = f"{table}-{prop_base_name}"
-            target = "<{%s_uri}> %s {%s_uri} ." % (table, prop, ref_table)
-
-            source = f"""SELECT
-                 s.{uri_col} as {table}_uri,
-                 r.{ref_uri_col} as {ref_table}_uri
-             FROM {table} s
-             JOIN {ref_table} r ON s.{col_name} = r.id"""
-
-            self.add_mapping(mapping_id, target, source)
-            self.stats['object_mappings'] += 1
-
-    def generate_junction_mapping(self, table):
-        """Generate mapping for junction table (many-to-many relationship)."""
-        fks = self.db.get_foreign_keys(table)
-        if len(fks) != 2:
-            return
-
-        # Determine which FK is subject and which is object
-        fk1, fk2 = fks
-
-        # Get URI columns for referenced tables
-        table1 = fk1['ref_table']
-        table2 = fk2['ref_table']
-
-        uri_col1 = self.db.get_uri_column(table1)
-        uri_col2 = self.db.get_uri_column(table2)
-
-        if not uri_col1 or not uri_col2:
-            return
-
-        # Infer property name from table name or second FK
-        # e.g., data_object_keywords -> hasKeyword
-        # Pattern: {entity1}_{entity2}s
-        prop = None
-
-        if table2 == 'keywords':
-            # Special case: keywords table has keyword column
-            mapping_id = f"{table}-keywords"
-            prop = "cpmeta:hasKeyword"
-            target = "<{subj_uri}> %s {keyword} ." % prop
-            source = f"""SELECT
-                 s.{uri_col1} as subj_uri,
-                 k.keyword
-             FROM {table} jt
-             JOIN {table1} s ON jt.{fk1['column']} = s.id
-             JOIN keywords k ON jt.{fk2['column']} = k.id"""
-        else:
-            # General case
-            prop_name = table2.rstrip('s')  # Remove trailing 's'
-            parts = prop_name.split('_')
-            camel = ''.join(p.capitalize() for p in parts)
-            prop = f"cpmeta:has{camel}"
-
-            mapping_id = f"{table}"
-            target = "<{subj_uri}> %s {obj_uri} ." % prop
-            source = f"""SELECT
-                 s.{uri_col1} as subj_uri,
-                 o.{uri_col2} as obj_uri
-             FROM {table} jt
-             JOIN {table1} s ON jt.{fk1['column']} = s.id
-             JOIN {table2} o ON jt.{fk2['column']} = o.id"""
-
-        # Add comment before mapping
-        if self.with_comments:
-            self.add_comment(f"\n# Junction table: {table}")
-
-        self.add_mapping(mapping_id, target, source)
-        self.stats['junction_mappings'] += 1
-
-    def add_mapping(self, mapping_id, target, source):
-        """Add a mapping to the list."""
-        self.mappings.append({
-            'id': mapping_id,
-            'target': target,
-            'source': source,
-        })
-
-    def add_comment(self, comment):
-        """Add a comment to the mappings."""
-        self.mappings.append({
-            'comment': comment
-        })
-
-    def write_obda_file(self, output_file):
-        """Write mappings to .obda file."""
-        with open(output_file, 'w') as f:
-            # Write prefix declarations
-            f.write("[PrefixDeclaration]\n")
-            for prefix, uri in sorted(NAMESPACES.items()):
-                f.write(f"{prefix}: {uri}\n")
-            f.write("\n")
-
-            # Write mapping declarations
-            f.write("[MappingDeclaration] @collection [[\n\n")
-
-            # Write header comment
-            # f.write(f"# Auto-generated Ontop mappings\n")
-            # f.write(f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            # f.write(f"# Total mappings: {len([m for m in self.mappings if 'id' in m])}\n")
-            # f.write("\n")
-
-            # Write mappings
-            for mapping in self.mappings:
-                if 'comment' in mapping:
-                    f.write(mapping['comment'] + "\n")
-                elif 'id' in mapping:
-                    f.write(f"mappingId\t{mapping['id']}\n")
-                    f.write(f"target\t\t{mapping['target']}\n")
-                    f.write(f"source\t\t{mapping['source']}\n")
-                    f.write("\n")
-
-            f.write("]]\n")
-
-        print(f"\n✓ Wrote {len([m for m in self.mappings if 'id' in m])} mappings to: {output_file}")
-
-
-# ============================================================
-# Main
-# ============================================================
-
-def get_connection(host='localhost', port=5432, user='postgres', dbname='postgres', password='ontop'):
-    """Create database connection."""
-    try:
-        return psycopg2.connect(
-            host=host,
-            port=port,
-            user=user,
-            dbname=dbname,
-            password=password
-        )
     except psycopg2.Error as e:
-        print(f"Error connecting to database: {e}")
+        print(f"Warning: Could not check column type for {table_name}: {e}")
+        return False
+
+
+def get_property_info(predicate, property_info, cursor, table_name):
+    """
+    Get property information including whether it's an object property and its range.
+    Uses ontology first, falls back to heuristics if not found.
+
+    Args:
+        predicate: Full predicate URI
+        property_info: Dictionary from parse_ontology()
+        cursor: Database cursor (for fallback heuristic)
+        table_name: Table name (for fallback heuristic)
+
+    Returns:
+        Tuple of (is_object: bool, range_uri: str or None)
+    """
+    # First try ontology lookup
+    if predicate in property_info:
+        info = property_info[predicate]
+        return info['is_object'], info.get('range')
+
+    # Fall back to heuristic if not found in ontology
+    print(f"  Note: {predicate} not found in ontology, using heuristic")
+    is_object = check_if_uri_column(cursor, table_name)
+    return is_object, None
+
+
+def generate_mapping(predicate, table_name, prefixes, is_uri_object, range_uri=None):
+    """
+    Generate a single Ontop mapping entry.
+
+    Args:
+        predicate: Full predicate URI
+        table_name: Sanitized table name (already includes prefix from sanitize_predicate)
+        prefixes: Dictionary of namespace -> prefix mappings
+        is_uri_object: Whether the object should be wrapped in <>
+        range_uri: Optional datatype range URI (e.g., 'http://www.w3.org/2001/XMLSchema#long')
+
+    Returns:
+        String containing the mapping entry
+    """
+    # Shorten the predicate using prefixes
+    short_predicate = shorten_uri(predicate, prefixes)
+
+    # Use table name as mapping ID (it already includes the prefix from sanitize_predicate)
+    mapping_id = table_name
+
+    # Determine object format
+    if is_uri_object:
+        obj_format = "<{obj}>"
+    else:
+        obj_format = "{obj}"
+
+        # Add datatype suffix if range is specified and it's a datatype property
+        # Only add for valid URIs (not blank nodes)
+        if range_uri and (range_uri.startswith('http://') or range_uri.startswith('https://')):
+            short_range = shorten_uri(range_uri, prefixes)
+            # Only add the type if it's not just a generic rdfs:Literal
+            if short_range and 'Literal' not in short_range:
+                obj_format = f"{{obj}}^^{short_range}"
+
+    # Generate the mapping
+    mapping = f"""mappingId\t{mapping_id}
+target\t\t<{{subj}}> {short_predicate} {obj_format} .
+source\t\tSELECT subj, obj FROM {table_name}
+"""
+
+    return mapping
+
+
+def generate_mappings_file(conn, output_path, ontology_path='ontop/cpmeta.ttl'):
+    """
+    Generate the complete Ontop mappings file.
+
+    Args:
+        conn: Database connection
+        output_path: Path to output .obda file
+        ontology_path: Path to ontology TTL file
+    """
+    cursor = conn.cursor()
+
+    try:
+        # Parse ontology to determine property types and ranges
+        property_info = parse_ontology(ontology_path)
+        print()
+
+        # Load table name to predicate URI mappings
+        print("Loading predicate table mappings...")
+        try:
+            cursor.execute("SELECT table_name, predicate_uri FROM predicate_table_mappings;")
+            table_to_predicate = dict(cursor.fetchall())
+            print(f"  Loaded {len(table_to_predicate)} table mappings")
+        except psycopg2.Error as e:
+            print(f"  Warning: Could not load predicate_table_mappings: {e}")
+            print("  Will use direct predicate URIs instead")
+            table_to_predicate = {}
+
+        print()
+
+        print("Fetching predicates from rdf_triples...")
+        cursor.execute("SELECT DISTINCT pred FROM rdf_triples ORDER BY pred;")
+        predicates = [row[0] for row in cursor.fetchall()]
+
+        if not predicates:
+            print("No predicates found in rdf_triples table.")
+            return
+
+        print(f"Found {len(predicates)} unique predicates.")
+
+        # Filter out the 'pred' predicate
+        predicates = [p for p in predicates if p != 'pred']
+        if len(predicates) == 0:
+            print("No valid predicates found after filtering.")
+            return
+
+        # Detect prefixes
+        prefixes = detect_prefixes(predicates)
+
+        # Ensure standard prefixes are included (for datatype ranges)
+        if 'http://www.w3.org/2001/XMLSchema#' not in prefixes:
+            prefixes['http://www.w3.org/2001/XMLSchema#'] = 'xsd'
+        if 'http://www.w3.org/2000/01/rdf-schema#' not in prefixes:
+            prefixes['http://www.w3.org/2000/01/rdf-schema#'] = 'rdfs'
+
+        # Start building the output
+        output_lines = []
+
+        # Write prefix declarations
+        output_lines.append("[PrefixDeclaration]")
+        for namespace, prefix in sorted(prefixes.items(), key=lambda x: x[1]):
+            # Format namespace with proper ending
+            if namespace.endswith(('#', '/')):
+                ns_format = namespace
+            else:
+                ns_format = namespace
+
+            output_lines.append(f"{prefix}: {ns_format}")
+
+        output_lines.append("")
+        output_lines.append("[MappingDeclaration] @collection [[")
+        output_lines.append("")
+
+        # Generate mappings for each predicate
+        print("\nGenerating mappings...")
+        for i, predicate in enumerate(predicates):
+            table_name = sanitize_predicate(predicate)
+
+            # Look up the original predicate URI from the mapping table
+            # This ensures we use the exact URI that matches the ontology
+            original_predicate = table_to_predicate.get(table_name, predicate)
+
+            # Get property info (type and range) from ontology, or use heuristics
+            is_uri_obj, range_uri = get_property_info(original_predicate, property_info, cursor, table_name)
+
+            # Generate mapping (use original predicate for the target)
+            mapping = generate_mapping(original_predicate, table_name, prefixes, is_uri_obj, range_uri)
+            output_lines.append(mapping)
+
+            if (i + 1) % 10 == 0:
+                print(f"  Generated {i + 1}/{len(predicates)} mappings...")
+
+        # Close the mapping declaration
+        output_lines.append("]]")
+        output_lines.append("")
+
+        # Write to file
+        print(f"\nWriting mappings to {output_path}...")
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(output_lines))
+
+        print(f"✓ Successfully generated {len(predicates)} mappings!")
+        print(f"Output file: {output_path}")
+
+    except psycopg2.Error as e:
+        print(f"\nDatabase error: {e}")
         sys.exit(1)
+    except IOError as e:
+        print(f"\nFile I/O error: {e}")
+        sys.exit(1)
+    finally:
+        cursor.close()
 
 
 def main():
+    """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Generate Ontop mappings from class-based database schema",
+        description="Generate Ontop mappings file from rdf_triples predicates",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Environment variables:
+  DB_HOST         Database host (default: localhost)
+  DB_PORT         Database port (default: 5432)
+  DB_USER         Database user (default: postgres)
+  DB_NAME         Database name (default: postgres)
+  DB_PASSWORD     Database password (optional)
+
 Examples:
-  %(prog)s
-  %(prog)s --output ontop/auto_mappings.obda
-  %(prog)s --include-tables data_objects,stations
-  %(prog)s --strategy grouped --with-comments
-  %(prog)s --include-predicate-tables  # Include old predicate tables
+  %(prog)s -o mappings.obda
+  %(prog)s --host db --output generated_mappings.obda
+  %(prog)s -o mappings.obda --ontology custom_ontology.ttl
+  DB_HOST=localhost %(prog)s -o mappings.obda
+
+Note:
+  Requires rdflib library: pip install rdflib
+  Falls back to heuristics if rdflib is not installed or ontology file not found.
         """
     )
 
-    # Database connection
-    parser.add_argument('--host', default='localhost', help='Database host')
-    parser.add_argument('--port', type=int, default=5432, help='Database port')
-    parser.add_argument('--user', default='postgres', help='Database user')
-    parser.add_argument('--dbname', default='postgres', help='Database name')
-    parser.add_argument('--password', default='ontop', help='Database password')
+    # Database connection arguments
+    parser.add_argument(
+        '--host',
+        default=os.environ.get('DB_HOST', 'localhost'),
+        help='Database host (default: localhost or $DB_HOST)'
+    )
 
-    # Generation options
-    parser.add_argument('--ontology', default='ontop/cpmeta.ttl',
-                        help='Ontology file (default: ontop/cpmeta.ttl)')
-    parser.add_argument('--output', default='ontop/generated_mappings.obda',
-                        help='Output file (default: ontop/generated_mappings.obda)')
-    parser.add_argument('--include-tables', help='Comma-separated list of tables to include')
-    parser.add_argument('--exclude-tables', help='Comma-separated list of tables to exclude')
-    parser.add_argument('--include-predicate-tables', action='store_true',
-                        help='Include old predicate-table pattern tables (default: exclude)')
-    parser.add_argument('--strategy', choices=['grouped', 'split'], default='grouped',
-                        help='Mapping strategy (default: grouped)')
-    parser.add_argument('--with-comments', action='store_true', default=False,
-                        help='Include explanatory comments (default: True)')
-    parser.add_argument('--dry-run', action='store_true',
-                        help='Print statistics without writing file')
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=int(os.environ.get('DB_PORT', '5432')),
+        help='Database port (default: 5432 or $DB_PORT)'
+    )
+
+    parser.add_argument(
+        '--user',
+        default=os.environ.get('DB_USER', 'postgres'),
+        help='Database user (default: postgres or $DB_USER)'
+    )
+
+    parser.add_argument(
+        '--dbname',
+        default=os.environ.get('DB_NAME', 'postgres'),
+        help='Database name (default: postgres or $DB_NAME)'
+    )
+
+    parser.add_argument(
+        '--password',
+        default=os.environ.get('DB_PASSWORD'),
+        help='Database password (default: $DB_PASSWORD)'
+    )
+
+    # Output file argument
+    parser.add_argument(
+        '-o', '--output',
+        default='ontop/generated_mappings.obda',
+        help='Output mappings file path (default: generated_mappings.obda)'
+    )
+
+    # Ontology file argument
+    parser.add_argument(
+        '--ontology',
+        default='ontop/cpmeta.ttl',
+        help='Path to ontology TTL file (default: ontop/cpmeta.ttl)'
+    )
 
     args = parser.parse_args()
 
-    # Parse table lists
-    include_tables = args.include_tables.split(',') if args.include_tables else None
-    exclude_tables = args.exclude_tables.split(',') if args.exclude_tables else None
-
-    # Add default exclusions for predicate tables and system tables unless explicitly including them
-    if not args.include_predicate_tables:
-        default_exclusions = [
-            # Predicate-table pattern (namespace_property)
-            r'^cpmeta_',
-            r'^prov_',
-            r'^rdfs_',
-            r'^owl_',
-            r'^xsd_',
-            r'^rdf_',
-            r'^dc_',
-            r'^dcat_',
-            r'^dcterms_',
-            r'^ssn_',
-            r'^vann_',
-            r'^locn_',
-            r'^ns_',
-            r'^files_',
-            r'^core_',
-            r'^wdcgg_',
-            r'^otcmeta_',
-            r'^stationentry_',
-            r'^sites_',
-            # System/utility tables
-            r'^triples$',
-            r'^rdf_triples$',
-            r'^iris$',
-            r'^predicate_table_mappings$',
-            r'^triple_keywords$',
-            r'^entity_keywords$',
-            r'^data_object_all_keywords$',
-            r'^object_spec_keywords$',
-            r'^object_spec_projects$',
-            r'^project_keywords$',
-        ]
-        if exclude_tables:
-            exclude_tables.extend(default_exclusions)
-        else:
-            exclude_tables = default_exclusions
-
-    print("=" * 60)
-    print("ONTOP MAPPING GENERATOR")
-    print("=" * 60)
+    # Display configuration
+    print(f"Connecting to PostgreSQL at {args.host}:{args.port} as {args.user}...")
 
     # Connect to database
-    print(f"\nConnecting to database at {args.host}:{args.port}...")
-    conn = get_connection(args.host, args.port, args.user, args.dbname, args.password)
+    conn = get_connection()
 
     try:
-        # Initialize components
-        print("Introspecting database schema...")
-        db = DatabaseIntrospector(conn)
-
-        print(f"Parsing ontology: {args.ontology}...")
-        onto = OntologyParser(args.ontology)
-
         # Generate mappings
-        print("\nGenerating mappings...")
-        generator = MappingGenerator(db, onto, args.strategy, args.with_comments)
-        generator.generate_all(include_tables, exclude_tables)
+        generate_mappings_file(conn, args.output, args.ontology)
 
-        # Print statistics
-        print("\n" + "=" * 60)
-        print("GENERATION REPORT")
-        print("=" * 60)
-        print(f"Type mappings:          {generator.stats['type_mappings']}")
-        print(f"Datatype mappings:      {generator.stats['datatype_mappings']}")
-        print(f"Object mappings:        {generator.stats['object_mappings']}")
-        print(f"Junction mappings:      {generator.stats['junction_mappings']}")
-        print(f"Skipped columns:        {generator.stats['skipped_columns']}")
-        total = generator.stats['type_mappings'] + generator.stats['datatype_mappings'] + \
-                generator.stats['object_mappings'] + generator.stats['junction_mappings']
-        print(f"Total mappings:         {total}")
-
-        # Write output
-        if not args.dry_run:
-            # Backup existing file
-            if os.path.exists(args.output):
-                backup = f"{args.output}.backup"
-                os.rename(args.output, backup)
-                print(f"\nBacked up existing file to: {backup}")
-
-            generator.write_obda_file(args.output)
-            file_size = os.path.getsize(args.output) / 1024
-            print(f"File size: {file_size:.1f} KB")
-        else:
-            print("\n(Dry run - no file written)")
-
-        print("\n✓ Mapping generation completed successfully")
-
-    except Exception as e:
-        print(f"\nError: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
     finally:
         conn.close()
 

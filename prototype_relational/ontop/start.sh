@@ -7,4 +7,4 @@ ONTOP_LOG_LEVEL=debug ../ontop-cli-5.4.0/ontop endpoint \
   --ontology="cpmeta.ttl" \
   --port=8080 \
   --cors-allowed-origins=* \
-  --mapping="mappings.obda"
+  --mapping="mapping/mappings.obda"

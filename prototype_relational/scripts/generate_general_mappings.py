@@ -326,13 +326,6 @@ def generate_general_mappings(max_instances=100000, output_path='general_triples
         # Start building the output
         output_lines = []
 
-        # Write prefix declarations
-        output_lines.append("[PrefixDeclaration]")
-        for namespace, prefix in sorted(prefixes.items(), key=lambda x: x[1]):
-            output_lines.append(f"{prefix}: {namespace}")
-
-        output_lines.append("")
-
         # Generate mappings for each predicate
         print("\nGenerating mappings...")
         for i, (predicate, count) in enumerate(filtered_predicates):
@@ -352,8 +345,16 @@ def generate_general_mappings(max_instances=100000, output_path='general_triples
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(output_lines))
 
+        # Write prefixes to separate file
+        prefix_file = '../ontop/mapping/generated_prefixes.txt'
+        print(f"Writing prefixes to {prefix_file}...")
+        with open(prefix_file, 'w', encoding='utf-8') as f:
+            for namespace, prefix in sorted(prefixes.items(), key=lambda x: x[1]):
+                f.write(f"{prefix}: {namespace}\n")
+
         print(f"\n✓ Successfully generated {len(filtered_predicates)} mappings!")
         print(f"Output file: {output_path}")
+        print(f"Prefixes file: {prefix_file}")
 
         # Print summary statistics
         total_instances = sum(count for _, count in filtered_predicates)
@@ -427,7 +428,7 @@ Examples:
 
     parser.add_argument(
         '-o', '--output',
-        default='generated_triples.obda',
+        default='../ontop/mapping/generated_triples.obda',
         help='Output mappings file path (default: generated_triples.obda)'
     )
 

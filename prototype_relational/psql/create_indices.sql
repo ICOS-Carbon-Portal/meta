@@ -12,8 +12,6 @@
 
 -- data_objects
 
-CREATE INDEX idx_data_objects_triple ON data_objects(triple_id);
-CREATE INDEX idx_data_objects_spec ON data_objects(object_spec_id);
 CREATE INDEX idx_data_objects_acq_start ON data_objects(acquisition_start_time);
 CREATE INDEX idx_data_objects_acq_end ON data_objects(acquisition_end_time);
 CREATE INDEX idx_data_objects_sub_start ON data_objects(submission_start_time);
@@ -26,10 +24,8 @@ CREATE INDEX idx_data_objects_rows ON data_objects(hasNumberOfRows);
 
 -- keywords
 
-CREATE INDEX idx_triple_keywords_triple ON triple_keywords(triple_id);
+CREATE INDEX idx_triple_keywords_subject ON triple_keywords(subject);
 CREATE INDEX idx_triple_keywords_keyword ON triple_keywords(keyword_id);
-CREATE INDEX idx_object_spec_keywords_spec ON object_spec_keywords(object_spec_id);
-CREATE INDEX idx_object_spec_keywords_keyword ON object_spec_keywords(keyword_id);
 CREATE INDEX idx_project_keywords_project ON project_keywords(project_id);
 CREATE INDEX idx_project_keywords_keyword ON project_keywords(keyword_id);
 CREATE INDEX idx_keywords_keyword ON keywords(keyword);

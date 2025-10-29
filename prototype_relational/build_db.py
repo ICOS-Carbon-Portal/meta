@@ -131,7 +131,7 @@ def get_property_value(properties, predicate, convert_type=None):
 
     return value
 
-def populate_data_objects_table(conn, object_spec_mapping=None):
+def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects=None):
     print("Populating data_objects table")
     cursor = conn.cursor()
 
@@ -169,6 +169,9 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
         WHERE properties->%s IS NOT NULL
     """
 
+    if max_data_objects is not None:
+        query += f" LIMIT {max_data_objects}"
+
     cursor.execute(query, (object_spec_pred,))
     data_objects = cursor.fetchall()
 
@@ -177,7 +180,7 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
-    insertion_query = "INSERT INTO data_objects (triple_id, subject, object_spec_id, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insertion_query = "INSERT INTO data_objects (triple_id, subject, object_spec_id, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
     for triple_id, subject, properties in data_objects:
         object_spec_uri = get_property_value(properties, object_spec_pred)
@@ -211,7 +214,7 @@ def populate_data_objects_table(conn, object_spec_mapping=None):
         sub_start, sub_end = get_temporal_data(cursor, submission_uri)
 
         data_to_insert.append((
-            triple_id, subject, object_spec_id, name,
+            triple_id, subject, object_spec_id, object_spec_uri, name,
             acq_start, acq_end, sub_start, sub_end, data_start, data_end,
             sha256sum, number_of_rows, size_in_bytes, column_names,
             next_version_of_id, produced_by, doi
@@ -849,12 +852,12 @@ def populate_aggregate_keywords(conn):
 
     return total_inserted
 
-def populate_dependent():
+def populate_dependent(max_data_objects=None):
     conn = get_connection()
     object_spec_mapping = populate_object_specs_table(conn)
     project_mapping = populate_projects_table(conn)
     populate_object_spec_projects(conn, project_mapping)
-    populate_data_objects_table(conn, object_spec_mapping)
+    populate_data_objects_table(conn, object_spec_mapping, max_data_objects)
     update_next_version(conn)
     populate_keywords_tables(conn)
     populate_aggregate_keywords(conn)
@@ -862,16 +865,16 @@ def populate_dependent():
     print("Creating indices")
     execute_sql_file(conn, "psql/create_indices.sql")
 
-def rebuild_dependent():
+def rebuild_dependent(max_data_objects=None):
     recreate_dependent_tables()
-    populate_dependent()
+    populate_dependent(max_data_objects)
 
 
-def rebuild_all(csv_path, limit=None):
+def rebuild_all(csv_path, limit=None, max_data_objects=None):
     print("Creating triples table")
     execute_sql_file(get_connection(), "psql/create_triples_table.sql")
     populate_triples(limit)
-    rebuild_dependent()
+    rebuild_dependent(max_data_objects)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -906,14 +909,21 @@ def main():
         help="Process only the first N triples from CSV (applies to triples rebuilding)"
     )
 
+    parser.add_argument(
+        "--max-data-objects",
+        type=int,
+        metavar="N",
+        help="Limit the maximum number of data object entries to process"
+    )
+
     args = parser.parse_args()
 
     if args.dependent:
-        rebuild_dependent()
+        rebuild_dependent(args.max_data_objects)
     elif args.create_tables:
         recreate_dependent_tables()
     elif args.rebuild_all:
-        rebuild_all(csv_path, args.limit)
+        rebuild_all(csv_path, args.limit, args.max_data_objects)
 
 if __name__ == "__main__":
     main()

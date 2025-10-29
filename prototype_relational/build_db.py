@@ -18,7 +18,7 @@ csv_path = "./dump_full.csv"
 def get_connection():
     """Create and return a PostgreSQL database connection."""
     return psycopg2.connect(
-        host="db",
+        host="localhost",
         user="postgres",
         port=5432,
         password="ontop"
@@ -38,88 +38,59 @@ def recreate_dependent_tables():
     execute_sql_file(conn, 'psql/create_dependent_tables.sql')
 
 
-def process_triples(csv_path, limit=None):
-    print("Processing RDF triples")
-    subject_data = defaultdict(lambda: defaultdict(list))
-
-    with open(csv_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        total_rows = 0
-
-        for row in reader:
-            subject = row['subj']
-            predicate = row['pred']
-            obj = row['obj']
-
-            subject_data[subject][predicate].append(obj)
-            total_rows += 1
-
-            if total_rows % 10000 == 0:
-                print(f"Processed {total_rows} triples...")
-
-            if limit and total_rows >= limit:
-                print(f"Reached limit of {limit} triples")
-                break
-
-    print(f"Total triples processed: {total_rows}")
-    print(f"Unique subjects found: {len(subject_data)}")
-
-    processed_data = []
-    for subject, predicates in subject_data.items():
-        properties = {}
-        for pred, objs in predicates.items():
-            if len(objs) == 1:
-                properties[pred] = objs[0]
-            else:
-                properties[pred] = objs
-
-        processed_data.append((subject, json.dumps(properties)))
-
-    return processed_data
-
-def populate_triples(limit):
-    data = process_triples(csv_path, limit)
-    conn = get_connection()
-    cursor = conn.cursor()
-    batch_size = 10000
-    total_inserted = 0
-
-    for i in range(0, len(data), batch_size):
-        batch = data[i:i+batch_size]
-        execute_batch(
-            cursor,
-            "INSERT INTO triples (subject, properties) VALUES (%s, %s)",
-            batch
-        )
-        total_inserted += len(batch)
-
-        if total_inserted % 10000 == 0:
-            print(f"Inserted {total_inserted} triples...")
-            conn.commit()
-
-    conn.commit()
-    print(f"Total triples inserted: {total_inserted}")
 
 def get_temporal_data(cursor, subject):
     started_at_time_pred = "http://www.w3.org/ns/prov#startedAtTime"
     ended_at_time_pred = "http://www.w3.org/ns/prov#endedAtTime"
 
+    if not subject:
+        return None, None
+
     cursor.execute("""
-        SELECT properties->>%s as start_time,
-               properties->>%s as end_time
-        FROM triples WHERE subject = %s
-    """, (started_at_time_pred, ended_at_time_pred, subject))
+        SELECT
+            MAX(CASE WHEN pred = %s THEN obj END) as start_time,
+            MAX(CASE WHEN pred = %s THEN obj END) as end_time
+        FROM rdf_triples
+        WHERE subj = %s
+          AND pred IN (%s, %s)
+    """, (started_at_time_pred, ended_at_time_pred, subject, started_at_time_pred, ended_at_time_pred))
 
     result = cursor.fetchone()
     if result:
         start_time, end_time = result
-        if start_time and start_time.startswith('['):
-            print(f"ERROR: Multiple start times for {subject}")
-            return None, None
-        if end_time and end_time.startswith('['):
-            print(f"ERROR: Multiple end times for {subject}")
-            return None, None
         return start_time, end_time
+
+    return None, None
+
+
+def get_acquisition_metadata(cursor, acquisition_uri):
+    """Fetch wasAssociatedWith and hasSamplingHeight from acquisition triple."""
+    was_associated_with_pred = "http://www.w3.org/ns/prov#wasAssociatedWith"
+    has_sampling_height_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight"
+
+    if not acquisition_uri:
+        return None, None
+
+    cursor.execute("""
+        SELECT
+            MAX(CASE WHEN pred = %s THEN obj END) as station_uri,
+            MAX(CASE WHEN pred = %s THEN obj END) as sampling_height
+        FROM rdf_triples
+        WHERE subj = %s
+          AND pred IN (%s, %s)
+    """, (was_associated_with_pred, has_sampling_height_pred, acquisition_uri, was_associated_with_pred, has_sampling_height_pred))
+
+    result = cursor.fetchone()
+    if result:
+        station_uri, sampling_height = result
+        # Convert sampling height to float if present
+        if sampling_height:
+            try:
+                sampling_height = float(sampling_height)
+            except (ValueError, TypeError):
+                print(f"WARNING: Could not convert sampling height to float: {sampling_height}")
+                sampling_height = None
+        return station_uri, sampling_height
 
     return None, None
 
@@ -153,37 +124,52 @@ def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects
         cursor.execute("SELECT subject, id FROM object_specs")
         object_spec_mapping = dict(cursor.fetchall())
 
-    print("Building data object URI mapping for foreign key resolution...")
+    # Build query to get all data objects with their properties
     query = """
-        SELECT subject, id
-        FROM triples
-        WHERE properties->%s IS NOT NULL
-    """
-    cursor.execute(query, (object_spec_pred,))
-    data_object_uri_to_triple_id = dict(cursor.fetchall())
-    print(f"Built mapping for {len(data_object_uri_to_triple_id):,} data object URIs")
-
-    query = """
-        SELECT id, subject, properties
-        FROM triples
-        WHERE properties->%s IS NOT NULL
+        SELECT
+            subj,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasObjectSpec,
+            MAX(CASE WHEN pred = %s THEN obj END) as name,
+            MAX(CASE WHEN pred = %s THEN obj END) as wasAcquiredBy,
+            MAX(CASE WHEN pred = %s THEN obj END) as wasSubmittedBy,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasStartTime,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasEndTime,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasSha256sum,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasNumberOfRows,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasSizeInBytes,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasActualColumnNames,
+            MAX(CASE WHEN pred = %s THEN obj END) as isNextVersionOf,
+            MAX(CASE WHEN pred = %s THEN obj END) as wasProducedBy,
+            MAX(CASE WHEN pred = %s THEN obj END) as hasDoi
+        FROM rdf_triples
+        WHERE subj IN (
+            SELECT DISTINCT subj FROM rdf_triples WHERE pred = %s
+        )
+        GROUP BY subj
     """
 
     if max_data_objects is not None:
         query += f" LIMIT {max_data_objects}"
 
-    cursor.execute(query, (object_spec_pred,))
+    cursor.execute(query, (
+        object_spec_pred, name_pred, was_acquired_by_pred, was_submitted_by_pred,
+        has_start_time_pred, has_end_time_pred, has_sha256sum_pred,
+        has_number_of_rows_pred, has_size_in_bytes_pred, has_actual_column_names_pred,
+        is_next_version_of_pred, was_produced_by_pred, has_doi_pred,
+        object_spec_pred
+    ))
     data_objects = cursor.fetchall()
 
-    print(f"\nFound {len(data_objects)} triples with hasObjectSpec predicate")
+    print(f"\nFound {len(data_objects)} data objects with hasObjectSpec predicate")
 
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
-    insertion_query = "INSERT INTO data_objects (triple_id, subject, object_spec_id, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insertion_query = "INSERT INTO data_objects (subject, object_spec_id, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-    for triple_id, subject, properties in data_objects:
-        object_spec_uri = get_property_value(properties, object_spec_pred)
+    for row in data_objects:
+        subject, object_spec_uri, name, acquisition_uri, submission_uri, data_start, data_end, sha256sum, number_of_rows, size_in_bytes, column_names, next_version_of_uri, produced_by, doi = row
+
         object_spec_id = object_spec_mapping.get(object_spec_uri) if object_spec_uri else None
 
         # Object spec for this data object was cut from data-set.
@@ -191,31 +177,30 @@ def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects
         if object_spec_id == None:
             continue
 
-        # Extract core properties
-        name = get_property_value(properties, name_pred)
-        acquisition_uri = get_property_value(properties, was_acquired_by_pred)
-        submission_uri = get_property_value(properties, was_submitted_by_pred)
-        data_start = properties.get(has_start_time_pred)
-        data_end = properties.get(has_end_time_pred)
+        # Convert numeric fields
+        if number_of_rows:
+            try:
+                number_of_rows = int(number_of_rows)
+            except (ValueError, TypeError):
+                number_of_rows = None
 
-        # Extract new properties
-        sha256sum = get_property_value(properties, has_sha256sum_pred)
-        number_of_rows = get_property_value(properties, has_number_of_rows_pred, 'int')
-        size_in_bytes = get_property_value(properties, has_size_in_bytes_pred, 'int')
-        column_names = get_property_value(properties, has_actual_column_names_pred)
-        next_version_of_uri = get_property_value(properties, is_next_version_of_pred)
-        produced_by = get_property_value(properties, was_produced_by_pred)
-        doi = get_property_value(properties, has_doi_pred)
+        if size_in_bytes:
+            try:
+                size_in_bytes = int(size_in_bytes)
+            except (ValueError, TypeError):
+                size_in_bytes = None
 
         # Store isNextVersionOf URI as None for now - will be resolved in second pass
         next_version_of_id = None
         # Get temporal data from acquisition and submission triples
         acq_start, acq_end = get_temporal_data(cursor, acquisition_uri)
+        acq_station, acq_sampling_height = get_acquisition_metadata(cursor, acquisition_uri)
         sub_start, sub_end = get_temporal_data(cursor, submission_uri)
 
         data_to_insert.append((
-            triple_id, subject, object_spec_id, object_spec_uri, name,
-            acq_start, acq_end, sub_start, sub_end, data_start, data_end,
+            subject, object_spec_id, object_spec_uri, name,
+            acq_start, acq_end, acq_station, acq_sampling_height,
+            sub_start, sub_end, data_start, data_end,
             sha256sum, number_of_rows, size_in_bytes, column_names,
             next_version_of_id, produced_by, doi
         ))
@@ -252,20 +237,14 @@ def update_next_version(conn):
 
     # Find all data objects that have isNextVersionOf relationships to update
     cursor.execute("""
-        SELECT e.subject, e.properties->>%s as next_version_uri
-        FROM triples e
-        JOIN data_objects data_object ON e.id = data_object.triple_id
-        WHERE e.properties->%s IS NOT NULL
-    """, (is_next_version_of_pred, is_next_version_of_pred))
+        SELECT e.subj, e.obj as next_version_uri
+        FROM rdf_triples e
+        JOIN data_objects data_object ON e.subj = data_object.subject
+        WHERE e.pred = %s
+    """, (is_next_version_of_pred,))
 
     updates_to_make = []
-    for subject, next_version_uri_raw in cursor.fetchall():
-        # Handle list values
-        if isinstance(next_version_uri_raw, str) and next_version_uri_raw.startswith('['):
-            next_version_uri = json.loads(next_version_uri_raw)[0] if next_version_uri_raw != '[]' else None
-        else:
-            next_version_uri = next_version_uri_raw
-
+    for subject, next_version_uri in cursor.fetchall():
         if next_version_uri:
             referenced_id = subject_to_id_mapping.get(next_version_uri)
             if referenced_id:
@@ -292,20 +271,14 @@ def update_next_version(conn):
 
     # Find all data objects that have isNextVersionOf relationships to update
     cursor.execute("""
-        SELECT e.subject, e.properties->>%s as next_version_uri
-        FROM triples e
-        JOIN data_objects data_object ON e.id = data_object.triple_id
-        WHERE e.properties->%s IS NOT NULL
-    """, (is_next_version_of_pred, is_next_version_of_pred))
+        SELECT e.subj, e.obj as next_version_uri
+        FROM rdf_triples e
+        JOIN data_objects data_object ON e.subj = data_object.subject
+        WHERE e.pred = %s
+    """, (is_next_version_of_pred,))
 
     updates_to_make = []
-    for subject, next_version_uri_raw in cursor.fetchall():
-        # Handle list values
-        if isinstance(next_version_uri_raw, str) and next_version_uri_raw.startswith('['):
-            next_version_uri = json.loads(next_version_uri_raw)[0] if next_version_uri_raw != '[]' else None
-        else:
-            next_version_uri = next_version_uri_raw
-
+    for subject, next_version_uri in cursor.fetchall():
         if next_version_uri:
             referenced_id = subject_to_id_mapping.get(next_version_uri)
             if referenced_id:
@@ -333,12 +306,12 @@ def populate_keywords_tables(conn):
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
     query = """
-        SELECT id, subject, properties->>%s as keywords_str
-        FROM triples
-        WHERE properties->%s IS NOT NULL
+        SELECT subj, obj as keywords_str
+        FROM rdf_triples
+        WHERE pred = %s
     """
 
-    cursor.execute(query, (keywords_pred, keywords_pred))
+    cursor.execute(query, (keywords_pred,))
     triples_with_keywords = cursor.fetchall()
 
     print(f"\nFound {len(triples_with_keywords)} triples with keywords")
@@ -348,14 +321,8 @@ def populate_keywords_tables(conn):
 
     triple_keyword_pairs = []
 
-    for triple_id, subject, keywords_str in triples_with_keywords:
+    for subject, keywords_str in triples_with_keywords:
         if keywords_str:
-            # Handle case where keywords might be a list
-            if isinstance(keywords_str, str) and keywords_str.startswith('['):
-                keywords_list = json.loads(keywords_str)
-                if keywords_list:
-                    keywords_str = keywords_list[0] if isinstance(keywords_list, list) else keywords_list
-
             # Parse comma-separated keywords
             keywords = [k.strip() for k in str(keywords_str).split(',') if k.strip()]
 
@@ -367,11 +334,11 @@ def populate_keywords_tables(conn):
                     cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
                     keyword_to_id[keyword] = cursor.fetchone()[0]
 
-                triple_keyword_pairs.append((triple_id, keyword_to_id[keyword]))
+                triple_keyword_pairs.append((subject, keyword_to_id[keyword]))
 
     execute_batch(
         cursor,
-        "INSERT INTO triple_keywords (triple_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        "INSERT INTO triple_keywords (subject, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
         triple_keyword_pairs
     )
 
@@ -389,7 +356,7 @@ def populate_keywords_tables(conn):
 
     # Show top keywords
     cursor.execute("""
-        SELECT k.keyword, COUNT(ek.triple_id) as count
+        SELECT k.keyword, COUNT(ek.subject) as count
         FROM keywords k
         JOIN triple_keywords ek ON k.id = ek.keyword_id
         GROUP BY k.keyword
@@ -425,13 +392,13 @@ def populate_object_spec_keywords(conn, keyword_to_id):
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
     query = """
-        SELECT os.id, os.subject, e.properties->>%s as keywords_str
+        SELECT os.id, os.subject, e.obj as keywords_str
         FROM object_specs os
-        JOIN triples e ON os.triple_id = e.id
-        WHERE e.properties->%s IS NOT NULL
+        JOIN rdf_triples e ON os.subject = e.subj
+        WHERE e.pred = %s
     """
 
-    cursor.execute(query, (keywords_pred, keywords_pred))
+    cursor.execute(query, (keywords_pred,))
     object_specs_with_keywords = cursor.fetchall()
 
     print(f"\nFound {len(object_specs_with_keywords)} object specs with keywords")
@@ -440,12 +407,6 @@ def populate_object_spec_keywords(conn, keyword_to_id):
 
     for object_spec_id, subject, keywords_str in object_specs_with_keywords:
         if keywords_str:
-            # Handle case where keywords might be a list
-            if isinstance(keywords_str, str) and keywords_str.startswith('['):
-                keywords_list = json.loads(keywords_str)
-                if keywords_list:
-                    keywords_str = keywords_list[0] if isinstance(keywords_list, list) else keywords_list
-
             # Parse comma-separated keywords
             keywords = [k.strip() for k in str(keywords_str).split(',') if k.strip()]
 
@@ -489,16 +450,15 @@ def populate_project_keywords(conn, keyword_to_id):
 
     keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
 
-    # Get all projects with keywords (only those that exist as triples)
+    # Get all projects with keywords (only those that exist in rdf_triples)
     query = """
-        SELECT p.id, p.subject, e.properties->>%s as keywords_str
+        SELECT p.id, p.subject, e.obj as keywords_str
         FROM projects p
-        JOIN triples e ON p.triple_id = e.id
-        WHERE p.triple_id IS NOT NULL
-        AND e.properties->%s IS NOT NULL
+        JOIN rdf_triples e ON p.subject = e.subj
+        WHERE e.pred = %s
     """
 
-    cursor.execute(query, (keywords_pred, keywords_pred))
+    cursor.execute(query, (keywords_pred,))
     projects_with_keywords = cursor.fetchall()
 
     print(f"\nFound {len(projects_with_keywords)} projects with keywords")
@@ -508,12 +468,6 @@ def populate_project_keywords(conn, keyword_to_id):
 
     for project_id, subject, keywords_str in projects_with_keywords:
         if keywords_str:
-            # Handle case where keywords might be a list
-            if isinstance(keywords_str, str) and keywords_str.startswith('['):
-                keywords_list = json.loads(keywords_str)
-                if keywords_list:
-                    keywords_str = keywords_list[0] if isinstance(keywords_list, list) else keywords_list
-
             # Parse comma-separated keywords
             keywords = [k.strip() for k in str(keywords_str).split(',') if k.strip()]
 
@@ -564,35 +518,34 @@ def populate_object_specs_table(conn):
 
     # First, find all unique object spec URIs referenced by data objects
     cursor.execute("""
-        SELECT DISTINCT properties->>%s as object_spec_uri
-        FROM triples e
-        WHERE properties->>%s = %s
-          AND properties->%s IS NOT NULL
-    """, (object_spec_pred, rdf_type_pred, data_object_type, object_spec_pred))
+        SELECT DISTINCT obj as object_spec_uri
+        FROM rdf_triples
+        WHERE pred = %s
+          AND subj IN (
+              SELECT subj FROM rdf_triples
+              WHERE pred = %s AND obj = %s
+          )
+    """, (object_spec_pred, rdf_type_pred, data_object_type))
 
     referenced_specs = cursor.fetchall()
     referenced_spec_uris = set()
 
     for row in referenced_specs:
         spec_uri = row[0]
-        if isinstance(spec_uri, str) and spec_uri.startswith('['):
-            import json
-            spec_list = json.loads(spec_uri)
-            referenced_spec_uris.update(spec_list)
-        elif spec_uri:
+        if spec_uri:
             referenced_spec_uris.add(spec_uri)
 
     print(f"\nFound {len(referenced_spec_uris)} unique object spec URIs referenced by data objects")
 
-    # Now find all triples that match these URIs
+    # Now find all triples that match these URIs (check if they exist as subjects)
     object_specs = []
     for spec_uri in referenced_spec_uris:
-        cursor.execute("SELECT id, subject FROM triples WHERE subject = %s", (spec_uri,))
+        cursor.execute("SELECT DISTINCT subj FROM rdf_triples WHERE subj = %s LIMIT 1", (spec_uri,))
         result = cursor.fetchone()
         if result:
-            object_specs.append(result)
+            object_specs.append(result[0])
         else:
-            print(f"Warning: Referenced object spec not found in triples: {spec_uri}")
+            print(f"Warning: Referenced object spec not found in rdf_triples: {spec_uri}")
 
     print(f"Found {len(object_specs)} object spec triples in database")
 
@@ -600,13 +553,13 @@ def populate_object_specs_table(conn):
     total_inserted = 0
     data_to_insert = []
 
-    for triple_id, subject in object_specs:
-        data_to_insert.append((triple_id, subject))
+    for subject in object_specs:
+        data_to_insert.append((subject,))
 
         if len(data_to_insert) >= batch_size:
             execute_batch(
                 cursor,
-                "INSERT INTO object_specs (triple_id, subject) VALUES (%s, %s)",
+                "INSERT INTO object_specs (subject) VALUES (%s)",
                 data_to_insert
             )
             total_inserted += len(data_to_insert)
@@ -641,50 +594,36 @@ def populate_projects_table(conn):
 
     # Get all unique project URIs from object specs
     query = """
-        SELECT DISTINCT e.properties->>%s as project_uri
+        SELECT DISTINCT e.obj as project_uri
         FROM object_specs os
-        JOIN triples e ON os.triple_id = e.id
-        WHERE e.properties->%s IS NOT NULL
+        JOIN rdf_triples e ON os.subject = e.subj
+        WHERE e.pred = %s
     """
 
-    cursor.execute(query, (associated_project_pred, associated_project_pred))
+    cursor.execute(query, (associated_project_pred,))
     project_uris_raw = cursor.fetchall()
 
-    # Process and flatten project URIs (might be lists or single values)
+    # Collect unique project URIs
     unique_project_uris = set()
     for row in project_uris_raw:
         project_uri = row[0]
         if project_uri:
-            if isinstance(project_uri, str) and project_uri.startswith('['):
-                uri_list = json.loads(project_uri)
-                for uri in (uri_list if isinstance(uri_list, list) else [uri_list]):
-                    if uri:
-                        unique_project_uris.add(uri)
-            else:
-                unique_project_uris.add(project_uri)
+            unique_project_uris.add(project_uri)
 
     print(f"\nFound {len(unique_project_uris)} unique project URIs")
 
     # Insert projects
     total_inserted = 0
     for project_uri in unique_project_uris:
-        # Check if this project exists as an triple
-        cursor.execute("SELECT id, properties FROM triples WHERE subject = %s", (project_uri,))
-        triple_row = cursor.fetchone()
+        # Check if this project exists in rdf_triples to get name
+        cursor.execute("SELECT obj FROM rdf_triples WHERE subj = %s AND pred = %s", (project_uri, name_pred))
+        name_row = cursor.fetchone()
 
-        triple_id = None
-        name = None
-
-        if triple_row:
-            triple_id = triple_row[0]
-            properties = triple_row[1]
-            name = properties.get(name_pred)
-            if isinstance(name, list):
-                name = name[0] if name else None
+        name = name_row[0] if name_row else None
 
         cursor.execute(
-            "INSERT INTO projects (triple_id, subject, name) VALUES (%s, %s, %s) ON CONFLICT (subject) DO NOTHING",
-            (triple_id, project_uri, name)
+            "INSERT INTO projects (subject, name) VALUES (%s, %s) ON CONFLICT (subject) DO NOTHING",
+            (project_uri, name)
         )
         total_inserted += 1
 
@@ -709,31 +648,22 @@ def populate_object_spec_projects(conn, project_mapping=None):
 
     # Get all object specs with associated projects
     query = """
-        SELECT os.id, os.subject, e.properties->>%s as project_uris
+        SELECT os.id, os.subject, e.obj as project_uri
         FROM object_specs os
-        JOIN triples e ON os.triple_id = e.id
-        WHERE e.properties->%s IS NOT NULL
+        JOIN rdf_triples e ON os.subject = e.subj
+        WHERE e.pred = %s
     """
 
-    cursor.execute(query, (associated_project_pred, associated_project_pred))
+    cursor.execute(query, (associated_project_pred,))
     object_specs_with_projects = cursor.fetchall()
 
     print(f"\nFound {len(object_specs_with_projects)} object specs with associated projects")
 
     # Process relationships
     relationships = []
-    for object_spec_id, subject, project_uris in object_specs_with_projects:
-        if project_uris:
-            # Handle case where project URIs might be a list
-            if isinstance(project_uris, str) and project_uris.startswith('['):
-                uri_list = json.loads(project_uris)
-                project_uri_list = uri_list if isinstance(uri_list, list) else [uri_list]
-            else:
-                project_uri_list = [project_uris]
-
-            for project_uri in project_uri_list:
-                if project_uri and project_uri in project_mapping:
-                    relationships.append((object_spec_id, project_mapping[project_uri]))
+    for object_spec_id, subject, project_uri in object_specs_with_projects:
+        if project_uri and project_uri in project_mapping:
+            relationships.append((object_spec_id, project_mapping[project_uri]))
 
     # Batch insert relationships
     if relationships:
@@ -780,7 +710,7 @@ def populate_aggregate_keywords(conn):
             -- Direct keywords from data object triple
             SELECT ek.keyword_id
             FROM triple_keywords ek
-            WHERE ek.triple_id = data_object.triple_id
+            WHERE ek.subject = data_object.subject
 
             UNION
 
@@ -870,12 +800,6 @@ def rebuild_dependent(max_data_objects=None):
     populate_dependent(max_data_objects)
 
 
-def rebuild_all(csv_path, limit=None, max_data_objects=None):
-    print("Creating triples table")
-    execute_sql_file(get_connection(), "psql/create_triples_table.sql")
-    populate_triples(limit)
-    rebuild_dependent(max_data_objects)
-
 def main():
     parser = argparse.ArgumentParser(
         description="Build and manage PostgreSQL database from RDF triples CSV",
@@ -888,25 +812,12 @@ def main():
     rebuild_group.add_argument(
         "--dependent",
         action="store_true",
-        help="Rebuild all tables except triples (object_specs + projects + data_objects + keywords + aggregated)"
-    )
-
-    rebuild_group.add_argument(
-        "--rebuild-all",
-        action="store_true",
-        help="Rebuild the entire database"
+        help="Rebuild all tables except rdf_triples (object_specs + projects + data_objects + keywords + aggregated)"
     )
 
     rebuild_group.add_argument(
         "--create-tables",
         action="store_true"
-    )
-
-    parser.add_argument(
-        "--limit",
-        type=int,
-        metavar="N",
-        help="Process only the first N triples from CSV (applies to triples rebuilding)"
     )
 
     parser.add_argument(
@@ -922,8 +833,6 @@ def main():
         rebuild_dependent(args.max_data_objects)
     elif args.create_tables:
         recreate_dependent_tables()
-    elif args.rebuild_all:
-        rebuild_all(csv_path, args.limit, args.max_data_objects)
 
 if __name__ == "__main__":
     main()

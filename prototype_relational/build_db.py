@@ -122,37 +122,40 @@ def populate_data_objects_table(conn, max_data_objects=None):
 
     # Build query to get all data objects with their properties
     query = """
-        SELECT
-            subj,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasObjectSpec,
-            MAX(CASE WHEN pred = %s THEN obj END) as name,
-            MAX(CASE WHEN pred = %s THEN obj END) as wasAcquiredBy,
-            MAX(CASE WHEN pred = %s THEN obj END) as wasSubmittedBy,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasStartTime,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasEndTime,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasSha256sum,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasNumberOfRows,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasSizeInBytes,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasActualColumnNames,
-            MAX(CASE WHEN pred = %s THEN obj END) as isNextVersionOf,
-            MAX(CASE WHEN pred = %s THEN obj END) as wasProducedBy,
-            MAX(CASE WHEN pred = %s THEN obj END) as hasDoi
-        FROM rdf_triples
-        WHERE subj IN (
-            SELECT DISTINCT subj FROM rdf_triples WHERE pred = %s
+        WITH data_object_subjects AS (
+            SELECT DISTINCT subj, obj as hasObjectSpec
+            FROM rdf_triples
+            WHERE pred = %s
         )
-        GROUP BY subj
+        SELECT
+            t.subj,
+            dos.hasObjectSpec,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as name,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasAcquiredBy,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasSubmittedBy,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasStartTime,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasEndTime,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasSha256sum,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasNumberOfRows,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasSizeInBytes,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasActualColumnNames,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as isNextVersionOf,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasProducedBy,
+            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasDoi
+        FROM rdf_triples t
+        INNER JOIN data_object_subjects dos ON t.subj = dos.subj
+        GROUP BY t.subj, dos.hasObjectSpec
     """
 
     if max_data_objects is not None:
         query += f" LIMIT {max_data_objects}"
 
     cursor.execute(query, (
-        object_spec_pred, name_pred, was_acquired_by_pred, was_submitted_by_pred,
+        object_spec_pred,
+        name_pred, was_acquired_by_pred, was_submitted_by_pred,
         has_start_time_pred, has_end_time_pred, has_sha256sum_pred,
         has_number_of_rows_pred, has_size_in_bytes_pred, has_actual_column_names_pred,
-        is_next_version_of_pred, was_produced_by_pred, has_doi_pred,
-        object_spec_pred
+        is_next_version_of_pred, was_produced_by_pred, has_doi_pred
     ))
     data_objects = cursor.fetchall()
 

@@ -1,63 +1,37 @@
-mappingId    data-object-type
-target       <{uri}> a cpmeta:{type} .
-source       SELECT uri, type FROM data_objects
-
 mappingId    data-object-fields
-target       <{uri}> cpmeta:hasName {name} ;
-               cpmeta:hasSha256sum {sha256} ;
-               cpmeta:hasSizeInBytes {size_in_bytes}^^xsd:long ;
-               cpmeta:hasNumberOfRows {number_of_rows}^^xsd:long ;
-               cpmeta:hasDoi {doi} ;
-               cpmeta:hasAcquisitionStartTime {acquisition_start_time}^^xsd:dateTime ;
-               cpmeta:hasAcquisitionEndTime {acquisition_end_time}^^xsd:dateTime ;
-               cpmeta:hasSubmissionStartTime {submission_start_time}^^xsd:dateTime ;
-               cpmeta:hasSubmissionEndTime {submission_end_time}^^xsd:dateTime ;
+target       <{uri}> cpmeta:hasName {name}^^xsd:string ;
+               cpmeta:hasObjectSpec <{hasObjectSpec}> ;
+               cpmeta:hasSha256sum {hasSha256sum}^^xsd:string ;
+               cpmeta:hasSizeInBytes {hasSizeInBytes}^^xsd:long ;
+               cpmeta:hasNumberOfRows {hasNumberOfRows}^^xsd:long ;
+               cpmeta:hasDoi {hasDoi}^^xsd:string ;
+               cpmeta:hasActualColumnNames {hasActualColumnNames}^^xsd:string ;
+	       cpmeta:wasSubmittedBy/prov:startedAtTime {submission_start_time}^^xsd:dateTime ;
+	       cpmeta:wasSubmittedBy/prov:endedAtTime {submission_end_time}^^xsd:dateTime ;
+               cpmeta:wasAcquiredBy/prov:startedAtTime {acquisition_start_time}^^xsd:dateTime ;
+               cpmeta:wasAcquiredBy/prov:endedAtTime {acquisition_end_time}^^xsd:dateTime ;
+               cpmeta:wasAcquiredBy/prov:wasAssociatedWith {acquisition_wasAssociatedWith}^^xsd:string;
+               cpmeta:wasAcquiredBy/prov:endedAtTime {acquisition_end_time}^^xsd:dateTime;
+               cpmeta:wasAcquiredBy/prov:hasSamplingHeight {acquisition_hasSamplingHeight}^^xsd:float;
                cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
                cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
-               cpmeta:hasActualColumnNames {actual_column_names}^^xsd:string ;
-               prov:wasProducedBy {was_produced_by} ;
-               cpmeta:wasSubmittedBy <{was_submitted_by}> ;
-               cpmeta:hasActualVariable <{actual_variable_uri}> ;
-               cpmeta:hasTemporalResolution {temporal_resolution} .
+               prov:wasProducedBy {wasProducedBy}^^xsd:string .
 source       SELECT
-               uri,
-               sha256,
+               subject as uri,
+               hasObjectSpec,
+               hasSha256sum,
                name,
-               size_in_bytes,
-               number_of_rows,
-               doi,
+               hasSizeInBytes,
+               hasNumberOfRows,
+               hasDoi,
                acquisition_start_time,
                acquisition_end_time,
+               acquisition_wasAssociatedWith,
+               acquisition_hasSamplingHeight,
                submission_start_time,
                submission_end_time,
                data_start_time,
                data_end_time,
-               actual_column_names,
-               was_produced_by,
-               was_submitted_by,
-               actual_variable_uri,
-               temporal_resolution
+               hasActualColumnNames,
+               wasProducedBy,
             FROM data_objects
-            WHERE name IS NOT NULL
-               OR doi IS NOT NULL
-               OR acquisition_start_time IS NOT NULL
-               OR acquisition_end_time IS NOT NULL
-               OR submission_start_time IS NOT NULL
-               OR submission_end_time IS NOT NULL
-               OR data_start_time IS NOT NULL
-               OR data_end_time IS NOT NULL
-               OR size_in_bytes IS NOT NULL
-               OR number_of_rows IS NOT NULL
-               OR actual_column_names IS NOT NULL
-               OR was_produced_by IS NOT NULL
-               OR was_submitted_by IS NOT NULL
-               OR actual_variable_uri IS NOT NULL
-               OR temporal_resolution IS NOT NULL
-
-mappingId    data-object-spec
-target       <{data_object_uri}> cpmeta:hasObjectSpec <{spec_uri}> .
-source       SELECT
-               d.uri as data_object_uri,
-               os.uri as spec_uri
-            FROM data_objects d
-            JOIN object_specs os ON d.object_spec_id = os.id

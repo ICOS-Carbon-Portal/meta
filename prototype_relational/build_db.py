@@ -102,7 +102,7 @@ def get_property_value(properties, predicate, convert_type=None):
 
     return value
 
-def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects=None):
+def populate_data_objects_table(conn, max_data_objects=None):
     print("Populating data_objects table")
     cursor = conn.cursor()
 
@@ -119,10 +119,6 @@ def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects
     is_next_version_of_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf"
     was_produced_by_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy"
     has_doi_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi"
-
-    if object_spec_mapping is None:
-        cursor.execute("SELECT subject, id FROM object_specs")
-        object_spec_mapping = dict(cursor.fetchall())
 
     # Build query to get all data objects with their properties
     query = """
@@ -165,17 +161,10 @@ def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
-    insertion_query = "INSERT INTO data_objects (subject, object_spec_id, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insertion_query = "INSERT INTO data_objects (subject, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
     for row in data_objects:
         subject, object_spec_uri, name, acquisition_uri, submission_uri, data_start, data_end, sha256sum, number_of_rows, size_in_bytes, column_names, next_version_of_uri, produced_by, doi = row
-
-        object_spec_id = object_spec_mapping.get(object_spec_uri) if object_spec_uri else None
-
-        # Object spec for this data object was cut from data-set.
-        # Very likely, when using a partial rdf log
-        if object_spec_id == None:
-            continue
 
         # Convert numeric fields
         if number_of_rows:
@@ -198,7 +187,7 @@ def populate_data_objects_table(conn, object_spec_mapping=None, max_data_objects
         sub_start, sub_end = get_temporal_data(cursor, submission_uri)
 
         data_to_insert.append((
-            subject, object_spec_id, object_spec_uri, name,
+            subject, object_spec_uri, name,
             acq_start, acq_end, acq_station, acq_sampling_height,
             sub_start, sub_end, data_start, data_end,
             sha256sum, number_of_rows, size_in_bytes, column_names,
@@ -368,14 +357,6 @@ def populate_keywords_tables(conn):
     for keyword, count in cursor.fetchall():
         print(f"  {keyword}: {count} triples")
 
-    # Populate object spec keywords if object_specs table exists
-    cursor.execute("""
-        SELECT COUNT(*) FROM information_schema.tables
-        WHERE table_name = 'object_specs'
-    """)
-    if cursor.fetchone()[0] > 0:
-        populate_object_spec_keywords(conn, keyword_to_id)
-
     # Populate project keywords if projects table exists
     cursor.execute("""
         SELECT COUNT(*) FROM information_schema.tables
@@ -385,65 +366,6 @@ def populate_keywords_tables(conn):
         populate_project_keywords(conn, keyword_to_id)
 
     return unique_keywords
-
-def populate_object_spec_keywords(conn, keyword_to_id):
-    cursor = conn.cursor()
-
-    keywords_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords"
-
-    query = """
-        SELECT os.id, os.subject, e.obj as keywords_str
-        FROM object_specs os
-        JOIN rdf_triples e ON os.subject = e.subj
-        WHERE e.pred = %s
-    """
-
-    cursor.execute(query, (keywords_pred,))
-    object_specs_with_keywords = cursor.fetchall()
-
-    print(f"\nFound {len(object_specs_with_keywords)} object specs with keywords")
-
-    object_spec_keyword_pairs = []
-
-    for object_spec_id, subject, keywords_str in object_specs_with_keywords:
-        if keywords_str:
-            # Parse comma-separated keywords
-            keywords = [k.strip() for k in str(keywords_str).split(',') if k.strip()]
-
-            for keyword in keywords:
-                # Get keyword ID (should already exist from populate_keywords_tables)
-                if keyword in keyword_to_id:
-                    object_spec_keyword_pairs.append((object_spec_id, keyword_to_id[keyword]))
-
-    execute_batch(
-        cursor,
-        "INSERT INTO object_spec_keywords (object_spec_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-        object_spec_keyword_pairs
-    )
-
-    conn.commit()
-
-    # Get statistics
-    cursor.execute("SELECT COUNT(*) FROM object_spec_keywords")
-    total_relationships = cursor.fetchone()[0]
-
-    print(f"Total object spec-keyword relationships: {total_relationships}")
-
-    # Show top keywords for object specs
-    cursor.execute("""
-        SELECT k.keyword, COUNT(osk.object_spec_id) as count
-        FROM keywords k
-        JOIN object_spec_keywords osk ON k.id = osk.keyword_id
-        GROUP BY k.keyword
-        ORDER BY count DESC
-        LIMIT 10
-    """)
-
-    print("\nTop 10 keywords for object specs by frequency:")
-    for keyword, count in cursor.fetchall():
-        print(f"  {keyword}: {count} object specs")
-
-    return total_relationships
 
 def populate_project_keywords(conn, keyword_to_id):
     cursor = conn.cursor()
@@ -508,83 +430,6 @@ def populate_project_keywords(conn, keyword_to_id):
 
     return total_relationships
 
-def populate_object_specs_table(conn):
-    print("Populating object_specs")
-    cursor = conn.cursor()
-
-    rdf_type_pred = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-    data_object_type = "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"
-    object_spec_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec"
-
-    # First, find all unique object spec URIs referenced by data objects
-    cursor.execute("""
-        SELECT DISTINCT obj as object_spec_uri
-        FROM rdf_triples
-        WHERE pred = %s
-          AND subj IN (
-              SELECT subj FROM rdf_triples
-              WHERE pred = %s AND obj = %s
-          )
-    """, (object_spec_pred, rdf_type_pred, data_object_type))
-
-    referenced_specs = cursor.fetchall()
-    referenced_spec_uris = set()
-
-    for row in referenced_specs:
-        spec_uri = row[0]
-        if spec_uri:
-            referenced_spec_uris.add(spec_uri)
-
-    print(f"\nFound {len(referenced_spec_uris)} unique object spec URIs referenced by data objects")
-
-    # Now find all triples that match these URIs (check if they exist as subjects)
-    object_specs = []
-    for spec_uri in referenced_spec_uris:
-        cursor.execute("SELECT DISTINCT subj FROM rdf_triples WHERE subj = %s LIMIT 1", (spec_uri,))
-        result = cursor.fetchone()
-        if result:
-            object_specs.append(result[0])
-        else:
-            print(f"Warning: Referenced object spec not found in rdf_triples: {spec_uri}")
-
-    print(f"Found {len(object_specs)} object spec triples in database")
-
-    batch_size = 1000
-    total_inserted = 0
-    data_to_insert = []
-
-    for subject in object_specs:
-        data_to_insert.append((subject,))
-
-        if len(data_to_insert) >= batch_size:
-            execute_batch(
-                cursor,
-                "INSERT INTO object_specs (subject) VALUES (%s)",
-                data_to_insert
-            )
-            total_inserted += len(data_to_insert)
-            data_to_insert = []
-
-            if total_inserted % 10000 == 0:
-                print(f"Inserted {total_inserted} object specs...")
-                conn.commit()
-
-    if data_to_insert:
-        execute_batch(
-            cursor,
-            "INSERT INTO object_specs (triple_id, subject) VALUES (%s, %s)",
-            data_to_insert
-        )
-        total_inserted += len(data_to_insert)
-
-    conn.commit()
-    print(f"Total object specs inserted: {total_inserted}")
-
-    cursor.execute("SELECT subject, id FROM object_specs")
-    subject_to_id = dict(cursor.fetchall())
-
-    return subject_to_id
-
 def populate_projects_table(conn):
     print("Populating projects")
     cursor = conn.cursor()
@@ -592,11 +437,11 @@ def populate_projects_table(conn):
     associated_project_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject"
     name_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasName"
 
-    # Get all unique project URIs from object specs
+    # Get all unique project URIs from data object specs
     query = """
         SELECT DISTINCT e.obj as project_uri
-        FROM object_specs os
-        JOIN rdf_triples e ON os.subject = e.subj
+        FROM data_objects dobj
+        JOIN rdf_triples e ON dobj.hasObjectSpec = e.subj
         WHERE e.pred = %s
     """
 
@@ -636,65 +481,6 @@ def populate_projects_table(conn):
 
     return project_mapping
 
-def populate_object_spec_projects(conn, project_mapping=None):
-    print("Populating object_spec_projects")
-    cursor = conn.cursor()
-
-    associated_project_pred = "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject"
-
-    if project_mapping is None:
-        cursor.execute("SELECT subject, id FROM projects")
-        project_mapping = dict(cursor.fetchall())
-
-    # Get all object specs with associated projects
-    query = """
-        SELECT os.id, os.subject, e.obj as project_uri
-        FROM object_specs os
-        JOIN rdf_triples e ON os.subject = e.subj
-        WHERE e.pred = %s
-    """
-
-    cursor.execute(query, (associated_project_pred,))
-    object_specs_with_projects = cursor.fetchall()
-
-    print(f"\nFound {len(object_specs_with_projects)} object specs with associated projects")
-
-    # Process relationships
-    relationships = []
-    for object_spec_id, subject, project_uri in object_specs_with_projects:
-        if project_uri and project_uri in project_mapping:
-            relationships.append((object_spec_id, project_mapping[project_uri]))
-
-    # Batch insert relationships
-    if relationships:
-        execute_batch(
-            cursor,
-            "INSERT INTO object_spec_projects (object_spec_id, project_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            relationships
-        )
-
-    conn.commit()
-
-    total_relationships = len(relationships)
-    print(f"Total object spec-project relationships: {total_relationships}")
-
-    # Show statistics
-    cursor.execute("""
-        SELECT p.subject, p.name, COUNT(osp.object_spec_id) as spec_count
-        FROM projects p
-        JOIN object_spec_projects osp ON p.id = osp.project_id
-        GROUP BY p.id, p.subject, p.name
-        ORDER BY spec_count DESC
-        LIMIT 10
-    """)
-
-    print("\nTop 10 projects by number of associated object specs:")
-    for subject, name, count in cursor.fetchall():
-        display_name = name if name else subject
-        print(f"  {display_name}: {count} object specs")
-
-    return total_relationships
-
 def populate_aggregate_keywords(conn):
     print("Populating aggregate keywords")
     cursor = conn.cursor()
@@ -714,20 +500,23 @@ def populate_aggregate_keywords(conn):
 
             UNION
 
-            -- Keywords from object spec (if exists)
-            SELECT osk.keyword_id
-            FROM object_spec_keywords osk
-            WHERE data_object.object_spec_id IS NOT NULL
-            AND osk.object_spec_id = data_object.object_spec_id
+            -- Keywords from object spec (using hasObjectSpec URI to look up in triple_keywords)
+            SELECT tk.keyword_id
+            FROM triple_keywords tk
+            WHERE tk.subject = data_object.hasObjectSpec
 
             UNION
 
-            -- Keywords from associated projects (if exist)
+            -- Keywords from associated projects (querying rdf_triples for hasAssociatedProject)
             SELECT pk.keyword_id
             FROM project_keywords pk
-            JOIN object_spec_projects osp ON pk.project_id = osp.project_id
-            WHERE data_object.object_spec_id IS NOT NULL
-            AND osp.object_spec_id = data_object.object_spec_id
+            JOIN projects p ON pk.project_id = p.id
+            WHERE p.subject IN (
+                SELECT obj
+                FROM rdf_triples
+                WHERE subj = data_object.hasObjectSpec
+                AND pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject'
+            )
         )
     """
 
@@ -784,10 +573,8 @@ def populate_aggregate_keywords(conn):
 
 def populate_dependent(max_data_objects=None):
     conn = get_connection()
-    object_spec_mapping = populate_object_specs_table(conn)
     project_mapping = populate_projects_table(conn)
-    populate_object_spec_projects(conn, project_mapping)
-    populate_data_objects_table(conn, object_spec_mapping, max_data_objects)
+    populate_data_objects_table(conn, max_data_objects)
     update_next_version(conn)
     populate_keywords_tables(conn)
     populate_aggregate_keywords(conn)
@@ -812,7 +599,7 @@ def main():
     rebuild_group.add_argument(
         "--dependent",
         action="store_true",
-        help="Rebuild all tables except rdf_triples (object_specs + projects + data_objects + keywords + aggregated)"
+        help="Rebuild all tables except rdf_triples (projects + data_objects + keywords + aggregated)"
     )
 
     rebuild_group.add_argument(

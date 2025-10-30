@@ -21,6 +21,8 @@ CREATE INDEX idx_data_objects_data_end ON data_objects(data_end_time);
 CREATE INDEX idx_data_objects_sha256 ON data_objects(hasSha256sum);
 CREATE INDEX idx_data_objects_size ON data_objects(hasSizeInBytes);
 CREATE INDEX idx_data_objects_rows ON data_objects(hasNumberOfRows);
+CREATE INDEX idx_data_objects_submitted_by ON data_objects(wasSubmittedBy);
+CREATE INDEX idx_data_objects_acquired_by ON data_objects(wasAcquiredBy);
 
 -- keywords
 

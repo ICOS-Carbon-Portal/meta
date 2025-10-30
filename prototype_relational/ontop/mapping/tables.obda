@@ -6,13 +6,8 @@ target       <{uri}> cpmeta:hasName {name}^^xsd:string ;
                cpmeta:hasNumberOfRows {hasNumberOfRows}^^xsd:long ;
                cpmeta:hasDoi {hasDoi}^^xsd:string ;
                cpmeta:hasActualColumnNames {hasActualColumnNames}^^xsd:string ;
-	       cpmeta:wasSubmittedBy/prov:startedAtTime {submission_start_time}^^xsd:dateTime ;
-	       cpmeta:wasSubmittedBy/prov:endedAtTime {submission_end_time}^^xsd:dateTime ;
-               cpmeta:wasAcquiredBy/prov:startedAtTime {acquisition_start_time}^^xsd:dateTime ;
-               cpmeta:wasAcquiredBy/prov:endedAtTime {acquisition_end_time}^^xsd:dateTime ;
-               cpmeta:wasAcquiredBy/prov:wasAssociatedWith {acquisition_wasAssociatedWith}^^xsd:string;
-               cpmeta:wasAcquiredBy/prov:endedAtTime {acquisition_end_time}^^xsd:dateTime;
-               cpmeta:wasAcquiredBy/prov:hasSamplingHeight {acquisition_hasSamplingHeight}^^xsd:float;
+	       cpmeta:wasSubmittedBy <{wasSubmittedBy}>;
+	       cpmeta:wasAcquiredBy <{wasAcquiredBy}>;
                cpmeta:hasDataStartTime {data_start_time}^^xsd:dateTime ;
                cpmeta:hasDataEndTime {data_end_time}^^xsd:dateTime ;
                prov:wasProducedBy {wasProducedBy}^^xsd:string .
@@ -24,14 +19,36 @@ source       SELECT
                hasSizeInBytes,
                hasNumberOfRows,
                hasDoi,
+               wasSubmittedBy,
+               wasAcquiredBy,
                acquisition_start_time,
                acquisition_end_time,
                acquisition_wasAssociatedWith,
                acquisition_hasSamplingHeight,
-               submission_start_time,
-               submission_end_time,
                data_start_time,
                data_end_time,
                hasActualColumnNames,
-               wasProducedBy,
+               wasProducedBy
             FROM data_objects
+
+mappingId data-object-submission
+target <{wasSubmittedBy}> prov:startedAtTime {submission_start_time}^^xsd:dateTime ;
+                        prov:endedAtTime {submission_end_time}^^xsd:dateTime .
+source        SELECT
+               wasSubmittedBy,
+               submission_start_time,
+               submission_end_time
+            FROM data_objects
+
+mappingId data-object-acquisition
+target <{wasAcquiredBy}> prov:startedAtTime {acquisition_start_time}^^xsd:dateTime ;
+               prov:endedAtTime {acquisition_end_time}^^xsd:dateTime ;
+               prov:wasAssociatedWith <{acquisition_wasAssociatedWith}> ;
+               prov:hasSamplingHeight {acquisition_hasSamplingHeight}^^xsd:float .
+source SELECT
+         wasAcquiredBy,
+         acquisition_start_time,
+         acquisition_end_time,
+         acquisition_wasAssociatedWith,
+         acquisition_hasSamplingHeight
+      FROM data_objects

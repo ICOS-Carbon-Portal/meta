@@ -21,6 +21,8 @@ CREATE TABLE data_objects (
     acquisition_end_time TIMESTAMP WITH TIME ZONE,
     acquisition_wasAssociatedWith TEXT,
     acquisition_hasSamplingHeight FLOAT,
+    wasSubmittedBy TEXT,
+    wasAcquiredBy TEXT,
     submission_start_time TIMESTAMP WITH TIME ZONE,
     submission_end_time TIMESTAMP WITH TIME ZONE,
     data_start_time TIMESTAMP WITH TIME ZONE,

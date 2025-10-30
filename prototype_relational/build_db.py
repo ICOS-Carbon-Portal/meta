@@ -164,7 +164,7 @@ def populate_data_objects_table(conn, max_data_objects=None):
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
-    insertion_query = "INSERT INTO data_objects (subject, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insertion_query = "INSERT INTO data_objects (subject, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, wasSubmittedBy, wasAcquiredBy, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
     for row in data_objects:
         subject, object_spec_uri, name, acquisition_uri, submission_uri, data_start, data_end, sha256sum, number_of_rows, size_in_bytes, column_names, next_version_of_uri, produced_by, doi = row
@@ -192,6 +192,7 @@ def populate_data_objects_table(conn, max_data_objects=None):
         data_to_insert.append((
             subject, object_spec_uri, name,
             acq_start, acq_end, acq_station, acq_sampling_height,
+            submission_uri, acquisition_uri,
             sub_start, sub_end, data_start, data_end,
             sha256sum, number_of_rows, size_in_bytes, column_names,
             next_version_of_id, produced_by, doi

@@ -21,10 +21,6 @@ source       SELECT
                hasDoi,
                wasSubmittedBy,
                wasAcquiredBy,
-               acquisition_start_time,
-               acquisition_end_time,
-               acquisition_wasAssociatedWith,
-               acquisition_hasSamplingHeight,
                data_start_time,
                data_end_time,
                hasActualColumnNames,
@@ -43,12 +39,18 @@ source        SELECT
 mappingId data-object-acquisition
 target <{wasAcquiredBy}> prov:startedAtTime {acquisition_start_time}^^xsd:dateTime ;
                prov:endedAtTime {acquisition_end_time}^^xsd:dateTime ;
-               prov:wasAssociatedWith <{acquisition_wasAssociatedWith}> ;
-               prov:hasSamplingHeight {acquisition_hasSamplingHeight}^^xsd:float .
+               prov:wasAssociatedWith <{acquisition_wasAssociatedWith}> .
 source SELECT
          wasAcquiredBy,
          acquisition_start_time,
          acquisition_end_time,
-         acquisition_wasAssociatedWith,
+         acquisition_wasAssociatedWith
+      FROM data_objects
+
+mappingId data-object-acquisition-sampling-height
+target <{wasAcquiredBy}> cpmeta:hasSamplingHeight {acquisition_hasSamplingHeight}^^xsd:float .
+source SELECT
+         wasAcquiredBy,
          acquisition_hasSamplingHeight
       FROM data_objects
+      WHERE acquisition_hasSamplingHeight IS NOT NULL

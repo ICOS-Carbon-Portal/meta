@@ -13,6 +13,7 @@
 -- data_objects
 
 CREATE INDEX idx_data_objects_acq_start ON data_objects(acquisition_start_time);
+CREATE INDEX idx_data_objects_spec ON data_objects(hasObjectSpec);
 CREATE INDEX idx_data_objects_acq_end ON data_objects(acquisition_end_time);
 CREATE INDEX idx_data_objects_sub_start ON data_objects(submission_start_time);
 CREATE INDEX idx_data_objects_sub_end ON data_objects(submission_end_time);
@@ -23,6 +24,7 @@ CREATE INDEX idx_data_objects_size ON data_objects(hasSizeInBytes);
 CREATE INDEX idx_data_objects_rows ON data_objects(hasNumberOfRows);
 CREATE INDEX idx_data_objects_submitted_by ON data_objects(wasSubmittedBy);
 CREATE INDEX idx_data_objects_acquired_by ON data_objects(wasAcquiredBy);
+CREATE INDEX idx_data_objects_acquisition_sampling_height ON data_objects(acquisition_hasSamplingHeight);
 
 -- keywords
 

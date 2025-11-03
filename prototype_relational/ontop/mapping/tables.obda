@@ -28,10 +28,19 @@ source       SELECT
             FROM data_objects
 
 mappingId data-object-spec
-target <{hasObjectSpec}> cpmeta:containsDataset <{spec_containsDataset}> .
+target <{hasObjectSpec}> cpmeta:containsDataset <{spec_containsDataset}>;
+                         cpmeta:hasColumn <{spec_dataset_hasColumn}> .
 source        SELECT
                hasObjectSpec,
-               spec_containsDataset
+               spec_containsDataset,
+               spec_dataset_hasColumn
+            FROM data_objects
+
+mappingId data-object-spec-dataset
+target <{spec_containsDataset}> cpmeta:hasColumn <{spec_dataset_hasColumn}> .
+source        SELECT
+               spec_containsDataset,
+               spec_dataset_hasColumn
             FROM data_objects
 
 

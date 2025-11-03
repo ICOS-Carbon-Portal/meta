@@ -3,10 +3,6 @@ mappingId	cpmeta_hasstationid_general
 target		<{subj}> cpmeta:hasStationId {obj} .
 source		SELECT subj, obj FROM rdf_triple_values WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
 
-mappingId	cpmeta_hascolumn_general
-target		<{subj}> cpmeta:hasColumn <{obj}> .
-source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn'
-
 mappingId	cpmeta_hascolumntitle_general
 target		<{subj}> cpmeta:hasColumnTitle {obj} .
 source		SELECT subj, obj FROM rdf_triple_values WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle'

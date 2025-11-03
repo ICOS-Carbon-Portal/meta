@@ -25,7 +25,9 @@ CREATE INDEX idx_data_objects_rows ON data_objects(hasNumberOfRows);
 CREATE INDEX idx_data_objects_submitted_by ON data_objects(wasSubmittedBy);
 CREATE INDEX idx_data_objects_acquired_by ON data_objects(wasAcquiredBy);
 CREATE INDEX idx_data_objects_acquisition_sampling_height ON data_objects(acquisition_hasSamplingHeight);
-CREATE INDEX idx_data_objects_spec_containsDataset ON data_objects(spec_containsDataset)
+CREATE INDEX idx_data_objects_acquisition_wasassociatedwith ON data_objects(acquisition_wasAssociatedWith);
+CREATE INDEX idx_data_objects_spec_containsDataset ON data_objects(spec_containsDataset);
+CREATE INDEX idx_data_objects_spec_dataset_hascolumn ON data_objects(spec_dataset_hasColumn);
 -- keywords
 
 CREATE INDEX idx_triple_keywords_subject ON triple_keywords(subject);

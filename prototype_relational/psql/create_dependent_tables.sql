@@ -11,6 +11,13 @@ CREATE TABLE projects (
 -- data_objects
 
 DROP TABLE IF EXISTS data_objects CASCADE;
+DROP TABLE IF EXISTS data_object_submissions CASCADE;
+
+CREATE TABLE data_object_submissions (
+    subject TEXT PRIMARY KEY,
+    hasStartTime TIMESTAMP WITH TIME ZONE,
+    hasEndTime TIMESTAMP WITH TIME ZONE
+);
 
 CREATE TABLE data_objects (
     id SERIAL PRIMARY KEY,
@@ -24,7 +31,6 @@ CREATE TABLE data_objects (
     hasDoi TEXT,
     wasSubmittedBy TEXT,
     wasAcquiredBy TEXT,
-    wasProducedBy TEXT,
     isNextVersionOf INTEGER,
     spec_containsDataset TEXT,
     spec_dataset_hasColumn TEXT,
@@ -36,8 +42,10 @@ CREATE TABLE data_objects (
     acquisition_end_time TIMESTAMP WITH TIME ZONE,
     acquisition_wasAssociatedWith TEXT,
     acquisition_hasSamplingHeight FLOAT,
+    FOREIGN KEY (wasSubmittedBy) REFERENCES data_object_submissions(subject),
     FOREIGN KEY (isNextVersionOf) REFERENCES data_objects(id)
 );
+
 
 -- keywords
 

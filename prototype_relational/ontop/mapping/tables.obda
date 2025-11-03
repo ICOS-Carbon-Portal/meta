@@ -13,19 +13,27 @@ target       <{uri}> cpmeta:hasName {name}^^xsd:string ;
                prov:wasProducedBy {wasProducedBy}^^xsd:string .
 source       SELECT
                subject as uri,
+               name,
                hasObjectSpec,
                hasSha256sum,
-               name,
                hasSizeInBytes,
                hasNumberOfRows,
+               hasActualColumnNames,
                hasDoi,
                wasSubmittedBy,
                wasAcquiredBy,
+               wasProducedBy,
                data_start_time,
-               data_end_time,
-               hasActualColumnNames,
-               wasProducedBy
+               data_end_time
             FROM data_objects
+
+mappingId data-object-spec
+target <{hasObjectSpec}> cpmeta:containsDataset <{spec_containsDataset}> .
+source        SELECT
+               hasObjectSpec,
+               spec_containsDataset
+            FROM data_objects
+
 
 mappingId data-object-submission
 target <{wasSubmittedBy}> prov:startedAtTime {submission_start_time}^^xsd:dateTime ;

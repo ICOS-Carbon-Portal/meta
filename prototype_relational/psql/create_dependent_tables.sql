@@ -26,6 +26,7 @@ CREATE TABLE data_objects (
     wasAcquiredBy TEXT,
     wasProducedBy TEXT,
     isNextVersionOf INTEGER,
+    spec_containsDataset TEXT,
     data_start_time TIMESTAMP WITH TIME ZONE,
     data_end_time TIMESTAMP WITH TIME ZONE,
     submission_start_time TIMESTAMP WITH TIME ZONE,

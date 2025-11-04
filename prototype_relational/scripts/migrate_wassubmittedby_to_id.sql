@@ -55,8 +55,8 @@ BEGIN
     WHERE wasSubmittedBy LIKE 'http://meta.icos-cp.eu/resources/subm_%';
 
     SELECT COUNT(*) INTO icos_with_id
-    FROM data_objects do
-    INNER JOIN data_object_submissions dos ON do.wasSubmittedBy = dos.subject
+    FROM data_objects dobj
+    INNER JOIN data_object_submissions dos ON dobj.wasSubmittedBy = dos.subject
     WHERE dos.id IS NOT NULL;
 
     RAISE NOTICE 'Total wasSubmittedBy references: %, ICOS references: %, ICOS with populated id: %',
@@ -64,10 +64,10 @@ BEGIN
 END $$;
 
 -- Update wasSubmittedBy from subject to id for ICOS submissions that have an id
-UPDATE data_objects do
+UPDATE data_objects dobj
 SET wasSubmittedBy = dos.id
 FROM data_object_submissions dos
-WHERE do.wasSubmittedBy = dos.subject
+WHERE dobj.wasSubmittedBy = dos.subject
   AND dos.id IS NOT NULL
   AND dos.subject LIKE 'http://meta.icos-cp.eu/resources/subm_%';
 
@@ -79,8 +79,8 @@ DECLARE
 BEGIN
     -- Count rows that now have id-based references (no http prefix)
     SELECT COUNT(*) INTO updated_count
-    FROM data_objects do
-    INNER JOIN data_object_submissions dos ON do.wasSubmittedBy = dos.id
+    FROM data_objects dobj
+    INNER JOIN data_object_submissions dos ON dobj.wasSubmittedBy = dos.id
     WHERE dos.id IS NOT NULL;
 
     -- Count rows still referencing subjects (http/https prefix)
@@ -92,12 +92,12 @@ BEGIN
     RAISE NOTICE 'Remaining subject-based references (skipped): %', remaining_subject_refs;
 END $$;
 
+COMMIT;
+
 -- Add new foreign key constraint referencing id column
 -- Note: This will fail if there are any wasSubmittedBy values that don't exist in data_object_submissions.id
 ALTER TABLE data_objects
 ADD CONSTRAINT data_objects_wassubmittedby_fkey
 FOREIGN KEY (wasSubmittedBy) REFERENCES data_object_submissions(id);
-
-RAISE NOTICE 'Successfully added new foreign key constraint';
 
 COMMIT;

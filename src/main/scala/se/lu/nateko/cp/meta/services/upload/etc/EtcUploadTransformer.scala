@@ -95,7 +95,15 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			etcMeta
 				.lookupFile(EtcFileMetaKey(meta.station, meta.logger, meta.fileId, meta.dataType))
 				.toTry(new MetadataException(
-					s"Could not find ETC file metadata for $meta on Carbon Portal"
+					s"""Could not find ETC file metadata for
+						| hashSum=${meta.hashSum.toString}
+						| fileName=${meta.fileName}
+						| station=${meta.station.id}
+						| logger=${meta.logger}
+						| dataType=${meta.dataType}
+						| fileId=${meta.fileId}
+						| acquisitionStart=${meta.acquisitionStart}
+						| acquisitionStop=${meta.acquisitionStop}""".stripMargin.linesIterator.mkString
 				))
 	}
 

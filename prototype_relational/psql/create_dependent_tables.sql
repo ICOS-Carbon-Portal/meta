@@ -15,13 +15,20 @@ DROP TABLE IF EXISTS data_object_submissions CASCADE;
 
 CREATE TABLE data_object_submissions (
     subject TEXT PRIMARY KEY,
-    hasStartTime TIMESTAMP WITH TIME ZONE,
+    hasStartTime TIMESTAMP WITH TIME ZONE NOT NULL,
     hasEndTime TIMESTAMP WITH TIME ZONE
 );
 
+CREATE TABLE data_object_acquisitions (
+    subject TEXT PRIMARY KEY,
+    startedAtTime TIMESTAMP WITH TIME ZONE,,
+    endedAtTime TIMESTAMP WITH TIME ZONE,
+    wasAssociatedWith TEXT,
+    hasSamplingHeight FLOAT
+);
+
 CREATE TABLE data_objects (
-    id SERIAL PRIMARY KEY,
-    subject TEXT UNIQUE NOT NULL,
+    subject TEXT PRIMARY KEY,
     name TEXT,
     hasObjectSpec TEXT NOT NULL,
     hasSha256sum TEXT NOT NULL,
@@ -43,7 +50,8 @@ CREATE TABLE data_objects (
     acquisition_wasAssociatedWith TEXT,
     acquisition_hasSamplingHeight FLOAT,
     FOREIGN KEY (wasSubmittedBy) REFERENCES data_object_submissions(subject),
-    FOREIGN KEY (isNextVersionOf) REFERENCES data_objects(id)
+    FOREIGN KEY (wasAcquiredBy) REFERENCES data_object_acquisitions(subject),
+    FOREIGN KEY (isNextVersionOf) REFERENCES data_objects(subject)
 );
 
 

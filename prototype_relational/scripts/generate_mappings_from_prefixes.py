@@ -16,6 +16,50 @@ from typing import Dict, Set, Tuple, Optional, List
 import psycopg2
 
 
+# Valid XSD datatypes - only these will be used for literal annotations
+VALID_XSD_DATATYPES = {
+    'http://www.w3.org/2001/XMLSchema#string',
+    'http://www.w3.org/2001/XMLSchema#boolean',
+    'http://www.w3.org/2001/XMLSchema#decimal',
+    'http://www.w3.org/2001/XMLSchema#integer',
+    'http://www.w3.org/2001/XMLSchema#double',
+    'http://www.w3.org/2001/XMLSchema#float',
+    'http://www.w3.org/2001/XMLSchema#date',
+    'http://www.w3.org/2001/XMLSchema#time',
+    'http://www.w3.org/2001/XMLSchema#dateTime',
+    'http://www.w3.org/2001/XMLSchema#dateTimeStamp',
+    'http://www.w3.org/2001/XMLSchema#gYear',
+    'http://www.w3.org/2001/XMLSchema#gMonth',
+    'http://www.w3.org/2001/XMLSchema#gDay',
+    'http://www.w3.org/2001/XMLSchema#gYearMonth',
+    'http://www.w3.org/2001/XMLSchema#gMonthDay',
+    'http://www.w3.org/2001/XMLSchema#duration',
+    'http://www.w3.org/2001/XMLSchema#yearMonthDuration',
+    'http://www.w3.org/2001/XMLSchema#dayTimeDuration',
+    'http://www.w3.org/2001/XMLSchema#byte',
+    'http://www.w3.org/2001/XMLSchema#short',
+    'http://www.w3.org/2001/XMLSchema#int',
+    'http://www.w3.org/2001/XMLSchema#long',
+    'http://www.w3.org/2001/XMLSchema#unsignedByte',
+    'http://www.w3.org/2001/XMLSchema#unsignedShort',
+    'http://www.w3.org/2001/XMLSchema#unsignedInt',
+    'http://www.w3.org/2001/XMLSchema#unsignedLong',
+    'http://www.w3.org/2001/XMLSchema#positiveInteger',
+    'http://www.w3.org/2001/XMLSchema#nonNegativeInteger',
+    'http://www.w3.org/2001/XMLSchema#negativeInteger',
+    'http://www.w3.org/2001/XMLSchema#nonPositiveInteger',
+    'http://www.w3.org/2001/XMLSchema#hexBinary',
+    'http://www.w3.org/2001/XMLSchema#base64Binary',
+    'http://www.w3.org/2001/XMLSchema#anyURI',
+    'http://www.w3.org/2001/XMLSchema#language',
+    'http://www.w3.org/2001/XMLSchema#normalizedString',
+    'http://www.w3.org/2001/XMLSchema#token',
+    'http://www.w3.org/2001/XMLSchema#NMTOKEN',
+    'http://www.w3.org/2001/XMLSchema#Name',
+    'http://www.w3.org/2001/XMLSchema#NCName',
+}
+
+
 def load_prefix_classes(json_path: str) -> dict:
     """Load and parse the prefix_to_classes.json file"""
     with open(json_path, 'r') as f:
@@ -202,7 +246,11 @@ def generate_prefix_name(namespace: str) -> str:
                 # Clean up the part
                 prefix = re.sub(r'[^a-zA-Z0-9]', '', parts[i])
                 if prefix:
-                    return prefix.lower()
+                    prefix = prefix.lower()
+                    # Ensure prefix starts with a letter (not a digit)
+                    if prefix[0].isdigit():
+                        prefix = f"ns{prefix}"
+                    return prefix
 
     # Fallback: use hash of namespace
     return f"ns{abs(hash(namespace)) % 1000}"
@@ -412,12 +460,14 @@ def generate_mapping(predicate: str, prefix_uri: str, table_name: str,
     if is_object_property:
         obj_format = "<{object}>"
     else:
-        # Datatype property
-        if range_uri:
+        # Datatype property - always annotate with datatype
+        # Validate that range_uri is a known XSD datatype
+        if range_uri and range_uri in VALID_XSD_DATATYPES:
             short_range = shorten_uri(range_uri, prefixes)
             obj_format = f"{{object}}^^{short_range}"
         else:
-            obj_format = "{object}"
+            # Default to xsd:string for unknown/invalid datatypes
+            obj_format = "{object}^^xsd:string"
 
     # Generate mapping using URI template for subject and prefix table query
     mapping = f"mappingId\t{mapping_id}\n"
@@ -474,30 +524,44 @@ def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str]
     lines.append("[MappingDeclaration] @collection [[")
     lines.append("")
 
-    # Section 3: Generate mappings for each predicate
-    sorted_predicates = sorted(predicates)
-    for i, predicate in enumerate(sorted_predicates):
-        # Get the prefix URI and table name for this predicate
+    # Section 3: Generate mappings for each predicate, grouped by prefix
+    # Group predicates by their source prefix
+    prefix_to_preds = defaultdict(list)
+    for predicate in predicates:
         prefix_uri = predicate_to_prefix.get(predicate)
-        if not prefix_uri:
+        if prefix_uri:
+            prefix_to_preds[prefix_uri].append(predicate)
+        else:
             print(f"Warning: No prefix found for predicate {predicate}, skipping")
-            continue
 
+    # Sort prefixes alphabetically
+    sorted_prefix_uris = sorted(prefix_to_preds.keys())
+
+    # Generate mappings grouped by prefix
+    first_mapping = True
+    for prefix_uri in sorted_prefix_uris:
         table_name = table_names.get(prefix_uri)
         if not table_name:
             print(f"Warning: No table name found for prefix {prefix_uri}, skipping")
             continue
 
-        # Get property info
-        is_object, range_uri = get_property_info(predicate, table_name, ontology_info, cursor)
+        # Sort predicates within this prefix
+        prefix_predicates = sorted(prefix_to_preds[prefix_uri])
 
-        # Generate mapping
-        mapping = generate_mapping(predicate, prefix_uri, table_name, prefixes, is_object, range_uri)
-        lines.append(mapping)
+        for predicate in prefix_predicates:
+            # Add blank line before mapping (except before first one)
+            if not first_mapping:
+                lines.append("")
+            first_mapping = False
 
-        # Add blank line between mappings (except after last one)
-        if i < len(sorted_predicates) - 1:
-            lines.append("")
+            # Get property info
+            is_object, range_uri = get_property_info(predicate, table_name, ontology_info, cursor)
+
+            # Generate mapping
+            mapping = generate_mapping(predicate, prefix_uri, table_name, prefixes, is_object, range_uri)
+            lines.append(mapping)
+
+    lines.append("")
 
     # Section 4: Close mapping declaration
     lines.append("]]")

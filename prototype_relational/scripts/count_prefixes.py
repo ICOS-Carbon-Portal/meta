@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import psycopg2
 import json
@@ -16,18 +16,7 @@ def get_connection():
     )
 
 
-def extract_prefix(subject):
-    """Extract the prefix from a subject by taking everything up to the last '/'."""
-    if '/' in subject:
-        # Find the last occurrence of '/' and take everything up to and including it
-        last_slash_index = subject.rfind('/')
-        return subject[:last_slash_index + 1]
-    else:
-        # If there's no '/', return the entire string
-        return subject
-
-
-def find_all_common_prefixes(subjects, min_count=1000):
+def find_all_common_prefixes(subjects, min_count=50):
     """
     Find all common prefixes among subjects at natural boundaries.
     This includes nested prefixes beyond just the last '/' delimiter.
@@ -118,7 +107,8 @@ def fetch_unique_subject_prefixes():
     prefix_counts = filter_to_leaf_prefixes(all_prefix_counts)
 
     # Sort by count (descending), most used prefixes first
-    sorted_prefixes = sorted(prefix_counts.keys(), key=lambda p: prefix_counts[p], reverse=True)
+    # sorted_prefixes = sorted(prefix_counts.keys(), key=lambda p: prefix_counts[p], reverse=True)
+    sorted_prefixes = sorted(prefix_counts.keys())
     return sorted_prefixes, prefix_counts
 
 

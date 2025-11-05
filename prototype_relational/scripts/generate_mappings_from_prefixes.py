@@ -4,7 +4,7 @@ Generate Ontop mappings (.obda file) from prefix_to_classes.json
 
 This script reads the prefix_to_classes.json file and generates Ontop mappings
 for all predicates found in the preds_subject arrays. Each predicate gets its own
-mapping that queries the rdf_triples table.
+mapping that queries the prefix-specific tables created by create_prefix_tables.py.
 """
 
 import json
@@ -12,7 +12,7 @@ import re
 import argparse
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, Set, Tuple, Optional
+from typing import Dict, Set, Tuple, Optional, List
 import psycopg2
 
 
@@ -22,26 +22,126 @@ def load_prefix_classes(json_path: str) -> dict:
         return json.load(f)
 
 
-def extract_predicates_from_json(data: dict) -> Set[str]:
+def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str]]:
     """
-    Extract all unique predicates from preds_subject arrays
+    Extract all unique predicates from preds_subject arrays and track their source prefix
 
     Args:
         data: Parsed JSON data from prefix_to_classes.json
 
     Returns:
-        Set of predicate URIs
+        Tuple of (set of predicate URIs, dict mapping predicate -> source prefix URI)
     """
     predicates = set()
+    predicate_to_prefix = {}
 
-    for prefix, prefix_data in data.get('prefixes', {}).items():
+    for prefix_uri, prefix_data in data.get('prefixes', {}).items():
         preds_subject = prefix_data.get('preds_subject', [])
         for pred_info in preds_subject:
             pred_uri = pred_info.get('predicate_uri')
             if pred_uri:
                 predicates.add(pred_uri)
+                predicate_to_prefix[pred_uri] = prefix_uri
 
-    return predicates
+    return predicates, predicate_to_prefix
+
+
+def extract_prefixes(data: dict) -> List[str]:
+    """
+    Extract all prefix namespaces from the JSON
+
+    Args:
+        data: Parsed JSON data from prefix_to_classes.json
+
+    Returns:
+        List of prefix/namespace URIs
+    """
+    prefixes = list(data.get('prefixes', {}).keys())
+    return prefixes
+
+
+def sanitize_table_name(prefix_uri: str) -> str:
+    """
+    Convert a prefix URI to a valid PostgreSQL table name
+    (Copied from create_prefix_tables.py for consistency)
+
+    Example: 'http://meta.icos-cp.eu/resources/' -> 'resources'
+             'http://meta.icos-cp.eu/ontologies/cpmeta/' -> 'cpmeta'
+    """
+    # Remove protocol
+    without_protocol = re.sub(r'^https?://', '', prefix_uri)
+
+    # Remove trailing slash/hash
+    without_protocol = without_protocol.rstrip('/#')
+
+    # Split by slashes
+    parts = without_protocol.split('/')
+
+    # Try to extract meaningful name from the last non-empty parts
+    meaningful_parts = [p for p in parts if p and p not in ['www', 'com', 'org', 'eu']]
+
+    if meaningful_parts:
+        # Use last 1-2 parts for more specificity
+        if len(meaningful_parts) >= 2:
+            # For paths like "meta.icos-cp.eu/resources/acq_"
+            # or "meta.icos-cp.eu/ontologies/cpmeta"
+            name_parts = meaningful_parts[-2:]
+            table_name = '_'.join(name_parts)
+        else:
+            table_name = meaningful_parts[-1]
+    else:
+        # Fallback: use hash
+        table_name = f"prefix_{abs(hash(prefix_uri)) % 10000}"
+
+    # Clean up: keep only alphanumeric and underscore
+    table_name = re.sub(r'[^a-zA-Z0-9_]', '_', table_name)
+
+    # Remove consecutive underscores
+    table_name = re.sub(r'_+', '_', table_name)
+
+    # Remove leading/trailing underscores
+    table_name = table_name.strip('_')
+
+    # Ensure doesn't start with digit
+    if table_name and table_name[0].isdigit():
+        table_name = f"t_{table_name}"
+
+    # Convert to lowercase
+    table_name = table_name.lower()
+
+    # Ensure it's not a reserved word
+    reserved_words = {'user', 'table', 'select', 'insert', 'update', 'delete', 'from', 'where'}
+    if table_name in reserved_words:
+        table_name = f"tbl_{table_name}"
+
+    return table_name
+
+
+def ensure_unique_table_names(prefixes: List[str]) -> Dict[str, str]:
+    """
+    Generate unique table names for all prefixes
+    (Copied from create_prefix_tables.py for consistency)
+
+    Returns:
+        Dict mapping prefix URI -> unique table name
+    """
+    table_names = {}
+    used_names = set()
+
+    for prefix in sorted(prefixes):
+        base_name = sanitize_table_name(prefix)
+        table_name = base_name
+
+        # Handle collisions
+        counter = 2
+        while table_name in used_names:
+            table_name = f"{base_name}{counter}"
+            counter += 1
+
+        table_names[prefix] = table_name
+        used_names.add(table_name)
+
+    return table_names
 
 
 def extract_namespace(uri: str) -> str:
@@ -187,17 +287,17 @@ def sanitize_for_mapping_id(uri: str, prefixes: Dict[str, str]) -> str:
     return f"{prefix}_{clean_local}"
 
 
-def check_if_uri_object(cursor, predicate: str, sample_size: int = 100) -> bool:
+def check_if_uri_object(cursor, predicate: str, table_name: str, sample_size: int = 100) -> bool:
     """
     Heuristic to determine if a predicate's objects are URIs or literals
 
-    Samples objects from rdf_triples and checks if they look like URIs
+    Samples objects from prefix table and checks if they look like URIs
     """
     try:
         query = f"""
-            SELECT obj
-            FROM rdf_triples
-            WHERE pred = %s
+            SELECT object
+            FROM {table_name}
+            WHERE predicate = %s
             LIMIT {sample_size}
         """
         cursor.execute(query, (predicate,))
@@ -266,7 +366,7 @@ def parse_ontology(ontology_path: Optional[str]) -> Dict[str, dict]:
         return {}
 
 
-def get_property_info(predicate: str, ontology_info: Dict[str, dict],
+def get_property_info(predicate: str, table_name: str, ontology_info: Dict[str, dict],
                      cursor, use_db_heuristic: bool = True) -> Tuple[bool, Optional[str]]:
     """
     Get property information: is it an ObjectProperty and what's its range
@@ -281,20 +381,23 @@ def get_property_info(predicate: str, ontology_info: Dict[str, dict],
 
     # Fall back to database heuristic
     if use_db_heuristic and cursor:
-        is_uri = check_if_uri_object(cursor, predicate)
+        is_uri = check_if_uri_object(cursor, predicate, table_name)
         return is_uri, None
 
     # Default to literal (DatatypeProperty) if unknown
     return False, None
 
 
-def generate_mapping(predicate: str, prefixes: Dict[str, str],
-                     is_object_property: bool, range_uri: Optional[str] = None) -> str:
+def generate_mapping(predicate: str, prefix_uri: str, table_name: str,
+                     prefixes: Dict[str, str], is_object_property: bool,
+                     range_uri: Optional[str] = None) -> str:
     """
     Generate a single Ontop mapping for a predicate
 
     Args:
         predicate: Full predicate URI
+        prefix_uri: The prefix URI for subjects (used in URI template)
+        table_name: Name of the prefix table to query
         prefixes: Namespace to prefix mapping
         is_object_property: Whether objects are URIs (True) or literals (False)
         range_uri: Optional datatype/range URI for the object
@@ -307,24 +410,25 @@ def generate_mapping(predicate: str, prefixes: Dict[str, str],
 
     # Format object based on property type
     if is_object_property:
-        obj_format = "<{obj}>"
+        obj_format = "<{object}>"
     else:
         # Datatype property
         if range_uri:
             short_range = shorten_uri(range_uri, prefixes)
-            obj_format = f"{{obj}}^^{short_range}"
+            obj_format = f"{{object}}^^{short_range}"
         else:
-            obj_format = "{obj}"
+            obj_format = "{object}"
 
-    # Generate mapping
+    # Generate mapping using URI template for subject and prefix table query
     mapping = f"mappingId\t{mapping_id}\n"
-    mapping += f"target\t\t<{{subj}}> {short_pred} {obj_format} .\n"
-    mapping += f"source\t\tSELECT subj, obj FROM rdf_triples WHERE pred = '{predicate}'\n"
+    mapping += f"target\t\t<{prefix_uri}{{id}}> {short_pred} {obj_format} .\n"
+    mapping += f"source\t\tSELECT id, object FROM {table_name} WHERE predicate = '{predicate}'\n"
 
     return mapping
 
 
-def generate_obda_file(predicates: Set[str], output_path: str,
+def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str],
+                       table_names: Dict[str, str], output_path: str,
                        ontology_path: Optional[str] = None,
                        db_connection_string: Optional[str] = None):
     """
@@ -332,6 +436,8 @@ def generate_obda_file(predicates: Set[str], output_path: str,
 
     Args:
         predicates: Set of predicate URIs to generate mappings for
+        predicate_to_prefix: Dict mapping predicate URI to its source prefix URI
+        table_names: Dict mapping prefix URI to table name
         output_path: Path to write the .obda file
         ontology_path: Optional path to OWL ontology file for property type info
         db_connection_string: Optional database connection for heuristics
@@ -351,7 +457,7 @@ def generate_obda_file(predicates: Set[str], output_path: str,
         except Exception as e:
             print(f"Warning: Could not connect to database: {e}")
 
-    # Detect prefixes
+    # Detect prefixes for namespace declarations
     prefixes = detect_prefixes(predicates)
     print(f"Detected {len(prefixes)} namespaces/prefixes")
 
@@ -371,11 +477,22 @@ def generate_obda_file(predicates: Set[str], output_path: str,
     # Section 3: Generate mappings for each predicate
     sorted_predicates = sorted(predicates)
     for i, predicate in enumerate(sorted_predicates):
+        # Get the prefix URI and table name for this predicate
+        prefix_uri = predicate_to_prefix.get(predicate)
+        if not prefix_uri:
+            print(f"Warning: No prefix found for predicate {predicate}, skipping")
+            continue
+
+        table_name = table_names.get(prefix_uri)
+        if not table_name:
+            print(f"Warning: No table name found for prefix {prefix_uri}, skipping")
+            continue
+
         # Get property info
-        is_object, range_uri = get_property_info(predicate, ontology_info, cursor)
+        is_object, range_uri = get_property_info(predicate, table_name, ontology_info, cursor)
 
         # Generate mapping
-        mapping = generate_mapping(predicate, prefixes, is_object, range_uri)
+        mapping = generate_mapping(predicate, prefix_uri, table_name, prefixes, is_object, range_uri)
         lines.append(mapping)
 
         # Add blank line between mappings (except after last one)
@@ -428,17 +545,24 @@ def main():
     print(f"Loading {args.json_file}...")
     data = load_prefix_classes(args.json_file)
 
-    # Extract predicates
-    predicates = extract_predicates_from_json(data)
+    # Extract predicates and their source prefixes
+    predicates, predicate_to_prefix = extract_predicates_from_json(data)
     print(f"Found {len(predicates)} unique predicates in preds_subject arrays")
 
     if not predicates:
         print("No predicates found! Check your JSON file.")
         return
 
+    # Extract all prefix URIs and generate table names
+    all_prefixes = extract_prefixes(data)
+    table_names = ensure_unique_table_names(all_prefixes)
+    print(f"Generated table names for {len(table_names)} prefixes")
+
     # Generate mappings
     generate_obda_file(
         predicates,
+        predicate_to_prefix,
+        table_names,
         args.output,
         ontology_path=args.ontology,
         db_connection_string=args.db

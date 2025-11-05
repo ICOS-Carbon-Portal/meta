@@ -59,6 +59,9 @@ VALID_XSD_DATATYPES = {
     'http://www.w3.org/2001/XMLSchema#NCName',
 }
 
+# RDF type predicate - skip this in mapping generation
+RDF_TYPE_URI = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+
 
 def load_prefix_classes(json_path: str) -> dict:
     """Load and parse the prefix_to_classes.json file"""
@@ -66,7 +69,7 @@ def load_prefix_classes(json_path: str) -> dict:
         return json.load(f)
 
 
-def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str]]:
+def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str], int]:
     """
     Extract all unique predicates from preds_subject arrays and track their source prefix
 
@@ -74,20 +77,26 @@ def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str]]:
         data: Parsed JSON data from prefix_to_classes.json
 
     Returns:
-        Tuple of (set of predicate URIs, dict mapping predicate -> source prefix URI)
+        Tuple of (set of predicate URIs, dict mapping predicate -> source prefix URI, count of skipped rdf:type)
     """
     predicates = set()
     predicate_to_prefix = {}
+    skipped_rdf_type_count = 0
 
     for prefix_uri, prefix_data in data.get('prefixes', {}).items():
         preds_subject = prefix_data.get('preds_subject', [])
         for pred_info in preds_subject:
             pred_uri = pred_info.get('predicate_uri')
             if pred_uri:
+                # Skip rdf:type predicate
+                if pred_uri == RDF_TYPE_URI:
+                    skipped_rdf_type_count += 1
+                    continue
+
                 predicates.add(pred_uri)
                 predicate_to_prefix[pred_uri] = prefix_uri
 
-    return predicates, predicate_to_prefix
+    return predicates, predicate_to_prefix, skipped_rdf_type_count
 
 
 def extract_prefixes(data: dict) -> List[str]:
@@ -610,8 +619,10 @@ def main():
     data = load_prefix_classes(args.json_file)
 
     # Extract predicates and their source prefixes
-    predicates, predicate_to_prefix = extract_predicates_from_json(data)
+    predicates, predicate_to_prefix, skipped_rdf_type = extract_predicates_from_json(data)
     print(f"Found {len(predicates)} unique predicates in preds_subject arrays")
+    if skipped_rdf_type > 0:
+        print(f"Skipped {skipped_rdf_type} rdf:type predicate(s)")
 
     if not predicates:
         print("No predicates found! Check your JSON file.")

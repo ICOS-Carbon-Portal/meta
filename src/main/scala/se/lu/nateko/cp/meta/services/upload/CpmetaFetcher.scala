@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
 
 import java.net.URI
-
+import java.time.Instant
 
 trait CpmetaReader:
 	import StatementSource.*
@@ -239,6 +239,11 @@ trait CpmetaReader:
 				then getUriValues(next, metaVocab.dcterms.hasPart)
 				else Seq(next)
 			.filter(isComplete)
+			.filter: next =>
+				if isPlainCollection(next) then
+					true
+				else
+					underMoratorium(next)(using summon[ItemConn].asInstanceOf[DobjConn | DocConn])
 			.toIndexedSeq
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
@@ -255,6 +260,11 @@ trait CpmetaReader:
 			then hasStatement(item, hasSizeInBytes, null)
 			else true //we are probably using a wrong context, so have to assume the item is complete
 		)
+
+	def underMoratorium(item: IRI)(using DobjConn | DocConn): Boolean =
+		getSubmission(item)
+			.map(_.stop.exists(_.compareTo(Instant.now) > 0))
+			.result.getOrElse(false)
 
 	def getLatestVersion(item: IRI)(using ItemConn): OneOrSeq[URI] =
 		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =

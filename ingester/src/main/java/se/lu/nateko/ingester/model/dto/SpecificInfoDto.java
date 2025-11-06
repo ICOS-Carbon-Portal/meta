@@ -4,12 +4,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import se.lu.nateko.ingester.deserialize.ListUriDeserializer;
 
 public class SpecificInfoDto {
-	private URI station;
+	private Optional<URI> station;
 	private Optional<URI> site;
 	@JsonDeserialize(using = ListUriDeserializer.class)
 	private List<URI> instrument;
@@ -18,7 +19,7 @@ public class SpecificInfoDto {
 	private Optional<TimeInterval> acquisitionInterval;
 	private Optional<Integer> nRows;
 	private Optional<DataProductionDto> production;
-	private Optional<String> spatial;
+	private Optional<JsonNode> spatial;
 	private String title;
 	private Optional<String> description;
 	private TemporalCoverage temporal;
@@ -27,7 +28,7 @@ public class SpecificInfoDto {
 	private List<String> variables;
 
 	public SpecificInfoDto(
-		URI station,
+		Optional<URI> station,
 		Optional<URI> site,
 		List<URI> instrument,
 		Optional<PositionDto> position,
@@ -35,7 +36,7 @@ public class SpecificInfoDto {
 		Optional<TimeInterval> acquisitionInterval,
 		Optional<Integer> nRows,
 		Optional<DataProductionDto> production,
-		Optional<String> spatial,
+		Optional<JsonNode> spatial,
 		String title,
 		Optional<String> description,
 		TemporalCoverage temporal,
@@ -60,7 +61,7 @@ public class SpecificInfoDto {
 		this.variables = variables;
 	}
 
-	public URI getStation() {
+	public Optional<URI> getStation() {
 		return station;
 	}
 
@@ -92,7 +93,7 @@ public class SpecificInfoDto {
 		return production;
 	}
 
-	public Optional<String> getSpatial() {
+	public Optional<JsonNode> getSpatial() {
 		return spatial;
 	}
 

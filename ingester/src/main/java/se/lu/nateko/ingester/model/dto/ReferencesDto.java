@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public class ReferencesDto {
 	private List<String> keywords;
-	private Optional<URI> license;
+	private Optional<URI> licence;
 	private Optional<Instant> moratorium;
 	private Optional<Boolean> duplicateFileNameAllowed;
 	private Optional<Boolean> autoDeprecateSameFileNameObjects;
@@ -15,14 +15,14 @@ public class ReferencesDto {
 
 	public ReferencesDto(
 		List<String> keywords,
-		Optional<URI> license,
+		Optional<URI> licence,
 		Optional<Instant> moratorium,
 		Optional<Boolean> duplicateFileNameAllowed,
 		Optional<Boolean> autoDeprecateSameFileNameObjects,
 		Optional<Boolean> partialUpload
 	) {
 		this.keywords = keywords;
-		this.license = license;
+		this.licence = licence;
 		this.moratorium = moratorium;
 		this.duplicateFileNameAllowed = duplicateFileNameAllowed;
 		this.autoDeprecateSameFileNameObjects = autoDeprecateSameFileNameObjects;
@@ -33,8 +33,8 @@ public class ReferencesDto {
 		return keywords;
 	}
 
-	public Optional<URI> getLicense() {
-		return license;
+	public Optional<URI> getLicence() {
+		return licence;
 	}
 
 	public Optional<Instant> getMoratorium() {

@@ -16,7 +16,7 @@ public class DataObjectDto {
 	private SpecificInfoDto specificInfo;
 	@JsonDeserialize(using = ListStringDeserializer.class)
 	private List<String> isNextVersionOf;
-	private Optional<DoiDto> preExistingDio;
+	private String preExistingDoi;
 	private Optional<ReferencesDto> references;
 
 	public DataObjectDto(
@@ -26,7 +26,7 @@ public class DataObjectDto {
 		String fileName,
 		SpecificInfoDto specificInfo,
 		List<String> isNextVersionOf,
-		Optional<DoiDto> preExistingDio,
+		String preExistingDoi,
 		Optional<ReferencesDto> references
 	) {
 		this.hashSum = hashSum;
@@ -35,7 +35,7 @@ public class DataObjectDto {
 		this.fileName = fileName;
 		this.specificInfo = specificInfo;
 		this.isNextVersionOf = isNextVersionOf;
-		this.preExistingDio = preExistingDio;
+		this.preExistingDoi = preExistingDoi;
 		this.references = references;
 	}
 
@@ -63,8 +63,8 @@ public class DataObjectDto {
 		return isNextVersionOf;
 	}
 
-	public Optional<DoiDto> getPreExistingDio() {
-		return preExistingDio;
+	public String getPreExistingDoi() {
+		return preExistingDoi;
 	}
 
 	public Optional<ReferencesDto> getReferences() {

@@ -40,6 +40,22 @@ def load_analysis_json(json_path: str) -> dict:
         return json.load(f)
 
 
+def load_predicate_types(json_path: str) -> Dict[str, str]:
+    """
+    Load predicate type mappings from JSON
+
+    Returns: Dict[predicate_uri] -> postgresql_type
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    type_map = {}
+    for pred_uri, pred_info in data.get('types', {}).items():
+        type_map[pred_uri] = pred_info['postgresql_type']
+
+    return type_map
+
+
 def sanitize_table_name(class_name: str) -> str:
     """
     Convert a class name to a valid PostgreSQL table name
@@ -127,111 +143,17 @@ def sanitize_column_name(predicate_short: str) -> str:
     return name
 
 
-def infer_column_type(cursor, class_uri: str, predicate_uri: str,
-                     rdf_type_uri: str, triples_table: str = 'rdf_triples',
-                     sample_size: int = 100) -> str:
-    """
-    Infer PostgreSQL column type by sampling actual values from rdf_triples
-
-    Returns: PostgreSQL type string (e.g., 'TEXT', 'INTEGER', 'TIMESTAMP WITH TIME ZONE')
-    """
-    query = f"""
-        SELECT obj
-        FROM {triples_table}
-        WHERE pred = %s
-          AND subj IN (
-              SELECT subj
-              FROM {triples_table}
-              WHERE pred = %s AND obj = %s
-              LIMIT 1000
-          )
-        LIMIT %s
-    """
-
-    cursor.execute(query, (predicate_uri, rdf_type_uri, class_uri, sample_size))
-    samples = [row[0] for row in cursor.fetchall()]
-
-    if not samples:
-        return 'TEXT'
-
-    # Check if all values match a pattern
-    all_integers = True
-    all_floats = True
-    all_timestamps = True
-    all_dates = True
-    all_booleans = True
-    all_uris = True
-
-    max_int_value = 0
-
-    # Patterns
-    timestamp_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
-    date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-    uri_pattern = re.compile(r'^https?://')
-
-    for value in samples:
-        if value is None:
-            continue
-
-        value_str = str(value).strip()
-
-        # Check timestamp
-        if not timestamp_pattern.match(value_str):
-            all_timestamps = False
-
-        # Check date
-        if not date_pattern.match(value_str):
-            all_dates = False
-
-        # Check boolean
-        if value_str.lower() not in ('true', 'false', '1', '0'):
-            all_booleans = False
-
-        # Check URI
-        if not uri_pattern.match(value_str):
-            all_uris = False
-
-        # Check integer
-        try:
-            int_val = int(value_str)
-            max_int_value = max(max_int_value, abs(int_val))
-        except (ValueError, OverflowError):
-            all_integers = False
-
-        # Check float
-        try:
-            float(value_str)
-        except (ValueError, OverflowError):
-            all_floats = False
-
-    # Determine type based on checks
-    if all_timestamps:
-        return 'TIMESTAMP WITH TIME ZONE'
-    elif all_dates:
-        return 'DATE'
-    elif all_booleans:
-        return 'BOOLEAN'
-    elif all_integers:
-        # Choose appropriate integer type based on max value
-        if max_int_value < 32767:
-            return 'SMALLINT'
-        elif max_int_value < 2147483647:
-            return 'INTEGER'
-        else:
-            return 'BIGINT'
-    elif all_floats:
-        return 'DOUBLE PRECISION'
-    elif all_uris:
-        return 'TEXT'  # Could be a foreign key, but we'll handle that separately
-    else:
-        return 'TEXT'
-
-
-def get_predicate_columns(class_data: dict, cursor, rdf_type_uri: str,
-                         triples_table: str, min_coverage: float = 0,
+def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
+                         min_coverage: float = 0,
                          exclude_namespaces: Set[str] = None) -> List[Dict]:
     """
     Get list of columns to create for a class based on its predicates
+
+    Args:
+        class_data: Class information from analysis JSON
+        type_map: Dict mapping predicate URIs to PostgreSQL types
+        min_coverage: Minimum coverage percentage to include predicate
+        exclude_namespaces: Set of namespace prefixes to exclude
 
     Returns: List of dicts with keys: name, type, predicate_uri, coverage
     """
@@ -252,13 +174,9 @@ def get_predicate_columns(class_data: dict, cursor, rdf_type_uri: str,
             continue
 
         col_name = sanitize_column_name(pred_info['predicate_short'])
-        col_type = infer_column_type(
-            cursor,
-            class_data['class_uri'],
-            pred_info['predicate_uri'],
-            rdf_type_uri,
-            triples_table
-        )
+
+        # Look up type from type_map, default to TEXT if not found
+        col_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
 
         columns.append({
             'name': col_name,
@@ -469,39 +387,47 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # First, run infer_predicate_types.py to generate predicate_types.json
+  ./infer_predicate_types.py
+
+  # Then generate SQL
   %(prog)s                                    # Generate SQL to create_class_tables.sql
   %(prog)s --min-coverage 50                  # Only include predicates with 50%+ coverage
   %(prog)s --exclude-namespaces rdf,rdfs      # Skip RDF/RDFS predicates
-  %(prog)s --db postgresql://localhost/db     # Generate and execute
   %(prog)s --drop                             # Include DROP TABLE statements
+
+  # Execute directly in database
+  %(prog)s --db --host localhost --dbname postgres
         """
     )
 
     parser.add_argument('--input', default='class_predicates_analysis.json',
                        help='Input JSON file (default: class_predicates_analysis.json)')
+    parser.add_argument('--types-json', default='predicate_types.json',
+                       help='Predicate types JSON file (default: predicate_types.json)')
     parser.add_argument('--output', default='create_class_tables.sql',
                        help='Output SQL file (default: create_class_tables.sql)')
     parser.add_argument('--min-coverage', type=float, default=0,
                        help='Minimum coverage percentage for predicates (default: 0)')
     parser.add_argument('--exclude-namespaces', default='',
                        help='Comma-separated list of namespaces to exclude (e.g., rdf,rdfs)')
-    parser.add_argument('--db', help='Database connection string for direct execution')
     parser.add_argument('--drop', action='store_true',
                        help='Include DROP TABLE statements')
     parser.add_argument('--triples-table', default='rdf_triples',
                        help='Name of the triples table (default: rdf_triples)')
-    parser.add_argument('--host', default='localhost', help='Database host')
-    parser.add_argument('--port', type=int, default=5432, help='Database port')
-    parser.add_argument('--user', default='postgres', help='Database user')
-    parser.add_argument('--dbname', default='postgres', help='Database name')
-    parser.add_argument('--password', default='ontop', help='Database password')
+    parser.add_argument('--db', help='Execute SQL directly in database (requires connection params)')
+    parser.add_argument('--host', default='localhost', help='Database host (for --db)')
+    parser.add_argument('--port', type=int, default=5432, help='Database port (for --db)')
+    parser.add_argument('--user', default='postgres', help='Database user (for --db)')
+    parser.add_argument('--dbname', default='postgres', help='Database name (for --db)')
+    parser.add_argument('--password', default='ontop', help='Database password (for --db)')
 
     args = parser.parse_args()
 
     # Parse excluded namespaces
     exclude_namespaces = set(ns.strip() for ns in args.exclude_namespaces.split(',') if ns.strip())
 
-    # Load JSON
+    # Load analysis JSON
     print(f"Loading {args.input}...")
     data = load_analysis_json(args.input)
 
@@ -512,19 +438,17 @@ Examples:
         print("No classes found in JSON!")
         return 1
 
-    # Connect to database for type inference
-    print(f"\nConnecting to database at {args.host}:{args.port}...")
+    # Load predicate types
+    print(f"Loading predicate types from {args.types_json}...")
     try:
-        conn = psycopg2.connect(
-            host=args.host,
-            port=args.port,
-            user=args.user,
-            dbname=args.dbname,
-            password=args.password
-        )
-        cursor = conn.cursor()
+        type_map = load_predicate_types(args.types_json)
+        print(f"Loaded types for {len(type_map)} predicates")
+    except FileNotFoundError:
+        print(f"Error: {args.types_json} not found!")
+        print(f"Run infer_predicate_types.py first to generate predicate types.")
+        return 1
     except Exception as e:
-        print(f"Error connecting to database: {e}")
+        print(f"Error loading predicate types: {e}")
         return 1
 
     try:
@@ -536,20 +460,20 @@ Examples:
             table_name = sanitize_table_name(class_data['class_name'])
             table_names[class_data['class_uri']] = table_name
 
-        # Analyze columns for each table
-        print("\nAnalyzing predicates and inferring column types...")
+        # Build columns for each table
+        print("\nBuilding table schemas...")
         columns_map = {}
         for i, class_data in enumerate(classes, 1):
             table_name = table_names[class_data['class_uri']]
             print(f"  [{i}/{len(classes)}] {table_name}...", end='\r')
 
             columns = get_predicate_columns(
-                class_data, cursor, rdf_type_uri, args.triples_table,
+                class_data, type_map,
                 args.min_coverage, exclude_namespaces
             )
             columns_map[table_name] = columns
 
-        print(f"\n  Analyzed {len(classes)} classes")
+        print(f"\n  Built schemas for {len(classes)} classes")
 
         # Build foreign key map
         print("\nBuilding foreign key relationships...")
@@ -667,6 +591,21 @@ Examples:
                     print("Aborted.")
                     return 0
 
+            # Connect to database for execution
+            print(f"Connecting to database at {args.host}:{args.port}...")
+            try:
+                conn = psycopg2.connect(
+                    host=args.host,
+                    port=args.port,
+                    user=args.user,
+                    dbname=args.dbname,
+                    password=args.password
+                )
+                cursor = conn.cursor()
+            except Exception as e:
+                print(f"Error connecting to database: {e}")
+                return 1
+
             try:
                 # Execute SQL
                 statements = [s.strip() for s in full_sql.split(';') if s.strip() and not s.strip().startswith('--')]
@@ -685,6 +624,9 @@ Examples:
                 print(f"\nError executing SQL: {e}")
                 conn.rollback()
                 return 1
+            finally:
+                cursor.close()
+                conn.close()
 
         print("\n✓ Complete!")
 
@@ -693,9 +635,6 @@ Examples:
         import traceback
         traceback.print_exc()
         return 1
-    finally:
-        cursor.close()
-        conn.close()
 
     return 0
 

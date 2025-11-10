@@ -60,8 +60,8 @@ def sanitize_table_name(class_name: str) -> str:
     """
     Convert a class name to a valid PostgreSQL table name
 
-    Example: 'cpmeta:DataObject' -> 'data_objects'
-             'prov:Activity' -> 'prov_activities'
+    Example: 'cpmeta:DataObject' -> 'ct_data_objects'
+             'prov:Activity' -> 'ct_prov_activities'
     """
     # Remove namespace prefix
     if ':' in class_name:
@@ -103,7 +103,8 @@ def sanitize_table_name(class_name: str) -> str:
     if name in reserved_words:
         name = f"tbl_{name}"
 
-    return name
+    # Add ct_ prefix to all table names
+    return f"ct_{name}"
 
 
 def sanitize_column_name(predicate_short: str) -> str:

@@ -6,28 +6,28 @@
 -- CREATE TABLES
 -- ======================================================================
 
--- Table: data_submissions
+-- Table: ct_data_submissions
 -- Class: cpmeta:DataSubmission (2,346,277 instances)
 
-CREATE TABLE IF NOT EXISTS data_submissions (
+CREATE TABLE IF NOT EXISTS ct_data_submissions (
     id TEXT PRIMARY KEY,
     ended_at_time TIMESTAMP WITH TIME ZONE,
     started_at_time TIMESTAMP WITH TIME ZONE,
     was_associated_with TEXT
 );
 
--- Table: data_objects
+-- Table: ct_data_objects
 -- Class: cpmeta:DataObject (2,345,839 instances)
 
-CREATE TABLE IF NOT EXISTS data_objects (
+CREATE TABLE IF NOT EXISTS ct_data_objects (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     has_object_spec TEXT,
     has_sha256sum TEXT,
-    has_size_in_bytes SMALLINT,
+    has_size_in_bytes BIGINT,
     was_submitted_by TEXT,
     was_acquired_by TEXT,
-    has_number_of_rows SMALLINT,
+    has_number_of_rows INTEGER,
     was_produced_by TEXT,
     is_next_version_of TEXT,
     has_actual_column_names TEXT,
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS data_objects (
     parameter TEXT,
     sampling_20_type TEXT,
     time_20_interval TEXT,
-    has_end_time TEXT,
-    has_start_time TEXT,
+    has_end_time TIMESTAMP WITH TIME ZONE,
+    has_start_time TIMESTAMP WITH TIME ZONE,
     has_temporal_resolution TEXT,
     description TEXT,
     title TEXT,
@@ -54,10 +54,10 @@ CREATE TABLE IF NOT EXISTS data_objects (
     see_also TEXT
 );
 
--- Table: data_acquisitions
+-- Table: ct_data_acquisitions
 -- Class: cpmeta:DataAcquisition (2,343,194 instances)
 
-CREATE TABLE IF NOT EXISTS data_acquisitions (
+CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
     id TEXT PRIMARY KEY,
     was_performed_with TEXT,
     ended_at_time TIMESTAMP WITH TIME ZONE,
@@ -68,10 +68,10 @@ CREATE TABLE IF NOT EXISTS data_acquisitions (
     was_performed_at TEXT
 );
 
--- Table: data_productions
+-- Table: ct_data_productions
 -- Class: cpmeta:DataProduction (1,248,515 instances)
 
-CREATE TABLE IF NOT EXISTS data_productions (
+CREATE TABLE IF NOT EXISTS ct_data_productions (
     id TEXT PRIMARY KEY,
     has_end_time TIMESTAMP WITH TIME ZONE,
     was_performed_by TEXT,
@@ -81,47 +81,47 @@ CREATE TABLE IF NOT EXISTS data_productions (
     see_also TEXT
 );
 
--- Table: variable_infos
+-- Table: ct_variable_infos
 -- Class: cpmeta:VariableInfo (4,957 instances)
 
-CREATE TABLE IF NOT EXISTS variable_infos (
+CREATE TABLE IF NOT EXISTS ct_variable_infos (
     id TEXT PRIMARY KEY,
     label TEXT,
     has_max_value DOUBLE PRECISION,
     has_min_value DOUBLE PRECISION
 );
 
--- Table: instruments
+-- Table: ct_instruments
 -- Class: cpmeta:Instrument (4,825 instances)
 
-CREATE TABLE IF NOT EXISTS instruments (
+CREATE TABLE IF NOT EXISTS ct_instruments (
     id TEXT PRIMARY KEY,
     has_model TEXT,
     has_serial_number TEXT,
     has_vendor TEXT,
     www_w3_org_ns_ssn_has_deployment TEXT,
-    has_etc_id SMALLINT,
+    has_etc_id TEXT,
     comment TEXT,
     has_name TEXT,
-    has_atc_id SMALLINT,
+    has_atc_id TEXT,
     has_instrument_owner TEXT,
     has_instrument_component TEXT,
     has_otc_id TEXT
 );
 
--- Table: spatial_coverages
+-- Table: ct_spatial_coverages
 -- Class: cpmeta:SpatialCoverage (3,962 instances)
 
-CREATE TABLE IF NOT EXISTS spatial_coverages (
+CREATE TABLE IF NOT EXISTS ct_spatial_coverages (
     id TEXT PRIMARY KEY,
     as_geo_json TEXT,
     label TEXT
 );
 
--- Table: memberships
+-- Table: ct_memberships
 -- Class: cpmeta:Membership (1,881 instances)
 
-CREATE TABLE IF NOT EXISTS memberships (
+CREATE TABLE IF NOT EXISTS ct_memberships (
     id TEXT PRIMARY KEY,
     label TEXT,
     has_role TEXT,
@@ -132,10 +132,10 @@ CREATE TABLE IF NOT EXISTS memberships (
     has_extra_role_info TEXT
 );
 
--- Table: persons
+-- Table: ct_persons
 -- Class: cpmeta:Person (1,144 instances)
 
-CREATE TABLE IF NOT EXISTS persons (
+CREATE TABLE IF NOT EXISTS ct_persons (
     id TEXT PRIMARY KEY,
     has_membership TEXT,
     has_first_name TEXT,
@@ -143,16 +143,16 @@ CREATE TABLE IF NOT EXISTS persons (
     has_email TEXT,
     has_etc_id TEXT,
     has_orcid_id TEXT,
-    has_atc_id SMALLINT,
+    has_atc_id TEXT,
     has_otc_id TEXT,
     label TEXT,
     comment TEXT
 );
 
--- Table: collections
+-- Table: ct_collections
 -- Class: cpmeta:Collection (786 instances)
 
-CREATE TABLE IF NOT EXISTS collections (
+CREATE TABLE IF NOT EXISTS ct_collections (
     id TEXT PRIMARY KEY,
     has_part TEXT,
     creator TEXT,
@@ -164,14 +164,14 @@ CREATE TABLE IF NOT EXISTS collections (
     see_also TEXT
 );
 
--- Table: document_objects
+-- Table: ct_document_objects
 -- Class: cpmeta:DocumentObject (438 instances)
 
-CREATE TABLE IF NOT EXISTS document_objects (
+CREATE TABLE IF NOT EXISTS ct_document_objects (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     has_sha256sum TEXT,
-    has_size_in_bytes INTEGER,
+    has_size_in_bytes BIGINT,
     was_submitted_by TEXT,
     creator TEXT,
     title TEXT,
@@ -180,10 +180,10 @@ CREATE TABLE IF NOT EXISTS document_objects (
     has_doi TEXT
 );
 
--- Table: dataset_columns
+-- Table: ct_dataset_columns
 -- Class: cpmeta:DatasetColumn (420 instances)
 
-CREATE TABLE IF NOT EXISTS dataset_columns (
+CREATE TABLE IF NOT EXISTS ct_dataset_columns (
     id TEXT PRIMARY KEY,
     has_column_title TEXT,
     has_value_format TEXT,
@@ -196,10 +196,10 @@ CREATE TABLE IF NOT EXISTS dataset_columns (
     see_also TEXT
 );
 
--- Table: value_types
+-- Table: ct_value_types
 -- Class: cpmeta:ValueType (307 instances)
 
-CREATE TABLE IF NOT EXISTS value_types (
+CREATE TABLE IF NOT EXISTS ct_value_types (
     id TEXT PRIMARY KEY,
     label TEXT,
     has_quantity_kind TEXT,
@@ -209,10 +209,10 @@ CREATE TABLE IF NOT EXISTS value_types (
     see_also TEXT
 );
 
--- Table: lat_lon_boxes
+-- Table: ct_lat_lon_boxes
 -- Class: cpmeta:LatLonBox (299 instances)
 
-CREATE TABLE IF NOT EXISTS lat_lon_boxes (
+CREATE TABLE IF NOT EXISTS ct_lat_lon_boxes (
     id TEXT PRIMARY KEY,
     has_eastern_bound DOUBLE PRECISION,
     has_northern_bound DOUBLE PRECISION,
@@ -222,14 +222,14 @@ CREATE TABLE IF NOT EXISTS lat_lon_boxes (
     label TEXT
 );
 
--- Table: es
+-- Table: ct_es
 -- Class: cpmeta:ES (278 instances)
 
-CREATE TABLE IF NOT EXISTS es (
+CREATE TABLE IF NOT EXISTS ct_es (
     id TEXT PRIMARY KEY,
     www_w3_org_ns_dcat_theme TEXT,
     country_code TEXT,
-    has_etc_id SMALLINT,
+    has_etc_id TEXT,
     has_latitude DOUBLE PRECISION,
     has_longitude DOUBLE PRECISION,
     has_name TEXT,
@@ -262,24 +262,24 @@ CREATE TABLE IF NOT EXISTS es (
     has_documentation_uri TEXT
 );
 
--- Table: organizations
+-- Table: ct_organizations
 -- Class: cpmeta:Organization (265 instances)
 
-CREATE TABLE IF NOT EXISTS organizations (
+CREATE TABLE IF NOT EXISTS ct_organizations (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     label TEXT,
     has_atc_id TEXT,
     has_otc_id TEXT,
-    has_etc_id SMALLINT,
+    has_etc_id TEXT,
     see_also TEXT,
     has_email TEXT
 );
 
--- Table: stations
+-- Table: ct_stations
 -- Class: cpmeta:Station (246 instances)
 
-CREATE TABLE IF NOT EXISTS stations (
+CREATE TABLE IF NOT EXISTS ct_stations (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     country TEXT,
@@ -297,10 +297,10 @@ CREATE TABLE IF NOT EXISTS stations (
     has_spatial_coverage TEXT
 );
 
--- Table: positions
+-- Table: ct_positions
 -- Class: cpmeta:Position (205 instances)
 
-CREATE TABLE IF NOT EXISTS positions (
+CREATE TABLE IF NOT EXISTS ct_positions (
     id TEXT PRIMARY KEY,
     has_latitude DOUBLE PRECISION,
     has_longitude DOUBLE PRECISION,
@@ -308,10 +308,10 @@ CREATE TABLE IF NOT EXISTS positions (
     as_geo_json TEXT
 );
 
--- Table: link_boxes
+-- Table: ct_link_boxes
 -- Class: cpmeta:LinkBox (184 instances)
 
-CREATE TABLE IF NOT EXISTS link_boxes (
+CREATE TABLE IF NOT EXISTS ct_link_boxes (
     id TEXT PRIMARY KEY,
     has_cover_image TEXT,
     has_name TEXT,
@@ -321,10 +321,10 @@ CREATE TABLE IF NOT EXISTS link_boxes (
     comment TEXT
 );
 
--- Table: fundings
+-- Table: ct_fundings
 -- Class: cpmeta:Funding (109 instances)
 
-CREATE TABLE IF NOT EXISTS fundings (
+CREATE TABLE IF NOT EXISTS ct_fundings (
     id TEXT PRIMARY KEY,
     has_funder TEXT,
     label TEXT,
@@ -336,10 +336,10 @@ CREATE TABLE IF NOT EXISTS fundings (
     comment TEXT
 );
 
--- Table: sites
+-- Table: ct_sites
 -- Class: cpmeta:Site (99 instances)
 
-CREATE TABLE IF NOT EXISTS sites (
+CREATE TABLE IF NOT EXISTS ct_sites (
     id TEXT PRIMARY KEY,
     has_sampling_point TEXT,
     has_ecosystem_type TEXT,
@@ -347,10 +347,10 @@ CREATE TABLE IF NOT EXISTS sites (
     label TEXT
 );
 
--- Table: simple_object_specs
+-- Table: ct_simple_object_specs
 -- Class: cpmeta:SimpleObjectSpec (97 instances)
 
-CREATE TABLE IF NOT EXISTS simple_object_specs (
+CREATE TABLE IF NOT EXISTS ct_simple_object_specs (
     id TEXT PRIMARY KEY,
     has_associated_project TEXT,
     has_data_level SMALLINT,
@@ -367,10 +367,10 @@ CREATE TABLE IF NOT EXISTS simple_object_specs (
     see_also TEXT
 );
 
--- Table: data_object_specs
+-- Table: ct_data_object_specs
 -- Class: cpmeta:DataObjectSpec (81 instances)
 
-CREATE TABLE IF NOT EXISTS data_object_specs (
+CREATE TABLE IF NOT EXISTS ct_data_object_specs (
     id TEXT PRIMARY KEY,
     has_associated_project TEXT,
     has_data_level SMALLINT,
@@ -386,10 +386,10 @@ CREATE TABLE IF NOT EXISTS data_object_specs (
     has_documentation_object TEXT
 );
 
--- Table: dataset_variables
+-- Table: ct_dataset_variables
 -- Class: cpmeta:DatasetVariable (76 instances)
 
-CREATE TABLE IF NOT EXISTS dataset_variables (
+CREATE TABLE IF NOT EXISTS ct_dataset_variables (
     id TEXT PRIMARY KEY,
     has_value_type TEXT,
     has_variable_title TEXT,
@@ -397,14 +397,14 @@ CREATE TABLE IF NOT EXISTS dataset_variables (
     is_optional_variable BOOLEAN
 );
 
--- Table: as
+-- Table: ct_as
 -- Class: cpmeta:AS (70 instances)
 
-CREATE TABLE IF NOT EXISTS as (
+CREATE TABLE IF NOT EXISTS ct_as (
     id TEXT PRIMARY KEY,
     www_w3_org_ns_dcat_theme TEXT,
     country_code TEXT,
-    has_atc_id SMALLINT,
+    has_atc_id TEXT,
     has_elevation DOUBLE PRECISION,
     has_latitude DOUBLE PRECISION,
     has_longitude DOUBLE PRECISION,
@@ -414,7 +414,7 @@ CREATE TABLE IF NOT EXISTS as (
     has_time_zone_offset SMALLINT,
     label TEXT,
     has_wigos_id TEXT,
-    has_station_class SMALLINT,
+    has_station_class TEXT,
     has_documentation_object TEXT,
     has_depiction TEXT,
     has_labeling_date DATE,
@@ -427,10 +427,10 @@ CREATE TABLE IF NOT EXISTS as (
     has_webpage_elements TEXT
 );
 
--- Table: tabular_dataset_specs
+-- Table: ct_tabular_dataset_specs
 -- Class: cpmeta:TabularDatasetSpec (68 instances)
 
-CREATE TABLE IF NOT EXISTS tabular_dataset_specs (
+CREATE TABLE IF NOT EXISTS ct_tabular_dataset_specs (
     id TEXT PRIMARY KEY,
     has_column TEXT,
     label TEXT,
@@ -438,38 +438,38 @@ CREATE TABLE IF NOT EXISTS tabular_dataset_specs (
     comment TEXT
 );
 
--- Table: plain_collections
+-- Table: ct_plain_collections
 -- Class: cpmeta:PlainCollection (50 instances)
 
-CREATE TABLE IF NOT EXISTS plain_collections (
+CREATE TABLE IF NOT EXISTS ct_plain_collections (
     id TEXT PRIMARY KEY,
     has_part TEXT,
     is_next_version_of TEXT
 );
 
--- Table: funders
+-- Table: ct_funders
 -- Class: cpmeta:Funder (45 instances)
 
-CREATE TABLE IF NOT EXISTS funders (
+CREATE TABLE IF NOT EXISTS ct_funders (
     id TEXT PRIMARY KEY,
     has_etc_id TEXT,
     has_name TEXT
 );
 
--- Table: ecosystem_types
+-- Table: ct_ecosystem_types
 -- Class: cpmeta:EcosystemType (41 instances)
 
-CREATE TABLE IF NOT EXISTS ecosystem_types (
+CREATE TABLE IF NOT EXISTS ct_ecosystem_types (
     id TEXT PRIMARY KEY,
     label TEXT,
     comment TEXT,
     see_also TEXT
 );
 
--- Table: webpage_elements
+-- Table: ct_webpage_elements
 -- Class: cpmeta:WebpageElements (37 instances)
 
-CREATE TABLE IF NOT EXISTS webpage_elements (
+CREATE TABLE IF NOT EXISTS ct_webpage_elements (
     id TEXT PRIMARY KEY,
     has_linkbox TEXT,
     has_cover_image TEXT,
@@ -477,28 +477,28 @@ CREATE TABLE IF NOT EXISTS webpage_elements (
     comment TEXT
 );
 
--- Table: climate_zones
+-- Table: ct_climate_zones
 -- Class: cpmeta:ClimateZone (35 instances)
 
-CREATE TABLE IF NOT EXISTS climate_zones (
+CREATE TABLE IF NOT EXISTS ct_climate_zones (
     id TEXT PRIMARY KEY,
     label TEXT,
     see_also TEXT
 );
 
--- Table: quantity_kinds
+-- Table: ct_quantity_kinds
 -- Class: cpmeta:QuantityKind (31 instances)
 
-CREATE TABLE IF NOT EXISTS quantity_kinds (
+CREATE TABLE IF NOT EXISTS ct_quantity_kinds (
     id TEXT PRIMARY KEY,
     label TEXT,
     comment TEXT
 );
 
--- Table: object_formats
+-- Table: ct_object_formats
 -- Class: cpmeta:ObjectFormat (28 instances)
 
-CREATE TABLE IF NOT EXISTS object_formats (
+CREATE TABLE IF NOT EXISTS ct_object_formats (
     id TEXT PRIMARY KEY,
     label TEXT,
     has_good_flag_value TEXT,
@@ -506,17 +506,17 @@ CREATE TABLE IF NOT EXISTS object_formats (
     see_also TEXT
 );
 
--- Table: os
+-- Table: ct_os
 -- Class: cpmeta:OS (25 instances)
 
-CREATE TABLE IF NOT EXISTS os (
+CREATE TABLE IF NOT EXISTS ct_os (
     id TEXT PRIMARY KEY,
     www_w3_org_ns_dcat_theme TEXT,
     country_code TEXT,
     has_name TEXT,
     has_otc_id TEXT,
     has_responsible_organization TEXT,
-    has_station_class SMALLINT,
+    has_station_class TEXT,
     has_station_id TEXT,
     label TEXT,
     www_w3_org_ns_dcat_contact_point TEXT,
@@ -537,10 +537,10 @@ CREATE TABLE IF NOT EXISTS os (
     is_discontinued BOOLEAN
 );
 
--- Table: projects
+-- Table: ct_projects
 -- Class: cpmeta:Project (18 instances)
 
-CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE IF NOT EXISTS ct_projects (
     id TEXT PRIMARY KEY,
     label TEXT,
     comment TEXT,
@@ -551,48 +551,48 @@ CREATE TABLE IF NOT EXISTS projects (
     has_skip_storage_policy BOOLEAN
 );
 
--- Table: value_formats
+-- Table: ct_value_formats
 -- Class: cpmeta:ValueFormat (13 instances)
 
-CREATE TABLE IF NOT EXISTS value_formats (
+CREATE TABLE IF NOT EXISTS ct_value_formats (
     id TEXT PRIMARY KEY,
     label TEXT,
     comment TEXT
 );
 
--- Table: dataset_specs
+-- Table: ct_dataset_specs
 -- Class: cpmeta:DatasetSpec (12 instances)
 
-CREATE TABLE IF NOT EXISTS dataset_specs (
+CREATE TABLE IF NOT EXISTS ct_dataset_specs (
     id TEXT PRIMARY KEY,
     has_variable TEXT,
     label TEXT,
     has_temporal_resolution TEXT
 );
 
--- Table: data_themes
+-- Table: ct_data_themes
 -- Class: cpmeta:DataTheme (9 instances)
 
-CREATE TABLE IF NOT EXISTS data_themes (
+CREATE TABLE IF NOT EXISTS ct_data_themes (
     id TEXT PRIMARY KEY,
     has_icon TEXT,
     label TEXT,
     has_marker_icon TEXT
 );
 
--- Table: roles
+-- Table: ct_roles
 -- Class: cpmeta:Role (5 instances)
 
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE IF NOT EXISTS ct_roles (
     id TEXT PRIMARY KEY,
     label TEXT,
     comment TEXT
 );
 
--- Table: atmo_stations
+-- Table: ct_atmo_stations
 -- Class: cpmeta:AtmoStation (4 instances)
 
-CREATE TABLE IF NOT EXISTS atmo_stations (
+CREATE TABLE IF NOT EXISTS ct_atmo_stations (
     id TEXT PRIMARY KEY,
     country_code TEXT,
     has_elevation DOUBLE PRECISION,
@@ -602,20 +602,20 @@ CREATE TABLE IF NOT EXISTS atmo_stations (
     has_station_id TEXT
 );
 
--- Table: thematic_centers
+-- Table: ct_thematic_centers
 -- Class: cpmeta:ThematicCenter (4 instances)
 
-CREATE TABLE IF NOT EXISTS thematic_centers (
+CREATE TABLE IF NOT EXISTS ct_thematic_centers (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     label TEXT,
     has_data_theme TEXT
 );
 
--- Table: ingos_stations
+-- Table: ct_ingos_stations
 -- Class: cpmeta:IngosStation (3 instances)
 
-CREATE TABLE IF NOT EXISTS ingos_stations (
+CREATE TABLE IF NOT EXISTS ct_ingos_stations (
     id TEXT PRIMARY KEY,
     country_code TEXT,
     has_elevation DOUBLE PRECISION,
@@ -625,28 +625,28 @@ CREATE TABLE IF NOT EXISTS ingos_stations (
     has_station_id TEXT
 );
 
--- Table: object_encodings
+-- Table: ct_object_encodings
 -- Class: cpmeta:ObjectEncoding (3 instances)
 
-CREATE TABLE IF NOT EXISTS object_encodings (
+CREATE TABLE IF NOT EXISTS ct_object_encodings (
     id TEXT PRIMARY KEY,
     label TEXT
 );
 
--- Table: central_facilities
+-- Table: ct_central_facilities
 -- Class: cpmeta:CentralFacility (2 instances)
 
-CREATE TABLE IF NOT EXISTS central_facilities (
+CREATE TABLE IF NOT EXISTS ct_central_facilities (
     id TEXT PRIMARY KEY,
     has_name TEXT,
     label TEXT,
     comment TEXT
 );
 
--- Table: sail_drones
+-- Table: ct_sail_drones
 -- Class: cpmeta:SailDrone (2 instances)
 
-CREATE TABLE IF NOT EXISTS sail_drones (
+CREATE TABLE IF NOT EXISTS ct_sail_drones (
     id TEXT PRIMARY KEY,
     www_w3_org_ns_dcat_theme TEXT,
     country_code TEXT,
@@ -655,10 +655,10 @@ CREATE TABLE IF NOT EXISTS sail_drones (
     has_station_id TEXT
 );
 
--- Table: specific_dataset_types
+-- Table: ct_specific_dataset_types
 -- Class: cpmeta:SpecificDatasetType (2 instances)
 
-CREATE TABLE IF NOT EXISTS specific_dataset_types (
+CREATE TABLE IF NOT EXISTS ct_specific_dataset_types (
     id TEXT PRIMARY KEY,
     label TEXT
 );
@@ -667,458 +667,460 @@ CREATE TABLE IF NOT EXISTS specific_dataset_types (
 -- FOREIGN KEY CONSTRAINTS
 -- ======================================================================
 
--- Foreign keys for as
-ALTER TABLE as ADD CONSTRAINT fk_as_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES organizations(id);
-ALTER TABLE as ADD CONSTRAINT fk_as_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES document_objects(id);
-ALTER TABLE as ADD CONSTRAINT fk_as_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES webpage_elements(id);
+-- Foreign keys for ct_as
+ALTER TABLE ct_as ADD CONSTRAINT fk_ct_as_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES ct_organizations(id);
+ALTER TABLE ct_as ADD CONSTRAINT fk_ct_as_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_as ADD CONSTRAINT fk_ct_as_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES ct_webpage_elements(id);
 
--- Foreign keys for collections
-ALTER TABLE collections ADD CONSTRAINT fk_collections_has_part FOREIGN KEY (has_part) REFERENCES data_objects(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_is_next_version_of FOREIGN KEY (is_next_version_of) REFERENCES data_objects(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_creator FOREIGN KEY (creator) REFERENCES central_facilities(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_has_part FOREIGN KEY (has_part) REFERENCES document_objects(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_see_also FOREIGN KEY (see_also) REFERENCES document_objects(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES spatial_coverages(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_creator FOREIGN KEY (creator) REFERENCES thematic_centers(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_creator FOREIGN KEY (creator) REFERENCES organizations(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES positions(id);
-ALTER TABLE collections ADD CONSTRAINT fk_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES lat_lon_boxes(id);
+-- Foreign keys for ct_collections
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_has_part FOREIGN KEY (has_part) REFERENCES ct_data_objects(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_is_next_version_of FOREIGN KEY (is_next_version_of) REFERENCES ct_data_objects(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_creator FOREIGN KEY (creator) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_has_part FOREIGN KEY (has_part) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_see_also FOREIGN KEY (see_also) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_creator FOREIGN KEY (creator) REFERENCES ct_thematic_centers(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_creator FOREIGN KEY (creator) REFERENCES ct_organizations(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_positions(id);
+ALTER TABLE ct_collections ADD CONSTRAINT fk_ct_collections_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_lat_lon_boxes(id);
 
--- Foreign keys for data_acquisitions
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_performed_with FOREIGN KEY (was_performed_with) REFERENCES instruments(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES as(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES es(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES os(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES stations(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_performed_at FOREIGN KEY (was_performed_at) REFERENCES sites(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_has_sampling_point FOREIGN KEY (has_sampling_point) REFERENCES positions(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES sail_drones(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ingos_stations(id);
-ALTER TABLE data_acquisitions ADD CONSTRAINT fk_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES atmo_stations(id);
+-- Foreign keys for ct_data_acquisitions
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_performed_with FOREIGN KEY (was_performed_with) REFERENCES ct_instruments(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_as(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_es(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_os(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_stations(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_performed_at FOREIGN KEY (was_performed_at) REFERENCES ct_sites(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_has_sampling_point FOREIGN KEY (has_sampling_point) REFERENCES ct_positions(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_sail_drones(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_ingos_stations(id);
+ALTER TABLE ct_data_acquisitions ADD CONSTRAINT fk_ct_data_acquisitions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_atmo_stations(id);
 
--- Foreign keys for data_object_specs
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES data_themes(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_encoding FOREIGN KEY (has_encoding) REFERENCES object_encodings(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_format FOREIGN KEY (has_format) REFERENCES object_formats(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_associated_project FOREIGN KEY (has_associated_project) REFERENCES projects(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_specific_dataset_type FOREIGN KEY (has_specific_dataset_type) REFERENCES specific_dataset_types(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES dataset_specs(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES document_objects(id);
-ALTER TABLE data_object_specs ADD CONSTRAINT fk_data_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES tabular_dataset_specs(id);
+-- Foreign keys for ct_data_object_specs
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES ct_data_themes(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_encoding FOREIGN KEY (has_encoding) REFERENCES ct_object_encodings(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_format FOREIGN KEY (has_format) REFERENCES ct_object_formats(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_associated_project FOREIGN KEY (has_associated_project) REFERENCES ct_projects(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_specific_dataset_type FOREIGN KEY (has_specific_dataset_type) REFERENCES ct_specific_dataset_types(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES ct_dataset_specs(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_data_object_specs ADD CONSTRAINT fk_ct_data_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES ct_tabular_dataset_specs(id);
 
--- Foreign keys for data_objects
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_was_submitted_by FOREIGN KEY (was_submitted_by) REFERENCES data_submissions(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_was_acquired_by FOREIGN KEY (was_acquired_by) REFERENCES data_acquisitions(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_was_produced_by FOREIGN KEY (was_produced_by) REFERENCES data_productions(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_object_spec FOREIGN KEY (has_object_spec) REFERENCES simple_object_specs(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_object_spec FOREIGN KEY (has_object_spec) REFERENCES data_object_specs(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_actual_variable FOREIGN KEY (has_actual_variable) REFERENCES variable_infos(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES spatial_coverages(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES lat_lon_boxes(id);
-ALTER TABLE data_objects ADD CONSTRAINT fk_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES positions(id);
+-- Foreign keys for ct_data_objects
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_was_submitted_by FOREIGN KEY (was_submitted_by) REFERENCES ct_data_submissions(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_was_acquired_by FOREIGN KEY (was_acquired_by) REFERENCES ct_data_acquisitions(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_was_produced_by FOREIGN KEY (was_produced_by) REFERENCES ct_data_productions(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_object_spec FOREIGN KEY (has_object_spec) REFERENCES ct_simple_object_specs(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_object_spec FOREIGN KEY (has_object_spec) REFERENCES ct_data_object_specs(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_actual_variable FOREIGN KEY (has_actual_variable) REFERENCES ct_variable_infos(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_lat_lon_boxes(id);
+ALTER TABLE ct_data_objects ADD CONSTRAINT fk_ct_data_objects_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_positions(id);
 
--- Foreign keys for data_productions
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES thematic_centers(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES thematic_centers(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES organizations(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES organizations(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES organizations(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES persons(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES persons(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES central_facilities(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES central_facilities(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES central_facilities(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_see_also FOREIGN KEY (see_also) REFERENCES document_objects(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES es(id);
-ALTER TABLE data_productions ADD CONSTRAINT fk_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES es(id);
+-- Foreign keys for ct_data_productions
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES ct_thematic_centers(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES ct_thematic_centers(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES ct_organizations(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES ct_organizations(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES ct_organizations(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES ct_persons(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES ct_persons(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_participated_in_by FOREIGN KEY (was_participated_in_by) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_see_also FOREIGN KEY (see_also) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_hosted_by FOREIGN KEY (was_hosted_by) REFERENCES ct_es(id);
+ALTER TABLE ct_data_productions ADD CONSTRAINT fk_ct_data_productions_was_performed_by FOREIGN KEY (was_performed_by) REFERENCES ct_es(id);
 
--- Foreign keys for data_submissions
-ALTER TABLE data_submissions ADD CONSTRAINT fk_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES thematic_centers(id);
-ALTER TABLE data_submissions ADD CONSTRAINT fk_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES es(id);
-ALTER TABLE data_submissions ADD CONSTRAINT fk_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES central_facilities(id);
-ALTER TABLE data_submissions ADD CONSTRAINT fk_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES organizations(id);
+-- Foreign keys for ct_data_submissions
+ALTER TABLE ct_data_submissions ADD CONSTRAINT fk_ct_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_thematic_centers(id);
+ALTER TABLE ct_data_submissions ADD CONSTRAINT fk_ct_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_es(id);
+ALTER TABLE ct_data_submissions ADD CONSTRAINT fk_ct_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_data_submissions ADD CONSTRAINT fk_ct_data_submissions_was_associated_with FOREIGN KEY (was_associated_with) REFERENCES ct_organizations(id);
 
--- Foreign keys for dataset_columns
-ALTER TABLE dataset_columns ADD CONSTRAINT fk_dataset_columns_has_value_format FOREIGN KEY (has_value_format) REFERENCES value_formats(id);
-ALTER TABLE dataset_columns ADD CONSTRAINT fk_dataset_columns_has_value_type FOREIGN KEY (has_value_type) REFERENCES value_types(id);
+-- Foreign keys for ct_dataset_columns
+ALTER TABLE ct_dataset_columns ADD CONSTRAINT fk_ct_dataset_columns_has_value_format FOREIGN KEY (has_value_format) REFERENCES ct_value_formats(id);
+ALTER TABLE ct_dataset_columns ADD CONSTRAINT fk_ct_dataset_columns_has_value_type FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id);
 
--- Foreign keys for dataset_specs
-ALTER TABLE dataset_specs ADD CONSTRAINT fk_dataset_specs_has_variable FOREIGN KEY (has_variable) REFERENCES dataset_variables(id);
+-- Foreign keys for ct_dataset_specs
+ALTER TABLE ct_dataset_specs ADD CONSTRAINT fk_ct_dataset_specs_has_variable FOREIGN KEY (has_variable) REFERENCES ct_dataset_variables(id);
 
--- Foreign keys for dataset_variables
-ALTER TABLE dataset_variables ADD CONSTRAINT fk_dataset_variables_has_value_type FOREIGN KEY (has_value_type) REFERENCES value_types(id);
+-- Foreign keys for ct_dataset_variables
+ALTER TABLE ct_dataset_variables ADD CONSTRAINT fk_ct_dataset_variables_has_value_type FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id);
 
--- Foreign keys for document_objects
-ALTER TABLE document_objects ADD CONSTRAINT fk_document_objects_was_submitted_by FOREIGN KEY (was_submitted_by) REFERENCES data_submissions(id);
-ALTER TABLE document_objects ADD CONSTRAINT fk_document_objects_creator FOREIGN KEY (creator) REFERENCES central_facilities(id);
-ALTER TABLE document_objects ADD CONSTRAINT fk_document_objects_creator FOREIGN KEY (creator) REFERENCES persons(id);
-ALTER TABLE document_objects ADD CONSTRAINT fk_document_objects_creator FOREIGN KEY (creator) REFERENCES organizations(id);
+-- Foreign keys for ct_document_objects
+ALTER TABLE ct_document_objects ADD CONSTRAINT fk_ct_document_objects_was_submitted_by FOREIGN KEY (was_submitted_by) REFERENCES ct_data_submissions(id);
+ALTER TABLE ct_document_objects ADD CONSTRAINT fk_ct_document_objects_creator FOREIGN KEY (creator) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_document_objects ADD CONSTRAINT fk_ct_document_objects_creator FOREIGN KEY (creator) REFERENCES ct_persons(id);
+ALTER TABLE ct_document_objects ADD CONSTRAINT fk_ct_document_objects_creator FOREIGN KEY (creator) REFERENCES ct_organizations(id);
 
--- Foreign keys for es
-ALTER TABLE es ADD CONSTRAINT fk_es_has_ecosystem_type FOREIGN KEY (has_ecosystem_type) REFERENCES ecosystem_types(id);
-ALTER TABLE es ADD CONSTRAINT fk_es_has_funding FOREIGN KEY (has_funding) REFERENCES fundings(id);
-ALTER TABLE es ADD CONSTRAINT fk_es_has_climate_zone FOREIGN KEY (has_climate_zone) REFERENCES climate_zones(id);
-ALTER TABLE es ADD CONSTRAINT fk_es_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES document_objects(id);
-ALTER TABLE es ADD CONSTRAINT fk_es_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES spatial_coverages(id);
-ALTER TABLE es ADD CONSTRAINT fk_es_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES webpage_elements(id);
+-- Foreign keys for ct_es
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_ecosystem_type FOREIGN KEY (has_ecosystem_type) REFERENCES ct_ecosystem_types(id);
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_funding FOREIGN KEY (has_funding) REFERENCES ct_fundings(id);
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_climate_zone FOREIGN KEY (has_climate_zone) REFERENCES ct_climate_zones(id);
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES ct_document_objects(id);
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id);
+ALTER TABLE ct_es ADD CONSTRAINT fk_ct_es_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES ct_webpage_elements(id);
 
--- Foreign keys for fundings
-ALTER TABLE fundings ADD CONSTRAINT fk_fundings_has_funder FOREIGN KEY (has_funder) REFERENCES funders(id);
+-- Foreign keys for ct_fundings
+ALTER TABLE ct_fundings ADD CONSTRAINT fk_ct_fundings_has_funder FOREIGN KEY (has_funder) REFERENCES ct_funders(id);
 
--- Foreign keys for instruments
-ALTER TABLE instruments ADD CONSTRAINT fk_instruments_has_vendor FOREIGN KEY (has_vendor) REFERENCES organizations(id);
-ALTER TABLE instruments ADD CONSTRAINT fk_instruments_has_instrument_owner FOREIGN KEY (has_instrument_owner) REFERENCES organizations(id);
+-- Foreign keys for ct_instruments
+ALTER TABLE ct_instruments ADD CONSTRAINT fk_ct_instruments_has_vendor FOREIGN KEY (has_vendor) REFERENCES ct_organizations(id);
+ALTER TABLE ct_instruments ADD CONSTRAINT fk_ct_instruments_has_instrument_owner FOREIGN KEY (has_instrument_owner) REFERENCES ct_organizations(id);
 
--- Foreign keys for link_boxes
-ALTER TABLE link_boxes ADD CONSTRAINT fk_link_boxes_has_webpage_link FOREIGN KEY (has_webpage_link) REFERENCES document_objects(id);
+-- Foreign keys for ct_link_boxes
+ALTER TABLE ct_link_boxes ADD CONSTRAINT fk_ct_link_boxes_has_webpage_link FOREIGN KEY (has_webpage_link) REFERENCES ct_document_objects(id);
 
--- Foreign keys for memberships
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_has_role FOREIGN KEY (has_role) REFERENCES roles(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES es(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES as(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES organizations(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES os(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES central_facilities(id);
-ALTER TABLE memberships ADD CONSTRAINT fk_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES thematic_centers(id);
+-- Foreign keys for ct_memberships
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_has_role FOREIGN KEY (has_role) REFERENCES ct_roles(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_es(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_as(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_organizations(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_os(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_central_facilities(id);
+ALTER TABLE ct_memberships ADD CONSTRAINT fk_ct_memberships_at_organization FOREIGN KEY (at_organization) REFERENCES ct_thematic_centers(id);
 
--- Foreign keys for object_formats
-ALTER TABLE object_formats ADD CONSTRAINT fk_object_formats_see_also FOREIGN KEY (see_also) REFERENCES value_formats(id);
+-- Foreign keys for ct_object_formats
+ALTER TABLE ct_object_formats ADD CONSTRAINT fk_ct_object_formats_see_also FOREIGN KEY (see_also) REFERENCES ct_value_formats(id);
 
--- Foreign keys for os
-ALTER TABLE os ADD CONSTRAINT fk_os_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES organizations(id);
-ALTER TABLE os ADD CONSTRAINT fk_os_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES spatial_coverages(id);
-ALTER TABLE os ADD CONSTRAINT fk_os_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES webpage_elements(id);
+-- Foreign keys for ct_os
+ALTER TABLE ct_os ADD CONSTRAINT fk_ct_os_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES ct_organizations(id);
+ALTER TABLE ct_os ADD CONSTRAINT fk_ct_os_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id);
+ALTER TABLE ct_os ADD CONSTRAINT fk_ct_os_has_webpage_elements FOREIGN KEY (has_webpage_elements) REFERENCES ct_webpage_elements(id);
 
--- Foreign keys for persons
-ALTER TABLE persons ADD CONSTRAINT fk_persons_has_membership FOREIGN KEY (has_membership) REFERENCES memberships(id);
+-- Foreign keys for ct_persons
+ALTER TABLE ct_persons ADD CONSTRAINT fk_ct_persons_has_membership FOREIGN KEY (has_membership) REFERENCES ct_memberships(id);
 
--- Foreign keys for plain_collections
-ALTER TABLE plain_collections ADD CONSTRAINT fk_plain_collections_has_part FOREIGN KEY (has_part) REFERENCES data_objects(id);
-ALTER TABLE plain_collections ADD CONSTRAINT fk_plain_collections_is_next_version_of FOREIGN KEY (is_next_version_of) REFERENCES data_objects(id);
+-- Foreign keys for ct_plain_collections
+ALTER TABLE ct_plain_collections ADD CONSTRAINT fk_ct_plain_collections_has_part FOREIGN KEY (has_part) REFERENCES ct_data_objects(id);
+ALTER TABLE ct_plain_collections ADD CONSTRAINT fk_ct_plain_collections_is_next_version_of FOREIGN KEY (is_next_version_of) REFERENCES ct_data_objects(id);
 
--- Foreign keys for simple_object_specs
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES data_themes(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_encoding FOREIGN KEY (has_encoding) REFERENCES object_encodings(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_format FOREIGN KEY (has_format) REFERENCES object_formats(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_associated_project FOREIGN KEY (has_associated_project) REFERENCES projects(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_specific_dataset_type FOREIGN KEY (has_specific_dataset_type) REFERENCES specific_dataset_types(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES tabular_dataset_specs(id);
-ALTER TABLE simple_object_specs ADD CONSTRAINT fk_simple_object_specs_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES document_objects(id);
+-- Foreign keys for ct_simple_object_specs
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES ct_data_themes(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_encoding FOREIGN KEY (has_encoding) REFERENCES ct_object_encodings(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_format FOREIGN KEY (has_format) REFERENCES ct_object_formats(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_associated_project FOREIGN KEY (has_associated_project) REFERENCES ct_projects(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_specific_dataset_type FOREIGN KEY (has_specific_dataset_type) REFERENCES ct_specific_dataset_types(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_contains_dataset FOREIGN KEY (contains_dataset) REFERENCES ct_tabular_dataset_specs(id);
+ALTER TABLE ct_simple_object_specs ADD CONSTRAINT fk_ct_simple_object_specs_has_documentation_object FOREIGN KEY (has_documentation_object) REFERENCES ct_document_objects(id);
 
--- Foreign keys for sites
-ALTER TABLE sites ADD CONSTRAINT fk_sites_has_sampling_point FOREIGN KEY (has_sampling_point) REFERENCES positions(id);
-ALTER TABLE sites ADD CONSTRAINT fk_sites_has_ecosystem_type FOREIGN KEY (has_ecosystem_type) REFERENCES ecosystem_types(id);
-ALTER TABLE sites ADD CONSTRAINT fk_sites_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES spatial_coverages(id);
+-- Foreign keys for ct_sites
+ALTER TABLE ct_sites ADD CONSTRAINT fk_ct_sites_has_sampling_point FOREIGN KEY (has_sampling_point) REFERENCES ct_positions(id);
+ALTER TABLE ct_sites ADD CONSTRAINT fk_ct_sites_has_ecosystem_type FOREIGN KEY (has_ecosystem_type) REFERENCES ct_ecosystem_types(id);
+ALTER TABLE ct_sites ADD CONSTRAINT fk_ct_sites_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id);
 
--- Foreign keys for stations
-ALTER TABLE stations ADD CONSTRAINT fk_stations_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES organizations(id);
-ALTER TABLE stations ADD CONSTRAINT fk_stations_has_climate_zone FOREIGN KEY (has_climate_zone) REFERENCES climate_zones(id);
-ALTER TABLE stations ADD CONSTRAINT fk_stations_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES lat_lon_boxes(id);
+-- Foreign keys for ct_stations
+ALTER TABLE ct_stations ADD CONSTRAINT fk_ct_stations_has_responsible_organization FOREIGN KEY (has_responsible_organization) REFERENCES ct_organizations(id);
+ALTER TABLE ct_stations ADD CONSTRAINT fk_ct_stations_has_climate_zone FOREIGN KEY (has_climate_zone) REFERENCES ct_climate_zones(id);
+ALTER TABLE ct_stations ADD CONSTRAINT fk_ct_stations_has_spatial_coverage FOREIGN KEY (has_spatial_coverage) REFERENCES ct_lat_lon_boxes(id);
 
--- Foreign keys for tabular_dataset_specs
-ALTER TABLE tabular_dataset_specs ADD CONSTRAINT fk_tabular_dataset_specs_has_column FOREIGN KEY (has_column) REFERENCES dataset_columns(id);
+-- Foreign keys for ct_tabular_dataset_specs
+ALTER TABLE ct_tabular_dataset_specs ADD CONSTRAINT fk_ct_tabular_dataset_specs_has_column FOREIGN KEY (has_column) REFERENCES ct_dataset_columns(id);
 
--- Foreign keys for thematic_centers
-ALTER TABLE thematic_centers ADD CONSTRAINT fk_thematic_centers_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES data_themes(id);
+-- Foreign keys for ct_thematic_centers
+ALTER TABLE ct_thematic_centers ADD CONSTRAINT fk_ct_thematic_centers_has_data_theme FOREIGN KEY (has_data_theme) REFERENCES ct_data_themes(id);
 
--- Foreign keys for value_types
-ALTER TABLE value_types ADD CONSTRAINT fk_value_types_has_quantity_kind FOREIGN KEY (has_quantity_kind) REFERENCES quantity_kinds(id);
+-- Foreign keys for ct_value_types
+ALTER TABLE ct_value_types ADD CONSTRAINT fk_ct_value_types_has_quantity_kind FOREIGN KEY (has_quantity_kind) REFERENCES ct_quantity_kinds(id);
 
--- Foreign keys for webpage_elements
-ALTER TABLE webpage_elements ADD CONSTRAINT fk_webpage_elements_has_linkbox FOREIGN KEY (has_linkbox) REFERENCES link_boxes(id);
+-- Foreign keys for ct_webpage_elements
+ALTER TABLE ct_webpage_elements ADD CONSTRAINT fk_ct_webpage_elements_has_linkbox FOREIGN KEY (has_linkbox) REFERENCES ct_link_boxes(id);
 
 -- ======================================================================
 -- INDEXES
 -- ======================================================================
 
--- Indexes for data_submissions
-CREATE INDEX IF NOT EXISTS idx_data_submissions_was_associated_with ON data_submissions(was_associated_with);
-CREATE INDEX IF NOT EXISTS idx_data_submissions_ended_at_time ON data_submissions(ended_at_time);
-CREATE INDEX IF NOT EXISTS idx_data_submissions_started_at_time ON data_submissions(started_at_time);
+-- Indexes for ct_data_submissions
+CREATE INDEX IF NOT EXISTS idx_ct_data_submissions_was_associated_with ON ct_data_submissions(was_associated_with);
+CREATE INDEX IF NOT EXISTS idx_ct_data_submissions_ended_at_time ON ct_data_submissions(ended_at_time);
+CREATE INDEX IF NOT EXISTS idx_ct_data_submissions_started_at_time ON ct_data_submissions(started_at_time);
 
--- Indexes for data_objects
-CREATE INDEX IF NOT EXISTS idx_data_objects_was_produced_by ON data_objects(was_produced_by);
-CREATE INDEX IF NOT EXISTS idx_data_objects_was_submitted_by ON data_objects(was_submitted_by);
-CREATE INDEX IF NOT EXISTS idx_data_objects_was_acquired_by ON data_objects(was_acquired_by);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_spatial_coverage ON data_objects(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_actual_variable ON data_objects(has_actual_variable);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_object_spec ON data_objects(has_object_spec);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_name ON data_objects(has_name);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_sha256sum ON data_objects(has_sha256sum);
-CREATE INDEX IF NOT EXISTS idx_data_objects_has_size_in_bytes ON data_objects(has_size_in_bytes);
+-- Indexes for ct_data_objects
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_was_produced_by ON ct_data_objects(was_produced_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_actual_variable ON ct_data_objects(has_actual_variable);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_object_spec ON ct_data_objects(has_object_spec);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_was_acquired_by ON ct_data_objects(was_acquired_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_was_submitted_by ON ct_data_objects(was_submitted_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_spatial_coverage ON ct_data_objects(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_name ON ct_data_objects(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_sha256sum ON ct_data_objects(has_sha256sum);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_size_in_bytes ON ct_data_objects(has_size_in_bytes);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_end_time ON ct_data_objects(has_end_time);
+CREATE INDEX IF NOT EXISTS idx_ct_data_objects_has_start_time ON ct_data_objects(has_start_time);
 
--- Indexes for data_acquisitions
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_was_performed_at ON data_acquisitions(was_performed_at);
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_has_sampling_point ON data_acquisitions(has_sampling_point);
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_was_performed_with ON data_acquisitions(was_performed_with);
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_was_associated_with ON data_acquisitions(was_associated_with);
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_ended_at_time ON data_acquisitions(ended_at_time);
-CREATE INDEX IF NOT EXISTS idx_data_acquisitions_started_at_time ON data_acquisitions(started_at_time);
+-- Indexes for ct_data_acquisitions
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_was_performed_at ON ct_data_acquisitions(was_performed_at);
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_has_sampling_point ON ct_data_acquisitions(has_sampling_point);
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_was_associated_with ON ct_data_acquisitions(was_associated_with);
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_was_performed_with ON ct_data_acquisitions(was_performed_with);
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_ended_at_time ON ct_data_acquisitions(ended_at_time);
+CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_started_at_time ON ct_data_acquisitions(started_at_time);
 
--- Indexes for data_productions
-CREATE INDEX IF NOT EXISTS idx_data_productions_was_participated_in_by ON data_productions(was_participated_in_by);
-CREATE INDEX IF NOT EXISTS idx_data_productions_was_hosted_by ON data_productions(was_hosted_by);
-CREATE INDEX IF NOT EXISTS idx_data_productions_was_performed_by ON data_productions(was_performed_by);
-CREATE INDEX IF NOT EXISTS idx_data_productions_see_also ON data_productions(see_also);
-CREATE INDEX IF NOT EXISTS idx_data_productions_has_end_time ON data_productions(has_end_time);
+-- Indexes for ct_data_productions
+CREATE INDEX IF NOT EXISTS idx_ct_data_productions_see_also ON ct_data_productions(see_also);
+CREATE INDEX IF NOT EXISTS idx_ct_data_productions_was_participated_in_by ON ct_data_productions(was_participated_in_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_productions_was_hosted_by ON ct_data_productions(was_hosted_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_productions_was_performed_by ON ct_data_productions(was_performed_by);
+CREATE INDEX IF NOT EXISTS idx_ct_data_productions_has_end_time ON ct_data_productions(has_end_time);
 
--- Indexes for variable_infos
-CREATE INDEX IF NOT EXISTS idx_variable_infos_label ON variable_infos(label);
-CREATE INDEX IF NOT EXISTS idx_variable_infos_has_max_value ON variable_infos(has_max_value);
-CREATE INDEX IF NOT EXISTS idx_variable_infos_has_min_value ON variable_infos(has_min_value);
+-- Indexes for ct_variable_infos
+CREATE INDEX IF NOT EXISTS idx_ct_variable_infos_label ON ct_variable_infos(label);
+CREATE INDEX IF NOT EXISTS idx_ct_variable_infos_has_max_value ON ct_variable_infos(has_max_value);
+CREATE INDEX IF NOT EXISTS idx_ct_variable_infos_has_min_value ON ct_variable_infos(has_min_value);
 
--- Indexes for instruments
-CREATE INDEX IF NOT EXISTS idx_instruments_has_vendor ON instruments(has_vendor);
-CREATE INDEX IF NOT EXISTS idx_instruments_has_instrument_owner ON instruments(has_instrument_owner);
-CREATE INDEX IF NOT EXISTS idx_instruments_has_model ON instruments(has_model);
-CREATE INDEX IF NOT EXISTS idx_instruments_has_serial_number ON instruments(has_serial_number);
+-- Indexes for ct_instruments
+CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_vendor ON ct_instruments(has_vendor);
+CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_instrument_owner ON ct_instruments(has_instrument_owner);
+CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_model ON ct_instruments(has_model);
+CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_serial_number ON ct_instruments(has_serial_number);
 
--- Indexes for spatial_coverages
-CREATE INDEX IF NOT EXISTS idx_spatial_coverages_as_geo_json ON spatial_coverages(as_geo_json);
+-- Indexes for ct_spatial_coverages
+CREATE INDEX IF NOT EXISTS idx_ct_spatial_coverages_as_geo_json ON ct_spatial_coverages(as_geo_json);
 
--- Indexes for memberships
-CREATE INDEX IF NOT EXISTS idx_memberships_has_role ON memberships(has_role);
-CREATE INDEX IF NOT EXISTS idx_memberships_at_organization ON memberships(at_organization);
-CREATE INDEX IF NOT EXISTS idx_memberships_label ON memberships(label);
-CREATE INDEX IF NOT EXISTS idx_memberships_has_start_time ON memberships(has_start_time);
-CREATE INDEX IF NOT EXISTS idx_memberships_has_end_time ON memberships(has_end_time);
+-- Indexes for ct_memberships
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_at_organization ON ct_memberships(at_organization);
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_role ON ct_memberships(has_role);
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_label ON ct_memberships(label);
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_start_time ON ct_memberships(has_start_time);
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_end_time ON ct_memberships(has_end_time);
 
--- Indexes for persons
-CREATE INDEX IF NOT EXISTS idx_persons_has_membership ON persons(has_membership);
-CREATE INDEX IF NOT EXISTS idx_persons_has_first_name ON persons(has_first_name);
-CREATE INDEX IF NOT EXISTS idx_persons_has_last_name ON persons(has_last_name);
+-- Indexes for ct_persons
+CREATE INDEX IF NOT EXISTS idx_ct_persons_has_membership ON ct_persons(has_membership);
+CREATE INDEX IF NOT EXISTS idx_ct_persons_has_first_name ON ct_persons(has_first_name);
+CREATE INDEX IF NOT EXISTS idx_ct_persons_has_last_name ON ct_persons(has_last_name);
 
--- Indexes for collections
-CREATE INDEX IF NOT EXISTS idx_collections_creator ON collections(creator);
-CREATE INDEX IF NOT EXISTS idx_collections_see_also ON collections(see_also);
-CREATE INDEX IF NOT EXISTS idx_collections_is_next_version_of ON collections(is_next_version_of);
-CREATE INDEX IF NOT EXISTS idx_collections_has_spatial_coverage ON collections(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_collections_has_part ON collections(has_part);
-CREATE INDEX IF NOT EXISTS idx_collections_title ON collections(title);
-CREATE INDEX IF NOT EXISTS idx_collections_description ON collections(description);
+-- Indexes for ct_collections
+CREATE INDEX IF NOT EXISTS idx_ct_collections_see_also ON ct_collections(see_also);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_creator ON ct_collections(creator);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_has_part ON ct_collections(has_part);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_is_next_version_of ON ct_collections(is_next_version_of);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_has_spatial_coverage ON ct_collections(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_title ON ct_collections(title);
+CREATE INDEX IF NOT EXISTS idx_ct_collections_description ON ct_collections(description);
 
--- Indexes for document_objects
-CREATE INDEX IF NOT EXISTS idx_document_objects_creator ON document_objects(creator);
-CREATE INDEX IF NOT EXISTS idx_document_objects_was_submitted_by ON document_objects(was_submitted_by);
-CREATE INDEX IF NOT EXISTS idx_document_objects_has_name ON document_objects(has_name);
-CREATE INDEX IF NOT EXISTS idx_document_objects_has_sha256sum ON document_objects(has_sha256sum);
-CREATE INDEX IF NOT EXISTS idx_document_objects_has_size_in_bytes ON document_objects(has_size_in_bytes);
+-- Indexes for ct_document_objects
+CREATE INDEX IF NOT EXISTS idx_ct_document_objects_was_submitted_by ON ct_document_objects(was_submitted_by);
+CREATE INDEX IF NOT EXISTS idx_ct_document_objects_creator ON ct_document_objects(creator);
+CREATE INDEX IF NOT EXISTS idx_ct_document_objects_has_name ON ct_document_objects(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_document_objects_has_sha256sum ON ct_document_objects(has_sha256sum);
+CREATE INDEX IF NOT EXISTS idx_ct_document_objects_has_size_in_bytes ON ct_document_objects(has_size_in_bytes);
 
--- Indexes for dataset_columns
-CREATE INDEX IF NOT EXISTS idx_dataset_columns_has_value_format ON dataset_columns(has_value_format);
-CREATE INDEX IF NOT EXISTS idx_dataset_columns_has_value_type ON dataset_columns(has_value_type);
-CREATE INDEX IF NOT EXISTS idx_dataset_columns_has_column_title ON dataset_columns(has_column_title);
-CREATE INDEX IF NOT EXISTS idx_dataset_columns_label ON dataset_columns(label);
+-- Indexes for ct_dataset_columns
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_columns_has_value_format ON ct_dataset_columns(has_value_format);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_columns_has_value_type ON ct_dataset_columns(has_value_type);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_columns_has_column_title ON ct_dataset_columns(has_column_title);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_columns_label ON ct_dataset_columns(label);
 
--- Indexes for value_types
-CREATE INDEX IF NOT EXISTS idx_value_types_has_quantity_kind ON value_types(has_quantity_kind);
-CREATE INDEX IF NOT EXISTS idx_value_types_label ON value_types(label);
+-- Indexes for ct_value_types
+CREATE INDEX IF NOT EXISTS idx_ct_value_types_has_quantity_kind ON ct_value_types(has_quantity_kind);
+CREATE INDEX IF NOT EXISTS idx_ct_value_types_label ON ct_value_types(label);
 
--- Indexes for lat_lon_boxes
-CREATE INDEX IF NOT EXISTS idx_lat_lon_boxes_has_eastern_bound ON lat_lon_boxes(has_eastern_bound);
-CREATE INDEX IF NOT EXISTS idx_lat_lon_boxes_has_northern_bound ON lat_lon_boxes(has_northern_bound);
-CREATE INDEX IF NOT EXISTS idx_lat_lon_boxes_has_southern_bound ON lat_lon_boxes(has_southern_bound);
-CREATE INDEX IF NOT EXISTS idx_lat_lon_boxes_has_western_bound ON lat_lon_boxes(has_western_bound);
-CREATE INDEX IF NOT EXISTS idx_lat_lon_boxes_as_geo_json ON lat_lon_boxes(as_geo_json);
+-- Indexes for ct_lat_lon_boxes
+CREATE INDEX IF NOT EXISTS idx_ct_lat_lon_boxes_has_eastern_bound ON ct_lat_lon_boxes(has_eastern_bound);
+CREATE INDEX IF NOT EXISTS idx_ct_lat_lon_boxes_has_northern_bound ON ct_lat_lon_boxes(has_northern_bound);
+CREATE INDEX IF NOT EXISTS idx_ct_lat_lon_boxes_has_southern_bound ON ct_lat_lon_boxes(has_southern_bound);
+CREATE INDEX IF NOT EXISTS idx_ct_lat_lon_boxes_has_western_bound ON ct_lat_lon_boxes(has_western_bound);
+CREATE INDEX IF NOT EXISTS idx_ct_lat_lon_boxes_as_geo_json ON ct_lat_lon_boxes(as_geo_json);
 
--- Indexes for es
-CREATE INDEX IF NOT EXISTS idx_es_has_funding ON es(has_funding);
-CREATE INDEX IF NOT EXISTS idx_es_has_spatial_coverage ON es(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_es_has_ecosystem_type ON es(has_ecosystem_type);
-CREATE INDEX IF NOT EXISTS idx_es_has_climate_zone ON es(has_climate_zone);
-CREATE INDEX IF NOT EXISTS idx_es_has_documentation_object ON es(has_documentation_object);
-CREATE INDEX IF NOT EXISTS idx_es_has_webpage_elements ON es(has_webpage_elements);
-CREATE INDEX IF NOT EXISTS idx_es_www_w3_org_ns_dcat_theme ON es(www_w3_org_ns_dcat_theme);
-CREATE INDEX IF NOT EXISTS idx_es_country_code ON es(country_code);
-CREATE INDEX IF NOT EXISTS idx_es_has_etc_id ON es(has_etc_id);
-CREATE INDEX IF NOT EXISTS idx_es_has_latitude ON es(has_latitude);
-CREATE INDEX IF NOT EXISTS idx_es_has_longitude ON es(has_longitude);
-CREATE INDEX IF NOT EXISTS idx_es_has_name ON es(has_name);
-CREATE INDEX IF NOT EXISTS idx_es_has_station_id ON es(has_station_id);
-CREATE INDEX IF NOT EXISTS idx_es_label ON es(label);
-CREATE INDEX IF NOT EXISTS idx_es_has_time_zone_offset ON es(has_time_zone_offset);
-CREATE INDEX IF NOT EXISTS idx_es_has_elevation ON es(has_elevation);
+-- Indexes for ct_es
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_documentation_object ON ct_es(has_documentation_object);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_funding ON ct_es(has_funding);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_climate_zone ON ct_es(has_climate_zone);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_ecosystem_type ON ct_es(has_ecosystem_type);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_webpage_elements ON ct_es(has_webpage_elements);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_spatial_coverage ON ct_es(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_es_www_w3_org_ns_dcat_theme ON ct_es(www_w3_org_ns_dcat_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_es_country_code ON ct_es(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_etc_id ON ct_es(has_etc_id);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_latitude ON ct_es(has_latitude);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_longitude ON ct_es(has_longitude);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_name ON ct_es(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_station_id ON ct_es(has_station_id);
+CREATE INDEX IF NOT EXISTS idx_ct_es_label ON ct_es(label);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_time_zone_offset ON ct_es(has_time_zone_offset);
+CREATE INDEX IF NOT EXISTS idx_ct_es_has_elevation ON ct_es(has_elevation);
 
--- Indexes for organizations
-CREATE INDEX IF NOT EXISTS idx_organizations_has_name ON organizations(has_name);
+-- Indexes for ct_organizations
+CREATE INDEX IF NOT EXISTS idx_ct_organizations_has_name ON ct_organizations(has_name);
 
--- Indexes for stations
-CREATE INDEX IF NOT EXISTS idx_stations_has_spatial_coverage ON stations(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_stations_has_responsible_organization ON stations(has_responsible_organization);
-CREATE INDEX IF NOT EXISTS idx_stations_has_climate_zone ON stations(has_climate_zone);
-CREATE INDEX IF NOT EXISTS idx_stations_has_name ON stations(has_name);
-CREATE INDEX IF NOT EXISTS idx_stations_country ON stations(country);
+-- Indexes for ct_stations
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_climate_zone ON ct_stations(has_climate_zone);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_responsible_organization ON ct_stations(has_responsible_organization);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_spatial_coverage ON ct_stations(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_name ON ct_stations(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_country ON ct_stations(country);
 
--- Indexes for positions
-CREATE INDEX IF NOT EXISTS idx_positions_has_latitude ON positions(has_latitude);
-CREATE INDEX IF NOT EXISTS idx_positions_has_longitude ON positions(has_longitude);
-CREATE INDEX IF NOT EXISTS idx_positions_label ON positions(label);
+-- Indexes for ct_positions
+CREATE INDEX IF NOT EXISTS idx_ct_positions_has_latitude ON ct_positions(has_latitude);
+CREATE INDEX IF NOT EXISTS idx_ct_positions_has_longitude ON ct_positions(has_longitude);
+CREATE INDEX IF NOT EXISTS idx_ct_positions_label ON ct_positions(label);
 
--- Indexes for link_boxes
-CREATE INDEX IF NOT EXISTS idx_link_boxes_has_webpage_link ON link_boxes(has_webpage_link);
-CREATE INDEX IF NOT EXISTS idx_link_boxes_has_cover_image ON link_boxes(has_cover_image);
-CREATE INDEX IF NOT EXISTS idx_link_boxes_has_name ON link_boxes(has_name);
-CREATE INDEX IF NOT EXISTS idx_link_boxes_has_order_weight ON link_boxes(has_order_weight);
-CREATE INDEX IF NOT EXISTS idx_link_boxes_label ON link_boxes(label);
+-- Indexes for ct_link_boxes
+CREATE INDEX IF NOT EXISTS idx_ct_link_boxes_has_webpage_link ON ct_link_boxes(has_webpage_link);
+CREATE INDEX IF NOT EXISTS idx_ct_link_boxes_has_cover_image ON ct_link_boxes(has_cover_image);
+CREATE INDEX IF NOT EXISTS idx_ct_link_boxes_has_name ON ct_link_boxes(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_link_boxes_has_order_weight ON ct_link_boxes(has_order_weight);
+CREATE INDEX IF NOT EXISTS idx_ct_link_boxes_label ON ct_link_boxes(label);
 
--- Indexes for fundings
-CREATE INDEX IF NOT EXISTS idx_fundings_has_funder ON fundings(has_funder);
-CREATE INDEX IF NOT EXISTS idx_fundings_label ON fundings(label);
+-- Indexes for ct_fundings
+CREATE INDEX IF NOT EXISTS idx_ct_fundings_has_funder ON ct_fundings(has_funder);
+CREATE INDEX IF NOT EXISTS idx_ct_fundings_label ON ct_fundings(label);
 
--- Indexes for sites
-CREATE INDEX IF NOT EXISTS idx_sites_has_spatial_coverage ON sites(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_sites_has_sampling_point ON sites(has_sampling_point);
-CREATE INDEX IF NOT EXISTS idx_sites_has_ecosystem_type ON sites(has_ecosystem_type);
-CREATE INDEX IF NOT EXISTS idx_sites_label ON sites(label);
+-- Indexes for ct_sites
+CREATE INDEX IF NOT EXISTS idx_ct_sites_has_ecosystem_type ON ct_sites(has_ecosystem_type);
+CREATE INDEX IF NOT EXISTS idx_ct_sites_has_sampling_point ON ct_sites(has_sampling_point);
+CREATE INDEX IF NOT EXISTS idx_ct_sites_has_spatial_coverage ON ct_sites(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_sites_label ON ct_sites(label);
 
--- Indexes for simple_object_specs
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_encoding ON simple_object_specs(has_encoding);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_contains_dataset ON simple_object_specs(contains_dataset);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_associated_project ON simple_object_specs(has_associated_project);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_format ON simple_object_specs(has_format);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_specific_dataset_type ON simple_object_specs(has_specific_dataset_type);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_documentation_object ON simple_object_specs(has_documentation_object);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_data_theme ON simple_object_specs(has_data_theme);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_has_data_level ON simple_object_specs(has_data_level);
-CREATE INDEX IF NOT EXISTS idx_simple_object_specs_label ON simple_object_specs(label);
+-- Indexes for ct_simple_object_specs
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_contains_dataset ON ct_simple_object_specs(contains_dataset);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_documentation_object ON ct_simple_object_specs(has_documentation_object);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_specific_dataset_type ON ct_simple_object_specs(has_specific_dataset_type);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_format ON ct_simple_object_specs(has_format);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_encoding ON ct_simple_object_specs(has_encoding);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_data_theme ON ct_simple_object_specs(has_data_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_associated_project ON ct_simple_object_specs(has_associated_project);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_has_data_level ON ct_simple_object_specs(has_data_level);
+CREATE INDEX IF NOT EXISTS idx_ct_simple_object_specs_label ON ct_simple_object_specs(label);
 
--- Indexes for data_object_specs
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_encoding ON data_object_specs(has_encoding);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_contains_dataset ON data_object_specs(contains_dataset);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_associated_project ON data_object_specs(has_associated_project);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_format ON data_object_specs(has_format);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_specific_dataset_type ON data_object_specs(has_specific_dataset_type);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_documentation_object ON data_object_specs(has_documentation_object);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_data_theme ON data_object_specs(has_data_theme);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_has_data_level ON data_object_specs(has_data_level);
-CREATE INDEX IF NOT EXISTS idx_data_object_specs_label ON data_object_specs(label);
+-- Indexes for ct_data_object_specs
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_contains_dataset ON ct_data_object_specs(contains_dataset);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_documentation_object ON ct_data_object_specs(has_documentation_object);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_specific_dataset_type ON ct_data_object_specs(has_specific_dataset_type);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_format ON ct_data_object_specs(has_format);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_encoding ON ct_data_object_specs(has_encoding);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_data_theme ON ct_data_object_specs(has_data_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_associated_project ON ct_data_object_specs(has_associated_project);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_has_data_level ON ct_data_object_specs(has_data_level);
+CREATE INDEX IF NOT EXISTS idx_ct_data_object_specs_label ON ct_data_object_specs(label);
 
--- Indexes for dataset_variables
-CREATE INDEX IF NOT EXISTS idx_dataset_variables_has_value_type ON dataset_variables(has_value_type);
-CREATE INDEX IF NOT EXISTS idx_dataset_variables_has_variable_title ON dataset_variables(has_variable_title);
-CREATE INDEX IF NOT EXISTS idx_dataset_variables_label ON dataset_variables(label);
+-- Indexes for ct_dataset_variables
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_variables_has_value_type ON ct_dataset_variables(has_value_type);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_variables_has_variable_title ON ct_dataset_variables(has_variable_title);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_variables_label ON ct_dataset_variables(label);
 
--- Indexes for as
-CREATE INDEX IF NOT EXISTS idx_as_has_responsible_organization ON as(has_responsible_organization);
-CREATE INDEX IF NOT EXISTS idx_as_has_documentation_object ON as(has_documentation_object);
-CREATE INDEX IF NOT EXISTS idx_as_has_webpage_elements ON as(has_webpage_elements);
-CREATE INDEX IF NOT EXISTS idx_as_www_w3_org_ns_dcat_theme ON as(www_w3_org_ns_dcat_theme);
-CREATE INDEX IF NOT EXISTS idx_as_country_code ON as(country_code);
-CREATE INDEX IF NOT EXISTS idx_as_has_atc_id ON as(has_atc_id);
-CREATE INDEX IF NOT EXISTS idx_as_has_elevation ON as(has_elevation);
-CREATE INDEX IF NOT EXISTS idx_as_has_latitude ON as(has_latitude);
-CREATE INDEX IF NOT EXISTS idx_as_has_longitude ON as(has_longitude);
-CREATE INDEX IF NOT EXISTS idx_as_has_name ON as(has_name);
-CREATE INDEX IF NOT EXISTS idx_as_has_station_id ON as(has_station_id);
-CREATE INDEX IF NOT EXISTS idx_as_has_time_zone_offset ON as(has_time_zone_offset);
-CREATE INDEX IF NOT EXISTS idx_as_label ON as(label);
+-- Indexes for ct_as
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_documentation_object ON ct_as(has_documentation_object);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_webpage_elements ON ct_as(has_webpage_elements);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_responsible_organization ON ct_as(has_responsible_organization);
+CREATE INDEX IF NOT EXISTS idx_ct_as_www_w3_org_ns_dcat_theme ON ct_as(www_w3_org_ns_dcat_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_as_country_code ON ct_as(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_atc_id ON ct_as(has_atc_id);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_elevation ON ct_as(has_elevation);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_latitude ON ct_as(has_latitude);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_longitude ON ct_as(has_longitude);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_name ON ct_as(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_station_id ON ct_as(has_station_id);
+CREATE INDEX IF NOT EXISTS idx_ct_as_has_time_zone_offset ON ct_as(has_time_zone_offset);
+CREATE INDEX IF NOT EXISTS idx_ct_as_label ON ct_as(label);
 
--- Indexes for tabular_dataset_specs
-CREATE INDEX IF NOT EXISTS idx_tabular_dataset_specs_has_column ON tabular_dataset_specs(has_column);
-CREATE INDEX IF NOT EXISTS idx_tabular_dataset_specs_label ON tabular_dataset_specs(label);
+-- Indexes for ct_tabular_dataset_specs
+CREATE INDEX IF NOT EXISTS idx_ct_tabular_dataset_specs_has_column ON ct_tabular_dataset_specs(has_column);
+CREATE INDEX IF NOT EXISTS idx_ct_tabular_dataset_specs_label ON ct_tabular_dataset_specs(label);
 
--- Indexes for plain_collections
-CREATE INDEX IF NOT EXISTS idx_plain_collections_has_part ON plain_collections(has_part);
-CREATE INDEX IF NOT EXISTS idx_plain_collections_is_next_version_of ON plain_collections(is_next_version_of);
+-- Indexes for ct_plain_collections
+CREATE INDEX IF NOT EXISTS idx_ct_plain_collections_is_next_version_of ON ct_plain_collections(is_next_version_of);
+CREATE INDEX IF NOT EXISTS idx_ct_plain_collections_has_part ON ct_plain_collections(has_part);
 
--- Indexes for funders
-CREATE INDEX IF NOT EXISTS idx_funders_has_etc_id ON funders(has_etc_id);
-CREATE INDEX IF NOT EXISTS idx_funders_has_name ON funders(has_name);
+-- Indexes for ct_funders
+CREATE INDEX IF NOT EXISTS idx_ct_funders_has_etc_id ON ct_funders(has_etc_id);
+CREATE INDEX IF NOT EXISTS idx_ct_funders_has_name ON ct_funders(has_name);
 
--- Indexes for ecosystem_types
-CREATE INDEX IF NOT EXISTS idx_ecosystem_types_label ON ecosystem_types(label);
+-- Indexes for ct_ecosystem_types
+CREATE INDEX IF NOT EXISTS idx_ct_ecosystem_types_label ON ct_ecosystem_types(label);
 
--- Indexes for webpage_elements
-CREATE INDEX IF NOT EXISTS idx_webpage_elements_has_linkbox ON webpage_elements(has_linkbox);
-CREATE INDEX IF NOT EXISTS idx_webpage_elements_has_cover_image ON webpage_elements(has_cover_image);
-CREATE INDEX IF NOT EXISTS idx_webpage_elements_label ON webpage_elements(label);
-CREATE INDEX IF NOT EXISTS idx_webpage_elements_comment ON webpage_elements(comment);
+-- Indexes for ct_webpage_elements
+CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_has_linkbox ON ct_webpage_elements(has_linkbox);
+CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_has_cover_image ON ct_webpage_elements(has_cover_image);
+CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_label ON ct_webpage_elements(label);
+CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_comment ON ct_webpage_elements(comment);
 
--- Indexes for climate_zones
-CREATE INDEX IF NOT EXISTS idx_climate_zones_label ON climate_zones(label);
+-- Indexes for ct_climate_zones
+CREATE INDEX IF NOT EXISTS idx_ct_climate_zones_label ON ct_climate_zones(label);
 
--- Indexes for quantity_kinds
-CREATE INDEX IF NOT EXISTS idx_quantity_kinds_label ON quantity_kinds(label);
+-- Indexes for ct_quantity_kinds
+CREATE INDEX IF NOT EXISTS idx_ct_quantity_kinds_label ON ct_quantity_kinds(label);
 
--- Indexes for object_formats
-CREATE INDEX IF NOT EXISTS idx_object_formats_see_also ON object_formats(see_also);
-CREATE INDEX IF NOT EXISTS idx_object_formats_label ON object_formats(label);
+-- Indexes for ct_object_formats
+CREATE INDEX IF NOT EXISTS idx_ct_object_formats_see_also ON ct_object_formats(see_also);
+CREATE INDEX IF NOT EXISTS idx_ct_object_formats_label ON ct_object_formats(label);
 
--- Indexes for os
-CREATE INDEX IF NOT EXISTS idx_os_has_spatial_coverage ON os(has_spatial_coverage);
-CREATE INDEX IF NOT EXISTS idx_os_has_responsible_organization ON os(has_responsible_organization);
-CREATE INDEX IF NOT EXISTS idx_os_has_webpage_elements ON os(has_webpage_elements);
-CREATE INDEX IF NOT EXISTS idx_os_www_w3_org_ns_dcat_theme ON os(www_w3_org_ns_dcat_theme);
-CREATE INDEX IF NOT EXISTS idx_os_country_code ON os(country_code);
-CREATE INDEX IF NOT EXISTS idx_os_has_name ON os(has_name);
-CREATE INDEX IF NOT EXISTS idx_os_has_otc_id ON os(has_otc_id);
-CREATE INDEX IF NOT EXISTS idx_os_has_station_class ON os(has_station_class);
-CREATE INDEX IF NOT EXISTS idx_os_has_station_id ON os(has_station_id);
-CREATE INDEX IF NOT EXISTS idx_os_label ON os(label);
-CREATE INDEX IF NOT EXISTS idx_os_www_w3_org_ns_dcat_contact_point ON os(www_w3_org_ns_dcat_contact_point);
-CREATE INDEX IF NOT EXISTS idx_os_spatial ON os(spatial);
+-- Indexes for ct_os
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_webpage_elements ON ct_os(has_webpage_elements);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_responsible_organization ON ct_os(has_responsible_organization);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_spatial_coverage ON ct_os(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_os_www_w3_org_ns_dcat_theme ON ct_os(www_w3_org_ns_dcat_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_os_country_code ON ct_os(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_name ON ct_os(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_otc_id ON ct_os(has_otc_id);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_station_class ON ct_os(has_station_class);
+CREATE INDEX IF NOT EXISTS idx_ct_os_has_station_id ON ct_os(has_station_id);
+CREATE INDEX IF NOT EXISTS idx_ct_os_label ON ct_os(label);
+CREATE INDEX IF NOT EXISTS idx_ct_os_www_w3_org_ns_dcat_contact_point ON ct_os(www_w3_org_ns_dcat_contact_point);
+CREATE INDEX IF NOT EXISTS idx_ct_os_spatial ON ct_os(spatial);
 
--- Indexes for projects
-CREATE INDEX IF NOT EXISTS idx_projects_label ON projects(label);
+-- Indexes for ct_projects
+CREATE INDEX IF NOT EXISTS idx_ct_projects_label ON ct_projects(label);
 
--- Indexes for value_formats
-CREATE INDEX IF NOT EXISTS idx_value_formats_label ON value_formats(label);
+-- Indexes for ct_value_formats
+CREATE INDEX IF NOT EXISTS idx_ct_value_formats_label ON ct_value_formats(label);
 
--- Indexes for dataset_specs
-CREATE INDEX IF NOT EXISTS idx_dataset_specs_has_variable ON dataset_specs(has_variable);
-CREATE INDEX IF NOT EXISTS idx_dataset_specs_label ON dataset_specs(label);
+-- Indexes for ct_dataset_specs
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_specs_has_variable ON ct_dataset_specs(has_variable);
+CREATE INDEX IF NOT EXISTS idx_ct_dataset_specs_label ON ct_dataset_specs(label);
 
--- Indexes for data_themes
-CREATE INDEX IF NOT EXISTS idx_data_themes_has_icon ON data_themes(has_icon);
-CREATE INDEX IF NOT EXISTS idx_data_themes_label ON data_themes(label);
+-- Indexes for ct_data_themes
+CREATE INDEX IF NOT EXISTS idx_ct_data_themes_has_icon ON ct_data_themes(has_icon);
+CREATE INDEX IF NOT EXISTS idx_ct_data_themes_label ON ct_data_themes(label);
 
--- Indexes for roles
-CREATE INDEX IF NOT EXISTS idx_roles_label ON roles(label);
+-- Indexes for ct_roles
+CREATE INDEX IF NOT EXISTS idx_ct_roles_label ON ct_roles(label);
 
--- Indexes for atmo_stations
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_country_code ON atmo_stations(country_code);
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_has_elevation ON atmo_stations(has_elevation);
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_has_latitude ON atmo_stations(has_latitude);
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_has_longitude ON atmo_stations(has_longitude);
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_has_name ON atmo_stations(has_name);
-CREATE INDEX IF NOT EXISTS idx_atmo_stations_has_station_id ON atmo_stations(has_station_id);
+-- Indexes for ct_atmo_stations
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_country_code ON ct_atmo_stations(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_has_elevation ON ct_atmo_stations(has_elevation);
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_has_latitude ON ct_atmo_stations(has_latitude);
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_has_longitude ON ct_atmo_stations(has_longitude);
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_has_name ON ct_atmo_stations(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_atmo_stations_has_station_id ON ct_atmo_stations(has_station_id);
 
--- Indexes for thematic_centers
-CREATE INDEX IF NOT EXISTS idx_thematic_centers_has_data_theme ON thematic_centers(has_data_theme);
-CREATE INDEX IF NOT EXISTS idx_thematic_centers_has_name ON thematic_centers(has_name);
-CREATE INDEX IF NOT EXISTS idx_thematic_centers_label ON thematic_centers(label);
+-- Indexes for ct_thematic_centers
+CREATE INDEX IF NOT EXISTS idx_ct_thematic_centers_has_data_theme ON ct_thematic_centers(has_data_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_thematic_centers_has_name ON ct_thematic_centers(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_thematic_centers_label ON ct_thematic_centers(label);
 
--- Indexes for ingos_stations
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_country_code ON ingos_stations(country_code);
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_has_elevation ON ingos_stations(has_elevation);
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_has_latitude ON ingos_stations(has_latitude);
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_has_longitude ON ingos_stations(has_longitude);
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_has_name ON ingos_stations(has_name);
-CREATE INDEX IF NOT EXISTS idx_ingos_stations_has_station_id ON ingos_stations(has_station_id);
+-- Indexes for ct_ingos_stations
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_country_code ON ct_ingos_stations(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_has_elevation ON ct_ingos_stations(has_elevation);
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_has_latitude ON ct_ingos_stations(has_latitude);
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_has_longitude ON ct_ingos_stations(has_longitude);
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_has_name ON ct_ingos_stations(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_ingos_stations_has_station_id ON ct_ingos_stations(has_station_id);
 
--- Indexes for object_encodings
-CREATE INDEX IF NOT EXISTS idx_object_encodings_label ON object_encodings(label);
+-- Indexes for ct_object_encodings
+CREATE INDEX IF NOT EXISTS idx_ct_object_encodings_label ON ct_object_encodings(label);
 
--- Indexes for central_facilities
-CREATE INDEX IF NOT EXISTS idx_central_facilities_has_name ON central_facilities(has_name);
-CREATE INDEX IF NOT EXISTS idx_central_facilities_label ON central_facilities(label);
+-- Indexes for ct_central_facilities
+CREATE INDEX IF NOT EXISTS idx_ct_central_facilities_has_name ON ct_central_facilities(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_central_facilities_label ON ct_central_facilities(label);
 
--- Indexes for sail_drones
-CREATE INDEX IF NOT EXISTS idx_sail_drones_www_w3_org_ns_dcat_theme ON sail_drones(www_w3_org_ns_dcat_theme);
-CREATE INDEX IF NOT EXISTS idx_sail_drones_country_code ON sail_drones(country_code);
-CREATE INDEX IF NOT EXISTS idx_sail_drones_has_elevation ON sail_drones(has_elevation);
-CREATE INDEX IF NOT EXISTS idx_sail_drones_has_name ON sail_drones(has_name);
-CREATE INDEX IF NOT EXISTS idx_sail_drones_has_station_id ON sail_drones(has_station_id);
+-- Indexes for ct_sail_drones
+CREATE INDEX IF NOT EXISTS idx_ct_sail_drones_www_w3_org_ns_dcat_theme ON ct_sail_drones(www_w3_org_ns_dcat_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_sail_drones_country_code ON ct_sail_drones(country_code);
+CREATE INDEX IF NOT EXISTS idx_ct_sail_drones_has_elevation ON ct_sail_drones(has_elevation);
+CREATE INDEX IF NOT EXISTS idx_ct_sail_drones_has_name ON ct_sail_drones(has_name);
+CREATE INDEX IF NOT EXISTS idx_ct_sail_drones_has_station_id ON ct_sail_drones(has_station_id);
 
--- Indexes for specific_dataset_types
-CREATE INDEX IF NOT EXISTS idx_specific_dataset_types_label ON specific_dataset_types(label);
+-- Indexes for ct_specific_dataset_types
+CREATE INDEX IF NOT EXISTS idx_ct_specific_dataset_types_label ON ct_specific_dataset_types(label);
 
 -- ======================================================================
 -- POPULATE TABLES
 -- ======================================================================
 
--- Populate data_submissions
-INSERT INTO data_submissions (id
+-- Populate ct_data_submissions
+INSERT INTO ct_data_submissions (id
 , ended_at_time
 , started_at_time
 , was_associated_with
@@ -1135,8 +1137,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate data_objects
-INSERT INTO data_objects (id
+-- Populate ct_data_objects
+INSERT INTO ct_data_objects (id
 , has_name
 , has_object_spec
 , has_sha256sum
@@ -1174,10 +1176,10 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec' THEN obj ELSE NULL END) AS has_object_spec
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum' THEN obj ELSE NULL END) AS has_sha256sum
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes' THEN obj::SMALLINT ELSE NULL END) AS has_size_in_bytes
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes' THEN obj::BIGINT ELSE NULL END) AS has_size_in_bytes
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy' THEN obj ELSE NULL END) AS was_submitted_by
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy' THEN obj ELSE NULL END) AS was_acquired_by
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows' THEN obj::SMALLINT ELSE NULL END) AS has_number_of_rows
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows' THEN obj::INTEGER ELSE NULL END) AS has_number_of_rows
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy' THEN obj ELSE NULL END) AS was_produced_by
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN obj ELSE NULL END) AS is_next_version_of
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames' THEN obj ELSE NULL END) AS has_actual_column_names
@@ -1195,8 +1197,8 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/resources/wdcgg/PARAMETER' THEN obj ELSE NULL END) AS parameter
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/resources/wdcgg/SAMPLING%20TYPE' THEN obj ELSE NULL END) AS sampling_20_type
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/resources/wdcgg/TIME%20INTERVAL' THEN obj ELSE NULL END) AS time_20_interval
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime' THEN obj ELSE NULL END) AS has_end_time
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime' THEN obj ELSE NULL END) AS has_start_time
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS has_end_time
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS has_start_time
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution' THEN obj ELSE NULL END) AS has_temporal_resolution
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/description' THEN obj ELSE NULL END) AS description
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/title' THEN obj ELSE NULL END) AS title
@@ -1209,8 +1211,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate data_acquisitions
-INSERT INTO data_acquisitions (id
+-- Populate ct_data_acquisitions
+INSERT INTO ct_data_acquisitions (id
 , was_performed_with
 , ended_at_time
 , started_at_time
@@ -1235,8 +1237,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate data_productions
-INSERT INTO data_productions (id
+-- Populate ct_data_productions
+INSERT INTO ct_data_productions (id
 , has_end_time
 , was_performed_by
 , was_hosted_by
@@ -1259,8 +1261,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate variable_infos
-INSERT INTO variable_infos (id
+-- Populate ct_variable_infos
+INSERT INTO ct_variable_infos (id
 , label
 , has_max_value
 , has_min_value
@@ -1277,8 +1279,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate instruments
-INSERT INTO instruments (id
+-- Populate ct_instruments
+INSERT INTO ct_instruments (id
 , has_model
 , has_serial_number
 , has_vendor
@@ -1297,10 +1299,10 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber' THEN obj ELSE NULL END) AS has_serial_number
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor' THEN obj ELSE NULL END) AS has_vendor
     , MAX(CASE WHEN pred = 'http://www.w3.org/ns/ssn/hasDeployment' THEN obj ELSE NULL END) AS www_w3_org_ns_ssn_has_deployment
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj::SMALLINT ELSE NULL END) AS has_etc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj::SMALLINT ELSE NULL END) AS has_atc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner' THEN obj ELSE NULL END) AS has_instrument_owner
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent' THEN obj ELSE NULL END) AS has_instrument_component
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
@@ -1311,8 +1313,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate spatial_coverages
-INSERT INTO spatial_coverages (id
+-- Populate ct_spatial_coverages
+INSERT INTO ct_spatial_coverages (id
 , as_geo_json
 , label
 )
@@ -1327,8 +1329,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate memberships
-INSERT INTO memberships (id
+-- Populate ct_memberships
+INSERT INTO ct_memberships (id
 , label
 , has_role
 , at_organization
@@ -1353,8 +1355,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate persons
-INSERT INTO persons (id
+-- Populate ct_persons
+INSERT INTO ct_persons (id
 , has_membership
 , has_first_name
 , has_last_name
@@ -1374,7 +1376,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail' THEN obj ELSE NULL END) AS has_email
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId' THEN obj ELSE NULL END) AS has_orcid_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj::SMALLINT ELSE NULL END) AS has_atc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
@@ -1385,8 +1387,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate collections
-INSERT INTO collections (id
+-- Populate ct_collections
+INSERT INTO ct_collections (id
 , has_part
 , creator
 , title
@@ -1413,8 +1415,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate document_objects
-INSERT INTO document_objects (id
+-- Populate ct_document_objects
+INSERT INTO ct_document_objects (id
 , has_name
 , has_sha256sum
 , has_size_in_bytes
@@ -1429,7 +1431,7 @@ SELECT
     subj AS id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum' THEN obj ELSE NULL END) AS has_sha256sum
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes' THEN obj::INTEGER ELSE NULL END) AS has_size_in_bytes
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes' THEN obj::BIGINT ELSE NULL END) AS has_size_in_bytes
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy' THEN obj ELSE NULL END) AS was_submitted_by
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/creator' THEN obj ELSE NULL END) AS creator
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/title' THEN obj ELSE NULL END) AS title
@@ -1443,8 +1445,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate dataset_columns
-INSERT INTO dataset_columns (id
+-- Populate ct_dataset_columns
+INSERT INTO ct_dataset_columns (id
 , has_column_title
 , has_value_format
 , has_value_type
@@ -1473,8 +1475,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate value_types
-INSERT INTO value_types (id
+-- Populate ct_value_types
+INSERT INTO ct_value_types (id
 , label
 , has_quantity_kind
 , has_unit
@@ -1497,8 +1499,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate lat_lon_boxes
-INSERT INTO lat_lon_boxes (id
+-- Populate ct_lat_lon_boxes
+INSERT INTO ct_lat_lon_boxes (id
 , has_eastern_bound
 , has_northern_bound
 , has_southern_bound
@@ -1521,8 +1523,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate es
-INSERT INTO es (id
+-- Populate ct_es
+INSERT INTO ct_es (id
 , www_w3_org_ns_dcat_theme
 , country_code
 , has_etc_id
@@ -1561,7 +1563,7 @@ SELECT
     subj AS id
     , MAX(CASE WHEN pred = 'http://www.w3.org/ns/dcat#theme' THEN obj ELSE NULL END) AS www_w3_org_ns_dcat_theme
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode' THEN obj ELSE NULL END) AS country_code
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj::SMALLINT ELSE NULL END) AS has_etc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_latitude
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_longitude
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
@@ -1599,8 +1601,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate organizations
-INSERT INTO organizations (id
+-- Populate ct_organizations
+INSERT INTO ct_organizations (id
 , has_name
 , label
 , has_atc_id
@@ -1615,7 +1617,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj::SMALLINT ELSE NULL END) AS has_etc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail' THEN obj ELSE NULL END) AS has_email
 FROM rdf_triples
@@ -1625,8 +1627,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate stations
-INSERT INTO stations (id
+-- Populate ct_stations
+INSERT INTO ct_stations (id
 , has_name
 , country
 , has_latitude
@@ -1665,8 +1667,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate positions
-INSERT INTO positions (id
+-- Populate ct_positions
+INSERT INTO ct_positions (id
 , has_latitude
 , has_longitude
 , label
@@ -1685,8 +1687,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate link_boxes
-INSERT INTO link_boxes (id
+-- Populate ct_link_boxes
+INSERT INTO ct_link_boxes (id
 , has_cover_image
 , has_name
 , has_order_weight
@@ -1709,8 +1711,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate fundings
-INSERT INTO fundings (id
+-- Populate ct_fundings
+INSERT INTO ct_fundings (id
 , has_funder
 , label
 , has_end_date
@@ -1737,8 +1739,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate sites
-INSERT INTO sites (id
+-- Populate ct_sites
+INSERT INTO ct_sites (id
 , has_sampling_point
 , has_ecosystem_type
 , has_spatial_coverage
@@ -1757,8 +1759,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate simple_object_specs
-INSERT INTO simple_object_specs (id
+-- Populate ct_simple_object_specs
+INSERT INTO ct_simple_object_specs (id
 , has_associated_project
 , has_data_level
 , has_data_theme
@@ -1795,8 +1797,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate data_object_specs
-INSERT INTO data_object_specs (id
+-- Populate ct_data_object_specs
+INSERT INTO ct_data_object_specs (id
 , has_associated_project
 , has_data_level
 , has_data_theme
@@ -1831,8 +1833,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate dataset_variables
-INSERT INTO dataset_variables (id
+-- Populate ct_dataset_variables
+INSERT INTO ct_dataset_variables (id
 , has_value_type
 , has_variable_title
 , label
@@ -1851,8 +1853,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate as
-INSERT INTO as (id
+-- Populate ct_as
+INSERT INTO ct_as (id
 , www_w3_org_ns_dcat_theme
 , country_code
 , has_atc_id
@@ -1881,7 +1883,7 @@ SELECT
     subj AS id
     , MAX(CASE WHEN pred = 'http://www.w3.org/ns/dcat#theme' THEN obj ELSE NULL END) AS www_w3_org_ns_dcat_theme
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode' THEN obj ELSE NULL END) AS country_code
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj::SMALLINT ELSE NULL END) AS has_atc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_elevation
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_latitude
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_longitude
@@ -1891,7 +1893,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset' THEN obj::SMALLINT ELSE NULL END) AS has_time_zone_offset
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId' THEN obj ELSE NULL END) AS has_wigos_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass' THEN obj::SMALLINT ELSE NULL END) AS has_station_class
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass' THEN obj ELSE NULL END) AS has_station_class
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject' THEN obj ELSE NULL END) AS has_documentation_object
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction' THEN obj ELSE NULL END) AS has_depiction
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate' THEN obj::DATE ELSE NULL END) AS has_labeling_date
@@ -1909,8 +1911,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate tabular_dataset_specs
-INSERT INTO tabular_dataset_specs (id
+-- Populate ct_tabular_dataset_specs
+INSERT INTO ct_tabular_dataset_specs (id
 , has_column
 , label
 , has_temporal_resolution
@@ -1929,8 +1931,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate plain_collections
-INSERT INTO plain_collections (id
+-- Populate ct_plain_collections
+INSERT INTO ct_plain_collections (id
 , has_part
 , is_next_version_of
 )
@@ -1945,8 +1947,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate funders
-INSERT INTO funders (id
+-- Populate ct_funders
+INSERT INTO ct_funders (id
 , has_etc_id
 , has_name
 )
@@ -1961,8 +1963,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate ecosystem_types
-INSERT INTO ecosystem_types (id
+-- Populate ct_ecosystem_types
+INSERT INTO ct_ecosystem_types (id
 , label
 , comment
 , see_also
@@ -1979,8 +1981,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate webpage_elements
-INSERT INTO webpage_elements (id
+-- Populate ct_webpage_elements
+INSERT INTO ct_webpage_elements (id
 , has_linkbox
 , has_cover_image
 , label
@@ -1999,8 +2001,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate climate_zones
-INSERT INTO climate_zones (id
+-- Populate ct_climate_zones
+INSERT INTO ct_climate_zones (id
 , label
 , see_also
 )
@@ -2015,8 +2017,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate quantity_kinds
-INSERT INTO quantity_kinds (id
+-- Populate ct_quantity_kinds
+INSERT INTO ct_quantity_kinds (id
 , label
 , comment
 )
@@ -2031,8 +2033,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate object_formats
-INSERT INTO object_formats (id
+-- Populate ct_object_formats
+INSERT INTO ct_object_formats (id
 , label
 , has_good_flag_value
 , comment
@@ -2051,8 +2053,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate os
-INSERT INTO os (id
+-- Populate ct_os
+INSERT INTO ct_os (id
 , www_w3_org_ns_dcat_theme
 , country_code
 , has_name
@@ -2085,7 +2087,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization' THEN obj ELSE NULL END) AS has_responsible_organization
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass' THEN obj::SMALLINT ELSE NULL END) AS has_station_class
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass' THEN obj ELSE NULL END) AS has_station_class
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId' THEN obj ELSE NULL END) AS has_station_id
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
     , MAX(CASE WHEN pred = 'http://www.w3.org/ns/dcat#contactPoint' THEN obj ELSE NULL END) AS www_w3_org_ns_dcat_contact_point
@@ -2111,8 +2113,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate projects
-INSERT INTO projects (id
+-- Populate ct_projects
+INSERT INTO ct_projects (id
 , label
 , comment
 , see_also
@@ -2137,8 +2139,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate value_formats
-INSERT INTO value_formats (id
+-- Populate ct_value_formats
+INSERT INTO ct_value_formats (id
 , label
 , comment
 )
@@ -2153,8 +2155,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate dataset_specs
-INSERT INTO dataset_specs (id
+-- Populate ct_dataset_specs
+INSERT INTO ct_dataset_specs (id
 , has_variable
 , label
 , has_temporal_resolution
@@ -2171,8 +2173,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate data_themes
-INSERT INTO data_themes (id
+-- Populate ct_data_themes
+INSERT INTO ct_data_themes (id
 , has_icon
 , label
 , has_marker_icon
@@ -2189,8 +2191,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate roles
-INSERT INTO roles (id
+-- Populate ct_roles
+INSERT INTO ct_roles (id
 , label
 , comment
 )
@@ -2205,8 +2207,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate atmo_stations
-INSERT INTO atmo_stations (id
+-- Populate ct_atmo_stations
+INSERT INTO ct_atmo_stations (id
 , country_code
 , has_elevation
 , has_latitude
@@ -2229,8 +2231,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate thematic_centers
-INSERT INTO thematic_centers (id
+-- Populate ct_thematic_centers
+INSERT INTO ct_thematic_centers (id
 , has_name
 , label
 , has_data_theme
@@ -2247,8 +2249,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate ingos_stations
-INSERT INTO ingos_stations (id
+-- Populate ct_ingos_stations
+INSERT INTO ct_ingos_stations (id
 , country_code
 , has_elevation
 , has_latitude
@@ -2271,8 +2273,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate object_encodings
-INSERT INTO object_encodings (id
+-- Populate ct_object_encodings
+INSERT INTO ct_object_encodings (id
 , label
 )
 SELECT
@@ -2285,8 +2287,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate central_facilities
-INSERT INTO central_facilities (id
+-- Populate ct_central_facilities
+INSERT INTO ct_central_facilities (id
 , has_name
 , label
 , comment
@@ -2303,8 +2305,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate sail_drones
-INSERT INTO sail_drones (id
+-- Populate ct_sail_drones
+INSERT INTO ct_sail_drones (id
 , www_w3_org_ns_dcat_theme
 , country_code
 , has_elevation
@@ -2325,8 +2327,8 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate specific_dataset_types
-INSERT INTO specific_dataset_types (id
+-- Populate ct_specific_dataset_types
+INSERT INTO ct_specific_dataset_types (id
 , label
 )
 SELECT

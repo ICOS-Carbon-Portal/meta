@@ -1,6 +1,6 @@
 {
   "analysis_metadata": {
-    "timestamp": "2025-10-28T13:54:53.925532",
+    "timestamp": "2025-11-10T16:42:52.848611",
     "triples_table": "rdf_triples",
     "filters": {
       "class_filter": null,
@@ -47,54 +47,112 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 2345839
+          "reference_count": 2345839,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
+              "predicate_short": "cpmeta:wasSubmittedBy",
+              "count": 2345839
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 438
+          "reference_count": 438,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
+              "predicate_short": "cpmeta:wasSubmittedBy",
+              "count": 438
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2346277
-        },
-        {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1621292
+          "reference_count": 1621292,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1621292
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
           "class_name": "cpmeta:ThematicCenter",
-          "reference_count": 1610329
+          "reference_count": 1610329,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1610329
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 721270
+          "reference_count": 721270,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 721270
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 721270
+          "reference_count": 721270,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 721270
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
           "class_name": "cpmeta:CentralFacility",
-          "reference_count": 10963
+          "reference_count": 10963,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 10963
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 2489
+          "reference_count": 2489,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 2489
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 1226
+          "reference_count": 1226,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1226
+            }
+          ]
         }
       ]
     },
@@ -332,84 +390,204 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 17217
+          "reference_count": 17217,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 17215
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
+              "predicate_short": "cpmeta:isNextVersionOf",
+              "count": 2
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Dataset",
           "class_name": "http://www.w3.org/ns/dcat#Dataset",
-          "reference_count": 1786
+          "reference_count": 1786,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2002/07/owl#sameAs",
+              "predicate_short": "http://www.w3.org/2002/07/owl#sameAs",
+              "count": 893
+            },
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#landingPage",
+              "predicate_short": "http://www.w3.org/ns/dcat#landingPage",
+              "count": 893
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Distribution",
           "class_name": "http://www.w3.org/ns/dcat#Distribution",
-          "reference_count": 893
+          "reference_count": 893,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#accessURL",
+              "predicate_short": "http://www.w3.org/ns/dcat#accessURL",
+              "count": 893
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection",
           "class_name": "cpmeta:PlainCollection",
-          "reference_count": 145
+          "reference_count": 145,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 95
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
+              "predicate_short": "cpmeta:isNextVersionOf",
+              "count": 50
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 2345839
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2345839
+          "reference_count": 2345839,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
+              "predicate_short": "cpmeta:wasSubmittedBy",
+              "count": 2345839
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 2343190
+          "reference_count": 2343190,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy",
+              "predicate_short": "cpmeta:wasAcquiredBy",
+              "count": 2343190
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 1248515
+          "reference_count": 1248515,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy",
+              "predicate_short": "cpmeta:wasProducedBy",
+              "count": 1248515
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 1217857
+          "reference_count": 1217857,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
+              "predicate_short": "cpmeta:hasObjectSpec",
+              "count": 1217857
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 1127982
+          "reference_count": 1127982,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
+              "predicate_short": "cpmeta:hasObjectSpec",
+              "count": 1127982
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/VariableInfo",
           "class_name": "cpmeta:VariableInfo",
-          "reference_count": 4957
+          "reference_count": 4957,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable",
+              "predicate_short": "cpmeta:hasActualVariable",
+              "count": 4957
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 4338
+          "reference_count": 4338,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
+              "predicate_short": "cpmeta:hasObjectSpec",
+              "count": 4332
+            },
+            {
+              "predicate_uri": "http://purl.org/dc/terms/license",
+              "predicate_short": "purl:license",
+              "count": 6
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
           "class_name": "cpmeta:SpatialCoverage",
-          "reference_count": 3788
+          "reference_count": 3788,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 3788
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox",
           "class_name": "cpmeta:LatLonBox",
-          "reference_count": 2555
+          "reference_count": 2555,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2555
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/dc/terms/LicenseDocument",
           "class_name": "purl:LicenseDocument",
-          "reference_count": 6
+          "reference_count": 6,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/license",
+              "predicate_short": "purl:license",
+              "count": 6
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
           "class_name": "cpmeta:Position",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -479,74 +657,160 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 2343190
+          "reference_count": 2343190,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy",
+              "predicate_short": "cpmeta:wasAcquiredBy",
+              "count": 2343190
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Instrument",
           "class_name": "cpmeta:Instrument",
-          "reference_count": 2406453
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2343194
+          "reference_count": 2406453,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith",
+              "predicate_short": "cpmeta:wasPerformedWith",
+              "count": 2406453
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 1979353
+          "reference_count": 1979353,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1979353
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AS",
           "class_name": "cpmeta:AS",
-          "reference_count": 1449964
+          "reference_count": 1449964,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1449964
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 870633
+          "reference_count": 870633,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 870633
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/OS",
           "class_name": "cpmeta:OS",
-          "reference_count": 15880
+          "reference_count": 15880,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 15880
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Station",
           "class_name": "cpmeta:Station",
-          "reference_count": 4353
+          "reference_count": 4353,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 4353
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
           "class_name": "cpmeta:Site",
-          "reference_count": 1878
+          "reference_count": 1878,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
+              "predicate_short": "cpmeta:wasPerformedAt",
+              "count": 1878
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 1878
+          "reference_count": 1878,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1878
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
           "class_name": "cpmeta:Position",
-          "reference_count": 1404
+          "reference_count": 1404,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
+              "predicate_short": "cpmeta:hasSamplingPoint",
+              "count": 1404
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone",
           "class_name": "cpmeta:SailDrone",
-          "reference_count": 437
+          "reference_count": 437,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 437
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation",
           "class_name": "cpmeta:IngosStation",
-          "reference_count": 9
+          "reference_count": 9,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 9
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation",
           "class_name": "cpmeta:AtmoStation",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -609,64 +873,186 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 1248515
+          "reference_count": 1248515,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy",
+              "predicate_short": "cpmeta:wasProducedBy",
+              "count": 1248515
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 2356890
+          "reference_count": 2356890,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1244321
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 1111559
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 1010
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
           "class_name": "cpmeta:ThematicCenter",
-          "reference_count": 2347699
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 1248515
+          "reference_count": 2347699,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1240811
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 1106888
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 623274
+          "reference_count": 623274,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 619149
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 2413
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1712
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Person",
           "class_name": "cpmeta:Person",
-          "reference_count": 24212
+          "reference_count": 24212,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 20794
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 3418
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
           "class_name": "cpmeta:CentralFacility",
-          "reference_count": 6950
+          "reference_count": 6950,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 4432
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 2517
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
           "class_name": "rdf:Seq",
-          "reference_count": 1554
+          "reference_count": 1554,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 1554
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 807
+          "reference_count": 807,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 807
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 56
+          "reference_count": 56,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 56
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -708,16 +1094,17 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 4957
+          "reference_count": 4957,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable",
+              "predicate_short": "cpmeta:hasActualVariable",
+              "count": 4957
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 4957
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Instrument",
@@ -813,29 +1200,57 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 2406453
+          "reference_count": 2406453,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith",
+              "predicate_short": "cpmeta:wasPerformedWith",
+              "count": 2406453
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 5971
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 4825
+          "reference_count": 5971,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor",
+              "predicate_short": "cpmeta:hasVendor",
+              "count": 4762
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner",
+              "predicate_short": "cpmeta:hasInstrumentOwner",
+              "count": 1209
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/ssn/Deployment",
           "class_name": "http://www.w3.org/ns/ssn/Deployment",
-          "reference_count": 4094
+          "reference_count": 4094,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/ssn/hasDeployment",
+              "predicate_short": "http://www.w3.org/ns/ssn/hasDeployment",
+              "count": 4094
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 5
+          "reference_count": 5,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner",
+              "predicate_short": "cpmeta:hasInstrumentOwner",
+              "count": 5
+            }
+          ]
         }
       ]
     },
@@ -870,41 +1285,77 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 3788
+          "reference_count": 3788,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 3788
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
           "class_name": "cpmeta:Site",
-          "reference_count": 99
+          "reference_count": 99,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 99
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 59
+          "reference_count": 59,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 59
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 42
+          "reference_count": 42,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 42
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 31
+          "reference_count": 31,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 31
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/OS",
           "class_name": "cpmeta:OS",
-          "reference_count": 15
+          "reference_count": 15,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 15
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 3962
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
@@ -972,64 +1423,141 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Person",
           "class_name": "cpmeta:Person",
-          "reference_count": 1798
+          "reference_count": 1798,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership",
+              "predicate_short": "cpmeta:hasMembership",
+              "count": 1798
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership",
+              "predicate_short": "cpmeta:hasMembership",
+              "count": 2
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Role",
           "class_name": "cpmeta:Role",
-          "reference_count": 1881
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 1881
+          "reference_count": 1881,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasRole",
+              "predicate_short": "cpmeta:hasRole",
+              "count": 1881
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 1308
+          "reference_count": 1308,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 1308
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 1120
+          "reference_count": 1120,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 1120
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 563
+          "reference_count": 563,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasRole",
+              "predicate_short": "cpmeta:hasRole",
+              "count": 550
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 13
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AS",
           "class_name": "cpmeta:AS",
-          "reference_count": 293
+          "reference_count": 293,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 293
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 167
+          "reference_count": 167,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 167
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/OS",
           "class_name": "cpmeta:OS",
-          "reference_count": 104
+          "reference_count": 104,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 104
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
           "class_name": "cpmeta:CentralFacility",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 3
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
           "class_name": "cpmeta:ThematicCenter",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -1120,44 +1648,248 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 24212
+          "reference_count": 24212,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 20794
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 3418
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
           "class_name": "rdf:Seq",
-          "reference_count": 8401
+          "reference_count": 8401,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1",
+              "predicate_short": "rdf:_1",
+              "count": 1649
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2",
+              "predicate_short": "rdf:_2",
+              "count": 1644
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3",
+              "predicate_short": "rdf:_3",
+              "count": 1209
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4",
+              "predicate_short": "rdf:_4",
+              "count": 1039
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_5",
+              "predicate_short": "rdf:_5",
+              "count": 747
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6",
+              "predicate_short": "rdf:_6",
+              "count": 631
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7",
+              "predicate_short": "rdf:_7",
+              "count": 595
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_8",
+              "predicate_short": "rdf:_8",
+              "count": 494
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_9",
+              "predicate_short": "rdf:_9",
+              "count": 285
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_10",
+              "predicate_short": "rdf:_10",
+              "count": 22
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_11",
+              "predicate_short": "rdf:_11",
+              "count": 10
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_14",
+              "predicate_short": "rdf:_14",
+              "count": 7
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_15",
+              "predicate_short": "rdf:_15",
+              "count": 7
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_12",
+              "predicate_short": "rdf:_12",
+              "count": 7
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_13",
+              "predicate_short": "rdf:_13",
+              "count": 7
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_17",
+              "predicate_short": "rdf:_17",
+              "count": 6
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_16",
+              "predicate_short": "rdf:_16",
+              "count": 5
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_18",
+              "predicate_short": "rdf:_18",
+              "count": 4
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_19",
+              "predicate_short": "rdf:_19",
+              "count": 4
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_20",
+              "predicate_short": "rdf:_20",
+              "count": 4
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_21",
+              "predicate_short": "rdf:_21",
+              "count": 4
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_22",
+              "predicate_short": "rdf:_22",
+              "count": 4
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_23",
+              "predicate_short": "rdf:_23",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_25",
+              "predicate_short": "rdf:_25",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_24",
+              "predicate_short": "rdf:_24",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_29",
+              "predicate_short": "rdf:_29",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_28",
+              "predicate_short": "rdf:_28",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_27",
+              "predicate_short": "rdf:_27",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_26",
+              "predicate_short": "rdf:_26",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_30",
+              "predicate_short": "rdf:_30",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_31",
+              "predicate_short": "rdf:_31",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_32",
+              "predicate_short": "rdf:_32",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 75
+          "reference_count": 75,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 75
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/vocommons/voaf#Vocabulary",
           "class_name": "http://purl.org/vocommons/voaf#Vocabulary",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/creator",
+              "predicate_short": "http://purl.org/dc/elements/1.1/creator",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/creator",
+              "predicate_short": "http://purl.org/dc/elements/1.1/creator",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
           "class_name": "http://www.w3.org/2002/07/owl#Ontology",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/creator",
+              "predicate_short": "http://purl.org/dc/elements/1.1/creator",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 1798
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 1144
+          "reference_count": 1798,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership",
+              "predicate_short": "cpmeta:hasMembership",
+              "count": 1798
+            }
+          ]
         }
       ]
     },
@@ -1235,57 +1967,132 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 17217
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 786
+          "reference_count": 17217,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 17215
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
+              "predicate_short": "cpmeta:isNextVersionOf",
+              "count": 2
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 778
+          "reference_count": 778,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 778
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
           "class_name": "cpmeta:CentralFacility",
-          "reference_count": 730
+          "reference_count": 730,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 730
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 151
+          "reference_count": 151,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 145
+            },
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 6
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
           "class_name": "cpmeta:SpatialCoverage",
-          "reference_count": 59
+          "reference_count": 59,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 59
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
           "class_name": "cpmeta:ThematicCenter",
-          "reference_count": 48
+          "reference_count": 48,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 48
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 6
+          "reference_count": 6,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 6
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
           "class_name": "cpmeta:Position",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 3
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox",
           "class_name": "cpmeta:LatLonBox",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -1369,89 +2176,201 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 807
+          "reference_count": 807,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 807
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 151
+          "reference_count": 151,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 145
+            },
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 6
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 60
+          "reference_count": 60,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 60
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 35
+          "reference_count": 35,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 35
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AS",
           "class_name": "cpmeta:AS",
-          "reference_count": 32
+          "reference_count": 32,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 32
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 21
+          "reference_count": 21,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 21
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 10
+          "reference_count": 10,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 10
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 8
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
           "class_name": "cpmeta:LinkBox",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink",
+              "predicate_short": "cpmeta:hasWebpageLink",
+              "count": 8
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 438
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 438
+          "reference_count": 438,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
+              "predicate_short": "cpmeta:wasSubmittedBy",
+              "count": 438
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 171
+          "reference_count": 171,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 171
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
           "class_name": "cpmeta:CentralFacility",
-          "reference_count": 162
+          "reference_count": 162,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 162
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Person",
           "class_name": "cpmeta:Person",
-          "reference_count": 75
+          "reference_count": 75,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 75
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 35
+          "reference_count": 35,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 35
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
           "class_name": "rdf:Seq",
-          "reference_count": 17
+          "reference_count": 17,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 17
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 8
+            }
+          ]
         }
       ]
     },
@@ -1535,39 +2454,81 @@
         {
           "class_uri": "http://www.w3.org/ns/ssn/Deployment",
           "class_name": "http://www.w3.org/ns/ssn/Deployment",
-          "reference_count": 4038
+          "reference_count": 4038,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/ssn/forProperty",
+              "predicate_short": "http://www.w3.org/ns/ssn/forProperty",
+              "count": 4038
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec",
           "class_name": "cpmeta:TabularDatasetSpec",
-          "reference_count": 665
+          "reference_count": 665,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
+              "predicate_short": "cpmeta:hasColumn",
+              "count": 665
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 5
+          "reference_count": 5,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
+              "predicate_short": "cpmeta:hasColumn",
+              "count": 5
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 431
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 420
+          "reference_count": 431,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
+              "predicate_short": "cpmeta:hasValueFormat",
+              "count": 419
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 12
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat",
           "class_name": "cpmeta:ValueFormat",
-          "reference_count": 419
+          "reference_count": 419,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
+              "predicate_short": "cpmeta:hasValueFormat",
+              "count": 419
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType",
           "class_name": "cpmeta:ValueType",
-          "reference_count": 419
+          "reference_count": 419,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 419
+            }
+          ]
         }
       ]
     },
@@ -1630,29 +2591,52 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
           "class_name": "cpmeta:DatasetColumn",
-          "reference_count": 419
+          "reference_count": 419,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 419
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable",
           "class_name": "cpmeta:DatasetVariable",
-          "reference_count": 76
+          "reference_count": 76,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 76
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 5
+          "reference_count": 5,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 5
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 307
-        },
-        {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind",
           "class_name": "cpmeta:QuantityKind",
-          "reference_count": 260
+          "reference_count": 260,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind",
+              "predicate_short": "cpmeta:hasQuantityKind",
+              "count": 260
+            }
+          ]
         }
       ]
     },
@@ -1715,26 +2699,41 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 2555
+          "reference_count": 2555,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2555
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Station",
           "class_name": "cpmeta:Station",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 299
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
@@ -1984,99 +2983,230 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 870633
+          "reference_count": 870633,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 870633
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 721270
+          "reference_count": 721270,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 721270
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/ssn/Deployment",
           "class_name": "http://www.w3.org/ns/ssn/Deployment",
-          "reference_count": 4094
+          "reference_count": 4094,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 4094
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 1308
+          "reference_count": 1308,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 1308
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/ES",
           "class_name": "http://meta.icos-cp.eu/ontologies/stationentry/ES",
-          "reference_count": 108
+          "reference_count": 108,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "predicate_short": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "count": 108
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Dataset",
           "class_name": "http://www.w3.org/ns/dcat#Dataset",
-          "reference_count": 78
+          "reference_count": 78,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAttributedTo",
+              "predicate_short": "prov:wasAttributedTo",
+              "count": 78
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2004/02/skos/core#Concept",
           "class_name": "http://www.w3.org/2004/02/skos/core#Concept",
-          "reference_count": 5936
+          "reference_count": 5936,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#theme",
+              "predicate_short": "http://www.w3.org/ns/dcat#theme",
+              "count": 5936
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 363
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 278
+          "reference_count": 363,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 259
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 104
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
           "class_name": "cpmeta:EcosystemType",
-          "reference_count": 259
+          "reference_count": 259,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 259
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Funding",
           "class_name": "cpmeta:Funding",
-          "reference_count": 108
+          "reference_count": 108,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding",
+              "predicate_short": "cpmeta:hasFunding",
+              "count": 108
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/dc/terms/Location",
           "class_name": "purl:Location",
-          "reference_count": 106
+          "reference_count": 106,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/spatial",
+              "predicate_short": "purl:spatial",
+              "count": 106
+            }
+          ]
         },
         {
           "class_uri": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
           "class_name": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
-          "reference_count": 106
+          "reference_count": 106,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/isPartOf",
+              "predicate_short": "purl:isPartOf",
+              "count": 106
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2006/vcard/ns#Individual",
           "class_name": "http://www.w3.org/2006/vcard/ns#Individual",
-          "reference_count": 106
+          "reference_count": 106,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#contactPoint",
+              "predicate_short": "http://www.w3.org/ns/dcat#contactPoint",
+              "count": 106
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone",
           "class_name": "cpmeta:ClimateZone",
-          "reference_count": 104
+          "reference_count": 104,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 104
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 35
+          "reference_count": 35,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 35
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
           "class_name": "cpmeta:SpatialCoverage",
-          "reference_count": 31
+          "reference_count": 31,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 31
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
           "class_name": "cpmeta:WebpageElements",
-          "reference_count": 13
+          "reference_count": 13,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 13
+            }
+          ]
         }
       ]
     },
@@ -2146,71 +3276,224 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 623274
+          "reference_count": 623274,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 619149
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 2413
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1712
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Instrument",
           "class_name": "cpmeta:Instrument",
-          "reference_count": 5971
+          "reference_count": 5971,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor",
+              "predicate_short": "cpmeta:hasVendor",
+              "count": 4762
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner",
+              "predicate_short": "cpmeta:hasInstrumentOwner",
+              "count": 1209
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 2489
+          "reference_count": 2489,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 2489
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 167
+          "reference_count": 167,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 167
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AS",
           "class_name": "cpmeta:AS",
-          "reference_count": 70
+          "reference_count": 70,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 70
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 47
+          "reference_count": 47,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 47
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/OS",
           "class_name": "cpmeta:OS",
-          "reference_count": 25
+          "reference_count": 25,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 25
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
           "class_name": "rdf:Seq",
-          "reference_count": 25
+          "reference_count": 25,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3",
+              "predicate_short": "rdf:_3",
+              "count": 5
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4",
+              "predicate_short": "rdf:_4",
+              "count": 5
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2",
+              "predicate_short": "rdf:_2",
+              "count": 5
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_16",
+              "predicate_short": "rdf:_16",
+              "count": 2
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_20",
+              "predicate_short": "rdf:_20",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_21",
+              "predicate_short": "rdf:_21",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_22",
+              "predicate_short": "rdf:_22",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6",
+              "predicate_short": "rdf:_6",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7",
+              "predicate_short": "rdf:_7",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_17",
+              "predicate_short": "rdf:_17",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_18",
+              "predicate_short": "rdf:_18",
+              "count": 1
+            },
+            {
+              "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_19",
+              "predicate_short": "rdf:_19",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 20
+          "reference_count": 20,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 10
+            },
+            {
+              "predicate_uri": "https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization",
+              "predicate_short": "https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization",
+              "count": 10
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 8
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Station",
           "class_name": "cpmeta:Station",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 8
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 6
+          "reference_count": 6,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 6
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 265
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Station",
@@ -2327,34 +3610,64 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 4353
+          "reference_count": 4353,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 4353
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 246
-        },
-        {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 8
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone",
           "class_name": "cpmeta:ClimateZone",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox",
           "class_name": "cpmeta:LatLonBox",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -2403,31 +3716,53 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 1404
+          "reference_count": 1404,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
+              "predicate_short": "cpmeta:hasSamplingPoint",
+              "count": 1404
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
           "class_name": "cpmeta:Site",
-          "reference_count": 194
+          "reference_count": 194,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
+              "predicate_short": "cpmeta:hasSamplingPoint",
+              "count": 194
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 3
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 2
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 205
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
@@ -2488,19 +3823,28 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
           "class_name": "cpmeta:WebpageElements",
-          "reference_count": 193
+          "reference_count": 193,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
+              "predicate_short": "cpmeta:hasLinkbox",
+              "count": 193
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 184
-        },
-        {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink",
+              "predicate_short": "cpmeta:hasWebpageLink",
+              "count": 8
+            }
+          ]
         }
       ]
     },
@@ -2577,24 +3921,40 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 108
+          "reference_count": 108,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding",
+              "predicate_short": "cpmeta:hasFunding",
+              "count": 108
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 86
+          "reference_count": 86,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding",
+              "predicate_short": "cpmeta:hasFunding",
+              "count": 86
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Funder",
           "class_name": "cpmeta:Funder",
-          "reference_count": 109
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 109
+          "reference_count": 109,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder",
+              "predicate_short": "cpmeta:hasFunder",
+              "count": 109
+            }
+          ]
         }
       ]
     },
@@ -2643,34 +4003,64 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 1878
+          "reference_count": 1878,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
+              "predicate_short": "cpmeta:wasPerformedAt",
+              "count": 1878
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 93
+          "reference_count": 93,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn",
+              "predicate_short": "cpmeta:operatesOn",
+              "count": 93
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
           "class_name": "cpmeta:Position",
-          "reference_count": 194
+          "reference_count": 194,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
+              "predicate_short": "cpmeta:hasSamplingPoint",
+              "count": 194
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
           "class_name": "cpmeta:EcosystemType",
-          "reference_count": 99
+          "reference_count": 99,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 99
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
           "class_name": "cpmeta:SpatialCoverage",
-          "reference_count": 99
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 99
+          "reference_count": 99,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 99
+            }
+          ]
         }
       ]
     },
@@ -2782,59 +4172,144 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 1217857
+          "reference_count": 1217857,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
+              "predicate_short": "cpmeta:hasObjectSpec",
+              "count": 1217857
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 295
+          "reference_count": 295,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 97
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 97
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 97
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence",
+              "predicate_short": "cpmeta:impliesDefaultLicence",
+              "count": 3
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme",
           "class_name": "cpmeta:DataTheme",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding",
           "class_name": "cpmeta:ObjectEncoding",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat",
           "class_name": "cpmeta:ObjectFormat",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Project",
           "class_name": "cpmeta:Project",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
+              "predicate_short": "cpmeta:hasAssociatedProject",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpecificDatasetType",
           "class_name": "cpmeta:SpecificDatasetType",
-          "reference_count": 97
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec",
           "class_name": "cpmeta:TabularDatasetSpec",
-          "reference_count": 96
+          "reference_count": 96,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 96
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 21
+          "reference_count": 21,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 21
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/dc/terms/LicenseDocument",
           "class_name": "purl:LicenseDocument",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence",
+              "predicate_short": "cpmeta:impliesDefaultLicence",
+              "count": 3
+            }
+          ]
         }
       ]
     },
@@ -2939,59 +4414,134 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 1127982
+          "reference_count": 1127982,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
+              "predicate_short": "cpmeta:hasObjectSpec",
+              "count": 1127982
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 243
+          "reference_count": 243,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 81
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 81
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme",
           "class_name": "cpmeta:DataTheme",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding",
           "class_name": "cpmeta:ObjectEncoding",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat",
           "class_name": "cpmeta:ObjectFormat",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Project",
           "class_name": "cpmeta:Project",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
+              "predicate_short": "cpmeta:hasAssociatedProject",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpecificDatasetType",
           "class_name": "cpmeta:SpecificDatasetType",
-          "reference_count": 81
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec",
           "class_name": "cpmeta:DatasetSpec",
-          "reference_count": 12
+          "reference_count": 12,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 12
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 8
+          "reference_count": 8,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 8
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec",
           "class_name": "cpmeta:TabularDatasetSpec",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -3040,19 +4590,28 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec",
           "class_name": "cpmeta:DatasetSpec",
-          "reference_count": 77
+          "reference_count": 77,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable",
+              "predicate_short": "cpmeta:hasVariable",
+              "count": 77
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType",
           "class_name": "cpmeta:ValueType",
-          "reference_count": 76
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 76
+          "reference_count": 76,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
+              "predicate_short": "cpmeta:hasValueType",
+              "count": 76
+            }
+          ]
         }
       ]
     },
@@ -3234,69 +4793,148 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 1449964
+          "reference_count": 1449964,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1449964
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Dataset",
           "class_name": "http://www.w3.org/ns/dcat#Dataset",
-          "reference_count": 425
+          "reference_count": 425,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAttributedTo",
+              "predicate_short": "prov:wasAttributedTo",
+              "count": 425
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 293
+          "reference_count": 293,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 293
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/AS",
           "class_name": "http://meta.icos-cp.eu/ontologies/stationentry/AS",
-          "reference_count": 39
+          "reference_count": 39,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "predicate_short": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "count": 39
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2004/02/skos/core#Concept",
           "class_name": "http://www.w3.org/2004/02/skos/core#Concept",
-          "reference_count": 1165
+          "reference_count": 1165,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#theme",
+              "predicate_short": "http://www.w3.org/ns/dcat#theme",
+              "count": 1165
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 70
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 70
+          "reference_count": 70,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 70
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 32
+          "reference_count": 32,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
+              "predicate_short": "cpmeta:hasDocumentationObject",
+              "count": 32
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/dc/terms/Location",
           "class_name": "purl:Location",
-          "reference_count": 28
+          "reference_count": 28,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/spatial",
+              "predicate_short": "purl:spatial",
+              "count": 28
+            }
+          ]
         },
         {
           "class_uri": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
           "class_name": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
-          "reference_count": 28
+          "reference_count": 28,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/isPartOf",
+              "predicate_short": "purl:isPartOf",
+              "count": 28
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2006/vcard/ns#Individual",
           "class_name": "http://www.w3.org/2006/vcard/ns#Individual",
-          "reference_count": 28
+          "reference_count": 28,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#contactPoint",
+              "predicate_short": "http://www.w3.org/ns/dcat#contactPoint",
+              "count": 28
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
           "class_name": "cpmeta:WebpageElements",
-          "reference_count": 10
+          "reference_count": 10,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 10
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -3345,34 +4983,64 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 96
+          "reference_count": 96,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 96
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
           "class_name": "cpmeta:DatasetColumn",
-          "reference_count": 665
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 68
+          "reference_count": 665,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
+              "predicate_short": "cpmeta:hasColumn",
+              "count": 665
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 32
+          "reference_count": 32,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
+              "predicate_short": "cpmeta:hasColumn",
+              "count": 32
+            }
+          ]
         }
       ]
     },
@@ -3408,12 +5076,19 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
           "class_name": "cpmeta:DataObject",
-          "reference_count": 145
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 50
+          "reference_count": 145,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/hasPart",
+              "predicate_short": "purl:hasPart",
+              "count": 95
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
+              "predicate_short": "cpmeta:isNextVersionOf",
+              "count": 50
+            }
+          ]
         }
       ]
     },
@@ -3448,16 +5123,17 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Funding",
           "class_name": "cpmeta:Funding",
-          "reference_count": 109
+          "reference_count": 109,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder",
+              "predicate_short": "cpmeta:hasFunder",
+              "count": 109
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 45
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
@@ -3497,31 +5173,53 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 259
+          "reference_count": 259,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 259
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
           "class_name": "cpmeta:Site",
-          "reference_count": 99
+          "reference_count": 99,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 99
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 90
+          "reference_count": 90,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 90
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 25
+          "reference_count": 25,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
+              "predicate_short": "cpmeta:hasEcosystemType",
+              "count": 25
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 41
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
@@ -3568,39 +5266,76 @@
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 20
+          "reference_count": 20,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 20
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 13
+          "reference_count": 13,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 13
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AS",
           "class_name": "cpmeta:AS",
-          "reference_count": 10
+          "reference_count": 10,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 10
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 9
+          "reference_count": 9,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 9
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/OS",
           "class_name": "cpmeta:OS",
-          "reference_count": 4
+          "reference_count": 4,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 4
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
           "class_name": "cpmeta:LinkBox",
-          "reference_count": 193
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 37
+          "reference_count": 193,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
+              "predicate_short": "cpmeta:hasLinkbox",
+              "count": 193
+            }
+          ]
         }
       ]
     },
@@ -3635,31 +5370,53 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ES",
           "class_name": "cpmeta:ES",
-          "reference_count": 104
+          "reference_count": 104,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 104
+            }
+          ]
         },
         {
           "class_uri": "http://envri.eu/dcat#Site",
           "class_name": "http://envri.eu/dcat#Site",
-          "reference_count": 80
+          "reference_count": 80,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 80
+            }
+          ]
         },
         {
           "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
           "class_name": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "reference_count": 10
+          "reference_count": 10,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 10
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Station",
           "class_name": "cpmeta:Station",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
+              "predicate_short": "cpmeta:hasClimateZone",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 35
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind",
@@ -3692,21 +5449,29 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType",
           "class_name": "cpmeta:ValueType",
-          "reference_count": 260
+          "reference_count": 260,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind",
+              "predicate_short": "cpmeta:hasQuantityKind",
+              "count": 260
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind",
+              "predicate_short": "cpmeta:hasQuantityKind",
+              "count": 2
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 31
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat",
@@ -3753,34 +5518,64 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
+              "predicate_short": "cpmeta:hasFormat",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 28
-        },
-        {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat",
           "class_name": "cpmeta:ValueFormat",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -3969,64 +5764,136 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 15880
+          "reference_count": 15880,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 15880
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Dataset",
           "class_name": "http://www.w3.org/ns/dcat#Dataset",
-          "reference_count": 389
+          "reference_count": 389,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAttributedTo",
+              "predicate_short": "prov:wasAttributedTo",
+              "count": 389
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 104
+          "reference_count": 104,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 104
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/OS",
           "class_name": "http://meta.icos-cp.eu/ontologies/stationentry/OS",
-          "reference_count": 19
+          "reference_count": 19,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "predicate_short": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+              "count": 19
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2004/02/skos/core#Concept",
           "class_name": "http://www.w3.org/2004/02/skos/core#Concept",
-          "reference_count": 146
+          "reference_count": 146,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#theme",
+              "predicate_short": "http://www.w3.org/ns/dcat#theme",
+              "count": 146
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
           "class_name": "cpmeta:Organization",
-          "reference_count": 25
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 25
+          "reference_count": 25,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
+              "predicate_short": "cpmeta:hasResponsibleOrganization",
+              "count": 25
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/dc/terms/Location",
           "class_name": "purl:Location",
-          "reference_count": 24
+          "reference_count": 24,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/spatial",
+              "predicate_short": "purl:spatial",
+              "count": 24
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2006/vcard/ns#Individual",
           "class_name": "http://www.w3.org/2006/vcard/ns#Individual",
-          "reference_count": 24
+          "reference_count": 24,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#contactPoint",
+              "predicate_short": "http://www.w3.org/ns/dcat#contactPoint",
+              "count": 24
+            }
+          ]
         },
         {
           "class_uri": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
           "class_name": "http://www.oil-e.net/ontology/envri-rm.owl#ResearchInfrastructure",
-          "reference_count": 19
+          "reference_count": 19,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/isPartOf",
+              "predicate_short": "purl:isPartOf",
+              "count": 19
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
           "class_name": "cpmeta:SpatialCoverage",
-          "reference_count": 15
+          "reference_count": 15,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
+              "predicate_short": "cpmeta:hasSpatialCoverage",
+              "count": 15
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
           "class_name": "cpmeta:WebpageElements",
-          "reference_count": 4
+          "reference_count": 4,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
+              "predicate_short": "cpmeta:hasWebpageElements",
+              "count": 4
+            }
+          ]
         }
       ]
     },
@@ -4096,26 +5963,41 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
+              "predicate_short": "cpmeta:hasAssociatedProject",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
+              "predicate_short": "cpmeta:hasAssociatedProject",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
+              "predicate_short": "cpmeta:hasAssociatedProject",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 18
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat",
@@ -4148,26 +6030,46 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
           "class_name": "cpmeta:DatasetColumn",
-          "reference_count": 419
+          "reference_count": 419,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
+              "predicate_short": "cpmeta:hasValueFormat",
+              "count": 419
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 6
+          "reference_count": 6,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
+              "predicate_short": "cpmeta:hasValueFormat",
+              "count": 5
+            },
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat",
           "class_name": "cpmeta:ObjectFormat",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+              "predicate_short": "rdfs:seeAlso",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 13
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec",
@@ -4207,19 +6109,28 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 12
+          "reference_count": 12,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
+              "predicate_short": "cpmeta:containsDataset",
+              "count": 12
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable",
           "class_name": "cpmeta:DatasetVariable",
-          "reference_count": 77
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 12
+          "reference_count": 77,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable",
+              "predicate_short": "cpmeta:hasVariable",
+              "count": 77
+            }
+          ]
         }
       ]
     },
@@ -4261,31 +6172,53 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 4
+          "reference_count": 4,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 4
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
           "class_name": "cpmeta:ThematicCenter",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 3
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 9
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Role",
@@ -4318,16 +6251,17 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 1881
+          "reference_count": 1881,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasRole",
+              "predicate_short": "cpmeta:hasRole",
+              "count": 1881
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 5
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation",
@@ -4388,16 +6322,17 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 2
+          "reference_count": 2,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 2
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 4
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
@@ -4437,34 +6372,69 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 2347699
+          "reference_count": 2347699,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 1240811
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 1106888
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 1610329
+          "reference_count": 1610329,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 1610329
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 48
+          "reference_count": 48,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 48
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 4
-        },
-        {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme",
           "class_name": "cpmeta:DataTheme",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
+              "predicate_short": "cpmeta:hasDataTheme",
+              "count": 3
+            }
+          ]
         }
       ]
     },
@@ -4527,16 +6497,17 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 9
+          "reference_count": 9,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 9
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 3
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding",
@@ -4562,26 +6533,41 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+              "predicate_short": "cpmeta:hasEncoding",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 3
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility",
@@ -4621,51 +6607,111 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
           "class_name": "cpmeta:DataSubmission",
-          "reference_count": 10963
+          "reference_count": 10963,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 10963
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
           "class_name": "cpmeta:DataProduction",
-          "reference_count": 6950
+          "reference_count": 6950,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
+              "predicate_short": "cpmeta:wasHostedBy",
+              "count": 4432
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
+              "predicate_short": "cpmeta:wasPerformedBy",
+              "count": 2517
+            },
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
+              "predicate_short": "cpmeta:wasParticipatedInBy",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Collection",
           "class_name": "cpmeta:Collection",
-          "reference_count": 730
+          "reference_count": 730,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 730
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
           "class_name": "cpmeta:DocumentObject",
-          "reference_count": 162
+          "reference_count": 162,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/terms/creator",
+              "predicate_short": "purl:creator",
+              "count": 162
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Membership",
           "class_name": "cpmeta:Membership",
-          "reference_count": 3
+          "reference_count": 3,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization",
+              "predicate_short": "cpmeta:atOrganization",
+              "count": 3
+            }
+          ]
         },
         {
           "class_uri": "http://purl.org/vocommons/voaf#Vocabulary",
           "class_name": "http://purl.org/vocommons/voaf#Vocabulary",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/publisher",
+              "predicate_short": "http://purl.org/dc/elements/1.1/publisher",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/publisher",
+              "predicate_short": "http://purl.org/dc/elements/1.1/publisher",
+              "count": 1
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
           "class_name": "http://www.w3.org/2002/07/owl#Ontology",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://purl.org/dc/elements/1.1/publisher",
+              "predicate_short": "http://purl.org/dc/elements/1.1/publisher",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2
-        }
-      ]
+      "references_to": []
     },
     {
       "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone",
@@ -4719,24 +6765,40 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
           "class_name": "cpmeta:DataAcquisition",
-          "reference_count": 437
+          "reference_count": 437,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
+              "predicate_short": "prov:wasAssociatedWith",
+              "count": 437
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/ns/dcat#Dataset",
           "class_name": "http://www.w3.org/ns/dcat#Dataset",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/prov#wasAttributedTo",
+              "predicate_short": "prov:wasAttributedTo",
+              "count": 1
+            }
+          ]
         }
       ],
       "references_to": [
         {
           "class_uri": "http://www.w3.org/2004/02/skos/core#Concept",
           "class_name": "http://www.w3.org/2004/02/skos/core#Concept",
-          "reference_count": 11
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2
+          "reference_count": 11,
+          "predicates": [
+            {
+              "predicate_uri": "http://www.w3.org/ns/dcat#theme",
+              "predicate_short": "http://www.w3.org/ns/dcat#theme",
+              "count": 11
+            }
+          ]
         }
       ]
     },
@@ -4764,26 +6826,41 @@
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
           "class_name": "cpmeta:SimpleObjectSpec",
-          "reference_count": 97
+          "reference_count": 97,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 97
+            }
+          ]
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
           "class_name": "cpmeta:DataObjectSpec",
-          "reference_count": 81
+          "reference_count": 81,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 81
+            }
+          ]
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "reference_count": 1
+          "reference_count": 1,
+          "predicates": [
+            {
+              "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+              "predicate_short": "cpmeta:hasSpecificDatasetType",
+              "count": 1
+            }
+          ]
         }
       ],
-      "references_to": [
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#Class",
-          "class_name": "http://www.w3.org/2002/07/owl#Class",
-          "reference_count": 2
-        }
-      ]
+      "references_to": []
     }
   ]
 }

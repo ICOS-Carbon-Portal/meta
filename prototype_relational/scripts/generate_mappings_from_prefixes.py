@@ -69,21 +69,25 @@ def load_prefix_classes(json_path: str) -> dict:
         return json.load(f)
 
 
-def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str], int]:
+def extract_predicates_from_json(data: dict) -> Tuple[Set[str], List[Tuple[str, str]], int]:
     """
-    Extract all unique predicates from preds_subject arrays and track their source prefix
+    Extract all unique predicates from preds_subject arrays and track their source prefixes
 
     Args:
         data: Parsed JSON data from prefix_to_classes.json
 
     Returns:
-        Tuple of (set of predicate URIs, dict mapping predicate -> source prefix URI, count of skipped rdf:type)
+        Tuple of (set of predicate URIs, list of (predicate, prefix) pairs, count of skipped rdf:type)
     """
     predicates = set()
-    predicate_to_prefix = {}
+    predicate_prefix_pairs = []
     skipped_rdf_type_count = 0
 
     for prefix_uri, prefix_data in data.get('prefixes', {}).items():
+        # Only process prefixes containing "icos-cp.eu"
+        if 'icos-cp.eu' not in prefix_uri:
+            continue
+
         preds_subject = prefix_data.get('preds_subject', [])
         for pred_info in preds_subject:
             pred_uri = pred_info.get('predicate_uri')
@@ -94,9 +98,10 @@ def extract_predicates_from_json(data: dict) -> Tuple[Set[str], Dict[str, str], 
                     continue
 
                 predicates.add(pred_uri)
-                predicate_to_prefix[pred_uri] = prefix_uri
+                # Store each (predicate, prefix) pair to generate mappings for all combinations
+                predicate_prefix_pairs.append((pred_uri, prefix_uri))
 
-    return predicates, predicate_to_prefix, skipped_rdf_type_count
+    return predicates, predicate_prefix_pairs, skipped_rdf_type_count
 
 
 def extract_prefixes(data: dict) -> List[str]:
@@ -107,9 +112,9 @@ def extract_prefixes(data: dict) -> List[str]:
         data: Parsed JSON data from prefix_to_classes.json
 
     Returns:
-        List of prefix/namespace URIs
+        List of prefix/namespace URIs (filtered to icos-cp.eu only)
     """
-    prefixes = list(data.get('prefixes', {}).keys())
+    prefixes = [p for p in data.get('prefixes', {}).keys() if 'icos-cp.eu' in p]
     return prefixes
 
 
@@ -462,7 +467,9 @@ def generate_mapping(predicate: str, prefix_uri: str, table_name: str,
     Returns:
         Formatted mapping string
     """
-    mapping_id = sanitize_for_mapping_id(predicate, prefixes)
+    # Ensure unique mapping ID by including table name (same predicate can appear in multiple tables)
+    base_id = sanitize_for_mapping_id(predicate, prefixes)
+    mapping_id = f"{table_name}_{base_id}"
     short_pred = shorten_uri(predicate, prefixes)
 
     # Format object based on property type
@@ -486,7 +493,7 @@ def generate_mapping(predicate: str, prefix_uri: str, table_name: str,
     return mapping
 
 
-def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str],
+def generate_obda_file(predicates: Set[str], predicate_prefix_pairs: List[Tuple[str, str]],
                        table_names: Dict[str, str], output_path: str,
                        ontology_path: Optional[str] = None,
                        db_connection_string: Optional[str] = None):
@@ -495,7 +502,7 @@ def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str]
 
     Args:
         predicates: Set of predicate URIs to generate mappings for
-        predicate_to_prefix: Dict mapping predicate URI to its source prefix URI
+        predicate_prefix_pairs: List of (predicate_uri, prefix_uri) pairs
         table_names: Dict mapping prefix URI to table name
         output_path: Path to write the .obda file
         ontology_path: Optional path to OWL ontology file for property type info
@@ -534,20 +541,17 @@ def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str]
     lines.append("")
 
     # Section 3: Generate mappings for each predicate, grouped by prefix
-    # Group predicates by their source prefix
+    # Group (predicate, prefix) pairs by prefix
     prefix_to_preds = defaultdict(list)
-    for predicate in predicates:
-        prefix_uri = predicate_to_prefix.get(predicate)
-        if prefix_uri:
-            prefix_to_preds[prefix_uri].append(predicate)
-        else:
-            print(f"Warning: No prefix found for predicate {predicate}, skipping")
+    for predicate, prefix_uri in predicate_prefix_pairs:
+        prefix_to_preds[prefix_uri].append(predicate)
 
     # Sort prefixes alphabetically
     sorted_prefix_uris = sorted(prefix_to_preds.keys())
 
     # Generate mappings grouped by prefix
     first_mapping = True
+    mapping_count = 0
     for prefix_uri in sorted_prefix_uris:
         table_name = table_names.get(prefix_uri)
         if not table_name:
@@ -569,6 +573,7 @@ def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str]
             # Generate mapping
             mapping = generate_mapping(predicate, prefix_uri, table_name, prefixes, is_object, range_uri)
             lines.append(mapping)
+            mapping_count += 1
 
     lines.append("")
 
@@ -585,7 +590,7 @@ def generate_obda_file(predicates: Set[str], predicate_to_prefix: Dict[str, str]
     if conn:
         conn.close()
 
-    print(f"Generated {len(predicates)} mappings in {output_path}")
+    print(f"Generated {mapping_count} mappings in {output_path}")
 
 
 def main():
@@ -619,8 +624,9 @@ def main():
     data = load_prefix_classes(args.json_file)
 
     # Extract predicates and their source prefixes
-    predicates, predicate_to_prefix, skipped_rdf_type = extract_predicates_from_json(data)
+    predicates, predicate_prefix_pairs, skipped_rdf_type = extract_predicates_from_json(data)
     print(f"Found {len(predicates)} unique predicates in preds_subject arrays")
+    print(f"Generating {len(predicate_prefix_pairs)} mappings (predicates may appear in multiple prefixes)")
     if skipped_rdf_type > 0:
         print(f"Skipped {skipped_rdf_type} rdf:type predicate(s)")
 
@@ -636,7 +642,7 @@ def main():
     # Generate mappings
     generate_obda_file(
         predicates,
-        predicate_to_prefix,
+        predicate_prefix_pairs,
         table_names,
         args.output,
         ontology_path=args.ontology,

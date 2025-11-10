@@ -153,7 +153,7 @@ def get_class_references(cursor, class_uri):
 
     # Incoming references: Find classes whose instances point TO this class
     incoming_query = f"""
-        SELECT DISTINCT referring_class.obj as class_uri, COUNT(*) as reference_count
+        SELECT referring_class.obj as class_uri, t.pred as predicate_uri, COUNT(*) as reference_count
         FROM {TRIPLES_TABLE} t
         -- t.obj are instances of the target class (class_uri)
         JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.obj
@@ -161,19 +161,42 @@ def get_class_references(cursor, class_uri):
         -- Find what classes the subjects (t.subj) belong to
         JOIN {TRIPLES_TABLE} referring_class ON referring_class.subj = t.subj
             AND referring_class.pred = %s
-        -- Exclude self-references
-        WHERE referring_class.obj != %s
-        GROUP BY referring_class.obj
-        ORDER BY reference_count DESC
+        -- Exclude self-references and rdf:type predicates
+        WHERE referring_class.obj != %s AND t.pred != %s
+        GROUP BY referring_class.obj, t.pred
+        ORDER BY referring_class.obj, reference_count DESC
     """
 
-    cursor.execute(incoming_query, (rdf_type, class_uri, rdf_type, class_uri))
-    incoming = [{"class_uri": row[0], "class_name": shorten_uri(row[0]), "reference_count": row[1]}
-                for row in cursor.fetchall()]
+    cursor.execute(incoming_query, (rdf_type, class_uri, rdf_type, class_uri, rdf_type))
+
+    # Process incoming results: group by class, collect predicates
+    incoming_by_class = defaultdict(lambda: {"predicates": [], "total_count": 0})
+    for row in cursor.fetchall():
+        class_uri_key = row[0]
+        predicate_uri = row[1]
+        count = row[2]
+
+        incoming_by_class[class_uri_key]["predicates"].append({
+            "predicate_uri": predicate_uri,
+            "predicate_short": shorten_uri(predicate_uri),
+            "count": count
+        })
+        incoming_by_class[class_uri_key]["total_count"] += count
+
+    incoming = [
+        {
+            "class_uri": class_uri_key,
+            "class_name": shorten_uri(class_uri_key),
+            "reference_count": data["total_count"],
+            "predicates": data["predicates"]
+        }
+        for class_uri_key, data in incoming_by_class.items()
+    ]
+    incoming.sort(key=lambda x: x["reference_count"], reverse=True)
 
     # Outgoing references: Find classes that instances of this class point TO
     outgoing_query = f"""
-        SELECT DISTINCT target_class.obj as class_uri, COUNT(*) as reference_count
+        SELECT target_class.obj as class_uri, t.pred as predicate_uri, COUNT(*) as reference_count
         FROM {TRIPLES_TABLE} t
         -- t.subj are instances of the source class (class_uri)
         JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.subj
@@ -181,15 +204,38 @@ def get_class_references(cursor, class_uri):
         -- Find what classes the objects (t.obj) belong to
         JOIN {TRIPLES_TABLE} target_class ON target_class.subj = t.obj
             AND target_class.pred = %s
-        -- Exclude self-references
-        WHERE target_class.obj != %s
-        GROUP BY target_class.obj
-        ORDER BY reference_count DESC
+        -- Exclude self-references and rdf:type predicates
+        WHERE target_class.obj != %s AND t.pred != %s
+        GROUP BY target_class.obj, t.pred
+        ORDER BY target_class.obj, reference_count DESC
     """
 
-    cursor.execute(outgoing_query, (rdf_type, class_uri, rdf_type, class_uri))
-    outgoing = [{"class_uri": row[0], "class_name": shorten_uri(row[0]), "reference_count": row[1]}
-                for row in cursor.fetchall()]
+    cursor.execute(outgoing_query, (rdf_type, class_uri, rdf_type, class_uri, rdf_type))
+
+    # Process outgoing results: group by class, collect predicates
+    outgoing_by_class = defaultdict(lambda: {"predicates": [], "total_count": 0})
+    for row in cursor.fetchall():
+        class_uri_key = row[0]
+        predicate_uri = row[1]
+        count = row[2]
+
+        outgoing_by_class[class_uri_key]["predicates"].append({
+            "predicate_uri": predicate_uri,
+            "predicate_short": shorten_uri(predicate_uri),
+            "count": count
+        })
+        outgoing_by_class[class_uri_key]["total_count"] += count
+
+    outgoing = [
+        {
+            "class_uri": class_uri_key,
+            "class_name": shorten_uri(class_uri_key),
+            "reference_count": data["total_count"],
+            "predicates": data["predicates"]
+        }
+        for class_uri_key, data in outgoing_by_class.items()
+    ]
+    outgoing.sort(key=lambda x: x["reference_count"], reverse=True)
 
     return incoming, outgoing
 
@@ -286,9 +332,24 @@ Examples:
             if incoming_refs or outgoing_refs:
                 print(f"\nClass Relationships:")
                 if incoming_refs:
-                    print(f"  Referenced by {len(incoming_refs)} class(es): {', '.join([ref['class_name'] for ref in incoming_refs[:3]])}{'...' if len(incoming_refs) > 3 else ''}")
+                    print(f"  Referenced by {len(incoming_refs)} class(es):")
+                    for ref in incoming_refs[:5]:  # Show top 5
+                        pred_names = ', '.join([p['predicate_short'] for p in ref['predicates'][:3]])
+                        if len(ref['predicates']) > 3:
+                            pred_names += f", ... ({len(ref['predicates'])} total)"
+                        print(f"    - {ref['class_name']} ({ref['reference_count']} refs via {pred_names})")
+                    if len(incoming_refs) > 5:
+                        print(f"    ... and {len(incoming_refs) - 5} more")
+
                 if outgoing_refs:
-                    print(f"  References {len(outgoing_refs)} class(es): {', '.join([ref['class_name'] for ref in outgoing_refs[:3]])}{'...' if len(outgoing_refs) > 3 else ''}")
+                    print(f"  References {len(outgoing_refs)} class(es):")
+                    for ref in outgoing_refs[:5]:  # Show top 5
+                        pred_names = ', '.join([p['predicate_short'] for p in ref['predicates'][:3]])
+                        if len(ref['predicates']) > 3:
+                            pred_names += f", ... ({len(ref['predicates'])} total)"
+                        print(f"    - {ref['class_name']} ({ref['reference_count']} refs via {pred_names})")
+                    if len(outgoing_refs) > 5:
+                        print(f"    ... and {len(outgoing_refs) - 5} more")
 
             predicates = get_predicates_for_class(cursor, class_uri)
 

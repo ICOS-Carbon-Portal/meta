@@ -28,7 +28,7 @@ CREATE TABLE data_object_acquisitions (
 );
 
 CREATE TABLE data_objects (
-    subject TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     name TEXT,
     hasObjectSpec TEXT NOT NULL,
     hasSha256sum TEXT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE data_objects (
     hasDoi TEXT,
     wasSubmittedBy TEXT,
     wasAcquiredBy TEXT,
-    isNextVersionOf INTEGER,
+    isNextVersionOf TEXT,
     spec_containsDataset TEXT,
     spec_dataset_hasColumn TEXT,
     data_start_time TIMESTAMP WITH TIME ZONE,
@@ -51,7 +51,7 @@ CREATE TABLE data_objects (
     acquisition_hasSamplingHeight FLOAT,
     FOREIGN KEY (wasSubmittedBy) REFERENCES data_object_submissions(id),
     FOREIGN KEY (wasAcquiredBy) REFERENCES data_object_acquisitions(id),
-    FOREIGN KEY (isNextVersionOf) REFERENCES data_objects(subject)
+    FOREIGN KEY (isNextVersionOf) REFERENCES data_objects(id)
 );
 
 

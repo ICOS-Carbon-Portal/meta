@@ -59,3 +59,4 @@ __pycache__/
 /sparqlMagicIndex.bin.bak
 /citationsCacheDump.json
 /doiMetaCacheDump.json
+/prototype_relational/logs/sparql.log

@@ -1,0 +1,1423 @@
+mappingId	terms_haspart_general
+target		<{subj}> terms:hasPart <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/hasPart'
+
+mappingId	prov_hadprimarysource_general
+target		<{subj}> prov:hadPrimarySource <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/prov#hadPrimarySource'
+
+mappingId	rdfs_label_general
+target		<{subj}> rdfs:label {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+mappingId	cpmeta_hasstarttime_general
+target		<{subj}> cpmeta:hasStartTime {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime'
+
+mappingId	dcat_theme_general
+target		<{subj}> dcat:theme <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#theme'
+
+mappingId	cpmeta_hasspatialcoverage_general
+target		<{subj}> cpmeta:hasSpatialCoverage <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+mappingId	cpmeta_atorganization_general
+target		<{subj}> cpmeta:atOrganization <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization'
+
+mappingId	cpmeta_haskeywords_general
+target		<{subj}> cpmeta:hasKeywords {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords'
+
+mappingId	cpmeta_hasactualvariable_general
+target		<{subj}> cpmeta:hasActualVariable <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable'
+
+mappingId	cpmeta_hasdoi_general
+target		<{subj}> cpmeta:hasDoi {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi'
+
+mappingId	cpmeta_haslatitude_general
+target		<{subj}> cpmeta:hasLatitude {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+mappingId	cpmeta_haslongitude_general
+target		<{subj}> cpmeta:hasLongitude {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+mappingId	cpmeta_hasserialnumber_general
+target		<{subj}> cpmeta:hasSerialNumber {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber'
+
+mappingId	cpmeta_hasmodel_general
+target		<{subj}> cpmeta:hasModel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasModel'
+
+mappingId	cpmeta_hasmaxvalue_general
+target		<{subj}> cpmeta:hasMaxValue {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+mappingId	cpmeta_hasminvalue_general
+target		<{subj}> cpmeta:hasMinValue {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+mappingId	terms_title_general
+target		<{subj}> terms:title {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/title'
+
+mappingId	cpmeta_hasvendor_general
+target		<{subj}> cpmeta:hasVendor <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor'
+
+mappingId	terms_description_general
+target		<{subj}> terms:description {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/description'
+
+mappingId	cpmeta_hasetcid_general
+target		<{subj}> cpmeta:hasEtcId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+mappingId	wdcgg_observation_20category_general
+target		<{subj}> wdcgg:OBSERVATION%20CATEGORY {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/OBSERVATION%20CATEGORY'
+
+mappingId	wdcgg_sampling_20type_general
+target		<{subj}> wdcgg:SAMPLING%20TYPE {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/SAMPLING%20TYPE'
+
+mappingId	wdcgg_time_20interval_general
+target		<{subj}> wdcgg:TIME%20INTERVAL {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/TIME%20INTERVAL'
+
+mappingId	wdcgg_measurement_20unit_general
+target		<{subj}> wdcgg:MEASUREMENT%20UNIT {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20UNIT'
+
+mappingId	wdcgg_measurement_20scale_general
+target		<{subj}> wdcgg:MEASUREMENT%20SCALE {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20SCALE'
+
+mappingId	wdcgg_measurement_20method_general
+target		<{subj}> wdcgg:MEASUREMENT%20METHOD {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20METHOD'
+
+mappingId	wdcgg_contributor_general
+target		<{subj}> wdcgg:CONTRIBUTOR {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/CONTRIBUTOR'
+
+mappingId	wdcgg_contact_20point_general
+target		<{subj}> wdcgg:CONTACT%20POINT {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/CONTACT%20POINT'
+
+mappingId	wdcgg_parameter_general
+target		<{subj}> wdcgg:PARAMETER {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/resources/wdcgg/PARAMETER'
+
+mappingId	cpmeta_asgeojson_general
+target		<{subj}> cpmeta:asGeoJSON {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON'
+
+mappingId	cpmeta_hasvariablename_general
+target		<{subj}> cpmeta:hasVariableName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableName'
+
+mappingId	ssn_hasdeployment_general
+target		<{subj}> ssn:hasDeployment <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/ssn/hasDeployment'
+
+mappingId	ssn_forproperty_general
+target		<{subj}> ssn:forProperty <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/ssn/forProperty'
+
+mappingId	cpmeta_hastemporalresolution_general
+target		<{subj}> cpmeta:hasTemporalResolution {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution'
+
+mappingId	files_hastype_general
+target		<{subj}> files:hasType {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/files/hasType'
+
+mappingId	files_hasname_general
+target		<{subj}> files:hasName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/files/hasName'
+
+mappingId	stationentry_hasassociatedfile_general
+target		<{subj}> stationentry:hasAssociatedFile <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAssociatedFile'
+
+mappingId	cpmeta_hasrole_general
+target		<{subj}> cpmeta:hasRole <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasRole'
+
+mappingId	cpmeta_wasperformedat_general
+target		<{subj}> cpmeta:wasPerformedAt <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt'
+
+mappingId	cpmeta_hasmembership_general
+target		<{subj}> cpmeta:hasMembership <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership'
+
+mappingId	rdf__2_general
+target		<{subj}> rdf:_2 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'
+
+mappingId	rdf__1_general
+target		<{subj}> rdf:_1 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'
+
+mappingId	cpmeta_hassamplingpoint_general
+target		<{subj}> cpmeta:hasSamplingPoint <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint'
+
+mappingId	cpmeta_hasatcid_general
+target		<{subj}> cpmeta:hasAtcId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+mappingId	rdf__3_general
+target		<{subj}> rdf:_3 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'
+
+mappingId	cpmeta_hasinstrumentowner_general
+target		<{subj}> cpmeta:hasInstrumentOwner <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner'
+
+mappingId	cpmeta_hasfirstname_general
+target		<{subj}> cpmeta:hasFirstName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName'
+
+mappingId	cpmeta_haslastname_general
+target		<{subj}> cpmeta:hasLastName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName'
+
+mappingId	cpmeta_hasinstrumentcomponent_general
+target		<{subj}> cpmeta:hasInstrumentComponent <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent'
+
+mappingId	terms_creator_general
+target		<{subj}> terms:creator <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/creator'
+
+mappingId	rdf__4_general
+target		<{subj}> rdf:_4 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_4'
+
+mappingId	rdfs_seealso_general
+target		<{subj}> rdfs:seeAlso <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+mappingId	cpmeta_hasemail_general
+target		<{subj}> cpmeta:hasEmail {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail'
+
+mappingId	terms_license_general
+target		<{subj}> terms:license <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/license'
+
+mappingId	dcat_distribution_general
+target		<{subj}> dcat:distribution <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#distribution'
+
+mappingId	dcat_accessurl_general
+target		<{subj}> dcat:accessURL <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#accessURL'
+
+mappingId	dcat_enddate_general
+target		<{subj}> dcat:endDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#endDate'
+
+mappingId	dcat_bytesize_general
+target		<{subj}> dcat:byteSize {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#byteSize'
+
+mappingId	terms_modified_general
+target		<{subj}> terms:modified {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/modified'
+
+mappingId	dcat_dataset_general
+target		<{subj}> dcat:dataset <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#dataset'
+
+mappingId	terms_issued_general
+target		<{subj}> terms:issued {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/issued'
+
+mappingId	ns1_type_general
+target		<{subj}> ns1:type <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/type'
+
+mappingId	owl_sameas_general
+target		<{subj}> owl:sameAs <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#sameAs'
+
+mappingId	dcat_startdate_general
+target		<{subj}> dcat:startDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#startDate'
+
+mappingId	dcat_landingpage_general
+target		<{subj}> dcat:landingPage <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#landingPage'
+
+mappingId	prov_wasattributedto_general
+target		<{subj}> prov:wasAttributedTo <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/prov#wasAttributedTo'
+
+mappingId	terms_temporal_general
+target		<{subj}> terms:temporal <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/temporal'
+
+mappingId	dcat_downloadurl_general
+target		<{subj}> dcat:downloadURL <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#downloadURL'
+
+mappingId	rdf__5_general
+target		<{subj}> rdf:_5 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_5'
+
+mappingId	cpmeta_hascolumn_general
+target		<{subj}> cpmeta:hasColumn <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn'
+
+mappingId	rdf__6_general
+target		<{subj}> rdf:_6 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_6'
+
+mappingId	rdf__7_general
+target		<{subj}> rdf:_7 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_7'
+
+mappingId	cpmeta_hasattributionweight_general
+target		<{subj}> cpmeta:hasAttributionWeight {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAttributionWeight'
+
+mappingId	cpmeta_hasvaluetype_general
+target		<{subj}> cpmeta:hasValueType <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType'
+
+mappingId	rdf__8_general
+target		<{subj}> rdf:_8 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_8'
+
+mappingId	cpmeta_hascolumntitle_general
+target		<{subj}> cpmeta:hasColumnTitle {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle'
+
+mappingId	cpmeta_hasvalueformat_general
+target		<{subj}> cpmeta:hasValueFormat <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat'
+
+mappingId	cpmeta_countrycode_general
+target		<{subj}> cpmeta:countryCode {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode'
+
+mappingId	cpmeta_hasstationid_general
+target		<{subj}> cpmeta:hasStationId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
+
+mappingId	cpmeta_hasorcidid_general
+target		<{subj}> cpmeta:hasOrcidId <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId'
+
+mappingId	cpmeta_hasecosystemtype_general
+target		<{subj}> cpmeta:hasEcosystemType <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType'
+
+mappingId	cpmeta_haselevation_general
+target		<{subj}> cpmeta:hasElevation {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation'
+
+mappingId	stationentry_haslat_general
+target		<{subj}> stationentry:hasLat {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLat'
+
+mappingId	stationentry_haslon_general
+target		<{subj}> stationentry:hasLon {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLon'
+
+mappingId	cpmeta_hasotcid_general
+target		<{subj}> cpmeta:hasOtcId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId'
+
+mappingId	cpmeta_hastimezoneoffset_general
+target		<{subj}> cpmeta:hasTimeZoneOffset {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset'
+
+mappingId	otcmeta_hasname_general
+target		<{subj}> otcmeta:hasName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasName'
+
+mappingId	cpmeta_haswesternbound_general
+target		<{subj}> cpmeta:hasWesternBound {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWesternBound'
+
+mappingId	cpmeta_hassouthernbound_general
+target		<{subj}> cpmeta:hasSouthernBound {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSouthernBound'
+
+mappingId	cpmeta_hasnorthernbound_general
+target		<{subj}> cpmeta:hasNorthernBound {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNorthernBound'
+
+mappingId	cpmeta_haseasternbound_general
+target		<{subj}> cpmeta:hasEasternBound {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEasternBound'
+
+mappingId	rdfs_range_general
+target		<{subj}> rdfs:range <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#range'
+
+mappingId	rdf__9_general
+target		<{subj}> rdf:_9 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_9'
+
+mappingId	rdfs_domain_general
+target		<{subj}> rdfs:domain <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#domain'
+
+mappingId	stationentry_haslongname_general
+target		<{subj}> stationentry:hasLongName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLongName'
+
+mappingId	cpmeta_hasquantitykind_general
+target		<{subj}> cpmeta:hasQuantityKind <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind'
+
+mappingId	cpmeta_hasunit_general
+target		<{subj}> cpmeta:hasUnit {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit'
+
+mappingId	stationentry_hasshortname_general
+target		<{subj}> stationentry:hasShortName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasShortName'
+
+mappingId	cpmeta_hasmeanannualprecip_general
+target		<{subj}> cpmeta:hasMeanAnnualPrecip {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip'
+
+mappingId	cpmeta_hasmeanannualtemp_general
+target		<{subj}> cpmeta:hasMeanAnnualTemp {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualTemp'
+
+mappingId	rdf_rest_general
+target		<{subj}> rdf:rest <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest'
+
+mappingId	rdf_first_general
+target		<{subj}> rdf:first <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first'
+
+mappingId	stationentry_hasemail_general
+target		<{subj}> stationentry:hasEmail {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEmail'
+
+mappingId	stationentry_hasfirstname_general
+target		<{subj}> stationentry:hasFirstName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName'
+
+mappingId	stationentry_haslastname_general
+target		<{subj}> stationentry:hasLastName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLastName'
+
+mappingId	cpmeta_country_general
+target		<{subj}> cpmeta:country {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/country'
+
+mappingId	cpmeta_hascoverimage_general
+target		<{subj}> cpmeta:hasCoverImage <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage'
+
+mappingId	stationentry_hascountry_general
+target		<{subj}> stationentry:hasCountry {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasCountry'
+
+mappingId	cpmeta_isoptionalcolumn_general
+target		<{subj}> cpmeta:isOptionalColumn {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn'
+
+mappingId	stationentry_haspi_general
+target		<{subj}> stationentry:hasPi <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPi'
+
+mappingId	cpmeta_haslinkbox_general
+target		<{subj}> cpmeta:hasLinkbox <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox'
+
+mappingId	stationentry_hassitetype_general
+target		<{subj}> stationentry:hasSiteType {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType'
+
+mappingId	stationentry_hasstationclass_general
+target		<{subj}> stationentry:hasStationClass {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass'
+
+mappingId	cpmeta_hasorderweight_general
+target		<{subj}> cpmeta:hasOrderWeight {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight'
+
+mappingId	cpmeta_haswebpagelink_general
+target		<{subj}> cpmeta:hasWebpageLink <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink'
+
+mappingId	cpmeta_hasdatatheme_general
+target		<{subj}> cpmeta:hasDataTheme <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme'
+
+mappingId	stationentry_hasstationkind_general
+target		<{subj}> stationentry:hasStationKind {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind'
+
+mappingId	stationentry_haselevationabovesea_general
+target		<{subj}> stationentry:hasElevationAboveSea {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea'
+
+mappingId	cpmeta_hasspecificdatasettype_general
+target		<{subj}> cpmeta:hasSpecificDatasetType <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType'
+
+mappingId	stationentry_hasappstatusdate_general
+target		<{subj}> stationentry:hasAppStatusDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate'
+
+mappingId	cpmeta_hasencoding_general
+target		<{subj}> cpmeta:hasEncoding <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding'
+
+mappingId	stationentry_hasapplicationstatus_general
+target		<{subj}> stationentry:hasApplicationStatus {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus'
+
+mappingId	cpmeta_hasassociatedproject_general
+target		<{subj}> cpmeta:hasAssociatedProject <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject'
+
+mappingId	cpmeta_hasformat_general
+target		<{subj}> cpmeta:hasFormat <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat'
+
+mappingId	cpmeta_hasdatalevel_general
+target		<{subj}> cpmeta:hasDataLevel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel'
+
+mappingId	stationentry_labelingjoinyear_general
+target		<{subj}> stationentry:labelingJoinYear {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear'
+
+mappingId	cpmeta_hasstationclass_general
+target		<{subj}> cpmeta:hasStationClass {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass'
+
+mappingId	stationentry_hasproductioncounterpart_general
+target		<{subj}> stationentry:hasProductionCounterpart <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart'
+
+mappingId	stationentry_hasaffiliation_general
+target		<{subj}> stationentry:hasAffiliation {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation'
+
+mappingId	dcat_contactpoint_general
+target		<{subj}> dcat:contactPoint <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#contactPoint'
+
+mappingId	ns_fn_general
+target		<{subj}> ns:fn {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2006/vcard/ns#fn'
+
+mappingId	terms_spatial_general
+target		<{subj}> terms:spatial <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/spatial'
+
+mappingId	rdfs_subclassof_general
+target		<{subj}> rdfs:subClassOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#subClassOf'
+
+mappingId	locn_geometry_general
+target		<{subj}> <http://www.w3.org/ns/locn#geometry> {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/locn#geometry'
+
+mappingId	ns_hasemail_general
+target		<{subj}> ns:hasEmail {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2006/vcard/ns#hasEmail'
+
+mappingId	terms_subject_general
+target		<{subj}> terms:subject <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/subject'
+
+mappingId	terms_identifier_general
+target		<{subj}> terms:identifier {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/identifier'
+
+mappingId	stationentry_haselevationaboveground_general
+target		<{subj}> stationentry:hasElevationAboveGround {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround'
+
+mappingId	terms_ispartof_general
+target		<{subj}> terms:isPartOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/terms/isPartOf'
+
+mappingId	cpmeta_isregexcolumn_general
+target		<{subj}> cpmeta:isRegexColumn {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn'
+
+mappingId	otcmeta_device_general
+target		<{subj}> otcmeta:device <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/device'
+
+mappingId	stationentry_hasoperationaldateestimate_general
+target		<{subj}> stationentry:hasOperationalDateEstimate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate'
+
+mappingId	rdfs_subpropertyof_general
+target		<{subj}> rdfs:subPropertyOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf'
+
+mappingId	cpmeta_hasdepiction_general
+target		<{subj}> cpmeta:hasDepiction <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction'
+
+mappingId	stationentry_isalreadyoperational_general
+target		<{subj}> stationentry:isAlreadyOperational {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational'
+
+mappingId	core_preflabel_general
+target		<{subj}> core:prefLabel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2004/02/skos/core#prefLabel'
+
+mappingId	core_altlabel_general
+target		<{subj}> core:altLabel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2004/02/skos/core#altLabel'
+
+mappingId	stationentry_haspreicosmeasurements_general
+target		<{subj}> stationentry:hasPreIcosMeasurements {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements'
+
+mappingId	otcmeta_atorganization_general
+target		<{subj}> otcmeta:atOrganization <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization'
+
+mappingId	otcmeta_hasrole_general
+target		<{subj}> otcmeta:hasRole <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasRole'
+
+mappingId	otcmeta_hasholder_general
+target		<{subj}> otcmeta:hasHolder <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder'
+
+mappingId	cpmeta_hasclimatezone_general
+target		<{subj}> cpmeta:hasClimateZone <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone'
+
+mappingId	cpmeta_hasresponsibleorganization_general
+target		<{subj}> cpmeta:hasResponsibleOrganization <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization'
+
+mappingId	stationentry_haseddyheight_general
+target		<{subj}> stationentry:hasEddyHeight {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight'
+
+mappingId	stationentry_hasfundingforoperation_general
+target		<{subj}> stationentry:hasFundingForOperation {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation'
+
+mappingId	cpmeta_hasfunder_general
+target		<{subj}> cpmeta:hasFunder <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder'
+
+mappingId	cpmeta_containsdataset_general
+target		<{subj}> cpmeta:containsDataset <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset'
+
+mappingId	cpmeta_hasfunding_general
+target		<{subj}> cpmeta:hasFunding <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding'
+
+mappingId	stationentry_hasfundingforconstruction_general
+target		<{subj}> stationentry:hasFundingForConstruction {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction'
+
+mappingId	cpmeta_hasdocumentationobject_general
+target		<{subj}> cpmeta:hasDocumentationObject <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject'
+
+mappingId	stationentry_hasanemometerdirection_general
+target		<{subj}> stationentry:hasAnemometerDirection {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection'
+
+mappingId	owl_onproperty_general
+target		<{subj}> owl:onProperty <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#onProperty'
+
+mappingId	stationentry_hasappstatuscomment_general
+target		<{subj}> stationentry:hasAppStatusComment {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusComment'
+
+mappingId	cpmeta_operateson_general
+target		<{subj}> cpmeta:operatesOn <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn'
+
+mappingId	stationentry_hasmainpersonnelnameslist_general
+target		<{subj}> stationentry:hasMainPersonnelNamesList {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasMainPersonnelNamesList'
+
+mappingId	otcmeta_ofsensor_general
+target		<{subj}> otcmeta:ofSensor <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofSensor'
+
+mappingId	cpmeta_hasenddate_general
+target		<{subj}> cpmeta:hasEndDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate'
+
+mappingId	cpmeta_hasstartdate_general
+target		<{subj}> cpmeta:hasStartDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate'
+
+mappingId	cpmeta_awardtitle_general
+target		<{subj}> cpmeta:awardTitle {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle'
+
+mappingId	owl_somevaluesfrom_general
+target		<{subj}> owl:someValuesFrom <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#someValuesFrom'
+
+mappingId	otcmeta_toinstrument_general
+target		<{subj}> otcmeta:toInstrument <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/toInstrument'
+
+mappingId	cpmeta_hasvariable_general
+target		<{subj}> cpmeta:hasVariable <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable'
+
+mappingId	cpmeta_hasvariabletitle_general
+target		<{subj}> cpmeta:hasVariableTitle {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableTitle'
+
+mappingId	stationentry_hasphone_general
+target		<{subj}> stationentry:hasPhone {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPhone'
+
+mappingId	cpmeta_haslabelingdate_general
+target		<{subj}> cpmeta:hasLabelingDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate'
+
+mappingId	cpmeta_awardnumber_general
+target		<{subj}> cpmeta:awardNumber {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber'
+
+mappingId	cpmeta_hasmeanannualradiation_general
+target		<{subj}> cpmeta:hasMeanAnnualRadiation {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation'
+
+mappingId	otcmeta_haslastname_general
+target		<{subj}> otcmeta:hasLastName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName'
+
+mappingId	otcmeta_hasfirstname_general
+target		<{subj}> otcmeta:hasFirstName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName'
+
+mappingId	stationentry_step2startdate_general
+target		<{subj}> stationentry:step2StartDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/step2StartDate'
+
+mappingId	stationentry_hasaddress_general
+target		<{subj}> stationentry:hasAddress {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAddress'
+
+mappingId	stationentry_hasexistinginfrastructure_general
+target		<{subj}> stationentry:hasExistingInfrastructure {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure'
+
+mappingId	otcmeta_countrycode_general
+target		<{subj}> otcmeta:countryCode {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/countryCode'
+
+mappingId	stationentry_hastelecom_general
+target		<{subj}> stationentry:hasTelecom {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTelecom'
+
+mappingId	stationentry_hasvegetation_general
+target		<{subj}> stationentry:hasVegetation {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasVegetation'
+
+mappingId	stationentry_hasresponsibleinstitutionname_general
+target		<{subj}> stationentry:hasResponsibleInstitutionName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName'
+
+mappingId	stationentry_hasanthropogenics_general
+target		<{subj}> stationentry:hasAnthropogenics {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAnthropogenics'
+
+mappingId	stationentry_haswinddataineuropeandatabase_general
+target		<{subj}> stationentry:hasWindDataInEuropeanDatabase {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase'
+
+mappingId	stationentry_hasaccessibility_general
+target		<{subj}> stationentry:hasAccessibility {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAccessibility'
+
+mappingId	stationentry_hasnamelistofnetworksitbelongsto_general
+target		<{subj}> stationentry:hasNameListOfNetworksItBelongsTo {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNameListOfNetworksItBelongsTo'
+
+mappingId	stationentry_haswebsite_general
+target		<{subj}> stationentry:hasWebsite <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWebsite'
+
+mappingId	otcmeta_hasmodelname_general
+target		<{subj}> otcmeta:hasModelName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName'
+
+mappingId	otcmeta_hasmanufacturer_general
+target		<{subj}> otcmeta:hasManufacturer <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer'
+
+mappingId	cpmeta_isoptionalvariable_general
+target		<{subj}> cpmeta:isOptionalVariable {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalVariable'
+
+mappingId	otcmeta_hasattributionweight_general
+target		<{subj}> otcmeta:hasAttributionWeight {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasAttributionWeight'
+
+mappingId	cpmeta_haswigosid_general
+target		<{subj}> cpmeta:hasWigosId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId'
+
+mappingId	cpmeta_isqualityflagfor_general
+target		<{subj}> cpmeta:isQualityFlagFor <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor'
+
+mappingId	stationentry_hasdeputypi_general
+target		<{subj}> stationentry:hasDeputyPi <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi'
+
+mappingId	cpmeta_hasassociatedpublication_general
+target		<{subj}> cpmeta:hasAssociatedPublication <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedPublication'
+
+mappingId	otcmeta_toplatform_general
+target		<{subj}> otcmeta:toPlatform <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/toPlatform'
+
+mappingId	stationentry_step1enddate_general
+target		<{subj}> stationentry:step1EndDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/step1EndDate'
+
+mappingId	owl_unionof_general
+target		<{subj}> owl:unionOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#unionOf'
+
+mappingId	core_exactmatch_general
+target		<{subj}> core:exactMatch <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+mappingId	otcmeta_hasemail_general
+target		<{subj}> otcmeta:hasEmail {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasEmail'
+
+mappingId	otcmeta_ofinstrument_general
+target		<{subj}> otcmeta:ofInstrument <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofInstrument'
+
+mappingId	stationentry_haslocationdescription_general
+target		<{subj}> stationentry:hasLocationDescription {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLocationDescription'
+
+mappingId	cpmeta_haswebpageelements_general
+target		<{subj}> cpmeta:hasWebpageElements <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements'
+
+mappingId	otcmeta_hasorcidid_general
+target		<{subj}> otcmeta:hasOrcidId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasOrcidId'
+
+mappingId	stationentry_step2enddate_general
+target		<{subj}> stationentry:step2EndDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/step2EndDate'
+
+mappingId	stationentry_hasplatformtype_general
+target		<{subj}> stationentry:hasPlatformType {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPlatformType'
+
+mappingId	stationentry_hastypeofsampling_general
+target		<{subj}> stationentry:hasTypeOfSampling {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTypeOfSampling'
+
+mappingId	stationentry_hasvesselowner_general
+target		<{subj}> stationentry:hasVesselOwner {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasVesselOwner'
+
+mappingId	cpmeta_awarduri_general
+target		<{subj}> cpmeta:awardURI <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI'
+
+mappingId	otcmeta_hasstarttime_general
+target		<{subj}> otcmeta:hasStartTime {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStartTime'
+
+mappingId	stationentry_hasunderwayco2sensormanufacturer_general
+target		<{subj}> stationentry:hasUnderwayCo2SensorManufacturer {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorManufacturer'
+
+mappingId	stationentry_hasunderwayco2sensormodel_general
+target		<{subj}> stationentry:hasUnderwayCo2SensorModel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorModel'
+
+mappingId	stationentry_hasunderwayothersensormanufacturer_general
+target		<{subj}> stationentry:hasUnderwayOtherSensorManufacturer {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorManufacturer'
+
+mappingId	stationentry_hasunderwayequilibratortype_general
+target		<{subj}> stationentry:hasUnderwayEquilibratorType {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayEquilibratorType'
+
+mappingId	stationentry_hasunderwayothersensormodel_general
+target		<{subj}> stationentry:hasUnderwayOtherSensorModel {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorModel'
+
+mappingId	stationentry_labelingenddate_general
+target		<{subj}> stationentry:labelingEndDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingEndDate'
+
+mappingId	otcmeta_hasicesplatformcode_general
+target		<{subj}> otcmeta:hasIcesPlatformCode {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasIcesPlatformCode'
+
+mappingId	otcmeta_ofplatform_general
+target		<{subj}> otcmeta:ofPlatform <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofPlatform'
+
+mappingId	stationentry_hasunderwayadditionalinfo_general
+target		<{subj}> stationentry:hasUnderwayAdditionalInfo {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayAdditionalInfo'
+
+mappingId	otcmeta_tostation_general
+target		<{subj}> otcmeta:toStation <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/toStation'
+
+mappingId	rdf__10_general
+target		<{subj}> rdf:_10 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_10'
+
+mappingId	owl_ondatatype_general
+target		<{subj}> owl:onDatatype <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#onDatatype'
+
+mappingId	owl_withrestrictions_general
+target		<{subj}> owl:withRestrictions <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#withRestrictions'
+
+mappingId	otcmeta_hasstationid_general
+target		<{subj}> otcmeta:hasStationId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId'
+
+mappingId	otcmeta_hasstationclass_general
+target		<{subj}> otcmeta:hasStationClass {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStationClass'
+
+mappingId	stationentry_step1startdate_general
+target		<{subj}> stationentry:step1StartDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/step1StartDate'
+
+mappingId	otcmeta_hasresponsibleorg_general
+target		<{subj}> otcmeta:hasResponsibleOrg <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasResponsibleOrg'
+
+mappingId	stationentry_hastcid_general
+target		<{subj}> stationentry:hasTcId {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTcId'
+
+mappingId	otcmeta_haspersontitle_general
+target		<{subj}> otcmeta:hasPersonTitle {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPersonTitle'
+
+mappingId	stationentry_hasunderwaymethodreferences_general
+target		<{subj}> stationentry:hasUnderwayMethodReferences {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayMethodReferences'
+
+mappingId	otcmeta_hasendtime_general
+target		<{subj}> otcmeta:hasEndTime {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasEndTime'
+
+mappingId	otcmeta_hasowner_general
+target		<{subj}> otcmeta:hasOwner <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasOwner'
+
+mappingId	otcmeta_measuresvariable_general
+target		<{subj}> otcmeta:measuresVariable <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable'
+
+mappingId	owl_oneof_general
+target		<{subj}> owl:oneOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#oneOf'
+
+mappingId	xsd_maxinclusive_general
+target		<{subj}> xsd:maxInclusive {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2001/XMLSchema#maxInclusive'
+
+mappingId	xsd_mininclusive_general
+target		<{subj}> xsd:minInclusive {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2001/XMLSchema#minInclusive'
+
+mappingId	stationentry_hasspatialreference_general
+target		<{subj}> stationentry:hasSpatialReference {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSpatialReference'
+
+mappingId	otcmeta_hasspatialreference_general
+target		<{subj}> otcmeta:hasSpatialReference {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSpatialReference'
+
+mappingId	otcmeta_hasvariableorigin_general
+target		<{subj}> otcmeta:hasVariableOrigin {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasVariableOrigin'
+
+mappingId	cpmeta_hasgoodflagvalue_general
+target		<{subj}> cpmeta:hasGoodFlagValue {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasGoodFlagValue'
+
+mappingId	otcmeta_hasgeoregion_general
+target		<{subj}> otcmeta:hasGeoRegion <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion'
+
+mappingId	stationentry_hasdiscretealkalinitymethodreferences_general
+target		<{subj}> stationentry:hasDiscreteAlkalinityMethodReferences {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityMethodReferences'
+
+mappingId	stationentry_hasdescription_general
+target		<{subj}> stationentry:hasDescription {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDescription'
+
+mappingId	cpmeta_hasoperationalperiod_general
+target		<{subj}> cpmeta:hasOperationalPeriod {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOperationalPeriod'
+
+mappingId	sites_hasresponsibleorganization_general
+target		<{subj}> <https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization> <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization'
+
+mappingId	cpmeta_isdiscontinued_general
+target		<{subj}> cpmeta:isDiscontinued {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued'
+
+mappingId	rdf__11_general
+target		<{subj}> rdf:_11 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_11'
+
+mappingId	stationentry_hasdiscretealkalinitytitrationtype_general
+target		<{subj}> stationentry:hasDiscreteAlkalinityTitrationType {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityTitrationType'
+
+mappingId	cpmeta_hasicon_general
+target		<{subj}> cpmeta:hasIcon <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon'
+
+mappingId	otcmeta_measuresskos_general
+target		<{subj}> otcmeta:measuresSkos <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos'
+
+mappingId	stationentry_hasnrtdatadeliverymethod_general
+target		<{subj}> stationentry:hasNrtDataDeliveryMethod {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataDeliveryMethod'
+
+mappingId	stationentry_hasdiscretealkalinitycurvefitting_general
+target		<{subj}> stationentry:hasDiscreteAlkalinityCurveFitting {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityCurveFitting'
+
+mappingId	owl_allvaluesfrom_general
+target		<{subj}> owl:allValuesFrom <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#allValuesFrom'
+
+mappingId	otcmeta_haslatitude_general
+target		<{subj}> otcmeta:hasLatitude {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLatitude'
+
+mappingId	otcmeta_haslongitude_general
+target		<{subj}> otcmeta:hasLongitude {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLongitude'
+
+mappingId	otcmeta_hasdate_general
+target		<{subj}> otcmeta:hasDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDate'
+
+mappingId	stationentry_hasdiscretetco2analysismethod_general
+target		<{subj}> stationentry:hasDiscreteTco2AnalysisMethod {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2AnalysisMethod'
+
+mappingId	stationentry_haseasternmostlon_general
+target		<{subj}> stationentry:hasEasternmostLon {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEasternmostLon'
+
+mappingId	rdf__17_general
+target		<{subj}> rdf:_17 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_17'
+
+mappingId	cpmeta_hasextraroleinfo_general
+target		<{subj}> cpmeta:hasExtraRoleInfo {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasExtraRoleInfo'
+
+mappingId	otcmeta_appliedtosensor_general
+target		<{subj}> otcmeta:appliedToSensor <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/appliedToSensor'
+
+mappingId	stationentry_hasconstructionstartdate_general
+target		<{subj}> stationentry:hasConstructionStartDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionStartDate'
+
+mappingId	xsd_pattern_general
+target		<{subj}> xsd:pattern {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2001/XMLSchema#pattern'
+
+mappingId	otcmeta_waterintakedepth_general
+target		<{subj}> otcmeta:waterIntakeDepth {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth'
+
+mappingId	stationentry_hassouthernmostlat_general
+target		<{subj}> stationentry:hasSouthernmostLat {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSouthernmostLat'
+
+mappingId	stationentry_hasnrtdataupdatefrequency_general
+target		<{subj}> stationentry:hasNrtDataUpdateFrequency {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataUpdateFrequency'
+
+mappingId	stationentry_hasnothernmostlat_general
+target		<{subj}> stationentry:hasNothernmostLat {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNothernmostLat'
+
+mappingId	rdf__12_general
+target		<{subj}> rdf:_12 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_12'
+
+mappingId	rdf__13_general
+target		<{subj}> rdf:_13 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_13'
+
+mappingId	rdf__14_general
+target		<{subj}> rdf:_14 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_14'
+
+mappingId	rdf__15_general
+target		<{subj}> rdf:_15 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_15'
+
+mappingId	rdf__16_general
+target		<{subj}> rdf:_16 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_16'
+
+mappingId	stationentry_haswesternmostlon_general
+target		<{subj}> stationentry:hasWesternmostLon {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWesternmostLon'
+
+mappingId	otcmeta_haslabelingdate_general
+target		<{subj}> otcmeta:hasLabelingDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLabelingDate'
+
+mappingId	stationentry_hasdiscretetco2standardizationtechnique_general
+target		<{subj}> stationentry:hasDiscreteTco2StandardizationTechnique {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2StandardizationTechnique'
+
+mappingId	stationentry_hasdiscreteadditionalinfo_general
+target		<{subj}> stationentry:hasDiscreteAdditionalInfo {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAdditionalInfo'
+
+mappingId	rdf__20_general
+target		<{subj}> rdf:_20 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_20'
+
+mappingId	rdf__18_general
+target		<{subj}> rdf:_18 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_18'
+
+mappingId	rdf__19_general
+target		<{subj}> rdf:_19 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_19'
+
+mappingId	rdf__21_general
+target		<{subj}> rdf:_21 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_21'
+
+mappingId	rdf__22_general
+target		<{subj}> rdf:_22 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_22'
+
+mappingId	stationentry_hasdiscretetco2techniquedescription_general
+target		<{subj}> stationentry:hasDiscreteTco2TechniqueDescription {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2TechniqueDescription'
+
+mappingId	stationentry_hasdiscretetco2methodreferences_general
+target		<{subj}> stationentry:hasDiscreteTco2MethodReferences {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2MethodReferences'
+
+mappingId	owl_disjointwith_general
+target		<{subj}> owl:disjointWith <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#disjointWith'
+
+mappingId	owl_onclass_general
+target		<{subj}> owl:onClass <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#onClass'
+
+mappingId	owl_equivalentclass_general
+target		<{subj}> owl:equivalentClass <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#equivalentClass'
+
+mappingId	cpmeta_hashidefromsearchpolicy_general
+target		<{subj}> cpmeta:hasHideFromSearchPolicy {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy'
+
+mappingId	cpmeta_hasdocumentationuri_general
+target		<{subj}> cpmeta:hasDocumentationUri <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationUri'
+
+mappingId	cpmeta_hasmarkericon_general
+target		<{subj}> cpmeta:hasMarkerIcon <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMarkerIcon'
+
+mappingId	stationentry_hasdiscretephscale_general
+target		<{subj}> stationentry:hasDiscretePhScale {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhScale'
+
+mappingId	stationentry_hasdiscretephmethodreferences_general
+target		<{subj}> stationentry:hasDiscretePhMethodReferences {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhMethodReferences'
+
+mappingId	stationentry_hasdiscretephanalysismethod_general
+target		<{subj}> stationentry:hasDiscretePhAnalysisMethod {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhAnalysisMethod'
+
+mappingId	stationentry_hasconstructionenddate_general
+target		<{subj}> stationentry:hasConstructionEndDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate'
+
+mappingId	stationentry_hasimagelink_general
+target		<{subj}> stationentry:hasImageLink <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasImageLink'
+
+mappingId	owl_qualifiedcardinality_general
+target		<{subj}> owl:qualifiedCardinality {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#qualifiedCardinality'
+
+mappingId	stationentry_hasdiscretepco2methodreferences_general
+target		<{subj}> stationentry:hasDiscretePco2MethodReferences {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2MethodReferences'
+
+mappingId	stationentry_hasdiscretepco2analysismethod_general
+target		<{subj}> stationentry:hasDiscretePco2AnalysisMethod {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2AnalysisMethod'
+
+mappingId	otcmeta_awardnumber_general
+target		<{subj}> otcmeta:awardNumber {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardNumber'
+
+mappingId	owl_maxqualifiedcardinality_general
+target		<{subj}> owl:maxQualifiedCardinality {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#maxQualifiedCardinality'
+
+mappingId	owl_intersectionof_general
+target		<{subj}> owl:intersectionOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#intersectionOf'
+
+mappingId	stationentry_hasdiscretepco2analysis_general
+target		<{subj}> stationentry:hasDiscretePco2Analysis {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2Analysis'
+
+mappingId	otcmeta_awardtitle_general
+target		<{subj}> otcmeta:awardTitle {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardTitle'
+
+mappingId	otcmeta_hasfunder_general
+target		<{subj}> otcmeta:hasFunder <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFunder'
+
+mappingId	cpmeta_impliesdefaultlicence_general
+target		<{subj}> cpmeta:impliesDefaultLicence <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence'
+
+mappingId	otcmeta_hasportofcall_general
+target		<{subj}> otcmeta:hasPortOfCall {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPortOfCall'
+
+mappingId	otcmeta_hasdeploymentschedule_general
+target		<{subj}> otcmeta:hasDeploymentSchedule {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDeploymentSchedule'
+
+mappingId	rdf__25_general
+target		<{subj}> rdf:_25 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_25'
+
+mappingId	rdf__24_general
+target		<{subj}> rdf:_24 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_24'
+
+mappingId	rdf__23_general
+target		<{subj}> rdf:_23 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_23'
+
+mappingId	otcmeta_hasunit_general
+target		<{subj}> otcmeta:hasUnit {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasUnit'
+
+mappingId	owl_disjointunionof_general
+target		<{subj}> owl:disjointUnionOf <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#disjointUnionOf'
+
+mappingId	owl_ondatarange_general
+target		<{subj}> owl:onDataRange <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#onDataRange'
+
+mappingId	otcmeta_hasserialnumber_general
+target		<{subj}> otcmeta:hasSerialNumber {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber'
+
+mappingId	otcmeta_hassamplingfrequency_general
+target		<{subj}> otcmeta:hasSamplingFrequency {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSamplingFrequency'
+
+mappingId	otcmeta_haspicture_general
+target		<{subj}> otcmeta:hasPicture <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPicture'
+
+mappingId	otcmeta_hasmiddlename_general
+target		<{subj}> otcmeta:hasMiddleName {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasMiddleName'
+
+mappingId	otcmeta_hasfunding_general
+target		<{subj}> otcmeta:hasFunding <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFunding'
+
+mappingId	otcmeta_hasdocumentationcomment_general
+target		<{subj}> otcmeta:hasDocumentationComment {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationComment'
+
+mappingId	rdf__26_general
+target		<{subj}> rdf:_26 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_26'
+
+mappingId	rdf__27_general
+target		<{subj}> rdf:_27 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_27'
+
+mappingId	rdf__28_general
+target		<{subj}> rdf:_28 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_28'
+
+mappingId	rdf__29_general
+target		<{subj}> rdf:_29 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_29'
+
+mappingId	otcmeta_hasresolution_general
+target		<{subj}> otcmeta:hasResolution {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasResolution'
+
+mappingId	ns1_title_general
+target		<{subj}> ns1:title {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/title'
+
+mappingId	rdf__32_general
+target		<{subj}> rdf:_32 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_32'
+
+mappingId	owl_versioninfo_general
+target		<{subj}> owl:versionInfo {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#versionInfo'
+
+mappingId	cpmeta_hasskipstoragepolicy_general
+target		<{subj}> cpmeta:hasSkipStoragePolicy {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipStoragePolicy'
+
+mappingId	ns1_creator_general
+target		<{subj}> ns1:creator <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/creator'
+
+mappingId	ns1_description_general
+target		<{subj}> ns1:description {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/description'
+
+mappingId	ns1_issued_general
+target		<{subj}> ns1:issued {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/issued'
+
+mappingId	cpmeta_hasskippidmintingpolicy_general
+target		<{subj}> cpmeta:hasSkipPidMintingPolicy {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipPidMintingPolicy'
+
+mappingId	stationentry_hasdiscretealkalinityothertitration_general
+target		<{subj}> stationentry:hasDiscreteAlkalinityOtherTitration {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityOtherTitration'
+
+mappingId	otcmeta_hasdocumentationreference_general
+target		<{subj}> otcmeta:hasDocumentationReference {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationReference'
+
+mappingId	rdf__31_general
+target		<{subj}> rdf:_31 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_31'
+
+mappingId	otcmeta_hasdiscretesamplingschedule_general
+target		<{subj}> otcmeta:hasDiscreteSamplingSchedule {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDiscreteSamplingSchedule'
+
+mappingId	rdf__30_general
+target		<{subj}> rdf:_30 <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_30'
+
+mappingId	otcmeta_hasdatetime_general
+target		<{subj}> otcmeta:hasDateTime {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDateTime'
+
+mappingId	ns1_modified_general
+target		<{subj}> ns1:modified {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/modified'
+
+mappingId	otcmeta_awarduri_general
+target		<{subj}> otcmeta:awardURI <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardURI'
+
+mappingId	ns_license_general
+target		<{subj}> <http://creativecommons.org/ns#license> <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://creativecommons.org/ns#license'
+
+mappingId	dcat_mediatype_general
+target		<{subj}> dcat:mediaType <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/ns/dcat#mediaType'
+
+mappingId	pred_pred_general
+target		<{subj}> <pred> {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'pred'
+
+mappingId	owl_cardinality_general
+target		<{subj}> owl:cardinality {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#cardinality'
+
+mappingId	owl_imports_general
+target		<{subj}> owl:imports <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2002/07/owl#imports'
+
+mappingId	stationentry_labelingprogressdate_general
+target		<{subj}> stationentry:labelingProgressDate {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate'
+
+mappingId	vann_preferrednamespaceprefix_general
+target		<{subj}> vann:preferredNamespacePrefix {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/vocab/vann/preferredNamespacePrefix'
+
+mappingId	vann_preferrednamespaceuri_general
+target		<{subj}> vann:preferredNamespaceUri <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/vocab/vann/preferredNamespaceUri'
+
+mappingId	ns1_rights_general
+target		<{subj}> ns1:rights {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/rights'
+
+mappingId	otcmeta_hasuncertainty_general
+target		<{subj}> otcmeta:hasUncertainty {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasUncertainty'
+
+mappingId	ns1_publisher_general
+target		<{subj}> ns1:publisher <{obj}> .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://purl.org/dc/elements/1.1/publisher'
+
+mappingId	otcmeta_airintakeposition_general
+target		<{subj}> otcmeta:airIntakePosition {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition'
+
+mappingId	xsd_length_general
+target		<{subj}> xsd:length {obj} .
+source		SELECT subj, obj FROM rdf_triples WHERE pred = 'http://www.w3.org/2001/XMLSchema#length'

@@ -1,0 +1,42 @@
+mappingId    data-object-relations
+target <https://meta.icos-cp.eu/objects/{id}> a cpmeta:DataObject ;
+                    cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_{wasSubmittedBy}> ;
+                    cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_{wasAcquiredBy}> .
+source        SELECT id, wasSubmittedBy, wasAcquiredBy FROM data_objects
+
+mappingId    data-object-fields
+target       <https://meta.icos-cp.eu/objects/{id}> cpmeta:hasName {name}^^xsd:string ;
+               cpmeta:hasObjectSpec <{hasObjectSpec}> ;
+               cpmeta:hasSha256sum {hasSha256sum}^^xsd:string ;
+               cpmeta:hasSizeInBytes {hasSizeInBytes}^^xsd:long ;
+               cpmeta:hasNumberOfRows {hasNumberOfRows}^^xsd:long ;
+               cpmeta:hasDoi {hasDoi}^^xsd:string ;
+               cpmeta:hasActualColumnNames {hasActualColumnNames}^^xsd:string ;
+               cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/{isNextVersionOf}> ;
+               prov:wasProducedBy {wasProducedBy}^^xsd:string .
+source       SELECT
+               id,
+               name,
+               hasObjectSpec,
+               hasSha256sum,
+               hasSizeInBytes,
+               hasNumberOfRows,
+               hasActualColumnNames,
+               hasDoi,
+               wasProducedBy,
+               isNextVersionOf
+            FROM data_objects
+
+mappingId data-object-submission
+target <http://meta.icos-cp.eu/resources/subm_{id}> a cpmeta:DataSubmission ;
+                   prov:startedAtTime {hasStartTime}^^xsd:dateTime ;
+                   prov:endedAtTime {hasEndTime}^^xsd:dateTime .
+source        SELECT id, hasStartTime, hasEndTime FROM data_object_submissions
+
+mappingId data-object-acquisition
+target <http://meta.icos-cp.eu/resources/acq_{id}> a cpmeta:DataAcquisition ;
+                   cpmeta:hasSamplingHeight {hasSamplingHeight}^^xsd:dateTime ;
+                   prov:startedAtTime {startedAtTime}^^xsd:dateTime ;
+                   prov:endedAtTime {endedAtTime}^^xsd:dateTime .
+source        SELECT id, hasSamplingHeight, startedAtTime, endedAtTime FROM data_object_acquisitions
+

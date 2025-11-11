@@ -1,0 +1,3409 @@
+[PrefixDeclaration]
+cpmeta:	http://meta.icos-cp.eu/ontologies/cpmeta/
+dcat:	http://www.w3.org/ns/dcat#
+files:	http://meta.icos-cp.eu/files/
+locn:	http://www.w3.org/ns/locn#
+ns:	http://creativecommons.org/ns#
+ns11:	http://purl.org/dc/elements/1.1/
+ns2:	http://www.w3.org/2006/vcard/ns#
+otcmeta:	http://meta.icos-cp.eu/ontologies/otcmeta/
+owl:	http://www.w3.org/2002/07/owl#
+prov:	http://www.w3.org/ns/prov#
+rdf:	http://www.w3.org/1999/02/22-rdf-syntax-ns#
+rdfs:	http://www.w3.org/2000/01/rdf-schema#
+skos:	http://www.w3.org/2004/02/skos/core#
+ssn:	http://www.w3.org/ns/ssn/
+stationentry:	http://meta.icos-cp.eu/ontologies/stationentry/
+terms:	http://purl.org/dc/terms/
+vann:	http://purl.org/vocab/vann/
+wdcgg:	http://meta.icos-cp.eu/resources/wdcgg/
+xsd:	http://www.w3.org/2001/XMLSchema#
+
+[MappingDeclaration] @collection [[
+
+mappingId	meta_icos_cp_eu_files_files_hasname
+target		<http://meta.icos-cp.eu/files/{id}> files:hasName {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_files WHERE predicate = 'http://meta.icos-cp.eu/files/hasName'
+
+
+mappingId	meta_icos_cp_eu_files_files_hastype
+target		<http://meta.icos-cp.eu/files/{id}> files:hasType {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_files WHERE predicate = 'http://meta.icos-cp.eu/files/hasType'
+
+
+mappingId	meta_icos_cp_eu_files_rdfs_domain
+target		<http://meta.icos-cp.eu/files/{id}> rdfs:domain {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_files WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#domain'
+
+
+mappingId	meta_icos_cp_eu_files_rdfs_label
+target		<http://meta.icos-cp.eu/files/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_files WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	meta_icos_cp_eu_files_rdfs_range
+target		<http://meta.icos-cp.eu/files/{id}> rdfs:range {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_files WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#range'
+
+
+mappingId	ontologies_cpmeta_ns_license
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns:license {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://creativecommons.org/ns#license'
+
+
+mappingId	ontologies_cpmeta_cpmeta_hasgoodflagvalue
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> cpmeta:hasGoodFlagValue {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasGoodFlagValue'
+
+
+mappingId	ontologies_cpmeta_ns11_creator
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:creator {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/creator'
+
+
+mappingId	ontologies_cpmeta_ns11_description
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:description {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/description'
+
+
+mappingId	ontologies_cpmeta_ns11_issued
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:issued {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/issued'
+
+
+mappingId	ontologies_cpmeta_ns11_modified
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:modified {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/modified'
+
+
+mappingId	ontologies_cpmeta_ns11_publisher
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:publisher {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/publisher'
+
+
+mappingId	ontologies_cpmeta_ns11_rights
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:rights {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/rights'
+
+
+mappingId	ontologies_cpmeta_ns11_title
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> ns11:title {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/dc/elements/1.1/title'
+
+
+mappingId	ontologies_cpmeta_vann_preferrednamespaceprefix
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> vann:preferredNamespacePrefix {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/vocab/vann/preferredNamespacePrefix'
+
+
+mappingId	ontologies_cpmeta_vann_preferrednamespaceuri
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> vann:preferredNamespaceUri {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://purl.org/vocab/vann/preferredNamespaceUri'
+
+
+mappingId	ontologies_cpmeta_rdf_first
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdf:first {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first'
+
+
+mappingId	ontologies_cpmeta_rdf_rest
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdf:rest {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest'
+
+
+mappingId	ontologies_cpmeta_rdfs_comment
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	ontologies_cpmeta_rdfs_domain
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:domain {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#domain'
+
+
+mappingId	ontologies_cpmeta_rdfs_label
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	ontologies_cpmeta_rdfs_range
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:range {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#range'
+
+
+mappingId	ontologies_cpmeta_rdfs_seealso
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	ontologies_cpmeta_rdfs_subclassof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:subClassOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#subClassOf'
+
+
+mappingId	ontologies_cpmeta_rdfs_subpropertyof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> rdfs:subPropertyOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf'
+
+
+mappingId	ontologies_cpmeta_xsd_length
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> xsd:length {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2001/XMLSchema#length'
+
+
+mappingId	ontologies_cpmeta_xsd_maxinclusive
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> xsd:maxInclusive {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2001/XMLSchema#maxInclusive'
+
+
+mappingId	ontologies_cpmeta_xsd_mininclusive
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> xsd:minInclusive {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2001/XMLSchema#minInclusive'
+
+
+mappingId	ontologies_cpmeta_xsd_pattern
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> xsd:pattern {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2001/XMLSchema#pattern'
+
+
+mappingId	ontologies_cpmeta_owl_allvaluesfrom
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:allValuesFrom {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#allValuesFrom'
+
+
+mappingId	ontologies_cpmeta_owl_cardinality
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:cardinality {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#cardinality'
+
+
+mappingId	ontologies_cpmeta_owl_disjointunionof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:disjointUnionOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#disjointUnionOf'
+
+
+mappingId	ontologies_cpmeta_owl_disjointwith
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:disjointWith {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#disjointWith'
+
+
+mappingId	ontologies_cpmeta_owl_equivalentclass
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:equivalentClass {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#equivalentClass'
+
+
+mappingId	ontologies_cpmeta_owl_intersectionof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:intersectionOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#intersectionOf'
+
+
+mappingId	ontologies_cpmeta_owl_maxqualifiedcardinality
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:maxQualifiedCardinality {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#maxQualifiedCardinality'
+
+
+mappingId	ontologies_cpmeta_owl_onclass
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:onClass {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#onClass'
+
+
+mappingId	ontologies_cpmeta_owl_ondatarange
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:onDataRange {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#onDataRange'
+
+
+mappingId	ontologies_cpmeta_owl_ondatatype
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:onDatatype {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#onDatatype'
+
+
+mappingId	ontologies_cpmeta_owl_onproperty
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:onProperty {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#onProperty'
+
+
+mappingId	ontologies_cpmeta_owl_oneof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:oneOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#oneOf'
+
+
+mappingId	ontologies_cpmeta_owl_qualifiedcardinality
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:qualifiedCardinality {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#qualifiedCardinality'
+
+
+mappingId	ontologies_cpmeta_owl_somevaluesfrom
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:someValuesFrom {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#someValuesFrom'
+
+
+mappingId	ontologies_cpmeta_owl_unionof
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:unionOf {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#unionOf'
+
+
+mappingId	ontologies_cpmeta_owl_versioninfo
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:versionInfo {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#versionInfo'
+
+
+mappingId	ontologies_cpmeta_owl_withrestrictions
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> owl:withRestrictions {object}^^xsd:string .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#withRestrictions'
+
+
+mappingId	ontologies_cpmeta_skos_exactmatch
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> skos:exactMatch <{object}> .
+source		SELECT id, object FROM ontologies_cpmeta WHERE predicate = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+
+mappingId	stationentry_es_stationentry_hasanemometerdirection
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasAnemometerDirection {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection'
+
+
+mappingId	stationentry_es_stationentry_hasappstatuscomment
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasAppStatusComment {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusComment'
+
+
+mappingId	stationentry_es_stationentry_hasappstatusdate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasAppStatusDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate'
+
+
+mappingId	stationentry_es_stationentry_hasapplicationstatus
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasApplicationStatus {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus'
+
+
+mappingId	stationentry_es_stationentry_hasassociatedfile
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasAssociatedFile {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAssociatedFile'
+
+
+mappingId	stationentry_es_stationentry_hascountry
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasCountry {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasCountry'
+
+
+mappingId	stationentry_es_stationentry_hasdeputypi
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasDeputyPi {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi'
+
+
+mappingId	stationentry_es_stationentry_haseddyheight
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasEddyHeight {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight'
+
+
+mappingId	stationentry_es_stationentry_haselevationaboveground
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasElevationAboveGround {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround'
+
+
+mappingId	stationentry_es_stationentry_haselevationabovesea
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasElevationAboveSea {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea'
+
+
+mappingId	stationentry_es_stationentry_hasfundingforconstruction
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasFundingForConstruction {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction'
+
+
+mappingId	stationentry_es_stationentry_hasfundingforoperation
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasFundingForOperation {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation'
+
+
+mappingId	stationentry_es_stationentry_haslat
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasLat {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLat'
+
+
+mappingId	stationentry_es_stationentry_haslon
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasLon {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLon'
+
+
+mappingId	stationentry_es_stationentry_haslongname
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasLongName {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLongName'
+
+
+mappingId	stationentry_es_stationentry_hasoperationaldateestimate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasOperationalDateEstimate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate'
+
+
+mappingId	stationentry_es_stationentry_haspi
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasPi {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPi'
+
+
+mappingId	stationentry_es_stationentry_haspreicosmeasurements
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasPreIcosMeasurements {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements'
+
+
+mappingId	stationentry_es_stationentry_hasproductioncounterpart
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasProductionCounterpart {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart'
+
+
+mappingId	stationentry_es_stationentry_hasshortname
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasShortName {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasShortName'
+
+
+mappingId	stationentry_es_stationentry_hassitetype
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasSiteType {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType'
+
+
+mappingId	stationentry_es_stationentry_hasstationclass
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass'
+
+
+mappingId	stationentry_es_stationentry_hasstationkind
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasStationKind {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind'
+
+
+mappingId	stationentry_es_stationentry_haswinddataineuropeandatabase
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:hasWindDataInEuropeanDatabase {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase'
+
+
+mappingId	stationentry_es_stationentry_isalreadyoperational
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:isAlreadyOperational {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational'
+
+
+mappingId	stationentry_es_stationentry_labelingenddate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:labelingEndDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingEndDate'
+
+
+mappingId	stationentry_es_stationentry_labelingjoinyear
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:labelingJoinYear {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear'
+
+
+mappingId	stationentry_es_stationentry_labelingprogressdate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:labelingProgressDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate'
+
+
+mappingId	stationentry_es_stationentry_step1enddate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:step1EndDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step1EndDate'
+
+
+mappingId	stationentry_es_stationentry_step1startdate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:step1StartDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step1StartDate'
+
+
+mappingId	stationentry_es_stationentry_step2enddate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:step2EndDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step2EndDate'
+
+
+mappingId	stationentry_es_stationentry_step2startdate
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> stationentry:step2StartDate {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step2StartDate'
+
+
+mappingId	stationentry_es_rdfs_label
+target		<http://meta.icos-cp.eu/ontologies/stationentry/ES/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_es WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	stationentry_pi_stationentry_hasaffiliation
+target		<http://meta.icos-cp.eu/ontologies/stationentry/PI/{id}> stationentry:hasAffiliation {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_pi WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation'
+
+
+mappingId	stationentry_pi_stationentry_hasemail
+target		<http://meta.icos-cp.eu/ontologies/stationentry/PI/{id}> stationentry:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_pi WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEmail'
+
+
+mappingId	stationentry_pi_stationentry_hasfirstname
+target		<http://meta.icos-cp.eu/ontologies/stationentry/PI/{id}> stationentry:hasFirstName {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_pi WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName'
+
+
+mappingId	stationentry_pi_stationentry_haslastname
+target		<http://meta.icos-cp.eu/ontologies/stationentry/PI/{id}> stationentry:hasLastName {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_pi WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLastName'
+
+
+mappingId	stationentry_pi_stationentry_hasphone
+target		<http://meta.icos-cp.eu/ontologies/stationentry/PI/{id}> stationentry:hasPhone {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_pi WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPhone'
+
+
+mappingId	stationentry_bnode_rdf_first
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> rdf:first {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#first'
+
+
+mappingId	stationentry_bnode_rdf_rest
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> rdf:rest {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest'
+
+
+mappingId	stationentry_bnode_xsd_maxinclusive
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> xsd:maxInclusive {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2001/XMLSchema#maxInclusive'
+
+
+mappingId	stationentry_bnode_xsd_mininclusive
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> xsd:minInclusive {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2001/XMLSchema#minInclusive'
+
+
+mappingId	stationentry_bnode_xsd_pattern
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> xsd:pattern {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2001/XMLSchema#pattern'
+
+
+mappingId	stationentry_bnode_owl_ondatatype
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:onDatatype {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#onDatatype'
+
+
+mappingId	stationentry_bnode_owl_onproperty
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:onProperty {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#onProperty'
+
+
+mappingId	stationentry_bnode_owl_oneof
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:oneOf {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#oneOf'
+
+
+mappingId	stationentry_bnode_owl_somevaluesfrom
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:someValuesFrom {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#someValuesFrom'
+
+
+mappingId	stationentry_bnode_owl_unionof
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:unionOf {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#unionOf'
+
+
+mappingId	stationentry_bnode_owl_withrestrictions
+target		<http://meta.icos-cp.eu/ontologies/stationentry/bnode_{id}> owl:withRestrictions {object}^^xsd:string .
+source		SELECT id, object FROM stationentry_bnode WHERE predicate = 'http://www.w3.org/2002/07/owl#withRestrictions'
+
+
+mappingId	resources_acq_cpmeta_hassamplingheight
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:hasSamplingHeight {object}^^xsd:float .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight'
+
+
+mappingId	resources_acq_cpmeta_wasperformedwith
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedWith <{object}> .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith'
+
+
+mappingId	resources_acq_prov_endedattime
+target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:endedAtTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://www.w3.org/ns/prov#endedAtTime'
+
+
+mappingId	resources_acq_prov_startedattime
+target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:startedAtTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://www.w3.org/ns/prov#startedAtTime'
+
+
+mappingId	resources_acq_prov_wasassociatedwith
+target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+
+
+mappingId	resources_cpmeta_cpmeta_containsdataset
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:containsDataset <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset'
+
+
+mappingId	resources_cpmeta_cpmeta_hasassociatedproject
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasAssociatedProject <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject'
+
+
+mappingId	resources_cpmeta_cpmeta_hascolumn
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasColumn <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn'
+
+
+mappingId	resources_cpmeta_cpmeta_hascolumntitle
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasColumnTitle {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle'
+
+
+mappingId	resources_cpmeta_cpmeta_hasdatalevel
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDataLevel {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel'
+
+
+mappingId	resources_cpmeta_cpmeta_hasdatatheme
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDataTheme <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme'
+
+
+mappingId	resources_cpmeta_cpmeta_hasdocumentationobject
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDocumentationObject <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject'
+
+
+mappingId	resources_cpmeta_cpmeta_hasencoding
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasEncoding <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding'
+
+
+mappingId	resources_cpmeta_cpmeta_hasformat
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasFormat <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat'
+
+
+mappingId	resources_cpmeta_cpmeta_haskeywords
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasKeywords {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords'
+
+
+mappingId	resources_cpmeta_cpmeta_hasquantitykind
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasQuantityKind <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind'
+
+
+mappingId	resources_cpmeta_cpmeta_hasspecificdatasettype
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasSpecificDatasetType <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType'
+
+
+mappingId	resources_cpmeta_cpmeta_hastemporalresolution
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasTemporalResolution {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution'
+
+
+mappingId	resources_cpmeta_cpmeta_hasunit
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasUnit {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit'
+
+
+mappingId	resources_cpmeta_cpmeta_hasvalueformat
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasValueFormat <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat'
+
+
+mappingId	resources_cpmeta_cpmeta_hasvaluetype
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasValueType <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType'
+
+
+mappingId	resources_cpmeta_cpmeta_hasvariable
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasVariable <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable'
+
+
+mappingId	resources_cpmeta_cpmeta_hasvariabletitle
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasVariableTitle {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableTitle'
+
+
+mappingId	resources_cpmeta_cpmeta_impliesdefaultlicence
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:impliesDefaultLicence <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence'
+
+
+mappingId	resources_cpmeta_cpmeta_isoptionalcolumn
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isOptionalColumn {object}^^xsd:boolean .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn'
+
+
+mappingId	resources_cpmeta_cpmeta_isoptionalvariable
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isOptionalVariable {object}^^xsd:boolean .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalVariable'
+
+
+mappingId	resources_cpmeta_cpmeta_isqualityflagfor
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isQualityFlagFor <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor'
+
+
+mappingId	resources_cpmeta_cpmeta_isregexcolumn
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isRegexColumn {object}^^xsd:boolean .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn'
+
+
+mappingId	resources_cpmeta_terms_description
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	resources_cpmeta_terms_title
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	resources_cpmeta_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_cpmeta_rdfs_label
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_cpmeta_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	resources_cpmeta_owl_imports
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> owl:imports {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/2002/07/owl#imports'
+
+
+mappingId	resources_cpmeta_skos_exactmatch
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> skos:exactMatch <{object}> .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+
+mappingId	resources_cpmeta_dcat_accessurl
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> dcat:accessURL {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/ns/dcat#accessURL'
+
+
+mappingId	resources_cpmeta_dcat_dataset
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> dcat:dataset {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/ns/dcat#dataset'
+
+
+mappingId	resources_cpmeta_dcat_distribution
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> dcat:distribution {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/ns/dcat#distribution'
+
+
+mappingId	resources_cpmeta_dcat_mediatype
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> dcat:mediaType {object}^^xsd:string .
+source		SELECT id, object FROM resources_cpmeta WHERE predicate = 'http://www.w3.org/ns/dcat#mediaType'
+
+
+mappingId	resources_dcat_terms_license
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> terms:license {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://purl.org/dc/terms/license'
+
+
+mappingId	resources_dcat_terms_title
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	resources_dcat_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_dcat_rdfs_label
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_dcat_skos_altlabel
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> skos:altLabel {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2004/02/skos/core#altLabel'
+
+
+mappingId	resources_dcat_skos_exactmatch
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> skos:exactMatch <{object}> .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+
+mappingId	resources_dcat_skos_preflabel
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> skos:prefLabel {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2004/02/skos/core#prefLabel'
+
+
+mappingId	resources_dcat_ns2_fn
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> ns2:fn {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2006/vcard/ns#fn'
+
+
+mappingId	resources_dcat_ns2_hasemail
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> ns2:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/2006/vcard/ns#hasEmail'
+
+
+mappingId	resources_dcat_dcat_accessurl
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> dcat:accessURL {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/dcat#accessURL'
+
+
+mappingId	resources_dcat_dcat_bytesize
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> dcat:byteSize {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/dcat#byteSize'
+
+
+mappingId	resources_dcat_dcat_downloadurl
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> dcat:downloadURL {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/dcat#downloadURL'
+
+
+mappingId	resources_dcat_dcat_enddate
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> dcat:endDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/dcat#endDate'
+
+
+mappingId	resources_dcat_dcat_startdate
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> dcat:startDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/dcat#startDate'
+
+
+mappingId	resources_dcat_locn_geometry
+target		<http://meta.icos-cp.eu/resources/dcat/{id}> locn:geometry {object}^^xsd:string .
+source		SELECT id, object FROM resources_dcat WHERE predicate = 'http://www.w3.org/ns/locn#geometry'
+
+
+mappingId	dcat_bnode_terms_license
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> terms:license {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://purl.org/dc/terms/license'
+
+
+mappingId	dcat_bnode_ns2_fn
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> ns2:fn {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/2006/vcard/ns#fn'
+
+
+mappingId	dcat_bnode_ns2_hasemail
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> ns2:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/2006/vcard/ns#hasEmail'
+
+
+mappingId	dcat_bnode_dcat_accessurl
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> dcat:accessURL {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/dcat#accessURL'
+
+
+mappingId	dcat_bnode_dcat_bytesize
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> dcat:byteSize {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/dcat#byteSize'
+
+
+mappingId	dcat_bnode_dcat_downloadurl
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> dcat:downloadURL {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/dcat#downloadURL'
+
+
+mappingId	dcat_bnode_dcat_enddate
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> dcat:endDate {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/dcat#endDate'
+
+
+mappingId	dcat_bnode_dcat_startdate
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> dcat:startDate {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/dcat#startDate'
+
+
+mappingId	dcat_bnode_locn_geometry
+target		<http://meta.icos-cp.eu/resources/dcat/bnode_{id}> locn:geometry {object}^^xsd:string .
+source		SELECT id, object FROM dcat_bnode WHERE predicate = 'http://www.w3.org/ns/locn#geometry'
+
+
+mappingId	dcat_var_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/dcat/var/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM dcat_var WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	dcat_var_skos_altlabel
+target		<http://meta.icos-cp.eu/resources/dcat/var/{id}> skos:altLabel {object}^^xsd:string .
+source		SELECT id, object FROM dcat_var WHERE predicate = 'http://www.w3.org/2004/02/skos/core#altLabel'
+
+
+mappingId	dcat_var_skos_exactmatch
+target		<http://meta.icos-cp.eu/resources/dcat/var/{id}> skos:exactMatch <{object}> .
+source		SELECT id, object FROM dcat_var WHERE predicate = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+
+mappingId	dcat_var_skos_preflabel
+target		<http://meta.icos-cp.eu/resources/dcat/var/{id}> skos:prefLabel {object}^^xsd:string .
+source		SELECT id, object FROM dcat_var WHERE predicate = 'http://www.w3.org/2004/02/skos/core#prefLabel'
+
+
+mappingId	resources_deployments_cpmeta_atorganization
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:atOrganization <{object}> .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization'
+
+
+mappingId	resources_deployments_cpmeta_hasendtime
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasEndTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime'
+
+
+mappingId	resources_deployments_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	resources_deployments_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	resources_deployments_cpmeta_hassamplingheight
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasSamplingHeight {object}^^xsd:float .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight'
+
+
+mappingId	resources_deployments_cpmeta_hasstarttime
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasStartTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime'
+
+
+mappingId	resources_deployments_cpmeta_hasvariablename
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> cpmeta:hasVariableName {object}^^xsd:string .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableName'
+
+
+mappingId	resources_deployments_ssn_forproperty
+target		<http://meta.icos-cp.eu/resources/deployments/{id}> ssn:forProperty <{object}> .
+source		SELECT id, object FROM resources_deployments WHERE predicate = 'http://www.w3.org/ns/ssn/forProperty'
+
+
+mappingId	resources_fundings_cpmeta_awardnumber
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardNumber {object}^^xsd:string .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber'
+
+
+mappingId	resources_fundings_cpmeta_awardtitle
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardTitle {object}^^xsd:string .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle'
+
+
+mappingId	resources_fundings_cpmeta_awarduri
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardURI {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI'
+
+
+mappingId	resources_fundings_cpmeta_hasenddate
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:hasEndDate {object}^^xsd:date .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate'
+
+
+mappingId	resources_fundings_cpmeta_hasfunder
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:hasFunder <{object}> .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder'
+
+
+mappingId	resources_fundings_cpmeta_hasstartdate
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:hasStartDate {object}^^xsd:date .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate'
+
+
+mappingId	resources_fundings_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_fundings_rdfs_label
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_fundings WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_icos_cpmeta_countrycode
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:countryCode {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode'
+
+
+mappingId	resources_icos_cpmeta_hascoverimage
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasCoverImage {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage'
+
+
+mappingId	resources_icos_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	resources_icos_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	resources_icos_cpmeta_haslinkbox
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasLinkbox <{object}> .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox'
+
+
+mappingId	resources_icos_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	resources_icos_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	resources_icos_cpmeta_hasorderweight
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasOrderWeight {object}^^xsd:integer .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight'
+
+
+mappingId	resources_icos_cpmeta_hasstationid
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasStationId {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
+
+
+mappingId	resources_icos_cpmeta_haswebpagelink
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasWebpageLink {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink'
+
+
+mappingId	resources_icos_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/icos/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_icos_rdfs_label
+target		<http://meta.icos-cp.eu/resources/icos/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_icos WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	instruments_atc_cpmeta_hasatcid
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasAtcId {object}^^xsd:string .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+
+mappingId	instruments_atc_cpmeta_hasinstrumentcomponent
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasInstrumentComponent <{object}> .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent'
+
+
+mappingId	instruments_atc_cpmeta_hasinstrumentowner
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasInstrumentOwner <{object}> .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner'
+
+
+mappingId	instruments_atc_cpmeta_hasmodel
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasModel {object}^^xsd:string .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasModel'
+
+
+mappingId	instruments_atc_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	instruments_atc_cpmeta_hasserialnumber
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasSerialNumber {object}^^xsd:string .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber'
+
+
+mappingId	instruments_atc_cpmeta_hasvendor
+target		<http://meta.icos-cp.eu/resources/instruments/ATC_{id}> cpmeta:hasVendor <{object}> .
+source		SELECT id, object FROM instruments_atc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor'
+
+
+mappingId	instruments_etc_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	instruments_etc_cpmeta_hasmodel
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> cpmeta:hasModel {object}^^xsd:string .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasModel'
+
+
+mappingId	instruments_etc_cpmeta_hasserialnumber
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> cpmeta:hasSerialNumber {object}^^xsd:string .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber'
+
+
+mappingId	instruments_etc_cpmeta_hasvendor
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> cpmeta:hasVendor <{object}> .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor'
+
+
+mappingId	instruments_etc_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	instruments_etc_ssn_hasdeployment
+target		<http://meta.icos-cp.eu/resources/instruments/ETC_{id}> ssn:hasDeployment <{object}> .
+source		SELECT id, object FROM instruments_etc WHERE predicate = 'http://www.w3.org/ns/ssn/hasDeployment'
+
+
+mappingId	instruments_otc_cpmeta_hasinstrumentcomponent
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasInstrumentComponent <{object}> .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent'
+
+
+mappingId	instruments_otc_cpmeta_hasmodel
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasModel {object}^^xsd:string .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasModel'
+
+
+mappingId	instruments_otc_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	instruments_otc_cpmeta_hasotcid
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasOtcId {object}^^xsd:string .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId'
+
+
+mappingId	instruments_otc_cpmeta_hasserialnumber
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasSerialNumber {object}^^xsd:string .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber'
+
+
+mappingId	instruments_otc_cpmeta_hasvendor
+target		<http://meta.icos-cp.eu/resources/instruments/OTC_{id}> cpmeta:hasVendor <{object}> .
+source		SELECT id, object FROM instruments_otc WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor'
+
+
+mappingId	resources_memberships_cpmeta_atorganization
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:atOrganization <{object}> .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization'
+
+
+mappingId	resources_memberships_cpmeta_hasattributionweight
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:hasAttributionWeight {object}^^xsd:integer .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAttributionWeight'
+
+
+mappingId	resources_memberships_cpmeta_hasendtime
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:hasEndTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime'
+
+
+mappingId	resources_memberships_cpmeta_hasextraroleinfo
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:hasExtraRoleInfo {object}^^xsd:string .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasExtraRoleInfo'
+
+
+mappingId	resources_memberships_cpmeta_hasrole
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:hasRole <{object}> .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasRole'
+
+
+mappingId	resources_memberships_cpmeta_hasstarttime
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> cpmeta:hasStartTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime'
+
+
+mappingId	resources_memberships_rdfs_label
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_memberships WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_nextvcoll_cpmeta_isnextversionof
+target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> cpmeta:isNextVersionOf <{object}> .
+source		SELECT id, object FROM resources_nextvcoll WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf'
+
+
+mappingId	resources_nextvcoll_terms_haspart
+target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> terms:hasPart <{object}> .
+source		SELECT id, object FROM resources_nextvcoll WHERE predicate = 'http://purl.org/dc/terms/hasPart'
+
+
+mappingId	resources_organizations_cpmeta_hasatcid
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasAtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+
+mappingId	resources_organizations_cpmeta_hasdatatheme
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasDataTheme <{object}> .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme'
+
+
+mappingId	resources_organizations_cpmeta_hasemail
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail'
+
+
+mappingId	resources_organizations_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	resources_organizations_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	resources_organizations_cpmeta_hasotcid
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasOtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId'
+
+
+mappingId	resources_organizations_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_organizations_rdfs_label
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_organizations_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_organizations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	organizations_etcorg_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/organizations/etcorg_{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM organizations_etcorg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	organizations_etcorg_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/organizations/etcorg_{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM organizations_etcorg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	resources_otcmeta_otcmeta_airintakeposition
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:airIntakePosition {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition'
+
+
+mappingId	resources_otcmeta_otcmeta_appliedtosensor
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:appliedToSensor {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/appliedToSensor'
+
+
+mappingId	resources_otcmeta_otcmeta_atorganization
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:atOrganization {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/atOrganization'
+
+
+mappingId	resources_otcmeta_otcmeta_awardnumber
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:awardNumber {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardNumber'
+
+
+mappingId	resources_otcmeta_otcmeta_awardtitle
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:awardTitle {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardTitle'
+
+
+mappingId	resources_otcmeta_otcmeta_awarduri
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:awardURI {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/awardURI'
+
+
+mappingId	resources_otcmeta_otcmeta_countrycode
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:countryCode {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/countryCode'
+
+
+mappingId	resources_otcmeta_otcmeta_device
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:device {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/device'
+
+
+mappingId	resources_otcmeta_otcmeta_hasattributionweight
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasAttributionWeight {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasAttributionWeight'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdate
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDate'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdatetime
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDateTime {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDateTime'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdeploymentschedule
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDeploymentSchedule {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDeploymentSchedule'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdiscretesamplingschedule
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDiscreteSamplingSchedule {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDiscreteSamplingSchedule'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdocumentationcomment
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDocumentationComment {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationComment'
+
+
+mappingId	resources_otcmeta_otcmeta_hasdocumentationreference
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasDocumentationReference {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasDocumentationReference'
+
+
+mappingId	resources_otcmeta_otcmeta_hasemail
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasEmail'
+
+
+mappingId	resources_otcmeta_otcmeta_hasendtime
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasEndTime {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasEndTime'
+
+
+mappingId	resources_otcmeta_otcmeta_hasfirstname
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasFirstName {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFirstName'
+
+
+mappingId	resources_otcmeta_otcmeta_hasfunder
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasFunder {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFunder'
+
+
+mappingId	resources_otcmeta_otcmeta_hasfunding
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasFunding {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasFunding'
+
+
+mappingId	resources_otcmeta_otcmeta_hasgeoregion
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasGeoRegion {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion'
+
+
+mappingId	resources_otcmeta_otcmeta_hasholder
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasHolder {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasHolder'
+
+
+mappingId	resources_otcmeta_otcmeta_hasicesplatformcode
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasIcesPlatformCode {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasIcesPlatformCode'
+
+
+mappingId	resources_otcmeta_otcmeta_haslabelingdate
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasLabelingDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLabelingDate'
+
+
+mappingId	resources_otcmeta_otcmeta_haslastname
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasLastName {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLastName'
+
+
+mappingId	resources_otcmeta_otcmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLatitude'
+
+
+mappingId	resources_otcmeta_otcmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasLongitude'
+
+
+mappingId	resources_otcmeta_otcmeta_hasmanufacturer
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasManufacturer {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer'
+
+
+mappingId	resources_otcmeta_otcmeta_hasmiddlename
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasMiddleName {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasMiddleName'
+
+
+mappingId	resources_otcmeta_otcmeta_hasmodelname
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasModelName {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName'
+
+
+mappingId	resources_otcmeta_otcmeta_hasname
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasName'
+
+
+mappingId	resources_otcmeta_otcmeta_hasorcidid
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasOrcidId {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasOrcidId'
+
+
+mappingId	resources_otcmeta_otcmeta_hasowner
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasOwner {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasOwner'
+
+
+mappingId	resources_otcmeta_otcmeta_haspersontitle
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasPersonTitle {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPersonTitle'
+
+
+mappingId	resources_otcmeta_otcmeta_haspicture
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasPicture {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPicture'
+
+
+mappingId	resources_otcmeta_otcmeta_hasportofcall
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasPortOfCall {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasPortOfCall'
+
+
+mappingId	resources_otcmeta_otcmeta_hasresolution
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasResolution {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasResolution'
+
+
+mappingId	resources_otcmeta_otcmeta_hasresponsibleorg
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasResponsibleOrg {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasResponsibleOrg'
+
+
+mappingId	resources_otcmeta_otcmeta_hasrole
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasRole {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasRole'
+
+
+mappingId	resources_otcmeta_otcmeta_hassamplingfrequency
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasSamplingFrequency {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSamplingFrequency'
+
+
+mappingId	resources_otcmeta_otcmeta_hasserialnumber
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasSerialNumber {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber'
+
+
+mappingId	resources_otcmeta_otcmeta_hasspatialreference
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasSpatialReference {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasSpatialReference'
+
+
+mappingId	resources_otcmeta_otcmeta_hasstarttime
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasStartTime {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStartTime'
+
+
+mappingId	resources_otcmeta_otcmeta_hasstationclass
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStationClass'
+
+
+mappingId	resources_otcmeta_otcmeta_hasstationid
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasStationId {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId'
+
+
+mappingId	resources_otcmeta_otcmeta_hasuncertainty
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasUncertainty {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasUncertainty'
+
+
+mappingId	resources_otcmeta_otcmeta_hasunit
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasUnit {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasUnit'
+
+
+mappingId	resources_otcmeta_otcmeta_hasvariableorigin
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:hasVariableOrigin {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/hasVariableOrigin'
+
+
+mappingId	resources_otcmeta_otcmeta_measuresskos
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:measuresSkos {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/measuresSkos'
+
+
+mappingId	resources_otcmeta_otcmeta_measuresvariable
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:measuresVariable {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/measuresVariable'
+
+
+mappingId	resources_otcmeta_otcmeta_ofinstrument
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:ofInstrument {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofInstrument'
+
+
+mappingId	resources_otcmeta_otcmeta_ofplatform
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:ofPlatform {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofPlatform'
+
+
+mappingId	resources_otcmeta_otcmeta_ofsensor
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:ofSensor {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/ofSensor'
+
+
+mappingId	resources_otcmeta_otcmeta_toinstrument
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:toInstrument {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/toInstrument'
+
+
+mappingId	resources_otcmeta_otcmeta_toplatform
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:toPlatform {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/toPlatform'
+
+
+mappingId	resources_otcmeta_otcmeta_tostation
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:toStation {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/toStation'
+
+
+mappingId	resources_otcmeta_otcmeta_waterintakedepth
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> otcmeta:waterIntakeDepth {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth'
+
+
+mappingId	resources_otcmeta_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_otcmeta_rdfs_label
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_otcmeta_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	resources_otcmeta_skos_exactmatch
+target		<http://meta.icos-cp.eu/resources/otcmeta/{id}> skos:exactMatch <{object}> .
+source		SELECT id, object FROM resources_otcmeta WHERE predicate = 'http://www.w3.org/2004/02/skos/core#exactMatch'
+
+
+mappingId	resources_people_cpmeta_hasatcid
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasAtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+
+mappingId	resources_people_cpmeta_hasemail
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail'
+
+
+mappingId	resources_people_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	resources_people_cpmeta_hasfirstname
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasFirstName {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName'
+
+
+mappingId	resources_people_cpmeta_haslastname
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasLastName {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName'
+
+
+mappingId	resources_people_cpmeta_hasmembership
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasMembership <{object}> .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership'
+
+
+mappingId	resources_people_cpmeta_hasorcidid
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasOrcidId {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId'
+
+
+mappingId	resources_people_cpmeta_hasotcid
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasOtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId'
+
+
+mappingId	resources_people_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/people/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_people_rdfs_label
+target		<http://meta.icos-cp.eu/resources/people/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_people WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_prod_cpmeta_hasendtime
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:hasEndTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime'
+
+
+mappingId	resources_prod_cpmeta_washostedby
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasHostedBy <{object}> .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy'
+
+
+mappingId	resources_prod_cpmeta_wasparticipatedinby
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <{object}> .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy'
+
+
+mappingId	resources_prod_cpmeta_wasperformedby
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasPerformedBy <{object}> .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy'
+
+
+mappingId	resources_prod_rdf_p_1
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_1 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'
+
+
+mappingId	resources_prod_rdf_p_10
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_10 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_10'
+
+
+mappingId	resources_prod_rdf_p_11
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_11 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_11'
+
+
+mappingId	resources_prod_rdf_p_12
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_12 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_12'
+
+
+mappingId	resources_prod_rdf_p_13
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_13 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_13'
+
+
+mappingId	resources_prod_rdf_p_14
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_14 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_14'
+
+
+mappingId	resources_prod_rdf_p_15
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_15 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_15'
+
+
+mappingId	resources_prod_rdf_p_16
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_16 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_16'
+
+
+mappingId	resources_prod_rdf_p_17
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_17 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_17'
+
+
+mappingId	resources_prod_rdf_p_18
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_18 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_18'
+
+
+mappingId	resources_prod_rdf_p_19
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_19 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_19'
+
+
+mappingId	resources_prod_rdf_p_2
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_2 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'
+
+
+mappingId	resources_prod_rdf_p_20
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_20 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_20'
+
+
+mappingId	resources_prod_rdf_p_21
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_21 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_21'
+
+
+mappingId	resources_prod_rdf_p_22
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_22 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_22'
+
+
+mappingId	resources_prod_rdf_p_23
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_23 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_23'
+
+
+mappingId	resources_prod_rdf_p_24
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_24 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_24'
+
+
+mappingId	resources_prod_rdf_p_25
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_25 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_25'
+
+
+mappingId	resources_prod_rdf_p_26
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_26 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_26'
+
+
+mappingId	resources_prod_rdf_p_27
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_27 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_27'
+
+
+mappingId	resources_prod_rdf_p_28
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_28 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_28'
+
+
+mappingId	resources_prod_rdf_p_29
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_29 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_29'
+
+
+mappingId	resources_prod_rdf_p_3
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_3 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'
+
+
+mappingId	resources_prod_rdf_p_30
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_30 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_30'
+
+
+mappingId	resources_prod_rdf_p_31
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_31 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_31'
+
+
+mappingId	resources_prod_rdf_p_32
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_32 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_32'
+
+
+mappingId	resources_prod_rdf_p_4
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_4 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_4'
+
+
+mappingId	resources_prod_rdf_p_5
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_5 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_5'
+
+
+mappingId	resources_prod_rdf_p_6
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_6 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_6'
+
+
+mappingId	resources_prod_rdf_p_7
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_7 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_7'
+
+
+mappingId	resources_prod_rdf_p_8
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_8 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_8'
+
+
+mappingId	resources_prod_rdf_p_9
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdf:_9 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_9'
+
+
+mappingId	resources_prod_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_prod_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/prod_{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	resources_prod_contribs_rdf_p_1
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_1 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'
+
+
+mappingId	resources_prod_contribs_rdf_p_10
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_10 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_10'
+
+
+mappingId	resources_prod_contribs_rdf_p_11
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_11 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_11'
+
+
+mappingId	resources_prod_contribs_rdf_p_12
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_12 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_12'
+
+
+mappingId	resources_prod_contribs_rdf_p_13
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_13 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_13'
+
+
+mappingId	resources_prod_contribs_rdf_p_14
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_14 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_14'
+
+
+mappingId	resources_prod_contribs_rdf_p_15
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_15 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_15'
+
+
+mappingId	resources_prod_contribs_rdf_p_16
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_16 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_16'
+
+
+mappingId	resources_prod_contribs_rdf_p_17
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_17 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_17'
+
+
+mappingId	resources_prod_contribs_rdf_p_18
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_18 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_18'
+
+
+mappingId	resources_prod_contribs_rdf_p_19
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_19 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_19'
+
+
+mappingId	resources_prod_contribs_rdf_p_2
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_2 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'
+
+
+mappingId	resources_prod_contribs_rdf_p_20
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_20 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_20'
+
+
+mappingId	resources_prod_contribs_rdf_p_21
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_21 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_21'
+
+
+mappingId	resources_prod_contribs_rdf_p_22
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_22 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_22'
+
+
+mappingId	resources_prod_contribs_rdf_p_23
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_23 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_23'
+
+
+mappingId	resources_prod_contribs_rdf_p_24
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_24 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_24'
+
+
+mappingId	resources_prod_contribs_rdf_p_25
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_25 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_25'
+
+
+mappingId	resources_prod_contribs_rdf_p_26
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_26 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_26'
+
+
+mappingId	resources_prod_contribs_rdf_p_27
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_27 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_27'
+
+
+mappingId	resources_prod_contribs_rdf_p_28
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_28 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_28'
+
+
+mappingId	resources_prod_contribs_rdf_p_29
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_29 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_29'
+
+
+mappingId	resources_prod_contribs_rdf_p_3
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_3 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'
+
+
+mappingId	resources_prod_contribs_rdf_p_30
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_30 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_30'
+
+
+mappingId	resources_prod_contribs_rdf_p_31
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_31 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_31'
+
+
+mappingId	resources_prod_contribs_rdf_p_32
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_32 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_32'
+
+
+mappingId	resources_prod_contribs_rdf_p_4
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_4 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_4'
+
+
+mappingId	resources_prod_contribs_rdf_p_5
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_5 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_5'
+
+
+mappingId	resources_prod_contribs_rdf_p_6
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_6 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_6'
+
+
+mappingId	resources_prod_contribs_rdf_p_7
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_7 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_7'
+
+
+mappingId	resources_prod_contribs_rdf_p_8
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_8 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_8'
+
+
+mappingId	resources_prod_contribs_rdf_p_9
+target		<http://meta.icos-cp.eu/resources/prod_contribs_{id}> rdf:_9 {object}^^xsd:string .
+source		SELECT id, object FROM resources_prod_contribs WHERE predicate = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#_9'
+
+
+mappingId	resources_spcov_cpmeta_asgeojson
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> cpmeta:asGeoJSON {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON'
+
+
+mappingId	resources_spcov_cpmeta_haseasternbound
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> cpmeta:hasEasternBound {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEasternBound'
+
+
+mappingId	resources_spcov_cpmeta_hasnorthernbound
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> cpmeta:hasNorthernBound {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNorthernBound'
+
+
+mappingId	resources_spcov_cpmeta_hassouthernbound
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> cpmeta:hasSouthernBound {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSouthernBound'
+
+
+mappingId	resources_spcov_cpmeta_haswesternbound
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> cpmeta:hasWesternBound {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWesternBound'
+
+
+mappingId	resources_spcov_rdfs_label
+target		<http://meta.icos-cp.eu/resources/spcov_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_spcov WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_stationentry_stationentry_hasaccessibility
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAccessibility {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAccessibility'
+
+
+mappingId	resources_stationentry_stationentry_hasaddress
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAddress {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAddress'
+
+
+mappingId	resources_stationentry_stationentry_hasaffiliation
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAffiliation {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation'
+
+
+mappingId	resources_stationentry_stationentry_hasanemometerdirection
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAnemometerDirection {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection'
+
+
+mappingId	resources_stationentry_stationentry_hasanthropogenics
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAnthropogenics {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAnthropogenics'
+
+
+mappingId	resources_stationentry_stationentry_hasappstatuscomment
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAppStatusComment {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusComment'
+
+
+mappingId	resources_stationentry_stationentry_hasappstatusdate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAppStatusDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate'
+
+
+mappingId	resources_stationentry_stationentry_hasapplicationstatus
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasApplicationStatus {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus'
+
+
+mappingId	resources_stationentry_stationentry_hasassociatedfile
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasAssociatedFile {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasAssociatedFile'
+
+
+mappingId	resources_stationentry_stationentry_hasconstructionenddate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasConstructionEndDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate'
+
+
+mappingId	resources_stationentry_stationentry_hascountry
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasCountry {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasCountry'
+
+
+mappingId	resources_stationentry_stationentry_hasdeputypi
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDeputyPi {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi'
+
+
+mappingId	resources_stationentry_stationentry_hasdescription
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDescription {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDescription'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscreteadditionalinfo
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteAdditionalInfo {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAdditionalInfo'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretealkalinitycurvefitting
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteAlkalinityCurveFitting {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityCurveFitting'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretealkalinitymethodreferences
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteAlkalinityMethodReferences {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityMethodReferences'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretealkalinityothertitration
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteAlkalinityOtherTitration {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityOtherTitration'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretealkalinitytitrationtype
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteAlkalinityTitrationType {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityTitrationType'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretepco2analysis
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscretePco2Analysis {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2Analysis'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretepco2analysismethod
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscretePco2AnalysisMethod {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2AnalysisMethod'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretepco2methodreferences
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscretePco2MethodReferences {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2MethodReferences'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretetco2analysismethod
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteTco2AnalysisMethod {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2AnalysisMethod'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretetco2methodreferences
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteTco2MethodReferences {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2MethodReferences'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretetco2standardizationtechnique
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteTco2StandardizationTechnique {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2StandardizationTechnique'
+
+
+mappingId	resources_stationentry_stationentry_hasdiscretetco2techniquedescription
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasDiscreteTco2TechniqueDescription {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2TechniqueDescription'
+
+
+mappingId	resources_stationentry_stationentry_haseasternmostlon
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasEasternmostLon {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEasternmostLon'
+
+
+mappingId	resources_stationentry_stationentry_haseddyheight
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasEddyHeight {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight'
+
+
+mappingId	resources_stationentry_stationentry_haselevationaboveground
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasElevationAboveGround {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround'
+
+
+mappingId	resources_stationentry_stationentry_haselevationabovesea
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasElevationAboveSea {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea'
+
+
+mappingId	resources_stationentry_stationentry_hasemail
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasEmail {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasEmail'
+
+
+mappingId	resources_stationentry_stationentry_hasexistinginfrastructure
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasExistingInfrastructure {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure'
+
+
+mappingId	resources_stationentry_stationentry_hasfirstname
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasFirstName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName'
+
+
+mappingId	resources_stationentry_stationentry_hasfundingforconstruction
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasFundingForConstruction {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction'
+
+
+mappingId	resources_stationentry_stationentry_hasfundingforoperation
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasFundingForOperation {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation'
+
+
+mappingId	resources_stationentry_stationentry_hasimagelink
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasImageLink {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasImageLink'
+
+
+mappingId	resources_stationentry_stationentry_haslastname
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasLastName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLastName'
+
+
+mappingId	resources_stationentry_stationentry_haslat
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasLat {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLat'
+
+
+mappingId	resources_stationentry_stationentry_haslocationdescription
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasLocationDescription {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLocationDescription'
+
+
+mappingId	resources_stationentry_stationentry_haslon
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasLon {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLon'
+
+
+mappingId	resources_stationentry_stationentry_haslongname
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasLongName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasLongName'
+
+
+mappingId	resources_stationentry_stationentry_hasmainpersonnelnameslist
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasMainPersonnelNamesList {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasMainPersonnelNamesList'
+
+
+mappingId	resources_stationentry_stationentry_hasnamelistofnetworksitbelongsto
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasNameListOfNetworksItBelongsTo {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNameListOfNetworksItBelongsTo'
+
+
+mappingId	resources_stationentry_stationentry_hasnothernmostlat
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasNothernmostLat {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNothernmostLat'
+
+
+mappingId	resources_stationentry_stationentry_hasnrtdatadeliverymethod
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasNrtDataDeliveryMethod {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataDeliveryMethod'
+
+
+mappingId	resources_stationentry_stationentry_hasnrtdataupdatefrequency
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasNrtDataUpdateFrequency {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataUpdateFrequency'
+
+
+mappingId	resources_stationentry_stationentry_hasoperationaldateestimate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasOperationalDateEstimate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate'
+
+
+mappingId	resources_stationentry_stationentry_hasphone
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasPhone {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPhone'
+
+
+mappingId	resources_stationentry_stationentry_haspi
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasPi {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPi'
+
+
+mappingId	resources_stationentry_stationentry_hasplatformtype
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasPlatformType {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPlatformType'
+
+
+mappingId	resources_stationentry_stationentry_haspreicosmeasurements
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasPreIcosMeasurements {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements'
+
+
+mappingId	resources_stationentry_stationentry_hasproductioncounterpart
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasProductionCounterpart {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart'
+
+
+mappingId	resources_stationentry_stationentry_hasresponsibleinstitutionname
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasResponsibleInstitutionName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName'
+
+
+mappingId	resources_stationentry_stationentry_hasshortname
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasShortName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasShortName'
+
+
+mappingId	resources_stationentry_stationentry_hassitetype
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasSiteType {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType'
+
+
+mappingId	resources_stationentry_stationentry_hassouthernmostlat
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasSouthernmostLat {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSouthernmostLat'
+
+
+mappingId	resources_stationentry_stationentry_hasspatialreference
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasSpatialReference {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasSpatialReference'
+
+
+mappingId	resources_stationentry_stationentry_hasstationclass
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass'
+
+
+mappingId	resources_stationentry_stationentry_hasstationkind
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasStationKind {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind'
+
+
+mappingId	resources_stationentry_stationentry_hastcid
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasTcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTcId'
+
+
+mappingId	resources_stationentry_stationentry_hastelecom
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasTelecom {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTelecom'
+
+
+mappingId	resources_stationentry_stationentry_hastypeofsampling
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasTypeOfSampling {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasTypeOfSampling'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayadditionalinfo
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayAdditionalInfo {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayAdditionalInfo'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayco2sensormanufacturer
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayCo2SensorManufacturer {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorManufacturer'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayco2sensormodel
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayCo2SensorModel {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorModel'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayequilibratortype
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayEquilibratorType {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayEquilibratorType'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwaymethodreferences
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayMethodReferences {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayMethodReferences'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayothersensormanufacturer
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayOtherSensorManufacturer {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorManufacturer'
+
+
+mappingId	resources_stationentry_stationentry_hasunderwayothersensormodel
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasUnderwayOtherSensorModel {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorModel'
+
+
+mappingId	resources_stationentry_stationentry_hasvegetation
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasVegetation {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasVegetation'
+
+
+mappingId	resources_stationentry_stationentry_hasvesselowner
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasVesselOwner {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasVesselOwner'
+
+
+mappingId	resources_stationentry_stationentry_haswebsite
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasWebsite {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWebsite'
+
+
+mappingId	resources_stationentry_stationentry_haswesternmostlon
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasWesternmostLon {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWesternmostLon'
+
+
+mappingId	resources_stationentry_stationentry_haswinddataineuropeandatabase
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:hasWindDataInEuropeanDatabase {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase'
+
+
+mappingId	resources_stationentry_stationentry_isalreadyoperational
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:isAlreadyOperational {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational'
+
+
+mappingId	resources_stationentry_stationentry_labelingenddate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:labelingEndDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingEndDate'
+
+
+mappingId	resources_stationentry_stationentry_labelingjoinyear
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:labelingJoinYear {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear'
+
+
+mappingId	resources_stationentry_stationentry_step1enddate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:step1EndDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step1EndDate'
+
+
+mappingId	resources_stationentry_stationentry_step1startdate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:step1StartDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step1StartDate'
+
+
+mappingId	resources_stationentry_stationentry_step2enddate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:step2EndDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step2EndDate'
+
+
+mappingId	resources_stationentry_stationentry_step2startdate
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> stationentry:step2StartDate {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/stationentry/step2StartDate'
+
+
+mappingId	resources_stationentry_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_stationentry_rdfs_label
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_stationentry_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/stationentry/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_stationentry WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	resources_stations_cpmeta_countrycode
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:countryCode {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode'
+
+
+mappingId	resources_stations_cpmeta_hasassociatedpublication
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasAssociatedPublication {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedPublication'
+
+
+mappingId	resources_stations_cpmeta_hasatcid
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasAtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+
+mappingId	resources_stations_cpmeta_hasclimatezone
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasClimateZone <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone'
+
+
+mappingId	resources_stations_cpmeta_hasdepiction
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasDepiction {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction'
+
+
+mappingId	resources_stations_cpmeta_hasdocumentationobject
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasDocumentationObject <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject'
+
+
+mappingId	resources_stations_cpmeta_hasdocumentationuri
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasDocumentationUri {object}^^xsd:anyURI .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationUri'
+
+
+mappingId	resources_stations_cpmeta_hasecosystemtype
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasEcosystemType <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType'
+
+
+mappingId	resources_stations_cpmeta_haselevation
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasElevation {object}^^xsd:float .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation'
+
+
+mappingId	resources_stations_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	resources_stations_cpmeta_hasfunding
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasFunding <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding'
+
+
+mappingId	resources_stations_cpmeta_haslabelingdate
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasLabelingDate {object}^^xsd:date .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate'
+
+
+mappingId	resources_stations_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	resources_stations_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	resources_stations_cpmeta_hasmeanannualprecip
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasMeanAnnualPrecip {object}^^xsd:float .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip'
+
+
+mappingId	resources_stations_cpmeta_hasmeanannualradiation
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasMeanAnnualRadiation {object}^^xsd:float .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation'
+
+
+mappingId	resources_stations_cpmeta_hasmeanannualtemp
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasMeanAnnualTemp {object}^^xsd:float .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualTemp'
+
+
+mappingId	resources_stations_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	resources_stations_cpmeta_hasotcid
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasOtcId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId'
+
+
+mappingId	resources_stations_cpmeta_hasresponsibleorganization
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasResponsibleOrganization <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization'
+
+
+mappingId	resources_stations_cpmeta_hasspatialcoverage
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasSpatialCoverage <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+
+mappingId	resources_stations_cpmeta_hasstationclass
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass'
+
+
+mappingId	resources_stations_cpmeta_hasstationid
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasStationId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
+
+
+mappingId	resources_stations_cpmeta_hastimezoneoffset
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasTimeZoneOffset {object}^^xsd:integer .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset'
+
+
+mappingId	resources_stations_cpmeta_haswebpageelements
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasWebpageElements <{object}> .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements'
+
+
+mappingId	resources_stations_cpmeta_haswigosid
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasWigosId {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId'
+
+
+mappingId	resources_stations_cpmeta_isdiscontinued
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:isDiscontinued {object}^^xsd:boolean .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued'
+
+
+mappingId	resources_stations_terms_description
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	resources_stations_terms_identifier
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:identifier {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/identifier'
+
+
+mappingId	resources_stations_terms_ispartof
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:isPartOf {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/isPartOf'
+
+
+mappingId	resources_stations_terms_spatial
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:spatial {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/spatial'
+
+
+mappingId	resources_stations_terms_subject
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:subject {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/subject'
+
+
+mappingId	resources_stations_terms_title
+target		<http://meta.icos-cp.eu/resources/stations/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	resources_stations_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/stations/{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	resources_stations_rdfs_label
+target		<http://meta.icos-cp.eu/resources/stations/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_stations_rdfs_seealso
+target		<http://meta.icos-cp.eu/resources/stations/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	resources_stations_dcat_contactpoint
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcat:contactPoint {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://www.w3.org/ns/dcat#contactPoint'
+
+
+mappingId	resources_stations_dcat_theme
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcat:theme {object}^^xsd:string .
+source		SELECT id, object FROM resources_stations WHERE predicate = 'http://www.w3.org/ns/dcat#theme'
+
+
+mappingId	stations_as_cpmeta_countrycode
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:countryCode {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode'
+
+
+mappingId	stations_as_cpmeta_hasatcid
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasAtcId {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId'
+
+
+mappingId	stations_as_cpmeta_hasdepiction
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasDepiction {object}^^xsd:anyURI .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction'
+
+
+mappingId	stations_as_cpmeta_hasdocumentationobject
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasDocumentationObject <{object}> .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject'
+
+
+mappingId	stations_as_cpmeta_haselevation
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasElevation {object}^^xsd:float .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation'
+
+
+mappingId	stations_as_cpmeta_haslabelingdate
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasLabelingDate {object}^^xsd:date .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate'
+
+
+mappingId	stations_as_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	stations_as_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	stations_as_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	stations_as_cpmeta_hasresponsibleorganization
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasResponsibleOrganization <{object}> .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization'
+
+
+mappingId	stations_as_cpmeta_hasstationclass
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass'
+
+
+mappingId	stations_as_cpmeta_hasstationid
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasStationId {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
+
+
+mappingId	stations_as_cpmeta_hastimezoneoffset
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasTimeZoneOffset {object}^^xsd:integer .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset'
+
+
+mappingId	stations_as_cpmeta_haswebpageelements
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasWebpageElements <{object}> .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements'
+
+
+mappingId	stations_as_cpmeta_haswigosid
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> cpmeta:hasWigosId {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId'
+
+
+mappingId	stations_as_terms_identifier
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> terms:identifier {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://purl.org/dc/terms/identifier'
+
+
+mappingId	stations_as_terms_ispartof
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> terms:isPartOf {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://purl.org/dc/terms/isPartOf'
+
+
+mappingId	stations_as_terms_spatial
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> terms:spatial {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://purl.org/dc/terms/spatial'
+
+
+mappingId	stations_as_terms_subject
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> terms:subject {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://purl.org/dc/terms/subject'
+
+
+mappingId	stations_as_terms_title
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	stations_as_rdfs_label
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	stations_as_dcat_contactpoint
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> dcat:contactPoint {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://www.w3.org/ns/dcat#contactPoint'
+
+
+mappingId	stations_as_dcat_theme
+target		<http://meta.icos-cp.eu/resources/stations/AS_{id}> dcat:theme {object}^^xsd:string .
+source		SELECT id, object FROM stations_as WHERE predicate = 'http://www.w3.org/ns/dcat#theme'
+
+
+mappingId	stations_es_cpmeta_countrycode
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:countryCode {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/countryCode'
+
+
+mappingId	stations_es_cpmeta_hasassociatedpublication
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasAssociatedPublication {object}^^xsd:anyURI .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedPublication'
+
+
+mappingId	stations_es_cpmeta_hasclimatezone
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasClimateZone <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone'
+
+
+mappingId	stations_es_cpmeta_hasdepiction
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasDepiction {object}^^xsd:anyURI .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction'
+
+
+mappingId	stations_es_cpmeta_hasdocumentationobject
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasDocumentationObject <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject'
+
+
+mappingId	stations_es_cpmeta_hasdocumentationuri
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasDocumentationUri {object}^^xsd:anyURI .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationUri'
+
+
+mappingId	stations_es_cpmeta_hasecosystemtype
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasEcosystemType <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType'
+
+
+mappingId	stations_es_cpmeta_haselevation
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasElevation {object}^^xsd:float .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation'
+
+
+mappingId	stations_es_cpmeta_hasetcid
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasEtcId {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId'
+
+
+mappingId	stations_es_cpmeta_hasfunding
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasFunding <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding'
+
+
+mappingId	stations_es_cpmeta_haslabelingdate
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasLabelingDate {object}^^xsd:date .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate'
+
+
+mappingId	stations_es_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	stations_es_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	stations_es_cpmeta_hasmeanannualprecip
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasMeanAnnualPrecip {object}^^xsd:float .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip'
+
+
+mappingId	stations_es_cpmeta_hasmeanannualradiation
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasMeanAnnualRadiation {object}^^xsd:float .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation'
+
+
+mappingId	stations_es_cpmeta_hasmeanannualtemp
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasMeanAnnualTemp {object}^^xsd:float .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualTemp'
+
+
+mappingId	stations_es_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	stations_es_cpmeta_hasspatialcoverage
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasSpatialCoverage <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+
+mappingId	stations_es_cpmeta_hasstationclass
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasStationClass {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass'
+
+
+mappingId	stations_es_cpmeta_hasstationid
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasStationId {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId'
+
+
+mappingId	stations_es_cpmeta_hastimezoneoffset
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasTimeZoneOffset {object}^^xsd:integer .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset'
+
+
+mappingId	stations_es_cpmeta_haswebpageelements
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:hasWebpageElements <{object}> .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements'
+
+
+mappingId	stations_es_cpmeta_isdiscontinued
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> cpmeta:isDiscontinued {object}^^xsd:boolean .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued'
+
+
+mappingId	stations_es_terms_description
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	stations_es_terms_identifier
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:identifier {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/identifier'
+
+
+mappingId	stations_es_terms_ispartof
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:isPartOf {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/isPartOf'
+
+
+mappingId	stations_es_terms_spatial
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:spatial {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/spatial'
+
+
+mappingId	stations_es_terms_subject
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:subject {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/subject'
+
+
+mappingId	stations_es_terms_title
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	stations_es_rdfs_comment
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> rdfs:comment {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#comment'
+
+
+mappingId	stations_es_rdfs_label
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	stations_es_dcat_contactpoint
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> dcat:contactPoint {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://www.w3.org/ns/dcat#contactPoint'
+
+
+mappingId	stations_es_dcat_theme
+target		<http://meta.icos-cp.eu/resources/stations/ES_{id}> dcat:theme {object}^^xsd:string .
+source		SELECT id, object FROM stations_es WHERE predicate = 'http://www.w3.org/ns/dcat#theme'
+
+
+mappingId	resources_subm_prov_endedattime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:endedAtTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_subm WHERE predicate = 'http://www.w3.org/ns/prov#endedAtTime'
+
+
+mappingId	resources_subm_prov_startedattime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM resources_subm WHERE predicate = 'http://www.w3.org/ns/prov#startedAtTime'
+
+
+mappingId	resources_subm_prov_wasassociatedwith
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_subm WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+
+
+mappingId	resources_varinfo_a_public_power_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_A_Public_power_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_a_public_power WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_a_public_power_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_A_Public_power_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_a_public_power WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_a_public_power_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_A_Public_power_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_a_public_power WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_b_industry_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_B_Industry_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_b_industry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_b_industry_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_B_Industry_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_b_industry WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_b_industry_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_B_Industry_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_b_industry WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_c_other_stationary_combustion_consumer_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_C_Other_stationary_combustion_consumer_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_c_other_stationary_combustion_consumer WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_c_other_stationary_combustion_consumer_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_C_Other_stationary_combustion_consumer_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_c_other_stationary_combustion_consumer WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_c_other_stationary_combustion_consumer_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_C_Other_stationary_combustion_consumer_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_c_other_stationary_combustion_consumer WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_et_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_et WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_et_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_et WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_et_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_et WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_et_t_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_T_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_et_t WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_et_t_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_T_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_et_t WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_et_t_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_ET_T_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_et_t WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_f_on_road_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_F_On-road_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_f_on_road WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_f_on_road_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_F_On-road_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_f_on_road WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_f_on_road_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_F_On-road_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_f_on_road WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_gpp_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_GPP_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_gpp WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_gpp_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_GPP_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_gpp WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_gpp_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_GPP_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_gpp WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_g_shipping_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_G_Shipping_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_g_shipping WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_g_shipping_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_G_Shipping_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_g_shipping WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_g_shipping_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_G_Shipping_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_g_shipping WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_h_aviation_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_H_Aviation_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_h_aviation WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_h_aviation_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_H_Aviation_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_h_aviation WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_h_aviation_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_H_Aviation_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_h_aviation WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_i_off_road_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_I_Off-road_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_i_off_road WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_i_off_road_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_I_Off-road_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_i_off_road WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_i_off_road_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_I_Off-road_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_i_off_road WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_nee_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_NEE_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_nee WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_nee_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_NEE_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_nee WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_nee_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_NEE_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_nee WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_anthropogenic_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_anthropogenic_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_anthropogenic WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_anthropogenic_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_anthropogenic_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_anthropogenic WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_anthropogenic_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_anthropogenic_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_anthropogenic WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_cement_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_cement_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_cement WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_cement_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_cement_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_cement WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_cement_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_cement_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_cement WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_combustion_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_combustion_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_combustion WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_combustion_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_combustion_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_combustion WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_combustion_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_combustion_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_combustion WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_emission_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_emission_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_emission WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_emission_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_emission_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_emission WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_emission_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_emission_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_emission WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_fire_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_fire_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_fire WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_fire_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_fire_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_fire WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_fire_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_fire_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_fire WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_foot_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_foot_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_foot WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_foot_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_foot_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_foot WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_foot_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_foot_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_foot WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_gpp2_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_gpp_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_gpp2 WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_gpp2_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_gpp_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_gpp2 WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_gpp2_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_gpp_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_gpp2 WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_nep_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_nep_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_nep WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_nep_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_nep_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_nep WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_nep_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_nep_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_nep WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_varinfo_ocean_cpmeta_hasmaxvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ocean_{id}> cpmeta:hasMaxValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_ocean WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue'
+
+
+mappingId	resources_varinfo_ocean_cpmeta_hasminvalue
+target		<http://meta.icos-cp.eu/resources/varinfo_ocean_{id}> cpmeta:hasMinValue {object}^^xsd:double .
+source		SELECT id, object FROM resources_varinfo_ocean WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue'
+
+
+mappingId	resources_varinfo_ocean_rdfs_label
+target		<http://meta.icos-cp.eu/resources/varinfo_ocean_{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_varinfo_ocean WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_wdcgg_cpmeta_country
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:country {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/country'
+
+
+mappingId	resources_wdcgg_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	resources_wdcgg_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	resources_wdcgg_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	resources_wdcgg_rdfs_label
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> rdfs:label {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#label'
+
+
+mappingId	resources_wdcgg_rdfs_subpropertyof
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> rdfs:subPropertyOf {object}^^xsd:string .
+source		SELECT id, object FROM resources_wdcgg WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf'
+
+
+mappingId	wdcgg_station_cpmeta_country
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:country {object}^^xsd:string .
+source		SELECT id, object FROM wdcgg_station WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/country'
+
+
+mappingId	wdcgg_station_cpmeta_haslatitude
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasLatitude {object}^^xsd:string .
+source		SELECT id, object FROM wdcgg_station WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude'
+
+
+mappingId	wdcgg_station_cpmeta_haslongitude
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasLongitude {object}^^xsd:string .
+source		SELECT id, object FROM wdcgg_station WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude'
+
+
+mappingId	wdcgg_station_cpmeta_hasname
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM wdcgg_station WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	meta_icos_cp_eu_collections_cpmeta_hasdoi
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:hasDoi {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi'
+
+
+mappingId	meta_icos_cp_eu_collections_cpmeta_hasspatialcoverage
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:hasSpatialCoverage <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+
+mappingId	meta_icos_cp_eu_collections_cpmeta_isnextversionof
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf'
+
+
+mappingId	meta_icos_cp_eu_collections_terms_creator
+target		<https://meta.icos-cp.eu/collections/{id}> terms:creator <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://purl.org/dc/terms/creator'
+
+
+mappingId	meta_icos_cp_eu_collections_terms_description
+target		<https://meta.icos-cp.eu/collections/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	meta_icos_cp_eu_collections_terms_haspart
+target		<https://meta.icos-cp.eu/collections/{id}> terms:hasPart <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://purl.org/dc/terms/hasPart'
+
+
+mappingId	meta_icos_cp_eu_collections_terms_title
+target		<https://meta.icos-cp.eu/collections/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	meta_icos_cp_eu_collections_rdfs_seealso
+target		<https://meta.icos-cp.eu/collections/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_collections WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	dcat_objects_ns11_type
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> ns11:type {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/elements/1.1/type'
+
+
+mappingId	dcat_objects_terms_description
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	dcat_objects_terms_issued
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> terms:issued {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/terms/issued'
+
+
+mappingId	dcat_objects_terms_modified
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> terms:modified {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/terms/modified'
+
+
+mappingId	dcat_objects_terms_temporal
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> terms:temporal {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/terms/temporal'
+
+
+mappingId	dcat_objects_terms_title
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	dcat_objects_owl_sameas
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> owl:sameAs {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://www.w3.org/2002/07/owl#sameAs'
+
+
+mappingId	dcat_objects_dcat_distribution
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> dcat:distribution {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://www.w3.org/ns/dcat#distribution'
+
+
+mappingId	dcat_objects_dcat_landingpage
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> dcat:landingPage {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://www.w3.org/ns/dcat#landingPage'
+
+
+mappingId	dcat_objects_prov_wasattributedto
+target		<https://meta.icos-cp.eu/dcat/objects/{id}> prov:wasAttributedTo {object}^^xsd:string .
+source		SELECT id, object FROM dcat_objects WHERE predicate = 'http://www.w3.org/ns/prov#wasAttributedTo'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasactualcolumnnames
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasActualColumnNames {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasactualvariable
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasActualVariable <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasdoi
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasDoi {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasendtime
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasEndTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_haskeywords
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasKeywords {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasname
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasName {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasnumberofrows
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasNumberOfRows {object}^^xsd:long .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasobjectspec
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasObjectSpec <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hassha256sum
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSha256sum {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hassizeinbytes
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSizeInBytes {object}^^xsd:long .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasspatialcoverage
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSpatialCoverage <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hasstarttime
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasStartTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_hastemporalresolution
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasTemporalResolution {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_isnextversionof
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:isNextVersionOf <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_wasacquiredby
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasAcquiredBy <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_wasproducedby
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasProducedBy <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy'
+
+
+mappingId	meta_icos_cp_eu_objects_cpmeta_wassubmittedby
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasSubmittedBy <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_contact_20point
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTACT%20POINT {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/CONTACT%20POINT'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_contributor
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTRIBUTOR {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/CONTRIBUTOR'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_measurement_20method
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20METHOD {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20METHOD'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_measurement_20scale
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20SCALE {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20SCALE'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_measurement_20unit
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20UNIT {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20UNIT'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_observation_20category
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:OBSERVATION%20CATEGORY {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/OBSERVATION%20CATEGORY'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_parameter
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:PARAMETER {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/PARAMETER'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_sampling_20type
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:SAMPLING%20TYPE {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/SAMPLING%20TYPE'
+
+
+mappingId	meta_icos_cp_eu_objects_wdcgg_time_20interval
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:TIME%20INTERVAL {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/TIME%20INTERVAL'
+
+
+mappingId	meta_icos_cp_eu_objects_terms_creator
+target		<https://meta.icos-cp.eu/objects/{id}> terms:creator <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/creator'
+
+
+mappingId	meta_icos_cp_eu_objects_terms_description
+target		<https://meta.icos-cp.eu/objects/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	meta_icos_cp_eu_objects_terms_license
+target		<https://meta.icos-cp.eu/objects/{id}> terms:license {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/license'
+
+
+mappingId	meta_icos_cp_eu_objects_terms_title
+target		<https://meta.icos-cp.eu/objects/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/title'
+
+
+mappingId	meta_icos_cp_eu_objects_rdfs_seealso
+target		<https://meta.icos-cp.eu/objects/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+
+mappingId	meta_icos_cp_eu_objects_prov_hadprimarysource
+target		<https://meta.icos-cp.eu/objects/{id}> prov:hadPrimarySource <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://www.w3.org/ns/prov#hadPrimarySource'
+
+
+]]

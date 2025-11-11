@@ -1,0 +1,23 @@
+
+
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
+where {
+	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject>}
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	VALUES ?station {<http://meta.icos-cp.eu/resources/stations/AS_PUY> <http://meta.icos-cp.eu/resources/stations/AS_PUI> <http://meta.icos-cp.eu/resources/stations/AS_ZEP> <http://meta.icos-cp.eu/resources/stations/AS_LIN> <http://meta.icos-cp.eu/resources/stations/AS_IPR> <http://meta.icos-cp.eu/resources/stations/AS_UTO> <http://meta.icos-cp.eu/resources/stations/AS_NOR> <http://meta.icos-cp.eu/resources/stations/AS_CBW> <http://meta.icos-cp.eu/resources/stations/AS_WAO> <http://meta.icos-cp.eu/resources/stations/AS_STE> <http://meta.icos-cp.eu/resources/stations/AS_JUE> <http://meta.icos-cp.eu/resources/stations/AS_KIT> <http://meta.icos-cp.eu/resources/stations/AS_RUN> <http://meta.icos-cp.eu/resources/stations/AS_SNO> <http://meta.icos-cp.eu/resources/stations/AS_PAL> <http://meta.icos-cp.eu/resources/stations/AS_HTM> <http://meta.icos-cp.eu/resources/stations/AS_OXK> <http://meta.icos-cp.eu/resources/stations/AS_TOH> <http://meta.icos-cp.eu/resources/stations/AS_JFJ> <http://meta.icos-cp.eu/resources/stations/AS_PRS> <http://meta.icos-cp.eu/resources/stations/AS_SVB> <http://meta.icos-cp.eu/resources/stations/AS_TRN> <http://meta.icos-cp.eu/resources/stations/AS_IZO> <http://meta.icos-cp.eu/resources/stations/AS_BIR> <http://meta.icos-cp.eu/resources/stations/AS_LUT> <http://meta.icos-cp.eu/resources/stations/AS_SMR> <http://meta.icos-cp.eu/resources/stations/AS_HPB> <http://meta.icos-cp.eu/resources/stations/AS_HEL> <http://meta.icos-cp.eu/resources/stations/AS_KRE> <http://meta.icos-cp.eu/resources/stations/AS_ZSF> <http://meta.icos-cp.eu/resources/stations/AS_SAC> <http://meta.icos-cp.eu/resources/stations/AS_GAT> <http://meta.icos-cp.eu/resources/stations/AS_LMP> <http://meta.icos-cp.eu/resources/stations/AS_RGL> <http://meta.icos-cp.eu/resources/stations/AS_SSL> <http://meta.icos-cp.eu/resources/stations/AS_CMN> <http://meta.icos-cp.eu/resources/stations/AS_WES> <http://meta.icos-cp.eu/resources/stations/AS_OPE>}
+	?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+	?dobj cpmeta:hasSizeInBytes ?size .
+	?dobj cpmeta:hasName ?fileName .
+	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
+	OPTIONAL {?dobj cpmeta:hasVariableName ?varName}
+	FILTER (!bound(?varName) || ?varName = "co2")
+}
+order by desc(?submTime)
+offset 0 limit 20000

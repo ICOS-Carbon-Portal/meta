@@ -1,0 +1,219 @@
+[PrefixDeclaration]
+core: http://www.w3.org/2004/02/skos/core#
+cpmeta: http://meta.icos-cp.eu/ontologies/cpmeta/
+dcat: http://www.w3.org/ns/dcat#
+elements11: http://purl.org/dc/elements/1.1/
+files: http://meta.icos-cp.eu/files/
+ns: http://www.w3.org/2006/vcard/ns#
+otcmeta: http://meta.icos-cp.eu/ontologies/otcmeta/
+owl: http://www.w3.org/2002/07/owl#
+prov: http://www.w3.org/ns/prov#
+rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+rdfs: http://www.w3.org/2000/01/rdf-schema#
+ssn: http://www.w3.org/ns/ssn/
+stationentry: http://meta.icos-cp.eu/ontologies/stationentry/
+terms: http://purl.org/dc/terms/
+vann: http://purl.org/vocab/vann/
+wdcgg: http://meta.icos-cp.eu/resources/wdcgg/
+xsd: http://www.w3.org/2001/XMLSchema#
+metaobjects: https://meta.icos-cp.eu/objects/
+
+[MappingDeclaration] @collection [[
+
+mappingId    data-object-relations
+target <https://meta.icos-cp.eu/objects/{id}> a cpmeta:DataObject ;
+                    cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_{wasSubmittedBy}> ;
+                    cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_{wasAcquiredBy}> .
+source        SELECT id, wasSubmittedBy, wasAcquiredBy FROM data_objects
+
+mappingId    data-object-fields
+target       <https://meta.icos-cp.eu/objects/{id}> cpmeta:hasName {name}^^xsd:string ;
+               cpmeta:hasObjectSpec <{hasObjectSpec}> ;
+               cpmeta:hasSha256sum {hasSha256sum}^^xsd:string ;
+               cpmeta:hasSizeInBytes {hasSizeInBytes}^^xsd:long ;
+               cpmeta:hasNumberOfRows {hasNumberOfRows}^^xsd:long ;
+               cpmeta:hasDoi {hasDoi}^^xsd:string ;
+               cpmeta:hasActualColumnNames {hasActualColumnNames}^^xsd:string ;
+               prov:wasProducedBy {wasProducedBy}^^xsd:string .
+source       SELECT
+               id,
+               name,
+               hasObjectSpec,
+               hasSha256sum,
+               hasSizeInBytes,
+               hasNumberOfRows,
+               hasActualColumnNames,
+               hasDoi,
+               wasProducedBy
+            FROM data_objects
+
+mappingId data-object-submission
+target <http://meta.icos-cp.eu/resources/subm_{id}> a cpmeta:DataSubmission ;
+                   prov:startedAtTime {hasStartTime}^^xsd:dateTime ;
+                   prov:endedAtTime {hasEndTime}^^xsd:dateTime .
+source        SELECT id, hasStartTime, hasEndTime FROM data_object_submissions
+
+mappingId data-object-acquisition
+target <http://meta.icos-cp.eu/resources/acq_{id}> a cpmeta:DataAcquisition ;
+                   cpmeta:hasSamplingHeight {hasSamplingHeight}^^xsd:dateTime ;
+                   prov:startedAtTime {startedAtTime}^^xsd:dateTime ;
+                   prov:endedAtTime {endedAtTime}^^xsd:dateTime .
+source        SELECT id, hasSamplingHeight, startedAtTime, endedAtTime FROM data_object_acquisitions
+
+
+mappingId	cpmeta_hasactualvariable
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasActualVariable <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable'
+
+
+mappingId	cpmeta_hasendtime
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasEndTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime'
+
+
+mappingId	cpmeta_haskeywords
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasKeywords {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords'
+
+mappingId	cpmeta_hasspatialcoverage
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSpatialCoverage <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage'
+
+
+mappingId	cpmeta_hasstarttime
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasStartTime {object}^^xsd:dateTime .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime'
+
+
+mappingId	cpmeta_hastemporalresolution
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasTemporalResolution {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution'
+
+
+mappingId	cpmeta_isnextversionof
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:isNextVersionOf <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf'
+
+
+mappingId	wdcgg_contact_20point
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTACT%20POINT {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/CONTACT%20POINT'
+
+
+mappingId	wdcgg_contributor
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTRIBUTOR {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/CONTRIBUTOR'
+
+
+mappingId	wdcgg_measurement_20method
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20METHOD {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20METHOD'
+
+
+mappingId	wdcgg_measurement_20scale
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20SCALE {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20SCALE'
+
+
+mappingId	wdcgg_measurement_20unit
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20UNIT {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20UNIT'
+
+
+mappingId	wdcgg_observation_20category
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:OBSERVATION%20CATEGORY {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/OBSERVATION%20CATEGORY'
+
+
+mappingId	wdcgg_parameter
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:PARAMETER {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/PARAMETER'
+
+
+mappingId	wdcgg_sampling_20type
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:SAMPLING%20TYPE {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/SAMPLING%20TYPE'
+
+
+mappingId	wdcgg_time_20interval
+target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:TIME%20INTERVAL {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://meta.icos-cp.eu/resources/wdcgg/TIME%20INTERVAL'
+
+
+mappingId	terms_creator
+target		<https://meta.icos-cp.eu/objects/{id}> terms:creator <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/creator'
+
+
+mappingId	terms_description
+target		<https://meta.icos-cp.eu/objects/{id}> terms:description {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/description'
+
+
+mappingId	terms_license
+target		<https://meta.icos-cp.eu/objects/{id}> terms:license {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/license'
+
+
+mappingId	terms_title
+target		<https://meta.icos-cp.eu/objects/{id}> terms:title {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://purl.org/dc/terms/title'
+
+mappingId	rdfs_seealso
+target		<https://meta.icos-cp.eu/objects/{id}> rdfs:seeAlso {object}^^xsd:string .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://www.w3.org/2000/01/rdf-schema#seeAlso'
+
+mappingId	prov_hadprimarysource
+target		<https://meta.icos-cp.eu/objects/{id}> prov:hadPrimarySource <{object}> .
+source		SELECT id, object FROM meta_icos_cp_eu_objects WHERE predicate = 'http://www.w3.org/ns/prov#hadPrimarySource'
+
+
+
+
+
+mappingId	resources_subm_prov_wasassociatedwith
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_subm WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+
+
+
+mappingId	resources_subm2_prov_wasassociatedwith
+target		<https://meta.fieldsites.se/resources/subm_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_subm2 WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+
+
+
+mappingId	resources_acq_cpmeta_hassamplingheight
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:hasSamplingHeight {object}^^xsd:float .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight'
+
+
+mappingId	resources_acq_cpmeta_wasperformedwith
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedWith <{object}> .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith'
+
+
+mappingId	resources_acq_prov_wasassociatedwith
+target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_acq WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+
+
+mappingId	resources_acq2_cpmeta_hassamplingheight
+target		<https://meta.fieldsites.se/resources/acq_{id}> cpmeta:hasSamplingHeight {object}^^xsd:float .
+source		SELECT id, object FROM resources_acq2 WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight'
+
+
+mappingId	resources_acq2_cpmeta_hassamplingpoint
+target		<https://meta.fieldsites.se/resources/acq_{id}> cpmeta:hasSamplingPoint <{object}> .
+source		SELECT id, object FROM resources_acq2 WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint'
+
+
+mappingId	resources_acq2_cpmeta_wasperformedat
+target		<https://meta.fieldsites.se/resources/acq_{id}> cpmeta:wasPerformedAt <{object}> .
+source		SELECT id, object FROM resources_acq2 WHERE predicate = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt'
+
+
+mappingId	resources_acq2_prov_wasassociatedwith
+target		<https://meta.fieldsites.se/resources/acq_{id}> prov:wasAssociatedWith <{object}> .
+source		SELECT id, object FROM resources_acq2 WHERE predicate = 'http://www.w3.org/ns/prov#wasAssociatedWith'
+]]

@@ -402,12 +402,117 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
     return columns
 
 
-def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str, str]]]:
+def analyze_reference_counts(classes: List[dict]) -> Dict[str, Set[str]]:
+    """
+    Analyze how many tables reference each table
+
+    Returns: Dict[table_name] -> Set[referencing_table_names]
+    """
+    class_to_table = {}
+    for class_data in classes:
+        table_name = sanitize_table_name(class_data['class_name'])
+        class_to_table[class_data['class_uri']] = table_name
+
+    # Count references to each table
+    referenced_by = defaultdict(set)
+
+    for class_data in classes:
+        table_name = sanitize_table_name(class_data['class_name'])
+
+        for ref in class_data.get('references_to', []):
+            ref_class_uri = ref['class_uri']
+            if ref_class_uri not in class_to_table:
+                continue
+
+            ref_table = class_to_table[ref_class_uri]
+            referenced_by[ref_table].add(table_name)
+
+    return dict(referenced_by)
+
+
+def identify_inlinable_tables(classes: List[dict], referenced_by: Dict[str, Set[str]]) -> Dict[str, str]:
+    """
+    Identify tables that should be inlined (only referenced by one other table)
+
+    Returns: Dict[table_to_inline] -> single_referencing_table
+    """
+    inlinable = {}
+
+    for class_data in classes:
+        table_name = sanitize_table_name(class_data['class_name'])
+
+        # Check if this table is referenced by exactly one other table
+        if table_name in referenced_by and len(referenced_by[table_name]) == 1:
+            referencing_table = list(referenced_by[table_name])[0]
+            inlinable[table_name] = referencing_table
+            print(f"  Will inline {table_name} into {referencing_table}")
+
+    return inlinable
+
+
+def inline_table_columns(class_data: dict, columns: List[Dict], inlined_tables: Dict[str, dict],
+                        type_map: Dict[str, str]) -> List[Dict]:
+    """
+    Add inlined columns from referenced tables
+
+    Args:
+        class_data: The class that references other tables
+        columns: Existing columns for this table
+        inlined_tables: Dict[table_name] -> class_data for tables to inline
+        type_map: Predicate type mappings
+
+    Returns: Extended list of columns including inlined ones
+    """
+    table_name = sanitize_table_name(class_data['class_name'])
+    extended_columns = columns.copy()
+
+    # Check which tables this class references
+    for ref in class_data.get('references_to', []):
+        ref_table = sanitize_table_name(ref['class_name'])
+
+        if ref_table in inlined_tables:
+            # Inline this table's columns
+            ref_class_data = inlined_tables[ref_table]
+
+            # Determine prefix from the predicate name
+            predicates = ref.get('predicates', [])
+            if predicates:
+                # Use the first predicate's name as prefix
+                pred_short = predicates[0]['predicate_short']
+                prefix = sanitize_column_name(pred_short)
+            else:
+                # Fallback to table name
+                prefix = ref_table.replace('ct_', '')
+
+            # Get columns from the referenced table
+            for pred_info in ref_class_data.get('predicates', []):
+                if pred_info['predicate_short'] == 'rdf:type':
+                    continue
+
+                col_name = f"{prefix}_{sanitize_column_name(pred_info['predicate_short'])}"
+                col_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
+
+                extended_columns.append({
+                    'name': col_name,
+                    'type': col_type,
+                    'predicate_uri': pred_info['predicate_uri'],
+                    'predicate_short': pred_info['predicate_short'],
+                    'coverage': pred_info.get('coverage_percentage', 0),
+                    'inlined_from': ref_table,
+                    'original_predicate': predicates[0]['predicate_uri'] if predicates else None
+                })
+
+    return extended_columns
+
+
+def build_foreign_key_map(classes: List[dict], inlinable_tables: Set[str]) -> Dict[str, List[Tuple[str, str, str]]]:
     """
     Build a map of which columns are foreign keys to other tables
 
     Deduplicates foreign keys so each column only references one table
     (chooses the most common target table for polymorphic references)
+
+    Excludes foreign keys to tables that will be inlined
 
     Returns: Dict[table_name] -> List[(column_name, ref_table, predicate_uri)]
     """
@@ -433,6 +538,10 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
                 continue
 
             ref_table = class_to_table[ref_class_uri]
+
+            # Skip if this table will be inlined
+            if ref_table in inlinable_tables:
+                continue
 
             # For each predicate that creates this reference
             for pred in ref['predicates']:
@@ -619,6 +728,16 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
 def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
                                 rdf_type_uri: str, triples_table: str) -> str:
     """Generate INSERT statement for a single non-merged table"""
+
+    # Separate inlined columns from regular columns
+    regular_columns = [c for c in columns if 'inlined_from' not in c]
+    inlined_columns = [c for c in columns if 'inlined_from' in c]
+
+    # Group inlined columns by the table they come from
+    inlined_by_table = defaultdict(list)
+    for col in inlined_columns:
+        inlined_by_table[col['inlined_from']].append(col)
+
     lines = [f"INSERT INTO {table_name} (id"]
 
     # Add column names
@@ -626,22 +745,68 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
         lines.append(f", {col['name']}")
 
     lines.append(")")
-    lines.append("SELECT")
-    lines.append("    subj AS id")
 
-    # For each column, use MAX(CASE...) to pivot the predicate values
-    for col in columns:
-        pred_uri = col['predicate_uri']
-        col_type = col['type']
-        cast_expr = _get_cast_expression(col_type)
-        lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+    if not inlined_columns:
+        # Simple case: no inlined columns, just pivot
+        lines.append("SELECT")
+        lines.append("    subj AS id")
 
-    lines.append(f"FROM {triples_table}")
-    lines.append(f"WHERE subj IN (")
-    lines.append(f"    SELECT subj FROM {triples_table}")
-    lines.append(f"    WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'")
-    lines.append(")")
-    lines.append("GROUP BY subj;")
+        # For each column, use MAX(CASE...) to pivot the predicate values
+        for col in regular_columns:
+            pred_uri = col['predicate_uri']
+            col_type = col['type']
+            cast_expr = _get_cast_expression(col_type)
+            lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+
+        lines.append(f"FROM {triples_table}")
+        lines.append(f"WHERE subj IN (")
+        lines.append(f"    SELECT subj FROM {triples_table}")
+        lines.append(f"    WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'")
+        lines.append(")")
+        lines.append("GROUP BY subj;")
+    else:
+        # Complex case: with inlined columns, need to join through FK relationships
+        # Group inlined columns by their FK predicate
+        by_fk_pred = defaultdict(lambda: {'table': None, 'columns': []})
+        for col in inlined_columns:
+            fk_pred = col.get('original_predicate')
+            by_fk_pred[fk_pred]['table'] = col['inlined_from']
+            by_fk_pred[fk_pred]['columns'].append(col)
+
+        lines.append("SELECT")
+        lines.append("    main.subj AS id")
+
+        # Regular columns - pivot from main table
+        for col in regular_columns:
+            pred_uri = col['predicate_uri']
+            col_type = col['type']
+            cast_expr = _get_cast_expression(col_type)
+            lines.append(f"    , MAX(CASE WHEN main.pred = '{pred_uri}' THEN {cast_expr.replace('obj', 'main.obj')} ELSE NULL END) AS {col['name']}")
+
+        # Inlined columns - pivot from joined tables
+        for fk_pred, info in by_fk_pred.items():
+            for col in info['columns']:
+                pred_uri = col['predicate_uri']
+                col_type = col['type']
+                cast_expr = _get_cast_expression(col_type)
+                alias = f"inl_{col['name']}"
+                lines.append(f"    , MAX(CASE WHEN {alias}.pred = '{pred_uri}' THEN {cast_expr.replace('obj', f'{alias}.obj')} ELSE NULL END) AS {col['name']}")
+
+        lines.append(f"FROM {triples_table} main")
+
+        # Join to referenced entities for inlined columns
+        for fk_pred, info in by_fk_pred.items():
+            for col in info['columns']:
+                alias = f"inl_{col['name']}"
+                lines.append(f"LEFT JOIN {triples_table} fk_{alias} ON main.subj = fk_{alias}.subj AND fk_{alias}.pred = '{fk_pred}'")
+                lines.append(f"LEFT JOIN {triples_table} {alias} ON fk_{alias}.obj = {alias}.subj")
+
+        lines.append(f"WHERE main.subj IN (")
+        lines.append(f"    SELECT subj FROM {triples_table}")
+        lines.append(f"    WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'")
+        lines.append(")")
+        lines.append("GROUP BY main.subj;")
+
 
     return '\n'.join(lines)
 
@@ -722,10 +887,14 @@ Examples:
                        help='Input JSON file (default: class_predicates_analysis.json)')
     parser.add_argument('--types-json', default='predicate_types.json',
                        help='Predicate types JSON file (default: predicate_types.json)')
-    parser.add_argument('--output', default='create_class_tables.sql',
-                       help='Output SQL file for schema (default: create_class_tables.sql)')
-    parser.add_argument('--populate-output', default='populate_class_tables.sql',
-                       help='Output SQL file for population (default: populate_class_tables.sql)')
+    parser.add_argument('--output', default='class_tables/create_class_tables.sql',
+                       help='Output SQL file for table creation (default: class_tables/create_class_tables.sql)')
+    parser.add_argument('--fk-output', default='class_tables/create_foreign_keys.sql',
+                       help='Output SQL file for foreign keys (default: class_tables/create_foreign_keys.sql)')
+    parser.add_argument('--index-output', default='class_tables/create_indexes.sql',
+                       help='Output SQL file for indexes (default: class_tables/create_indexes.sql)')
+    parser.add_argument('--populate-output', default='class_tables/populate_class_tables.sql',
+                       help='Output SQL file for population (default: class_tables/populate_class_tables.sql)')
     parser.add_argument('--min-coverage', type=float, default=0,
                        help='Minimum coverage percentage for predicates (default: 0)')
     parser.add_argument('--exclude-namespaces', default='',
@@ -786,104 +955,156 @@ Examples:
     try:
         rdf_type_uri = f"{NS['rdf']}type"
 
-        # Build table name map
-        table_names = {}
+        # Analyze reference counts to identify inlinable tables
+        print("\nAnalyzing table references...")
+        referenced_by = analyze_reference_counts(classes)
+        inlinable_map = identify_inlinable_tables(classes, referenced_by)
+
+        # Build a map of inlined table class data
+        inlined_tables = {}
         for class_data in classes:
+            table_name = sanitize_table_name(class_data['class_name'])
+            if table_name in inlinable_map:
+                inlined_tables[table_name] = class_data
+
+        # Filter out inlined tables from the classes list
+        classes_to_generate = [c for c in classes if sanitize_table_name(c['class_name']) not in inlinable_map]
+        print(f"  After inlining: {len(classes)} -> {len(classes_to_generate)} tables")
+
+        # Build table name map (for non-inlined tables)
+        table_names = {}
+        for class_data in classes_to_generate:
             table_name = sanitize_table_name(class_data['class_name'])
             table_names[class_data['class_uri']] = table_name
 
         # Build columns for each table
         print("\nBuilding table schemas...")
         columns_map = {}
-        for i, class_data in enumerate(classes, 1):
+        for i, class_data in enumerate(classes_to_generate, 1):
             table_name = table_names[class_data['class_uri']]
-            print(f"  [{i}/{len(classes)}] {table_name}...", end='\r')
+            print(f"  [{i}/{len(classes_to_generate)}] {table_name}...", end='\r')
 
             columns = get_predicate_columns(
                 class_data, type_map,
                 args.min_coverage, exclude_namespaces
             )
+
+            # Inline columns from referenced tables
+            columns = inline_table_columns(class_data, columns, inlined_tables, type_map)
+
             columns_map[table_name] = columns
 
-        print(f"\n  Built schemas for {len(classes)} classes")
+        print(f"\n  Built schemas for {len(classes_to_generate)} classes")
 
-        # Build foreign key map
+        # Build foreign key map (excluding inlinable tables)
         print("\nBuilding foreign key relationships...")
-        fk_map = build_foreign_key_map(classes)
+        fk_map = build_foreign_key_map(classes_to_generate, set(inlinable_map.keys()))
         print(f"  Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
 
         # Print summary
-        print_summary(classes, table_names, columns_map, fk_map)
+        print_summary(classes_to_generate, table_names, columns_map, fk_map)
 
-        # Generate Schema SQL
-        print(f"\nGenerating schema SQL...")
-        schema_lines = []
+        # Generate CREATE TABLE SQL
+        print(f"\nGenerating CREATE TABLE SQL...")
+        table_lines = []
 
         # Header
-        schema_lines.append("-- Generated SQL for class-based tables (SCHEMA)")
-        schema_lines.append(f"-- Source: {args.input}")
-        schema_lines.append(f"-- Total tables: {len(table_names)}")
-        schema_lines.append("")
+        table_lines.append("-- Generated SQL for class-based tables (CREATE TABLES)")
+        table_lines.append(f"-- Source: {args.input}")
+        table_lines.append(f"-- Total tables: {len(table_names)}")
+        if inlinable_map:
+            table_lines.append(f"-- Inlined tables: {len(inlinable_map)}")
+        table_lines.append("")
+        table_lines.append("-- Run foreign keys and indexes after creating tables:")
+        table_lines.append(f"-- 1. {args.output}")
+        table_lines.append(f"-- 2. {args.fk_output}")
+        table_lines.append(f"-- 3. {args.index_output}")
+        table_lines.append(f"-- 4. {args.populate_output}")
+        table_lines.append("")
 
         # DROP statements if requested
         if args.drop:
-            schema_lines.append("-- Drop existing tables")
+            table_lines.append("-- Drop existing tables")
             for table_name in sorted(table_names.values()):
-                schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
-            schema_lines.append("")
+                table_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+            table_lines.append("")
 
         # CREATE TABLE statements
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- CREATE TABLES")
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("")
+        table_lines.append("-- " + "=" * 70)
+        table_lines.append("-- CREATE TABLES")
+        table_lines.append("-- " + "=" * 70)
+        table_lines.append("")
 
-        for class_data in classes:
+        for class_data in classes_to_generate:
             table_name = table_names[class_data['class_uri']]
             columns = columns_map[table_name]
             fks = fk_map.get(table_name, [])
             merge_config = class_data.get('merge_config')
 
-            schema_lines.append(f"-- Table: {table_name}")
+            table_lines.append(f"-- Table: {table_name}")
             if merge_config:
                 merged_from = class_data.get('merged_from', [])
-                schema_lines.append(f"-- UNION TABLE merging: {', '.join(merged_from)}")
-            schema_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
-            schema_lines.append("")
+                table_lines.append(f"-- UNION TABLE merging: {', '.join(merged_from)}")
+            table_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
+
+            # Show inlined tables
+            inlined_in_this_table = [t for t, ref in inlinable_map.items() if ref == table_name]
+            if inlined_in_this_table:
+                table_lines.append(f"-- Inlined tables: {', '.join(inlined_in_this_table)}")
+
+            table_lines.append("")
 
             create_sql = generate_create_table_sql(table_name, columns, fks, merge_config)
-            schema_lines.append(create_sql)
-            schema_lines.append("")
+            table_lines.append(create_sql)
+            table_lines.append("")
 
-        # FOREIGN KEY constraints
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- FOREIGN KEY CONSTRAINTS")
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("")
+        # Generate FOREIGN KEY SQL
+        print(f"Generating FOREIGN KEY SQL...")
+        fk_lines = []
+
+        # Header
+        fk_lines.append("-- Generated SQL for class-based tables (FOREIGN KEYS)")
+        fk_lines.append(f"-- Source: {args.input}")
+        fk_lines.append(f"-- Run this after creating tables with {args.output}")
+        fk_lines.append("")
+
+        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("-- FOREIGN KEY CONSTRAINTS")
+        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("")
 
         for table_name, fks in sorted(fk_map.items()):
             if fks:
                 fk_sql = generate_foreign_key_sql(table_name, fks)
-                schema_lines.append(f"-- Foreign keys for {table_name}")
-                schema_lines.append(fk_sql)
-                schema_lines.append("")
+                fk_lines.append(f"-- Foreign keys for {table_name}")
+                fk_lines.append(fk_sql)
+                fk_lines.append("")
 
-        # INDEXES
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- INDEXES")
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("")
+        # Generate INDEXES SQL
+        print(f"Generating INDEXES SQL...")
+        index_lines = []
 
-        for class_data in classes:
+        # Header
+        index_lines.append("-- Generated SQL for class-based tables (INDEXES)")
+        index_lines.append(f"-- Source: {args.input}")
+        index_lines.append(f"-- Run this after creating tables with {args.output}")
+        index_lines.append("")
+
+        index_lines.append("-- " + "=" * 70)
+        index_lines.append("-- INDEXES")
+        index_lines.append("-- " + "=" * 70)
+        index_lines.append("")
+
+        for class_data in classes_to_generate:
             table_name = table_names[class_data['class_uri']]
             columns = columns_map[table_name]
             fks = fk_map.get(table_name, [])
 
             idx_sql = generate_indexes_sql(table_name, columns, fks)
             if idx_sql:
-                schema_lines.append(f"-- Indexes for {table_name}")
-                schema_lines.append(idx_sql)
-                schema_lines.append("")
+                index_lines.append(f"-- Indexes for {table_name}")
+                index_lines.append(idx_sql)
+                index_lines.append("")
 
         # Generate Population SQL
         print(f"Generating population SQL...")
@@ -904,7 +1125,7 @@ Examples:
         populate_lines.append("-- " + "=" * 70)
         populate_lines.append("")
 
-        for class_data in classes:
+        for class_data in classes_to_generate:
             table_name = table_names[class_data['class_uri']]
             columns = columns_map[table_name]
 
@@ -926,24 +1147,35 @@ Examples:
             populate_lines.append(insert_sql)
             populate_lines.append("")
 
-        # Write schema file
-        schema_sql = '\n'.join(schema_lines)
-        print(f"\nWriting schema SQL to {args.output}...")
+        # Write CREATE TABLE file
+        table_sql = '\n'.join(table_lines)
+        print(f"\nWriting CREATE TABLE SQL to {args.output}...")
         with open(args.output, 'w') as f:
-            f.write("BEGIN;")
-            f.write(schema_sql)
-            f.write("COMMIT;")
-        print(f"Schema SQL written to {args.output}")
+            f.write(table_sql)
+        print(f"  Written to {args.output} ({len(table_lines)} lines)")
+
+        # Write FOREIGN KEY file
+        fk_sql = '\n'.join(fk_lines)
+        print(f"Writing FOREIGN KEY SQL to {args.fk_output}...")
+        with open(args.fk_output, 'w') as f:
+            f.write(fk_sql)
+        print(f"  Written to {args.fk_output} ({len(fk_lines)} lines)")
+
+        # Write INDEX file
+        index_sql = '\n'.join(index_lines)
+        print(f"Writing INDEX SQL to {args.index_output}...")
+        with open(args.index_output, 'w') as f:
+            f.write(index_sql)
+        print(f"  Written to {args.index_output} ({len(index_lines)} lines)")
 
         # Write population file
         populate_sql = '\n'.join(populate_lines)
-        print(f"Writing population SQL to {args.populate_output}...")
+        print(f"Writing POPULATION SQL to {args.populate_output}...")
         with open(args.populate_output, 'w') as f:
             f.write(populate_sql)
-        print(f"Population SQL written to {args.populate_output}")
+        print(f"  Written to {args.populate_output} ({len(populate_lines)} lines)")
 
-        print(f"\nSchema lines: {len(schema_lines)}")
-        print(f"Population lines: {len(populate_lines)}")
+        print(f"\nTotal files generated: 4")
 
         # Execute if requested
         if args.db or '--db' in sys.argv:
@@ -973,17 +1205,43 @@ Examples:
                 return 1
 
             try:
-                # Execute schema SQL
-                print("\nExecuting schema SQL...")
-                schema_statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                print(f"  {len(schema_statements)} statements to execute")
+                # Execute CREATE TABLE SQL
+                print("\nExecuting CREATE TABLE SQL...")
+                table_statements = [s.strip() for s in table_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(table_statements)} statements to execute")
 
-                for i, statement in enumerate(schema_statements, 1):
+                for i, statement in enumerate(table_statements, 1):
                     if statement:
-                        print(f"  [{i}/{len(schema_statements)}] Executing...", end='\r')
+                        print(f"  [{i}/{len(table_statements)}] Executing...", end='\r')
                         cursor.execute(statement)
 
-                print(f"\n  Schema created successfully!")
+                print(f"\n  Tables created successfully!")
+                conn.commit()
+
+                # Execute FOREIGN KEY SQL
+                print("\nExecuting FOREIGN KEY SQL...")
+                fk_statements = [s.strip() for s in fk_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(fk_statements)} statements to execute")
+
+                for i, statement in enumerate(fk_statements, 1):
+                    if statement:
+                        print(f"  [{i}/{len(fk_statements)}] Executing...", end='\r')
+                        cursor.execute(statement)
+
+                print(f"\n  Foreign keys created successfully!")
+                conn.commit()
+
+                # Execute INDEX SQL
+                print("\nExecuting INDEX SQL...")
+                index_statements = [s.strip() for s in index_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(index_statements)} statements to execute")
+
+                for i, statement in enumerate(index_statements, 1):
+                    if statement:
+                        print(f"  [{i}/{len(index_statements)}] Executing...", end='\r')
+                        cursor.execute(statement)
+
+                print(f"\n  Indexes created successfully!")
                 conn.commit()
 
                 # Execute population SQL

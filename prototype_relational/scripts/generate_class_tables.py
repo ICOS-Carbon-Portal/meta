@@ -391,13 +391,13 @@ Examples:
   # First, run infer_predicate_types.py to generate predicate_types.json
   ./infer_predicate_types.py
 
-  # Then generate SQL
-  %(prog)s                                    # Generate SQL to create_class_tables.sql
+  # Then generate SQL (creates two files: schema and population)
+  %(prog)s                                    # Generates create_class_tables.sql + populate_class_tables.sql
   %(prog)s --min-coverage 50                  # Only include predicates with 50%+ coverage
   %(prog)s --exclude-namespaces rdf,rdfs      # Skip RDF/RDFS predicates
   %(prog)s --drop                             # Include DROP TABLE statements
 
-  # Execute directly in database
+  # Execute directly in database (runs both schema and population)
   %(prog)s --db --host localhost --dbname postgres
         """
     )
@@ -407,7 +407,9 @@ Examples:
     parser.add_argument('--types-json', default='predicate_types.json',
                        help='Predicate types JSON file (default: predicate_types.json)')
     parser.add_argument('--output', default='create_class_tables.sql',
-                       help='Output SQL file (default: create_class_tables.sql)')
+                       help='Output SQL file for schema (default: create_class_tables.sql)')
+    parser.add_argument('--populate-output', default='populate_class_tables.sql',
+                       help='Output SQL file for population (default: populate_class_tables.sql)')
     parser.add_argument('--min-coverage', type=float, default=0,
                        help='Minimum coverage percentage for predicates (default: 0)')
     parser.add_argument('--exclude-namespaces', default='',
@@ -484,60 +486,60 @@ Examples:
         # Print summary
         print_summary(classes, table_names, columns_map, fk_map)
 
-        # Generate SQL
-        print(f"\nGenerating SQL...")
-        sql_lines = []
+        # Generate Schema SQL
+        print(f"\nGenerating schema SQL...")
+        schema_lines = []
 
         # Header
-        sql_lines.append("-- Generated SQL for class-based tables")
-        sql_lines.append(f"-- Source: {args.input}")
-        sql_lines.append(f"-- Total tables: {len(table_names)}")
-        sql_lines.append("")
+        schema_lines.append("-- Generated SQL for class-based tables (SCHEMA)")
+        schema_lines.append(f"-- Source: {args.input}")
+        schema_lines.append(f"-- Total tables: {len(table_names)}")
+        schema_lines.append("")
 
         # DROP statements if requested
         if args.drop:
-            sql_lines.append("-- Drop existing tables")
+            schema_lines.append("-- Drop existing tables")
             for table_name in sorted(table_names.values()):
-                sql_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
-            sql_lines.append("")
+                schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+            schema_lines.append("")
 
         # CREATE TABLE statements
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("-- CREATE TABLES")
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("-- CREATE TABLES")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("")
 
         for class_data in classes:
             table_name = table_names[class_data['class_uri']]
             columns = columns_map[table_name]
             fks = fk_map.get(table_name, [])
 
-            sql_lines.append(f"-- Table: {table_name}")
-            sql_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
-            sql_lines.append("")
+            schema_lines.append(f"-- Table: {table_name}")
+            schema_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
+            schema_lines.append("")
 
             create_sql = generate_create_table_sql(table_name, columns, fks)
-            sql_lines.append(create_sql)
-            sql_lines.append("")
+            schema_lines.append(create_sql)
+            schema_lines.append("")
 
         # FOREIGN KEY constraints
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("-- FOREIGN KEY CONSTRAINTS")
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("-- FOREIGN KEY CONSTRAINTS")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("")
 
         for table_name, fks in sorted(fk_map.items()):
             if fks:
                 fk_sql = generate_foreign_key_sql(table_name, fks)
-                sql_lines.append(f"-- Foreign keys for {table_name}")
-                sql_lines.append(fk_sql)
-                sql_lines.append("")
+                schema_lines.append(f"-- Foreign keys for {table_name}")
+                schema_lines.append(fk_sql)
+                schema_lines.append("")
 
         # INDEXES
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("-- INDEXES")
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("-- INDEXES")
+        schema_lines.append("-- " + "=" * 70)
+        schema_lines.append("")
 
         for class_data in classes:
             table_name = table_names[class_data['class_uri']]
@@ -546,15 +548,28 @@ Examples:
 
             idx_sql = generate_indexes_sql(table_name, columns, fks)
             if idx_sql:
-                sql_lines.append(f"-- Indexes for {table_name}")
-                sql_lines.append(idx_sql)
-                sql_lines.append("")
+                schema_lines.append(f"-- Indexes for {table_name}")
+                schema_lines.append(idx_sql)
+                schema_lines.append("")
+
+        # Generate Population SQL
+        print(f"Generating population SQL...")
+        populate_lines = []
+
+        # Header
+        populate_lines.append("-- Generated SQL for class-based tables (POPULATION)")
+        populate_lines.append(f"-- Source: {args.input}")
+        populate_lines.append(f"-- Triples table: {args.triples_table}")
+        populate_lines.append(f"-- Total tables: {len(table_names)}")
+        populate_lines.append("")
+        populate_lines.append("-- Run this script after creating tables with create_class_tables.sql")
+        populate_lines.append("")
 
         # INSERT statements
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("-- POPULATE TABLES")
-        sql_lines.append("-- " + "=" * 70)
-        sql_lines.append("")
+        populate_lines.append("-- " + "=" * 70)
+        populate_lines.append("-- POPULATE TABLES")
+        populate_lines.append("-- " + "=" * 70)
+        populate_lines.append("")
 
         for class_data in classes:
             table_name = table_names[class_data['class_uri']]
@@ -563,22 +578,31 @@ Examples:
             if not columns:
                 continue
 
-            sql_lines.append(f"-- Populate {table_name}")
+            populate_lines.append(f"-- Populate {table_name}")
+            populate_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
             insert_sql = generate_insert_sql(
                 table_name, class_data['class_uri'], columns,
                 rdf_type_uri, args.triples_table
             )
-            sql_lines.append(insert_sql)
-            sql_lines.append("")
+            populate_lines.append(insert_sql)
+            populate_lines.append("")
 
-        # Write to file
-        full_sql = '\n'.join(sql_lines)
-        print(f"\nWriting SQL to {args.output}...")
+        # Write schema file
+        schema_sql = '\n'.join(schema_lines)
+        print(f"\nWriting schema SQL to {args.output}...")
         with open(args.output, 'w') as f:
-            f.write(full_sql)
+            f.write(schema_sql)
+        print(f"Schema SQL written to {args.output}")
 
-        print(f"SQL written to {args.output}")
-        print(f"\nTotal lines: {len(sql_lines)}")
+        # Write population file
+        populate_sql = '\n'.join(populate_lines)
+        print(f"Writing population SQL to {args.populate_output}...")
+        with open(args.populate_output, 'w') as f:
+            f.write(populate_sql)
+        print(f"Population SQL written to {args.populate_output}")
+
+        print(f"\nSchema lines: {len(schema_lines)}")
+        print(f"Population lines: {len(populate_lines)}")
 
         # Execute if requested
         if args.db or '--db' in sys.argv:
@@ -608,18 +632,33 @@ Examples:
                 return 1
 
             try:
-                # Execute SQL
-                statements = [s.strip() for s in full_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                print(f"Executing {len(statements)} SQL statements...")
+                # Execute schema SQL
+                print("\nExecuting schema SQL...")
+                schema_statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(schema_statements)} statements to execute")
 
-                for i, statement in enumerate(statements, 1):
+                for i, statement in enumerate(schema_statements, 1):
                     if statement:
-                        print(f"  [{i}/{len(statements)}] Executing...", end='\r')
+                        print(f"  [{i}/{len(schema_statements)}] Executing...", end='\r')
                         cursor.execute(statement)
 
-                print(f"\nCommitting changes...")
+                print(f"\n  Schema created successfully!")
                 conn.commit()
-                print("Done! All tables created and populated successfully!")
+
+                # Execute population SQL
+                print("\nExecuting population SQL...")
+                populate_statements = [s.strip() for s in populate_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(populate_statements)} statements to execute")
+
+                for i, statement in enumerate(populate_statements, 1):
+                    if statement:
+                        print(f"  [{i}/{len(populate_statements)}] Executing...", end='\r')
+                        cursor.execute(statement)
+
+                print(f"\n  Tables populated successfully!")
+                conn.commit()
+
+                print("\nDone! All tables created and populated successfully!")
 
             except Exception as e:
                 print(f"\nError executing SQL: {e}")

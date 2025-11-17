@@ -34,6 +34,60 @@ NS = {
 }
 
 
+# Table merge configuration - defines which classes should be merged into union tables
+# This resolves polymorphic foreign key issues where one column references multiple table types
+MERGE_GROUPS = {
+    'ct_object_specs': {
+        'classes': ['cpmeta:SimpleObjectSpec', 'cpmeta:DataObjectSpec'],
+        'type_column': 'spec_type',
+        'type_values': {
+            'cpmeta:SimpleObjectSpec': 'simple',
+            'cpmeta:DataObjectSpec': 'data'
+        }
+    },
+    'ct_spatial_coverages': {
+        'classes': ['cpmeta:SpatialCoverage', 'cpmeta:LatLonBox', 'cpmeta:Position'],
+        'type_column': 'coverage_type',
+        'type_values': {
+            'cpmeta:SpatialCoverage': 'spatial',
+            'cpmeta:LatLonBox': 'latlon',
+            'cpmeta:Position': 'position'
+        }
+    },
+    'ct_organizations': {
+        'classes': ['cpmeta:Organization', 'cpmeta:TC', 'cpmeta:Facility'],
+        'type_column': 'org_type',
+        'type_values': {
+            'cpmeta:Organization': 'organization',
+            'cpmeta:TC': 'thematic_center',
+            'cpmeta:Facility': 'central_facility'
+        }
+    },
+    'ct_stations': {
+        'classes': ['cpmeta:Station', 'cpmeta:AS', 'cpmeta:ES', 'cpmeta:OS',
+                   'cpmeta:SailDrone', 'cpmeta:IngosStation', 'cpmeta:AtmoStation'],
+        'type_column': 'station_type',
+        'type_values': {
+            'cpmeta:Station': 'station',
+            'cpmeta:AS': 'as',
+            'cpmeta:ES': 'es',
+            'cpmeta:OS': 'os',
+            'cpmeta:SailDrone': 'saildrone',
+            'cpmeta:IngosStation': 'ingos',
+            'cpmeta:AtmoStation': 'atmo'
+        }
+    },
+    'ct_dataset_specs': {
+        'classes': ['cpmeta:DatasetSpec', 'cpmeta:TabularDatasetSpec'],
+        'type_column': 'dataset_type',
+        'type_values': {
+            'cpmeta:DatasetSpec': 'dataset',
+            'cpmeta:TabularDatasetSpec': 'tabular'
+        }
+    }
+}
+
+
 def load_analysis_json(json_path: str) -> dict:
     """Load and parse the class_predicates_analysis.json file"""
     with open(json_path, 'r') as f:
@@ -56,13 +110,171 @@ def load_predicate_types(json_path: str) -> Dict[str, str]:
     return type_map
 
 
+def build_class_uri_map(classes: List[dict]) -> Dict[str, str]:
+    """
+    Build a mapping from class short names to full URIs
+
+    Returns: Dict[class_short_name] -> class_uri
+    """
+    class_uri_map = {}
+    for class_data in classes:
+        class_name = class_data['class_name']
+        class_uri = class_data['class_uri']
+        class_uri_map[class_name] = class_uri
+    return class_uri_map
+
+
+def get_merge_mapping() -> Tuple[Dict[str, str], Dict[str, dict]]:
+    """
+    Build mappings for table merges
+
+    Returns:
+        - Dict[class_name] -> union_table_name (for classes that should be merged)
+        - Dict[union_table_name] -> merge_config (config for each union table)
+    """
+    class_to_union = {}
+    union_configs = {}
+
+    for union_table, config in MERGE_GROUPS.items():
+        union_configs[union_table] = config
+        for class_name in config['classes']:
+            class_to_union[class_name] = union_table
+
+    return class_to_union, union_configs
+
+
+def merge_classes(classes: List[dict], class_uri_map: Dict[str, str]) -> List[dict]:
+    """
+    Merge classes according to MERGE_GROUPS configuration
+
+    Creates union tables that combine multiple related classes with a type discriminator column.
+
+    Args:
+        classes: List of class data dictionaries
+        class_uri_map: Mapping from class short names to URIs
+
+    Returns:
+        List of class data with merged entries
+    """
+    class_to_union, union_configs = get_merge_mapping()
+
+    # Build a map of class_uri -> class_data for quick lookup
+    uri_to_class = {c['class_uri']: c for c in classes}
+
+    # Track which classes have been merged
+    merged_class_uris = set()
+    merged_classes = []
+
+    # Create merged class entries
+    for union_table, config in union_configs.items():
+        # Collect all classes to merge
+        classes_to_merge = []
+        for class_name in config['classes']:
+            if class_name in class_uri_map:
+                class_uri = class_uri_map[class_name]
+                if class_uri in uri_to_class:
+                    classes_to_merge.append(uri_to_class[class_uri])
+                    merged_class_uris.add(class_uri)
+
+        if not classes_to_merge:
+            continue
+
+        # Use the first class as the base and merge others into it
+        base_class = classes_to_merge[0].copy()
+        base_class['class_name'] = f"MERGED:{union_table}"
+        base_class['merged_from'] = [c['class_name'] for c in classes_to_merge]
+        base_class['merge_config'] = config
+
+        # Combine instance counts
+        base_class['instance_count'] = sum(c['instance_count'] for c in classes_to_merge)
+
+        # Merge predicates - combine all unique predicates
+        predicates_map = {}
+        for cls in classes_to_merge:
+            for pred in cls.get('predicates', []):
+                pred_uri = pred['predicate_uri']
+                if pred_uri not in predicates_map:
+                    predicates_map[pred_uri] = pred.copy()
+                else:
+                    # Update counts if this predicate appears in multiple classes
+                    existing = predicates_map[pred_uri]
+                    existing['count'] = existing.get('count', 0) + pred.get('count', 0)
+
+        base_class['predicates'] = list(predicates_map.values())
+
+        # Merge references_to - combine all unique references
+        references_map = {}
+        for cls in classes_to_merge:
+            for ref in cls.get('references_to', []):
+                ref_class_uri = ref['class_uri']
+                if ref_class_uri not in references_map:
+                    references_map[ref_class_uri] = {
+                        'class_uri': ref_class_uri,
+                        'class_name': ref['class_name'],
+                        'predicates': []
+                    }
+
+                # Add predicates for this reference
+                pred_map = {p['predicate_uri']: p for p in references_map[ref_class_uri]['predicates']}
+                for pred in ref.get('predicates', []):
+                    pred_uri = pred['predicate_uri']
+                    if pred_uri not in pred_map:
+                        pred_map[pred_uri] = pred.copy()
+                    else:
+                        # Update counts
+                        pred_map[pred_uri]['count'] = pred_map[pred_uri].get('count', 0) + pred.get('count', 0)
+
+                references_map[ref_class_uri]['predicates'] = list(pred_map.values())
+
+        base_class['references_to'] = list(references_map.values())
+
+        # Merge referenced_by - combine all unique back-references
+        referenced_by_map = {}
+        for cls in classes_to_merge:
+            for ref in cls.get('referenced_by', []):
+                ref_class_uri = ref['class_uri']
+                if ref_class_uri not in referenced_by_map:
+                    referenced_by_map[ref_class_uri] = {
+                        'class_uri': ref_class_uri,
+                        'class_name': ref['class_name'],
+                        'predicates': []
+                    }
+
+                # Add predicates for this back-reference
+                pred_map = {p['predicate_uri']: p for p in referenced_by_map[ref_class_uri]['predicates']}
+                for pred in ref.get('predicates', []):
+                    pred_uri = pred['predicate_uri']
+                    if pred_uri not in pred_map:
+                        pred_map[pred_uri] = pred.copy()
+                    else:
+                        pred_map[pred_uri]['count'] = pred_map[pred_uri].get('count', 0) + pred.get('count', 0)
+
+                referenced_by_map[ref_class_uri]['predicates'] = list(pred_map.values())
+
+        base_class['referenced_by'] = list(referenced_by_map.values())
+
+        merged_classes.append(base_class)
+
+    # Add all non-merged classes
+    for cls in classes:
+        if cls['class_uri'] not in merged_class_uris:
+            merged_classes.append(cls)
+
+    return merged_classes
+
+
 def sanitize_table_name(class_name: str) -> str:
     """
     Convert a class name to a valid PostgreSQL table name
 
     Example: 'cpmeta:DataObject' -> 'ct_data_objects'
              'prov:Activity' -> 'ct_prov_activities'
+             'MERGED:ct_object_specs' -> 'ct_object_specs'
     """
+    # Handle merged classes - they already have the table name
+    if class_name.startswith('MERGED:'):
+        return class_name.replace('MERGED:', '')
+
     # Remove namespace prefix
     if ':' in class_name:
         namespace, name = class_name.split(':', 1)
@@ -194,6 +406,9 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
     """
     Build a map of which columns are foreign keys to other tables
 
+    Deduplicates foreign keys so each column only references one table
+    (chooses the most common target table for polymorphic references)
+
     Returns: Dict[table_name] -> List[(column_name, ref_table, predicate_uri)]
     """
     # First, build a map of class_uri -> table_name
@@ -202,7 +417,9 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
         table_name = sanitize_table_name(class_data['class_name'])
         class_to_table[class_data['class_uri']] = table_name
 
-    fk_map = defaultdict(list)
+    # Build FK map with counts to track polymorphic references
+    # Structure: table_name -> column_name -> ref_table -> (predicate_uri, count)
+    fk_candidates = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'predicate_uri': None, 'count': 0})))
 
     # For each class, look at its references_to
     for class_data in classes:
@@ -220,13 +437,44 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
             # For each predicate that creates this reference
             for pred in ref['predicates']:
                 col_name = sanitize_column_name(pred['predicate_short'])
-                fk_map[table_name].append((col_name, ref_table, pred['predicate_uri']))
+                count = pred.get('count', 1)
+
+                # Track this FK candidate with its count
+                if fk_candidates[table_name][col_name][ref_table]['predicate_uri'] is None:
+                    fk_candidates[table_name][col_name][ref_table]['predicate_uri'] = pred['predicate_uri']
+                    fk_candidates[table_name][col_name][ref_table]['count'] = count
+                else:
+                    # Accumulate counts for this FK
+                    fk_candidates[table_name][col_name][ref_table]['count'] += count
+
+    # Now deduplicate: for each column, pick the target table with highest count
+    fk_map = defaultdict(list)
+
+    for table_name, columns in fk_candidates.items():
+        for col_name, targets in columns.items():
+            if len(targets) == 1:
+                # Only one target - no duplication
+                ref_table = list(targets.keys())[0]
+                pred_uri = targets[ref_table]['predicate_uri']
+                fk_map[table_name].append((col_name, ref_table, pred_uri))
+            else:
+                # Multiple targets - pick the one with highest count
+                best_target = max(targets.items(), key=lambda x: x[1]['count'])
+                ref_table = best_target[0]
+                pred_uri = best_target[1]['predicate_uri']
+                fk_map[table_name].append((col_name, ref_table, pred_uri))
+
+                # Log the polymorphic relationship for reference
+                other_targets = [t for t in targets.keys() if t != ref_table]
+                print(f"  Note: Polymorphic FK {table_name}.{col_name} -> {ref_table} "
+                      f"(also references: {', '.join(other_targets)})")
 
     return dict(fk_map)
 
 
 def generate_create_table_sql(table_name: str, columns: List[Dict],
-                              foreign_keys: List[Tuple[str, str, str]] = None) -> str:
+                              foreign_keys: List[Tuple[str, str, str]] = None,
+                              merge_config: dict = None) -> str:
     """
     Generate CREATE TABLE statement
 
@@ -234,11 +482,19 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
         table_name: Name of the table
         columns: List of column definitions
         foreign_keys: List of (column_name, ref_table, predicate_uri) tuples
+        merge_config: Merge configuration if this is a union table
     """
     fk_cols = {fk[0] for fk in (foreign_keys or [])}
 
     lines = [f"CREATE TABLE IF NOT EXISTS {table_name} ("]
     lines.append("    id TEXT PRIMARY KEY,")
+
+    # Add entity_type discriminator column for merged tables
+    if merge_config:
+        type_column = merge_config.get('type_column', 'entity_type')
+        type_values = list(merge_config.get('type_values', {}).values())
+        type_check = ', '.join(f"'{v}'" for v in type_values)
+        lines.append(f"    {type_column} TEXT NOT NULL CHECK ({type_column} IN ({type_check})),")
 
     # Add regular columns
     for col in columns:
@@ -300,12 +556,69 @@ def generate_indexes_sql(table_name: str, columns: List[Dict],
 
 
 def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
-                       rdf_type_uri: str, triples_table: str = 'rdf_triples') -> str:
+                       rdf_type_uri: str, triples_table: str = 'rdf_triples',
+                       merge_config: dict = None, merged_from: List[str] = None,
+                       class_uri_map: Dict[str, str] = None) -> str:
     """
     Generate INSERT statement to populate table from rdf_triples
 
     Uses conditional aggregation (similar to PIVOT) to transform triples into rows.
+    For merged tables, generates UNION of multiple queries (one per merged class).
     """
+    if not merge_config or not merged_from:
+        # Simple non-merged table
+        return _generate_single_insert_sql(table_name, class_uri, columns,
+                                          rdf_type_uri, triples_table)
+
+    # Merged table - generate UNION of inserts for each merged class
+    type_column = merge_config.get('type_column', 'entity_type')
+    type_values = merge_config.get('type_values', {})
+
+    # Build a UNION query for all merged classes
+    union_parts = []
+
+    for class_name in merged_from:
+        if class_name not in class_uri_map:
+            continue
+
+        cls_uri = class_uri_map[class_name]
+        type_value = type_values.get(class_name, 'unknown')
+
+        # Build SELECT for this class
+        select_lines = ["SELECT"]
+        select_lines.append("    subj AS id")
+        select_lines.append(f"    , '{type_value}' AS {type_column}")
+
+        # For each column, use MAX(CASE...) to pivot the predicate values
+        for col in columns:
+            pred_uri = col['predicate_uri']
+            col_type = col['type']
+            cast_expr = _get_cast_expression(col_type)
+            select_lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+
+        select_lines.append(f"FROM {triples_table}")
+        select_lines.append(f"WHERE subj IN (")
+        select_lines.append(f"    SELECT subj FROM {triples_table}")
+        select_lines.append(f"    WHERE pred = '{rdf_type_uri}' AND obj = '{cls_uri}'")
+        select_lines.append(")")
+        select_lines.append("GROUP BY subj")
+
+        union_parts.append('\n'.join(select_lines))
+
+    # Combine with UNION ALL
+    lines = [f"INSERT INTO {table_name} (id, {type_column}"]
+    for col in columns:
+        lines.append(f", {col['name']}")
+    lines.append(")")
+    lines.append('\nUNION ALL\n'.join(union_parts))
+    lines.append(";")
+
+    return '\n'.join(lines)
+
+
+def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
+                                rdf_type_uri: str, triples_table: str) -> str:
+    """Generate INSERT statement for a single non-merged table"""
     lines = [f"INSERT INTO {table_name} (id"]
 
     # Add column names
@@ -320,24 +633,7 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
     for col in columns:
         pred_uri = col['predicate_uri']
         col_type = col['type']
-
-        # Build CAST expression based on type
-        cast_expr = "obj"
-        if col_type == 'TIMESTAMP WITH TIME ZONE':
-            cast_expr = "obj::TIMESTAMP WITH TIME ZONE"
-        elif col_type == 'DATE':
-            cast_expr = "obj::DATE"
-        elif col_type == 'INTEGER':
-            cast_expr = "obj::INTEGER"
-        elif col_type == 'BIGINT':
-            cast_expr = "obj::BIGINT"
-        elif col_type == 'SMALLINT':
-            cast_expr = "obj::SMALLINT"
-        elif col_type == 'DOUBLE PRECISION':
-            cast_expr = "obj::DOUBLE PRECISION"
-        elif col_type == 'BOOLEAN':
-            cast_expr = "CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END"
-
+        cast_expr = _get_cast_expression(col_type)
         lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
 
     lines.append(f"FROM {triples_table}")
@@ -348,6 +644,26 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
     lines.append("GROUP BY subj;")
 
     return '\n'.join(lines)
+
+
+def _get_cast_expression(col_type: str) -> str:
+    """Get the appropriate CAST expression for a column type"""
+    if col_type == 'TIMESTAMP WITH TIME ZONE':
+        return "obj::TIMESTAMP WITH TIME ZONE"
+    elif col_type == 'DATE':
+        return "obj::DATE"
+    elif col_type == 'INTEGER':
+        return "obj::INTEGER"
+    elif col_type == 'BIGINT':
+        return "obj::BIGINT"
+    elif col_type == 'SMALLINT':
+        return "obj::SMALLINT"
+    elif col_type == 'DOUBLE PRECISION':
+        return "obj::DOUBLE PRECISION"
+    elif col_type == 'BOOLEAN':
+        return "CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END"
+    else:
+        return "obj"
 
 
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],
@@ -441,8 +757,21 @@ Examples:
         print("No classes found in JSON!")
         return 1
 
+    # Build class URI map for merging
+    print("\nBuilding class URI map...")
+    class_uri_map = build_class_uri_map(classes)
+
+    # Merge classes according to MERGE_GROUPS configuration
+    print("Merging classes for union tables...")
+    original_count = len(classes)
+    classes = merge_classes(classes, class_uri_map)
+    merged_count = original_count - len(classes) + sum(1 for c in classes if 'merge_config' in c)
+    if merged_count > 0:
+        print(f"  Merged {merged_count} classes into {sum(1 for c in classes if 'merge_config' in c)} union tables")
+        print(f"  Total tables after merging: {len(classes)}")
+
     # Load predicate types
-    print(f"Loading predicate types from {args.types_json}...")
+    print(f"\nLoading predicate types from {args.types_json}...")
     try:
         type_map = load_predicate_types(args.types_json)
         print(f"Loaded types for {len(type_map)} predicates")
@@ -513,12 +842,16 @@ Examples:
             table_name = table_names[class_data['class_uri']]
             columns = columns_map[table_name]
             fks = fk_map.get(table_name, [])
+            merge_config = class_data.get('merge_config')
 
             schema_lines.append(f"-- Table: {table_name}")
+            if merge_config:
+                merged_from = class_data.get('merged_from', [])
+                schema_lines.append(f"-- UNION TABLE merging: {', '.join(merged_from)}")
             schema_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
             schema_lines.append("")
 
-            create_sql = generate_create_table_sql(table_name, columns, fks)
+            create_sql = generate_create_table_sql(table_name, columns, fks, merge_config)
             schema_lines.append(create_sql)
             schema_lines.append("")
 
@@ -578,11 +911,17 @@ Examples:
             if not columns:
                 continue
 
+            merge_config = class_data.get('merge_config')
+            merged_from = class_data.get('merged_from', [])
+
             populate_lines.append(f"-- Populate {table_name}")
+            if merge_config:
+                populate_lines.append(f"-- UNION TABLE merging: {', '.join(merged_from)}")
             populate_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
             insert_sql = generate_insert_sql(
                 table_name, class_data['class_uri'], columns,
-                rdf_type_uri, args.triples_table
+                rdf_type_uri, args.triples_table,
+                merge_config, merged_from, class_uri_map
             )
             populate_lines.append(insert_sql)
             populate_lines.append("")
@@ -591,7 +930,9 @@ Examples:
         schema_sql = '\n'.join(schema_lines)
         print(f"\nWriting schema SQL to {args.output}...")
         with open(args.output, 'w') as f:
+            f.write("BEGIN;")
             f.write(schema_sql)
+            f.write("COMMIT;")
         print(f"Schema SQL written to {args.output}")
 
         # Write population file

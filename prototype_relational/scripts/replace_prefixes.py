@@ -22,9 +22,12 @@ PREFIXES = {
     'http://meta.icos-cp.eu/resources/': 'cpres',
     'http://purl.org/dc/terms/': 'terms',
     'http://www.w3.org/ns/dcat#': 'dcat',
-    'http://purl.org/dc/elements/1.1': 'purl-elements',
+    'http://purl.org/dc/elements/1.1/': 'purl-elements',
     'http://purl.org/vocab/vann/': 'purl-vann',
-    'http://www.w3.org/ns/ssn': 'w3ssn',
+    'http://www.w3.org/ns/ssn/': 'w3ssn',
+    'http://www.w3.org/2006/vcard/': 'w3_vcard',
+    'http://www.w3.org/ns/locn': 'w3locn',
+    'http://www.w3.org/2004/02/skos/core': 'w3skos_core',
     'http://creativecommons.org/ns': 'creativecommons'
 }
 
@@ -43,7 +46,8 @@ def main():
     for line in sys.stdin:
         # Keep the line ending intact
         modified = replace_predicates(line)
-        sys.stdout.write(modified)
+        if not modified.startswith(' rdf:_'):
+            sys.stdout.write(modified)
 
 
 if __name__ == '__main__':

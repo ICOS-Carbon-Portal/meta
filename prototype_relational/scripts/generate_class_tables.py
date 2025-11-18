@@ -723,8 +723,8 @@ Examples:
   # First, run infer_predicate_types.py to generate predicate_types.json
   ./infer_predicate_types.py
 
-  # Then generate SQL (creates two files: schema and population)
-  %(prog)s                                    # Generates create_class_tables.sql + populate_class_tables.sql
+  # Then generate SQL (creates four files: schema, population, FKs, and indexes)
+  %(prog)s                                    # Generates create_class_tables.sql + populate_class_tables.sql + create_foreign_keys.sql + create_indexes.sql
   %(prog)s --min-coverage 50                  # Only include predicates with 50%+ coverage
   %(prog)s --exclude-namespaces rdf,rdfs      # Skip RDF/RDFS predicates
   %(prog)s --drop                             # Include DROP TABLE statements
@@ -735,19 +735,21 @@ Examples:
     )
 
     parser.add_argument('--input', default='class_predicates_analysis.json',
-                       help='Input JSON file (default: class_predicates_analysis.json)')
+                       help='Input JSON file')
     parser.add_argument('--types-json', default='predicate_types.json',
-                       help='Predicate types JSON file (default: predicate_types.json)')
-    parser.add_argument('--output', default='create_class_tables.sql',
-                       help='Output SQL file for schema (default: create_class_tables.sql)')
-    parser.add_argument('--populate-output', default='populate_class_tables.sql',
-                       help='Output SQL file for population (default: populate_class_tables.sql)')
+                       help='Predicate types JSON file ')
+    parser.add_argument('--output', default='class_tables/create_class_tables.sql',
+                       help='Output SQL file for schema ')
+    parser.add_argument('--populate-output', default='class_tables/populate_class_tables.sql',
+                       help='Output SQL file for population')
+    parser.add_argument('--fk-output', default='class_tables/create_foreign_keys.sql',
+                       help='Output SQL file for foreign keys')
+    parser.add_argument('--index-output', default='class_tables/create_indexes.sql',
+                       help='Output SQL file for indexes')
     parser.add_argument('--min-coverage', type=float, default=0,
                        help='Minimum coverage percentage for predicates (default: 0)')
     parser.add_argument('--exclude-namespaces', default='',
                        help='Comma-separated list of namespaces to exclude (e.g., rdf,rdfs)')
-    parser.add_argument('--drop', action='store_true',
-                       help='Include DROP TABLE statements')
     parser.add_argument('--triples-table', default='rdf_triples',
                        help='Name of the triples table (default: rdf_triples)')
     parser.add_argument('--db', help='Execute SQL directly in database (requires connection params)')
@@ -841,12 +843,10 @@ Examples:
         schema_lines.append(f"-- Total tables: {len(table_names)}")
         schema_lines.append("")
 
-        # DROP statements if requested
-        if args.drop:
-            schema_lines.append("-- Drop existing tables")
-            for table_name in sorted(table_names.values()):
-                schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
-            schema_lines.append("")
+        schema_lines.append("-- Drop existing tables")
+        for table_name in sorted(table_names.values()):
+            schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+        schema_lines.append("")
 
         # CREATE TABLE statements
         schema_lines.append("-- " + "=" * 70)
@@ -871,24 +871,40 @@ Examples:
             schema_lines.append(create_sql)
             schema_lines.append("")
 
-        # FOREIGN KEY constraints
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- FOREIGN KEY CONSTRAINTS")
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("")
+        # Generate Foreign Key SQL
+        print(f"Generating foreign key SQL...")
+        fk_lines = []
+
+        # Header
+        fk_lines.append("-- Generated SQL for foreign key constraints")
+        fk_lines.append(f"-- Source: {args.input}")
+        fk_lines.append(f"-- Total tables: {len(table_names)}")
+        fk_lines.append("")
+        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("-- FOREIGN KEY CONSTRAINTS")
+        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("")
 
         for table_name, fks in sorted(fk_map.items()):
             if fks:
                 fk_sql = generate_foreign_key_sql(table_name, fks)
-                schema_lines.append(f"-- Foreign keys for {table_name}")
-                schema_lines.append(fk_sql)
-                schema_lines.append("")
+                fk_lines.append(f"-- Foreign keys for {table_name}")
+                fk_lines.append(fk_sql)
+                fk_lines.append("")
 
-        # INDEXES
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- INDEXES")
-        schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("")
+        # Generate Index SQL
+        print(f"Generating index SQL...")
+        index_lines = []
+
+        # Header
+        index_lines.append("-- Generated SQL for indexes")
+        index_lines.append(f"-- Source: {args.input}")
+        index_lines.append(f"-- Total tables: {len(table_names)}")
+        index_lines.append("")
+        index_lines.append("-- " + "=" * 70)
+        index_lines.append("-- INDEXES")
+        index_lines.append("-- " + "=" * 70)
+        index_lines.append("")
 
         for class_data in classes:
             table_name = table_names[class_data['class_uri']]
@@ -897,9 +913,9 @@ Examples:
 
             idx_sql = generate_indexes_sql(table_name, columns, fks)
             if idx_sql:
-                schema_lines.append(f"-- Indexes for {table_name}")
-                schema_lines.append(idx_sql)
-                schema_lines.append("")
+                index_lines.append(f"-- Indexes for {table_name}")
+                index_lines.append(idx_sql)
+                index_lines.append("")
 
         # Generate Population SQL
         print(f"Generating population SQL...")
@@ -946,9 +962,7 @@ Examples:
         schema_sql = '\n'.join(schema_lines)
         print(f"\nWriting schema SQL to {args.output}...")
         with open(args.output, 'w') as f:
-            f.write("BEGIN;")
             f.write(schema_sql)
-            f.write("COMMIT;")
         print(f"Schema SQL written to {args.output}")
 
         # Write population file
@@ -958,8 +972,24 @@ Examples:
             f.write(populate_sql)
         print(f"Population SQL written to {args.populate_output}")
 
+        # Write foreign key file
+        fk_sql = '\n'.join(fk_lines)
+        print(f"Writing foreign key SQL to {args.fk_output}...")
+        with open(args.fk_output, 'w') as f:
+            f.write(fk_sql)
+        print(f"Foreign key SQL written to {args.fk_output}")
+
+        # Write index file
+        index_sql = '\n'.join(index_lines)
+        print(f"Writing index SQL to {args.index_output}...")
+        with open(args.index_output, 'w') as f:
+            f.write(index_sql)
+        print(f"Index SQL written to {args.index_output}")
+
         print(f"\nSchema lines: {len(schema_lines)}")
         print(f"Population lines: {len(populate_lines)}")
+        print(f"Foreign key lines: {len(fk_lines)}")
+        print(f"Index lines: {len(index_lines)}")
 
         # Execute if requested
         if args.db or '--db' in sys.argv:
@@ -967,11 +997,10 @@ Examples:
             print("EXECUTING SQL IN DATABASE")
             print("=" * 80)
 
-            if args.drop:
-                response = input("WARNING: --drop specified. This will DELETE existing tables. Continue? (yes/no): ")
-                if response.lower() != 'yes':
-                    print("Aborted.")
-                    return 0
+            response = input("WARNING: --drop specified. This will DELETE existing tables. Continue? (yes/no): ")
+            if response.lower() != 'yes':
+                print("Aborted.")
+                return 0
 
             # Connect to database for execution
             print(f"Connecting to database at {args.host}:{args.port}...")
@@ -1015,7 +1044,33 @@ Examples:
                 print(f"\n  Tables populated successfully!")
                 conn.commit()
 
-                print("\nDone! All tables created and populated successfully!")
+                # Execute foreign key SQL
+                print("\nExecuting foreign key SQL...")
+                fk_statements = [s.strip() for s in fk_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(fk_statements)} statements to execute")
+
+                for i, statement in enumerate(fk_statements, 1):
+                    if statement:
+                        print(f"  [{i}/{len(fk_statements)}] Executing...", end='\r')
+                        cursor.execute(statement)
+
+                print(f"\n  Foreign keys created successfully!")
+                conn.commit()
+
+                # Execute index SQL
+                print("\nExecuting index SQL...")
+                index_statements = [s.strip() for s in index_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                print(f"  {len(index_statements)} statements to execute")
+
+                for i, statement in enumerate(index_statements, 1):
+                    if statement:
+                        print(f"  [{i}/{len(index_statements)}] Executing...", end='\r')
+                        cursor.execute(statement)
+
+                print(f"\n  Indexes created successfully!")
+                conn.commit()
+
+                print("\nDone! All tables created, populated, with foreign keys and indexes!")
 
             except Exception as e:
                 print(f"\nError executing SQL: {e}")

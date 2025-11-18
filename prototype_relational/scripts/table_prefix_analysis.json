@@ -1,0 +1,226 @@
+{
+  "timestamp": "2025-11-18T18:17:58.588756",
+  "total_tables_analyzed": 36,
+  "total_reference_prefixes": 40,
+  "tables": {
+    "ct_central_facilities": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/organizations/": 2
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_climate_zones": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 30
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_collections": {
+      "prefix_counts": {
+        "https://meta.icos-cp.eu/collections/": 778
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_data_acquisitions": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/acq_": 2341316
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_data_objects": {
+      "prefix_counts": {
+        "https://meta.icos-cp.eu/objects/": 2343960
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_data_productions": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/prod_": 1248434
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_data_submissions": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/subm_": 2344301
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_data_themes": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/themes": 4
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_dataset_columns": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 270
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_dataset_specs": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 45
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_dataset_variables": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 76
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_document_objects": {
+      "prefix_counts": {
+        "https://meta.icos-cp.eu/objects/": 341
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_ecosystem_types": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 17
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_funders": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/organizations/": 45
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_fundings": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/fundings/": 109
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_instruments": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/instruments/": 4825
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_link_boxes": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/icos/": 158
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_memberships": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/memberships/": 1881
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_object_encodings": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 3
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_object_formats": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 22
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_object_specs": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 110
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_organizations": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/organizations/": 256
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_persons": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/people/": 1124
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_plain_collections": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/nextvcoll_": 50
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_projects": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/projects": 12
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_quantity_kinds": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 21
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_roles": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/roles/": 5
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_sites": {
+      "prefix_counts": {},
+      "unknown_prefixes": 0
+    },
+    "ct_spatial_coverages": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/latlonboxes": 7,
+        "http://meta.icos-cp.eu/resources/position_": 4,
+        "http://meta.icos-cp.eu/resources/spcov_": 4156
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_specific_dataset_types": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 2
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_stations": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/icos/": 1,
+        "http://meta.icos-cp.eu/resources/stations/": 403,
+        "http://meta.icos-cp.eu/resources/wdcgg/": 224,
+        "http://meta.icos-cp.eu/resources/wdcgg/station/": 224
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_thematic_centers": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/organizations/": 3
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_value_formats": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/": 13
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_value_types": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/cpmeta/": 166
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_variable_infos": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/varinfo_": 4957
+      },
+      "unknown_prefixes": 0
+    },
+    "ct_webpage_elements": {
+      "prefix_counts": {
+        "http://meta.icos-cp.eu/resources/icos/": 28
+      },
+      "unknown_prefixes": 0
+    }
+  }
+}

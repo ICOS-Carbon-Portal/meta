@@ -589,12 +589,14 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
         select_lines.append("    subj AS id")
         select_lines.append(f"    , '{type_value}' AS {type_column}")
 
-        # For each column, use MAX(CASE...) to pivot the predicate values
+        # For each column, use appropriate aggregate function to pivot the predicate values
+        # Use BOOL_OR for boolean columns, MAX for others
         for col in columns:
             pred_uri = col['predicate_uri']
             col_type = col['type']
             cast_expr = _get_cast_expression(col_type)
-            select_lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+            agg_func = _get_aggregate_function(col_type)
+            select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
 
         select_lines.append(f"FROM {triples_table}")
         select_lines.append(f"WHERE subj IN (")
@@ -629,12 +631,14 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
     lines.append("SELECT")
     lines.append("    subj AS id")
 
-    # For each column, use MAX(CASE...) to pivot the predicate values
+    # For each column, use appropriate aggregate function to pivot the predicate values
+    # Use BOOL_OR for boolean columns, MAX for others
     for col in columns:
         pred_uri = col['predicate_uri']
         col_type = col['type']
         cast_expr = _get_cast_expression(col_type)
-        lines.append(f"    , MAX(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+        agg_func = _get_aggregate_function(col_type)
+        lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
 
     lines.append(f"FROM {triples_table}")
     lines.append(f"WHERE subj IN (")
@@ -664,6 +668,18 @@ def _get_cast_expression(col_type: str) -> str:
         return "CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END"
     else:
         return "obj"
+
+
+def _get_aggregate_function(col_type: str) -> str:
+    """Get the appropriate aggregate function for a column type
+
+    PostgreSQL doesn't have MAX() for boolean types, so we use BOOL_OR() instead.
+    BOOL_OR returns TRUE if any value is TRUE, which is equivalent to MAX for booleans.
+    """
+    if col_type == 'BOOLEAN':
+        return 'BOOL_OR'
+    else:
+        return 'MAX'
 
 
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],

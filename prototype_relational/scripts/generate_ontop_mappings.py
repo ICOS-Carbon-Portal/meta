@@ -11,15 +11,60 @@ import sys
 import re
 from collections import Counter
 from urllib.parse import urlparse
-from create_predicate_tables import sanitize_predicate, get_connection
 
-try:
-    from rdflib import Graph, Namespace, RDF, RDFS, OWL
-    HAS_RDFLIB = True
-except ImportError:
-    HAS_RDFLIB = False
-    print("Warning: rdflib not installed. Install with: pip install rdflib")
-    print("Falling back to heuristic-based object type detection.")
+def get_connection():
+    """Create and return a PostgreSQL database connection."""
+    try:
+        return psycopg2.connect(
+            host="localhost",
+            user="postgres",
+            port=5432,
+            password="ontop"
+        )
+    except psycopg2.Error as e:
+        print(f"Error connecting to database: {e}")
+        sys.exit(1)
+
+
+def sanitize_predicate(predicate):
+    """
+    Sanitize predicate URIs into valid PostgreSQL table names.
+    Includes the namespace prefix to prevent collisions.
+
+    Args:
+        predicate: URI string like 'http://example.com/ontology/hasName'
+
+    Returns:
+        Sanitized table name like 'prefix_hasname'
+    """
+    # Extract namespace and generate prefix
+    namespace = extract_namespace(predicate)
+    prefix = generate_prefix_name(namespace)
+
+    # Extract the last component (local name) after the last / or #
+    match = re.search(r'[/#]([^/#]+)$', predicate)
+    if match:
+        local_name = match.group(1)
+    else:
+        local_name = predicate
+
+    # Replace any non-alphanumeric characters with underscores
+    local_name = re.sub(r'[^a-zA-Z0-9_]', '_', local_name)
+
+    # Ensure local name doesn't start with a number
+    if local_name and local_name[0].isdigit():
+        local_name = f"pred_{local_name}"
+
+    # Convert to lowercase for consistency
+    local_name = local_name.lower()
+
+    # Combine prefix and local name
+    table_name = f"{prefix}_{local_name}"
+
+    return table_name
+
+
+from rdflib import Graph, Namespace, RDF, RDFS, OWL
 
 def extract_namespace(uri):
     """
@@ -32,7 +77,7 @@ def extract_namespace(uri):
     return uri
 
 
-def generate_prefix_name(namespace, existing_prefixes):
+def generate_prefix_name(namespace, existing_prefixes = {}):
     """
     Generate a short prefix name for a namespace.
     Tries to use common conventions or extracts from the URI.
@@ -150,7 +195,7 @@ def shorten_uri(uri, prefixes):
     return f"<{uri}>"
 
 
-def parse_ontology(ontology_path='ontop/cpmeta.ttl'):
+def parse_ontology(ontology_path='../ontop/cpmeta.ttl'):
     """
     Parse the ontology file to determine property types and ranges.
 
@@ -162,10 +207,6 @@ def parse_ontology(ontology_path='ontop/cpmeta.ttl'):
         Example: {uri: {'is_object': False, 'range': 'http://www.w3.org/2001/XMLSchema#long'}}
     """
     property_info = {}
-
-    if not HAS_RDFLIB:
-        print("Warning: Cannot parse ontology without rdflib. Using heuristics.")
-        return property_info
 
     if not os.path.exists(ontology_path):
         print(f"Warning: Ontology file not found at {ontology_path}. Using heuristics.")
@@ -323,7 +364,7 @@ source\t\tSELECT subj, obj FROM {table_name}
     return mapping
 
 
-def generate_mappings_file(conn, output_path, ontology_path='ontop/cpmeta.ttl'):
+def generate_mappings_file(conn, output_path, ontology_path='../ontop/cpmeta.ttl'):
     """
     Generate the complete Ontop mappings file.
 
@@ -496,14 +537,14 @@ Note:
     # Output file argument
     parser.add_argument(
         '-o', '--output',
-        default='ontop/generated_mappings.obda',
+        default='../ontop/generated_mappings.obda',
         help='Output mappings file path (default: generated_mappings.obda)'
     )
 
     # Ontology file argument
     parser.add_argument(
         '--ontology',
-        default='ontop/cpmeta.ttl',
+        default='../ontop/cpmeta.ttl',
         help='Path to ontology TTL file (default: ontop/cpmeta.ttl)'
     )
 

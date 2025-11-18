@@ -110,6 +110,22 @@ def load_predicate_types(json_path: str) -> Dict[str, str]:
     return type_map
 
 
+def load_prefix_analysis(json_path: str) -> Dict[str, Dict[str, int]]:
+    """
+    Load table prefix analysis from JSON
+
+    Returns: Dict[table_name] -> Dict[prefix_uri] -> count
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    prefix_map = {}
+    for table_name, table_info in data.get('tables', {}).items():
+        prefix_map[table_name] = table_info.get('prefix_counts', {})
+
+    return prefix_map
+
+
 def build_class_uri_map(classes: List[dict]) -> Dict[str, str]:
     """
     Build a mapping from class short names to full URIs
@@ -488,6 +504,8 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
 
     lines = [f"CREATE TABLE IF NOT EXISTS {table_name} ("]
     lines.append("    id TEXT PRIMARY KEY,")
+    lines.append("    rdf_subject TEXT NOT NULL UNIQUE,")
+    lines.append("    prefix TEXT NOT NULL,")
 
     # Add entity_type discriminator column for merged tables
     if merge_config:
@@ -502,9 +520,8 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
         col_type = 'TEXT' if col['name'] in fk_cols else col['type']
         lines.append(f"    {col['name']} {col_type},")
 
-    # Remove trailing comma from last column
-    if lines[-1].endswith(','):
-        lines[-1] = lines[-1][:-1]
+    # Add CHECK constraint: prefix || id = rdf_subject
+    lines.append("    CHECK (prefix || id = rdf_subject)")
 
     lines.append(");")
 
@@ -558,21 +575,28 @@ def generate_indexes_sql(table_name: str, columns: List[Dict],
 def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
                        rdf_type_uri: str, triples_table: str = 'rdf_triples',
                        merge_config: dict = None, merged_from: List[str] = None,
-                       class_uri_map: Dict[str, str] = None) -> str:
+                       class_uri_map: Dict[str, str] = None,
+                       prefix_map: Dict[str, Dict[str, int]] = None,
+                       fk_map: Dict[str, List[Tuple[str, str, str]]] = None) -> str:
     """
     Generate INSERT statement to populate table from rdf_triples
 
     Uses conditional aggregation (similar to PIVOT) to transform triples into rows.
     For merged tables, generates UNION of multiple queries (one per merged class).
     """
+    prefix_map = prefix_map or {}
+    fk_map = fk_map or {}
+
     if not merge_config or not merged_from:
         # Simple non-merged table
         return _generate_single_insert_sql(table_name, class_uri, columns,
-                                          rdf_type_uri, triples_table)
+                                          rdf_type_uri, triples_table,
+                                          prefix_map, fk_map)
 
     # Merged table - generate UNION of inserts for each merged class
     type_column = merge_config.get('type_column', 'entity_type')
     type_values = merge_config.get('type_values', {})
+    fk_cols = {fk[0]: fk[1] for fk in fk_map.get(table_name, [])}
 
     # Build a UNION query for all merged classes
     union_parts = []
@@ -586,7 +610,18 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
 
         # Build SELECT for this class
         select_lines = ["SELECT"]
-        select_lines.append("    subj AS id")
+
+        # Generate prefix extraction SQL with proper indentation
+        prefix_sql = _generate_prefix_extraction_sql(table_name, 'subj', prefix_map)
+        indented_prefix = '\n'.join('    ' + line if line.strip() else line
+                                    for line in prefix_sql.split('\n'))
+
+        # Generate suffix (id) extraction SQL
+        suffix_sql = _generate_suffix_extraction_sql('subj', f"({prefix_sql})")
+
+        select_lines.append(f"    {suffix_sql} AS id")
+        select_lines.append(f"    , subj AS rdf_subject")
+        select_lines.append(f"    , ({indented_prefix}) AS prefix")
         select_lines.append(f"    , '{type_value}' AS {type_column}")
 
         # For each column, use appropriate aggregate function to pivot the predicate values
@@ -594,9 +629,23 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
         for col in columns:
             pred_uri = col['predicate_uri']
             col_type = col['type']
-            cast_expr = _get_cast_expression(col_type)
-            agg_func = _get_aggregate_function(col_type)
-            select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+            col_name = col['name']
+
+            # Check if this column is a foreign key
+            if col_name in fk_cols:
+                # This is a foreign key - extract suffix from obj
+                ref_table = fk_cols[col_name]
+                # Generate prefix extraction for the referenced table
+                ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
+                # Generate suffix extraction
+                ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
+                agg_func = _get_aggregate_function(col_type)
+                select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
+            else:
+                # Regular column - use the value as-is
+                cast_expr = _get_cast_expression(col_type)
+                agg_func = _get_aggregate_function(col_type)
+                select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
         select_lines.append(f"FROM {triples_table}")
         select_lines.append(f"WHERE subj IN (")
@@ -608,7 +657,7 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
         union_parts.append('\n'.join(select_lines))
 
     # Combine with UNION ALL
-    lines = [f"INSERT INTO {table_name} (id, {type_column}"]
+    lines = [f"INSERT INTO {table_name} (id, rdf_subject, prefix, {type_column}"]
     for col in columns:
         lines.append(f", {col['name']}")
     lines.append(")")
@@ -619,9 +668,15 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
 
 
 def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
-                                rdf_type_uri: str, triples_table: str) -> str:
+                                rdf_type_uri: str, triples_table: str,
+                                prefix_map: Dict[str, Dict[str, int]] = None,
+                                fk_map: Dict[str, List[Tuple[str, str, str]]] = None) -> str:
     """Generate INSERT statement for a single non-merged table"""
-    lines = [f"INSERT INTO {table_name} (id"]
+    prefix_map = prefix_map or {}
+    fk_map = fk_map or {}
+    fk_cols = {fk[0]: fk[1] for fk in fk_map.get(table_name, [])}
+
+    lines = [f"INSERT INTO {table_name} (id, rdf_subject, prefix"]
 
     # Add column names
     for col in columns:
@@ -629,16 +684,42 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
 
     lines.append(")")
     lines.append("SELECT")
-    lines.append("    subj AS id")
+
+    # Generate prefix extraction SQL with proper indentation
+    prefix_sql = _generate_prefix_extraction_sql(table_name, 'subj', prefix_map)
+    # Add indentation to all lines of the CASE statement
+    indented_prefix = '\n'.join('    ' + line if line.strip() else line
+                                for line in prefix_sql.split('\n'))
+
+    # Generate suffix (id) extraction SQL
+    suffix_sql = _generate_suffix_extraction_sql('subj', f"({prefix_sql})")
+
+    lines.append(f"    {suffix_sql} AS id")
+    lines.append(f"    , subj AS rdf_subject")
+    lines.append(f"    , ({indented_prefix}) AS prefix")
 
     # For each column, use appropriate aggregate function to pivot the predicate values
     # Use BOOL_OR for boolean columns, MAX for others
     for col in columns:
         pred_uri = col['predicate_uri']
         col_type = col['type']
-        cast_expr = _get_cast_expression(col_type)
-        agg_func = _get_aggregate_function(col_type)
-        lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col['name']}")
+        col_name = col['name']
+
+        # Check if this column is a foreign key
+        if col_name in fk_cols:
+            # This is a foreign key - extract suffix from obj
+            ref_table = fk_cols[col_name]
+            # Generate prefix extraction for the referenced table
+            ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
+            # Generate suffix extraction
+            ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
+            agg_func = _get_aggregate_function(col_type)
+            lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
+        else:
+            # Regular column - use the value as-is
+            cast_expr = _get_cast_expression(col_type)
+            agg_func = _get_aggregate_function(col_type)
+            lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
     lines.append(f"FROM {triples_table}")
     lines.append(f"WHERE subj IN (")
@@ -680,6 +761,59 @@ def _get_aggregate_function(col_type: str) -> str:
         return 'BOOL_OR'
     else:
         return 'MAX'
+
+
+def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
+                                     prefix_map: Dict[str, Dict[str, int]]) -> str:
+    """
+    Generate SQL CASE statement to extract prefix from a URI
+
+    Args:
+        table_name: Name of the table to look up prefixes for
+        column_expr: SQL column expression containing the URI (e.g., 'subj' or 'obj')
+        prefix_map: Dictionary mapping table names to their prefix counts
+
+    Returns:
+        SQL CASE statement that returns the matching prefix
+    """
+    prefixes = prefix_map.get(table_name, {})
+
+    if not prefixes:
+        # No known prefixes - return empty string
+        return "''"
+
+    # Sort prefixes by length (descending) to match longest first
+    # This handles cases like 'http://example.com/foo/' and 'http://example.com/foo/bar/'
+    sorted_prefixes = sorted(prefixes.keys(), key=len, reverse=True)
+
+    # Build CASE statement
+    case_parts = ["CASE"]
+    for prefix in sorted_prefixes:
+        # Use LIKE for pattern matching - escape any SQL wildcards in the prefix
+        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
+        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN '{prefix}'")
+
+    # Default case - empty string if no prefix matches
+    case_parts.append("        ELSE ''")
+    case_parts.append("    END")
+
+    return '\n'.join(case_parts)
+
+
+def _generate_suffix_extraction_sql(column_expr: str, prefix_expr: str) -> str:
+    """
+    Generate SQL to extract suffix (ID) by removing prefix from URI
+
+    Args:
+        column_expr: SQL column expression containing the full URI
+        prefix_expr: SQL expression that evaluates to the prefix
+
+    Returns:
+        SQL expression that returns the suffix (URI with prefix removed)
+    """
+    # Use SUBSTRING to extract everything after the prefix
+    # SUBSTRING(string FROM position) - position is 1-indexed
+    return f"SUBSTRING({column_expr} FROM LENGTH({prefix_expr}) + 1)"
 
 
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],
@@ -799,6 +933,19 @@ Examples:
         return 1
     except Exception as e:
         print(f"Error loading predicate types: {e}")
+        return 1
+
+    # Load prefix analysis
+    print(f"\nLoading prefix analysis from table_prefix_analysis.json...")
+    try:
+        prefix_map = load_prefix_analysis('table_prefix_analysis.json')
+        print(f"Loaded prefix information for {len(prefix_map)} tables")
+    except FileNotFoundError:
+        print(f"Error: table_prefix_analysis.json not found!")
+        print(f"Prefix analysis file is required for extracting subject prefixes.")
+        return 1
+    except Exception as e:
+        print(f"Error loading prefix analysis: {e}")
         return 1
 
     try:
@@ -953,7 +1100,8 @@ Examples:
             insert_sql = generate_insert_sql(
                 table_name, class_data['class_uri'], columns,
                 rdf_type_uri, args.triples_table,
-                merge_config, merged_from, class_uri_map
+                merge_config, merged_from, class_uri_map,
+                prefix_map, fk_map
             )
             populate_lines.append(insert_sql)
             populate_lines.append("")
@@ -962,7 +1110,9 @@ Examples:
         schema_sql = '\n'.join(schema_lines)
         print(f"\nWriting schema SQL to {args.output}...")
         with open(args.output, 'w') as f:
+            f.write("BEGIN;")
             f.write(schema_sql)
+            f.write("COMMIT;")
         print(f"Schema SQL written to {args.output}")
 
         # Write population file

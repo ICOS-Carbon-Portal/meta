@@ -1,14 +1,8 @@
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix prov: <http://www.w3.org/ns/prov#>
 
-select ?obj ?name ?hasNumberOfRows ?hasSizeInBytes ?hasDoi ?hasKeyword
+select ?samplingHeight ?spec
   where{
-    ?obj cpmeta:hasObjectSpec ?spec .
-    ?obj cpmeta:hasName ?name .
-    ?obj cpmeta:hasSha256sum ?hash .
-    ?obj cpmeta:hasNumberOfRows ?hasNumberOfRows .
-    ?obj cpmeta:hasDoi ?hasDoi .
-    ?obj prov:wasProducedBy ?produced .
-    ?obj cpmeta:hasSizeInBytes ?hasSizeInBytes .
+    ?dobj cpmeta:hasObjectSpec ?spec .
+    ?dobj cpmeta:wasAcquiredBy/cpmeta:hasSamplingHeight ?samplingHeight .
   }
-  LIMIT 100000

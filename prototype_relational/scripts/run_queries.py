@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+import time
 
 def print_query(query, index):
     print(f"\n{'='*80}")
@@ -19,15 +20,20 @@ def run_query(query, host='http://localhost:65432/sparql'):
     }
 
     try:
+        start_time = time.time()
         response = requests.post(host, data=query, headers=headers)
+        elapsed_time = time.time() - start_time
+
+        print(response.text)
+
 
         # Check if the request was successful (status code 2xx)
         if response.status_code >= 200 and response.status_code < 300:
-            return True, response.text, None
+            return True, response.text, None, elapsed_time
         else:
-            return False, response.text, f"HTTP {response.status_code}"
+            return False, response.text, f"HTTP {response.status_code}", elapsed_time
     except Exception as e:
-        return False, "", str(e)
+        return False, "", str(e), 0
 
 
 def extract_queries(input_file):
@@ -82,11 +88,12 @@ def main(input_file, output_file):
         print_query(query, idx)
 
         rewritten_queries.append(f"Query #{idx}\n{'-'*80}\n{query}\n{'-'*80}\n")
-        success, response_text, error_msg = run_query(query)
+        success, response_text, error_msg, elapsed_time = run_query(query)
 
         # Print response length
         line_count = len(response_text.splitlines())
         print(f"Response: {line_count} lines, {len(response_text)} characters")
+        print(f"Query took {elapsed_time:.3f} seconds")
 
         # Track failures
         if not success:

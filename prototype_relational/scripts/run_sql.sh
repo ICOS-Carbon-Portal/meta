@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-PGPASSWORD=ontop psql --host localhost --port 5432 -U postgres -d postgres -a -f "$1"
+PGPASSWORD=ontop psql --host localhost --port 5432 -U postgres -v ON_ERROR_STOP=on -d postgres -a -f "$1"

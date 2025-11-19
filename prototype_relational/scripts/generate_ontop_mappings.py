@@ -453,6 +453,10 @@ def _generate_mappings_for_prefix(
         if not pred_uri or not pred_short:
             continue
 
+        # Skip rdf:type predicate
+        if pred_uri == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
+            continue
+
         # Convert predicate to column name
         column_name = sanitize_column_name(pred_short)
 

@@ -23,8 +23,10 @@ NS = {
     'cpmeta': 'http://meta.icos-cp.eu/ontologies/cpmeta/',
     'prov': 'http://www.w3.org/ns/prov#',
     'purl': 'http://purl.org/dc/terms/',
-    'dcat': 'http://www.w3.org/ns/prov#',
-    'wdcgg': 'http://meta.icos-cp.eu/resources/wdcgg/'
+    'dcat': 'http://www.w3.org/ns/dcat#',
+    'skos': 'http://www.w3.org/2004/02/skos/core#',
+    'wdcgg': 'http://meta.icos-cp.eu/resources/wdcgg/',
+    'ssn': 'http://www.w3.org/ns/ssn/'
 }
 
 

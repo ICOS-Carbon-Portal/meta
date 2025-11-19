@@ -272,24 +272,44 @@ def sanitize_column_name(pred_short: str) -> str:
     Note: % is replaced with _ literally (e.g., %20 -> _20_), not URL-decoded,
     to match the database column naming convention.
     """
-    # If it's a full URI, extract just the local name
-    if pred_short.startswith('http://') or pred_short.startswith('https://'):
-        # Get local name after last # or /
-        if '#' in pred_short:
-            pred_short = pred_short.rsplit('#', 1)[1]
-        elif '/' in pred_short:
-            pred_short = pred_short.rsplit('/', 1)[1]
-    # If it's a prefixed name, remove namespace prefix
-    elif ':' in pred_short:
-        pred_short = pred_short.split(':', 1)[1]
+    # Remove namespace prefix if using colon notation
+    if ':' in pred_short:
+        namespace, name = pred_short.split(':', 1)
+    else:
+        # For full URIs without namespace prefix, use the ENTIRE URL path
+        # This handles cases like http://www.w3.org/ns/ssn/hasDeployment
+        # which should become www_w3_org_ns_ssn_has_deployment
+        if pred_short.startswith('http://') or pred_short.startswith('https://'):
+            # Remove protocol
+            name = pred_short.replace('http://', '').replace('https://', '')
+        else:
+            # Fallback: extract local name
+            name = pred_short.split('/')[-1].split('#')[-1]
+        namespace = ''
 
-    # Replace % with _ (e.g., %20 becomes _20_, %2F becomes _2f_)
-    pred_short = pred_short.replace('%', '_')
+    # Replace % with _ (e.g., %20 becomes _20_)
+    name = name.replace('%', '_')
 
-    # Convert to snake_case
-    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', pred_short)
+    # Convert CamelCase to snake_case
+    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', name)
-    return name.lower()
+    name = name.lower()
+
+    # Clean up: replace all non-alphanumeric with underscores
+    name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+    name = re.sub(r'_+', '_', name)
+    name = name.strip('_')
+
+    # Ensure doesn't start with digit
+    if name and name[0].isdigit():
+        name = f"col_{name}"
+
+    # Ensure it's not a reserved word
+    reserved_words = {'user', 'table', 'select', 'insert', 'update', 'delete', 'from', 'where', 'group', 'order', 'type'}
+    if name in reserved_words:
+        name = f"{name}_value"
+
+    return name
 
 
 def get_xsd_type(sql_type: str) -> Optional[str]:

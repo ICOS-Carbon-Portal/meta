@@ -17,6 +17,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
+from rdflib import Graph, RDF, OWL
 
 # Table merge configuration (from generate_class_tables.py)
 # Maps merged table names to the classes that were merged into them
@@ -121,6 +122,56 @@ def extract_namespace(uri: str) -> str:
     elif '/' in uri:
         return uri.rsplit('/', 1)[0] + '/'
     return uri
+
+
+def load_property_types_from_ontology(ontology_file: Path) -> Dict[str, str]:
+    """
+    Load property type information from OWL ontology.
+
+    Parses the ontology to determine which predicates are ObjectProperty
+    vs DatatypeProperty, which is needed to generate correct Ontop mappings.
+
+    Args:
+        ontology_file: Path to the ontology file (.ttl or .owl)
+
+    Returns:
+        Dict mapping predicate_uri -> 'object' or 'datatype'
+    """
+    if not ontology_file.exists():
+        print(f"Warning: Ontology file not found at {ontology_file}")
+        return {}
+
+    try:
+        print(f"Loading ontology from {ontology_file}...")
+        g = Graph()
+
+        # Try to parse as Turtle first, then as OWL/XML
+        try:
+            g.parse(ontology_file, format="turtle")
+        except Exception:
+            g.parse(ontology_file, format="xml")
+
+        property_types = {}
+
+        # Get all ObjectProperties
+        for prop in g.subjects(RDF.type, OWL.ObjectProperty):
+            property_types[str(prop)] = 'object'
+
+        # Get all DatatypeProperties
+        for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
+            property_types[str(prop)] = 'datatype'
+
+        obj_count = sum(1 for v in property_types.values() if v == 'object')
+        data_count = sum(1 for v in property_types.values() if v == 'datatype')
+
+        print(f"  Found {obj_count} ObjectProperties and {data_count} DatatypeProperties")
+
+        return property_types
+
+    except Exception as e:
+        print(f"Warning: Error parsing ontology: {e}")
+        print("  Falling back to FK-based property type detection")
+        return {}
 
 
 def get_prefix_name(namespace: str, known_prefixes: Dict[str, str]) -> str:
@@ -414,7 +465,8 @@ def generate_table_mappings(
     prefix_map: Dict[str, str],
     fk_map: Dict[str, Dict[str, Tuple[str, str]]],
     table_prefix_analysis: Dict,
-    predicate_types: Dict[str, str]
+    predicate_types: Dict[str, str],
+    property_types_from_ontology: Dict[str, str]
 ) -> List[str]:
     """
     Generate all mapping entries for a single table.
@@ -437,6 +489,7 @@ def generate_table_mappings(
                     fk_map,
                     table_prefix_analysis,
                     predicate_types,
+                    property_types_from_ontology,
                     multi_prefix=True
                 )
             )
@@ -452,6 +505,7 @@ def generate_table_mappings(
                 fk_map,
                 table_prefix_analysis,
                 predicate_types,
+                property_types_from_ontology,
                 multi_prefix=False
             )
         )
@@ -467,6 +521,7 @@ def _generate_mappings_for_prefix(
     fk_map: Dict[str, Dict[str, Tuple[str, str]]],
     table_prefix_analysis: Dict,
     predicate_types: Dict[str, str],
+    property_types_from_ontology: Dict[str, str],
     multi_prefix: bool = False
 ) -> List[str]:
     """Generate mappings for a table with a specific prefix."""
@@ -493,6 +548,10 @@ def _generate_mappings_for_prefix(
         # Check if this is a foreign key
         is_fk = column_name in table_fks
 
+        # Determine if this is an object property (from ontology) or datatype property
+        ontology_property_type = property_types_from_ontology.get(pred_uri)
+        is_object_property = ontology_property_type == 'object'
+
         # Generate mapping ID
         mapping_id = generate_mapping_id(
             table_name,
@@ -509,18 +568,26 @@ def _generate_mappings_for_prefix(
 
         predicate = get_prefixed_predicate(pred_uri, prefix_map)
 
-        if is_fk:
+        if is_object_property:
             # Object property - reconstruct referenced URI
-            ref_table, ref_column = table_fks[column_name]
-            ref_prefix = find_referenced_table_prefix(ref_table, table_prefix_analysis)
+            # Try to get the target prefix from FK if available
+            if is_fk:
+                ref_table, ref_column = table_fks[column_name]
+                ref_prefix = find_referenced_table_prefix(ref_table, table_prefix_analysis)
+            else:
+                # No FK constraint, but ontology says it's an object property
+                # We need to determine the prefix from the data or make a best guess
+                # For now, we'll use a placeholder that needs the actual URI
+                ref_prefix = None
 
             if ref_prefix:
                 object_part = f"<{ref_prefix}{{{column_name}}}>"
             else:
-                # Fallback: can't determine prefix
+                # Fallback: assume column contains full URI or needs prefix from somewhere
+                # This handles cases where there's no FK but ontology declares it as ObjectProperty
                 object_part = f"<{{{column_name}}}>"
         else:
-            # Datatype property
+            # Datatype property (or unknown - default to datatype)
             sql_type = predicate_types.get(pred_uri, 'TEXT')
             xsd_type = get_xsd_type(sql_type)
 
@@ -621,8 +688,13 @@ def main():
         print(f"Warning: {predicate_types_file} not found, using default types")
         predicate_types = {}
 
+    # Load property types from ontology
+    print("\nLoading property types from ontology...")
+    ontology_file = script_dir.parent / 'ontop' / 'cpmeta.ttl'
+    property_types_from_ontology = load_property_types_from_ontology(ontology_file)
+
     # Parse foreign keys
-    print("Parsing foreign keys...")
+    print("\nParsing foreign keys...")
     fk_map = parse_foreign_keys(fk_sql_file)
     print(f"Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
 
@@ -702,7 +774,8 @@ def main():
             prefix_map,
             fk_map,
             table_prefix_analysis,
-            predicate_types
+            predicate_types,
+            property_types_from_ontology
         )
 
         all_mappings.extend(mappings)

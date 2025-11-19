@@ -90,8 +90,8 @@ def parse_foreign_keys(sql_file: Path) -> Dict[str, Dict[str, Tuple[str, str]]]:
 
     content = sql_file.read_text()
 
-    # Pattern: ALTER TABLE table_name ADD FOREIGN KEY (column) REFERENCES ref_table(ref_column);
-    pattern = r'ALTER\s+TABLE\s+(\w+)\s+ADD\s+FOREIGN\s+KEY\s*\((\w+)\)\s+REFERENCES\s+(\w+)\s*\((\w+)\)'
+    # Pattern: ALTER TABLE table_name ADD [CONSTRAINT name] FOREIGN KEY (column) REFERENCES ref_table(ref_column);
+    pattern = r'ALTER\s+TABLE\s+(\w+)\s+ADD\s+(?:CONSTRAINT\s+\w+\s+)?FOREIGN\s+KEY\s*\((\w+)\)\s+REFERENCES\s+(\w+)\s*\((\w+)\)'
 
     for match in re.finditer(pattern, content, re.IGNORECASE):
         table_name = match.group(1)
@@ -450,7 +450,14 @@ def main():
 
     if predicate_types_file.exists():
         with open(predicate_types_file) as f:
-            predicate_types = json.load(f)
+            predicate_types_data = json.load(f)
+            # Extract the types dict from the structure
+            predicate_types = {}
+            if 'types' in predicate_types_data:
+                for pred_uri, info in predicate_types_data['types'].items():
+                    predicate_types[pred_uri] = info.get('postgresql_type', 'TEXT')
+            else:
+                predicate_types = predicate_types_data
     else:
         print(f"Warning: {predicate_types_file} not found, using default types")
         predicate_types = {}

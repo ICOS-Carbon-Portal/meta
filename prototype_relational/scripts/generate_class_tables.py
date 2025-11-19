@@ -20,6 +20,8 @@ from collections import defaultdict
 from typing import Dict, Set, List, Tuple, Optional
 import psycopg2
 from psycopg2 import sql
+from rdflib import Graph, URIRef, Namespace
+from rdflib.namespace import OWL, RDF, RDFS
 
 
 # Namespace definitions for shortening
@@ -31,6 +33,7 @@ NS = {
     'prov': 'http://www.w3.org/ns/prov#',
     'purl': 'http://purl.org/dc/terms/',
     'dcat': 'http://www.w3.org/ns/prov#',
+    'ssn':	'http://www.w3.org/ns/ssn/'
 }
 
 
@@ -86,6 +89,45 @@ MERGE_GROUPS = {
         }
     }
 }
+
+
+def detect_functional_properties(ontology_path: str) -> Tuple[Set[str], Set[str]]:
+    """
+    Parse the ontology to detect functional vs non-functional properties
+
+    Args:
+        ontology_path: Path to the ontology file (TTL format)
+
+    Returns:
+        Tuple of (functional_properties, non_functional_properties)
+        Both are sets of predicate URIs
+    """
+    print(f"Loading ontology from {ontology_path}...")
+    g = Graph()
+    g.parse(ontology_path, format='turtle')
+
+    functional_properties = set()
+    all_properties = set()
+
+    # Find all functional properties
+    for prop in g.subjects(RDF.type, OWL.FunctionalProperty):
+        functional_properties.add(str(prop))
+        all_properties.add(str(prop))
+
+    # Find all properties (object and datatype properties)
+    for prop in g.subjects(RDF.type, OWL.ObjectProperty):
+        all_properties.add(str(prop))
+
+    for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
+        all_properties.add(str(prop))
+
+    # Non-functional properties are those that are properties but not functional
+    non_functional_properties = all_properties - functional_properties
+
+    print(f"  Found {len(functional_properties)} functional properties")
+    print(f"  Found {len(non_functional_properties)} non-functional properties")
+
+    return functional_properties, non_functional_properties
 
 
 def load_analysis_json(json_path: str) -> dict:
@@ -374,20 +416,26 @@ def sanitize_column_name(predicate_short: str) -> str:
 
 def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
                          min_coverage: float = 0,
-                         exclude_namespaces: Set[str] = None) -> List[Dict]:
+                         exclude_namespaces: Set[str] = None,
+                         functional_properties: Set[str] = None) -> List[Dict]:
     """
     Get list of columns to create for a class based on its predicates
+
+    Only includes functional properties (single-valued). Non-functional properties
+    will be handled via junction tables.
 
     Args:
         class_data: Class information from analysis JSON
         type_map: Dict mapping predicate URIs to PostgreSQL types
         min_coverage: Minimum coverage percentage to include predicate
         exclude_namespaces: Set of namespace prefixes to exclude
+        functional_properties: Set of predicate URIs that are functional (optional)
 
     Returns: List of dicts with keys: name, type, predicate_uri, coverage
     """
     columns = []
     exclude_namespaces = exclude_namespaces or set()
+    functional_properties = functional_properties or set()
 
     for pred_info in class_data.get('predicates', []):
         # Skip if below coverage threshold
@@ -400,6 +448,10 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
 
         # Skip rdf:type as it's redundant (we know the class)
         if pred_info['predicate_short'] == 'rdf:type':
+            continue
+
+        # Skip non-functional properties (they'll get junction tables)
+        if functional_properties and pred_info['predicate_uri'] not in functional_properties:
             continue
 
         col_name = sanitize_column_name(pred_info['predicate_short'])
@@ -416,6 +468,132 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         })
 
     return columns
+
+
+def get_junction_table_predicates(class_data: dict, type_map: Dict[str, str],
+                                  min_coverage: float = 0,
+                                  exclude_namespaces: Set[str] = None,
+                                  non_functional_properties: Set[str] = None,
+                                  fk_map: Dict[str, List[Tuple[str, str, str]]] = None) -> List[Dict]:
+    """
+    Get list of predicates that need junction tables (non-functional properties)
+
+    Args:
+        class_data: Class information from analysis JSON
+        type_map: Dict mapping predicate URIs to PostgreSQL types
+        min_coverage: Minimum coverage percentage to include predicate
+        exclude_namespaces: Set of namespace prefixes to exclude
+        non_functional_properties: Set of predicate URIs that are non-functional
+        fk_map: Foreign key map to determine if predicate is an object property
+
+    Returns: List of dicts with keys: name, type, predicate_uri, is_object_property, ref_table
+    """
+    junction_predicates = []
+    exclude_namespaces = exclude_namespaces or set()
+    non_functional_properties = non_functional_properties or set()
+    fk_map = fk_map or {}
+
+    # Get table name for this class to look up foreign keys
+    table_name = sanitize_table_name(class_data['class_name'])
+    fk_cols = {fk[0]: fk[1] for fk in fk_map.get(table_name, [])}
+
+    for pred_info in class_data.get('predicates', []):
+        # Skip if below coverage threshold
+        if pred_info['coverage_percentage'] < min_coverage:
+            continue
+
+        # Skip excluded namespaces
+        if pred_info['namespace'] in exclude_namespaces:
+            continue
+
+        # Skip rdf:type
+        if pred_info['predicate_short'] == 'rdf:type':
+            continue
+
+        # Only include non-functional properties
+        if pred_info['predicate_uri'] not in non_functional_properties:
+            continue
+
+        col_name = sanitize_column_name(pred_info['predicate_short'])
+        col_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
+
+        # Check if this is an object property (foreign key)
+        is_object_property = col_name in fk_cols
+        ref_table = fk_cols.get(col_name) if is_object_property else None
+
+        junction_predicates.append({
+            'name': col_name,
+            'type': col_type,
+            'predicate_uri': pred_info['predicate_uri'],
+            'predicate_short': pred_info['predicate_short'],
+            'coverage': pred_info['coverage_percentage'],
+            'is_object_property': is_object_property,
+            'ref_table': ref_table
+        })
+
+    return junction_predicates
+
+
+def generate_junction_table_sql(base_table: str, predicate_info: Dict) -> str:
+    """
+    Generate CREATE TABLE statement for a junction table
+
+    Args:
+        base_table: Name of the base class table
+        predicate_info: Dict with predicate information (from get_junction_table_predicates)
+
+    Returns:
+        SQL CREATE TABLE statement
+    """
+    junction_table = f"{base_table}__{predicate_info['name']}"
+
+    lines = [f"CREATE TABLE IF NOT EXISTS {junction_table} ("]
+    lines.append("    id SERIAL PRIMARY KEY,")
+    lines.append(f"    {base_table}_id TEXT NOT NULL,")
+
+    # Determine value column type and constraints
+    if predicate_info['is_object_property']:
+        # Object property - foreign key to referenced table
+        ref_table = predicate_info['ref_table']
+        lines.append(f"    value_id TEXT NOT NULL,")
+        lines.append(f"    FOREIGN KEY ({base_table}_id) REFERENCES {base_table}(id) ON DELETE CASCADE,")
+        lines.append(f"    FOREIGN KEY (value_id) REFERENCES {ref_table}(id) ON DELETE CASCADE,")
+        lines.append(f"    UNIQUE({base_table}_id, value_id)")
+    else:
+        # Data property - direct value
+        value_type = predicate_info['type']
+        lines.append(f"    value {value_type},")
+        lines.append(f"    FOREIGN KEY ({base_table}_id) REFERENCES {base_table}(id) ON DELETE CASCADE")
+
+    lines.append(");")
+
+    return '\n'.join(lines)
+
+
+def generate_junction_table_indexes(base_table: str, predicate_info: Dict) -> str:
+    """
+    Generate indexes for a junction table
+
+    Args:
+        base_table: Name of the base class table
+        predicate_info: Dict with predicate information
+
+    Returns:
+        SQL CREATE INDEX statements
+    """
+    junction_table = f"{base_table}__{predicate_info['name']}"
+    lines = []
+
+    # Index on base table foreign key
+    idx_name = f"idx_{junction_table}_{base_table}_id"
+    lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {junction_table}({base_table}_id);")
+
+    # Index on value if it's an object property
+    if predicate_info['is_object_property']:
+        idx_name = f"idx_{junction_table}_value_id"
+        lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {junction_table}(value_id);")
+
+    return '\n'.join(lines)
 
 
 def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str, str]]]:
@@ -816,6 +994,112 @@ def _generate_suffix_extraction_sql(column_expr: str, prefix_expr: str) -> str:
     return f"SUBSTRING({column_expr} FROM LENGTH({prefix_expr}) + 1)"
 
 
+def generate_junction_table_insert(base_table: str, class_uri: str, predicate_info: Dict,
+                                   rdf_type_uri: str, triples_table: str = 'rdf_triples',
+                                   prefix_map: Dict[str, Dict[str, int]] = None,
+                                   merge_config: dict = None, merged_from: List[str] = None,
+                                   class_uri_map: Dict[str, str] = None) -> str:
+    """
+    Generate INSERT statement to populate a junction table from rdf_triples
+
+    Args:
+        base_table: Name of the base class table
+        class_uri: URI of the class
+        predicate_info: Dict with predicate information
+        rdf_type_uri: URI for rdf:type
+        triples_table: Name of the triples table
+        prefix_map: Prefix mappings for extracting IDs
+        merge_config: Merge configuration if this is a union table
+        merged_from: List of class names that were merged
+        class_uri_map: Mapping from class names to URIs
+
+    Returns:
+        SQL INSERT statement
+    """
+    junction_table = f"{base_table}__{predicate_info['name']}"
+    pred_uri = predicate_info['predicate_uri']
+    prefix_map = prefix_map or {}
+
+    # Generate prefix extraction SQL for the base table
+    base_prefix_sql = _generate_prefix_extraction_sql(base_table, 'subj', prefix_map)
+    base_suffix_sql = _generate_suffix_extraction_sql('subj', f"({base_prefix_sql})")
+
+    if predicate_info['is_object_property']:
+        # Object property - extract ID from object URI
+        ref_table = predicate_info['ref_table']
+        ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
+        ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
+
+        if merge_config and merged_from:
+            # Merged table - UNION queries for each class
+            union_parts = []
+            for class_name in merged_from:
+                if class_name not in class_uri_map:
+                    continue
+                cls_uri = class_uri_map[class_name]
+
+                union_parts.append(f"""SELECT
+    {base_suffix_sql} AS {base_table}_id,
+    {ref_suffix_sql} AS value_id
+FROM {triples_table}
+WHERE pred = '{pred_uri}'
+    AND subj IN (
+        SELECT subj FROM {triples_table}
+        WHERE pred = '{rdf_type_uri}' AND obj = '{cls_uri}'
+    )""")
+
+            return f"""INSERT INTO {junction_table} ({base_table}_id, value_id)
+{chr(10) + 'UNION ALL' + chr(10).join(union_parts)};"""
+        else:
+            # Simple non-merged table
+            return f"""INSERT INTO {junction_table} ({base_table}_id, value_id)
+SELECT
+    {base_suffix_sql} AS {base_table}_id,
+    {ref_suffix_sql} AS value_id
+FROM {triples_table}
+WHERE pred = '{pred_uri}'
+    AND subj IN (
+        SELECT subj FROM {triples_table}
+        WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'
+    );"""
+    else:
+        # Data property - use object value directly
+        cast_expr = _get_cast_expression(predicate_info['type'])
+
+        if merge_config and merged_from:
+            # Merged table - UNION queries for each class
+            union_parts = []
+            for class_name in merged_from:
+                if class_name not in class_uri_map:
+                    continue
+                cls_uri = class_uri_map[class_name]
+
+                union_parts.append(f"""SELECT
+    {base_suffix_sql} AS {base_table}_id,
+    {cast_expr} AS value
+FROM {triples_table}
+WHERE pred = '{pred_uri}'
+    AND subj IN (
+        SELECT subj FROM {triples_table}
+        WHERE pred = '{rdf_type_uri}' AND obj = '{cls_uri}'
+    )""")
+
+            return f"""INSERT INTO {junction_table} ({base_table}_id, value)
+{chr(10) + 'UNION ALL' + chr(10).join(union_parts)};"""
+        else:
+            # Simple non-merged table
+            return f"""INSERT INTO {junction_table} ({base_table}_id, value)
+SELECT
+    {base_suffix_sql} AS {base_table}_id,
+    {cast_expr} AS value
+FROM {triples_table}
+WHERE pred = '{pred_uri}'
+    AND subj IN (
+        SELECT subj FROM {triples_table}
+        WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'
+    );"""
+
+
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],
                  columns_map: Dict[str, List[Dict]], fk_map: Dict[str, List]):
     """Print summary of tables to be created"""
@@ -872,6 +1156,8 @@ Examples:
                        help='Input JSON file')
     parser.add_argument('--types-json', default='predicate_types.json',
                        help='Predicate types JSON file ')
+    parser.add_argument('--ontology', default='../ontop/cpmeta.ttl',
+                       help='Ontology file for detecting functional properties')
     parser.add_argument('--output', default='class_tables/create_class_tables.sql',
                        help='Output SQL file for schema ')
     parser.add_argument('--populate-output', default='class_tables/populate_class_tables.sql',
@@ -948,6 +1234,18 @@ Examples:
         print(f"Error loading prefix analysis: {e}")
         return 1
 
+    # Detect functional vs non-functional properties from ontology
+    print(f"\nAnalyzing ontology for functional properties...")
+    try:
+        functional_properties, non_functional_properties = detect_functional_properties(args.ontology)
+    except FileNotFoundError:
+        print(f"Error: {args.ontology} not found!")
+        print(f"Ontology file is required for detecting functional properties.")
+        return 1
+    except Exception as e:
+        print(f"Error analyzing ontology: {e}")
+        return 1
+
     try:
         rdf_type_uri = f"{NS['rdf']}type"
 
@@ -957,7 +1255,12 @@ Examples:
             table_name = sanitize_table_name(class_data['class_name'])
             table_names[class_data['class_uri']] = table_name
 
-        # Build columns for each table
+        # Build foreign key map first (needed for junction table detection)
+        print("\nBuilding foreign key relationships...")
+        fk_map = build_foreign_key_map(classes)
+        print(f"  Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
+
+        # Build columns for each table (only functional properties)
         print("\nBuilding table schemas...")
         columns_map = {}
         for i, class_data in enumerate(classes, 1):
@@ -966,16 +1269,30 @@ Examples:
 
             columns = get_predicate_columns(
                 class_data, type_map,
-                args.min_coverage, exclude_namespaces
+                args.min_coverage, exclude_namespaces,
+                functional_properties
             )
             columns_map[table_name] = columns
 
         print(f"\n  Built schemas for {len(classes)} classes")
 
-        # Build foreign key map
-        print("\nBuilding foreign key relationships...")
-        fk_map = build_foreign_key_map(classes)
-        print(f"  Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
+        # Build junction table predicates (non-functional properties)
+        print("\nBuilding junction table schemas...")
+        junction_map = {}
+        for i, class_data in enumerate(classes, 1):
+            table_name = table_names[class_data['class_uri']]
+            print(f"  [{i}/{len(classes)}] {table_name}...", end='\r')
+
+            junction_predicates = get_junction_table_predicates(
+                class_data, type_map,
+                args.min_coverage, exclude_namespaces,
+                non_functional_properties, fk_map
+            )
+            if junction_predicates:
+                junction_map[table_name] = junction_predicates
+
+        total_junction_tables = sum(len(preds) for preds in junction_map.values())
+        print(f"\n  Found {total_junction_tables} junction tables needed for non-functional properties")
 
         # Print summary
         print_summary(classes, table_names, columns_map, fk_map)
@@ -1017,6 +1334,27 @@ Examples:
             create_sql = generate_create_table_sql(table_name, columns, fks, merge_config)
             schema_lines.append(create_sql)
             schema_lines.append("")
+
+        # CREATE JUNCTION TABLE statements
+        if junction_map:
+            schema_lines.append("-- " + "=" * 70)
+            schema_lines.append("-- CREATE JUNCTION TABLES (for multi-valued properties)")
+            schema_lines.append("-- " + "=" * 70)
+            schema_lines.append("")
+
+            for table_name, junction_predicates in sorted(junction_map.items()):
+                for pred_info in junction_predicates:
+                    junction_table = f"{table_name}__{pred_info['name']}"
+                    schema_lines.append(f"-- Junction table: {junction_table}")
+                    schema_lines.append(f"-- Base table: {table_name}")
+                    schema_lines.append(f"-- Predicate: {pred_info['predicate_short']}")
+                    if pred_info['is_object_property']:
+                        schema_lines.append(f"-- References: {pred_info['ref_table']}")
+                    schema_lines.append("")
+
+                    junction_sql = generate_junction_table_sql(table_name, pred_info)
+                    schema_lines.append(junction_sql)
+                    schema_lines.append("")
 
         # Generate Foreign Key SQL
         print(f"Generating foreign key SQL...")
@@ -1064,6 +1402,22 @@ Examples:
                 index_lines.append(idx_sql)
                 index_lines.append("")
 
+        # Junction table indexes
+        if junction_map:
+            index_lines.append("-- " + "=" * 70)
+            index_lines.append("-- JUNCTION TABLE INDEXES")
+            index_lines.append("-- " + "=" * 70)
+            index_lines.append("")
+
+            for table_name, junction_predicates in sorted(junction_map.items()):
+                for pred_info in junction_predicates:
+                    junction_table = f"{table_name}__{pred_info['name']}"
+                    idx_sql = generate_junction_table_indexes(table_name, pred_info)
+                    if idx_sql:
+                        index_lines.append(f"-- Indexes for {junction_table}")
+                        index_lines.append(idx_sql)
+                        index_lines.append("")
+
         # Generate Population SQL
         print(f"Generating population SQL...")
         populate_lines = []
@@ -1105,6 +1459,38 @@ Examples:
             )
             populate_lines.append(insert_sql)
             populate_lines.append("")
+
+        # Junction table population
+        if junction_map:
+            populate_lines.append("-- " + "=" * 70)
+            populate_lines.append("-- POPULATE JUNCTION TABLES")
+            populate_lines.append("-- " + "=" * 70)
+            populate_lines.append("")
+
+            for class_data in classes:
+                table_name = table_names[class_data['class_uri']]
+                junction_predicates = junction_map.get(table_name, [])
+
+                if not junction_predicates:
+                    continue
+
+                merge_config = class_data.get('merge_config')
+                merged_from = class_data.get('merged_from', [])
+
+                for pred_info in junction_predicates:
+                    junction_table = f"{table_name}__{pred_info['name']}"
+                    populate_lines.append(f"-- Populate {junction_table}")
+                    populate_lines.append(f"-- Base table: {table_name}")
+                    populate_lines.append(f"-- Predicate: {pred_info['predicate_short']}")
+                    populate_lines.append("")
+
+                    insert_sql = generate_junction_table_insert(
+                        table_name, class_data['class_uri'], pred_info,
+                        rdf_type_uri, args.triples_table,
+                        prefix_map, merge_config, merged_from, class_uri_map
+                    )
+                    populate_lines.append(insert_sql)
+                    populate_lines.append("")
 
         # Write schema file
         schema_sql = '\n'.join(schema_lines)

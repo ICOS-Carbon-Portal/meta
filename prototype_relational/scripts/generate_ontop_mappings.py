@@ -27,6 +27,7 @@ MERGE_GROUPS = {
     'ct_organizations': ['cpmeta:Organization', 'cpmeta:TC', 'cpmeta:Facility'],
     'ct_stations': ['cpmeta:Station', 'cpmeta:AS', 'cpmeta:ES', 'cpmeta:OS',
                     'cpmeta:SailDrone', 'cpmeta:IngosStation', 'cpmeta:AtmoStation'],
+    'ct_dataset_specs': ['cpmeta:DatasetSpec', 'cpmeta:TabularDatasetSpec'],
 }
 
 

@@ -18,6 +18,16 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
 
+# Table merge configuration (from generate_class_tables.py)
+# Maps merged table names to the classes that were merged into them
+MERGE_GROUPS = {
+    'ct_object_specs': ['cpmeta:SimpleObjectSpec', 'cpmeta:DataObjectSpec'],
+    'ct_spatial_coverages': ['cpmeta:SpatialCoverage', 'cpmeta:LatLonBox', 'cpmeta:Position'],
+    'ct_organizations': ['cpmeta:Organization', 'cpmeta:TC', 'cpmeta:Facility'],
+    'ct_stations': ['cpmeta:Station', 'cpmeta:AS', 'cpmeta:ES', 'cpmeta:OS',
+                    'cpmeta:SailDrone', 'cpmeta:IngosStation', 'cpmeta:AtmoStation'],
+}
+
 
 def sanitize_table_name(class_name: str) -> str:
     """
@@ -115,12 +125,31 @@ def extract_namespace(uri: str) -> str:
 
 def get_prefix_name(namespace: str, known_prefixes: Dict[str, str]) -> str:
     """Get or generate a prefix name for a namespace."""
+    # Well-known namespace mappings
+    WELL_KNOWN_NAMESPACES = {
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+        'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+        'http://www.w3.org/2002/07/owl#': 'owl',
+        'http://www.w3.org/ns/prov#': 'prov',
+        'http://www.w3.org/2001/XMLSchema#': 'xsd',
+        'http://purl.org/dc/terms/': 'dcterms',
+        'http://www.w3.org/ns/dcat#': 'dcat',
+        'http://www.w3.org/2004/02/skos/core#': 'skos',
+        'http://www.w3.org/ns/ssn/': 'ssn',
+        'http://meta.icos-cp.eu/ontologies/cpmeta/': 'cpmeta',
+        'http://meta.icos-cp.eu/resources/wdcgg/': 'wdcgg',
+    }
+
+    # Check well-known namespaces first
+    if namespace in WELL_KNOWN_NAMESPACES:
+        return WELL_KNOWN_NAMESPACES[namespace]
+
     # Check if we already have a mapping
     for prefix, ns in known_prefixes.items():
         if ns == namespace:
             return prefix
 
-    # Generate a new prefix name
+    # Generate a new prefix name from the URI
     if '#' in namespace:
         base = namespace.rsplit('#', 1)[0]
         prefix_candidate = base.rsplit('/', 1)[-1]
@@ -128,14 +157,41 @@ def get_prefix_name(namespace: str, known_prefixes: Dict[str, str]) -> str:
         base = namespace.rstrip('/')
         prefix_candidate = base.rsplit('/', 1)[-1]
 
+    # Sanitize the prefix name
+    prefix_candidate = sanitize_prefix_name(prefix_candidate)
+
     # Ensure uniqueness
     prefix = prefix_candidate
     counter = 1
-    while prefix in known_prefixes:
+    while prefix in known_prefixes or prefix in WELL_KNOWN_NAMESPACES.values():
         prefix = f"{prefix_candidate}{counter}"
         counter += 1
 
     return prefix
+
+
+def sanitize_prefix_name(prefix: str) -> str:
+    """
+    Sanitize a prefix name to be valid for RDF/SPARQL/Ontop.
+
+    Valid prefix: [a-zA-Z][a-zA-Z0-9_-]*
+    """
+    # Remove common URI patterns
+    prefix = prefix.replace('http://', '').replace('https://', '')
+
+    # Replace problematic characters with underscore
+    # Keep letters, digits, hyphens, underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '', prefix)
+
+    # If it starts with a digit or hyphen, prepend 'ns'
+    if sanitized and (sanitized[0].isdigit() or sanitized[0] in '-_'):
+        sanitized = 'ns' + sanitized
+
+    # If empty or still invalid, use a default
+    if not sanitized or not sanitized[0].isalpha():
+        sanitized = 'ns1'
+
+    return sanitized
 
 
 def generate_prefix_declarations(
@@ -205,9 +261,22 @@ def get_prefixed_predicate(pred_uri: str, prefix_map: Dict[str, str]) -> str:
 
 
 def sanitize_column_name(pred_short: str) -> str:
-    """Convert predicate short name to column name (same as generate_class_tables.py)."""
-    # Remove namespace prefix
-    if ':' in pred_short:
+    """
+    Convert predicate short name or URI to column name.
+
+    Handles both:
+    - Prefixed names: 'cpmeta:hasObjectSpec' -> 'has_object_spec'
+    - Full URIs: 'http://www.w3.org/ns/dcat#contactPoint' -> 'contact_point'
+    """
+    # If it's a full URI, extract just the local name
+    if pred_short.startswith('http://') or pred_short.startswith('https://'):
+        # Get local name after last # or /
+        if '#' in pred_short:
+            pred_short = pred_short.rsplit('#', 1)[1]
+        elif '/' in pred_short:
+            pred_short = pred_short.rsplit('/', 1)[1]
+    # If it's a prefixed name, remove namespace prefix
+    elif ':' in pred_short:
         pred_short = pred_short.split(':', 1)[1]
 
     # Convert to snake_case
@@ -261,25 +330,51 @@ def find_referenced_table_prefix(
 
 
 def generate_mapping_id(table_name: str, predicate_short: str, prefix: Optional[str] = None) -> str:
-    """Generate a unique mapping ID."""
+    """
+    Generate a unique, valid mapping ID.
+
+    Ensures the ID matches: [a-zA-Z][a-zA-Z0-9_]*
+    """
     # Remove ct_ prefix from table name
     clean_table = table_name.replace('ct_', '')
 
-    # Clean up predicate
-    if ':' in predicate_short:
+    # Clean up predicate - extract local name if it's a full URI
+    if predicate_short.startswith('http://') or predicate_short.startswith('https://'):
+        # Get local name after last # or /
+        if '#' in predicate_short:
+            predicate_short = predicate_short.rsplit('#', 1)[1]
+        elif '/' in predicate_short:
+            predicate_short = predicate_short.rsplit('/', 1)[1]
+    # If it's a prefixed name, remove namespace prefix
+    elif ':' in predicate_short:
         predicate_short = predicate_short.split(':', 1)[1]
+
+    # Sanitize predicate to only alphanumeric and underscores
+    predicate_short = re.sub(r'[^a-zA-Z0-9_]', '_', predicate_short)
 
     mapping_id = f"{clean_table}_{predicate_short}"
 
     if prefix:
         # Add a suffix based on the prefix to make it unique
+        # Extract a meaningful short identifier from the prefix URL
         prefix_suffix = prefix.replace('http://', '').replace('https://', '')
-        prefix_suffix = re.sub(r'[^a-zA-Z0-9]', '_', prefix_suffix)
+        # Remove common domain parts to shorten
+        prefix_suffix = prefix_suffix.replace('meta.icos-cp.eu/', '')
+        prefix_suffix = prefix_suffix.replace('www.w3.org/', '')
+        # Keep only alphanumeric characters
+        prefix_suffix = re.sub(r'[^a-zA-Z0-9]', '', prefix_suffix)
         # Shorten to avoid overly long IDs
-        prefix_suffix = prefix_suffix[:20]
+        prefix_suffix = prefix_suffix[:15]
         mapping_id += f"_{prefix_suffix}"
 
-    return mapping_id.replace('__', '_').strip('_')
+    # Collapse multiple underscores and strip leading/trailing underscores
+    mapping_id = re.sub(r'_+', '_', mapping_id).strip('_')
+
+    # Ensure it starts with a letter (should already be the case from table name)
+    if mapping_id and not mapping_id[0].isalpha():
+        mapping_id = 'map_' + mapping_id
+
+    return mapping_id
 
 
 def generate_table_mappings(
@@ -430,6 +525,36 @@ source\t\t{source}"""
     return mappings
 
 
+def merge_class_predicates(class_infos: List[Dict]) -> Dict:
+    """
+    Merge predicates from multiple classes into a single class info dict.
+
+    Used for union/merged tables that combine multiple OWL classes.
+    """
+    if not class_infos:
+        return {'predicates': []}
+
+    # Use the first class as the base
+    merged = {
+        'class_name': 'MERGED:' + '+'.join(c.get('class_name', '') for c in class_infos),
+        'class_uri': class_infos[0].get('class_uri', ''),
+        'predicates': []
+    }
+
+    # Collect all unique predicates by URI
+    seen_predicates = {}
+
+    for class_info in class_infos:
+        for pred in class_info.get('predicates', []):
+            pred_uri = pred.get('predicate_uri', '')
+            if pred_uri and pred_uri not in seen_predicates:
+                seen_predicates[pred_uri] = pred
+
+    merged['predicates'] = list(seen_predicates.values())
+
+    return merged
+
+
 def main():
     """Main entry point."""
     # Paths
@@ -474,11 +599,35 @@ def main():
     # Build table name to class info map
     print("Building table to class mappings...")
     table_to_class = {}
+    table_to_classes = {}  # For merged tables: table -> [class_info1, class_info2, ...]
+    class_name_to_info = {}  # class_name -> class_info
+
+    # First pass: build class_name -> class_info lookup
+    for class_info in class_analysis.get('classes', []):
+        class_name = class_info.get('class_name', '')
+        if class_name:
+            class_name_to_info[class_name] = class_info
+
+    # Second pass: handle merged tables from MERGE_GROUPS
+    for merged_table, class_names in MERGE_GROUPS.items():
+        table_to_classes[merged_table] = []
+        for class_name in class_names:
+            if class_name in class_name_to_info:
+                class_info = class_name_to_info[class_name]
+                table_to_classes[merged_table].append(class_info)
+                # Set first class as the single representative
+                if merged_table not in table_to_class:
+                    table_to_class[merged_table] = class_info
+
+    # Third pass: handle non-merged tables (standard case)
     for class_info in class_analysis.get('classes', []):
         class_name = class_info.get('class_name', '')
         if class_name:
             table_name = sanitize_table_name(class_name)
-            table_to_class[table_name] = class_info
+            # Only add if not already handled by MERGE_GROUPS
+            if table_name not in table_to_class:
+                table_to_class[table_name] = class_info
+                table_to_classes[table_name] = [class_info]
 
     # Generate mappings for all tables
     print("Generating mappings...")
@@ -492,7 +641,6 @@ def main():
             print(f"Warning: No class info for table {table_name}, skipping")
             continue
 
-        class_info = table_to_class[table_name]
         prefix_counts = tables[table_name].get('prefix_counts', {})
         table_prefixes = list(prefix_counts.keys())
 
@@ -500,7 +648,18 @@ def main():
             print(f"Warning: No prefixes for table {table_name}, skipping")
             continue
 
-        print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(class_info.get('predicates', []))} predicate(s)")
+        # Handle merged tables (multiple classes -> one table)
+        classes_for_table = table_to_classes.get(table_name, [table_to_class[table_name]])
+
+        if len(classes_for_table) > 1:
+            # Merged table - combine predicates from all classes
+            merged_class_info = merge_class_predicates(classes_for_table)
+            print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(merged_class_info.get('predicates', []))} predicate(s) [MERGED from {len(classes_for_table)} classes]")
+            class_info = merged_class_info
+        else:
+            # Single class table
+            class_info = table_to_class[table_name]
+            print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(class_info.get('predicates', []))} predicate(s)")
 
         mappings = generate_table_mappings(
             table_name,

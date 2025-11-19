@@ -217,6 +217,22 @@ def load_analysis_json(json_path: str) -> dict:
         return json.load(f)
 
 
+def load_prefix_analysis(json_path: str) -> Dict[str, Dict[str, int]]:
+    """
+    Load table prefix analysis from JSON
+
+    Returns: Dict[table_name] -> Dict[prefix_uri] -> count
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    prefix_map = {}
+    for table_name, table_info in data.get('tables', {}).items():
+        prefix_map[table_name] = table_info.get('prefix_counts', {})
+
+    return prefix_map
+
+
 def merge_classes(classes: List[dict], class_uri_map: Dict[str, str]) -> List[dict]:
     """
     Merge classes according to MERGE_GROUPS configuration
@@ -314,119 +330,153 @@ def find_missing_refs(cursor, source_table: str, fk_column: str, target_table: s
     return {row[0] for row in cursor.fetchall()}
 
 
-def lookup_full_uri(cursor, missing_id: str, triples_table: str = 'rdf_triples') -> Optional[str]:
+def construct_uri_from_prefix(missing_id: str, prefix: str) -> Tuple[str, str]:
     """
-    Query rdf_triples to find full URI for a missing ID
+    Directly construct URI from known prefix and ID
 
-    Tries multiple strategies:
-    1. Look for URIs ending with the missing ID in the object column
-    2. Look for URIs ending with the missing ID in the subject column
+    Returns: (full_uri, prefix)
     """
-    # Strategy 1: Check object column (most common for FK values)
-    query = sql.SQL("""
-        SELECT DISTINCT obj
-        FROM {}
-        WHERE obj LIKE %s
-          AND obj ~ %s
-        LIMIT 1
-    """).format(sql.Identifier(triples_table))
-
-    pattern_like = f'%{missing_id}'
-    pattern_regex = f'.*{re.escape(missing_id)}$'
-
-    cursor.execute(query, (pattern_like, pattern_regex))
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-
-    # Strategy 2: Check subject column
-    query = sql.SQL("""
-        SELECT DISTINCT subj
-        FROM {}
-        WHERE subj LIKE %s
-          AND subj ~ %s
-        LIMIT 1
-    """).format(sql.Identifier(triples_table))
-
-    cursor.execute(query, (pattern_like, pattern_regex))
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-
-    return None
+    full_uri = prefix + missing_id
+    return full_uri, prefix
 
 
-def split_uri(full_uri: str, id_suffix: str) -> Tuple[str, str]:
-    """Extract prefix from full URI"""
-    if not full_uri.endswith(id_suffix):
-        raise ValueError(f"URI {full_uri} does not end with {id_suffix}")
-    prefix = full_uri[:-len(id_suffix)]
-    return prefix, id_suffix
-
-
-def determine_type(cursor, full_uri: str, table_name: str, triples_table: str = 'rdf_triples') -> str:
+def lookup_full_uri(cursor, missing_id: str, target_table: str, prefix_map: Dict[str, Dict[str, int]], triples_table: str = 'rdf_triples') -> Optional[Tuple[str, str, bool]]:
     """
-    For merged tables, determine the type discriminator value
+    Get full URI and prefix for a missing ID
 
-    Queries rdf_triples for the rdf:type of the entity and maps it to the discriminator value
+    Strategy:
+    1. If target_table has exactly one prefix: construct URI directly (FAST)
+    2. If target_table has multiple prefixes: query rdf_triples (SLOW but accurate)
+
+    Returns: (full_uri, prefix, used_direct_construction) or None
+    """
+    # Check if we can use direct construction
+    prefixes = prefix_map.get(target_table, {})
+
+    if len(prefixes) == 1:
+        # Single prefix - construct directly!
+        prefix = list(prefixes.keys())[0]
+        full_uri, prefix = construct_uri_from_prefix(missing_id, prefix)
+        return (full_uri, prefix, True)
+
+    elif len(prefixes) > 1:
+        # Multiple prefixes - need to query rdf_triples to find the correct one
+        # Try object column first (most common for FK values)
+        query = sql.SQL("""
+            SELECT DISTINCT obj
+            FROM {}
+            WHERE obj LIKE %s
+              AND obj ~ %s
+            LIMIT 1
+        """).format(sql.Identifier(triples_table))
+
+        pattern_like = f'%{missing_id}'
+        pattern_regex = f'.*{re.escape(missing_id)}$'
+
+        cursor.execute(query, (pattern_like, pattern_regex))
+        result = cursor.fetchone()
+        if result:
+            full_uri = result[0]
+            # Extract prefix
+            if not full_uri.endswith(missing_id):
+                return None
+            prefix = full_uri[:-len(missing_id)]
+            return (full_uri, prefix, False)
+
+        # Try subject column
+        query = sql.SQL("""
+            SELECT DISTINCT subj
+            FROM {}
+            WHERE subj LIKE %s
+              AND subj ~ %s
+            LIMIT 1
+        """).format(sql.Identifier(triples_table))
+
+        cursor.execute(query, (pattern_like, pattern_regex))
+        result = cursor.fetchone()
+        if result:
+            full_uri = result[0]
+            if not full_uri.endswith(missing_id):
+                return None
+            prefix = full_uri[:-len(missing_id)]
+            return (full_uri, prefix, False)
+
+        return None
+
+    else:
+        # No known prefixes - query rdf_triples
+        query = sql.SQL("""
+            SELECT DISTINCT obj
+            FROM {}
+            WHERE obj LIKE %s
+              AND obj ~ %s
+            LIMIT 1
+        """).format(sql.Identifier(triples_table))
+
+        pattern_like = f'%{missing_id}'
+        pattern_regex = f'.*{re.escape(missing_id)}$'
+
+        cursor.execute(query, (pattern_like, pattern_regex))
+        result = cursor.fetchone()
+        if result:
+            full_uri = result[0]
+            if not full_uri.endswith(missing_id):
+                return None
+            prefix = full_uri[:-len(missing_id)]
+            return (full_uri, prefix, False)
+
+        query = sql.SQL("""
+            SELECT DISTINCT subj
+            FROM {}
+            WHERE subj LIKE %s
+              AND subj ~ %s
+            LIMIT 1
+        """).format(sql.Identifier(triples_table))
+
+        cursor.execute(query, (pattern_like, pattern_regex))
+        result = cursor.fetchone()
+        if result:
+            full_uri = result[0]
+            if not full_uri.endswith(missing_id):
+                return None
+            prefix = full_uri[:-len(missing_id)]
+            return (full_uri, prefix, False)
+
+        return None
+
+
+def determine_type(table_name: str) -> Optional[str]:
+    """
+    For merged tables, return the default type discriminator value
+
+    No database query needed - just uses the default from MERGE_GROUPS config
     """
     if table_name not in MERGE_GROUPS:
         return None
 
     config = MERGE_GROUPS[table_name]
-    type_values = config['type_values']
-    default_type = config.get('default_type', list(type_values.values())[0])
-
-    # Query for rdf:type
-    rdf_type_uri = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-    query = sql.SQL("""
-        SELECT obj
-        FROM {}
-        WHERE subj = %s
-          AND pred = %s
-    """).format(sql.Identifier(triples_table))
-
-    cursor.execute(query, (full_uri, rdf_type_uri))
-    results = cursor.fetchall()
-
-    if not results:
-        return default_type
-
-    # Try to match the RDF type to one of our configured types
-    for row in results:
-        rdf_class = row[0]
-
-        # Convert full URI to short form (e.g., 'http://.../cpmeta/DataObjectSpec' -> 'cpmeta:DataObjectSpec')
-        if '#' in rdf_class:
-            namespace_uri, class_name = rdf_class.rsplit('#', 1)
-            short_form = f"cpmeta:{class_name}"  # Assume cpmeta for now
-        elif '/' in rdf_class:
-            parts = rdf_class.rsplit('/', 1)
-            if len(parts) == 2:
-                class_name = parts[1]
-                # Try to determine namespace
-                if 'cpmeta' in rdf_class:
-                    short_form = f"cpmeta:{class_name}"
-                else:
-                    short_form = class_name
-            else:
-                continue
-        else:
-            continue
-
-        if short_form in type_values:
-            return type_values[short_form]
-
+    default_type = config.get('default_type', list(config['type_values'].values())[0])
     return default_type
 
 
+def escape_sql_string(s: str) -> str:
+    """Escape single quotes for SQL string literals by doubling them"""
+    return s.replace("'", "''")
+
+
 def generate_stub_insert(target_table: str, missing_id: str, rdf_subject: str, prefix: str, type_val: Optional[str] = None) -> str:
-    """Generate INSERT statement for stub row"""
+    """Generate INSERT statement for stub row with proper SQL escaping"""
+    # Escape all string values to prevent SQL injection and syntax errors
+    escaped_id = escape_sql_string(missing_id)
+    escaped_subject = escape_sql_string(rdf_subject)
+    escaped_prefix = escape_sql_string(prefix)
+
     if type_val and target_table in MERGE_GROUPS:
         type_column = MERGE_GROUPS[target_table]['type_column']
-        return f"INSERT INTO {target_table} (id, rdf_subject, prefix, {type_column}) VALUES ('{missing_id}', '{rdf_subject}', '{prefix}', '{type_val}') ON CONFLICT (id) DO NOTHING;"
+        escaped_type = escape_sql_string(type_val)
+        return f"INSERT INTO {target_table} (id, rdf_subject, prefix, {type_column}) VALUES ('{escaped_id}', '{escaped_subject}', '{escaped_prefix}', '{escaped_type}') ON CONFLICT (id) DO NOTHING;"
     else:
-        return f"INSERT INTO {target_table} (id, rdf_subject, prefix) VALUES ('{missing_id}', '{rdf_subject}', '{prefix}') ON CONFLICT (id) DO NOTHING;"
+        return f"INSERT INTO {target_table} (id, rdf_subject, prefix) VALUES ('{escaped_id}', '{escaped_subject}', '{escaped_prefix}') ON CONFLICT (id) DO NOTHING;"
 
 
 def main():
@@ -492,8 +542,27 @@ Examples:
     classes = merge_classes(classes, class_uri_map)
     print(f"Total tables after merging: {len(classes)}")
 
+    # Load prefix analysis
+    print("\nLoading prefix analysis from table_prefix_analysis.json...")
+    try:
+        prefix_map = load_prefix_analysis('table_prefix_analysis.json')
+        print(f"Loaded prefix information for {len(prefix_map)} tables")
+
+        # Count tables by prefix count
+        single_prefix_tables = sum(1 for prefixes in prefix_map.values() if len(prefixes) == 1)
+        multi_prefix_tables = sum(1 for prefixes in prefix_map.values() if len(prefixes) > 1)
+        print(f"  - {single_prefix_tables} tables with single prefix (will use direct URI construction)")
+        print(f"  - {multi_prefix_tables} tables with multiple prefixes (will query rdf_triples)")
+    except FileNotFoundError:
+        print(f"Error: table_prefix_analysis.json not found!")
+        print(f"Prefix analysis file is required for constructing URIs.")
+        return 1
+    except Exception as e:
+        print(f"Error loading prefix analysis: {e}")
+        return 1
+
     # Build foreign key map
-    print("Building foreign key relationships from analysis JSON...")
+    print("\nBuilding foreign key relationships from analysis JSON...")
     fk_map = build_foreign_key_map(classes)
     total_fks = sum(len(fks) for fks in fk_map.values())
     print(f"Found {total_fks} foreign key relationships")
@@ -554,6 +623,20 @@ Examples:
             print("\n--report-only specified, exiting without generating fixes")
             return 0
 
+        # Deduplicate missing IDs by target table
+        # Multiple FKs might reference the same missing ID
+        print("\nDeduplicating missing IDs by target table...")
+        missing_by_target = defaultdict(set)  # {target_table: set(missing_ids)}
+
+        for (source_table, fk_column, target_table), missing_ids in all_missing.items():
+            missing_by_target[target_table].update(missing_ids)
+
+        total_unique_missing = sum(len(ids) for ids in missing_by_target.values())
+        print(f"  {total_missing_count} total missing references")
+        print(f"  {total_unique_missing} unique missing IDs to insert")
+        if total_missing_count > total_unique_missing:
+            print(f"  Eliminated {total_missing_count - total_unique_missing} duplicates")
+
         # Generate INSERT statements
         print("\n" + "=" * 80)
         print("GENERATING INSERT STATEMENTS FOR MISSING REFERENCES")
@@ -561,25 +644,42 @@ Examples:
 
         insert_statements = []
         failed_lookups = []
+        direct_construction_count = 0
+        rdf_triples_lookup_count = 0
 
-        for (source_table, fk_column, target_table), missing_ids in all_missing.items():
-            print(f"\nProcessing {target_table} (referenced by {source_table}.{fk_column})...")
+        for target_table in sorted(missing_by_target.keys()):
+            missing_ids = missing_by_target[target_table]
+            print(f"\nProcessing {target_table}: {len(missing_ids)} unique missing IDs")
+
+            # Check if this table uses single prefix or multiple
+            prefixes = prefix_map.get(target_table, {})
+            if len(prefixes) == 1:
+                print(f"  Using direct URI construction (single prefix)")
+            elif len(prefixes) > 1:
+                print(f"  Using rdf_triples lookup (multiple prefixes: {len(prefixes)})")
+            else:
+                print(f"  Using rdf_triples lookup (no known prefix)")
 
             for missing_id in sorted(missing_ids):
                 # Lookup full URI
-                full_uri = lookup_full_uri(cursor, missing_id, args.triples_table)
+                uri_result = lookup_full_uri(cursor, missing_id, target_table, prefix_map, args.triples_table)
 
-                if not full_uri:
-                    failed_lookups.append((target_table, missing_id, "URI not found in rdf_triples"))
-                    print(f"  WARNING: Could not find URI for {missing_id} in {args.triples_table}")
+                if not uri_result:
+                    failed_lookups.append((target_table, missing_id, "URI not found"))
+                    print(f"  WARNING: Could not find URI for {missing_id}")
                     continue
 
-                try:
-                    # Extract prefix
-                    prefix, id_part = split_uri(full_uri, missing_id)
+                full_uri, prefix, used_direct = uri_result
 
-                    # Determine type for merged tables
-                    type_val = determine_type(cursor, full_uri, target_table, args.triples_table)
+                # Track statistics
+                if used_direct:
+                    direct_construction_count += 1
+                else:
+                    rdf_triples_lookup_count += 1
+
+                try:
+                    # Determine type for merged tables (always use default)
+                    type_val = determine_type(target_table)
 
                     # Generate INSERT
                     insert_sql = generate_stub_insert(target_table, missing_id, full_uri, prefix, type_val)
@@ -591,6 +691,8 @@ Examples:
                     continue
 
         print(f"\nGenerated {len(insert_statements)} INSERT statements")
+        print(f"  - {direct_construction_count} using direct URI construction (fast)")
+        print(f"  - {rdf_triples_lookup_count} using rdf_triples lookup (slower)")
 
         if failed_lookups:
             print(f"\nWARNING: {len(failed_lookups)} references could not be resolved:")

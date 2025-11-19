@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
-from rdflib import Graph, RDF, OWL
+from rdflib import Graph, RDF, RDFS, OWL
 
 # Table merge configuration (from generate_class_tables.py)
 # Maps merged table names to the classes that were merged into them
@@ -124,18 +124,22 @@ def extract_namespace(uri: str) -> str:
     return uri
 
 
-def load_property_types_from_ontology(ontology_file: Path) -> Dict[str, str]:
+def load_property_types_from_ontology(ontology_file: Path) -> Dict[str, Dict[str, str]]:
     """
     Load property type information from OWL ontology.
 
     Parses the ontology to determine which predicates are ObjectProperty
-    vs DatatypeProperty, which is needed to generate correct Ontop mappings.
+    vs DatatypeProperty, and extracts the XSD datatype range for DatatypeProperties.
 
     Args:
         ontology_file: Path to the ontology file (.ttl or .owl)
 
     Returns:
-        Dict mapping predicate_uri -> 'object' or 'datatype'
+        Dict mapping predicate_uri -> {'type': 'object'|'datatype', 'range': 'xsd:long'}
+        Example: {
+            'http://.../hasSamplingPoint': {'type': 'object', 'range': None},
+            'http://.../hasSizeInBytes': {'type': 'datatype', 'range': 'xsd:long'}
+        }
     """
     if not ontology_file.exists():
         print(f"Warning: Ontology file not found at {ontology_file}")
@@ -152,19 +156,33 @@ def load_property_types_from_ontology(ontology_file: Path) -> Dict[str, str]:
             g.parse(ontology_file, format="xml")
 
         property_types = {}
+        XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema#"
 
         # Get all ObjectProperties
         for prop in g.subjects(RDF.type, OWL.ObjectProperty):
-            property_types[str(prop)] = 'object'
+            property_types[str(prop)] = {'type': 'object', 'range': None}
 
-        # Get all DatatypeProperties
+        # Get all DatatypeProperties and their ranges
         for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
-            property_types[str(prop)] = 'datatype'
+            prop_uri = str(prop)
+            property_types[prop_uri] = {'type': 'datatype', 'range': None}
 
-        obj_count = sum(1 for v in property_types.values() if v == 'object')
-        data_count = sum(1 for v in property_types.values() if v == 'datatype')
+            # Extract rdfs:range to get the XSD datatype
+            for range_obj in g.objects(prop, RDFS.range):
+                range_uri = str(range_obj)
+
+                # Convert XSD URI to prefixed notation (e.g., xsd:long)
+                if range_uri.startswith(XSD_NAMESPACE):
+                    xsd_type = range_uri[len(XSD_NAMESPACE):]
+                    property_types[prop_uri]['range'] = f"xsd:{xsd_type}"
+                    break  # Use first range declaration
+
+        obj_count = sum(1 for v in property_types.values() if v['type'] == 'object')
+        data_count = sum(1 for v in property_types.values() if v['type'] == 'datatype')
+        data_with_range = sum(1 for v in property_types.values() if v['type'] == 'datatype' and v['range'])
 
         print(f"  Found {obj_count} ObjectProperties and {data_count} DatatypeProperties")
+        print(f"  {data_with_range} DatatypeProperties have explicit XSD ranges")
 
         return property_types
 
@@ -466,7 +484,7 @@ def generate_table_mappings(
     fk_map: Dict[str, Dict[str, Tuple[str, str]]],
     table_prefix_analysis: Dict,
     predicate_types: Dict[str, str],
-    property_types_from_ontology: Dict[str, str]
+    property_types_from_ontology: Dict[str, Dict[str, str]]
 ) -> List[str]:
     """
     Generate all mapping entries for a single table.
@@ -521,7 +539,7 @@ def _generate_mappings_for_prefix(
     fk_map: Dict[str, Dict[str, Tuple[str, str]]],
     table_prefix_analysis: Dict,
     predicate_types: Dict[str, str],
-    property_types_from_ontology: Dict[str, str],
+    property_types_from_ontology: Dict[str, Dict[str, str]],
     multi_prefix: bool = False
 ) -> List[str]:
     """Generate mappings for a table with a specific prefix."""
@@ -548,9 +566,12 @@ def _generate_mappings_for_prefix(
         # Check if this is a foreign key
         is_fk = column_name in table_fks
 
-        # Determine if this is an object property (from ontology) or datatype property
-        ontology_property_type = property_types_from_ontology.get(pred_uri)
-        is_object_property = ontology_property_type == 'object'
+        # Determine property type and range from ontology
+        ontology_info = property_types_from_ontology.get(pred_uri, {})
+        property_type = ontology_info.get('type')  # 'object' or 'datatype'
+        ontology_xsd_range = ontology_info.get('range')  # e.g., 'xsd:long'
+
+        is_object_property = property_type == 'object'
 
         # Generate mapping ID
         mapping_id = generate_mapping_id(
@@ -588,13 +609,19 @@ def _generate_mappings_for_prefix(
                 object_part = f"<{{{column_name}}}>"
         else:
             # Datatype property (or unknown - default to datatype)
-            sql_type = predicate_types.get(pred_uri, 'TEXT')
-            xsd_type = get_xsd_type(sql_type)
-
-            if xsd_type:
-                object_part = f"{{{column_name}}}^^{xsd_type}"
+            # IMPORTANT: Use XSD type from ontology if available, otherwise infer from SQL type
+            if ontology_xsd_range:
+                # Use the exact XSD type declared in the ontology
+                object_part = f"{{{column_name}}}^^{ontology_xsd_range}"
             else:
-                object_part = f"{{{column_name}}}"
+                # Fallback: infer XSD type from SQL type
+                sql_type = predicate_types.get(pred_uri, 'TEXT')
+                xsd_type = get_xsd_type(sql_type)
+
+                if xsd_type:
+                    object_part = f"{{{column_name}}}^^{xsd_type}"
+                else:
+                    object_part = f"{{{column_name}}}"
 
         target = f"{subject_uri} {predicate} {object_part} ."
 

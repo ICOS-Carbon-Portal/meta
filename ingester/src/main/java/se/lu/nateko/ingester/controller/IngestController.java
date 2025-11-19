@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import se.lu.nateko.ingester.model.dto.DataObjectDto;
+import se.lu.nateko.ingester.model.dto.etc.EtcUploadMetadataDto;
 import se.lu.nateko.ingester.service.IngestService;
 
 @RestController
@@ -19,6 +20,12 @@ public class IngestController {
 	@PostMapping("/ingest/uploaded")
 	public ResponseEntity<String> ingestUploadPayload(@RequestBody DataObjectDto dataObject) {
 		ingestService.saveStationSpecificDataObject(dataObject);
+		return ResponseEntity.ok("");
+	}
+
+	@PostMapping("/inges/etc")
+	public ResponseEntity<String> ingestEtc(@RequestBody EtcUploadMetadataDto dto) {
+		ingestService.saveEtcUploadMetadata(dto);
 		return ResponseEntity.ok("");
 	}
 }

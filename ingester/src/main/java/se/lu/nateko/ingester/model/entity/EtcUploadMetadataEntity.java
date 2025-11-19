@@ -3,11 +3,14 @@ package se.lu.nateko.ingester.model.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity(name = "EtcUploadMetadata")
 public class EtcUploadMetadataEntity {
 	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Integer id;
 	private String hashSum;
 	private String fileName;
@@ -17,6 +20,8 @@ public class EtcUploadMetadataEntity {
 	private Integer fileId;
 	private LocalDateTime acquisitionStart;
 	private LocalDateTime acquisitionStop;
+
+	public EtcUploadMetadataEntity() {}
 
 	public EtcUploadMetadataEntity(
 		String hashSum,

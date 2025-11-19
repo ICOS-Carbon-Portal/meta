@@ -3,11 +3,14 @@ package se.lu.nateko.ingester.model.entity;
 import java.time.Instant;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity(name = "StationSpecificDataObject")
 public class StationSpecificDataObjectEntity {
 	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Integer id;
 	private String submitterId;
 	private String hashSum;

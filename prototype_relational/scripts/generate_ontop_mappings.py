@@ -267,6 +267,10 @@ def sanitize_column_name(pred_short: str) -> str:
     Handles both:
     - Prefixed names: 'cpmeta:hasObjectSpec' -> 'has_object_spec'
     - Full URIs: 'http://www.w3.org/ns/dcat#contactPoint' -> 'contact_point'
+    - URL-encoded URIs: 'wdcgg:CONTACT%20POINT' -> 'contact_20_point'
+
+    Note: % is replaced with _ literally (e.g., %20 -> _20_), not URL-decoded,
+    to match the database column naming convention.
     """
     # If it's a full URI, extract just the local name
     if pred_short.startswith('http://') or pred_short.startswith('https://'):
@@ -278,6 +282,9 @@ def sanitize_column_name(pred_short: str) -> str:
     # If it's a prefixed name, remove namespace prefix
     elif ':' in pred_short:
         pred_short = pred_short.split(':', 1)[1]
+
+    # Replace % with _ (e.g., %20 becomes _20_, %2F becomes _2f_)
+    pred_short = pred_short.replace('%', '_')
 
     # Convert to snake_case
     name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', pred_short)
@@ -349,7 +356,10 @@ def generate_mapping_id(table_name: str, predicate_short: str, prefix: Optional[
     elif ':' in predicate_short:
         predicate_short = predicate_short.split(':', 1)[1]
 
-    # Sanitize predicate to only alphanumeric and underscores
+    # Replace % with _ (e.g., %20 becomes _20_)
+    predicate_short = predicate_short.replace('%', '_')
+
+    # Sanitize predicate to only alphanumeric and underscores (hyphens, spaces, etc. become underscores)
     predicate_short = re.sub(r'[^a-zA-Z0-9_]', '_', predicate_short)
 
     mapping_id = f"{clean_table}_{predicate_short}"

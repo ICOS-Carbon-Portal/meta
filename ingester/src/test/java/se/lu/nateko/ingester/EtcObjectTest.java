@@ -27,11 +27,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import se.lu.nateko.ingester.model.entity.StationSpecificDataObjectEntity;
-import se.lu.nateko.ingester.repository.IngestRepository;
+import se.lu.nateko.ingester.model.entity.EtcUploadMetadataEntity;
+import se.lu.nateko.ingester.repository.etc.EtcUploadMetadataRepository;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-class IngesterApplicationTests {
+class EtcObjectTest {
 	@LocalServerPort
 	private int port;
 
@@ -39,13 +39,13 @@ class IngesterApplicationTests {
 	private TestRestTemplate restTemplate;
 
 	@MockitoBean
-	private IngestRepository ingestRepository;
+	private EtcUploadMetadataRepository etcUploadMetadataRepository;
 
 	@ParameterizedTest
 	@MethodSource("provideJsons")
-	public void testThings(JsonNode jsonNode) throws JSONException, IOException, Exception {
-		Mockito.when(ingestRepository.save(Mockito.any()))
-			.thenReturn(new StationSpecificDataObjectEntity());
+	public void ingestEtcTest(JsonNode jsonNode) throws JSONException, IOException, Exception {
+		Mockito.when(etcUploadMetadataRepository.save(Mockito.any()))
+			.thenReturn(new EtcUploadMetadataEntity());
 
 		String url = "http://localhost:" + port + "/ingest/uploaded";
 		HttpEntity<JsonNode> request = new HttpEntity<>(jsonNode);
@@ -71,7 +71,7 @@ class IngesterApplicationTests {
 	}
 
 	private static List<String> listResources() {
-		URL resource = Thread.currentThread().getContextClassLoader().getResource("./dataobjects");
+		URL resource = Thread.currentThread().getContextClassLoader().getResource("./etc");
 
 		if (resource == null) {
 			throw new IllegalArgumentException("Resource path not found");

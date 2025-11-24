@@ -84,6 +84,38 @@ def sanitize_table_name(class_name: str) -> str:
     return f"ct_{name}"
 
 
+def create_lens_names(column_name: str) -> Tuple[str, str]:
+    """
+    Convert an array column name to lens name parts.
+
+    Args:
+        column_name: Array column name (e.g., 'has_part', 'has_column')
+
+    Returns:
+        Tuple of (lens_suffix, new_column_name)
+        e.g., 'has_column' -> ('columns', 'column')
+    """
+    base = column_name
+
+    # Remove common prefixes
+    for prefix in ['has_', 'is_', 'was_', 'had_', 'were_', 'been_']:
+        if base.startswith(prefix):
+            base = base[len(prefix):]
+            break
+
+    # Remove _of suffix (for cases like 'is_next_version_of')
+    if base.endswith('_of'):
+        base = base[:-3]
+
+    # Pluralize for lens name (add 's' if doesn't end in 's')
+    lens_suffix = base + 's' if not base.endswith('s') else base
+
+    # Singularize for new column (remove trailing 's' if present)
+    new_column = base[:-1] if base.endswith('s') and len(base) > 1 else base
+
+    return lens_suffix, new_column
+
+
 def parse_foreign_keys(sql_file: Path) -> Dict[str, Dict[str, Tuple[str, str]]]:
     """
     Parse foreign key relationships from SQL file.
@@ -485,21 +517,22 @@ def generate_table_mappings(
     property_types_from_ontology: Dict[str, Dict[str, str]],
     cardinality_data: Dict[Tuple[str, str], Dict],
     functional_properties: Set[str]
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[List[str], List[str], List[Dict]]:
     """
     Generate all mapping entries for a single table.
 
     Returns:
-        Tuple of (scalar_mappings, array_mappings)
+        Tuple of (scalar_mappings, array_mappings, lens_definitions)
     """
     scalar_mappings = []
     array_mappings = []
+    lens_definitions = []
     class_uri = class_info.get('class_uri', '')
 
     # For multi-prefix tables, generate separate mappings
     if len(table_prefixes) > 1:
         for table_prefix in table_prefixes:
-            scalar, array = _generate_mappings_for_prefix(
+            scalar, array, lenses = _generate_mappings_for_prefix(
                 table_name,
                 class_info,
                 table_prefix,
@@ -514,10 +547,11 @@ def generate_table_mappings(
             )
             scalar_mappings.extend(scalar)
             array_mappings.extend(array)
+            lens_definitions.extend(lenses)
     else:
         # Single prefix table
         table_prefix = table_prefixes[0] if table_prefixes else None
-        scalar, array = _generate_mappings_for_prefix(
+        scalar, array, lenses = _generate_mappings_for_prefix(
             table_name,
             class_info,
             table_prefix,
@@ -532,8 +566,9 @@ def generate_table_mappings(
         )
         scalar_mappings.extend(scalar)
         array_mappings.extend(array)
+        lens_definitions.extend(lenses)
 
-    return scalar_mappings, array_mappings
+    return scalar_mappings, array_mappings, lens_definitions
 
 
 def _generate_mappings_for_prefix(
@@ -548,15 +583,16 @@ def _generate_mappings_for_prefix(
     cardinality_data: Dict[Tuple[str, str], Dict],
     functional_properties: Set[str],
     multi_prefix: bool = False
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[List[str], List[str], List[Dict]]:
     """
     Generate mappings for a table with a specific prefix.
 
     Returns:
-        Tuple of (scalar_mappings, array_mappings)
+        Tuple of (scalar_mappings, array_mappings, lens_definitions)
     """
     scalar_mappings = []
     array_mappings = []
+    lens_definitions = []
 
     # Get table's foreign keys
     table_fks = fk_map.get(table_name, {})
@@ -677,18 +713,95 @@ def _generate_mappings_for_prefix(
 
         source = '\n            '.join(source_lines)
 
-        # Combine into mapping entry
-        mapping = f"""mappingId\t{mapping_id}
+        # Add to appropriate list based on whether it's an array
+        if is_array:
+            # Create lens for array column
+            lens_suffix, new_column = create_lens_names(column_name)
+            lens_name = f"{table_name}_{lens_suffix}"
+
+            # If flattened column name equals new column name, add "single_" prefix
+            if column_name == new_column:
+                new_column = f"single_{new_column}"
+
+            # Create lens definition
+            lens_def = {
+                "name": ["lenses", lens_name],
+                "type": "FlattenLens",
+                "baseRelation": [table_name],
+                "flattenedColumn": {
+                    "name": column_name,
+                    "datatype": "TEXT[]"
+                },
+                "columns": {
+                    "kept": ["id"],
+                    "new": new_column,
+                    "position": "index"
+                }
+            }
+            lens_definitions.append(lens_def)
+
+            # Build modified source SQL using the lens
+            source_lines = [
+                "SELECT",
+                f"    id,",
+                f"    {new_column}"
+            ]
+
+            if not table_prefix:
+                # For multi-prefix tables, we need to join back to get prefix
+                # For now, skip prefix column for lens-based queries
+                pass
+
+            source_lines.append(f"FROM lenses.{lens_name}")
+
+            if multi_prefix and table_prefix:
+                # For multi-prefix lenses, we'd need to filter in the lens or join
+                # For simplicity, we'll note this limitation
+                pass
+
+            source = '\n            '.join(source_lines)
+
+            # Rebuild target with singular column name
+            if table_prefix:
+                subject_uri = f"<{table_prefix}{{id}}>"
+            else:
+                subject_uri = "<{prefix}{id}>"
+
+            predicate = get_prefixed_predicate(pred_uri, prefix_map)
+
+            if is_object_property:
+                if ref_prefix:
+                    object_part = f"<{ref_prefix}{{{new_column}}}>"
+                else:
+                    object_part = f"<{{{new_column}}}>"
+            else:
+                if ontology_xsd_range:
+                    object_part = f"{{{new_column}}}^^{ontology_xsd_range}"
+                else:
+                    sql_type = predicate_types.get(pred_uri, 'TEXT')
+                    xsd_type = get_xsd_type(sql_type)
+                    if xsd_type:
+                        object_part = f"{{{new_column}}}^^{xsd_type}"
+                    else:
+                        object_part = f"{{{new_column}}}"
+
+            target = f"{subject_uri} {predicate} {object_part} ."
+
+            # Combine into mapping entry
+            mapping = f"""mappingId\t{mapping_id}
 target\t\t{target}
 source\t\t{source}"""
 
-        # Add to appropriate list based on whether it's an array
-        if is_array:
             array_mappings.append(mapping)
         else:
+            # Scalar mapping - use original logic
+            mapping = f"""mappingId\t{mapping_id}
+target\t\t{target}
+source\t\t{source}"""
+
             scalar_mappings.append(mapping)
 
-    return scalar_mappings, array_mappings
+    return scalar_mappings, array_mappings, lens_definitions
 
 
 def merge_class_predicates(class_infos: List[Dict]) -> Dict:
@@ -821,6 +934,7 @@ def main():
     print("Generating mappings...")
     all_scalar_mappings = []
     all_array_mappings = []
+    all_lens_definitions = []
 
     # Get tables from the structure (it has a 'tables' key)
     tables = table_prefix_analysis.get('tables', table_prefix_analysis)
@@ -850,7 +964,7 @@ def main():
             class_info = table_to_class[table_name]
             print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(class_info.get('predicates', []))} predicate(s)")
 
-        scalar_mappings, array_mappings = generate_table_mappings(
+        scalar_mappings, array_mappings, lens_definitions = generate_table_mappings(
             table_name,
             class_info,
             table_prefixes,
@@ -865,6 +979,7 @@ def main():
 
         all_scalar_mappings.extend(scalar_mappings)
         all_array_mappings.extend(array_mappings)
+        all_lens_definitions.extend(lens_definitions)
 
     # Write output files
     print(f"\nWriting mappings to output files...")
@@ -889,9 +1004,30 @@ def main():
         f.write('\n\n'.join(all_array_mappings))
         f.write('\n\n]]')
 
-    print(f"\nDone! Generated {len(all_scalar_mappings)} scalar mappings and {len(all_array_mappings)} array mappings")
+    # Deduplicate lenses by name (multi-prefix tables generate duplicates)
+    seen_lenses = {}
+    for lens in all_lens_definitions:
+        lens_key = tuple(lens['name'])
+        if lens_key not in seen_lenses:
+            seen_lenses[lens_key] = lens
+
+    deduped_lens_definitions = list(seen_lenses.values())
+
+    # Write lenses.json file (in ontop/ directory, not ontop/mapping/)
+    lenses_output_file = output_file.parent.parent / 'lenses.json'
+    print(f"  Writing {len(deduped_lens_definitions)} lens definitions to {lenses_output_file}...")
+    if len(all_lens_definitions) > len(deduped_lens_definitions):
+        print(f"    (Removed {len(all_lens_definitions) - len(deduped_lens_definitions)} duplicates from multi-prefix tables)")
+    lenses_data = {
+        "relations": deduped_lens_definitions
+    }
+    with open(lenses_output_file, 'w') as f:
+        json.dump(lenses_data, f, indent=4)
+
+    print(f"\nDone! Generated {len(all_scalar_mappings)} scalar mappings, {len(all_array_mappings)} array mappings, and {len(deduped_lens_definitions)} lenses")
     print(f"Scalar mappings: {output_file}")
     print(f"Array mappings: {array_output_file}")
+    print(f"Lenses: {lenses_output_file}")
 
 
 if __name__ == '__main__':

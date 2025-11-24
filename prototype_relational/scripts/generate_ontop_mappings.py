@@ -769,8 +769,43 @@ def _generate_mappings_for_prefix(
 
             predicate = get_prefixed_predicate(pred_uri, prefix_map)
 
+            # For array object properties, find the referenced table prefix from references_to
             if is_object_property:
-                if ref_prefix:
+                array_ref_prefix = None
+                # Look through references_to to find which class this predicate references
+                for ref in class_info.get('references_to', []):
+                    for ref_pred in ref.get('predicates', []):
+                        if ref_pred.get('predicate_uri') == pred_uri:
+                            # Found it - now get the table name and prefix
+                            ref_class_name = ref.get('class_name', '')
+                            if not ref_class_name:
+                                continue
+
+                            # Check if this class is part of a merged table
+                            ref_table = None
+                            for merged_table, config in MERGE_GROUPS.items():
+                                if ref_class_name in config['classes']:
+                                    ref_table = merged_table
+                                    break
+
+                            # If not merged, convert class name to table name
+                            if not ref_table:
+                                ref_table = sanitize_table_name(ref_class_name)
+
+                            # Get the first prefix for this table
+                            if ref_table in table_prefix_analysis.get('tables', {}):
+                                table_data = table_prefix_analysis['tables'][ref_table]
+                                prefixes = table_data.get('prefix_counts', {})
+                                if prefixes:
+                                    array_ref_prefix = list(prefixes.keys())[0]
+                            break
+                    if array_ref_prefix:
+                        break
+
+                # Use the array-specific prefix if found, otherwise fall back to FK-based prefix
+                if array_ref_prefix:
+                    object_part = f"<{array_ref_prefix}{{{new_column}}}>"
+                elif ref_prefix:
                     object_part = f"<{ref_prefix}{{{new_column}}}>"
                 else:
                     object_part = f"<{{{new_column}}}>"

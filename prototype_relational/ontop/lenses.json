@@ -1,0 +1,20 @@
+{
+    "relations": [
+        {
+            "name": ["lenses", "dataset_specs_columns"],
+            "type": "FlattenLens",
+            "baseRelation": ["ct_dataset_specs"],
+            "flattenedColumn": {
+                "name": "has_column",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "column",
+                "position": "index"
+            }
+        }
+    ]
+}

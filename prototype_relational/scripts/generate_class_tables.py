@@ -414,15 +414,44 @@ def sanitize_column_name(predicate_short: str) -> str:
     return name
 
 
+def to_array_type(base_type: str) -> str:
+    """
+    Convert a PostgreSQL type to its array equivalent
+
+    Args:
+        base_type: Base PostgreSQL type (e.g., 'TEXT', 'INTEGER')
+
+    Returns:
+        Array type (e.g., 'TEXT[]', 'INTEGER[]')
+    """
+    return f"{base_type}[]"
+
+
+def get_base_type(col_type: str) -> str:
+    """
+    Extract the base type from a column type (strips [] suffix if present)
+
+    Args:
+        col_type: Column type (e.g., 'TEXT', 'TEXT[]', 'INTEGER[]')
+
+    Returns:
+        Base type without array suffix (e.g., 'TEXT', 'INTEGER')
+    """
+    if col_type.endswith('[]'):
+        return col_type[:-2]
+    return col_type
+
+
 def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
                          min_coverage: float = 0,
                          exclude_namespaces: Set[str] = None,
-                         functional_properties: Set[str] = None) -> List[Dict]:
+                         functional_properties: Set[str] = None,
+                         non_functional_properties: Set[str] = None) -> List[Dict]:
     """
     Get list of columns to create for a class based on its predicates
 
-    Only includes functional properties (single-valued). Non-functional properties
-    will be handled via junction tables.
+    Includes both functional properties (single-valued) and non-functional properties
+    (multi-valued, stored as arrays).
 
     Args:
         class_data: Class information from analysis JSON
@@ -430,12 +459,14 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         min_coverage: Minimum coverage percentage to include predicate
         exclude_namespaces: Set of namespace prefixes to exclude
         functional_properties: Set of predicate URIs that are functional (optional)
+        non_functional_properties: Set of predicate URIs that are non-functional (optional)
 
-    Returns: List of dicts with keys: name, type, predicate_uri, coverage
+    Returns: List of dicts with keys: name, type, predicate_uri, coverage, is_array
     """
     columns = []
     exclude_namespaces = exclude_namespaces or set()
     functional_properties = functional_properties or set()
+    non_functional_properties = non_functional_properties or set()
 
     for pred_info in class_data.get('predicates', []):
         # Skip if below coverage threshold
@@ -450,150 +481,27 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         if pred_info['predicate_short'] == 'rdf:type':
             continue
 
-        # Skip non-functional properties (they'll get junction tables)
-        if functional_properties and pred_info['predicate_uri'] not in functional_properties:
-            continue
-
         col_name = sanitize_column_name(pred_info['predicate_short'])
 
         # Look up type from type_map, default to TEXT if not found
-        col_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
+        base_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
+
+        # Determine if this is a non-functional property (multi-valued)
+        is_array = pred_info['predicate_uri'] in non_functional_properties
+
+        # Use array type for non-functional properties
+        col_type = to_array_type(base_type) if is_array else base_type
 
         columns.append({
             'name': col_name,
             'type': col_type,
             'predicate_uri': pred_info['predicate_uri'],
             'predicate_short': pred_info['predicate_short'],
-            'coverage': pred_info['coverage_percentage']
+            'coverage': pred_info['coverage_percentage'],
+            'is_array': is_array
         })
 
     return columns
-
-
-def get_junction_table_predicates(class_data: dict, type_map: Dict[str, str],
-                                  min_coverage: float = 0,
-                                  exclude_namespaces: Set[str] = None,
-                                  non_functional_properties: Set[str] = None,
-                                  fk_map: Dict[str, List[Tuple[str, str, str]]] = None) -> List[Dict]:
-    """
-    Get list of predicates that need junction tables (non-functional properties)
-
-    Args:
-        class_data: Class information from analysis JSON
-        type_map: Dict mapping predicate URIs to PostgreSQL types
-        min_coverage: Minimum coverage percentage to include predicate
-        exclude_namespaces: Set of namespace prefixes to exclude
-        non_functional_properties: Set of predicate URIs that are non-functional
-        fk_map: Foreign key map to determine if predicate is an object property
-
-    Returns: List of dicts with keys: name, type, predicate_uri, is_object_property, ref_table
-    """
-    junction_predicates = []
-    exclude_namespaces = exclude_namespaces or set()
-    non_functional_properties = non_functional_properties or set()
-    fk_map = fk_map or {}
-
-    # Get table name for this class to look up foreign keys
-    table_name = sanitize_table_name(class_data['class_name'])
-    fk_cols = {fk[0]: fk[1] for fk in fk_map.get(table_name, [])}
-
-    for pred_info in class_data.get('predicates', []):
-        # Skip if below coverage threshold
-        if pred_info['coverage_percentage'] < min_coverage:
-            continue
-
-        # Skip excluded namespaces
-        if pred_info['namespace'] in exclude_namespaces:
-            continue
-
-        # Skip rdf:type
-        if pred_info['predicate_short'] == 'rdf:type':
-            continue
-
-        # Only include non-functional properties
-        if pred_info['predicate_uri'] not in non_functional_properties:
-            continue
-
-        col_name = sanitize_column_name(pred_info['predicate_short'])
-        col_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
-
-        # Check if this is an object property (foreign key)
-        is_object_property = col_name in fk_cols
-        ref_table = fk_cols.get(col_name) if is_object_property else None
-
-        junction_predicates.append({
-            'name': col_name,
-            'type': col_type,
-            'predicate_uri': pred_info['predicate_uri'],
-            'predicate_short': pred_info['predicate_short'],
-            'coverage': pred_info['coverage_percentage'],
-            'is_object_property': is_object_property,
-            'ref_table': ref_table
-        })
-
-    return junction_predicates
-
-
-def generate_junction_table_sql(base_table: str, predicate_info: Dict) -> str:
-    """
-    Generate CREATE TABLE statement for a junction table
-
-    Args:
-        base_table: Name of the base class table
-        predicate_info: Dict with predicate information (from get_junction_table_predicates)
-
-    Returns:
-        SQL CREATE TABLE statement
-    """
-    junction_table = f"{base_table}__{predicate_info['name']}"
-
-    lines = [f"CREATE TABLE IF NOT EXISTS {junction_table} ("]
-    lines.append("    id SERIAL PRIMARY KEY,")
-    lines.append(f"    {base_table}_id TEXT NOT NULL,")
-
-    # Determine value column type and constraints
-    if predicate_info['is_object_property']:
-        # Object property - foreign key to referenced table
-        ref_table = predicate_info['ref_table']
-        lines.append(f"    value_id TEXT NOT NULL,")
-        lines.append(f"    FOREIGN KEY ({base_table}_id) REFERENCES {base_table}(id) ON DELETE CASCADE,")
-        lines.append(f"    FOREIGN KEY (value_id) REFERENCES {ref_table}(id) ON DELETE CASCADE,")
-        lines.append(f"    UNIQUE({base_table}_id, value_id)")
-    else:
-        # Data property - direct value
-        value_type = predicate_info['type']
-        lines.append(f"    value {value_type},")
-        lines.append(f"    FOREIGN KEY ({base_table}_id) REFERENCES {base_table}(id) ON DELETE CASCADE")
-
-    lines.append(");")
-
-    return '\n'.join(lines)
-
-
-def generate_junction_table_indexes(base_table: str, predicate_info: Dict) -> str:
-    """
-    Generate indexes for a junction table
-
-    Args:
-        base_table: Name of the base class table
-        predicate_info: Dict with predicate information
-
-    Returns:
-        SQL CREATE INDEX statements
-    """
-    junction_table = f"{base_table}__{predicate_info['name']}"
-    lines = []
-
-    # Index on base table foreign key
-    idx_name = f"idx_{junction_table}_{base_table}_id"
-    lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {junction_table}({base_table}_id);")
-
-    # Index on value if it's an object property
-    if predicate_info['is_object_property']:
-        idx_name = f"idx_{junction_table}_value_id"
-        lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {junction_table}(value_id);")
-
-    return '\n'.join(lines)
 
 
 def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str, str]]]:
@@ -694,8 +602,16 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
 
     # Add regular columns
     for col in columns:
-        # If this column is a foreign key, ensure it's TEXT type
-        col_type = 'TEXT' if col['name'] in fk_cols else col['type']
+        # For foreign keys, use TEXT for single values, TEXT[] for arrays
+        # Array foreign keys cannot have foreign key constraints in PostgreSQL
+        if col['name'] in fk_cols:
+            # Foreign key column - ensure it's TEXT or TEXT[] based on is_array
+            if col.get('is_array', False):
+                col_type = 'TEXT[]'
+            else:
+                col_type = 'TEXT'
+        else:
+            col_type = col['type']
         lines.append(f"    {col['name']} {col_type},")
 
     # Add CHECK constraint: prefix || id = rdf_subject
@@ -728,24 +644,35 @@ def generate_indexes_sql(table_name: str, columns: List[Dict],
                         foreign_keys: List[Tuple[str, str, str]] = None) -> str:
     """
     Generate CREATE INDEX statements for performance
+    Uses GIN indexes for array columns for efficient array operations
     """
     lines = []
     fk_cols = {fk[0] for fk in (foreign_keys or [])}
 
-    # Index foreign key columns
+    # Build map of column names to their is_array flag
+    col_is_array = {col['name']: col.get('is_array', False) for col in columns}
+
+    # Index foreign key columns (skip arrays - they'll be indexed below with GIN)
     for col_name in fk_cols:
-        idx_name = f"idx_{table_name}_{col_name}"
-        lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name}({col_name});")
+        if not col_is_array.get(col_name, False):
+            idx_name = f"idx_{table_name}_{col_name}"
+            lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name}({col_name});")
 
     # Index commonly queried columns (timestamps, high-coverage columns)
     for col in columns:
-        if col['name'] in fk_cols:
-            continue  # Already indexed
+        if col['name'] in fk_cols and not col.get('is_array', False):
+            continue  # Already indexed above
+
+        is_array = col.get('is_array', False)
 
         # Index if high coverage or timestamp type
         if col['coverage'] >= 90 or 'TIMESTAMP' in col['type']:
             idx_name = f"idx_{table_name}_{col['name']}"
-            lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name}({col['name']});")
+            if is_array:
+                # Use GIN index for array columns (enables efficient array operations like ANY, @>, etc.)
+                lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name} USING GIN ({col['name']});")
+            else:
+                lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name}({col['name']});")
 
     return '\n'.join(lines)
 
@@ -803,11 +730,12 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
         select_lines.append(f"    , '{type_value}' AS {type_column}")
 
         # For each column, use appropriate aggregate function to pivot the predicate values
-        # Use BOOL_OR for boolean columns, MAX for others
+        # Use BOOL_OR for boolean columns, ARRAY_AGG for arrays, MAX for others
         for col in columns:
             pred_uri = col['predicate_uri']
             col_type = col['type']
             col_name = col['name']
+            is_array = col.get('is_array', False)
 
             # Check if this column is a foreign key
             if col_name in fk_cols:
@@ -817,12 +745,14 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
                 ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
                 # Generate suffix extraction
                 ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
-                agg_func = _get_aggregate_function(col_type)
+                agg_func = _get_aggregate_function(col_type, is_array)
                 select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
             else:
                 # Regular column - use the value as-is
-                cast_expr = _get_cast_expression(col_type)
-                agg_func = _get_aggregate_function(col_type)
+                # For arrays, we cast individual values then aggregate; for scalars, we cast and take MAX
+                base_type = get_base_type(col_type)
+                cast_expr = _get_cast_expression(base_type)
+                agg_func = _get_aggregate_function(col_type, is_array)
                 select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
         select_lines.append(f"FROM {triples_table}")
@@ -877,11 +807,12 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
     lines.append(f"    , ({indented_prefix}) AS prefix")
 
     # For each column, use appropriate aggregate function to pivot the predicate values
-    # Use BOOL_OR for boolean columns, MAX for others
+    # Use BOOL_OR for boolean columns, ARRAY_AGG for arrays, MAX for others
     for col in columns:
         pred_uri = col['predicate_uri']
         col_type = col['type']
         col_name = col['name']
+        is_array = col.get('is_array', False)
 
         # Check if this column is a foreign key
         if col_name in fk_cols:
@@ -891,12 +822,14 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
             ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
             # Generate suffix extraction
             ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
-            agg_func = _get_aggregate_function(col_type)
+            agg_func = _get_aggregate_function(col_type, is_array)
             lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
         else:
             # Regular column - use the value as-is
-            cast_expr = _get_cast_expression(col_type)
-            agg_func = _get_aggregate_function(col_type)
+            # For arrays, we cast individual values then aggregate; for scalars, we cast and take MAX
+            base_type = get_base_type(col_type)
+            cast_expr = _get_cast_expression(base_type)
+            agg_func = _get_aggregate_function(col_type, is_array)
             lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
     lines.append(f"FROM {triples_table}")
@@ -929,13 +862,24 @@ def _get_cast_expression(col_type: str) -> str:
         return "obj"
 
 
-def _get_aggregate_function(col_type: str) -> str:
+def _get_aggregate_function(col_type: str, is_array: bool = False) -> str:
     """Get the appropriate aggregate function for a column type
 
     PostgreSQL doesn't have MAX() for boolean types, so we use BOOL_OR() instead.
     BOOL_OR returns TRUE if any value is TRUE, which is equivalent to MAX for booleans.
+
+    For array types, use ARRAY_AGG to collect all values into an array.
+
+    Args:
+        col_type: The column type
+        is_array: Whether this is an array column (multi-valued property)
+
+    Returns:
+        The appropriate aggregate function name
     """
-    if col_type == 'BOOLEAN':
+    if is_array:
+        return 'ARRAY_AGG'
+    elif col_type == 'BOOLEAN':
         return 'BOOL_OR'
     else:
         return 'MAX'
@@ -992,112 +936,6 @@ def _generate_suffix_extraction_sql(column_expr: str, prefix_expr: str) -> str:
     # Use SUBSTRING to extract everything after the prefix
     # SUBSTRING(string FROM position) - position is 1-indexed
     return f"SUBSTRING({column_expr} FROM LENGTH({prefix_expr}) + 1)"
-
-
-def generate_junction_table_insert(base_table: str, class_uri: str, predicate_info: Dict,
-                                   rdf_type_uri: str, triples_table: str = 'rdf_triples',
-                                   prefix_map: Dict[str, Dict[str, int]] = None,
-                                   merge_config: dict = None, merged_from: List[str] = None,
-                                   class_uri_map: Dict[str, str] = None) -> str:
-    """
-    Generate INSERT statement to populate a junction table from rdf_triples
-
-    Args:
-        base_table: Name of the base class table
-        class_uri: URI of the class
-        predicate_info: Dict with predicate information
-        rdf_type_uri: URI for rdf:type
-        triples_table: Name of the triples table
-        prefix_map: Prefix mappings for extracting IDs
-        merge_config: Merge configuration if this is a union table
-        merged_from: List of class names that were merged
-        class_uri_map: Mapping from class names to URIs
-
-    Returns:
-        SQL INSERT statement
-    """
-    junction_table = f"{base_table}__{predicate_info['name']}"
-    pred_uri = predicate_info['predicate_uri']
-    prefix_map = prefix_map or {}
-
-    # Generate prefix extraction SQL for the base table
-    base_prefix_sql = _generate_prefix_extraction_sql(base_table, 'subj', prefix_map)
-    base_suffix_sql = _generate_suffix_extraction_sql('subj', f"({base_prefix_sql})")
-
-    if predicate_info['is_object_property']:
-        # Object property - extract ID from object URI
-        ref_table = predicate_info['ref_table']
-        ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
-        ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
-
-        if merge_config and merged_from:
-            # Merged table - UNION queries for each class
-            union_parts = []
-            for class_name in merged_from:
-                if class_name not in class_uri_map:
-                    continue
-                cls_uri = class_uri_map[class_name]
-
-                union_parts.append(f"""SELECT
-    {base_suffix_sql} AS {base_table}_id,
-    {ref_suffix_sql} AS value_id
-FROM {triples_table}
-WHERE pred = '{pred_uri}'
-    AND subj IN (
-        SELECT subj FROM {triples_table}
-        WHERE pred = '{rdf_type_uri}' AND obj = '{cls_uri}'
-    )""")
-
-            return f"""INSERT INTO {junction_table} ({base_table}_id, value_id)
-{chr(10) + 'UNION ALL' + chr(10).join(union_parts)};"""
-        else:
-            # Simple non-merged table
-            return f"""INSERT INTO {junction_table} ({base_table}_id, value_id)
-SELECT
-    {base_suffix_sql} AS {base_table}_id,
-    {ref_suffix_sql} AS value_id
-FROM {triples_table}
-WHERE pred = '{pred_uri}'
-    AND subj IN (
-        SELECT subj FROM {triples_table}
-        WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'
-    );"""
-    else:
-        # Data property - use object value directly
-        cast_expr = _get_cast_expression(predicate_info['type'])
-
-        if merge_config and merged_from:
-            # Merged table - UNION queries for each class
-            union_parts = []
-            for class_name in merged_from:
-                if class_name not in class_uri_map:
-                    continue
-                cls_uri = class_uri_map[class_name]
-
-                union_parts.append(f"""SELECT
-    {base_suffix_sql} AS {base_table}_id,
-    {cast_expr} AS value
-FROM {triples_table}
-WHERE pred = '{pred_uri}'
-    AND subj IN (
-        SELECT subj FROM {triples_table}
-        WHERE pred = '{rdf_type_uri}' AND obj = '{cls_uri}'
-    )""")
-
-            return f"""INSERT INTO {junction_table} ({base_table}_id, value)
-{chr(10) + 'UNION ALL' + chr(10).join(union_parts)};"""
-        else:
-            # Simple non-merged table
-            return f"""INSERT INTO {junction_table} ({base_table}_id, value)
-SELECT
-    {base_suffix_sql} AS {base_table}_id,
-    {cast_expr} AS value
-FROM {triples_table}
-WHERE pred = '{pred_uri}'
-    AND subj IN (
-        SELECT subj FROM {triples_table}
-        WHERE pred = '{rdf_type_uri}' AND obj = '{class_uri}'
-    );"""
 
 
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],
@@ -1255,12 +1093,12 @@ Examples:
             table_name = sanitize_table_name(class_data['class_name'])
             table_names[class_data['class_uri']] = table_name
 
-        # Build foreign key map first (needed for junction table detection)
+        # Build foreign key map
         print("\nBuilding foreign key relationships...")
         fk_map = build_foreign_key_map(classes)
         print(f"  Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
 
-        # Build columns for each table (only functional properties)
+        # Build columns for each table (includes both functional and non-functional properties)
         print("\nBuilding table schemas...")
         columns_map = {}
         for i, class_data in enumerate(classes, 1):
@@ -1270,29 +1108,11 @@ Examples:
             columns = get_predicate_columns(
                 class_data, type_map,
                 args.min_coverage, exclude_namespaces,
-                functional_properties
+                functional_properties, non_functional_properties
             )
             columns_map[table_name] = columns
 
         print(f"\n  Built schemas for {len(classes)} classes")
-
-        # Build junction table predicates (non-functional properties)
-        print("\nBuilding junction table schemas...")
-        junction_map = {}
-        for i, class_data in enumerate(classes, 1):
-            table_name = table_names[class_data['class_uri']]
-            print(f"  [{i}/{len(classes)}] {table_name}...", end='\r')
-
-            junction_predicates = get_junction_table_predicates(
-                class_data, type_map,
-                args.min_coverage, exclude_namespaces,
-                non_functional_properties, fk_map
-            )
-            if junction_predicates:
-                junction_map[table_name] = junction_predicates
-
-        total_junction_tables = sum(len(preds) for preds in junction_map.values())
-        print(f"\n  Found {total_junction_tables} junction tables needed for non-functional properties")
 
         # Print summary
         print_summary(classes, table_names, columns_map, fk_map)
@@ -1335,27 +1155,6 @@ Examples:
             schema_lines.append(create_sql)
             schema_lines.append("")
 
-        # CREATE JUNCTION TABLE statements
-        if junction_map:
-            schema_lines.append("-- " + "=" * 70)
-            schema_lines.append("-- CREATE JUNCTION TABLES (for multi-valued properties)")
-            schema_lines.append("-- " + "=" * 70)
-            schema_lines.append("")
-
-            for table_name, junction_predicates in sorted(junction_map.items()):
-                for pred_info in junction_predicates:
-                    junction_table = f"{table_name}__{pred_info['name']}"
-                    schema_lines.append(f"-- Junction table: {junction_table}")
-                    schema_lines.append(f"-- Base table: {table_name}")
-                    schema_lines.append(f"-- Predicate: {pred_info['predicate_short']}")
-                    if pred_info['is_object_property']:
-                        schema_lines.append(f"-- References: {pred_info['ref_table']}")
-                    schema_lines.append("")
-
-                    junction_sql = generate_junction_table_sql(table_name, pred_info)
-                    schema_lines.append(junction_sql)
-                    schema_lines.append("")
-
         # Generate Foreign Key SQL
         print(f"Generating foreign key SQL...")
         fk_lines = []
@@ -1367,15 +1166,24 @@ Examples:
         fk_lines.append("")
         fk_lines.append("-- " + "=" * 70)
         fk_lines.append("-- FOREIGN KEY CONSTRAINTS")
+        fk_lines.append("-- Note: Array columns (multi-valued properties) do not have FK constraints")
+        fk_lines.append("-- PostgreSQL does not support foreign key constraints on array columns")
         fk_lines.append("-- " + "=" * 70)
         fk_lines.append("")
 
         for table_name, fks in sorted(fk_map.items()):
             if fks:
-                fk_sql = generate_foreign_key_sql(table_name, fks)
-                fk_lines.append(f"-- Foreign keys for {table_name}")
-                fk_lines.append(fk_sql)
-                fk_lines.append("")
+                # Filter out foreign keys for array columns (PostgreSQL doesn't support FK constraints on arrays)
+                columns = columns_map.get(table_name, [])
+                array_col_names = {col['name'] for col in columns if col.get('is_array', False)}
+                non_array_fks = [(col_name, ref_table, pred_uri) for col_name, ref_table, pred_uri in fks
+                                 if col_name not in array_col_names]
+
+                if non_array_fks:
+                    fk_sql = generate_foreign_key_sql(table_name, non_array_fks)
+                    fk_lines.append(f"-- Foreign keys for {table_name}")
+                    fk_lines.append(fk_sql)
+                    fk_lines.append("")
 
         # Generate Index SQL
         print(f"Generating index SQL...")
@@ -1401,22 +1209,6 @@ Examples:
                 index_lines.append(f"-- Indexes for {table_name}")
                 index_lines.append(idx_sql)
                 index_lines.append("")
-
-        # Junction table indexes
-        if junction_map:
-            index_lines.append("-- " + "=" * 70)
-            index_lines.append("-- JUNCTION TABLE INDEXES")
-            index_lines.append("-- " + "=" * 70)
-            index_lines.append("")
-
-            for table_name, junction_predicates in sorted(junction_map.items()):
-                for pred_info in junction_predicates:
-                    junction_table = f"{table_name}__{pred_info['name']}"
-                    idx_sql = generate_junction_table_indexes(table_name, pred_info)
-                    if idx_sql:
-                        index_lines.append(f"-- Indexes for {junction_table}")
-                        index_lines.append(idx_sql)
-                        index_lines.append("")
 
         # Generate Population SQL
         print(f"Generating population SQL...")
@@ -1459,38 +1251,6 @@ Examples:
             )
             populate_lines.append(insert_sql)
             populate_lines.append("")
-
-        # Junction table population
-        if junction_map:
-            populate_lines.append("-- " + "=" * 70)
-            populate_lines.append("-- POPULATE JUNCTION TABLES")
-            populate_lines.append("-- " + "=" * 70)
-            populate_lines.append("")
-
-            for class_data in classes:
-                table_name = table_names[class_data['class_uri']]
-                junction_predicates = junction_map.get(table_name, [])
-
-                if not junction_predicates:
-                    continue
-
-                merge_config = class_data.get('merge_config')
-                merged_from = class_data.get('merged_from', [])
-
-                for pred_info in junction_predicates:
-                    junction_table = f"{table_name}__{pred_info['name']}"
-                    populate_lines.append(f"-- Populate {junction_table}")
-                    populate_lines.append(f"-- Base table: {table_name}")
-                    populate_lines.append(f"-- Predicate: {pred_info['predicate_short']}")
-                    populate_lines.append("")
-
-                    insert_sql = generate_junction_table_insert(
-                        table_name, class_data['class_uri'], pred_info,
-                        rdf_type_uri, args.triples_table,
-                        prefix_map, merge_config, merged_from, class_uri_map
-                    )
-                    populate_lines.append(insert_sql)
-                    populate_lines.append("")
 
         # Write schema file
         schema_sql = '\n'.join(schema_lines)

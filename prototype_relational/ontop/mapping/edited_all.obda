@@ -1,4 +1,3 @@
-
 [PrefixDeclaration]
 cpmeta:	http://meta.icos-cp.eu/ontologies/cpmeta/
 dcat:	http://www.w3.org/ns/dcat#
@@ -539,11 +538,8 @@ source		SELECT
             FROM ct_dataset_specs
 
 mappingId	dataset_specs_hasColumn
-target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/{has_column}> .
-source		SELECT
-                id,
-                has_column
-            FROM ct_dataset_specs
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/{column}> .
+source		SELECT id, column FROM lenses.dataset_specs_columns
 
 mappingId	dataset_specs_comment
 target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> rdfs:comment {comment} .

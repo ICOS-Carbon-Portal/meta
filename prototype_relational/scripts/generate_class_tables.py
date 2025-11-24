@@ -87,6 +87,14 @@ MERGE_GROUPS = {
             'cpmeta:DatasetSpec': 'dataset',
             'cpmeta:TabularDatasetSpec': 'tabular'
         }
+    },
+    'ct_static_objects': {
+        'classes': ['cpmeta:DataObject', 'cpmeta:DocumentObject'],
+        'type_column': 'object_type',
+        'type_values': {
+            'cpmeta:DataObject': 'data',
+            'cpmeta:DocumentObject': 'document'
+        }
     }
 }
 

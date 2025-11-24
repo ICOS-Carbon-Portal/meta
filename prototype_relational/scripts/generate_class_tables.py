@@ -168,6 +168,29 @@ def load_prefix_analysis(json_path: str) -> Dict[str, Dict[str, int]]:
     return prefix_map
 
 
+def load_cardinality_analysis(json_path: str) -> Dict[Tuple[str, str], Dict]:
+    """
+    Load predicate cardinality analysis from JSON
+
+    Returns: Dict[(class_uri, predicate_uri)] -> {
+        'subjects_count': int,
+        'min_values': int,
+        'max_values': int,
+        'avg_values': float,
+        'p95_values': float
+    }
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    cardinality_map = {}
+    for class_uri, class_data in data.get('classes', {}).items():
+        for pred_uri, stats in class_data.get('predicates', {}).items():
+            cardinality_map[(class_uri, pred_uri)] = stats
+
+    return cardinality_map
+
+
 def build_class_uri_map(classes: List[dict]) -> Dict[str, str]:
     """
     Build a mapping from class short names to full URIs
@@ -446,12 +469,20 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
                          min_coverage: float = 0,
                          exclude_namespaces: Set[str] = None,
                          functional_properties: Set[str] = None,
-                         non_functional_properties: Set[str] = None) -> List[Dict]:
+                         non_functional_properties: Set[str] = None,
+                         cardinality_data: Dict[Tuple[str, str], Dict] = None,
+                         class_uri_map: Dict[str, str] = None) -> List[Dict]:
     """
     Get list of columns to create for a class based on its predicates
 
     Includes both functional properties (single-valued) and non-functional properties
     (multi-valued, stored as arrays).
+
+    Uses a conservative approach:
+    - Functional properties (by ontology) → always scalar
+    - Non-functional properties (by ontology) → check actual cardinality:
+      - If max_values > 1 in data → array
+      - If max_values = 1 in data → scalar (avoid unnecessary arrays)
 
     Args:
         class_data: Class information from analysis JSON
@@ -460,6 +491,8 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         exclude_namespaces: Set of namespace prefixes to exclude
         functional_properties: Set of predicate URIs that are functional (optional)
         non_functional_properties: Set of predicate URIs that are non-functional (optional)
+        cardinality_data: Dict[(class_uri, pred_uri)] -> cardinality stats (optional)
+        class_uri_map: Dict mapping class short names to URIs (for merged classes)
 
     Returns: List of dicts with keys: name, type, predicate_uri, coverage, is_array
     """
@@ -467,6 +500,26 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
     exclude_namespaces = exclude_namespaces or set()
     functional_properties = functional_properties or set()
     non_functional_properties = non_functional_properties or set()
+    cardinality_data = cardinality_data or {}
+    class_uri_map = class_uri_map or {}
+
+    class_uri = class_data['class_uri']
+
+    # For merged classes, we need to check cardinality against ALL original class URIs
+    # This is important because predicates may only exist on some of the merged classes
+    merged_from = class_data.get('merged_from', [])
+    if merged_from:
+        # Build list of original class URIs for all merged classes
+        original_class_uris = []
+        for class_name in merged_from:
+            if class_name in class_uri_map:
+                original_class_uris.append(class_uri_map[class_name])
+        if not original_class_uris:
+            # Fallback if class_uri_map lookup failed
+            original_class_uris = [class_uri]
+    else:
+        # Not a merged class - just use the single class_uri
+        original_class_uris = [class_uri]
 
     for pred_info in class_data.get('predicates', []):
         # Skip if below coverage threshold
@@ -482,20 +535,42 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
             continue
 
         col_name = sanitize_column_name(pred_info['predicate_short'])
+        pred_uri = pred_info['predicate_uri']
 
         # Look up type from type_map, default to TEXT if not found
-        base_type = type_map.get(pred_info['predicate_uri'], 'TEXT')
+        base_type = type_map.get(pred_uri, 'TEXT')
 
-        # Determine if this is a non-functional property (multi-valued)
-        is_array = pred_info['predicate_uri'] in non_functional_properties
+        # Determine if this should be an array using conservative logic
+        is_functional = pred_uri in functional_properties
+        is_non_functional = pred_uri in non_functional_properties
 
-        # Use array type for non-functional properties
+        if is_functional:
+            # Functional property - trust ontology, always scalar
+            is_array = False
+        elif is_non_functional:
+            # Non-functional by ontology - check actual cardinality
+            # For merged classes, check ALL original class URIs and take maximum
+            max_values = 1
+            for uri in original_class_uris:
+                stats = cardinality_data.get((uri, pred_uri), {})
+                max_values = max(max_values, stats.get('max_values', 1))
+            is_array = max_values > 1
+        else:
+            # Property not in ontology - check cardinality if available, default to scalar
+            # For merged classes, check ALL original class URIs and take maximum
+            max_values = 1
+            for uri in original_class_uris:
+                stats = cardinality_data.get((uri, pred_uri), {})
+                max_values = max(max_values, stats.get('max_values', 1))
+            is_array = max_values > 1
+
+        # Use array type if needed
         col_type = to_array_type(base_type) if is_array else base_type
 
         columns.append({
             'name': col_name,
             'type': col_type,
-            'predicate_uri': pred_info['predicate_uri'],
+            'predicate_uri': pred_uri,
             'predicate_short': pred_info['predicate_short'],
             'coverage': pred_info['coverage_percentage'],
             'is_array': is_array
@@ -996,6 +1071,8 @@ Examples:
                        help='Predicate types JSON file ')
     parser.add_argument('--ontology', default='../ontop/cpmeta.ttl',
                        help='Ontology file for detecting functional properties')
+    parser.add_argument('--cardinality-json', default='predicate_cardinality.json',
+                       help='Predicate cardinality JSON file (optional, improves array detection)')
     parser.add_argument('--output', default='class_tables/create_class_tables.sql',
                        help='Output SQL file for schema ')
     parser.add_argument('--populate-output', default='class_tables/populate_class_tables.sql',
@@ -1084,6 +1161,19 @@ Examples:
         print(f"Error analyzing ontology: {e}")
         return 1
 
+    # Load cardinality analysis (optional - improves array detection)
+    cardinality_data = {}
+    print(f"\nLoading cardinality analysis from {args.cardinality_json}...")
+    try:
+        cardinality_data = load_cardinality_analysis(args.cardinality_json)
+        print(f"  Loaded cardinality data for {len(cardinality_data)} (class, predicate) pairs")
+    except FileNotFoundError:
+        print(f"  Warning: {args.cardinality_json} not found - will use ontology declarations only")
+        print(f"  Run analyze_predicate_cardinality.py to generate cardinality data for better array detection")
+    except Exception as e:
+        print(f"  Warning: Error loading cardinality analysis: {e}")
+        print(f"  Continuing without cardinality data - will use ontology declarations only")
+
     try:
         rdf_type_uri = f"{NS['rdf']}type"
 
@@ -1108,11 +1198,42 @@ Examples:
             columns = get_predicate_columns(
                 class_data, type_map,
                 args.min_coverage, exclude_namespaces,
-                functional_properties, non_functional_properties
+                functional_properties, non_functional_properties,
+                cardinality_data, class_uri_map
             )
             columns_map[table_name] = columns
 
         print(f"\n  Built schemas for {len(classes)} classes")
+
+        # Report on array optimization from cardinality data
+        if cardinality_data:
+            print("\n  Analyzing array optimization...")
+            total_non_functional = 0
+            arrays_avoided = 0
+            arrays_used = 0
+
+            for class_data in classes:
+                class_uri = class_data['class_uri']
+                table_name = table_names[class_uri]
+                columns = columns_map.get(table_name, [])
+
+                for col in columns:
+                    pred_uri = col['predicate_uri']
+                    is_non_functional = pred_uri in non_functional_properties
+
+                    if is_non_functional:
+                        total_non_functional += 1
+                        if col['is_array']:
+                            arrays_used += 1
+                        else:
+                            arrays_avoided += 1
+
+            if total_non_functional > 0:
+                print(f"  Non-functional properties (by ontology): {total_non_functional}")
+                print(f"    Truly multi-valued (using arrays): {arrays_used}")
+                print(f"    Single-valued in practice (avoided arrays): {arrays_avoided}")
+                pct_avoided = 100.0 * arrays_avoided / total_non_functional
+                print(f"    Arrays avoided: {pct_avoided:.1f}%")
 
         # Print summary
         print_summary(classes, table_names, columns_map, fk_map)

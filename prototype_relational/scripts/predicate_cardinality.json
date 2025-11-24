@@ -1,0 +1,2563 @@
+{
+  "classes": {
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission": {
+      "class_name": "cpmeta:DataSubmission",
+      "instance_count": 2344301,
+      "predicates": {
+        "http://www.w3.org/ns/prov#endedAtTime": {
+          "subjects_count": 2343430,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.0000042672492884,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/prov#startedAtTime": {
+          "subjects_count": 2344301,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.000040097240073,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/prov#wasAssociatedWith": {
+          "subjects_count": 2344301,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject": {
+      "class_name": "cpmeta:DataObject",
+      "instance_count": 2343960,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames": {
+          "subjects_count": 268117,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasActualVariable": {
+          "subjects_count": 2414,
+          "min_values": 1,
+          "max_values": 10,
+          "avg_values": 2.0534382767191386,
+          "p95_values": 10.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi": {
+          "subjects_count": 4391,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime": {
+          "subjects_count": 2650,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords": {
+          "subjects_count": 5446,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 2343960,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows": {
+          "subjects_count": 1249383,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec": {
+          "subjects_count": 2343960,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum": {
+          "subjects_count": 2343960,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes": {
+          "subjects_count": 2343089,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage": {
+          "subjects_count": 6344,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime": {
+          "subjects_count": 2650,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution": {
+          "subjects_count": 2581,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf": {
+          "subjects_count": 876514,
+          "min_values": 1,
+          "max_values": 14,
+          "avg_values": 1.0030598484450903,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy": {
+          "subjects_count": 2341544,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy": {
+          "subjects_count": 1248434,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy": {
+          "subjects_count": 2343960,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/CONTACT%20POINT": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/CONTRIBUTOR": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20METHOD": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20SCALE": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/MEASUREMENT%20UNIT": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/OBSERVATION%20CATEGORY": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/PARAMETER": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/SAMPLING%20TYPE": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/resources/wdcgg/TIME%20INTERVAL": {
+          "subjects_count": 4259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/description": {
+          "subjects_count": 2641,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/license": {
+          "subjects_count": 6,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 2650,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/prov#hadPrimarySource": {
+          "subjects_count": 3035,
+          "min_values": 1,
+          "max_values": 786,
+          "avg_values": 5.946293245469522,
+          "p95_values": 25.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition": {
+      "class_name": "cpmeta:DataAcquisition",
+      "instance_count": 2341316,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight": {
+          "subjects_count": 1110259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith": {
+          "subjects_count": 2170077,
+          "min_values": 1,
+          "max_values": 16,
+          "avg_values": 1.1188847216020446,
+          "p95_values": 2.0
+        },
+        "http://www.w3.org/ns/prov#endedAtTime": {
+          "subjects_count": 2340995,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/prov#startedAtTime": {
+          "subjects_count": 2340995,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/prov#wasAssociatedWith": {
+          "subjects_count": 2341312,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction": {
+      "class_name": "cpmeta:DataProduction",
+      "instance_count": 1248434,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime": {
+          "subjects_count": 1248434,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.0000016020069944,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy": {
+          "subjects_count": 1113733,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy": {
+          "subjects_count": 626107,
+          "min_values": 1,
+          "max_values": 76,
+          "avg_values": 1.0245772687416048,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy": {
+          "subjects_count": 1248434,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 138308,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 748,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/VariableInfo": {
+      "class_name": "cpmeta:VariableInfo",
+      "instance_count": 4957,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMaxValue": {
+          "subjects_count": 4816,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMinValue": {
+          "subjects_count": 4816,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 4957,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Instrument": {
+      "class_name": "cpmeta:Instrument",
+      "instance_count": 4825,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId": {
+          "subjects_count": 1212,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId": {
+          "subjects_count": 3428,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent": {
+          "subjects_count": 376,
+          "min_values": 1,
+          "max_values": 8,
+          "avg_values": 2.9122340425531914,
+          "p95_values": 5.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner": {
+          "subjects_count": 1209,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasModel": {
+          "subjects_count": 4825,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 1386,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId": {
+          "subjects_count": 185,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSerialNumber": {
+          "subjects_count": 4825,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasVendor": {
+          "subjects_count": 4762,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 3427,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/ssn/hasDeployment": {
+          "subjects_count": 3074,
+          "min_values": 1,
+          "max_values": 8,
+          "avg_values": 1.3318152244632402,
+          "p95_values": 2.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage": {
+      "class_name": "cpmeta:SpatialCoverage",
+      "instance_count": 3865,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON": {
+          "subjects_count": 3865,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 40,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Membership": {
+      "class_name": "cpmeta:Membership",
+      "instance_count": 1881,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/atOrganization": {
+          "subjects_count": 1876,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAttributionWeight": {
+          "subjects_count": 523,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime": {
+          "subjects_count": 344,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasExtraRoleInfo": {
+          "subjects_count": 7,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasRole": {
+          "subjects_count": 1881,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime": {
+          "subjects_count": 1093,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 1881,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.0058479532163742,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Person": {
+      "class_name": "cpmeta:Person",
+      "instance_count": 1124,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId": {
+          "subjects_count": 124,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail": {
+          "subjects_count": 941,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId": {
+          "subjects_count": 667,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName": {
+          "subjects_count": 1124,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName": {
+          "subjects_count": 1124,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership": {
+          "subjects_count": 908,
+          "min_values": 1,
+          "max_values": 16,
+          "avg_values": 1.9812775330396477,
+          "p95_values": 6.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId": {
+          "subjects_count": 389,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId": {
+          "subjects_count": 68,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 10,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Collection": {
+      "class_name": "cpmeta:Collection",
+      "instance_count": 778,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi": {
+          "subjects_count": 452,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage": {
+          "subjects_count": 63,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf": {
+          "subjects_count": 459,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.0043572984749456,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/creator": {
+          "subjects_count": 778,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/description": {
+          "subjects_count": 773,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/hasPart": {
+          "subjects_count": 778,
+          "min_values": 1,
+          "max_values": 616,
+          "avg_values": 23.069408740359897,
+          "p95_values": 73.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 778,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 6,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject": {
+      "class_name": "cpmeta:DocumentObject",
+      "instance_count": 341,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 341,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum": {
+          "subjects_count": 341,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes": {
+          "subjects_count": 341,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf": {
+          "subjects_count": 112,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy": {
+          "subjects_count": 341,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/creator": {
+          "subjects_count": 213,
+          "min_values": 1,
+          "max_values": 6,
+          "avg_values": 1.1126760563380282,
+          "p95_values": 1.3999999999999773
+        },
+        "http://purl.org/dc/terms/description": {
+          "subjects_count": 216,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 220,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox": {
+      "class_name": "cpmeta:LatLonBox",
+      "instance_count": 298,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON": {
+          "subjects_count": 291,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEasternBound": {
+          "subjects_count": 298,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasNorthernBound": {
+          "subjects_count": 298,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSouthernBound": {
+          "subjects_count": 298,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWesternBound": {
+          "subjects_count": 298,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 211,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ES": {
+      "class_name": "cpmeta:ES",
+      "instance_count": 278,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedPublication": {
+          "subjects_count": 18,
+          "min_values": 1,
+          "max_values": 8,
+          "avg_values": 2.6666666666666665,
+          "p95_values": 5.449999999999996
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone": {
+          "subjects_count": 104,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction": {
+          "subjects_count": 88,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject": {
+          "subjects_count": 34,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.0294117647058825,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationUri": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType": {
+          "subjects_count": 259,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 257,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunding": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 9,
+          "avg_values": 2.1176470588235294,
+          "p95_values": 6.5
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate": {
+          "subjects_count": 35,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip": {
+          "subjects_count": 232,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualRadiation": {
+          "subjects_count": 66,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualTemp": {
+          "subjects_count": 231,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage": {
+          "subjects_count": 31,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass": {
+          "subjects_count": 108,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 278,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset": {
+          "subjects_count": 258,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements": {
+          "subjects_count": 13,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued": {
+          "subjects_count": 7,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/description": {
+          "subjects_count": 88,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/identifier": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/isPartOf": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/spatial": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/subject": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 115,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 277,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#contactPoint": {
+          "subjects_count": 106,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#theme": {
+          "subjects_count": 77,
+          "min_values": 64,
+          "max_values": 78,
+          "avg_values": 77.0909090909091,
+          "p95_values": 78.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn": {
+      "class_name": "cpmeta:DatasetColumn",
+      "instance_count": 270,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle": {
+          "subjects_count": 270,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat": {
+          "subjects_count": 270,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType": {
+          "subjects_count": 270,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn": {
+          "subjects_count": 123,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor": {
+          "subjects_count": 30,
+          "min_values": 1,
+          "max_values": 13,
+          "avg_values": 1.7666666666666666,
+          "p95_values": 5.549999999999997
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn": {
+          "subjects_count": 57,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 270,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Organization": {
+      "class_name": "cpmeta:Organization",
+      "instance_count": 256,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId": {
+          "subjects_count": 109,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 256,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId": {
+          "subjects_count": 55,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 133,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 41,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Station": {
+      "class_name": "cpmeta:Station",
+      "instance_count": 246,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/country": {
+          "subjects_count": 224,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 22,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationUri": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 13,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 215,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 215,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 246,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization": {
+          "subjects_count": 9,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 22,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset": {
+          "subjects_count": 5,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType": {
+      "class_name": "cpmeta:ValueType",
+      "instance_count": 166,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind": {
+          "subjects_count": 159,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit": {
+          "subjects_count": 153,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 33,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 166,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 6,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2004/02/skos/core#exactMatch": {
+          "subjects_count": 10,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox": {
+      "class_name": "cpmeta:LinkBox",
+      "instance_count": 158,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage": {
+          "subjects_count": 158,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 158,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight": {
+          "subjects_count": 158,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink": {
+          "subjects_count": 156,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 158,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Funding": {
+      "class_name": "cpmeta:Funding",
+      "instance_count": 109,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber": {
+          "subjects_count": 66,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle": {
+          "subjects_count": 82,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/awardURI": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate": {
+          "subjects_count": 89,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder": {
+          "subjects_count": 109,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate": {
+          "subjects_count": 89,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 27,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 109,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable": {
+      "class_name": "cpmeta:DatasetVariable",
+      "instance_count": 76,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType": {
+          "subjects_count": 76,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableTitle": {
+          "subjects_count": 76,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalVariable": {
+          "subjects_count": 57,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 76,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/AS": {
+      "class_name": "cpmeta:AS",
+      "instance_count": 70,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.2,
+          "p95_values": 2.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject": {
+          "subjects_count": 31,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.032258064516129,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate": {
+          "subjects_count": 30,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass": {
+          "subjects_count": 39,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTimeZoneOffset": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements": {
+          "subjects_count": 10,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWigosId": {
+          "subjects_count": 54,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/identifier": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/isPartOf": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/spatial": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/subject": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 70,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#contactPoint": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#theme": {
+          "subjects_count": 39,
+          "min_values": 21,
+          "max_values": 40,
+          "avg_values": 29.871794871794872,
+          "p95_values": 40.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec": {
+      "class_name": "cpmeta:SimpleObjectSpec",
+      "instance_count": 59,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject": {
+          "subjects_count": 8,
+          "min_values": 2,
+          "max_values": 2,
+          "avg_values": 2.0,
+          "p95_values": 2.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords": {
+          "subjects_count": 43,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/impliesDefaultLicence": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 32,
+          "min_values": 1,
+          "max_values": 5,
+          "avg_values": 1.15625,
+          "p95_values": 1.4499999999999993
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 59,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec": {
+      "class_name": "cpmeta:DataObjectSpec",
+      "instance_count": 51,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset": {
+          "subjects_count": 12,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 2,
+          "avg_values": 1.5,
+          "p95_values": 2.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords": {
+          "subjects_count": 9,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 23,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 51,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 10,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/PlainCollection": {
+      "class_name": "cpmeta:PlainCollection",
+      "instance_count": 50,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf": {
+          "subjects_count": 50,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/hasPart": {
+          "subjects_count": 50,
+          "min_values": 1,
+          "max_values": 7,
+          "avg_values": 1.9,
+          "p95_values": 3.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Funder": {
+      "class_name": "cpmeta:Funder",
+      "instance_count": 45,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId": {
+          "subjects_count": 45,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 45,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec": {
+      "class_name": "cpmeta:TabularDatasetSpec",
+      "instance_count": 33,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn": {
+          "subjects_count": 33,
+          "min_values": 4,
+          "max_values": 26,
+          "avg_values": 11.818181818181818,
+          "p95_values": 26.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 33,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone": {
+      "class_name": "cpmeta:ClimateZone",
+      "instance_count": 30,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 30,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 30,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements": {
+      "class_name": "cpmeta:WebpageElements",
+      "instance_count": 28,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox": {
+          "subjects_count": 28,
+          "min_values": 5,
+          "max_values": 6,
+          "avg_values": 5.964285714285714,
+          "p95_values": 6.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 27,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 28,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/OS": {
+      "class_name": "cpmeta:OS",
+      "instance_count": 25,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLabelingDate": {
+          "subjects_count": 6,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 7,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 7,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage": {
+          "subjects_count": 15,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationClass": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/description": {
+          "subjects_count": 11,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.4545454545454546,
+          "p95_values": 3.0
+        },
+        "http://purl.org/dc/terms/identifier": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/isPartOf": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/spatial": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.263157894736842,
+          "p95_values": 3.0
+        },
+        "http://purl.org/dc/terms/subject": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://purl.org/dc/terms/title": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 14,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.3571428571428572,
+          "p95_values": 3.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 25,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 10,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#contactPoint": {
+          "subjects_count": 19,
+          "min_values": 1,
+          "max_values": 3,
+          "avg_values": 1.263157894736842,
+          "p95_values": 3.0
+        },
+        "http://www.w3.org/ns/dcat#theme": {
+          "subjects_count": 14,
+          "min_values": 9,
+          "max_values": 11,
+          "avg_values": 10.428571428571429,
+          "p95_values": 11.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat": {
+      "class_name": "cpmeta:ObjectFormat",
+      "instance_count": 22,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasGoodFlagValue": {
+          "subjects_count": 5,
+          "min_values": 2,
+          "max_values": 3,
+          "avg_values": 2.6,
+          "p95_values": 3.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 22,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind": {
+      "class_name": "cpmeta:QuantityKind",
+      "instance_count": 21,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 17,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 21,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType": {
+      "class_name": "cpmeta:EcosystemType",
+      "instance_count": 17,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 16,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 17,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat": {
+      "class_name": "cpmeta:ValueFormat",
+      "instance_count": 13,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 12,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetSpec": {
+      "class_name": "cpmeta:DatasetSpec",
+      "instance_count": 12,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasVariable": {
+          "subjects_count": 11,
+          "min_values": 1,
+          "max_values": 42,
+          "avg_values": 7.0,
+          "p95_values": 28.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 12,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Project": {
+      "class_name": "cpmeta:Project",
+      "instance_count": 12,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords": {
+          "subjects_count": 5,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipPidMintingPolicy": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipStoragePolicy": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 12,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 12,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#seeAlso": {
+          "subjects_count": 8,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Role": {
+      "class_name": "cpmeta:Role",
+      "instance_count": 5,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 5,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/AtmoStation": {
+      "class_name": "cpmeta:AtmoStation",
+      "instance_count": 4,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme": {
+      "class_name": "cpmeta:DataTheme",
+      "instance_count": 4,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasMarkerIcon": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/Position": {
+      "class_name": "cpmeta:Position",
+      "instance_count": 4,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 4,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/IngosStation": {
+      "class_name": "cpmeta:IngosStation",
+      "instance_count": 3,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding": {
+      "class_name": "cpmeta:ObjectEncoding",
+      "instance_count": 3,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter": {
+      "class_name": "cpmeta:ThematicCenter",
+      "instance_count": 3,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 3,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/CentralFacility": {
+      "class_name": "cpmeta:CentralFacility",
+      "instance_count": 2,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#comment": {
+          "subjects_count": 1,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/SailDrone": {
+      "class_name": "cpmeta:SailDrone",
+      "instance_count": 2,
+      "predicates": {
+        "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasName": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        },
+        "http://www.w3.org/ns/dcat#theme": {
+          "subjects_count": 1,
+          "min_values": 11,
+          "max_values": 11,
+          "avg_values": 11.0,
+          "p95_values": 11.0
+        }
+      }
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/SpecificDatasetType": {
+      "class_name": "cpmeta:SpecificDatasetType",
+      "instance_count": 2,
+      "predicates": {
+        "http://www.w3.org/2000/01/rdf-schema#label": {
+          "subjects_count": 2,
+          "min_values": 1,
+          "max_values": 1,
+          "avg_values": 1.0,
+          "p95_values": 1.0
+        }
+      }
+    }
+  }
+}

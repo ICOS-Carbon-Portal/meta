@@ -544,25 +544,28 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         is_functional = pred_uri in functional_properties
         is_non_functional = pred_uri in non_functional_properties
 
-        if is_functional:
-            # Functional property - trust ontology, always scalar
-            is_array = False
-        elif is_non_functional:
-            # Non-functional by ontology - check actual cardinality
-            # For merged classes, check ALL original class URIs and take maximum
-            max_values = 1
-            for uri in original_class_uris:
-                stats = cardinality_data.get((uri, pred_uri), {})
-                max_values = max(max_values, stats.get('max_values', 1))
-            is_array = max_values > 1
-        else:
-            # Property not in ontology - check cardinality if available, default to scalar
-            # For merged classes, check ALL original class URIs and take maximum
-            max_values = 1
-            for uri in original_class_uris:
-                stats = cardinality_data.get((uri, pred_uri), {})
-                max_values = max(max_values, stats.get('max_values', 1))
-            is_array = max_values > 1
+        # if is_functional:
+        #     # Functional property - trust ontology, always scalar
+        #     is_array = False
+        # elif is_non_functional:
+        #     # Non-functional by ontology - check actual cardinality
+        #     # For merged classes, check ALL original class URIs and take maximum
+        #     max_values = 1
+        #     for uri in original_class_uris:
+        #         stats = cardinality_data.get((uri, pred_uri), {})
+        #         max_values = max(max_values, stats.get('max_values', 1))
+        #     is_array = max_values > 1
+        # else:
+        #     # Property not in ontology - check cardinality if available, default to scalar
+        #     # For merged classes, check ALL original class URIs and take maximum
+        #     max_values = 1
+        #     for uri in original_class_uris:
+        #         stats = cardinality_data.get((uri, pred_uri), {})
+        #         max_values = max(max_values, stats.get('max_values', 1))
+        #     is_array = max_values > 1
+
+        # TODO: Temporarily only do this for ct_dataset_specs.has_column
+        is_array = col_name == 'has_column'
 
         # Use array type if needed
         col_type = to_array_type(base_type) if is_array else base_type
@@ -821,14 +824,22 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
                 # Generate suffix extraction
                 ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
                 agg_func = _get_aggregate_function(col_type, is_array)
-                select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
+                # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
+                if is_array:
+                    select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) FILTER (WHERE pred = '{pred_uri}') AS {col_name}")
+                else:
+                    select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
             else:
                 # Regular column - use the value as-is
                 # For arrays, we cast individual values then aggregate; for scalars, we cast and take MAX
                 base_type = get_base_type(col_type)
                 cast_expr = _get_cast_expression(base_type)
                 agg_func = _get_aggregate_function(col_type, is_array)
-                select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
+                # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
+                if is_array:
+                    select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) FILTER (WHERE pred = '{pred_uri}') AS {col_name}")
+                else:
+                    select_lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
         select_lines.append(f"FROM {triples_table}")
         select_lines.append(f"WHERE subj IN (")
@@ -898,14 +909,22 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
             # Generate suffix extraction
             ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
             agg_func = _get_aggregate_function(col_type, is_array)
-            lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
+            # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
+            if is_array:
+                lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) FILTER (WHERE pred = '{pred_uri}') AS {col_name}")
+            else:
+                lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {ref_suffix_sql} ELSE NULL END) AS {col_name}")
         else:
             # Regular column - use the value as-is
             # For arrays, we cast individual values then aggregate; for scalars, we cast and take MAX
             base_type = get_base_type(col_type)
             cast_expr = _get_cast_expression(base_type)
             agg_func = _get_aggregate_function(col_type, is_array)
-            lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
+            # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
+            if is_array:
+                lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) FILTER (WHERE pred = '{pred_uri}') AS {col_name}")
+            else:
+                lines.append(f"    , {agg_func}(CASE WHEN pred = '{pred_uri}' THEN {cast_expr} ELSE NULL END) AS {col_name}")
 
     lines.append(f"FROM {triples_table}")
     lines.append(f"WHERE subj IN (")

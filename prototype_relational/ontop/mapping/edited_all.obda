@@ -138,20 +138,6 @@ source		SELECT
                 has_sampling_height
             FROM ct_data_acquisitions
 
-mappingId	data_acquisitions_hasSamplingPoint
-target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:hasSamplingPoint <{has_sampling_point}> .
-source		SELECT
-                id,
-                has_sampling_point
-            FROM ct_data_acquisitions
-
-mappingId	data_acquisitions_wasPerformedAt
-target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedAt <{was_performed_at}> .
-source		SELECT
-                id,
-                was_performed_at
-            FROM ct_data_acquisitions
-
 mappingId	data_objects_hasName
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasName {has_name}^^xsd:string .
 source		SELECT

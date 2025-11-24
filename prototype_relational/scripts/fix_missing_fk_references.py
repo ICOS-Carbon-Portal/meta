@@ -23,64 +23,7 @@ from collections import defaultdict
 from typing import Dict, Set, List, Tuple, Optional
 import psycopg2
 from psycopg2 import sql
-
-
-# Table merge configuration - must match generate_class_tables.py
-MERGE_GROUPS = {
-    'ct_object_specs': {
-        'classes': ['cpmeta:SimpleObjectSpec', 'cpmeta:DataObjectSpec'],
-        'type_column': 'spec_type',
-        'type_values': {
-            'cpmeta:SimpleObjectSpec': 'simple',
-            'cpmeta:DataObjectSpec': 'data'
-        },
-        'default_type': 'simple'
-    },
-    'ct_spatial_coverages': {
-        'classes': ['cpmeta:SpatialCoverage', 'cpmeta:LatLonBox', 'cpmeta:Position'],
-        'type_column': 'coverage_type',
-        'type_values': {
-            'cpmeta:SpatialCoverage': 'spatial',
-            'cpmeta:LatLonBox': 'latlon',
-            'cpmeta:Position': 'position'
-        },
-        'default_type': 'spatial'
-    },
-    'ct_organizations': {
-        'classes': ['cpmeta:Organization', 'cpmeta:TC', 'cpmeta:Facility'],
-        'type_column': 'org_type',
-        'type_values': {
-            'cpmeta:Organization': 'organization',
-            'cpmeta:TC': 'thematic_center',
-            'cpmeta:Facility': 'central_facility'
-        },
-        'default_type': 'organization'
-    },
-    'ct_stations': {
-        'classes': ['cpmeta:Station', 'cpmeta:AS', 'cpmeta:ES', 'cpmeta:OS',
-                   'cpmeta:SailDrone', 'cpmeta:IngosStation', 'cpmeta:AtmoStation'],
-        'type_column': 'station_type',
-        'type_values': {
-            'cpmeta:Station': 'station',
-            'cpmeta:AS': 'as',
-            'cpmeta:ES': 'es',
-            'cpmeta:OS': 'os',
-            'cpmeta:SailDrone': 'saildrone',
-            'cpmeta:IngosStation': 'ingos',
-            'cpmeta:AtmoStation': 'atmo'
-        },
-        'default_type': 'station'
-    },
-    'ct_dataset_specs': {
-        'classes': ['cpmeta:DatasetSpec', 'cpmeta:TabularDatasetSpec'],
-        'type_column': 'dataset_type',
-        'type_values': {
-            'cpmeta:DatasetSpec': 'dataset',
-            'cpmeta:TabularDatasetSpec': 'tabular'
-        },
-        'default_type': 'dataset'
-    }
-}
+from generate_class_tables import MERGE_GROUPS
 
 
 def sanitize_table_name(class_name: str) -> str:
@@ -315,6 +258,23 @@ def build_class_uri_map(classes: List[dict]) -> Dict[str, str]:
         class_uri = class_data['class_uri']
         class_uri_map[class_name] = class_uri
     return class_uri_map
+
+
+def get_array_columns(cursor) -> Set[Tuple[str, str]]:
+    """
+    Query database schema to identify array columns
+
+    Returns: Set of (table_name, column_name) tuples for columns with array types
+    """
+    query = """
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name LIKE 'ct_%'
+          AND data_type = 'ARRAY'
+    """
+    cursor.execute(query)
+    return {(row[0], row[1]) for row in cursor.fetchall()}
 
 
 def find_missing_refs(cursor, source_table: str, fk_column: str, target_table: str) -> Set[str]:
@@ -584,6 +544,11 @@ Examples:
         return 1
 
     try:
+        # Identify array columns (arrays cannot have FK constraints in PostgreSQL)
+        print("\nIdentifying array columns from database schema...")
+        array_columns = get_array_columns(cursor)
+        print(f"Found {len(array_columns)} array columns (will be skipped)")
+
         # Find all missing references
         print("\n" + "=" * 80)
         print("SCANNING FOR MISSING FOREIGN KEY REFERENCES")
@@ -591,9 +556,16 @@ Examples:
 
         all_missing = {}  # {(source_table, fk_column, target_table): set(missing_ids)}
         total_missing_count = 0
+        skipped_array_fks = 0
 
         for source_table, fks in sorted(fk_map.items()):
             for fk_column, target_table, pred_uri in fks:
+                # Skip array columns - PostgreSQL doesn't support FK constraints on arrays
+                if (source_table, fk_column) in array_columns:
+                    skipped_array_fks += 1
+                    print(f"  Skipping {source_table}.{fk_column} (array column)")
+                    continue
+
                 try:
                     missing = find_missing_refs(cursor, source_table, fk_column, target_table)
                     if missing:
@@ -613,6 +585,8 @@ Examples:
 
         print("\n" + "=" * 80)
         print(f"SUMMARY: Found {total_missing_count} missing references across {len(all_missing)} FK relationships")
+        if skipped_array_fks > 0:
+            print(f"Skipped {skipped_array_fks} array columns (PostgreSQL doesn't support FK constraints on arrays)")
         print("=" * 80)
 
         if total_missing_count == 0:

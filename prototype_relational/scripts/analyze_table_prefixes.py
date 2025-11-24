@@ -41,7 +41,7 @@ def get_class_tables(conn):
 
 def analyze_table_prefixes(conn, table_name, prefixes):
     """
-    For a given table, find which prefixes are used in the id column.
+    For a given table, find which prefixes are used in the rdf_subject column.
     Returns a tuple of (prefix_counts, unknown_count).
     """
     cursor = conn.cursor()
@@ -49,6 +49,7 @@ def analyze_table_prefixes(conn, table_name, prefixes):
 
     # Get total row count
     query = f"SELECT COUNT(*) FROM {table_name};"
+    # print(query)
     cursor.execute(query)
     total_rows = cursor.fetchone()[0]
 
@@ -58,10 +59,12 @@ def analyze_table_prefixes(conn, table_name, prefixes):
         query = f"""
             SELECT COUNT(*)
             FROM {table_name}
-            WHERE id LIKE %s;
+            WHERE rdf_subject LIKE '{prefix}%';
         """
-        cursor.execute(query, (prefix + '%',))
+        # print(query)
+        cursor.execute(query)
         count = cursor.fetchone()[0]
+        # print(f"count: {count}")
 
         if count > 0:
             prefix_counts[prefix] = count
@@ -69,7 +72,7 @@ def analyze_table_prefixes(conn, table_name, prefixes):
     # Count rows that match ANY of the supplied prefixes
     if prefixes:
         # Build a query with OR conditions for all prefixes
-        conditions = ' OR '.join(['id LIKE %s'] * len(prefixes))
+        conditions = ' OR '.join(['rdf_subject LIKE %s'] * len(prefixes))
         query = f"""
             SELECT COUNT(*)
             FROM {table_name}
@@ -96,6 +99,10 @@ def main():
     print("Loading reference prefixes from icos_subject_prefixes.json...")
     prefixes = load_reference_prefixes()
     print(f"Loaded {len(prefixes)} reference prefixes")
+
+    print(f"prefixes:")
+    for pr in prefixes:
+        print(pr)
 
     # Connect to database
     print("\nConnecting to PostgreSQL database...")

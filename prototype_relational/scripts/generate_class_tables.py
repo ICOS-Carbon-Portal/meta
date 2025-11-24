@@ -552,28 +552,25 @@ def get_predicate_columns(class_data: dict, type_map: Dict[str, str],
         is_functional = pred_uri in functional_properties
         is_non_functional = pred_uri in non_functional_properties
 
-        # if is_functional:
-        #     # Functional property - trust ontology, always scalar
-        #     is_array = False
-        # elif is_non_functional:
-        #     # Non-functional by ontology - check actual cardinality
-        #     # For merged classes, check ALL original class URIs and take maximum
-        #     max_values = 1
-        #     for uri in original_class_uris:
-        #         stats = cardinality_data.get((uri, pred_uri), {})
-        #         max_values = max(max_values, stats.get('max_values', 1))
-        #     is_array = max_values > 1
-        # else:
-        #     # Property not in ontology - check cardinality if available, default to scalar
-        #     # For merged classes, check ALL original class URIs and take maximum
-        #     max_values = 1
-        #     for uri in original_class_uris:
-        #         stats = cardinality_data.get((uri, pred_uri), {})
-        #         max_values = max(max_values, stats.get('max_values', 1))
-        #     is_array = max_values > 1
-
-        # TODO: Temporarily only do this for ct_dataset_specs.has_column
-        is_array = col_name == 'has_column'
+        if is_functional:
+            # Functional property - trust ontology, always scalar
+            is_array = False
+        elif is_non_functional:
+            # Non-functional by ontology - check actual cardinality
+            # For merged classes, check ALL original class URIs and take maximum
+            max_values = 1
+            for uri in original_class_uris:
+                stats = cardinality_data.get((uri, pred_uri), {})
+                max_values = max(max_values, stats.get('max_values', 1))
+            is_array = max_values > 1
+        else:
+            # Property not in ontology - check cardinality if available, default to scalar
+            # For merged classes, check ALL original class URIs and take maximum
+            max_values = 1
+            for uri in original_class_uris:
+                stats = cardinality_data.get((uri, pred_uri), {})
+                max_values = max(max_values, stats.get('max_values', 1))
+            is_array = max_values > 1
 
         # Use array type if needed
         col_type = to_array_type(base_type) if is_array else base_type

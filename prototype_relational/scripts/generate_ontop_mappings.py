@@ -7,9 +7,12 @@ This script reads:
 - table_prefix_analysis.json: Table to prefix mappings
 - class_tables/create_foreign_keys.sql: Foreign key relationships
 - predicate_types.json: SQL types for proper literal handling
+- predicate_cardinality.json: Cardinality data for array detection
+- ../ontop/cpmeta.ttl: Ontology for functional property detection
 
 Outputs:
-- ../ontop/mapping/generated_all_mappings.obda: Complete Ontop R2RML mappings
+- ../ontop/mapping/generated_all_mappings.obda: Scalar (non-array) property mappings
+- ../ontop/mapping/generated_array_mappings.obda: Array property mappings
 """
 
 import json
@@ -18,18 +21,12 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
 from rdflib import Graph, RDF, RDFS, OWL
-
-# Table merge configuration (from generate_class_tables.py)
-# Maps merged table names to the classes that were merged into them
-MERGE_GROUPS = {
-    'ct_object_specs': ['cpmeta:SimpleObjectSpec', 'cpmeta:DataObjectSpec'],
-    'ct_spatial_coverages': ['cpmeta:SpatialCoverage', 'cpmeta:LatLonBox', 'cpmeta:Position'],
-    'ct_organizations': ['cpmeta:Organization', 'cpmeta:TC', 'cpmeta:Facility'],
-    'ct_stations': ['cpmeta:Station', 'cpmeta:AS', 'cpmeta:ES', 'cpmeta:OS',
-                    'cpmeta:SailDrone', 'cpmeta:IngosStation', 'cpmeta:AtmoStation'],
-    'ct_dataset_specs': ['cpmeta:DatasetSpec', 'cpmeta:TabularDatasetSpec'],
-}
-
+from generate_class_tables import (
+    MERGE_GROUPS,
+    detect_functional_properties,
+    load_cardinality_analysis,
+    get_predicate_columns
+)
 
 def sanitize_table_name(class_name: str) -> str:
     """
@@ -485,38 +482,24 @@ def generate_table_mappings(
     fk_map: Dict[str, Dict[str, Tuple[str, str]]],
     table_prefix_analysis: Dict,
     predicate_types: Dict[str, str],
-    property_types_from_ontology: Dict[str, Dict[str, str]]
-) -> List[str]:
+    property_types_from_ontology: Dict[str, Dict[str, str]],
+    cardinality_data: Dict[Tuple[str, str], Dict],
+    functional_properties: Set[str]
+) -> Tuple[List[str], List[str]]:
     """
     Generate all mapping entries for a single table.
 
     Returns:
-        List of mapping text blocks
+        Tuple of (scalar_mappings, array_mappings)
     """
-    mappings = []
+    scalar_mappings = []
+    array_mappings = []
     class_uri = class_info.get('class_uri', '')
 
     # For multi-prefix tables, generate separate mappings
     if len(table_prefixes) > 1:
         for table_prefix in table_prefixes:
-            mappings.extend(
-                _generate_mappings_for_prefix(
-                    table_name,
-                    class_info,
-                    table_prefix,
-                    prefix_map,
-                    fk_map,
-                    table_prefix_analysis,
-                    predicate_types,
-                    property_types_from_ontology,
-                    multi_prefix=True
-                )
-            )
-    else:
-        # Single prefix table
-        table_prefix = table_prefixes[0] if table_prefixes else None
-        mappings.extend(
-            _generate_mappings_for_prefix(
+            scalar, array = _generate_mappings_for_prefix(
                 table_name,
                 class_info,
                 table_prefix,
@@ -525,11 +508,32 @@ def generate_table_mappings(
                 table_prefix_analysis,
                 predicate_types,
                 property_types_from_ontology,
-                multi_prefix=False
+                cardinality_data,
+                functional_properties,
+                multi_prefix=True
             )
+            scalar_mappings.extend(scalar)
+            array_mappings.extend(array)
+    else:
+        # Single prefix table
+        table_prefix = table_prefixes[0] if table_prefixes else None
+        scalar, array = _generate_mappings_for_prefix(
+            table_name,
+            class_info,
+            table_prefix,
+            prefix_map,
+            fk_map,
+            table_prefix_analysis,
+            predicate_types,
+            property_types_from_ontology,
+            cardinality_data,
+            functional_properties,
+            multi_prefix=False
         )
+        scalar_mappings.extend(scalar)
+        array_mappings.extend(array)
 
-    return mappings
+    return scalar_mappings, array_mappings
 
 
 def _generate_mappings_for_prefix(
@@ -541,13 +545,27 @@ def _generate_mappings_for_prefix(
     table_prefix_analysis: Dict,
     predicate_types: Dict[str, str],
     property_types_from_ontology: Dict[str, Dict[str, str]],
+    cardinality_data: Dict[Tuple[str, str], Dict],
+    functional_properties: Set[str],
     multi_prefix: bool = False
-) -> List[str]:
-    """Generate mappings for a table with a specific prefix."""
-    mappings = []
+) -> Tuple[List[str], List[str]]:
+    """
+    Generate mappings for a table with a specific prefix.
+
+    Returns:
+        Tuple of (scalar_mappings, array_mappings)
+    """
+    scalar_mappings = []
+    array_mappings = []
 
     # Get table's foreign keys
     table_fks = fk_map.get(table_name, {})
+
+    # Get class URI(s) for array detection
+    # For merged tables, check cardinality against ALL original class URIs
+    original_class_uris = class_info.get('original_class_uris', [class_info.get('class_uri', '')])
+    if not original_class_uris:
+        original_class_uris = [class_info.get('class_uri', '')]
 
     # Generate mapping for each predicate
     for pred in class_info.get('predicates', []):
@@ -563,6 +581,21 @@ def _generate_mappings_for_prefix(
 
         # Convert predicate to column name
         column_name = sanitize_column_name(pred_short)
+
+        # Determine if this predicate is an array
+        # Use same logic as generate_class_tables.py
+        is_functional = pred_uri in functional_properties
+        if is_functional:
+            # Functional property - always scalar
+            is_array = False
+        else:
+            # Check actual cardinality data
+            # For merged classes, check ALL original class URIs and take maximum
+            max_values = 1
+            for uri in original_class_uris:
+                stats = cardinality_data.get((uri, pred_uri), {})
+                max_values = max(max_values, stats.get('max_values', 1))
+            is_array = max_values > 1
 
         # Check if this is a foreign key
         is_fk = column_name in table_fks
@@ -649,9 +682,13 @@ def _generate_mappings_for_prefix(
 target\t\t{target}
 source\t\t{source}"""
 
-        mappings.append(mapping)
+        # Add to appropriate list based on whether it's an array
+        if is_array:
+            array_mappings.append(mapping)
+        else:
+            scalar_mappings.append(mapping)
 
-    return mappings
+    return scalar_mappings, array_mappings
 
 
 def merge_class_predicates(class_infos: List[Dict]) -> Dict:
@@ -667,6 +704,7 @@ def merge_class_predicates(class_infos: List[Dict]) -> Dict:
     merged = {
         'class_name': 'MERGED:' + '+'.join(c.get('class_name', '') for c in class_infos),
         'class_uri': class_infos[0].get('class_uri', ''),
+        'original_class_uris': [c.get('class_uri', '') for c in class_infos],  # Keep all URIs for cardinality checks
         'predicates': []
     }
 
@@ -721,6 +759,22 @@ def main():
     ontology_file = script_dir.parent / 'ontop' / 'cpmeta.ttl'
     property_types_from_ontology = load_property_types_from_ontology(ontology_file)
 
+    # Load cardinality data for array detection
+    print("\nLoading cardinality analysis...")
+    cardinality_file = script_dir / 'predicate_cardinality.json'
+    if cardinality_file.exists():
+        cardinality_data = load_cardinality_analysis(str(cardinality_file))
+        print(f"Loaded cardinality data for {len(cardinality_data)} (class, predicate) pairs")
+    else:
+        print(f"Warning: {cardinality_file} not found - will not detect array columns")
+        cardinality_data = {}
+
+    # Detect functional properties from ontology
+    print("\nDetecting functional properties from ontology...")
+    functional_properties, non_functional_properties = detect_functional_properties(str(ontology_file))
+    print(f"Found {len(functional_properties)} functional properties")
+    print(f"Found {len(non_functional_properties)} non-functional properties")
+
     # Parse foreign keys
     print("\nParsing foreign keys...")
     fk_map = parse_foreign_keys(fk_sql_file)
@@ -743,9 +797,9 @@ def main():
             class_name_to_info[class_name] = class_info
 
     # Second pass: handle merged tables from MERGE_GROUPS
-    for merged_table, class_names in MERGE_GROUPS.items():
+    for merged_table, config in MERGE_GROUPS.items():
         table_to_classes[merged_table] = []
-        for class_name in class_names:
+        for class_name in config['classes']:
             if class_name in class_name_to_info:
                 class_info = class_name_to_info[class_name]
                 table_to_classes[merged_table].append(class_info)
@@ -765,7 +819,8 @@ def main():
 
     # Generate mappings for all tables
     print("Generating mappings...")
-    all_mappings = []
+    all_scalar_mappings = []
+    all_array_mappings = []
 
     # Get tables from the structure (it has a 'tables' key)
     tables = table_prefix_analysis.get('tables', table_prefix_analysis)
@@ -795,7 +850,7 @@ def main():
             class_info = table_to_class[table_name]
             print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(class_info.get('predicates', []))} predicate(s)")
 
-        mappings = generate_table_mappings(
+        scalar_mappings, array_mappings = generate_table_mappings(
             table_name,
             class_info,
             table_prefixes,
@@ -803,24 +858,40 @@ def main():
             fk_map,
             table_prefix_analysis,
             predicate_types,
-            property_types_from_ontology
+            property_types_from_ontology,
+            cardinality_data,
+            functional_properties
         )
 
-        all_mappings.extend(mappings)
+        all_scalar_mappings.extend(scalar_mappings)
+        all_array_mappings.extend(array_mappings)
 
-    # Write output file
-    print(f"\nWriting {len(all_mappings)} mappings to {output_file}...")
+    # Write output files
+    print(f"\nWriting mappings to output files...")
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # Write scalar mappings file
+    print(f"  Writing {len(all_scalar_mappings)} scalar mappings to {output_file}...")
     with open(output_file, 'w') as f:
         f.write(prefix_section)
         f.write('\n\n')
         f.write('[MappingDeclaration] @collection [[\n\n')
-        f.write('\n\n'.join(all_mappings))
+        f.write('\n\n'.join(all_scalar_mappings))
         f.write('\n\n]]')
 
-    print(f"Done! Generated {len(all_mappings)} mappings")
-    print(f"Output: {output_file}")
+    # Write array mappings file
+    array_output_file = output_file.parent / 'generated_array_mappings.obda'
+    print(f"  Writing {len(all_array_mappings)} array mappings to {array_output_file}...")
+    with open(array_output_file, 'w') as f:
+        f.write(prefix_section)
+        f.write('\n\n')
+        f.write('[MappingDeclaration] @collection [[\n\n')
+        f.write('\n\n'.join(all_array_mappings))
+        f.write('\n\n]]')
+
+    print(f"\nDone! Generated {len(all_scalar_mappings)} scalar mappings and {len(all_array_mappings)} array mappings")
+    print(f"Scalar mappings: {output_file}")
+    print(f"Array mappings: {array_output_file}")
 
 
 if __name__ == '__main__':

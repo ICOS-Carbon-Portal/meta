@@ -188,9 +188,15 @@ def load_property_types_from_ontology(ontology_file: Path) -> Dict[str, Dict[str
         property_types = {}
         XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema#"
 
-        # Get all ObjectProperties
+        # Get all ObjectProperties and their ranges
         for prop in g.subjects(RDF.type, OWL.ObjectProperty):
-            property_types[str(prop)] = {'type': 'object', 'range': None}
+            prop_uri = str(prop)
+            property_types[prop_uri] = {'type': 'object', 'range': None}
+
+            # Extract rdfs:range to get the target class
+            for range_obj in g.objects(prop, RDFS.range):
+                property_types[prop_uri]['range'] = str(range_obj)
+                break  # Use first range declaration
 
         # Get all DatatypeProperties and their ranges
         for prop in g.subjects(RDF.type, OWL.DatatypeProperty):
@@ -516,7 +522,8 @@ def generate_table_mappings(
     predicate_types: Dict[str, str],
     property_types_from_ontology: Dict[str, Dict[str, str]],
     cardinality_data: Dict[Tuple[str, str], Dict],
-    functional_properties: Set[str]
+    functional_properties: Set[str],
+    class_analysis: Dict
 ) -> Tuple[List[str], List[str], List[Dict]]:
     """
     Generate all mapping entries for a single table.
@@ -543,6 +550,7 @@ def generate_table_mappings(
                 property_types_from_ontology,
                 cardinality_data,
                 functional_properties,
+                class_analysis,
                 multi_prefix=True
             )
             scalar_mappings.extend(scalar)
@@ -562,6 +570,7 @@ def generate_table_mappings(
             property_types_from_ontology,
             cardinality_data,
             functional_properties,
+            class_analysis,
             multi_prefix=False
         )
         scalar_mappings.extend(scalar)
@@ -582,6 +591,7 @@ def _generate_mappings_for_prefix(
     property_types_from_ontology: Dict[str, Dict[str, str]],
     cardinality_data: Dict[Tuple[str, str], Dict],
     functional_properties: Set[str],
+    class_analysis: Dict,
     multi_prefix: bool = False
 ) -> Tuple[List[str], List[str], List[Dict]]:
     """
@@ -659,18 +669,14 @@ def _generate_mappings_for_prefix(
 
         predicate = get_prefixed_predicate(pred_uri, prefix_map)
 
+        # For object properties, determine ref_prefix from FK (for both scalar and array)
+        ref_prefix = None
+        if is_object_property and is_fk:
+            ref_table, ref_column = table_fks[column_name]
+            ref_prefix = find_referenced_table_prefix(ref_table, table_prefix_analysis)
+
         if is_object_property:
             # Object property - reconstruct referenced URI
-            # Try to get the target prefix from FK if available
-            if is_fk:
-                ref_table, ref_column = table_fks[column_name]
-                ref_prefix = find_referenced_table_prefix(ref_table, table_prefix_analysis)
-            else:
-                # No FK constraint, but ontology says it's an object property
-                # We need to determine the prefix from the data or make a best guess
-                # For now, we'll use a placeholder that needs the actual URI
-                ref_prefix = None
-
             if ref_prefix:
                 object_part = f"<{ref_prefix}{{{column_name}}}>"
             else:
@@ -769,38 +775,40 @@ def _generate_mappings_for_prefix(
 
             predicate = get_prefixed_predicate(pred_uri, prefix_map)
 
-            # For array object properties, find the referenced table prefix from references_to
+            # For array object properties, use ontology rdfs:range to find the target table prefix
             if is_object_property:
                 array_ref_prefix = None
-                # Look through references_to to find which class this predicate references
-                for ref in class_info.get('references_to', []):
-                    for ref_pred in ref.get('predicates', []):
-                        if ref_pred.get('predicate_uri') == pred_uri:
-                            # Found it - now get the table name and prefix
-                            ref_class_name = ref.get('class_name', '')
-                            if not ref_class_name:
-                                continue
 
-                            # Check if this class is part of a merged table
-                            ref_table = None
-                            for merged_table, config in MERGE_GROUPS.items():
-                                if ref_class_name in config['classes']:
-                                    ref_table = merged_table
-                                    break
+                # Get the range class from ontology
+                range_class_uri = ontology_info.get('range')
 
-                            # If not merged, convert class name to table name
-                            if not ref_table:
-                                ref_table = sanitize_table_name(ref_class_name)
-
-                            # Get the first prefix for this table
-                            if ref_table in table_prefix_analysis.get('tables', {}):
-                                table_data = table_prefix_analysis['tables'][ref_table]
-                                prefixes = table_data.get('prefix_counts', {})
-                                if prefixes:
-                                    array_ref_prefix = list(prefixes.keys())[0]
+                if range_class_uri:
+                    # Find which table corresponds to this class URI
+                    # First, find the class_name from the class URI
+                    ref_class_name = None
+                    for cls in class_analysis.get('classes', []):
+                        if cls.get('class_uri') == range_class_uri:
+                            ref_class_name = cls.get('class_name', '')
                             break
-                    if array_ref_prefix:
-                        break
+
+                    if ref_class_name:
+                        # Check if this class is part of a merged table
+                        ref_table = None
+                        for merged_table, config in MERGE_GROUPS.items():
+                            if ref_class_name in config['classes']:
+                                ref_table = merged_table
+                                break
+
+                        # If not merged, convert class name to table name
+                        if not ref_table:
+                            ref_table = sanitize_table_name(ref_class_name)
+
+                        # Get the first prefix for this table
+                        if ref_table in table_prefix_analysis.get('tables', {}):
+                            table_data = table_prefix_analysis['tables'][ref_table]
+                            prefixes = table_data.get('prefix_counts', {})
+                            if prefixes:
+                                array_ref_prefix = list(prefixes.keys())[0]
 
                 # Use the array-specific prefix if found, otherwise fall back to FK-based prefix
                 if array_ref_prefix:
@@ -1009,7 +1017,8 @@ def main():
             predicate_types,
             property_types_from_ontology,
             cardinality_data,
-            functional_properties
+            functional_properties,
+            class_analysis
         )
 
         all_scalar_mappings.extend(scalar_mappings)

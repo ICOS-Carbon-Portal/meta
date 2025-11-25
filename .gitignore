@@ -60,3 +60,4 @@ __pycache__/
 /citationsCacheDump.json
 /doiMetaCacheDump.json
 /prototype_relational/logs/sparql.log
+/prototype_relational/scripts/metadata_visualization.html

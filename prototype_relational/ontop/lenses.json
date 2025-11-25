@@ -87,27 +87,6 @@
         {
             "name": [
                 "lenses",
-                "ct_data_submissions_ended_at_times"
-            ],
-            "type": "FlattenLens",
-            "baseRelation": [
-                "ct_data_submissions"
-            ],
-            "flattenedColumn": {
-                "name": "ended_at_time",
-                "datatype": "TEXT[]"
-            },
-            "columns": {
-                "kept": [
-                    "id"
-                ],
-                "new": "single_ended_at_time",
-                "position": "index"
-            }
-        },
-        {
-            "name": [
-                "lenses",
                 "ct_data_submissions_started_at_times"
             ],
             "type": "FlattenLens",
@@ -116,7 +95,7 @@
             ],
             "flattenedColumn": {
                 "name": "started_at_time",
-                "datatype": "TEXT[]"
+                "datatype": "TIMESTAMP[]"
             },
             "columns": {
                 "kept": [

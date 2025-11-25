@@ -712,13 +712,14 @@ def generate_foreign_key_sql(table_name: str, foreign_keys: List[Tuple[str, str,
     if not foreign_keys:
         return ""
 
-    lines = []
+    lines = ["BEGIN;\n"]
     for col_name, ref_table, predicate_uri in foreign_keys:
         fk_name = f"fk_{table_name}_{col_name}"
         lines.append(
             f"ALTER TABLE {table_name} ADD CONSTRAINT {fk_name} "
             f"FOREIGN KEY ({col_name}) REFERENCES {ref_table}(id);"
         )
+    lines.append("\nCOMMIT;")
 
     return '\n'.join(lines)
 
@@ -999,6 +1000,12 @@ def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
         # No known prefixes - return NULL
         return "NULL"
 
+    if len(prefixes) == 1:
+        # Only one prefix - return it as a literal
+        prefix = list(prefixes.keys())[0]
+        return f"'{prefix}'"
+
+    # Multiple prefixes - use CASE statement
     # Sort prefixes by length (descending) to match longest first
     # This handles cases like 'http://example.com/foo/' and 'http://example.com/foo/bar/'
     sorted_prefixes = sorted(prefixes.keys(), key=len, reverse=True)
@@ -1034,6 +1041,13 @@ def _generate_suffix_extraction_sql(column_expr: str, table_name: str,
     if not prefixes:
         return f"{column_expr}"  # No prefixes - return as-is
 
+    if len(prefixes) == 1:
+        # Only one prefix - hardcode the position directly
+        prefix = list(prefixes.keys())[0]
+        position = len(prefix) + 1  # +1 because SUBSTRING is 1-indexed
+        return f"SUBSTRING({column_expr} FROM {position})"
+
+    # Multiple prefixes - use CASE statement
     # Sort prefixes by length (descending) to match longest first
     sorted_prefixes = sorted(prefixes.keys(), key=len, reverse=True)
 

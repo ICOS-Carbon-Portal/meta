@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-05T11:47:40.337104",
+  "timestamp": "2025-11-10T22:58:13.363596",
   "total_prefixes": 69,
   "prefixes": {
     "http://meta.icos-cp.eu/files/": {
@@ -182,85 +182,85 @@
           "class_uri": "http://www.w3.org/2002/07/owl#Class",
           "class_name": "Class",
           "count": 89,
-          "percentage": 22.08
+          "percentage": 22.53
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
           "class_name": "NamedIndividual",
-          "count": 64,
-          "percentage": 15.88
+          "count": 60,
+          "percentage": 15.19
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
           "class_name": "Restriction",
           "count": 60,
-          "percentage": 14.89
+          "percentage": 15.19
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#FunctionalProperty",
           "class_name": "FunctionalProperty",
           "count": 39,
-          "percentage": 9.68
+          "percentage": 9.87
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#DatatypeProperty",
           "class_name": "DatatypeProperty",
           "count": 33,
-          "percentage": 8.19
+          "percentage": 8.35
         },
         {
           "class_uri": "http://www.w3.org/2002/07/owl#ObjectProperty",
           "class_name": "ObjectProperty",
           "count": 23,
-          "percentage": 5.71
+          "percentage": 5.82
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectFormat",
           "class_name": "ObjectFormat",
           "count": 21,
-          "percentage": 5.21
+          "percentage": 5.32
         },
         {
           "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
           "class_name": "List",
           "count": 16,
-          "percentage": 3.97
+          "percentage": 4.05
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
           "class_name": "EcosystemType",
           "count": 15,
-          "percentage": 3.72
+          "percentage": 3.8
         },
         {
           "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
           "class_name": "Datatype",
           "count": 13,
-          "percentage": 3.23
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat",
-          "class_name": "ValueFormat",
-          "count": 12,
-          "percentage": 2.98
+          "percentage": 3.29
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone",
           "class_name": "ClimateZone",
           "count": 9,
-          "percentage": 2.23
+          "percentage": 2.28
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat",
+          "class_name": "ValueFormat",
+          "count": 9,
+          "percentage": 2.28
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding",
           "class_name": "ObjectEncoding",
-          "count": 3,
-          "percentage": 0.74
+          "count": 2,
+          "percentage": 0.51
         },
         {
           "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpecificDatasetType",
           "class_name": "SpecificDatasetType",
           "count": 2,
-          "percentage": 0.5
+          "percentage": 0.51
         },
         {
           "class_uri": "http://purl.org/dc/terms/LicenseDocument",
@@ -275,14 +275,14 @@
           "percentage": 0.25
         },
         {
-          "class_uri": "http://purl.org/vocommons/voaf#Vocabulary",
-          "class_name": "Vocabulary",
+          "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
+          "class_name": "Ontology",
           "count": 1,
           "percentage": 0.25
         },
         {
-          "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
-          "class_name": "Ontology",
+          "class_uri": "http://purl.org/vocommons/voaf#Vocabulary",
+          "class_name": "Vocabulary",
           "count": 1,
           "percentage": 0.25
         }
@@ -316,7 +316,7 @@
         {
           "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
           "predicate_name": "first",
-          "count": 114
+          "count": 110
         },
         {
           "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -508,12 +508,12 @@
         {
           "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
           "predicate_name": "type",
-          "count": 8304991
+          "count": 8298159
         },
         {
           "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
           "predicate_name": "hasValueFormat",
-          "count": 419
+          "count": 270
         },
         {
           "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
@@ -521,24 +521,24 @@
           "count": 259
         },
         {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
-          "predicate_name": "hasSpecificDatasetType",
-          "count": 178
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 114
         },
         {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
-          "predicate_name": "hasEncoding",
-          "count": 178
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
+          "predicate_name": "hasSpecificDatasetType",
+          "count": 110
         },
         {
           "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
           "predicate_name": "hasFormat",
-          "count": 116
+          "count": 110
         },
         {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
-          "predicate_name": "domain",
-          "count": 114
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
+          "predicate_name": "hasEncoding",
+          "count": 110
         },
         {
           "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
@@ -548,7 +548,7 @@
         {
           "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
           "predicate_name": "subClassOf",
-          "count": 90
+          "count": 89
         },
         {
           "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
@@ -643,6 +643,1407 @@
         {
           "predicate_uri": "http://www.w3.org/2002/07/owl#imports",
           "predicate_name": "imports",
+          "count": 1
+        }
+      ]
+    },
+    "http://meta.icos-cp.eu/ontologies/cpmeta/bnode_": {
+      "total_count": 233,
+      "subject_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 60,
+          "percentage": 25.75
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 31,
+          "percentage": 13.3
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 16,
+          "percentage": 6.87
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 13,
+          "percentage": 5.58
+        }
+      ],
+      "object_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 60,
+          "percentage": 50.0
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 31,
+          "percentage": 25.83
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 16,
+          "percentage": 13.33
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 13,
+          "percentage": 10.83
+        }
+      ],
+      "preds_subject": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 120
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 114
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 110
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 60
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#someValuesFrom",
+          "predicate_name": "someValuesFrom",
+          "count": 45
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 27
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 9
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onDatatype",
+          "predicate_name": "onDatatype",
+          "count": 9
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#allValuesFrom",
+          "predicate_name": "allValuesFrom",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#minInclusive",
+          "predicate_name": "minInclusive",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#maxInclusive",
+          "predicate_name": "maxInclusive",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onClass",
+          "predicate_name": "onClass",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#intersectionOf",
+          "predicate_name": "intersectionOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#qualifiedCardinality",
+          "predicate_name": "qualifiedCardinality",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#maxQualifiedCardinality",
+          "predicate_name": "maxQualifiedCardinality",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onDataRange",
+          "predicate_name": "onDataRange",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#pattern",
+          "predicate_name": "pattern",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#length",
+          "predicate_name": "length",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#cardinality",
+          "predicate_name": "cardinality",
+          "count": 1
+        }
+      ],
+      "preds_object": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 69
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 50
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 27
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 25
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 25
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 14
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 9
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#equivalentClass",
+          "predicate_name": "equivalentClass",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#intersectionOf",
+          "predicate_name": "intersectionOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointUnionOf",
+          "predicate_name": "disjointUnionOf",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#allValuesFrom",
+          "predicate_name": "allValuesFrom",
+          "count": 1
+        }
+      ]
+    },
+    "http://meta.icos-cp.eu/ontologies/otcmeta/": {
+      "total_count": 210,
+      "subject_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#FunctionalProperty",
+          "class_name": "FunctionalProperty",
+          "count": 56,
+          "percentage": 26.67
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+          "class_name": "DatatypeProperty",
+          "count": 44,
+          "percentage": 20.95
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 38,
+          "percentage": 18.1
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 26,
+          "percentage": 12.38
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#ObjectProperty",
+          "class_name": "ObjectProperty",
+          "count": 18,
+          "percentage": 8.57
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
+          "class_name": "NamedIndividual",
+          "count": 11,
+          "percentage": 5.24
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 10,
+          "percentage": 4.76
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 8,
+          "percentage": 3.81
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion",
+          "class_name": "GeoRegion",
+          "count": 7,
+          "percentage": 3.33
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/Role",
+          "class_name": "Role",
+          "count": 4,
+          "percentage": 1.9
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
+          "class_name": "Ontology",
+          "count": 1,
+          "percentage": 0.48
+        }
+      ],
+      "object_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 38,
+          "percentage": 26.95
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 26,
+          "percentage": 18.44
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#FunctionalProperty",
+          "class_name": "FunctionalProperty",
+          "count": 22,
+          "percentage": 15.6
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#ObjectProperty",
+          "class_name": "ObjectProperty",
+          "count": 13,
+          "percentage": 9.22
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+          "class_name": "DatatypeProperty",
+          "count": 10,
+          "percentage": 7.09
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 10,
+          "percentage": 7.09
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 8,
+          "percentage": 5.67
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
+          "class_name": "NamedIndividual",
+          "count": 7,
+          "percentage": 4.96
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/Role",
+          "class_name": "Role",
+          "count": 4,
+          "percentage": 2.84
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/GeoRegion",
+          "class_name": "GeoRegion",
+          "count": 3,
+          "percentage": 2.13
+        }
+      ],
+      "preds_subject": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 223
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
+          "predicate_name": "label",
+          "count": 86
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 61
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 61
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 57
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 57
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 38
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#someValuesFrom",
+          "predicate_name": "someValuesFrom",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 15
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+          "predicate_name": "subPropertyOf",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onDatatype",
+          "predicate_name": "onDatatype",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#comment",
+          "predicate_name": "comment",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#pattern",
+          "predicate_name": "pattern",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#minInclusive",
+          "predicate_name": "minInclusive",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#maxInclusive",
+          "predicate_name": "maxInclusive",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointUnionOf",
+          "predicate_name": "disjointUnionOf",
+          "count": 1
+        }
+      ],
+      "preds_object": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 684
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/hasRole",
+          "predicate_name": "hasRole",
+          "count": 116
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 61
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 47
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 36
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 33
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 15
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/otcmeta/hasGeoRegion",
+          "predicate_name": "hasGeoRegion",
+          "count": 12
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+          "predicate_name": "subPropertyOf",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointUnionOf",
+          "predicate_name": "disjointUnionOf",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#someValuesFrom",
+          "predicate_name": "someValuesFrom",
+          "count": 1
+        }
+      ]
+    },
+    "http://meta.icos-cp.eu/ontologies/otcmeta/bnode_": {
+      "total_count": 113,
+      "subject_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 26,
+          "percentage": 23.01
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 15,
+          "percentage": 13.27
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 10,
+          "percentage": 8.85
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 8,
+          "percentage": 7.08
+        }
+      ],
+      "object_classes": [
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 26,
+          "percentage": 44.07
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 15,
+          "percentage": 25.42
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 10,
+          "percentage": 16.95
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 8,
+          "percentage": 13.56
+        }
+      ],
+      "preds_subject": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 59
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 57
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 57
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#someValuesFrom",
+          "predicate_name": "someValuesFrom",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 15
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onDatatype",
+          "predicate_name": "onDatatype",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#pattern",
+          "predicate_name": "pattern",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#minInclusive",
+          "predicate_name": "minInclusive",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#maxInclusive",
+          "predicate_name": "maxInclusive",
+          "count": 2
+        }
+      ],
+      "preds_object": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 33
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 15
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 14
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 9
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 7
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointUnionOf",
+          "predicate_name": "disjointUnionOf",
+          "count": 1
+        }
+      ]
+    },
+    "http://meta.icos-cp.eu/ontologies/stationentry/": {
+      "total_count": 457,
+      "subject_classes": [
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/PI",
+          "class_name": "PI",
+          "count": 100,
+          "percentage": 21.88
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/ES",
+          "class_name": "ES",
+          "count": 89,
+          "percentage": 19.47
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+          "class_name": "DatatypeProperty",
+          "count": 85,
+          "percentage": 18.6
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#FunctionalProperty",
+          "class_name": "FunctionalProperty",
+          "count": 81,
+          "percentage": 17.72
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 49,
+          "percentage": 10.72
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/AS",
+          "class_name": "AS",
+          "count": 40,
+          "percentage": 8.75
+        },
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/OS",
+          "class_name": "OS",
+          "count": 25,
+          "percentage": 5.47
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 14,
+          "percentage": 3.06
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 11,
+          "percentage": 2.41
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 7,
+          "percentage": 1.53
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#ObjectProperty",
+          "class_name": "ObjectProperty",
+          "count": 3,
+          "percentage": 0.66
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Ontology",
+          "class_name": "Ontology",
+          "count": 1,
+          "percentage": 0.22
+        }
+      ],
+      "object_classes": [
+        {
+          "class_uri": "http://meta.icos-cp.eu/ontologies/stationentry/PI",
+          "class_name": "PI",
+          "count": 66,
+          "percentage": 39.29
+        },
+        {
+          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#List",
+          "class_name": "List",
+          "count": 49,
+          "percentage": 29.17
+        },
+        {
+          "class_uri": "http://www.w3.org/2000/01/rdf-schema#Datatype",
+          "class_name": "Datatype",
+          "count": 14,
+          "percentage": 8.33
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+          "class_name": "DatatypeProperty",
+          "count": 12,
+          "percentage": 7.14
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Restriction",
+          "class_name": "Restriction",
+          "count": 11,
+          "percentage": 6.55
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#FunctionalProperty",
+          "class_name": "FunctionalProperty",
+          "count": 8,
+          "percentage": 4.76
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#Class",
+          "class_name": "Class",
+          "count": 7,
+          "percentage": 4.17
+        },
+        {
+          "class_uri": "http://www.w3.org/2002/07/owl#ObjectProperty",
+          "class_name": "ObjectProperty",
+          "count": 1,
+          "percentage": 0.6
+        }
+      ],
+      "preds_subject": [
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAssociatedFile",
+          "predicate_name": "hasAssociatedFile",
+          "count": 1774
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 505
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasLat",
+          "predicate_name": "hasLat",
+          "count": 279
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasLon",
+          "predicate_name": "hasLon",
+          "count": 278
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasLongName",
+          "predicate_name": "hasLongName",
+          "count": 215
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasShortName",
+          "predicate_name": "hasShortName",
+          "count": 204
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasCountry",
+          "predicate_name": "hasCountry",
+          "count": 178
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasPi",
+          "predicate_name": "hasPi",
+          "count": 170
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveSea",
+          "predicate_name": "hasElevationAboveSea",
+          "count": 155
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasSiteType",
+          "predicate_name": "hasSiteType",
+          "count": 154
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasStationClass",
+          "predicate_name": "hasStationClass",
+          "count": 154
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasStationKind",
+          "predicate_name": "hasStationKind",
+          "count": 150
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusDate",
+          "predicate_name": "hasAppStatusDate",
+          "count": 146
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasApplicationStatus",
+          "predicate_name": "hasApplicationStatus",
+          "count": 146
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/labelingJoinYear",
+          "predicate_name": "labelingJoinYear",
+          "count": 142
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasElevationAboveGround",
+          "predicate_name": "hasElevationAboveGround",
+          "count": 141
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasProductionCounterpart",
+          "predicate_name": "hasProductionCounterpart",
+          "count": 134
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasOperationalDateEstimate",
+          "predicate_name": "hasOperationalDateEstimate",
+          "count": 126
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/isAlreadyOperational",
+          "predicate_name": "isAlreadyOperational",
+          "count": 111
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasPreIcosMeasurements",
+          "predicate_name": "hasPreIcosMeasurements",
+          "count": 110
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForOperation",
+          "predicate_name": "hasFundingForOperation",
+          "count": 106
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasFundingForConstruction",
+          "predicate_name": "hasFundingForConstruction",
+          "count": 104
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasFirstName",
+          "predicate_name": "hasFirstName",
+          "count": 100
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasLastName",
+          "predicate_name": "hasLastName",
+          "count": 100
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasEmail",
+          "predicate_name": "hasEmail",
+          "count": 100
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 88
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 88
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAnemometerDirection",
+          "predicate_name": "hasAnemometerDirection",
+          "count": 85
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasEddyHeight",
+          "predicate_name": "hasEddyHeight",
+          "count": 85
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
+          "predicate_name": "label",
+          "count": 82
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasMainPersonnelNamesList",
+          "predicate_name": "hasMainPersonnelNamesList",
+          "count": 77
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAppStatusComment",
+          "predicate_name": "hasAppStatusComment",
+          "count": 72
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 65
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 65
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/step2StartDate",
+          "predicate_name": "step2StartDate",
+          "count": 59
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAffiliation",
+          "predicate_name": "hasAffiliation",
+          "count": 58
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAddress",
+          "predicate_name": "hasAddress",
+          "count": 54
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasTelecom",
+          "predicate_name": "hasTelecom",
+          "count": 52
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAnthropogenics",
+          "predicate_name": "hasAnthropogenics",
+          "count": 52
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasExistingInfrastructure",
+          "predicate_name": "hasExistingInfrastructure",
+          "count": 52
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+          "predicate_name": "subPropertyOf",
+          "count": 52
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasVegetation",
+          "predicate_name": "hasVegetation",
+          "count": 51
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasResponsibleInstitutionName",
+          "predicate_name": "hasResponsibleInstitutionName",
+          "count": 50
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasAccessibility",
+          "predicate_name": "hasAccessibility",
+          "count": 50
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasWebsite",
+          "predicate_name": "hasWebsite",
+          "count": 49
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasWindDataInEuropeanDatabase",
+          "predicate_name": "hasWindDataInEuropeanDatabase",
+          "count": 49
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasNameListOfNetworksItBelongsTo",
+          "predicate_name": "hasNameListOfNetworksItBelongsTo",
+          "count": 48
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi",
+          "predicate_name": "hasDeputyPi",
+          "count": 42
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/step1EndDate",
+          "predicate_name": "step1EndDate",
+          "count": 36
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasLocationDescription",
+          "predicate_name": "hasLocationDescription",
+          "count": 32
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasPhone",
+          "predicate_name": "hasPhone",
+          "count": 30
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#comment",
+          "predicate_name": "comment",
+          "count": 27
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/step2EndDate",
+          "predicate_name": "step2EndDate",
+          "count": 26
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasTypeOfSampling",
+          "predicate_name": "hasTypeOfSampling",
+          "count": 25
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasPlatformType",
+          "predicate_name": "hasPlatformType",
+          "count": 25
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasVesselOwner",
+          "predicate_name": "hasVesselOwner",
+          "count": 25
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorModel",
+          "predicate_name": "hasUnderwayCo2SensorModel",
+          "count": 23
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayCo2SensorManufacturer",
+          "predicate_name": "hasUnderwayCo2SensorManufacturer",
+          "count": 23
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorModel",
+          "predicate_name": "hasUnderwayOtherSensorModel",
+          "count": 22
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayOtherSensorManufacturer",
+          "predicate_name": "hasUnderwayOtherSensorManufacturer",
+          "count": 22
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayEquilibratorType",
+          "predicate_name": "hasUnderwayEquilibratorType",
+          "count": 21
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/labelingEndDate",
+          "predicate_name": "labelingEndDate",
+          "count": 21
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayAdditionalInfo",
+          "predicate_name": "hasUnderwayAdditionalInfo",
+          "count": 18
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasTcId",
+          "predicate_name": "hasTcId",
+          "count": 16
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasUnderwayMethodReferences",
+          "predicate_name": "hasUnderwayMethodReferences",
+          "count": 16
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/step1StartDate",
+          "predicate_name": "step1StartDate",
+          "count": 16
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 14
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasSpatialReference",
+          "predicate_name": "hasSpatialReference",
+          "count": 12
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#someValuesFrom",
+          "predicate_name": "someValuesFrom",
+          "count": 11
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 11
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityMethodReferences",
+          "predicate_name": "hasDiscreteAlkalinityMethodReferences",
+          "count": 9
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDescription",
+          "predicate_name": "hasDescription",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityTitrationType",
+          "predicate_name": "hasDiscreteAlkalinityTitrationType",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onDatatype",
+          "predicate_name": "onDatatype",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAlkalinityCurveFitting",
+          "predicate_name": "hasDiscreteAlkalinityCurveFitting",
+          "count": 7
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionStartDate",
+          "predicate_name": "hasConstructionStartDate",
+          "count": 7
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataDeliveryMethod",
+          "predicate_name": "hasNrtDataDeliveryMethod",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2AnalysisMethod",
+          "predicate_name": "hasDiscreteTco2AnalysisMethod",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#minInclusive",
+          "predicate_name": "minInclusive",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#maxInclusive",
+          "predicate_name": "maxInclusive",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2StandardizationTechnique",
+          "predicate_name": "hasDiscreteTco2StandardizationTechnique",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasNrtDataUpdateFrequency",
+          "predicate_name": "hasNrtDataUpdateFrequency",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteAdditionalInfo",
+          "predicate_name": "hasDiscreteAdditionalInfo",
+          "count": 5
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhMethodReferences",
+          "predicate_name": "hasDiscretePhMethodReferences",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasNothernmostLat",
+          "predicate_name": "hasNothernmostLat",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2MethodReferences",
+          "predicate_name": "hasDiscreteTco2MethodReferences",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasSouthernmostLat",
+          "predicate_name": "hasSouthernmostLat",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasEasternmostLon",
+          "predicate_name": "hasEasternmostLon",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhScale",
+          "predicate_name": "hasDiscretePhScale",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscreteTco2TechniqueDescription",
+          "predicate_name": "hasDiscreteTco2TechniqueDescription",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePhAnalysisMethod",
+          "predicate_name": "hasDiscretePhAnalysisMethod",
+          "count": 4
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasWesternmostLon",
+          "predicate_name": "hasWesternmostLon",
+          "count": 3
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2001/XMLSchema#pattern",
+          "predicate_name": "pattern",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2MethodReferences",
+          "predicate_name": "hasDiscretePco2MethodReferences",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2AnalysisMethod",
+          "predicate_name": "hasDiscretePco2AnalysisMethod",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDiscretePco2Analysis",
+          "predicate_name": "hasDiscretePco2Analysis",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasConstructionEndDate",
+          "predicate_name": "hasConstructionEndDate",
+          "count": 2
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointWith",
+          "predicate_name": "disjointWith",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/labelingProgressDate",
+          "predicate_name": "labelingProgressDate",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
+          "count": 1
+        }
+      ],
+      "preds_object": [
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+          "predicate_name": "type",
+          "count": 418
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#domain",
+          "predicate_name": "domain",
+          "count": 90
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasPi",
+          "predicate_name": "hasPi",
+          "count": 83
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+          "predicate_name": "subPropertyOf",
+          "count": 52
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest",
+          "predicate_name": "rest",
+          "count": 50
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#range",
+          "predicate_name": "range",
+          "count": 17
+        },
+        {
+          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
+          "predicate_name": "first",
+          "count": 16
+        },
+        {
+          "predicate_uri": "http://meta.icos-cp.eu/ontologies/stationentry/hasDeputyPi",
+          "predicate_name": "hasDeputyPi",
+          "count": 16
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+          "predicate_name": "subClassOf",
+          "count": 14
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#onProperty",
+          "predicate_name": "onProperty",
+          "count": 11
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#withRestrictions",
+          "predicate_name": "withRestrictions",
+          "count": 8
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#oneOf",
+          "predicate_name": "oneOf",
+          "count": 6
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#disjointWith",
+          "predicate_name": "disjointWith",
+          "count": 1
+        },
+        {
+          "predicate_uri": "http://www.w3.org/2002/07/owl#unionOf",
+          "predicate_name": "unionOf",
           "count": 1
         }
       ]
@@ -6401,1571 +7802,73 @@
     },
     "https://meta.fieldsites.se/objects/": {
       "total_count": 1976,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
-          "class_name": "DataObject",
-          "count": 1879,
-          "percentage": 95.09
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
-          "class_name": "DocumentObject",
-          "count": 97,
-          "percentage": 4.91
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject",
-          "class_name": "DataObject",
-          "count": 961,
-          "percentage": 93.03
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject",
-          "class_name": "DocumentObject",
-          "count": 72,
-          "percentage": 6.97
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSha256sum",
-          "predicate_name": "hasSha256sum",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
-          "predicate_name": "wasSubmittedBy",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasName",
-          "predicate_name": "hasName",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSizeInBytes",
-          "predicate_name": "hasSizeInBytes",
-          "count": 1969
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy",
-          "predicate_name": "wasAcquiredBy",
-          "count": 1879
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
-          "predicate_name": "hasObjectSpec",
-          "count": 1879
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows",
-          "predicate_name": "hasNumberOfRows",
-          "count": 1317
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames",
-          "predicate_name": "hasActualColumnNames",
-          "count": 1281
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
-          "predicate_name": "isNextVersionOf",
-          "count": 918
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy",
-          "predicate_name": "wasProducedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://purl.org/dc/terms/title",
-          "predicate_name": "title",
-          "count": 77
-        },
-        {
-          "predicate_uri": "http://purl.org/dc/terms/description",
-          "predicate_name": "description",
-          "count": 76
-        },
-        {
-          "predicate_uri": "http://purl.org/dc/terms/creator",
-          "predicate_name": "creator",
-          "count": 60
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi",
-          "predicate_name": "hasDoi",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime",
-          "predicate_name": "hasEndTime",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution",
-          "predicate_name": "hasTemporalResolution",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasStartTime",
-          "predicate_name": "hasStartTime",
-          "count": 1
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf",
-          "predicate_name": "isNextVersionOf",
-          "count": 918
-        },
-        {
-          "predicate_uri": "http://purl.org/dc/terms/hasPart",
-          "predicate_name": "hasPart",
-          "count": 131
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
-          "predicate_name": "seeAlso",
-          "count": 59
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
-          "predicate_name": "hasDocumentationObject",
-          "count": 17
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink",
-          "predicate_name": "hasWebpageLink",
-          "count": 8
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/": {
       "total_count": 4857,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
-          "class_name": "DataSubmission",
-          "count": 1976,
-          "percentage": 40.68
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
-          "class_name": "DataAcquisition",
-          "count": 1878,
-          "percentage": 38.67
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
-          "class_name": "Position",
-          "count": 201,
-          "percentage": 4.14
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
-          "class_name": "DatasetColumn",
-          "count": 150,
-          "percentage": 3.09
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType",
-          "class_name": "ValueType",
-          "count": 141,
-          "percentage": 2.9
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
-          "class_name": "Site",
-          "count": 99,
-          "percentage": 2.04
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
-          "class_name": "SpatialCoverage",
-          "count": 97,
-          "percentage": 2.0
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
-          "class_name": "DataProduction",
-          "count": 81,
-          "percentage": 1.67
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
-          "class_name": "SimpleObjectSpec",
-          "count": 38,
-          "percentage": 0.78
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec",
-          "class_name": "TabularDatasetSpec",
-          "count": 35,
-          "percentage": 0.72
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
-          "class_name": "DataObjectSpec",
-          "count": 30,
-          "percentage": 0.62
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
-          "class_name": "LinkBox",
-          "count": 26,
-          "percentage": 0.54
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
-          "class_name": "EcosystemType",
-          "count": 24,
-          "percentage": 0.49
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Person",
-          "class_name": "Person",
-          "count": 20,
-          "percentage": 0.41
-        },
-        {
-          "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "class_name": "Station",
-          "count": 10,
-          "percentage": 0.21
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind",
-          "class_name": "QuantityKind",
-          "count": 10,
-          "percentage": 0.21
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
-          "class_name": "Organization",
-          "count": 9,
-          "percentage": 0.19
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
-          "class_name": "WebpageElements",
-          "count": 9,
-          "percentage": 0.19
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Project",
-          "class_name": "Project",
-          "count": 6,
-          "percentage": 0.12
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone",
-          "class_name": "ClimateZone",
-          "count": 5,
-          "percentage": 0.1
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme",
-          "class_name": "DataTheme",
-          "count": 5,
-          "percentage": 0.1
-        },
-        {
-          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
-          "class_name": "Seq",
-          "count": 4,
-          "percentage": 0.08
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
-          "class_name": "ThematicCenter",
-          "count": 1,
-          "percentage": 0.02
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox",
-          "class_name": "LatLonBox",
-          "count": 1,
-          "percentage": 0.02
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "class_name": "NamedIndividual",
-          "count": 1,
-          "percentage": 0.02
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
-          "class_name": "DataSubmission",
-          "count": 1976,
-          "percentage": 41.09
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
-          "class_name": "DataAcquisition",
-          "count": 1878,
-          "percentage": 39.05
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
-          "class_name": "Position",
-          "count": 197,
-          "percentage": 4.1
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
-          "class_name": "DatasetColumn",
-          "count": 143,
-          "percentage": 2.97
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ValueType",
-          "class_name": "ValueType",
-          "count": 129,
-          "percentage": 2.68
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
-          "class_name": "SpatialCoverage",
-          "count": 97,
-          "percentage": 2.02
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
-          "class_name": "Site",
-          "count": 93,
-          "percentage": 1.93
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
-          "class_name": "DataProduction",
-          "count": 81,
-          "percentage": 1.68
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/TabularDatasetSpec",
-          "class_name": "TabularDatasetSpec",
-          "count": 34,
-          "percentage": 0.71
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
-          "class_name": "SimpleObjectSpec",
-          "count": 34,
-          "percentage": 0.71
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
-          "class_name": "LinkBox",
-          "count": 26,
-          "percentage": 0.54
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType",
-          "class_name": "EcosystemType",
-          "count": 23,
-          "percentage": 0.48
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
-          "class_name": "DataObjectSpec",
-          "count": 21,
-          "percentage": 0.44
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Person",
-          "class_name": "Person",
-          "count": 17,
-          "percentage": 0.35
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind",
-          "class_name": "QuantityKind",
-          "count": 10,
-          "percentage": 0.21
-        },
-        {
-          "class_uri": "https://meta.fieldsites.se/ontologies/sites/Station",
-          "class_name": "Station",
-          "count": 10,
-          "percentage": 0.21
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
-          "class_name": "WebpageElements",
-          "count": 9,
-          "percentage": 0.19
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Organization",
-          "class_name": "Organization",
-          "count": 9,
-          "percentage": 0.19
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone",
-          "class_name": "ClimateZone",
-          "count": 5,
-          "percentage": 0.1
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme",
-          "class_name": "DataTheme",
-          "count": 5,
-          "percentage": 0.1
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Project",
-          "class_name": "Project",
-          "count": 5,
-          "percentage": 0.1
-        },
-        {
-          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
-          "class_name": "Seq",
-          "count": 4,
-          "percentage": 0.08
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter",
-          "class_name": "ThematicCenter",
-          "count": 1,
-          "percentage": 0.02
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LatLonBox",
-          "class_name": "LatLonBox",
-          "count": 1,
-          "percentage": 0.02
-        },
-        {
-          "class_uri": "http://www.w3.org/2002/07/owl#NamedIndividual",
-          "class_name": "NamedIndividual",
-          "count": 1,
-          "percentage": 0.02
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 4857
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
-          "predicate_name": "wasAssociatedWith",
-          "count": 3855
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#startedAtTime",
-          "predicate_name": "startedAtTime",
-          "count": 3848
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#endedAtTime",
-          "predicate_name": "endedAtTime",
-          "count": 3841
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
-          "predicate_name": "wasPerformedAt",
-          "count": 1878
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
-          "predicate_name": "hasSamplingPoint",
-          "count": 1598
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 877
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
-          "predicate_name": "hasColumn",
-          "count": 275
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude",
-          "predicate_name": "hasLongitude",
-          "count": 211
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude",
-          "predicate_name": "hasLatitude",
-          "count": 211
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle",
-          "predicate_name": "hasColumnTitle",
-          "count": 150
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
-          "predicate_name": "hasValueType",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
-          "predicate_name": "hasValueFormat",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
-          "predicate_name": "hasEcosystemType",
-          "count": 124
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind",
-          "predicate_name": "hasQuantityKind",
-          "count": 101
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 99
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON",
-          "predicate_name": "asGeoJSON",
-          "count": 98
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit",
-          "predicate_name": "hasUnit",
-          "count": 96
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn",
-          "predicate_name": "operatesOn",
-          "count": 93
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn",
-          "predicate_name": "isRegexColumn",
-          "count": 90
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn",
-          "predicate_name": "isOptionalColumn",
-          "count": 88
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#comment",
-          "predicate_name": "comment",
-          "count": 85
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime",
-          "predicate_name": "hasEndTime",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
-          "predicate_name": "wasPerformedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
-          "predicate_name": "seeAlso",
-          "count": 74
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
-          "predicate_name": "hasEncoding",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
-          "predicate_name": "hasAssociatedProject",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel",
-          "predicate_name": "hasDataLevel",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
-          "predicate_name": "hasDataTheme",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
-          "predicate_name": "hasFormat",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
-          "predicate_name": "hasSpecificDatasetType",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords",
-          "predicate_name": "hasKeywords",
-          "count": 60
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasName",
-          "predicate_name": "hasName",
-          "count": 46
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
-          "predicate_name": "containsDataset",
-          "count": 38
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage",
-          "predicate_name": "hasCoverImage",
-          "count": 35
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasTemporalResolution",
-          "predicate_name": "hasTemporalResolution",
-          "count": 31
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
-          "predicate_name": "hasLinkbox",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink",
-          "predicate_name": "hasWebpageLink",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight",
-          "predicate_name": "hasOrderWeight",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName",
-          "predicate_name": "hasFirstName",
-          "count": 20
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName",
-          "predicate_name": "hasLastName",
-          "count": 20
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
-          "predicate_name": "hasDocumentationObject",
-          "count": 17
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail",
-          "predicate_name": "hasEmail",
-          "count": 14
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasOperationalPeriod",
-          "predicate_name": "hasOperationalPeriod",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
-          "predicate_name": "hasResponsibleOrganization",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualTemp",
-          "predicate_name": "hasMeanAnnualTemp",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasStationId",
-          "predicate_name": "hasStationId",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasElevation",
-          "predicate_name": "hasElevation",
-          "count": 10
-        },
-        {
-          "predicate_uri": "https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization",
-          "predicate_name": "hasResponsibleOrganization",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDepiction",
-          "predicate_name": "hasDepiction",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
-          "predicate_name": "hasClimateZone",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/countryCode",
-          "predicate_name": "countryCode",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
-          "predicate_name": "hasWebpageElements",
-          "count": 9
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasMeanAnnualPrecip",
-          "predicate_name": "hasMeanAnnualPrecip",
-          "count": 9
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon",
-          "predicate_name": "hasIcon",
-          "count": 5
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2",
-          "predicate_name": "_2",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
-          "predicate_name": "wasParticipatedInBy",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3",
-          "predicate_name": "_3",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1",
-          "predicate_name": "_1",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_5",
-          "predicate_name": "_5",
-          "count": 3
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId",
-          "predicate_name": "hasOrcidId",
-          "count": 3
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4",
-          "predicate_name": "_4",
-          "count": 3
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight",
-          "predicate_name": "hasSamplingHeight",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
-          "predicate_name": "wasHostedBy",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7",
-          "predicate_name": "_7",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6",
-          "predicate_name": "_6",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasNorthernBound",
-          "predicate_name": "hasNorthernBound",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSouthernBound",
-          "predicate_name": "hasSouthernBound",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEasternBound",
-          "predicate_name": "hasEasternBound",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWesternBound",
-          "predicate_name": "hasWesternBound",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isDiscontinued",
-          "predicate_name": "isDiscontinued",
-          "count": 1
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
-          "predicate_name": "wasAssociatedWith",
-          "count": 3855
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
-          "predicate_name": "wasSubmittedBy",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
-          "predicate_name": "hasObjectSpec",
-          "count": 1879
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy",
-          "predicate_name": "wasAcquiredBy",
-          "count": 1879
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
-          "predicate_name": "wasPerformedAt",
-          "count": 1878
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
-          "predicate_name": "hasSamplingPoint",
-          "count": 1598
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
-          "predicate_name": "hasColumn",
-          "count": 275
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
-          "predicate_name": "hasValueType",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
-          "predicate_name": "hasEcosystemType",
-          "count": 124
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind",
-          "predicate_name": "hasQuantityKind",
-          "count": 101
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 101
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn",
-          "predicate_name": "operatesOn",
-          "count": 93
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
-          "predicate_name": "wasPerformedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy",
-          "predicate_name": "wasProducedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
-          "predicate_name": "hasDataTheme",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
-          "predicate_name": "hasAssociatedProject",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://purl.org/dc/terms/creator",
-          "predicate_name": "creator",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
-          "predicate_name": "containsDataset",
-          "count": 38
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
-          "predicate_name": "hasLinkbox",
-          "count": 26
-        },
-        {
-          "predicate_uri": "https://meta.fieldsites.se/ontologies/sites/hasResponsibleOrganization",
-          "predicate_name": "hasResponsibleOrganization",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasClimateZone",
-          "predicate_name": "hasClimateZone",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasResponsibleOrganization",
-          "predicate_name": "hasResponsibleOrganization",
-          "count": 10
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
-          "predicate_name": "hasWebpageElements",
-          "count": 9
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2",
-          "predicate_name": "_2",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1",
-          "predicate_name": "_1",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
-          "predicate_name": "wasParticipatedInBy",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3",
-          "predicate_name": "_3",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_4",
-          "predicate_name": "_4",
-          "count": 3
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_5",
-          "predicate_name": "_5",
-          "count": 3
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_6",
-          "predicate_name": "_6",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_7",
-          "predicate_name": "_7",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
-          "predicate_name": "wasHostedBy",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#first",
-          "predicate_name": "first",
-          "count": 1
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/acq_": {
       "total_count": 1879,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
-          "class_name": "DataAcquisition",
-          "count": 1878,
-          "percentage": 99.95
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition",
-          "class_name": "DataAcquisition",
-          "count": 1878,
-          "percentage": 100.0
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
-          "predicate_name": "wasAssociatedWith",
-          "count": 1879
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
-          "predicate_name": "wasPerformedAt",
-          "count": 1878
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 1878
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#endedAtTime",
-          "predicate_name": "endedAtTime",
-          "count": 1872
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#startedAtTime",
-          "predicate_name": "startedAtTime",
-          "count": 1872
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
-          "predicate_name": "hasSamplingPoint",
-          "count": 1404
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight",
-          "predicate_name": "hasSamplingHeight",
-          "count": 2
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy",
-          "predicate_name": "wasAcquiredBy",
-          "count": 1879
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/areas/": {
       "total_count": 97,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
-          "class_name": "SpatialCoverage",
-          "count": 97,
-          "percentage": 100.0
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SpatialCoverage",
-          "class_name": "SpatialCoverage",
-          "count": 97,
-          "percentage": 100.0
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/asGeoJSON",
-          "predicate_name": "asGeoJSON",
-          "count": 97
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 97
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 97
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 99
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/columns/": {
       "total_count": 150,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
-          "class_name": "DatasetColumn",
-          "count": 150,
-          "percentage": 100.0
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn",
-          "class_name": "DatasetColumn",
-          "count": 143,
-          "percentage": 100.0
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle",
-          "predicate_name": "hasColumnTitle",
-          "count": 150
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 150
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat",
-          "predicate_name": "hasValueFormat",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType",
-          "predicate_name": "hasValueType",
-          "count": 149
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn",
-          "predicate_name": "isRegexColumn",
-          "count": 90
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn",
-          "predicate_name": "isOptionalColumn",
-          "count": 88
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasColumn",
-          "predicate_name": "hasColumn",
-          "count": 275
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/objspecs/": {
       "total_count": 68,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
-          "class_name": "SimpleObjectSpec",
-          "count": 38,
-          "percentage": 55.88
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
-          "class_name": "DataObjectSpec",
-          "count": 30,
-          "percentage": 44.12
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/SimpleObjectSpec",
-          "class_name": "SimpleObjectSpec",
-          "count": 34,
-          "percentage": 61.82
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataObjectSpec",
-          "class_name": "DataObjectSpec",
-          "count": 21,
-          "percentage": 38.18
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject",
-          "predicate_name": "hasAssociatedProject",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel",
-          "predicate_name": "hasDataLevel",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme",
-          "predicate_name": "hasDataTheme",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding",
-          "predicate_name": "hasEncoding",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasFormat",
-          "predicate_name": "hasFormat",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpecificDatasetType",
-          "predicate_name": "hasSpecificDatasetType",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 68
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords",
-          "predicate_name": "hasKeywords",
-          "count": 60
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#comment",
-          "predicate_name": "comment",
-          "count": 59
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset",
-          "predicate_name": "containsDataset",
-          "count": 38
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasDocumentationObject",
-          "predicate_name": "hasDocumentationObject",
-          "count": 7
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec",
-          "predicate_name": "hasObjectSpec",
-          "count": 1879
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/position_": {
       "total_count": 201,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
-          "class_name": "Position",
-          "count": 201,
-          "percentage": 100.0
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Position",
-          "class_name": "Position",
-          "count": 197,
-          "percentage": 100.0
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLatitude",
-          "predicate_name": "hasLatitude",
-          "count": 201
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLongitude",
-          "predicate_name": "hasLongitude",
-          "count": 201
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 201
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 197
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
-          "predicate_name": "hasSamplingPoint",
-          "count": 1598
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 1
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/prod_": {
       "total_count": 82,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
-          "class_name": "DataProduction",
-          "count": 81,
-          "percentage": 98.78
-        },
-        {
-          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
-          "class_name": "Seq",
-          "count": 1,
-          "percentage": 1.22
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataProduction",
-          "class_name": "DataProduction",
-          "count": 81,
-          "percentage": 98.78
-        },
-        {
-          "class_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq",
-          "class_name": "Seq",
-          "count": 1,
-          "percentage": 1.22
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 82
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedBy",
-          "predicate_name": "wasPerformedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEndTime",
-          "predicate_name": "hasEndTime",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
-          "predicate_name": "seeAlso",
-          "count": 59
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
-          "predicate_name": "wasParticipatedInBy",
-          "count": 4
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasHostedBy",
-          "predicate_name": "wasHostedBy",
-          "count": 2
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_1",
-          "predicate_name": "_1",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_2",
-          "predicate_name": "_2",
-          "count": 1
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#_3",
-          "predicate_name": "_3",
-          "count": 1
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy",
-          "predicate_name": "wasProducedBy",
-          "count": 81
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasParticipatedInBy",
-          "predicate_name": "wasParticipatedInBy",
-          "count": 1
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/sites/": {
       "total_count": 134,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
-          "class_name": "Site",
-          "count": 99,
-          "percentage": 73.88
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
-          "class_name": "LinkBox",
-          "count": 26,
-          "percentage": 19.4
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
-          "class_name": "WebpageElements",
-          "count": 9,
-          "percentage": 6.72
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/Site",
-          "class_name": "Site",
-          "count": 93,
-          "percentage": 72.66
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox",
-          "class_name": "LinkBox",
-          "count": 26,
-          "percentage": 20.31
-        },
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements",
-          "class_name": "WebpageElements",
-          "count": 9,
-          "percentage": 7.03
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingPoint",
-          "predicate_name": "hasSamplingPoint",
-          "count": 194
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#label",
-          "predicate_name": "label",
-          "count": 134
-        },
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 134
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage",
-          "predicate_name": "hasSpatialCoverage",
-          "count": 99
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasEcosystemType",
-          "predicate_name": "hasEcosystemType",
-          "count": 99
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage",
-          "predicate_name": "hasCoverImage",
-          "count": 35
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
-          "predicate_name": "hasLinkbox",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight",
-          "predicate_name": "hasOrderWeight",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink",
-          "predicate_name": "hasWebpageLink",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasName",
-          "predicate_name": "hasName",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://www.w3.org/2000/01/rdf-schema#comment",
-          "predicate_name": "comment",
-          "count": 10
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedAt",
-          "predicate_name": "wasPerformedAt",
-          "count": 1878
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/operatesOn",
-          "predicate_name": "operatesOn",
-          "count": 93
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox",
-          "predicate_name": "hasLinkbox",
-          "count": 26
-        },
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageElements",
-          "predicate_name": "hasWebpageElements",
-          "count": 9
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.fieldsites.se/resources/subm_": {
       "total_count": 1976,
-      "subject_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
-          "class_name": "DataSubmission",
-          "count": 1976,
-          "percentage": 100.0
-        }
-      ],
-      "object_classes": [
-        {
-          "class_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/DataSubmission",
-          "class_name": "DataSubmission",
-          "count": 1976,
-          "percentage": 100.0
-        }
-      ],
-      "preds_subject": [
-        {
-          "predicate_uri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "predicate_name": "type",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#startedAtTime",
-          "predicate_name": "startedAtTime",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#wasAssociatedWith",
-          "predicate_name": "wasAssociatedWith",
-          "count": 1976
-        },
-        {
-          "predicate_uri": "http://www.w3.org/ns/prov#endedAtTime",
-          "predicate_name": "endedAtTime",
-          "count": 1969
-        }
-      ],
-      "preds_object": [
-        {
-          "predicate_uri": "http://meta.icos-cp.eu/ontologies/cpmeta/wasSubmittedBy",
-          "predicate_name": "wasSubmittedBy",
-          "count": 1976
-        }
-      ]
+      "subject_classes": [],
+      "object_classes": [],
+      "preds_subject": [],
+      "preds_object": []
     },
     "https://meta.icos-cp.eu/collections/": {
       "total_count": 778,

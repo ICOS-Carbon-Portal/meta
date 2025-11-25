@@ -1,9 +1,182 @@
 {
     "relations": [
         {
-            "name": ["lenses", "dataset_specs_columns"],
+            "name": [
+                "lenses",
+                "ct_collections_parts"
+            ],
             "type": "FlattenLens",
-            "baseRelation": ["ct_dataset_specs"],
+            "baseRelation": [
+                "ct_collections"
+            ],
+            "flattenedColumn": {
+                "name": "has_part",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "part",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_collections_next_versions"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_collections"
+            ],
+            "flattenedColumn": {
+                "name": "is_next_version_of",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "next_version",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_data_acquisitions_performed_withs"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_data_acquisitions"
+            ],
+            "flattenedColumn": {
+                "name": "was_performed_with",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "performed_with",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_data_productions_participated_in_bys"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_data_productions"
+            ],
+            "flattenedColumn": {
+                "name": "was_participated_in_by",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "participated_in_by",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_data_submissions_ended_at_times"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_data_submissions"
+            ],
+            "flattenedColumn": {
+                "name": "ended_at_time",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_ended_at_time",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_data_submissions_started_at_times"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_data_submissions"
+            ],
+            "flattenedColumn": {
+                "name": "started_at_time",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_started_at_time",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_dataset_columns_quality_flag_fors"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_dataset_columns"
+            ],
+            "flattenedColumn": {
+                "name": "is_quality_flag_for",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "quality_flag_for",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_dataset_specs_variables"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_dataset_specs"
+            ],
+            "flattenedColumn": {
+                "name": "has_variable",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "variable",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_dataset_specs_columns"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_dataset_specs"
+            ],
             "flattenedColumn": {
                 "name": "has_column",
                 "datatype": "TEXT[]"
@@ -13,6 +186,468 @@
                     "id"
                 ],
                 "new": "column",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_instruments_deployments"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_instruments"
+            ],
+            "flattenedColumn": {
+                "name": "has_deployment",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "deployment",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_instruments_instrument_components"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_instruments"
+            ],
+            "flattenedColumn": {
+                "name": "has_instrument_component",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "instrument_component",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_memberships_labels"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_memberships"
+            ],
+            "flattenedColumn": {
+                "name": "label",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_label",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_object_formats_good_flag_values"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_object_formats"
+            ],
+            "flattenedColumn": {
+                "name": "has_good_flag_value",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "good_flag_value",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_object_specs_comments"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_object_specs"
+            ],
+            "flattenedColumn": {
+                "name": "comment",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_comment",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_object_specs_documentation_objects"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_object_specs"
+            ],
+            "flattenedColumn": {
+                "name": "has_documentation_object",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "documentation_object",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_persons_memberships"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_persons"
+            ],
+            "flattenedColumn": {
+                "name": "has_membership",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "membership",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_plain_collections_parts"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_plain_collections"
+            ],
+            "flattenedColumn": {
+                "name": "has_part",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "part",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_static_objects_next_versions"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_static_objects"
+            ],
+            "flattenedColumn": {
+                "name": "is_next_version_of",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "next_version",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_static_objects_primary_sources"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_static_objects"
+            ],
+            "flattenedColumn": {
+                "name": "had_primary_source",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "primary_source",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_static_objects_actual_variables"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_static_objects"
+            ],
+            "flattenedColumn": {
+                "name": "has_actual_variable",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "actual_variable",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_static_objects_creators"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_static_objects"
+            ],
+            "flattenedColumn": {
+                "name": "creator",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_creator",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_comments"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "comment",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_comment",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_themes"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "theme",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_theme",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_documentation_objects"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "has_documentation_object",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "documentation_object",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_depictions"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "has_depiction",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "depiction",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_contact_points"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "contact_point",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_contact_point",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_spatials"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "spatial",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_spatial",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_fundings"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "has_funding",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "funding",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_descriptions"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "description",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "single_description",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_stations_associated_publications"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "flattenedColumn": {
+                "name": "has_associated_publication",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "associated_publication",
+                "position": "index"
+            }
+        },
+        {
+            "name": [
+                "lenses",
+                "ct_webpage_elements_linkboxs"
+            ],
+            "type": "FlattenLens",
+            "baseRelation": [
+                "ct_webpage_elements"
+            ],
+            "flattenedColumn": {
+                "name": "has_linkbox",
+                "datatype": "TEXT[]"
+            },
+            "columns": {
+                "kept": [
+                    "id"
+                ],
+                "new": "linkbox",
                 "position": "index"
             }
         }

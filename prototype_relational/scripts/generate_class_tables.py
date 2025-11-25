@@ -805,7 +805,7 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
                                     for line in prefix_sql.split('\n'))
 
         # Generate suffix (id) extraction SQL
-        suffix_sql = _generate_suffix_extraction_sql('subj', f"({prefix_sql})")
+        suffix_sql = _generate_suffix_extraction_sql('subj', table_name, prefix_map)
 
         select_lines.append(f"    {suffix_sql} AS id")
         select_lines.append(f"    , subj AS rdf_subject")
@@ -824,10 +824,8 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
             if col_name in fk_cols:
                 # This is a foreign key - extract suffix from obj
                 ref_table = fk_cols[col_name]
-                # Generate prefix extraction for the referenced table
-                ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
                 # Generate suffix extraction
-                ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
+                ref_suffix_sql = _generate_suffix_extraction_sql('obj', ref_table, prefix_map)
                 agg_func = _get_aggregate_function(col_type, is_array)
                 # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
                 if is_array:
@@ -891,7 +889,7 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
                                 for line in prefix_sql.split('\n'))
 
     # Generate suffix (id) extraction SQL
-    suffix_sql = _generate_suffix_extraction_sql('subj', f"({prefix_sql})")
+    suffix_sql = _generate_suffix_extraction_sql('subj', table_name, prefix_map)
 
     lines.append(f"    {suffix_sql} AS id")
     lines.append(f"    , subj AS rdf_subject")
@@ -909,10 +907,8 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
         if col_name in fk_cols:
             # This is a foreign key - extract suffix from obj
             ref_table = fk_cols[col_name]
-            # Generate prefix extraction for the referenced table
-            ref_prefix_sql = _generate_prefix_extraction_sql(ref_table, 'obj', prefix_map)
             # Generate suffix extraction
-            ref_suffix_sql = _generate_suffix_extraction_sql('obj', f"({ref_prefix_sql})")
+            ref_suffix_sql = _generate_suffix_extraction_sql('obj', ref_table, prefix_map)
             agg_func = _get_aggregate_function(col_type, is_array)
             # For arrays, add FILTER clause to exclude NULLs from non-matching predicates
             if is_array:
@@ -1000,8 +996,8 @@ def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
     prefixes = prefix_map.get(table_name, {})
 
     if not prefixes:
-        # No known prefixes - return empty string
-        return "''"
+        # No known prefixes - return NULL
+        return "NULL"
 
     # Sort prefixes by length (descending) to match longest first
     # This handles cases like 'http://example.com/foo/' and 'http://example.com/foo/bar/'
@@ -1014,27 +1010,45 @@ def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
         escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
         case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN '{prefix}'")
 
-    # Default case - empty string if no prefix matches
-    case_parts.append("        ELSE ''")
+    # No ELSE clause - will cause error if no prefix matches
     case_parts.append("    END")
 
     return '\n'.join(case_parts)
 
 
-def _generate_suffix_extraction_sql(column_expr: str, prefix_expr: str) -> str:
+def _generate_suffix_extraction_sql(column_expr: str, table_name: str,
+                                     prefix_map: Dict[str, Dict[str, int]]) -> str:
     """
-    Generate SQL to extract suffix (ID) by removing prefix from URI
+    Generate SQL to extract suffix (ID) by removing prefix from URI using hardcoded lengths
 
     Args:
         column_expr: SQL column expression containing the full URI
-        prefix_expr: SQL expression that evaluates to the prefix
+        table_name: Name of table to look up prefixes for
+        prefix_map: Dictionary mapping table names to their prefix counts
 
     Returns:
         SQL expression that returns the suffix (URI with prefix removed)
     """
-    # Use SUBSTRING to extract everything after the prefix
-    # SUBSTRING(string FROM position) - position is 1-indexed
-    return f"SUBSTRING({column_expr} FROM LENGTH({prefix_expr}) + 1)"
+    prefixes = prefix_map.get(table_name, {})
+
+    if not prefixes:
+        return f"{column_expr}"  # No prefixes - return as-is
+
+    # Sort prefixes by length (descending) to match longest first
+    sorted_prefixes = sorted(prefixes.keys(), key=len, reverse=True)
+
+    # Build CASE statement with hardcoded positions
+    case_parts = ["CASE"]
+    for prefix in sorted_prefixes:
+        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
+        position = len(prefix) + 1  # +1 because SUBSTRING is 1-indexed
+        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN {position}")
+
+    # No ELSE clause - will error if no prefix matches
+    case_parts.append("    END")
+
+    position_expr = '\n'.join(case_parts)
+    return f"SUBSTRING({column_expr} FROM ({position_expr}))"
 
 
 def print_summary(classes_data: List[dict], table_names: Dict[str, str],

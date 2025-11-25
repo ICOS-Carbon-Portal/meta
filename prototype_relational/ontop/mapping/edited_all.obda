@@ -41,18 +41,18 @@ source		SELECT
             FROM lenses.ct_data_productions_participated_in_bys
 
 mappingId	data_submissions_endedAtTime
-target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
 source		SELECT
                 id,
                 ended_at_time
             FROM ct_data_submissions
 
 mappingId	data_submissions_startedAtTime
-target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {single_started_at_time}^^xsd:dateTime .
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {started_at_time}^^xsd:dateTime .
 source		SELECT
                 id,
-                single_started_at_time
-            FROM lenses.ct_data_submissions_started_at_times
+                started_at_time
+            FROM ct_data_submissions
 
 mappingId	dataset_columns_isQualityFlagFor
 target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isQualityFlagFor <http://meta.icos-cp.eu/resources/cpmeta/{quality_flag_for}> .

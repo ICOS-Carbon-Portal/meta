@@ -87,27 +87,6 @@
         {
             "name": [
                 "lenses",
-                "ct_data_submissions_started_at_times"
-            ],
-            "type": "FlattenLens",
-            "baseRelation": [
-                "ct_data_submissions"
-            ],
-            "flattenedColumn": {
-                "name": "started_at_time",
-                "datatype": "TIMESTAMP[]"
-            },
-            "columns": {
-                "kept": [
-                    "id"
-                ],
-                "new": "single_started_at_time",
-                "position": "index"
-            }
-        },
-        {
-            "name": [
-                "lenses",
                 "ct_dataset_columns_quality_flag_fors"
             ],
             "type": "FlattenLens",

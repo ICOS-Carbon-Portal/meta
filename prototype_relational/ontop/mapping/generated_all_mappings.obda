@@ -152,6 +152,20 @@ source		SELECT
                 see_also
             FROM ct_data_productions
 
+mappingId	data_submissions_endedAtTime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
+source		SELECT
+                id,
+                ended_at_time
+            FROM ct_data_submissions
+
+mappingId	data_submissions_startedAtTime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {started_at_time}^^xsd:dateTime .
+source		SELECT
+                id,
+                started_at_time
+            FROM ct_data_submissions
+
 mappingId	data_submissions_wasAssociatedWith
 target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/{was_associated_with}> .
 source		SELECT
@@ -355,18 +369,18 @@ source		SELECT
                 award_number
             FROM ct_fundings
 
-mappingId	fundings_awardURI
-target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardURI {award_uri}^^xsd:anyURI .
-source		SELECT
-                id,
-                award_uri
-            FROM ct_fundings
-
 mappingId	fundings_comment
 target		<http://meta.icos-cp.eu/resources/fundings/{id}> rdfs:comment {comment} .
 source		SELECT
                 id,
                 comment
+            FROM ct_fundings
+
+mappingId	fundings_awardURI
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardURI {award_uri}^^xsd:anyURI .
+source		SELECT
+                id,
+                award_uri
             FROM ct_fundings
 
 mappingId	instruments_hasModel

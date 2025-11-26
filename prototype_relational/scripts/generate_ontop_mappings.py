@@ -461,6 +461,88 @@ def find_referenced_table_prefix(
     return max(prefix_counts.items(), key=lambda x: x[1])[0]
 
 
+def find_all_array_target_prefixes_from_references(
+    class_uri: str,
+    pred_uri: str,
+    class_analysis: Dict,
+    table_prefix_analysis: Dict
+) -> List[Tuple[str, str]]:
+    """
+    Find ALL target prefixes for an array object property by analyzing reference patterns.
+
+    Examines the 'references_to' section of class_predicates_analysis.json to determine
+    which classes are referenced by this predicate, then returns prefixes for ALL targets.
+
+    Args:
+        class_uri: URI of the subject class (e.g., 'http://.../cpmeta/Collection')
+        pred_uri: URI of the predicate (e.g., 'http://purl.org/dc/terms/hasPart')
+        class_analysis: Loaded class_predicates_analysis.json
+        table_prefix_analysis: Loaded table_prefix_analysis.json
+
+    Returns:
+        List of (prefix, target_class_name) tuples
+        Example: [
+            ('https://meta.icos-cp.eu/objects/', 'DataObject'),
+            ('https://meta.icos-cp.eu/collections/', 'Collection')
+        ]
+    """
+    # Find the class definition
+    class_info = None
+    for cls in class_analysis.get('classes', []):
+        if cls.get('class_uri') == class_uri:
+            class_info = cls
+            break
+
+    if not class_info:
+        return []
+
+    # Find ALL target classes for this predicate
+    target_results = []
+
+    for ref in class_info.get('references_to', []):
+        target_class_uri = ref.get('class_uri')
+
+        # Check if this reference uses our predicate
+        for pred_ref in ref.get('predicates', []):
+            if pred_ref.get('predicate_uri') == pred_uri:
+                # Found a target class for this predicate
+                # Convert target class URI to table name and prefix
+
+                # First, find the class name
+                target_class_name = None
+                for cls in class_analysis.get('classes', []):
+                    if cls.get('class_uri') == target_class_uri:
+                        target_class_name = cls.get('class_name')
+                        break
+
+                # If class_name not found in classes list, use the one from reference
+                if not target_class_name:
+                    target_class_name = ref.get('class_name', target_class_uri)
+
+                # Check if this class is part of a merged table
+                target_table = None
+                for merged_table, config in MERGE_GROUPS.items():
+                    if target_class_name in config['classes']:
+                        target_table = merged_table
+                        break
+
+                # If not merged, convert class name to table name
+                if not target_table:
+                    target_table = sanitize_table_name(target_class_name)
+
+                # Get the primary prefix for this table
+                target_prefix = find_referenced_table_prefix(target_table, table_prefix_analysis)
+
+                if target_prefix:
+                    # Extract short class name for mapping ID suffix
+                    short_class_name = target_class_name.split(':')[-1] if ':' in target_class_name else target_class_name.split('/')[-1]
+                    target_results.append((target_prefix, short_class_name))
+
+                break  # Found the predicate in this reference, move to next reference
+
+    return target_results
+
+
 def generate_mapping_id(table_name: str, predicate_short: str, prefix: Optional[str] = None) -> str:
     """
     Generate a unique, valid mapping ID.
@@ -775,16 +857,16 @@ def _generate_mappings_for_prefix(
 
             predicate = get_prefixed_predicate(pred_uri, prefix_map)
 
-            # For array object properties, use ontology rdfs:range to find the target table prefix
+            # For array object properties, determine ALL target prefixes and generate multiple mappings
             if is_object_property:
-                array_ref_prefix = None
+                # Collect all possible target prefixes
+                target_prefixes = []  # List of (prefix, class_name) tuples
 
-                # Get the range class from ontology
+                # Strategy 1: Get the range class from ontology
                 range_class_uri = ontology_info.get('range')
 
                 if range_class_uri:
                     # Find which table corresponds to this class URI
-                    # First, find the class_name from the class URI
                     ref_class_name = None
                     for cls in class_analysis.get('classes', []):
                         if cls.get('class_uri') == range_class_uri:
@@ -809,15 +891,68 @@ def _generate_mappings_for_prefix(
                             prefixes = table_data.get('prefix_counts', {})
                             if prefixes:
                                 array_ref_prefix = list(prefixes.keys())[0]
+                                # Extract short class name
+                                short_class_name = ref_class_name.split(':')[-1] if ':' in ref_class_name else ref_class_name
+                                target_prefixes.append((array_ref_prefix, short_class_name))
 
-                # Use the array-specific prefix if found, otherwise fall back to FK-based prefix
-                if array_ref_prefix:
-                    object_part = f"<{array_ref_prefix}{{{new_column}}}>"
-                elif ref_prefix:
-                    object_part = f"<{ref_prefix}{{{new_column}}}>"
+                # Strategy 2: Analyze reference patterns from class_predicates_analysis.json
+                if not target_prefixes:
+                    # Check all original class URIs (for merged tables)
+                    for uri in original_class_uris:
+                        prefixes_from_refs = find_all_array_target_prefixes_from_references(
+                            uri, pred_uri, class_analysis, table_prefix_analysis
+                        )
+                        target_prefixes.extend(prefixes_from_refs)
+
+                    # Deduplicate by prefix (keep first occurrence)
+                    seen_prefixes = set()
+                    unique_target_prefixes = []
+                    for prefix, class_name in target_prefixes:
+                        if prefix not in seen_prefixes:
+                            seen_prefixes.add(prefix)
+                            unique_target_prefixes.append((prefix, class_name))
+                    target_prefixes = unique_target_prefixes
+
+                # Strategy 3: Use FK-based prefix if available (fallback)
+                if not target_prefixes and ref_prefix:
+                    # Extract a reasonable class name from the referenced table
+                    target_class_name = "Unknown"
+                    target_prefixes.append((ref_prefix, target_class_name))
+
+                # Generate a separate mapping for EACH target prefix
+                if target_prefixes:
+                    for array_ref_prefix, target_class_name in target_prefixes:
+                        # Create unique mapping_id with suffix if multiple targets
+                        if len(target_prefixes) > 1:
+                            # Sanitize class name for use in mapping ID
+                            sanitized_class = re.sub(r'[^a-zA-Z0-9_]', '', target_class_name)
+                            mapping_id_with_suffix = f"{mapping_id}_{sanitized_class}"
+                        else:
+                            mapping_id_with_suffix = mapping_id
+
+                        object_part = f"<{array_ref_prefix}{{{new_column}}}>"
+                        target = f"{subject_uri} {predicate} {object_part} ."
+
+                        # Combine into mapping entry
+                        mapping = f"""mappingId\t{mapping_id_with_suffix}
+target\t\t{target}
+source\t\t{source}"""
+
+                        array_mappings.append(mapping)
                 else:
+                    # Warning: no prefix found
+                    print(f"WARNING: Could not determine prefix for array object property {pred_short} in {table_name}")
+                    print(f"  Predicate URI: {pred_uri}")
+                    print(f"  Column: {new_column}")
+                    # Still create a mapping without prefix as fallback
                     object_part = f"<{{{new_column}}}>"
+                    target = f"{subject_uri} {predicate} {object_part} ."
+                    mapping = f"""mappingId\t{mapping_id}
+target\t\t{target}
+source\t\t{source}"""
+                    array_mappings.append(mapping)
             else:
+                # Datatype property - single mapping
                 if ontology_xsd_range:
                     object_part = f"{{{new_column}}}^^{ontology_xsd_range}"
                 else:
@@ -828,14 +963,14 @@ def _generate_mappings_for_prefix(
                     else:
                         object_part = f"{{{new_column}}}"
 
-            target = f"{subject_uri} {predicate} {object_part} ."
+                target = f"{subject_uri} {predicate} {object_part} ."
 
-            # Combine into mapping entry
-            mapping = f"""mappingId\t{mapping_id}
+                # Combine into mapping entry
+                mapping = f"""mappingId\t{mapping_id}
 target\t\t{target}
 source\t\t{source}"""
 
-            array_mappings.append(mapping)
+                array_mappings.append(mapping)
         else:
             # Scalar mapping - use original logic
             mapping = f"""mappingId\t{mapping_id}
@@ -1067,6 +1202,28 @@ def main():
     }
     with open(lenses_output_file, 'w') as f:
         json.dump(lenses_data, f, indent=4)
+
+    # Validate array object properties have prefixes
+    print(f"\n=== Array Object Property Validation ===")
+    missing_prefix_mappings = []
+    for mapping in all_array_mappings:
+        # Check for patterns like <{variable}> at the end of target (without a prefix)
+        # Pattern: target line ending with <{...}> .
+        if re.search(r'target\s+.*<\{[^}]+\}>\s*\.$', mapping, re.MULTILINE):
+            # Extract mapping ID for reporting
+            mapping_id_match = re.search(r'mappingId\s+(\S+)', mapping)
+            if mapping_id_match:
+                missing_prefix_mappings.append(mapping_id_match.group(1))
+
+    if missing_prefix_mappings:
+        print(f"⚠ WARNING: {len(missing_prefix_mappings)} array object properties missing URI prefixes:")
+        for mapping_id in missing_prefix_mappings[:10]:  # Show first 10
+            print(f"  - {mapping_id}")
+        if len(missing_prefix_mappings) > 10:
+            print(f"  ... and {len(missing_prefix_mappings) - 10} more")
+        print(f"\nPlease review these mappings and add explicit ontology ranges or reference data.")
+    else:
+        print(f"✓ All {len(all_array_mappings)} array object properties have URI prefixes")
 
     print(f"\nDone! Generated {len(all_scalar_mappings)} scalar mappings, {len(all_array_mappings)} array mappings, and {len(deduped_lens_definitions)} lenses")
     print(f"Scalar mappings: {output_file}")

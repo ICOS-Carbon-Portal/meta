@@ -165,7 +165,7 @@ if __name__ == '__main__':
         input_file = sys.argv[1]
     else:
         # input_file = 'unique_sparql.log'
-        input_file = 'manual_rewritten.log'
+        input_file = '../logs/manual_rewritten.log'
 
     main(input_file, 'rewritten_queries.txt')
     print("DONE")

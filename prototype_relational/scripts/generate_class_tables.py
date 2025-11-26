@@ -659,7 +659,8 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
 
 def generate_create_table_sql(table_name: str, columns: List[Dict],
                               foreign_keys: List[Tuple[str, str, str]] = None,
-                              merge_config: dict = None) -> str:
+                              merge_config: dict = None,
+                              unlogged: bool = False) -> str:
     """
     Generate CREATE TABLE statement
 
@@ -668,10 +669,12 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
         columns: List of column definitions
         foreign_keys: List of (column_name, ref_table, predicate_uri) tuples
         merge_config: Merge configuration if this is a union table
+        unlogged: If True, create UNLOGGED table for faster writes (not crash-safe)
     """
     fk_cols = {fk[0] for fk in (foreign_keys or [])}
 
-    lines = [f"CREATE TABLE IF NOT EXISTS {table_name} ("]
+    unlogged_keyword = "UNLOGGED " if unlogged else ""
+    lines = [f"CREATE {unlogged_keyword}TABLE IF NOT EXISTS {table_name} ("]
     lines.append("    id TEXT PRIMARY KEY,")
     lines.append("    rdf_subject TEXT NOT NULL UNIQUE,")
     lines.append("    prefix TEXT NOT NULL,")
@@ -1146,6 +1149,14 @@ Examples:
     parser.add_argument('--dbname', default='postgres', help='Database name (for --db)')
     parser.add_argument('--password', default='ontop', help='Database password (for --db)')
 
+    # UNLOGGED vs LOGGED tables (default: UNLOGGED for performance)
+    unlogged_group = parser.add_mutually_exclusive_group()
+    unlogged_group.add_argument('--unlogged', dest='unlogged', action='store_true',
+                       help='Create UNLOGGED tables for faster bulk load (DEFAULT)')
+    unlogged_group.add_argument('--logged', dest='unlogged', action='store_false',
+                       help='Create LOGGED tables (crash-safe, but slower)')
+    parser.set_defaults(unlogged=True)
+
     args = parser.parse_args()
 
     # Parse excluded namespaces
@@ -1324,7 +1335,7 @@ Examples:
             schema_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
             schema_lines.append("")
 
-            create_sql = generate_create_table_sql(table_name, columns, fks, merge_config)
+            create_sql = generate_create_table_sql(table_name, columns, fks, merge_config, args.unlogged)
             schema_lines.append(create_sql)
             schema_lines.append("")
 

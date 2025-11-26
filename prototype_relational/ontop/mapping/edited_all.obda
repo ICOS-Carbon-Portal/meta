@@ -12,47 +12,55 @@ xsd:	http://www.w3.org/2001/XMLSchema#
 
 [MappingDeclaration] @collection [[
 
-mappingId	collections_hasPart
-target		<https://meta.icos-cp.eu/collections/{id}> dcterms:hasPart <{part}> .
+
+mappingId	collections_hasPart_DataObject
+target		<https://meta.icos-cp.eu/collections/{id}> dcterms:hasPart <https://meta.icos-cp.eu/objects/{part}> .
 source		SELECT
                 id,
                 part
             FROM lenses.ct_collections_parts
 
-mappingId	collections_isNextVersionOf
-target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <{next_version}> .
+mappingId	collections_hasPart_Collection
+target		<https://meta.icos-cp.eu/collections/{id}> dcterms:hasPart <https://meta.icos-cp.eu/collections/{part}> .
+source		SELECT
+                id,
+                part
+            FROM lenses.ct_collections_parts
+
+mappingId	collections_isNextVersionOf_DataObject
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/{next_version}> .
+source		SELECT
+                id,
+                next_version
+            FROM lenses.ct_collections_next_versions
+
+mappingId	collections_isNextVersionOf_Collection
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/collections/{next_version}> .
 source		SELECT
                 id,
                 next_version
             FROM lenses.ct_collections_next_versions
 
 mappingId	data_acquisitions_wasPerformedWith
-target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedWith <{performed_with}> .
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedWith <http://meta.icos-cp.eu/resources/instruments/{performed_with}> .
 source		SELECT
                 id,
                 performed_with
             FROM lenses.ct_data_acquisitions_performed_withs
 
-mappingId	data_productions_wasParticipatedInBy
-target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <{participated_in_by}> .
+mappingId	data_productions_wasParticipatedInBy_Organization
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/organizations/{participated_in_by}> .
 source		SELECT
                 id,
                 participated_in_by
             FROM lenses.ct_data_productions_participated_in_bys
 
-mappingId	data_submissions_endedAtTime
-target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
+mappingId	data_productions_wasParticipatedInBy_Person
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/people/{participated_in_by}> .
 source		SELECT
                 id,
-                ended_at_time
-            FROM ct_data_submissions
-
-mappingId	data_submissions_startedAtTime
-target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {started_at_time}^^xsd:dateTime .
-source		SELECT
-                id,
-                started_at_time
-            FROM ct_data_submissions
+                participated_in_by
+            FROM lenses.ct_data_productions_participated_in_bys
 
 mappingId	dataset_columns_isQualityFlagFor
 target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isQualityFlagFor <http://meta.icos-cp.eu/resources/cpmeta/{quality_flag_for}> .
@@ -125,21 +133,21 @@ source		SELECT
             FROM lenses.ct_persons_memberships
 
 mappingId	plain_collections_hasPart
-target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> dcterms:hasPart <{part}> .
+target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> dcterms:hasPart <https://meta.icos-cp.eu/objects/{part}> .
 source		SELECT
                 id,
                 part
             FROM lenses.ct_plain_collections_parts
 
 mappingId	static_objects_isNextVersionOf
-target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:isNextVersionOf <{next_version}> .
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/{next_version}> .
 source		SELECT
                 id,
                 next_version
             FROM lenses.ct_static_objects_next_versions
 
 mappingId	static_objects_hadPrimarySource
-target		<https://meta.icos-cp.eu/objects/{id}> prov:hadPrimarySource <{primary_source}> .
+target		<https://meta.icos-cp.eu/objects/{id}> prov:hadPrimarySource <https://meta.icos-cp.eu/objects/{primary_source}> .
 source		SELECT
                 id,
                 primary_source
@@ -152,8 +160,15 @@ source		SELECT
                 actual_variable
             FROM lenses.ct_static_objects_actual_variables
 
-mappingId	static_objects_creator
-target		<https://meta.icos-cp.eu/objects/{id}> dcterms:creator <{single_creator}> .
+mappingId	static_objects_creator_CentralFacility
+target		<https://meta.icos-cp.eu/objects/{id}> dcterms:creator <http://meta.icos-cp.eu/resources/organizations/{single_creator}> .
+source		SELECT
+                id,
+                single_creator
+            FROM lenses.ct_static_objects_creators
+
+mappingId	static_objects_creator_Person
+target		<https://meta.icos-cp.eu/objects/{id}> dcterms:creator <http://meta.icos-cp.eu/resources/people/{single_creator}> .
 source		SELECT
                 id,
                 single_creator
@@ -419,6 +434,34 @@ source		SELECT
             FROM lenses.ct_webpage_elements_linkboxs
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mappingId	central_facilities_hasName
 target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasName {has_name}^^xsd:string .
 source		SELECT
@@ -558,6 +601,20 @@ source		SELECT
                 id,
                 see_also
             FROM ct_data_productions
+
+mappingId	data_submissions_endedAtTime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
+source		SELECT
+                id,
+                ended_at_time
+            FROM ct_data_submissions
+
+mappingId	data_submissions_startedAtTime
+target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:startedAtTime {started_at_time}^^xsd:dateTime .
+source		SELECT
+                id,
+                started_at_time
+            FROM ct_data_submissions
 
 mappingId	data_submissions_wasAssociatedWith
 target		<http://meta.icos-cp.eu/resources/subm_{id}> prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/{was_associated_with}> .
@@ -762,18 +819,18 @@ source		SELECT
                 award_number
             FROM ct_fundings
 
-mappingId	fundings_awardURI
-target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardURI {award_uri}^^xsd:anyURI .
-source		SELECT
-                id,
-                award_uri
-            FROM ct_fundings
-
 mappingId	fundings_comment
 target		<http://meta.icos-cp.eu/resources/fundings/{id}> rdfs:comment {comment} .
 source		SELECT
                 id,
                 comment
+            FROM ct_fundings
+
+mappingId	fundings_awardURI
+target		<http://meta.icos-cp.eu/resources/fundings/{id}> cpmeta:awardURI {award_uri}^^xsd:anyURI .
+source		SELECT
+                id,
+                award_uri
             FROM ct_fundings
 
 mappingId	instruments_hasModel

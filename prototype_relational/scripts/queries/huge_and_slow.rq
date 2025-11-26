@@ -1,0 +1,46 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix dcterms: <http://purl.org/dc/terms/>
+select distinct ?dobj ?station ?stationId ?samplingHeight ?samplingPoint ?theme ?themeIcon ?title ?specComments ?description ?columnNames ?site ?hasVarInfo ?dois ?biblioInfo where{
+	{
+		select ?dobj (min(?station0) as ?station) (sample(?stationId0) as ?stationId) (sample(?samplingHeight0) as ?samplingHeight)
+			(sample(?samplingPoint0) as ?samplingPoint) (sample(?site0) as ?site)
+			(group_concat(distinct ?specComment ; separator=". ") as ?specComments) (group_concat(distinct ?doi ; separator="|") as ?dois)
+		where{
+			VALUES ?dobj { <https://meta.icos-cp.eu/objects/euuGN3ivkjRnPRP5G2XCmuXZ> <https://meta.icos-cp.eu/objects/FcwebKMRHvKZqLeBabH7Q5Xf> <https://meta.icos-cp.eu/objects/YUKNKCmydDgLFhwr_cGvB1Uw> <https://meta.icos-cp.eu/objects/MZ_eUO-C-05HJll2Kro5Yh-d> <https://meta.icos-cp.eu/objects/yq3u2mko1dGhD0sOeqHR6dlz> <https://meta.icos-cp.eu/objects/z70KsTLwMGvtwp47xxiwH2dU> <https://meta.icos-cp.eu/objects/28YtMqrQjj-krJCuxhRHQTlG> <https://meta.icos-cp.eu/objects/0Luc1rB0XxAbCOj7Ija1cAcc> <https://meta.icos-cp.eu/objects/uChrOHcnk8PjQUKdQypGSqf5> <https://meta.icos-cp.eu/objects/03GXiF84hCmwo7jZo_IFyDJj> <https://meta.icos-cp.eu/objects/FbYezxBd3h_dqNTO4ZLcoTWq> <https://meta.icos-cp.eu/objects/WhIRisqKSpLPP6iPaF6r9ATY> <https://meta.icos-cp.eu/objects/iMywE4aE1m9dXz2XlmDtDVhp> <https://meta.icos-cp.eu/objects/nuF-hLTHWqBVfNZXXaARRjwe> <https://meta.icos-cp.eu/objects/2ums6rEMaZ7gQK8XHuN1F3xh> <https://meta.icos-cp.eu/objects/MTcnlCsk8tcnhS-k7Kj2mqgG> <https://meta.icos-cp.eu/objects/Dqvrzbj9XZ6hlFw3g1Xn8_OO> <https://meta.icos-cp.eu/objects/pcAQ9WW_zM853j9saKcB0xkE> <https://meta.icos-cp.eu/objects/ASoFGiYwn8KvM_pg4MoWY3a3> <https://meta.icos-cp.eu/objects/0LwYP5j8nRdUMoSnp7D_AmFA> }
+			OPTIONAL{
+				?dobj cpmeta:wasAcquiredBy ?acq.
+				?acq prov:wasAssociatedWith ?stationUri .
+				OPTIONAL{ ?stationUri cpmeta:hasName ?station0 }
+				OPTIONAL{ ?stationUri cpmeta:hasStationId ?stationId0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingHeight ?samplingHeight0 }
+				OPTIONAL{ ?acq cpmeta:hasSamplingPoint/rdfs:label ?samplingPoint0 }
+				OPTIONAL{ ?acq cpmeta:wasPerformedAt/cpmeta:hasSpatialCoverage/rdfs:label ?site0 }
+			}
+			OPTIONAL{
+				?coll dcterms:hasPart ?dobj ; cpmeta:hasDoi ?doi .
+				optional{
+					?newerColl cpmeta:isNextVersionOf ?coll .
+					OPTIONAL {?newerColl cpmeta:hasDoi ?doi }
+					OPTIONAL {?newerColl dcterms:hasPart ?dobj ; cpmeta:hasDoi []}
+					FILTER (BOUND(?dobj) || BOUND(?doi))
+				}
+				filter(!bound(?newerColl))
+			}
+			OPTIONAL{ ?dobj cpmeta:hasObjectSpec/rdfs:comment ?specComment }
+		}
+		group by ?dobj
+	}
+	OPTIONAL{
+		?dobj cpmeta:hasObjectSpec/cpmeta:hasDataTheme ?themeUri .
+		?themeUri rdfs:label ?theme ; cpmeta:hasIcon ?themeIcon .
+	}
+	OPTIONAL{ ?dobj dcterms:title ?title }
+	OPTIONAL{ ?dobj dcterms:description ?description }
+	OPTIONAL{ ?dobj cpmeta:hasActualColumnNames ?columnNames }
+	BIND(BOUND(?hasVarInfoCheck) AS ?hasVarInfo)
+	OPTIONAL{ ?dobj cpmeta:hasBiblioInfo ?biblioInfo}
+}
+

@@ -502,42 +502,42 @@ target		<https://meta.icos-cp.eu/collections/{id}> dcterms:creator <http://meta.
 source		SELECT
                 id,
                 creator
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	collections_title
 target		<https://meta.icos-cp.eu/collections/{id}> dcterms:title {title} .
 source		SELECT
                 id,
                 title
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	collections_description
 target		<https://meta.icos-cp.eu/collections/{id}> dcterms:description {description} .
 source		SELECT
                 id,
                 description
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	collections_hasDoi
 target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:hasDoi {has_doi}^^xsd:string .
 source		SELECT
                 id,
                 has_doi
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	collections_hasSpatialCoverage
 target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:hasSpatialCoverage <http://meta.icos-cp.eu/resources/spcov_{has_spatial_coverage}> .
 source		SELECT
                 id,
                 has_spatial_coverage
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	collections_seeAlso
 target		<https://meta.icos-cp.eu/collections/{id}> rdfs:seeAlso {see_also} .
 source		SELECT
                 id,
                 see_also
-            FROM ct_collections
+            FROM lenses.collections
 
 mappingId	data_acquisitions_endedAtTime
 target		<http://meta.icos-cp.eu/resources/acq_{id}> prov:endedAtTime {ended_at_time}^^xsd:dateTime .
@@ -1195,7 +1195,7 @@ target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> cpmeta:isNextVersionOf
 source		SELECT
                 id,
                 is_next_version_of
-            FROM ct_plain_collections
+            FROM lenses.plain_collections
 
 mappingId	projects_comment
 target		<http://meta.icos-cp.eu/resources/projects{id}> rdfs:comment {comment} .
@@ -1478,196 +1478,196 @@ target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasName {has_name}^^xsd:st
 source		SELECT
                 id,
                 has_name
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasObjectSpec
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/{has_object_spec}> .
 source		SELECT
                 id,
                 has_object_spec
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasSha256sum
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSha256sum {has_sha256sum} .
 source		SELECT
                 id,
                 has_sha256sum
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasSizeInBytes
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSizeInBytes {has_size_in_bytes}^^xsd:long .
 source		SELECT
                 id,
                 has_size_in_bytes
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_wasSubmittedBy
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_{was_submitted_by}> .
 source		SELECT
                 id,
                 was_submitted_by
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_wasAcquiredBy
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_{was_acquired_by}> .
 source		SELECT
                 id,
                 was_acquired_by
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasNumberOfRows
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasNumberOfRows {has_number_of_rows}^^xsd:long .
 source		SELECT
                 id,
                 has_number_of_rows
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_wasProducedBy
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:wasProducedBy <http://meta.icos-cp.eu/resources/prod_{was_produced_by}> .
 source		SELECT
                 id,
                 was_produced_by
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasActualColumnNames
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasActualColumnNames {has_actual_column_names}^^xsd:string .
 source		SELECT
                 id,
                 has_actual_column_names
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasSpatialCoverage
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasSpatialCoverage <http://meta.icos-cp.eu/resources/spcov_{has_spatial_coverage}> .
 source		SELECT
                 id,
                 has_spatial_coverage
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasDoi
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasDoi {has_doi}^^xsd:string .
 source		SELECT
                 id,
                 has_doi
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasKeywords
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasKeywords {has_keywords}^^xsd:string .
 source		SELECT
                 id,
                 has_keywords
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_CONTACT_20POINT
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTACT%20POINT {contact_20_point} .
 source		SELECT
                 id,
                 contact_20_point
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_CONTRIBUTOR
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:CONTRIBUTOR {contributor} .
 source		SELECT
                 id,
                 contributor
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_MEASUREMENT_20METHOD
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20METHOD {measurement_20_method} .
 source		SELECT
                 id,
                 measurement_20_method
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_MEASUREMENT_20SCALE
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20SCALE {measurement_20_scale} .
 source		SELECT
                 id,
                 measurement_20_scale
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_MEASUREMENT_20UNIT
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:MEASUREMENT%20UNIT {measurement_20_unit} .
 source		SELECT
                 id,
                 measurement_20_unit
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_OBSERVATION_20CATEGORY
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:OBSERVATION%20CATEGORY {observation_20_category} .
 source		SELECT
                 id,
                 observation_20_category
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_PARAMETER
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:PARAMETER {parameter} .
 source		SELECT
                 id,
                 parameter
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_SAMPLING_20TYPE
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:SAMPLING%20TYPE {sampling_20_type} .
 source		SELECT
                 id,
                 sampling_20_type
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_TIME_20INTERVAL
 target		<https://meta.icos-cp.eu/objects/{id}> wdcgg:TIME%20INTERVAL {time_20_interval} .
 source		SELECT
                 id,
                 time_20_interval
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasEndTime
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasEndTime {has_end_time}^^xsd:dateTime .
 source		SELECT
                 id,
                 has_end_time
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasStartTime
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasStartTime {has_start_time}^^xsd:dateTime .
 source		SELECT
                 id,
                 has_start_time
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_hasTemporalResolution
 target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasTemporalResolution {has_temporal_resolution}^^xsd:string .
 source		SELECT
                 id,
                 has_temporal_resolution
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_description
 target		<https://meta.icos-cp.eu/objects/{id}> dcterms:description {description} .
 source		SELECT
                 id,
                 description
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_title
 target		<https://meta.icos-cp.eu/objects/{id}> dcterms:title {title} .
 source		SELECT
                 id,
                 title
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_license
 target		<https://meta.icos-cp.eu/objects/{id}> dcterms:license {license} .
 source		SELECT
                 id,
                 license
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	static_objects_seeAlso
 target		<https://meta.icos-cp.eu/objects/{id}> rdfs:seeAlso {see_also} .
 source		SELECT
                 id,
                 see_also
-            FROM ct_static_objects
+            FROM lenses.ct_static_objects_id
 
 mappingId	stations_hasName_resourcesicos
 target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasName {has_name}^^xsd:string .

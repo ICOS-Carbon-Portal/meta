@@ -1,6 +1,47 @@
 {
     "relations": [
         {
+          "type": "BasicLens",
+          "baseRelation": [ "ct_plain_collections" ],
+          "name": ["lenses", "plain_collections"],
+           "iriSafeConstraints": {
+              "added": [
+                  "id"
+              ]
+          },
+          "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+          "type": "BasicLens",
+          "baseRelation": [ "ct_collections" ],
+          "name": ["lenses", "collections"],
+           "iriSafeConstraints": {
+              "added": [
+                  "id"
+              ]
+          },
+          "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+          "type": "BasicLens",
+          "baseRelation": [ "ct_static_objects" ],
+          "name": ["lenses", "ct_static_objects_id"],
+           "iriSafeConstraints": {
+              "added": [
+                  "id"
+              ]
+          },
+          "nonNullConstraints": { "added": [ "id" ] }
+        },
+        {
             "name": [
                 "lenses",
                 "ct_collections_parts"
@@ -40,7 +81,12 @@
                 ],
                 "new": "next_version",
                 "position": "index"
-            }
+            },
+            "iriSafeConstraints": {
+              "added": [
+                  "id", "next_version"
+              ]
+          }
         },
         {
             "name": [
@@ -299,6 +345,11 @@
                 "lenses",
                 "ct_plain_collections_parts"
             ],
+           "iriSafeConstraints": {
+              "added": [
+                  "id", "part"
+              ]
+          },
             "type": "FlattenLens",
             "baseRelation": [
                 "ct_plain_collections"
@@ -328,6 +379,11 @@
                 "name": "is_next_version_of",
                 "datatype": "TEXT[]"
             },
+           "iriSafeConstraints": {
+              "added": [
+                  "id", "next_version"
+              ]
+          },
             "columns": {
                 "kept": [
                     "id"

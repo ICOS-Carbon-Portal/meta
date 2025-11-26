@@ -1,44 +1,686 @@
 {
     "relations": [
         {
-          "type": "BasicLens",
-          "baseRelation": [ "ct_plain_collections" ],
-          "name": ["lenses", "plain_collections"],
-           "iriSafeConstraints": { "added": [ "id" ] },
-          "nonNullConstraints": {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_webpage_elements"
+            ],
+            "name": [
+                "lenses",
+                "webpage_elements"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id"
                 ]
             }
         },
         {
-          "type": "BasicLens",
-          "baseRelation": [ "ct_collections" ],
-          "name": ["lenses", "collections"],
-           "iriSafeConstraints": {
-              "added": [
-                  "id"
-              ]
-          },
-          "nonNullConstraints": {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_variable_infos"
+            ],
+            "name": [
+                "lenses",
+                "variable_infos"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id"
                 ]
             }
         },
         {
-          "type": "BasicLens",
-          "baseRelation": [ "ct_static_objects" ],
-          "name": ["lenses", "ct_static_objects_id"],
-           "iriSafeConstraints": {
-              "added": [
-                  "id"
-              ]
-          },
-          "nonNullConstraints": { "added": [ "id" ] }
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_value_types"
+            ],
+            "name": [
+                "lenses",
+                "value_types"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
         },
         {
-           "iriSafeConstraints": { "added": [ "id", "part" ] },
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_value_formats"
+            ],
+            "name": [
+                "lenses",
+                "value_formats"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_thematic_centers"
+            ],
+            "name": [
+                "lenses",
+                "thematic_centers"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_stations"
+            ],
+            "name": [
+                "lenses",
+                "stations"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_static_objects"
+            ],
+            "name": [
+                "lenses",
+                "static_objects"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_specific_dataset_types"
+            ],
+            "name": [
+                "lenses",
+                "specific_dataset_types"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_spatial_coverages"
+            ],
+            "name": [
+                "lenses",
+                "spatial_coverages"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_roles"
+            ],
+            "name": [
+                "lenses",
+                "roles"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_quantity_kinds"
+            ],
+            "name": [
+                "lenses",
+                "quantity_kinds"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_projects"
+            ],
+            "name": [
+                "lenses",
+                "projects"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_plain_collections"
+            ],
+            "name": [
+                "lenses",
+                "plain_collections"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_persons"
+            ],
+            "name": [
+                "lenses",
+                "persons"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_organizations"
+            ],
+            "name": [
+                "lenses",
+                "organizations"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_object_specs"
+            ],
+            "name": [
+                "lenses",
+                "object_specs"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_object_formats"
+            ],
+            "name": [
+                "lenses",
+                "object_formats"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_object_encodings"
+            ],
+            "name": [
+                "lenses",
+                "object_encodings"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_memberships"
+            ],
+            "name": [
+                "lenses",
+                "memberships"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_link_boxes"
+            ],
+            "name": [
+                "lenses",
+                "link_boxes"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_instruments"
+            ],
+            "name": [
+                "lenses",
+                "instruments"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_fundings"
+            ],
+            "name": [
+                "lenses",
+                "fundings"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_funders"
+            ],
+            "name": [
+                "lenses",
+                "funders"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_ecosystem_types"
+            ],
+            "name": [
+                "lenses",
+                "ecosystem_types"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_dataset_variables"
+            ],
+            "name": [
+                "lenses",
+                "dataset_variables"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_dataset_specs"
+            ],
+            "name": [
+                "lenses",
+                "dataset_specs"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_dataset_columns"
+            ],
+            "name": [
+                "lenses",
+                "dataset_columns"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_data_themes"
+            ],
+            "name": [
+                "lenses",
+                "data_themes"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_data_submissions"
+            ],
+            "name": [
+                "lenses",
+                "data_submissions"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_data_productions"
+            ],
+            "name": [
+                "lenses",
+                "data_productions"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_data_acquisitions"
+            ],
+            "name": [
+                "lenses",
+                "data_acquisitions"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_collections"
+            ],
+            "name": [
+                "lenses",
+                "collections"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_climate_zones"
+            ],
+            "name": [
+                "lenses",
+                "climate_zones"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
+            "type": "BasicLens",
+            "baseRelation": [
+                "ct_central_facilities"
+            ],
+            "name": [
+                "lenses",
+                "central_facilities"
+            ],
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id"
+                ]
+            }
+        },
+        {
             "name": [
                 "lenses",
                 "ct_collections_parts"
@@ -57,6 +699,12 @@
                 ],
                 "new": "part",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "part"
+                ]
             }
         },
         {
@@ -80,13 +728,13 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
-              "added": [
-                  "id", "next_version"
-              ]
-          }
+                "added": [
+                    "id",
+                    "next_version"
+                ]
+            }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_data_acquisitions_performed_withs"
@@ -105,10 +753,15 @@
                 ],
                 "new": "performed_with",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "performed_with"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_data_productions_participated_in_bys"
@@ -127,10 +780,15 @@
                 ],
                 "new": "participated_in_by",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "participated_in_by"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_columns_quality_flag_fors"
@@ -149,10 +807,15 @@
                 ],
                 "new": "quality_flag_for",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "quality_flag_for"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_specs_variables"
@@ -171,10 +834,15 @@
                 ],
                 "new": "variable",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "variable"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_specs_columns"
@@ -193,10 +861,15 @@
                 ],
                 "new": "column",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "column"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_instruments_deployments"
@@ -215,10 +888,15 @@
                 ],
                 "new": "deployment",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "deployment"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_instruments_instrument_components"
@@ -237,10 +915,15 @@
                 ],
                 "new": "instrument_component",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "instrument_component"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_memberships_labels"
@@ -259,10 +942,14 @@
                 ],
                 "new": "single_label",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_formats_good_flag_values"
@@ -281,10 +968,14 @@
                 ],
                 "new": "good_flag_value",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_specs_comments"
@@ -303,10 +994,14 @@
                 ],
                 "new": "single_comment",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_specs_documentation_objects"
@@ -325,10 +1020,15 @@
                 ],
                 "new": "documentation_object",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "documentation_object"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_persons_memberships"
@@ -347,6 +1047,12 @@
                 ],
                 "new": "membership",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "membership"
+                ]
             }
         },
         {
@@ -354,11 +1060,6 @@
                 "lenses",
                 "ct_plain_collections_parts"
             ],
-           "iriSafeConstraints": {
-              "added": [
-                  "id", "part"
-              ]
-          },
             "type": "FlattenLens",
             "baseRelation": [
                 "ct_plain_collections"
@@ -373,6 +1074,12 @@
                 ],
                 "new": "part",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "part"
+                ]
             }
         },
         {
@@ -388,21 +1095,21 @@
                 "name": "is_next_version_of",
                 "datatype": "TEXT[]"
             },
-           "iriSafeConstraints": {
-              "added": [
-                  "id", "next_version"
-              ]
-          },
             "columns": {
                 "kept": [
                     "id"
                 ],
                 "new": "next_version",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "next_version"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_primary_sources"
@@ -421,10 +1128,15 @@
                 ],
                 "new": "primary_source",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "primary_source"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_actual_variables"
@@ -443,10 +1155,15 @@
                 ],
                 "new": "actual_variable",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "actual_variable"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_creators"
@@ -465,10 +1182,15 @@
                 ],
                 "new": "single_creator",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "single_creator"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_comments"
@@ -487,15 +1209,18 @@
                 ],
                 "new": "single_comment",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_themes"
             ],
-           "iriSafeConstraints": { "added": [ "id" ] },
             "type": "FlattenLens",
             "baseRelation": [
                 "ct_stations"
@@ -510,10 +1235,14 @@
                 ],
                 "new": "single_theme",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_documentation_objects"
@@ -532,10 +1261,15 @@
                 ],
                 "new": "documentation_object",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "documentation_object"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_depictions"
@@ -554,10 +1288,14 @@
                 ],
                 "new": "depiction",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_contact_points"
@@ -576,10 +1314,14 @@
                 ],
                 "new": "single_contact_point",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_spatials"
@@ -598,10 +1340,14 @@
                 ],
                 "new": "single_spatial",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_fundings"
@@ -620,10 +1366,15 @@
                 ],
                 "new": "funding",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "funding"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_descriptions"
@@ -642,10 +1393,14 @@
                 ],
                 "new": "single_description",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_associated_publications"
@@ -664,10 +1419,14 @@
                 ],
                 "new": "associated_publication",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id"
+                ]
             }
         },
         {
-           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_webpage_elements_linkboxs"
@@ -686,6 +1445,12 @@
                 ],
                 "new": "linkbox",
                 "position": "index"
+            },
+            "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "linkbox"
+                ]
             }
         }
     ]

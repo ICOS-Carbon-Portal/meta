@@ -84,6 +84,21 @@ def sanitize_table_name(class_name: str) -> str:
     return f"ct_{name}"
 
 
+def get_basic_lens_name(table_name: str) -> str:
+    """
+    Convert table name to BasicLens name by removing ct_ prefix.
+
+    Args:
+        table_name: Table name (e.g., 'ct_collections')
+
+    Returns:
+        Lens name without ct_ prefix (e.g., 'collections')
+    """
+    if table_name.startswith('ct_'):
+        return table_name[3:]  # Remove 'ct_' prefix
+    return table_name
+
+
 def create_lens_names(column_name: str) -> Tuple[str, str]:
     """
     Convert an array column name to lens name parts.
@@ -794,7 +809,9 @@ def _generate_mappings_for_prefix(
             # Need prefix column for URI reconstruction
             source_lines.insert(2, "    prefix,")
 
-        source_lines.append(f"FROM {table_name}")
+        # Use BasicLens instead of direct table reference
+        basic_lens_name = get_basic_lens_name(table_name)
+        source_lines.append(f"FROM lenses.{basic_lens_name}")
 
         if multi_prefix and table_prefix:
             source_lines.append(f"WHERE prefix = '{table_prefix}'")
@@ -826,6 +843,19 @@ def _generate_mappings_for_prefix(
                     "position": "index"
                 }
             }
+
+            # Add iriSafeConstraints based on property type
+            if is_object_property:
+                # Object properties need both id and the flattened column
+                lens_def["iriSafeConstraints"] = {
+                    "added": ["id", new_column]
+                }
+            else:
+                # Datatype properties only need id
+                lens_def["iriSafeConstraints"] = {
+                    "added": ["id"]
+                }
+
             lens_definitions.append(lens_def)
 
             # Build modified source SQL using the lens
@@ -1113,6 +1143,7 @@ def main():
     all_scalar_mappings = []
     all_array_mappings = []
     all_lens_definitions = []
+    created_basic_lenses = set()  # Track which BasicLens we've already created
 
     # Get tables from the structure (it has a 'tables' key)
     tables = table_prefix_analysis.get('tables', table_prefix_analysis)
@@ -1141,6 +1172,24 @@ def main():
             # Single class table
             class_info = table_to_class[table_name]
             print(f"  {table_name}: {len(table_prefixes)} prefix(es), {len(class_info.get('predicates', []))} predicate(s)")
+
+        # Create BasicLens for this table if not already created
+        if table_name not in created_basic_lenses:
+            basic_lens_name = get_basic_lens_name(table_name)
+            basic_lens_def = {
+                "type": "BasicLens",
+                "baseRelation": [table_name],
+                "name": ["lenses", basic_lens_name],
+                "iriSafeConstraints": {
+                    "added": ["id"]
+                },
+                "nonNullConstraints": {
+                    "added": ["id"]
+                }
+            }
+            # Insert BasicLens at the beginning to ensure they come before FlattenLens
+            all_lens_definitions.insert(0, basic_lens_def)
+            created_basic_lenses.add(table_name)
 
         scalar_mappings, array_mappings, lens_definitions = generate_table_mappings(
             table_name,

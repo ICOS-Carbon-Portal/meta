@@ -4,11 +4,7 @@
           "type": "BasicLens",
           "baseRelation": [ "ct_plain_collections" ],
           "name": ["lenses", "plain_collections"],
-           "iriSafeConstraints": {
-              "added": [
-                  "id"
-              ]
-          },
+           "iriSafeConstraints": { "added": [ "id" ] },
           "nonNullConstraints": {
                 "added": [
                     "id"
@@ -42,6 +38,7 @@
           "nonNullConstraints": { "added": [ "id" ] }
         },
         {
+           "iriSafeConstraints": { "added": [ "id", "part" ] },
             "name": [
                 "lenses",
                 "ct_collections_parts"
@@ -89,6 +86,7 @@
           }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_data_acquisitions_performed_withs"
@@ -110,6 +108,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_data_productions_participated_in_bys"
@@ -131,6 +130,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_columns_quality_flag_fors"
@@ -152,6 +152,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_specs_variables"
@@ -173,6 +174,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_dataset_specs_columns"
@@ -194,6 +196,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_instruments_deployments"
@@ -215,6 +218,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_instruments_instrument_components"
@@ -236,6 +240,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_memberships_labels"
@@ -257,6 +262,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_formats_good_flag_values"
@@ -278,6 +284,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_specs_comments"
@@ -299,6 +306,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_object_specs_documentation_objects"
@@ -320,6 +328,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_persons_memberships"
@@ -393,6 +402,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_primary_sources"
@@ -414,6 +424,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_actual_variables"
@@ -435,6 +446,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_static_objects_creators"
@@ -456,6 +468,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_comments"
@@ -477,10 +490,12 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_themes"
             ],
+           "iriSafeConstraints": { "added": [ "id" ] },
             "type": "FlattenLens",
             "baseRelation": [
                 "ct_stations"
@@ -498,6 +513,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_documentation_objects"
@@ -519,6 +535,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_depictions"
@@ -540,6 +557,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_contact_points"
@@ -561,6 +579,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_spatials"
@@ -582,6 +601,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_fundings"
@@ -603,6 +623,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_descriptions"
@@ -624,6 +645,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_stations_associated_publications"
@@ -645,6 +667,7 @@
             }
         },
         {
+           "iriSafeConstraints": { "added": [ "id" ] },
             "name": [
                 "lenses",
                 "ct_webpage_elements_linkboxs"

@@ -7,15 +7,15 @@
         "http://www.w3.org/ns/prov#endedAtTime": {
           "subjects_count": 2343430,
           "min_values": 1,
-          "max_values": 3,
-          "avg_values": 1.0000042672492884,
+          "max_values": 1,
+          "avg_values": 1.0,
           "p95_values": 1.0
         },
         "http://www.w3.org/ns/prov#startedAtTime": {
           "subjects_count": 2344301,
           "min_values": 1,
-          "max_values": 3,
-          "avg_values": 1.000040097240073,
+          "max_values": 1,
+          "avg_values": 1.0,
           "p95_values": 1.0
         },
         "http://www.w3.org/ns/prov#wasAssociatedWith": {

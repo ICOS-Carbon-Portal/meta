@@ -163,13 +163,13 @@ def get_class_references(cursor, class_uri):
         -- Find what classes the subjects (t.subj) belong to
         JOIN {TRIPLES_TABLE} referring_class ON referring_class.subj = t.subj
             AND referring_class.pred = %s
-        -- Exclude self-references and rdf:type predicates
-        WHERE referring_class.obj != %s AND t.pred != %s
+        -- Exclude rdf:type predicates
+        WHERE t.pred != %s
         GROUP BY referring_class.obj, t.pred
         ORDER BY referring_class.obj, reference_count DESC
     """
 
-    cursor.execute(incoming_query, (rdf_type, class_uri, rdf_type, class_uri, rdf_type))
+    cursor.execute(incoming_query, (rdf_type, class_uri, rdf_type, rdf_type))
 
     # Process incoming results: group by class, collect predicates
     incoming_by_class = defaultdict(lambda: {"predicates": [], "total_count": 0})
@@ -206,13 +206,13 @@ def get_class_references(cursor, class_uri):
         -- Find what classes the objects (t.obj) belong to
         JOIN {TRIPLES_TABLE} target_class ON target_class.subj = t.obj
             AND target_class.pred = %s
-        -- Exclude self-references and rdf:type predicates
-        WHERE target_class.obj != %s AND t.pred != %s
+        -- Exclude rdf:type predicates
+        WHERE t.pred != %s
         GROUP BY target_class.obj, t.pred
         ORDER BY target_class.obj, reference_count DESC
     """
 
-    cursor.execute(outgoing_query, (rdf_type, class_uri, rdf_type, class_uri, rdf_type))
+    cursor.execute(outgoing_query, (rdf_type, class_uri, rdf_type, rdf_type))
 
     # Process outgoing results: group by class, collect predicates
     outgoing_by_class = defaultdict(lambda: {"predicates": [], "total_count": 0})

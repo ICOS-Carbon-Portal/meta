@@ -80,7 +80,7 @@ GROUP BY subj
 
 -- Populate ct_spatial_coverages
 -- UNION TABLE merging: cpmeta:SpatialCoverage, cpmeta:LatLonBox, cpmeta:Position
--- Class: MERGED:ct_spatial_coverages (4,167 instances)
+-- Class: MERGED:ct_spatial_coverages (4,164 instances)
 INSERT INTO ct_spatial_coverages (id, rdf_subject, prefix, coverage_type
 , as_geo_json
 , label
@@ -210,7 +210,7 @@ GROUP BY subj
 
 -- Populate ct_stations
 -- UNION TABLE merging: cpmeta:Station, cpmeta:AS, cpmeta:ES, cpmeta:OS, cpmeta:SailDrone, cpmeta:IngosStation, cpmeta:AtmoStation
--- Class: MERGED:ct_stations (628 instances)
+-- Class: MERGED:ct_stations (623 instances)
 INSERT INTO ct_stations (id, rdf_subject, prefix, station_type
 , has_name
 , country
@@ -755,7 +755,7 @@ GROUP BY subj
 
 -- Populate ct_static_objects
 -- UNION TABLE merging: cpmeta:DataObject, cpmeta:DocumentObject
--- Class: MERGED:ct_static_objects (2,344,301 instances)
+-- Class: MERGED:ct_static_objects (2,344,302 instances)
 INSERT INTO ct_static_objects (id, rdf_subject, prefix, object_type
 , has_name
 , has_object_spec
@@ -803,9 +803,9 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy' THEN SUBSTRING(obj FROM 38) ELSE NULL END) AS was_acquired_by
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows' THEN obj::INTEGER ELSE NULL END) AS has_number_of_rows
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy' THEN SUBSTRING(obj FROM 39) ELSE NULL END) AS was_produced_by
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN SUBSTRING(obj FROM 33) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames' THEN obj ELSE NULL END) AS has_actual_column_names
-    , ARRAY_AGG(CASE WHEN pred = 'http://www.w3.org/ns/prov#hadPrimarySource' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://www.w3.org/ns/prov#hadPrimarySource') AS had_primary_source
+    , ARRAY_AGG(CASE WHEN pred = 'http://www.w3.org/ns/prov#hadPrimarySource' THEN SUBSTRING(obj FROM 33) ELSE NULL END) FILTER (WHERE pred = 'http://www.w3.org/ns/prov#hadPrimarySource') AS had_primary_source
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage' THEN SUBSTRING(obj FROM (CASE
         WHEN obj LIKE 'http://meta.icos-cp.eu/resources/latlonboxes%' THEN 45
         WHEN obj LIKE 'http://meta.icos-cp.eu/resources/position\_%' THEN 43
@@ -851,9 +851,9 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasAcquiredBy' THEN SUBSTRING(obj FROM 38) ELSE NULL END) AS was_acquired_by
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasNumberOfRows' THEN obj::INTEGER ELSE NULL END) AS has_number_of_rows
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasProducedBy' THEN SUBSTRING(obj FROM 39) ELSE NULL END) AS was_produced_by
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN SUBSTRING(obj FROM 33) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasActualColumnNames' THEN obj ELSE NULL END) AS has_actual_column_names
-    , ARRAY_AGG(CASE WHEN pred = 'http://www.w3.org/ns/prov#hadPrimarySource' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://www.w3.org/ns/prov#hadPrimarySource') AS had_primary_source
+    , ARRAY_AGG(CASE WHEN pred = 'http://www.w3.org/ns/prov#hadPrimarySource' THEN SUBSTRING(obj FROM 33) ELSE NULL END) FILTER (WHERE pred = 'http://www.w3.org/ns/prov#hadPrimarySource') AS had_primary_source
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage' THEN SUBSTRING(obj FROM (CASE
         WHEN obj LIKE 'http://meta.icos-cp.eu/resources/latlonboxes%' THEN 45
         WHEN obj LIKE 'http://meta.icos-cp.eu/resources/position\_%' THEN 43
@@ -888,7 +888,7 @@ GROUP BY subj
 ;
 
 -- Populate ct_data_submissions
--- Class: cpmeta:DataSubmission (2,344,301 instances)
+-- Class: cpmeta:DataSubmission (2,344,302 instances)
 INSERT INTO ct_data_submissions (id, rdf_subject, prefix
 , ended_at_time
 , started_at_time
@@ -909,7 +909,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_data_acquisitions
--- Class: cpmeta:DataAcquisition (2,341,316 instances)
+-- Class: cpmeta:DataAcquisition (2,341,317 instances)
 INSERT INTO ct_data_acquisitions (id, rdf_subject, prefix
 , was_performed_with
 , ended_at_time
@@ -939,7 +939,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_data_productions
--- Class: cpmeta:DataProduction (1,248,434 instances)
+-- Class: cpmeta:DataProduction (1,248,435 instances)
 INSERT INTO ct_data_productions (id, rdf_subject, prefix
 , has_end_time
 , was_performed_by
@@ -987,7 +987,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_instruments
--- Class: cpmeta:Instrument (4,825 instances)
+-- Class: cpmeta:Instrument (4,826 instances)
 INSERT INTO ct_instruments (id, rdf_subject, prefix
 , has_model
 , has_serial_number
@@ -1014,7 +1014,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentOwner' THEN SUBSTRING(obj FROM 48) ELSE NULL END) AS has_instrument_owner
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent') AS has_instrument_component
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent' THEN SUBSTRING(obj FROM 46) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasInstrumentComponent') AS has_instrument_component
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
 FROM rdf_triples
 WHERE subj IN (
@@ -1024,7 +1024,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_memberships
--- Class: cpmeta:Membership (1,881 instances)
+-- Class: cpmeta:Membership (1,870 instances)
 INSERT INTO ct_memberships (id, rdf_subject, prefix
 , label
 , has_role
@@ -1053,7 +1053,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_persons
--- Class: cpmeta:Person (1,124 instances)
+-- Class: cpmeta:Person (1,146 instances)
 INSERT INTO ct_persons (id, rdf_subject, prefix
 , has_membership
 , has_first_name
@@ -1107,7 +1107,7 @@ SELECT
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/creator' THEN SUBSTRING(obj FROM 48) ELSE NULL END) AS creator
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/title' THEN obj ELSE NULL END) AS title
     , MAX(CASE WHEN pred = 'http://purl.org/dc/terms/description' THEN obj ELSE NULL END) AS description
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN SUBSTRING(obj FROM 33) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf' THEN SUBSTRING(obj FROM 37) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isNextVersionOf') AS is_next_version_of
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDoi' THEN obj ELSE NULL END) AS has_doi
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSpatialCoverage' THEN SUBSTRING(obj FROM (CASE
         WHEN obj LIKE 'http://meta.icos-cp.eu/resources/latlonboxes%' THEN 45
@@ -1146,7 +1146,7 @@ SELECT
     , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_optional_column
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
     , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_regex_column
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor' THEN obj ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor') AS is_quality_flag_for
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor' THEN SUBSTRING(obj FROM 41) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor') AS is_quality_flag_for
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
 FROM rdf_triples
 WHERE subj IN (
@@ -1208,7 +1208,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_fundings
--- Class: cpmeta:Funding (109 instances)
+-- Class: cpmeta:Funding (115 instances)
 INSERT INTO ct_fundings (id, rdf_subject, prefix
 , has_funder
 , label
@@ -1216,8 +1216,8 @@ INSERT INTO ct_fundings (id, rdf_subject, prefix
 , has_start_date
 , award_title
 , award_number
-, award_uri
 , comment
+, award_uri
 )
 SELECT
     SUBSTRING(subj FROM 43) AS id
@@ -1229,8 +1229,8 @@ SELECT
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate' THEN obj::DATE ELSE NULL END) AS has_start_date
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle' THEN obj ELSE NULL END) AS award_title
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber' THEN obj ELSE NULL END) AS award_number
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI' THEN obj ELSE NULL END) AS award_uri
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI' THEN obj ELSE NULL END) AS award_uri
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
@@ -1281,7 +1281,7 @@ WHERE subj IN (
 GROUP BY subj;
 
 -- Populate ct_funders
--- Class: cpmeta:Funder (45 instances)
+-- Class: cpmeta:Funder (47 instances)
 INSERT INTO ct_funders (id, rdf_subject, prefix
 , has_etc_id
 , has_name

@@ -8,12 +8,7 @@ DROP TABLE IF EXISTS ct_climate_zones CASCADE;
 DROP TABLE IF EXISTS ct_collections CASCADE;
 DROP TABLE IF EXISTS ct_data_acquisitions CASCADE;
 DROP TABLE IF EXISTS ct_data_productions CASCADE;
-
-
 DROP TABLE IF EXISTS ct_data_submissions CASCADE;
-
-
-
 DROP TABLE IF EXISTS ct_data_themes CASCADE;
 DROP TABLE IF EXISTS ct_dataset_columns CASCADE;
 DROP TABLE IF EXISTS ct_dataset_specs CASCADE;
@@ -74,7 +69,7 @@ CREATE TABLE IF NOT EXISTS ct_object_specs (
 
 -- Table: ct_spatial_coverages
 -- UNION TABLE merging: cpmeta:SpatialCoverage, cpmeta:LatLonBox, cpmeta:Position
--- Class: MERGED:ct_spatial_coverages (4,167 instances)
+-- Class: MERGED:ct_spatial_coverages (4,164 instances)
 
 CREATE TABLE IF NOT EXISTS ct_spatial_coverages (
     id TEXT PRIMARY KEY,
@@ -113,7 +108,7 @@ CREATE TABLE IF NOT EXISTS ct_organizations (
 
 -- Table: ct_stations
 -- UNION TABLE merging: cpmeta:Station, cpmeta:AS, cpmeta:ES, cpmeta:OS, cpmeta:SailDrone, cpmeta:IngosStation, cpmeta:AtmoStation
--- Class: MERGED:ct_stations (628 instances)
+-- Class: MERGED:ct_stations (623 instances)
 
 CREATE TABLE IF NOT EXISTS ct_stations (
     id TEXT PRIMARY KEY,
@@ -181,7 +176,7 @@ CREATE TABLE IF NOT EXISTS ct_dataset_specs (
 
 -- Table: ct_static_objects
 -- UNION TABLE merging: cpmeta:DataObject, cpmeta:DocumentObject
--- Class: MERGED:ct_static_objects (2,344,301 instances)
+-- Class: MERGED:ct_static_objects (2,344,302 instances)
 
 CREATE TABLE IF NOT EXISTS ct_static_objects (
     id TEXT PRIMARY KEY,
@@ -224,7 +219,7 @@ CREATE TABLE IF NOT EXISTS ct_static_objects (
 );
 
 -- Table: ct_data_submissions
--- Class: cpmeta:DataSubmission (2,344,301 instances)
+-- Class: cpmeta:DataSubmission (2,344,302 instances)
 
 CREATE TABLE IF NOT EXISTS ct_data_submissions (
     id TEXT PRIMARY KEY,
@@ -237,7 +232,7 @@ CREATE TABLE IF NOT EXISTS ct_data_submissions (
 );
 
 -- Table: ct_data_acquisitions
--- Class: cpmeta:DataAcquisition (2,341,316 instances)
+-- Class: cpmeta:DataAcquisition (2,341,317 instances)
 
 CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
     id TEXT PRIMARY KEY,
@@ -252,7 +247,7 @@ CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
 );
 
 -- Table: ct_data_productions
--- Class: cpmeta:DataProduction (1,248,434 instances)
+-- Class: cpmeta:DataProduction (1,248,435 instances)
 
 CREATE TABLE IF NOT EXISTS ct_data_productions (
     id TEXT PRIMARY KEY,
@@ -281,7 +276,7 @@ CREATE TABLE IF NOT EXISTS ct_variable_infos (
 );
 
 -- Table: ct_instruments
--- Class: cpmeta:Instrument (4,825 instances)
+-- Class: cpmeta:Instrument (4,826 instances)
 
 CREATE TABLE IF NOT EXISTS ct_instruments (
     id TEXT PRIMARY KEY,
@@ -302,7 +297,7 @@ CREATE TABLE IF NOT EXISTS ct_instruments (
 );
 
 -- Table: ct_memberships
--- Class: cpmeta:Membership (1,881 instances)
+-- Class: cpmeta:Membership (1,870 instances)
 
 CREATE TABLE IF NOT EXISTS ct_memberships (
     id TEXT PRIMARY KEY,
@@ -319,7 +314,7 @@ CREATE TABLE IF NOT EXISTS ct_memberships (
 );
 
 -- Table: ct_persons
--- Class: cpmeta:Person (1,124 instances)
+-- Class: cpmeta:Person (1,146 instances)
 
 CREATE TABLE IF NOT EXISTS ct_persons (
     id TEXT PRIMARY KEY,
@@ -407,7 +402,7 @@ CREATE TABLE IF NOT EXISTS ct_link_boxes (
 );
 
 -- Table: ct_fundings
--- Class: cpmeta:Funding (109 instances)
+-- Class: cpmeta:Funding (115 instances)
 
 CREATE TABLE IF NOT EXISTS ct_fundings (
     id TEXT PRIMARY KEY,
@@ -419,8 +414,8 @@ CREATE TABLE IF NOT EXISTS ct_fundings (
     has_start_date DATE,
     award_title TEXT,
     award_number TEXT,
-    award_uri TEXT,
     comment TEXT,
+    award_uri TEXT,
     CHECK (prefix || id = rdf_subject)
 );
 
@@ -451,7 +446,7 @@ CREATE TABLE IF NOT EXISTS ct_plain_collections (
 );
 
 -- Table: ct_funders
--- Class: cpmeta:Funder (45 instances)
+-- Class: cpmeta:Funder (47 instances)
 
 CREATE TABLE IF NOT EXISTS ct_funders (
     id TEXT PRIMARY KEY,

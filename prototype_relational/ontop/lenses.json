@@ -705,6 +705,12 @@
                     "id",
                     "part"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "part"
+                ]
             }
         },
         {
@@ -728,6 +734,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "next_version"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "next_version"
@@ -759,6 +771,12 @@
                     "id",
                     "performed_with"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "performed_with"
+                ]
             }
         },
         {
@@ -782,6 +800,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "participated_in_by"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "participated_in_by"
@@ -813,6 +837,12 @@
                     "id",
                     "quality_flag_for"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "quality_flag_for"
+                ]
             }
         },
         {
@@ -836,6 +866,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "variable"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "variable"
@@ -867,6 +903,12 @@
                     "id",
                     "column"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "column"
+                ]
             }
         },
         {
@@ -890,6 +932,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "deployment"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "deployment"
@@ -921,6 +969,12 @@
                     "id",
                     "instrument_component"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "instrument_component"
+                ]
             }
         },
         {
@@ -946,6 +1000,12 @@
             "iriSafeConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_label"
                 ]
             }
         },
@@ -973,6 +1033,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "good_flag_value"
+                ]
             }
         },
         {
@@ -999,6 +1065,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_comment"
+                ]
             }
         },
         {
@@ -1022,6 +1094,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "documentation_object"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "documentation_object"
@@ -1053,6 +1131,12 @@
                     "id",
                     "membership"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "membership"
+                ]
             }
         },
         {
@@ -1076,6 +1160,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "part"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "part"
@@ -1107,6 +1197,12 @@
                     "id",
                     "next_version"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "next_version"
+                ]
             }
         },
         {
@@ -1130,6 +1226,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "primary_source"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "primary_source"
@@ -1161,6 +1263,12 @@
                     "id",
                     "actual_variable"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "actual_variable"
+                ]
             }
         },
         {
@@ -1184,6 +1292,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "single_creator"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "single_creator"
@@ -1214,6 +1328,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_comment"
+                ]
             }
         },
         {
@@ -1240,6 +1360,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_theme"
+                ]
             }
         },
         {
@@ -1263,6 +1389,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "documentation_object"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "documentation_object"
@@ -1293,6 +1425,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "depiction"
+                ]
             }
         },
         {
@@ -1318,6 +1456,12 @@
             "iriSafeConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_contact_point"
                 ]
             }
         },
@@ -1345,6 +1489,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_spatial"
+                ]
             }
         },
         {
@@ -1368,6 +1518,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "funding"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "funding"
@@ -1398,6 +1554,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "single_description"
+                ]
             }
         },
         {
@@ -1424,6 +1586,12 @@
                 "added": [
                     "id"
                 ]
+            },
+            "nonNullConstraints": {
+                "added": [
+                    "id",
+                    "associated_publication"
+                ]
             }
         },
         {
@@ -1447,6 +1615,12 @@
                 "position": "index"
             },
             "iriSafeConstraints": {
+                "added": [
+                    "id",
+                    "linkbox"
+                ]
+            },
+            "nonNullConstraints": {
                 "added": [
                     "id",
                     "linkbox"

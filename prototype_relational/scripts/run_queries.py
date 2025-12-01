@@ -86,7 +86,7 @@ def print_diff(csv1, csv2, max_lines=50):
         max_lines: Maximum number of difference lines to display per section (default: 50)
     """
     print(f"\n{'─'*80}")
-    print("Set-based Diff (order-independent):")
+    print("Set-based Diff (order-independent, ignoring rows with meta.fieldsites.se):")
     print(f"{'─'*80}")
 
     try:
@@ -108,16 +108,27 @@ def print_diff(csv1, csv2, max_lines=50):
         header1 = rows1[0] if len(rows1) > 0 else []
         header2 = rows2[0] if len(rows2) > 0 else []
 
+        # Count total data rows (excluding header)
+        total_rows1 = len(rows1) - 1 if len(rows1) > 1 else 0
+        total_rows2 = len(rows2) - 1 if len(rows2) > 1 else 0
+
         # Convert data rows to sets of tuples (skip header)
+        # Filter out rows containing 'meta.fieldsites.se'
         data1 = set(
             tuple(cell.strip() for cell in row)
             for row in rows1[1:]
+            if not any('meta.fieldsites.se' in cell for cell in row)
         ) if len(rows1) > 1 else set()
 
         data2 = set(
             tuple(cell.strip() for cell in row)
             for row in rows2[1:]
+            if not any('meta.fieldsites.se' in cell for cell in row)
         ) if len(rows2) > 1 else set()
+
+        # Count filtered rows
+        filtered1 = total_rows1 - len(data1)
+        filtered2 = total_rows2 - len(data2)
 
         # Calculate set differences
         only_in_1 = data1 - data2
@@ -125,6 +136,11 @@ def print_diff(csv1, csv2, max_lines=50):
         in_both = data1 & data2
 
         # Display statistics
+        if filtered1 > 0 or filtered2 > 0:
+            print(f"Filtered rows (containing meta.fieldsites.se):")
+            print(f"  Endpoint 1: {filtered1} rows filtered")
+            print(f"  Endpoint 2: {filtered2} rows filtered")
+            print()
         print(f"Rows only in Endpoint 1: {len(only_in_1)}")
         print(f"Rows only in Endpoint 2: {len(only_in_2)}")
         print(f"Rows in both: {len(in_both)}")
@@ -168,6 +184,7 @@ def print_diff(csv1, csv2, max_lines=50):
 def compare_csv_results(csv1, csv2):
     """
     Compare two CSV strings as sets of rows (order-independent).
+    Ignores rows containing 'meta.fieldsites.se'.
 
     Args:
         csv1: First CSV string
@@ -193,13 +210,16 @@ def compare_csv_results(csv1, csv2):
 
         # Skip header row and convert data rows to sets of tuples
         # Strip whitespace from each cell
+        # Filter out rows containing 'meta.fieldsites.se'
         data1 = set(
             tuple(cell.strip() for cell in row)
             for row in rows1[1:]  # Skip header
+            if not any('meta.fieldsites.se' in cell for cell in row)
         )
         data2 = set(
             tuple(cell.strip() for cell in row)
             for row in rows2[1:]  # Skip header
+            if not any('meta.fieldsites.se' in cell for cell in row)
         )
 
         return data1 == data2

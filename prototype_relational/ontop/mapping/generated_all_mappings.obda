@@ -2298,4 +2298,424 @@ source		SELECT
                 comment
             FROM lenses.webpage_elements
 
+mappingId	collections_hasPart_DataObject
+target		<https://meta.icos-cp.eu/collections/{id}> dcterms:hasPart <https://meta.icos-cp.eu/objects/{part}> .
+source		SELECT
+                id,
+                part
+            FROM lenses.ct_collections_parts
+
+mappingId	collections_hasPart_Collection
+target		<https://meta.icos-cp.eu/collections/{id}> dcterms:hasPart <https://meta.icos-cp.eu/collections/{part}> .
+source		SELECT
+                id,
+                part
+            FROM lenses.ct_collections_parts
+
+mappingId	collections_isNextVersionOf_DataObject
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/{next_version}> .
+source		SELECT
+                id,
+                next_version
+            FROM lenses.ct_collections_next_versions
+
+mappingId	collections_isNextVersionOf_Collection
+target		<https://meta.icos-cp.eu/collections/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/collections/{next_version}> .
+source		SELECT
+                id,
+                next_version
+            FROM lenses.ct_collections_next_versions
+
+mappingId	data_acquisitions_wasPerformedWith
+target		<http://meta.icos-cp.eu/resources/acq_{id}> cpmeta:wasPerformedWith <http://meta.icos-cp.eu/resources/instruments/{performed_with}> .
+source		SELECT
+                id,
+                performed_with
+            FROM lenses.ct_data_acquisitions_performed_withs
+
+mappingId	data_productions_wasParticipatedInBy_Organization
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/organizations/{participated_in_by}> .
+source		SELECT
+                id,
+                participated_in_by
+            FROM lenses.ct_data_productions_participated_in_bys
+
+mappingId	data_productions_wasParticipatedInBy_Person
+target		<http://meta.icos-cp.eu/resources/prod_{id}> cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/people/{participated_in_by}> .
+source		SELECT
+                id,
+                participated_in_by
+            FROM lenses.ct_data_productions_participated_in_bys
+
+mappingId	dataset_columns_isQualityFlagFor
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:isQualityFlagFor <http://meta.icos-cp.eu/resources/cpmeta/{quality_flag_for}> .
+source		SELECT
+                id,
+                quality_flag_for
+            FROM lenses.ct_dataset_columns_quality_flag_fors
+
+mappingId	dataset_specs_hasVariable
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasVariable <http://meta.icos-cp.eu/resources/cpmeta/{variable}> .
+source		SELECT
+                id,
+                variable
+            FROM lenses.ct_dataset_specs_variables
+
+mappingId	dataset_specs_hasColumn
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/{column}> .
+source		SELECT
+                id,
+                column
+            FROM lenses.ct_dataset_specs_columns
+
+mappingId	instruments_hasDeployment
+target		<http://meta.icos-cp.eu/resources/instruments/{id}> ssn:hasDeployment <{deployment}> .
+source		SELECT
+                id,
+                deployment
+            FROM lenses.ct_instruments_deployments
+
+mappingId	instruments_hasInstrumentComponent
+target		<http://meta.icos-cp.eu/resources/instruments/{id}> cpmeta:hasInstrumentComponent <http://meta.icos-cp.eu/resources/instruments/{instrument_component}> .
+source		SELECT
+                id,
+                instrument_component
+            FROM lenses.ct_instruments_instrument_components
+
+mappingId	memberships_label
+target		<http://meta.icos-cp.eu/resources/memberships/{id}> rdfs:label {single_label} .
+source		SELECT
+                id,
+                single_label
+            FROM lenses.ct_memberships_labels
+
+mappingId	objeformats_hasGoodFlagValue
+target		<http://meta.icos-cp.eu/ontologies/cpmeta/{id}> cpmeta:hasGoodFlagValue {good_flag_value}^^xsd:string .
+source		SELECT
+                id,
+                good_flag_value
+            FROM lenses.ct_object_formats_good_flag_values
+
+mappingId	objespecs_comment
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> rdfs:comment {single_comment} .
+source		SELECT
+                id,
+                single_comment
+            FROM lenses.ct_object_specs_comments
+
+mappingId	objespecs_hasDocumentationObject
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/{documentation_object}> .
+source		SELECT
+                id,
+                documentation_object
+            FROM lenses.ct_object_specs_documentation_objects
+
+mappingId	persons_hasMembership
+target		<http://meta.icos-cp.eu/resources/people/{id}> cpmeta:hasMembership <http://meta.icos-cp.eu/resources/memberships/{membership}> .
+source		SELECT
+                id,
+                membership
+            FROM lenses.ct_persons_memberships
+
+mappingId	plain_collections_hasPart
+target		<http://meta.icos-cp.eu/resources/nextvcoll_{id}> dcterms:hasPart <https://meta.icos-cp.eu/objects/{part}> .
+source		SELECT
+                id,
+                part
+            FROM lenses.ct_plain_collections_parts
+
+mappingId	static_objects_isNextVersionOf
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/{next_version}> .
+source		SELECT
+                id,
+                next_version
+            FROM lenses.ct_static_objects_next_versions
+
+mappingId	static_objects_hadPrimarySource
+target		<https://meta.icos-cp.eu/objects/{id}> prov:hadPrimarySource <https://meta.icos-cp.eu/objects/{primary_source}> .
+source		SELECT
+                id,
+                primary_source
+            FROM lenses.ct_static_objects_primary_sources
+
+mappingId	static_objects_hasActualVariable
+target		<https://meta.icos-cp.eu/objects/{id}> cpmeta:hasActualVariable <http://meta.icos-cp.eu/resources/varinfo_{actual_variable}> .
+source		SELECT
+                id,
+                actual_variable
+            FROM lenses.ct_static_objects_actual_variables
+
+mappingId	static_objects_creator_CentralFacility
+target		<https://meta.icos-cp.eu/objects/{id}> dcterms:creator <http://meta.icos-cp.eu/resources/organizations/{single_creator}> .
+source		SELECT
+                id,
+                single_creator
+            FROM lenses.ct_static_objects_creators
+
+mappingId	static_objects_creator_Person
+target		<https://meta.icos-cp.eu/objects/{id}> dcterms:creator <http://meta.icos-cp.eu/resources/people/{single_creator}> .
+source		SELECT
+                id,
+                single_creator
+            FROM lenses.ct_static_objects_creators
+
+mappingId	stations_comment_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> rdfs:comment {single_comment} .
+source		SELECT
+                id,
+                single_comment
+            FROM lenses.ct_stations_comments
+
+mappingId	stations_theme_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> dcat:theme {single_theme} .
+source		SELECT
+                id,
+                single_theme
+            FROM lenses.ct_stations_themes
+
+mappingId	stations_hasDocumentationObject_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/{documentation_object}> .
+source		SELECT
+                id,
+                documentation_object
+            FROM lenses.ct_stations_documentation_objects
+
+mappingId	stations_hasDepiction_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasDepiction {depiction}^^xsd:anyURI .
+source		SELECT
+                id,
+                depiction
+            FROM lenses.ct_stations_depictions
+
+mappingId	stations_contactPoint_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> dcat:contactPoint {single_contact_point} .
+source		SELECT
+                id,
+                single_contact_point
+            FROM lenses.ct_stations_contact_points
+
+mappingId	stations_spatial_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> dcterms:spatial {single_spatial} .
+source		SELECT
+                id,
+                single_spatial
+            FROM lenses.ct_stations_spatials
+
+mappingId	stations_hasFunding_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/{funding}> .
+source		SELECT
+                id,
+                funding
+            FROM lenses.ct_stations_fundings
+
+mappingId	stations_description_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> dcterms:description {single_description} .
+source		SELECT
+                id,
+                single_description
+            FROM lenses.ct_stations_descriptions
+
+mappingId	stations_hasAssociatedPublication_resourcesicos
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasAssociatedPublication {associated_publication}^^xsd:anyURI .
+source		SELECT
+                id,
+                associated_publication
+            FROM lenses.ct_stations_associated_publications
+
+mappingId	stations_comment_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> rdfs:comment {single_comment} .
+source		SELECT
+                id,
+                single_comment
+            FROM lenses.ct_stations_comments
+
+mappingId	stations_theme_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcat:theme {single_theme} .
+source		SELECT
+                id,
+                single_theme
+            FROM lenses.ct_stations_themes
+
+mappingId	stations_hasDocumentationObject_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/{documentation_object}> .
+source		SELECT
+                id,
+                documentation_object
+            FROM lenses.ct_stations_documentation_objects
+
+mappingId	stations_hasDepiction_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasDepiction {depiction}^^xsd:anyURI .
+source		SELECT
+                id,
+                depiction
+            FROM lenses.ct_stations_depictions
+
+mappingId	stations_contactPoint_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcat:contactPoint {single_contact_point} .
+source		SELECT
+                id,
+                single_contact_point
+            FROM lenses.ct_stations_contact_points
+
+mappingId	stations_spatial_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcterms:spatial {single_spatial} .
+source		SELECT
+                id,
+                single_spatial
+            FROM lenses.ct_stations_spatials
+
+mappingId	stations_hasFunding_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/{funding}> .
+source		SELECT
+                id,
+                funding
+            FROM lenses.ct_stations_fundings
+
+mappingId	stations_description_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> dcterms:description {single_description} .
+source		SELECT
+                id,
+                single_description
+            FROM lenses.ct_stations_descriptions
+
+mappingId	stations_hasAssociatedPublication_resourcesstatio
+target		<http://meta.icos-cp.eu/resources/stations/{id}> cpmeta:hasAssociatedPublication {associated_publication}^^xsd:anyURI .
+source		SELECT
+                id,
+                associated_publication
+            FROM lenses.ct_stations_associated_publications
+
+mappingId	stations_comment_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> rdfs:comment {single_comment} .
+source		SELECT
+                id,
+                single_comment
+            FROM lenses.ct_stations_comments
+
+mappingId	stations_theme_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> dcat:theme {single_theme} .
+source		SELECT
+                id,
+                single_theme
+            FROM lenses.ct_stations_themes
+
+mappingId	stations_hasDocumentationObject_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/{documentation_object}> .
+source		SELECT
+                id,
+                documentation_object
+            FROM lenses.ct_stations_documentation_objects
+
+mappingId	stations_hasDepiction_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasDepiction {depiction}^^xsd:anyURI .
+source		SELECT
+                id,
+                depiction
+            FROM lenses.ct_stations_depictions
+
+mappingId	stations_contactPoint_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> dcat:contactPoint {single_contact_point} .
+source		SELECT
+                id,
+                single_contact_point
+            FROM lenses.ct_stations_contact_points
+
+mappingId	stations_spatial_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> dcterms:spatial {single_spatial} .
+source		SELECT
+                id,
+                single_spatial
+            FROM lenses.ct_stations_spatials
+
+mappingId	stations_hasFunding_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/{funding}> .
+source		SELECT
+                id,
+                funding
+            FROM lenses.ct_stations_fundings
+
+mappingId	stations_description_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> dcterms:description {single_description} .
+source		SELECT
+                id,
+                single_description
+            FROM lenses.ct_stations_descriptions
+
+mappingId	stations_hasAssociatedPublication_resourceswdcgg
+target		<http://meta.icos-cp.eu/resources/wdcgg/{id}> cpmeta:hasAssociatedPublication {associated_publication}^^xsd:anyURI .
+source		SELECT
+                id,
+                associated_publication
+            FROM lenses.ct_stations_associated_publications
+
+mappingId	stations_comment_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> rdfs:comment {single_comment} .
+source		SELECT
+                id,
+                single_comment
+            FROM lenses.ct_stations_comments
+
+mappingId	stations_theme_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> dcat:theme {single_theme} .
+source		SELECT
+                id,
+                single_theme
+            FROM lenses.ct_stations_themes
+
+mappingId	stations_hasDocumentationObject_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/{documentation_object}> .
+source		SELECT
+                id,
+                documentation_object
+            FROM lenses.ct_stations_documentation_objects
+
+mappingId	stations_hasDepiction_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasDepiction {depiction}^^xsd:anyURI .
+source		SELECT
+                id,
+                depiction
+            FROM lenses.ct_stations_depictions
+
+mappingId	stations_contactPoint_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> dcat:contactPoint {single_contact_point} .
+source		SELECT
+                id,
+                single_contact_point
+            FROM lenses.ct_stations_contact_points
+
+mappingId	stations_spatial_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> dcterms:spatial {single_spatial} .
+source		SELECT
+                id,
+                single_spatial
+            FROM lenses.ct_stations_spatials
+
+mappingId	stations_hasFunding_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/{funding}> .
+source		SELECT
+                id,
+                funding
+            FROM lenses.ct_stations_fundings
+
+mappingId	stations_description_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> dcterms:description {single_description} .
+source		SELECT
+                id,
+                single_description
+            FROM lenses.ct_stations_descriptions
+
+mappingId	stations_hasAssociatedPublication_resourceswdcggs
+target		<http://meta.icos-cp.eu/resources/wdcgg/station/{id}> cpmeta:hasAssociatedPublication {associated_publication}^^xsd:anyURI .
+source		SELECT
+                id,
+                associated_publication
+            FROM lenses.ct_stations_associated_publications
+
+mappingId	webpage_elements_hasLinkbox
+target		<http://meta.icos-cp.eu/resources/icos/{id}> cpmeta:hasLinkbox <http://meta.icos-cp.eu/resources/icos/{linkbox}> .
+source		SELECT
+                id,
+                linkbox
+            FROM lenses.ct_webpage_elements_linkboxs
+
 ]]

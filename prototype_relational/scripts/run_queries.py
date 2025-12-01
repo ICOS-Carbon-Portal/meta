@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import difflib
 import io
 import requests
 import sys
@@ -73,6 +74,95 @@ def extract_queries(input_file):
             queries.append(query_text)
 
     return queries
+
+
+def print_diff(csv1, csv2, max_lines=50):
+    """
+    Print set-based differences between two CSV strings (order-independent).
+
+    Args:
+        csv1: First CSV string
+        csv2: Second CSV string
+        max_lines: Maximum number of difference lines to display per section (default: 50)
+    """
+    print(f"\n{'─'*80}")
+    print("Set-based Diff (order-independent):")
+    print(f"{'─'*80}")
+
+    try:
+        # Parse both CSV strings
+        reader1 = csv.reader(io.StringIO(csv1))
+        reader2 = csv.reader(io.StringIO(csv2))
+
+        # Convert to lists to get all rows
+        rows1 = list(reader1)
+        rows2 = list(reader2)
+
+        # Handle empty results
+        if len(rows1) == 0 and len(rows2) == 0:
+            print("Both results are empty")
+            print(f"{'─'*80}")
+            return
+
+        # Get headers
+        header1 = rows1[0] if len(rows1) > 0 else []
+        header2 = rows2[0] if len(rows2) > 0 else []
+
+        # Convert data rows to sets of tuples (skip header)
+        data1 = set(
+            tuple(cell.strip() for cell in row)
+            for row in rows1[1:]
+        ) if len(rows1) > 1 else set()
+
+        data2 = set(
+            tuple(cell.strip() for cell in row)
+            for row in rows2[1:]
+        ) if len(rows2) > 1 else set()
+
+        # Calculate set differences
+        only_in_1 = data1 - data2
+        only_in_2 = data2 - data1
+        in_both = data1 & data2
+
+        # Display statistics
+        print(f"Rows only in Endpoint 1: {len(only_in_1)}")
+        print(f"Rows only in Endpoint 2: {len(only_in_2)}")
+        print(f"Rows in both: {len(in_both)}")
+
+        # Show rows only in Endpoint 1
+        if only_in_1:
+            print(f"\n--- Rows ONLY in Endpoint 1 ({len(only_in_1)} rows) ---")
+            for i, row in enumerate(sorted(only_in_1)[:max_lines], 1):
+                print(f"  {i}. {','.join(row)}")
+            if len(only_in_1) > max_lines:
+                print(f"  ... ({len(only_in_1) - max_lines} more rows not shown)")
+
+        # Show rows only in Endpoint 2
+        if only_in_2:
+            print(f"\n+++ Rows ONLY in Endpoint 2 ({len(only_in_2)} rows) +++")
+            for i, row in enumerate(sorted(only_in_2)[:max_lines], 1):
+                print(f"  {i}. {','.join(row)}")
+            if len(only_in_2) > max_lines:
+                print(f"  ... ({len(only_in_2) - max_lines} more rows not shown)")
+
+    except Exception as e:
+        print(f"Error parsing CSV for diff: {e}")
+        print("Falling back to line-by-line comparison:")
+        # Fall back to simple line diff
+        lines1 = set(csv1.splitlines())
+        lines2 = set(csv2.splitlines())
+        only_1 = lines1 - lines2
+        only_2 = lines2 - lines1
+        if only_1:
+            print(f"\nOnly in Endpoint 1: {len(only_1)} lines")
+            for line in list(only_1)[:max_lines]:
+                print(f"  - {line}")
+        if only_2:
+            print(f"\nOnly in Endpoint 2: {len(only_2)} lines")
+            for line in list(only_2)[:max_lines]:
+                print(f"  + {line}")
+
+    print(f"{'─'*80}")
 
 
 def compare_csv_results(csv1, csv2):
@@ -196,7 +286,7 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
     print(f"{'='*80}")
 
 
-def main(input_file, output_file, skip_indexes=None):
+def main(input_file, output_file, skip_indexes=None, show_results=False):
     if skip_indexes is None:
         skip_indexes = set()
 
@@ -264,6 +354,32 @@ def main(input_file, output_file, skip_indexes=None):
         else:
             print(f"  Failed: {error2}")
 
+        # Print full results if requested
+        if show_results:
+            if success1:
+                print(f"\nResults from Endpoint 1:")
+                print(f"{'─'*80}")
+                # Limit output to 200 lines
+                lines1 = response1.splitlines()
+                if len(lines1) > 200:
+                    print('\n'.join(lines1[:200]))
+                    print(f"\n... ({len(lines1) - 200} more lines truncated)")
+                else:
+                    print(response1)
+                print(f"{'─'*80}")
+
+            if success2:
+                print(f"\nResults from Endpoint 2:")
+                print(f"{'─'*80}")
+                # Limit output to 200 lines
+                lines2 = response2.splitlines()
+                if len(lines2) > 200:
+                    print('\n'.join(lines2[:200]))
+                    print(f"\n... ({len(lines2) - 200} more lines truncated)")
+                else:
+                    print(response2)
+                print(f"{'─'*80}")
+
         # Handle failures and compare results
         if not success1 and not success2:
             # Both failed
@@ -299,6 +415,10 @@ def main(input_file, output_file, skip_indexes=None):
             else:
                 mismatched_results.append(idx)
                 print(f"\nResult: ✗ MISMATCH")
+
+                # Show diff if requested
+                if show_results:
+                    print_diff(response1, response2)
 
             # Track queries with 1 or fewer rows (from endpoint 1)
             if line_count1 <= 2:
@@ -388,6 +508,11 @@ if __name__ == '__main__':
         default='',
         help='Comma-separated list of query indexes to skip (e.g., "1,3,5")'
     )
+    parser.add_argument(
+        '--show-results',
+        action='store_true',
+        help='Print full results from both endpoints and show diffs for mismatches'
+    )
 
     args = parser.parse_args()
 
@@ -401,5 +526,5 @@ if __name__ == '__main__':
             print(f"Example: --skip 1,3,5", file=sys.stderr)
             sys.exit(1)
 
-    main(args.input_file, args.output, skip_indexes)
+    main(args.input_file, args.output, skip_indexes, args.show_results)
     print("DONE")

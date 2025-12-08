@@ -2,13 +2,14 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.sail.lmdb.LmdbStore
+// import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStorageConfig
 
 import java.nio.file.{FileVisitOption, Files, Paths}
+import se.lu.nateko.cp.meta.prototype.ntriples.NTriplesSail
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
@@ -51,8 +52,8 @@ object StorageSail:
 				lmdbConf.setValueIDCacheSize:
 					Math.max(lmdb.valueCacheSize / 2, LmdbStoreConfig.VALUE_ID_CACHE_SIZE)
 
-				val lmdbSail = LmdbStore(storageDir.toFile, lmdbConf)
-				log.info("LmdbStore instantiated")
+				val lmdbSail = NTriplesSail(storageDir.toFile)
+				log.info("NTriplesSail instantiated")
 				lmdbSail
 			case None =>
 				val indices = if isFreshInit then "" else conf.indices

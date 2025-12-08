@@ -10,13 +10,8 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 class NTriplesSailSource(store: NTriplesSailStore, explicit: Boolean) extends BackingSailSource {
-	override def dataset(level: IsolationLevel): SailDataset = {
-		new NTriplesSailDataset(store, explicit)
-	}
-
-	override def sink(level: IsolationLevel): SailSink = {
-		new NoopSink()
-	}
+	override def dataset(level: IsolationLevel): SailDataset = new NTriplesSailDataset(store, explicit)
+	override def sink(level: IsolationLevel): SailSink = new NoopSink()
 }
 
 class NTriplesSailDataset(store: NTriplesSailStore, explicit: Boolean) extends SailDataset {

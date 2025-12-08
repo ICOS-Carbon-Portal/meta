@@ -6,6 +6,8 @@ import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.sail.base.{BackingSailSource, SailDataset, SailSink}
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.{IRI, Namespace, Resource, Statement, Value}
+import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
+import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 class NTriplesSailSource(store: NTriplesSailStore, explicit: Boolean) extends BackingSailSource {
 	override def dataset(level: IsolationLevel): SailDataset = {
@@ -25,19 +27,19 @@ class NTriplesSailDataset(store: NTriplesSailStore, explicit: Boolean) extends S
 		obj: Value,
 		contexts: Resource*
 	): CloseableIteration[Statement] = {
-		store.getStatements(subj, pred, obj, explicit, contexts.toArray)
+		return new CloseableIteratorIteration(Set().iterator.asJava)
 	}
 
 	override def getContextIDs(): CloseableIteration[Resource] = {
-		store.getContextIDs()
+		return new CloseableIteratorIteration(Set().iterator.asJava)
 	}
 
 	override def getNamespaces(): CloseableIteration[Namespace] = {
-		store.getNamespaces()
+		return new CloseableIteratorIteration(Set().iterator.asJava)
 	}
 
 	override def getNamespace(prefix: String): String = {
-		store.getNamespace(prefix)
+		""
 	}
 
 	override def close(): Unit = {

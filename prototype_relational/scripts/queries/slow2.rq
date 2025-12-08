@@ -1,0 +1,10 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+               prefix otcmeta: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+               prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+               prefix prov: <http://www.w3.org/ns/prov#>
+               prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+  SELECT distinct ?name WHERE {
+  ?dobj cpmeta:hasObjectSpec ?spec .
+  ?dobj cpmeta:hasName ?name .
+}
+limit 1000

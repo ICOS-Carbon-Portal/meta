@@ -1,0 +1,16 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select distinct ?spec where {
+          VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
+          ?dobj cpmeta:hasObjectSpec ?spec .
+          BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+          VALUES ?station {<http://meta.icos-cp.eu/resources/stations/ES_NL-Loo> <http://meta.icos-cp.eu/resources/stations/ES_DE-Geb> <http://meta.icos-cp.eu/resources/stations/ES_DK-Vng> <http://meta.icos-cp.eu/resources/stations/ES_FR-Gri> <http://meta.icos-cp.eu/resources/stations/ES_SE-Htm> <http://meta.icos-cp.eu/resources/stations/ES_SE-Sto> <http://meta.icos-cp.eu/resources/stations/ES_CH-Dav> <http://meta.icos-cp.eu/resources/stations/ES_IT-Cp2> <http://meta.icos-cp.eu/resources/stations/ES_DE-HoH> <http://meta.icos-cp.eu/resources/stations/ES_BE-Lon> <http://meta.icos-cp.eu/resources/stations/ES_GL-ZaF> <http://meta.icos-cp.eu/resources/stations/ES_FR-Hes> <http://meta.icos-cp.eu/resources/stations/ES_DK-Sor> <http://meta.icos-cp.eu/resources/stations/ES_DE-Tha> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sod> <http://meta.icos-cp.eu/resources/stations/ES_IT-SR2> <http://meta.icos-cp.eu/resources/stations/ES_BE-Dor> <http://meta.icos-cp.eu/resources/stations/ES_IT-BCi> <http://meta.icos-cp.eu/resources/stations/ES_FR-Bil> <http://meta.icos-cp.eu/resources/stations/ES_FI-Sii> <http://meta.icos-cp.eu/resources/stations/ES_UK-AMo> <http://meta.icos-cp.eu/resources/stations/ES_FR-Fon> <http://meta.icos-cp.eu/resources/stations/ES_BE-Maa> <http://meta.icos-cp.eu/resources/stations/ES_SE-Nor> <http://meta.icos-cp.eu/resources/stations/ES_SE-Svb> <http://meta.icos-cp.eu/resources/stations/ES_BE-Vie> <http://meta.icos-cp.eu/resources/stations/ES_IT-Ren> <http://meta.icos-cp.eu/resources/stations/ES_BE-Bra> <http://meta.icos-cp.eu/resources/stations/ES_FI-Hyy> <http://meta.icos-cp.eu/resources/stations/ES_CZ-Lnz> <http://meta.icos-cp.eu/resources/stations/ES_FR-Pue> <http://meta.icos-cp.eu/resources/stations/ES_CZ-BK1> <http://meta.icos-cp.eu/resources/stations/ES_FR-FBn> <http://meta.icos-cp.eu/resources/stations/ES_NO-Hur> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lus> <http://meta.icos-cp.eu/resources/stations/ES_DE-RuS> <http://meta.icos-cp.eu/resources/stations/ES_SE-Deg> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lqu> <http://meta.icos-cp.eu/resources/stations/ES_FR-Lam> <http://meta.icos-cp.eu/resources/stations/ES_IT-MBo>}
+          ?dobj cpmeta:wasAcquiredBy/prov:wasAssociatedWith ?station .
+          ?dobj cpmeta:hasSizeInBytes ?size .
+          ?dobj cpmeta:hasName ?fileName .
+          ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
+          ?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
+          ?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
+  }

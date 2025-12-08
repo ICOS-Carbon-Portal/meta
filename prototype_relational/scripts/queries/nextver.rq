@@ -1,0 +1,8 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+select ?obj where {
+    ?dobj cpmeta:hasObjectSpec ?spec .
+    filter not exists {[] cpmeta:isNextVersionOf ?dobj}
+  } limit 1000

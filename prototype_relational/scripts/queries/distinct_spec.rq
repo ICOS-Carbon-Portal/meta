@@ -1,0 +1,9 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+select distinct ?spec
+where {
+  FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/")) .
+  ?dobj cpmeta:hasObjectSpec ?spec
+
+}
+order by(?spec)
+limit 10

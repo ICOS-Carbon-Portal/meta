@@ -1,0 +1,17 @@
+prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?dobj ?hasNextVersion ?spec
+where {
+	?spec cpmeta:hasDataLevel [] .
+          FILTER(STRSTARTS(str(?spec), "http://meta.icos-cp.eu/")) .
+          OPTIONAL {
+             ?spec cpmeta:hasAssociatedProject ?project .
+             ?project cpmeta:hasHideFromSearchPolicy "true"^^xsd:boolean .
+             BIND("true"^^xsd:boolean AS ?hide)
+          } .
+          FILTER(!BOUND(?hide))
+	?dobj cpmeta:hasObjectSpec ?spec .
+	BIND(EXISTS{[] cpmeta:isNextVersionOf ?dobj} AS ?hasNextVersion)
+	?dobj cpmeta:hasSizeInBytes ?size .
+}
+limit 5

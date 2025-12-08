@@ -134,44 +134,6 @@ class NTriplesSailStore(dataFile: File) extends SailStore {
 		true
 	}
 
-	// Core write methods (no-ops for read-only store)
-	def addStatement(st: Statement, explicit: Boolean): Unit = {
-		// No-op - read-only store
-	}
-
-	def removeStatement(st: Statement, explicit: Boolean): Unit = {
-		// No-op - read-only store
-	}
-
-	private def containsStatement(st: Statement): Boolean = {
-		statements.exists(statementsEqual(_, st))
-	}
-
-	private def matchesStatement(existing: Statement, st: Statement): Boolean = {
-		existing.getSubject.equals(st.getSubject) &&
-		existing.getPredicate.equals(st.getPredicate) &&
-		existing.getObject.equals(st.getObject) &&
-		(
-			(existing.getContext == null && st.getContext == null) ||
-			(existing.getContext != null && existing.getContext.equals(st.getContext))
-		)
-	}
-
-	private def statementsEqual(st1: Statement, st2: Statement): Boolean = {
-		st1.getSubject.equals(st2.getSubject) &&
-		st1.getPredicate.equals(st2.getPredicate) &&
-		st1.getObject.equals(st2.getObject) &&
-		((st1.getContext == null && st2.getContext == null) ||
-		 (st1.getContext != null && st1.getContext.equals(st2.getContext)))
-	}
-
-	private def removeFromIndexes(st: Statement): Unit = {
-		subjectIndex.get(st.getSubject).foreach(_ -= st)
-		predicateIndex.get(st.getPredicate).foreach(_ -= st)
-		objectIndex.get(st.getObject).foreach(_ -= st)
-		val ctx = st.getContext
-		contextIndex.get(ctx).foreach(_ -= st)
-	}
 
 	def clearContext(context: Resource): Unit = {
 		// No-op - read-only store
@@ -226,14 +188,5 @@ class NTriplesSailStore(dataFile: File) extends SailStore {
 		} finally {
 			lock.readLock().unlock()
 		}
-	}
-
-	// Persistence operations
-	def loadFromFile(): Unit = {
-		NTriplesFileIO.load(dataFile, this)
-	}
-
-	def saveToFile(): Unit = {
-		// No-op - read-only store
 	}
 }

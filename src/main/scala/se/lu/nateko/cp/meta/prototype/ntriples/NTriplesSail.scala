@@ -50,10 +50,6 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail {
 			// Initialize store
 			val dataFile = new File(dataDir, "data.trig")
 			store = new NTriplesSailStore(dataFile)
-
-			// Load existing data
-			store.loadFromFile()
-
 		} catch {
 			case NonFatal(e) =>
 				// Clean up on failure

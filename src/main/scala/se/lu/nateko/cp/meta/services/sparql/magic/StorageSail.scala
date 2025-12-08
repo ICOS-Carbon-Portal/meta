@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStorageConfig
 
 import java.nio.file.{FileVisitOption, Files, Paths}
-import se.lu.nateko.cp.meta.prototype.ntriples.NTriplesSail
+import se.lu.nateko.cp.meta.prototype.ntriples.SqlSail
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
@@ -52,7 +52,7 @@ object StorageSail:
 				lmdbConf.setValueIDCacheSize:
 					Math.max(lmdb.valueCacheSize / 2, LmdbStoreConfig.VALUE_ID_CACHE_SIZE)
 
-				val lmdbSail = NTriplesSail(storageDir.toFile)
+				val lmdbSail = SqlSail(storageDir.toFile)
 				log.info("NTriplesSail instantiated")
 				lmdbSail
 			case None =>

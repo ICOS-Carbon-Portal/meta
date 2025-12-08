@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import se.lu.nateko.cp.meta.prototype.ntriples.NTriplesSail
+import se.lu.nateko.cp.meta.prototype.ntriples.SqlSail
 import scala.jdk.CollectionConverters.*
 
 class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
@@ -32,14 +32,14 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	"NTriplesSail" should "initialize and shutdown without errors" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 		repo.shutDown()
 	}
 
 	it should "add and query statements" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -71,7 +71,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 
 	it should "persist and reload data" in {
 		// Add data
-		val sail1 = new NTriplesSail(tempDir)
+		val sail1 = new SqlSail(tempDir)
 		val repo1 = new SailRepository(sail1)
 		repo1.init()
 
@@ -94,7 +94,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 		}
 
 		// Reload and verify
-		val sail2 = new NTriplesSail(tempDir)
+		val sail2 = new SqlSail(tempDir)
 		val repo2 = new SailRepository(sail2)
 		repo2.init()
 
@@ -113,7 +113,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "support named graphs" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -155,7 +155,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "support transaction rollback" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -183,7 +183,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "remove statements" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -220,7 +220,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "clear context" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -261,7 +261,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "support namespaces" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -287,7 +287,7 @@ class NTriplesSailTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach
 	}
 
 	it should "query with pattern matching" in {
-		val sail = new NTriplesSail(tempDir)
+		val sail = new SqlSail(tempDir)
 		val repo = new SailRepository(sail)
 		repo.init()
 

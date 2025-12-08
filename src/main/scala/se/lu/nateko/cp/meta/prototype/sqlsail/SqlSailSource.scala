@@ -8,13 +8,19 @@ import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.{IRI, Namespace, Resource, Statement, Value}
 import org.eclipse.rdf4j.common.iteration.CloseableIteratorIteration
 import scala.jdk.CollectionConverters.IteratorHasAsJava
+import java.io.File
+import org.eclipse.rdf4j.sail.base.SailStore
+import org.eclipse.rdf4j.sail.base.SailSource
+import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.EvaluationStatistics
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
-class NTriplesSailSource(store: NTriplesSailStore, explicit: Boolean) extends BackingSailSource {
-	override def dataset(level: IsolationLevel): SailDataset = new NTriplesSailDataset(store, explicit)
+class SqlSailSource(store: Store, explicit: Boolean) extends BackingSailSource {
+	override def dataset(level: IsolationLevel): SailDataset = new Dataset(store, explicit)
 	override def sink(level: IsolationLevel): SailSink = new NoopSink()
 }
 
-class NTriplesSailDataset(store: NTriplesSailStore, explicit: Boolean) extends SailDataset {
+class Dataset(store: Store, explicit: Boolean) extends SailDataset {
 
 	override def getStatements(
 		subj: Resource,
@@ -53,4 +59,18 @@ class NoopSink() extends SailSink {
 	override def flush(): Unit = {}
 	override def close(): Unit = {}
 	override def observe(subj: Resource, pred: IRI, obj: Value, contexts: Resource*): Unit = {}
+}
+
+class Store(dataFile: File) extends SailStore {
+
+	private val valueFactory = SimpleValueFactory.getInstance()
+	private val explicitSource = new SqlSailSource(this, explicit = true)
+	private val inferredSource = new SqlSailSource(this, explicit = false)
+
+	override def getValueFactory: ValueFactory = valueFactory
+	override def getExplicitSailSource: SailSource = explicitSource
+	override def getInferredSailSource: SailSource = inferredSource
+	override def getEvaluationStatistics: EvaluationStatistics = new EvaluationStatistics()
+
+	override def close(): Unit = {}
 }

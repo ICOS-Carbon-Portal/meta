@@ -7,9 +7,9 @@ import org.eclipse.rdf4j.query.algebra.evaluation.impl.DefaultEvaluationStrategy
 import org.eclipse.rdf4j.sail.SailException
 import org.eclipse.rdf4j.sail.base.SailSourceConnection
 
-class NTriplesSailConnection(
-	sail: NTriplesSail,
-	store: NTriplesSailStore
+class SqlSailConnection(
+	sail: SqlSail,
+	store: Store
 ) extends SailSourceConnection(
 	sail,
 	store,

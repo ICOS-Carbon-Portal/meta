@@ -14,7 +14,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceRes
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 
-class NTriplesSail(dataDir: File) extends AbstractNotifyingSail with FederatedServiceResolverClient{
+class SqlSail(dataDir: File) extends AbstractNotifyingSail with FederatedServiceResolverClient{
 
 
 	override def getFederatedServiceResolver(): FederatedServiceResolver | Null = null
@@ -23,7 +23,7 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail with FederatedSe
 
 	private val logger = LoggerFactory.getLogger(getClass)
 
-	private var store: NTriplesSailStore = _
+	private var store: Store = _
 	private var lockChannel: FileChannel = _
 	private var fileLock: FileLock = _
 
@@ -59,7 +59,7 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail with FederatedSe
 
 			// Initialize store
 			val dataFile = new File(dataDir, "data.trig")
-			store = new NTriplesSailStore(dataFile)
+			store = new Store(dataFile)
 		} catch {
 			case NonFatal(e) =>
 				// Clean up on failure
@@ -102,7 +102,7 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail with FederatedSe
 	}
 
 	override def getConnectionInternal(): NotifyingSailConnection = {
-		new NTriplesSailConnection(this, store)
+		new SqlSailConnection(this, store)
 	}
 
 	override def isWritable(): Boolean = false
@@ -120,5 +120,5 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail with FederatedSe
 		throw new UnsupportedOperationException("Data directory cannot be changed after construction")
 	}
 
-	def getSailStore: NTriplesSailStore = store
+	def getSailStore: Store = store
 }

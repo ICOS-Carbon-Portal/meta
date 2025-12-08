@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# MAPPING=mapping/generated_all_mappings.obda
+MAPPING=mapping/generated_all_mappings.obda
 # MAPPING=mapping/spec_and_hasName.obda
-MAPPING=mapping/edited_all.obda
+# MAPPING=mapping/edited_all.obda
 
 ONTOP_LOG_LEVEL=DEBUG ../ontop-cli-5.4.0/ontop endpoint \
   --properties="ontop.properties" \

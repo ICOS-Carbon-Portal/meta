@@ -174,21 +174,21 @@ source		SELECT
             FROM lenses.data_submissions
 
 mappingId	data_themes_hasIcon
-target		<http://meta.icos-cp.eu/resources/themes{id}> cpmeta:hasIcon {has_icon}^^xsd:anyURI .
+target		<http://meta.icos-cp.eu/resources/themes/{id}> cpmeta:hasIcon {has_icon}^^xsd:anyURI .
 source		SELECT
                 id,
                 has_icon
             FROM lenses.data_themes
 
 mappingId	data_themes_hasMarkerIcon
-target		<http://meta.icos-cp.eu/resources/themes{id}> cpmeta:hasMarkerIcon {has_marker_icon}^^xsd:anyURI .
+target		<http://meta.icos-cp.eu/resources/themes/{id}> cpmeta:hasMarkerIcon {has_marker_icon}^^xsd:anyURI .
 source		SELECT
                 id,
                 has_marker_icon
             FROM lenses.data_themes
 
 mappingId	data_themes_label
-target		<http://meta.icos-cp.eu/resources/themes{id}> rdfs:label {label} .
+target		<http://meta.icos-cp.eu/resources/themes/{id}> rdfs:label {label} .
 source		SELECT
                 id,
                 label
@@ -559,7 +559,7 @@ source		SELECT
             FROM lenses.object_specs
 
 mappingId	objespecs_hasAssociatedProject
-target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects{has_associated_project}> .
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/{has_associated_project}> .
 source		SELECT
                 id,
                 has_associated_project
@@ -573,7 +573,7 @@ source		SELECT
             FROM lenses.object_specs
 
 mappingId	objespecs_hasDataTheme
-target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes{has_data_theme}> .
+target		<http://meta.icos-cp.eu/resources/cpmeta/{id}> cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/{has_data_theme}> .
 source		SELECT
                 id,
                 has_data_theme
@@ -748,49 +748,49 @@ source		SELECT
             FROM lenses.plain_collections
 
 mappingId	projects_comment
-target		<http://meta.icos-cp.eu/resources/projects{id}> rdfs:comment {comment} .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> rdfs:comment {comment} .
 source		SELECT
                 id,
                 comment
             FROM lenses.projects
 
 mappingId	projects_label
-target		<http://meta.icos-cp.eu/resources/projects{id}> rdfs:label {label} .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> rdfs:label {label} .
 source		SELECT
                 id,
                 label
             FROM lenses.projects
 
 mappingId	projects_seeAlso
-target		<http://meta.icos-cp.eu/resources/projects{id}> rdfs:seeAlso {see_also} .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> rdfs:seeAlso {see_also} .
 source		SELECT
                 id,
                 see_also
             FROM lenses.projects
 
 mappingId	projects_hasKeywords
-target		<http://meta.icos-cp.eu/resources/projects{id}> cpmeta:hasKeywords {has_keywords}^^xsd:string .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> cpmeta:hasKeywords {has_keywords}^^xsd:string .
 source		SELECT
                 id,
                 has_keywords
             FROM lenses.projects
 
 mappingId	projects_hasHideFromSearchPolicy
-target		<http://meta.icos-cp.eu/resources/projects{id}> cpmeta:hasHideFromSearchPolicy {has_hide_from_search_policy}^^xsd:boolean .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> cpmeta:hasHideFromSearchPolicy {has_hide_from_search_policy}^^xsd:boolean .
 source		SELECT
                 id,
                 has_hide_from_search_policy
             FROM lenses.projects
 
 mappingId	projects_hasSkipPidMintingPolicy
-target		<http://meta.icos-cp.eu/resources/projects{id}> cpmeta:hasSkipPidMintingPolicy {has_skip_pid_minting_policy}^^xsd:boolean .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> cpmeta:hasSkipPidMintingPolicy {has_skip_pid_minting_policy}^^xsd:boolean .
 source		SELECT
                 id,
                 has_skip_pid_minting_policy
             FROM lenses.projects
 
 mappingId	projects_hasSkipStoragePolicy
-target		<http://meta.icos-cp.eu/resources/projects{id}> cpmeta:hasSkipStoragePolicy {has_skip_storage_policy}^^xsd:boolean .
+target		<http://meta.icos-cp.eu/resources/projects/{id}> cpmeta:hasSkipStoragePolicy {has_skip_storage_policy}^^xsd:boolean .
 source		SELECT
                 id,
                 has_skip_storage_policy
@@ -825,7 +825,7 @@ source		SELECT
             FROM lenses.roles
 
 mappingId	spatial_coverages_asGeoJSON_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:asGeoJSON {as_geo_json}^^xsd:string .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:asGeoJSON {as_geo_json}^^xsd:string .
 source		SELECT
                 id,
                 as_geo_json
@@ -833,7 +833,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_label_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> rdfs:label {label} .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> rdfs:label {label} .
 source		SELECT
                 id,
                 label
@@ -841,7 +841,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasEasternBound_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasEasternBound {has_eastern_bound}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasEasternBound {has_eastern_bound}^^xsd:double .
 source		SELECT
                 id,
                 has_eastern_bound
@@ -849,7 +849,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasNorthernBound_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasNorthernBound {has_northern_bound}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasNorthernBound {has_northern_bound}^^xsd:double .
 source		SELECT
                 id,
                 has_northern_bound
@@ -857,7 +857,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasSouthernBound_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasSouthernBound {has_southern_bound}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasSouthernBound {has_southern_bound}^^xsd:double .
 source		SELECT
                 id,
                 has_southern_bound
@@ -865,7 +865,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasWesternBound_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasWesternBound {has_western_bound}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasWesternBound {has_western_bound}^^xsd:double .
 source		SELECT
                 id,
                 has_western_bound
@@ -873,7 +873,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasLatitude_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasLatitude {has_latitude}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasLatitude {has_latitude}^^xsd:double .
 source		SELECT
                 id,
                 has_latitude
@@ -881,7 +881,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
 
 mappingId	spatial_coverages_hasLongitude_resourceslatlon
-target		<http://meta.icos-cp.eu/resources/latlonboxes{id}> cpmeta:hasLongitude {has_longitude}^^xsd:double .
+target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasLongitude {has_longitude}^^xsd:double .
 source		SELECT
                 id,
                 has_longitude
@@ -2180,7 +2180,7 @@ source		SELECT
             WHERE prefix = 'http://meta.icos-cp.eu/resources/wdcgg/station/'
 
 mappingId	thematic_centers_hasDataTheme
-target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes{has_data_theme}> .
+target		<http://meta.icos-cp.eu/resources/organizations/{id}> cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/{has_data_theme}> .
 source		SELECT
                 id,
                 has_data_theme

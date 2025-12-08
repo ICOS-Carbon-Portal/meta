@@ -8,10 +8,6 @@ import scala.collection.mutable
 
 class NTriplesSailSink(store: NTriplesSailStore, explicit: Boolean) extends SailSink {
 
-	private val added = mutable.Set[Statement]()
-	private val removed = mutable.Set[Statement]()
-	private val namespaceChanges = mutable.Map[String, Option[String]]()
-	private val contextsToClean = mutable.Set[Resource]()
 
 	// All write operations are no-ops for read-only store
 	override def approve(subj: Resource, pred: IRI, obj: Value, context: Resource): Unit = {
@@ -54,10 +50,6 @@ class NTriplesSailSink(store: NTriplesSailStore, explicit: Boolean) extends Sail
 	}
 
 	private def clearBuffers(): Unit = {
-		added.clear()
-		removed.clear()
-		namespaceChanges.clear()
-		contextsToClean.clear()
 	}
 
 	// Observe method for monitoring changes (optional)

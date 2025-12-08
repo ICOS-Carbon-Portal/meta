@@ -162,7 +162,7 @@ where{
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 select ?spec ?keywords
-from <http://meta.icos-cp.eu/resources/cpmeta/>
+
 where{
 	?spec cpmeta:hasAssociatedProject ?proj
 	{
@@ -472,7 +472,7 @@ offset 0 limit 20
 
 PREFIX cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 SELECT *
-FROM <http://meta.icos-cp.eu/resources/stationentry/>
+
 FROM NAMED <http://meta.icos-cp.eu/resources/stationlabeling/>
 WHERE {
 	{
@@ -505,9 +505,9 @@ prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT *
-FROM <http://meta.icos-cp.eu/resources/icos/>
-FROM <http://meta.icos-cp.eu/resources/cpmeta/>
-FROM <http://meta.icos-cp.eu/resources/stationentry/>
+
+
+
 WHERE{
 	{
 		select ?s ?ps (GROUP_CONCAT(?lname; separator=";") AS ?PI_names) where {
@@ -572,7 +572,7 @@ WHERE {
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?station ?lat ?lon ?name ?cc
-FROM <http://meta.icos-cp.eu/resources/icos/>
+
 WHERE {
 	?station cpmeta:hasWebpageElements ?el; cpmeta:hasLatitude ?lat; cpmeta:hasLongitude ?lon; cpmeta:hasName ?name; cpmeta:countryCode ?cc
 }
@@ -584,10 +584,10 @@ prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 select ?uri ?label ?comment ?stationId ?webpage
-from <http://meta.icos-cp.eu/ontologies/cpmeta/>
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
+
 where {
 	?class a owl:Class .
 	filter (?class not in (cpmeta:DataObject, cpmeta:DataSubmission, cpmeta:DataAcquisition, cpmeta:DataProduction,
@@ -656,7 +656,7 @@ prefix xsd: <http://www.w3.org/2001/XMLSchema#>
       (GROUP_CONCAT(?piLname; separator=";") AS ?PI_names)
       (str(?siteType) AS ?Site_type)
 
-      FROM <http://meta.icos-cp.eu/resources/stationentry/>
+      
 
       WHERE {
         ?s cpst:hasCountry ?country .
@@ -746,10 +746,10 @@ order by ?startTime
         prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
         prefix cpst: <http://meta.icos-cp.eu/ontologies/stationentry/>
         select distinct ?uri ?id ?name ?icosClass ?country ?lat ?lon ?elevation ?stationTheme ?firstName ?lastName ?email ?siteType
-        from <http://meta.icos-cp.eu/resources/icos/>
-        from <http://meta.icos-cp.eu/resources/extrastations/>
-        from <http://meta.icos-cp.eu/resources/cpmeta/>
-        from <http://meta.icos-cp.eu/resources/stationentry/>
+        
+        
+        
+        
         where {
             {
                 select ?uri ?id ?stationTheme (sample(?pers) as ?piOpt)  where
@@ -837,9 +837,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	?spec cpmeta:hasDataLevel [] .
@@ -879,9 +879,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
@@ -908,7 +908,7 @@ where {
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 select ?uri
-from <http://meta.icos-cp.eu/resources/icos/>
+
 where {
     ?uri a cpmeta:OS ; cpmeta:hasStationId "IT-FOS-MIRAMARE"^^xsd:string .
 }
@@ -998,9 +998,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
@@ -1030,9 +1030,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
@@ -1061,9 +1061,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject>}
@@ -1167,9 +1167,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct>}
@@ -1194,7 +1194,7 @@ where {
 
 prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 select *
-FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+
 where{
 	{{?cov a cpmeta:SpatialCoverage } union {?cov a cpmeta:LatLonBox}}
 	?cov rdfs:label ?label
@@ -1205,7 +1205,7 @@ where{
 
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 SELECT *
-FROM <http://meta.icos-cp.eu/resources/cpmeta/>
+
 WHERE {
 	?spec cpmeta:hasDataLevel ?dataLevel ; rdfs:label ?name ; cpmeta:hasFormat ?format ;
 		cpmeta:hasDataTheme ?theme ; cpmeta:hasAssociatedProject ?project ;
@@ -1221,10 +1221,10 @@ WHERE {
 
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 SELECT *
-FROM <http://meta.icos-cp.eu/resources/icos/>
-FROM <http://meta.icos-cp.eu/resources/cpmeta/>
-FROM <http://meta.icos-cp.eu/ontologies/cpmeta/>
-FROM <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
+
 WHERE {
 
 	?station cpmeta:hasStationId ?id; cpmeta:hasName ?name .
@@ -1239,9 +1239,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcSaheatFlagFile> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcPicarroL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcLosGatosL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/otcL0DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer> <http://meta.icos-cp.eu/resources/cpmeta/lagrangianTransportModelResult> <http://meta.icos-cp.eu/resources/cpmeta/anthropogenicEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/biosphericModelResults> <http://meta.icos-cp.eu/resources/cpmeta/fireEmissionModelResults> <http://meta.icos-cp.eu/resources/cpmeta/oceanicFluxModelResults> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
@@ -1292,9 +1292,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
@@ -1326,9 +1326,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
@@ -1358,9 +1358,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
@@ -1390,7 +1390,7 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <https://meta.fieldsites.se/resources/sites/>
+
 where {
 
 	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/stationHourlyMeteorological> <https://meta.fieldsites.se/resources/objspecs/waterHourlyMeteorological> <https://meta.fieldsites.se/resources/objspecs/stationDailyMeteorological> <https://meta.fieldsites.se/resources/objspecs/waterDailyMeteorological>}
@@ -1419,7 +1419,7 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <https://meta.fieldsites.se/resources/sites/>
+
 where {
 
 	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/stream-water-level> <https://meta.fieldsites.se/resources/objspecs/stream-discharge> <https://meta.fieldsites.se/resources/objspecs/lake-temperature> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors> <https://meta.fieldsites.se/resources/objspecs/lake-profile> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-stream> <https://meta.fieldsites.se/resources/objspecs/lake-temperature-daily> <https://meta.fieldsites.se/resources/objspecs/lake-water-level> <https://meta.fieldsites.se/resources/objspecs/lake-manual-sample> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-lake> <https://meta.fieldsites.se/resources/objspecs/stream-additional> <https://meta.fieldsites.se/resources/objspecs/daily-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/hourly-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/lake-sonde> <https://meta.fieldsites.se/resources/objspecs/lake-sonde-profiling> <https://meta.fieldsites.se/resources/objspecs/lake-ice-coverage> <https://meta.fieldsites.se/resources/objspecs/16s-bacteria-reads> <https://meta.fieldsites.se/resources/objspecs/18s-eukaryotes-reads> <https://meta.fieldsites.se/resources/objspecs/chemistry-fish> <https://meta.fieldsites.se/resources/objspecs/zooplankton> <https://meta.fieldsites.se/resources/objspecs/bacterial-abundance> <https://meta.fieldsites.se/resources/objspecs/disinfection-byproduct-parameters> <https://meta.fieldsites.se/resources/objspecs/parafac-component-parameters> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors-daily> <https://meta.fieldsites.se/resources/objspecs/phytoplankton> <https://meta.fieldsites.se/resources/objspecs/stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/daily-stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/lake-sediment-characteristics> <https://meta.fieldsites.se/resources/objspecs/lake-chlorophyll> <https://meta.fieldsites.se/resources/objspecs/lake-chlorophyll-calibration>}
@@ -1447,9 +1447,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif>}
@@ -1479,9 +1479,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasResultsArchive> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/eddyCovarianceFluxDataArchive> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/ingosArchive> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcC14L2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/ingosCh4Release> <http://meta.icos-cp.eu/resources/cpmeta/ingosN2oRelease> <http://meta.icos-cp.eu/resources/cpmeta/socat_DataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL2Product> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL2Product> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atmGhgProduct> <http://meta.icos-cp.eu/resources/cpmeta/soopL2Product> <http://meta.icos-cp.eu/resources/cpmeta/AirCoreProduct> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/atmoMeasArchive> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoEcoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoMeteoDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcCoNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oNrtGrowingDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcL1Product_v2> <http://meta.icos-cp.eu/resources/cpmeta/atcRnNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoAirTempMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/ecoProfileMultiLevelsDataObject> <http://meta.icos-cp.eu/resources/cpmeta/icosOtcFosL1Product> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcAncillaryRawBif> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcGHGFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcFlaskFastTrackDataObject>}
@@ -1511,9 +1511,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
@@ -1545,9 +1545,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ObspackTimeSerieResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCH4TimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/ObspackN2oTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCh4> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo2> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackN2o> <http://meta.icos-cp.eu/resources/cpmeta/atcCo2Product> <http://meta.icos-cp.eu/resources/cpmeta/atcCh4Product> <http://meta.icos-cp.eu/resources/cpmeta/atcN2oProduct> <http://meta.icos-cp.eu/resources/cpmeta/ObspackCOTimeSeriesResult> <http://meta.icos-cp.eu/resources/cpmeta/icosObspackCo>}
@@ -1576,9 +1576,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}
@@ -1609,7 +1609,7 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <https://meta.fieldsites.se/resources/sites/>
+
 where {
 
 	VALUES ?spec {<https://meta.fieldsites.se/resources/objspecs/lake-temperature> <https://meta.fieldsites.se/resources/objspecs/aquanet-automatic-sensors> <https://meta.fieldsites.se/resources/objspecs/lake-profile> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-stream> <https://meta.fieldsites.se/resources/objspecs/lake-temperature-daily> <https://meta.fieldsites.se/resources/objspecs/lake-manual-sample> <https://meta.fieldsites.se/resources/objspecs/chemical-variables-lake> <https://meta.fieldsites.se/resources/objspecs/daily-lake-water-level> <https://meta.fieldsites.se/resources/objspecs/16s-bacteria-reads> <https://meta.fieldsites.se/resources/objspecs/18s-eukaryotes-reads> <https://meta.fieldsites.se/resources/objspecs/chemistry-fish> <https://meta.fieldsites.se/resources/objspecs/zooplankton> <https://meta.fieldsites.se/resources/objspecs/bacterial-abundance> <https://meta.fieldsites.se/resources/objspecs/stream-water-level-discharge> <https://meta.fieldsites.se/resources/objspecs/daily-stream-water-level-discharge>}
@@ -1690,9 +1690,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesBin> <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2AuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtAuxData> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtFluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo>}
@@ -1808,9 +1808,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select ?dobj ?hasNextVersion ?spec ?fileName ?size ?submTime ?timeStart ?timeEnd
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcBioMeteoRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/etcStorageFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/ceptometerMeasurements> <http://meta.icos-cp.eu/resources/cpmeta/etcEddyFluxRawSeriesCsv> <http://meta.icos-cp.eu/resources/cpmeta/digHemispherPics> <http://meta.icos-cp.eu/resources/cpmeta/etcArchiveProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet>}
@@ -1842,9 +1842,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/ecoFluxesDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMtoL2DataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject> <http://meta.icos-cp.eu/resources/cpmeta/atcMeteoFastTrackNRTDataObject> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteo> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo> <http://meta.icos-cp.eu/resources/cpmeta/etcNrtMeteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxnet> <http://meta.icos-cp.eu/resources/cpmeta/miscFluxnetProduct> <http://meta.icos-cp.eu/resources/cpmeta/stiltMoleFracTimeSer>}
@@ -1873,9 +1873,9 @@ prefix prov: <http://www.w3.org/ns/prov#>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 prefix geo: <http://www.opengis.net/ont/geosparql#>
 select (cpmeta:distinct_keywords() as ?keywords)
-from <http://meta.icos-cp.eu/resources/cpmeta/>
-from <http://meta.icos-cp.eu/resources/icos/>
-from <http://meta.icos-cp.eu/resources/extrastations/>
+
+
+
 where {
 
 	VALUES ?spec {<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens>}

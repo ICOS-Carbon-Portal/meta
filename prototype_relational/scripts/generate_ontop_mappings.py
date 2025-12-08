@@ -847,14 +847,13 @@ def _generate_mappings_for_prefix(
             # Add iriSafeConstraints based on property type
             if is_object_property:
                 # Object properties need both id and the flattened column
-                lens_def["iriSafeConstraints"] = {
-                    "added": ["id", new_column]
-                }
+                lens_def["iriSafeConstraints"] = {"added": ["id", new_column]}
             else:
                 # Datatype properties only need id
-                lens_def["iriSafeConstraints"] = {
-                    "added": ["id"]
-                }
+                lens_def["iriSafeConstraints"] = {"added": ["id"]}
+
+            # nonNullConstraints always includes both id and the flattened column
+            lens_def["nonNullConstraints"] = {"added": ["id", new_column]}
 
             lens_definitions.append(lens_def)
 
@@ -1213,23 +1212,14 @@ def main():
     print(f"\nWriting mappings to output files...")
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write scalar mappings file
-    print(f"  Writing {len(all_scalar_mappings)} scalar mappings to {output_file}...")
+    # Combine all mappings (scalar + array) into a single file
+    all_mappings = all_scalar_mappings + all_array_mappings
+    print(f"  Writing {len(all_mappings)} mappings ({len(all_scalar_mappings)} scalar, {len(all_array_mappings)} array) to {output_file}...")
     with open(output_file, 'w') as f:
         f.write(prefix_section)
         f.write('\n\n')
         f.write('[MappingDeclaration] @collection [[\n\n')
-        f.write('\n\n'.join(all_scalar_mappings))
-        f.write('\n\n]]')
-
-    # Write array mappings file
-    array_output_file = output_file.parent / 'generated_array_mappings.obda'
-    print(f"  Writing {len(all_array_mappings)} array mappings to {array_output_file}...")
-    with open(array_output_file, 'w') as f:
-        f.write(prefix_section)
-        f.write('\n\n')
-        f.write('[MappingDeclaration] @collection [[\n\n')
-        f.write('\n\n'.join(all_array_mappings))
+        f.write('\n\n'.join(all_mappings))
         f.write('\n\n]]')
 
     # Deduplicate lenses by name (multi-prefix tables generate duplicates)
@@ -1274,9 +1264,8 @@ def main():
     else:
         print(f"✓ All {len(all_array_mappings)} array object properties have URI prefixes")
 
-    print(f"\nDone! Generated {len(all_scalar_mappings)} scalar mappings, {len(all_array_mappings)} array mappings, and {len(deduped_lens_definitions)} lenses")
-    print(f"Scalar mappings: {output_file}")
-    print(f"Array mappings: {array_output_file}")
+    print(f"\nDone! Generated {len(all_mappings)} total mappings ({len(all_scalar_mappings)} scalar, {len(all_array_mappings)} array) and {len(deduped_lens_definitions)} lenses")
+    print(f"All mappings: {output_file}")
     print(f"Lenses: {lenses_output_file}")
 
 

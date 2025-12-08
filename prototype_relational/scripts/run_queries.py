@@ -374,8 +374,45 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         else:
             print(f"  Failed: {error2}")
 
-        # Print full results if requested
-        if show_results:
+        # Handle failures and compare results first
+        # Determine if we have a mismatch before printing results
+        has_mismatch = False
+        if not success1 and not success2:
+            # Both failed
+            has_mismatch = True
+            both_endpoints_failed.append(idx)
+            failed_queries.append({
+                'index': idx,
+                'query': query,
+                'response': f"EP1: {response1}\nEP2: {response2}",
+                'error': f"EP1: {error1}, EP2: {error2}"
+            })
+        elif not success1:
+            # Only endpoint 1 failed
+            has_mismatch = True
+            endpoint1_failures.append(idx)
+            failed_queries.append({
+                'index': idx,
+                'query': query,
+                'response': response1,
+                'error': error1
+            })
+        elif not success2:
+            # Only endpoint 2 failed
+            has_mismatch = True
+            endpoint2_failures.append(idx)
+        else:
+            # Both succeeded - compare results
+            results_match = compare_csv_results(response1, response2)
+
+            if results_match:
+                matched_results.append(idx)
+            else:
+                has_mismatch = True
+                mismatched_results.append(idx)
+
+        # Print full results only on mismatch if requested
+        if show_results and has_mismatch:
             if success1:
                 print(f"\nResults from Endpoint 1:")
                 print(f"{'─'*80}")
@@ -400,45 +437,22 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                     print(response2)
                 print(f"{'─'*80}")
 
-        # Handle failures and compare results
+        # Print result status
         if not success1 and not success2:
-            # Both failed
-            both_endpoints_failed.append(idx)
-            failed_queries.append({
-                'index': idx,
-                'query': query,
-                'response': f"EP1: {response1}\nEP2: {response2}",
-                'error': f"EP1: {error1}, EP2: {error2}"
-            })
             print(f"\nResult: ⚠️  BOTH ENDPOINTS FAILED")
         elif not success1:
-            # Only endpoint 1 failed
-            endpoint1_failures.append(idx)
-            failed_queries.append({
-                'index': idx,
-                'query': query,
-                'response': response1,
-                'error': error1
-            })
             print(f"\nResult: ⚠️  ENDPOINT 1 FAILED")
         elif not success2:
-            # Only endpoint 2 failed
-            endpoint2_failures.append(idx)
             print(f"\nResult: ⚠️  ENDPOINT 2 FAILED")
         else:
-            # Both succeeded - compare results
-            results_match = compare_csv_results(response1, response2)
-
-            if results_match:
-                matched_results.append(idx)
-                print(f"\nResult: ✓ MATCH")
-            else:
-                mismatched_results.append(idx)
+            # Both succeeded
+            if has_mismatch:
                 print(f"\nResult: ✗ MISMATCH")
-
                 # Show diff if requested
                 if show_results:
                     print_diff(response1, response2)
+            else:
+                print(f"\nResult: ✓ MATCH")
 
             # Track queries with 1 or fewer rows (from endpoint 1)
             if line_count1 <= 2:

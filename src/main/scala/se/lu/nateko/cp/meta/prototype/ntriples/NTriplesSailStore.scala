@@ -134,47 +134,13 @@ class NTriplesSailStore(dataFile: File) extends SailStore {
 		true
 	}
 
-	// Core write methods
+	// Core write methods (no-ops for read-only store)
 	def addStatement(st: Statement, explicit: Boolean): Unit = {
-		lock.writeLock().lock()
-		try {
-			// Only handle explicit statements for this simple implementation
-			if (!explicit) return
-
-			// Check if already exists
-			if (containsStatement(st)) return
-
-			// Add to statement list
-			statements += st
-
-			// Update indexes
-			subjectIndex.getOrElseUpdate(st.getSubject, mutable.ArrayBuffer.empty) += st
-			predicateIndex.getOrElseUpdate(st.getPredicate, mutable.ArrayBuffer.empty) += st
-			objectIndex.getOrElseUpdate(st.getObject, mutable.ArrayBuffer.empty) += st
-			val ctx = st.getContext
-			contextIndex.getOrElseUpdate(ctx, mutable.ArrayBuffer.empty) += st
-		} finally {
-			lock.writeLock().unlock()
-		}
+		// No-op - read-only store
 	}
 
 	def removeStatement(st: Statement, explicit: Boolean): Unit = {
-		lock.writeLock().lock()
-		try {
-			// Only handle explicit statements
-			if (!explicit) return
-
-			// Find matching statements and remove
-			val toRemove = statements.filter(matchesStatement(_, st)).toSeq
-
-			// Remove from list and indexes
-			for (stToRemove <- toRemove) {
-				statements -= stToRemove
-				removeFromIndexes(stToRemove)
-			}
-		} finally {
-			lock.writeLock().unlock()
-		}
+		// No-op - read-only store
 	}
 
 	private def containsStatement(st: Statement): Boolean = {
@@ -208,35 +174,16 @@ class NTriplesSailStore(dataFile: File) extends SailStore {
 	}
 
 	def clearContext(context: Resource): Unit = {
-		lock.writeLock().lock()
-		try {
-			val toRemove = contextIndex.getOrElse(context, mutable.ArrayBuffer.empty).toSeq
-			for (st <- toRemove) {
-				statements -= st
-				removeFromIndexes(st)
-			}
-		} finally {
-			lock.writeLock().unlock()
-		}
+		// No-op - read-only store
 	}
 
-	// Namespace operations
+	// Namespace operations (no-ops for read-only store)
 	def setNamespace(prefix: String, name: String): Unit = {
-		lock.writeLock().lock()
-		try {
-			namespaces(prefix) = name
-		} finally {
-			lock.writeLock().unlock()
-		}
+		// No-op - read-only store
 	}
 
 	def removeNamespace(prefix: String): Unit = {
-		lock.writeLock().lock()
-		try {
-			namespaces.remove(prefix)
-		} finally {
-			lock.writeLock().unlock()
-		}
+		// No-op - read-only store
 	}
 
 	def getNamespace(prefix: String): String = {
@@ -287,6 +234,6 @@ class NTriplesSailStore(dataFile: File) extends SailStore {
 	}
 
 	def saveToFile(): Unit = {
-		NTriplesFileIO.save(dataFile, this)
+		// No-op - read-only store
 	}
 }

@@ -69,16 +69,8 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail {
 
 	override def shutDownInternal(): Unit = {
 		try {
-			// Save data
+			// Close store (no save - read-only)
 			if (store != null) {
-				try {
-					store.saveToFile()
-				} catch {
-					case NonFatal(e) =>
-						logger.error("Failed to save data during shutdown", e)
-				}
-
-				// Close store
 				store.close()
 			}
 		} finally {
@@ -107,7 +99,7 @@ class NTriplesSail(dataDir: File) extends AbstractNotifyingSail {
 		new NTriplesSailConnection(this, store)
 	}
 
-	override def isWritable(): Boolean = true
+	override def isWritable(): Boolean = false
 
 	override def getValueFactory: ValueFactory = {
 		if (store == null) {

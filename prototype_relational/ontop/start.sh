@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# # Download DuckDB JDBC driver if not present
+# DUCKDB_JDBC="duckdb_jdbc-1.1.3.jar"
+# if [ ! -f "$DUCKDB_JDBC" ]; then
+#     echo "Downloading DuckDB JDBC driver..."
+#     wget https://repo1.maven.org/maven2/org/duckdb/duckdb_jdbc/1.1.3/$DUCKDB_JDBC
+# fi
+
 MAPPING=mapping/generated_all_mappings.obda
 # MAPPING=mapping/spec_and_hasName.obda
 # MAPPING=mapping/edited_all.obda
@@ -11,4 +18,5 @@ ONTOP_LOG_LEVEL=DEBUG ../ontop-cli-5.4.0/ontop endpoint \
   --ontology="cpmeta.ttl" \
   --port=8080 \
   --cors-allowed-origins=* \
-  --mapping=$MAPPING
+  --mapping=$MAPPING \
+  --port 65432

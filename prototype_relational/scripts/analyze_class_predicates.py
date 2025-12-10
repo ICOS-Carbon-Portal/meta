@@ -4,7 +4,7 @@ Analyze which predicates are used with each OWL class in the RDF data.
 This helps identify which properties should be included in class-based tables.
 """
 
-import psycopg2
+import duckdb
 import argparse
 import os
 import sys
@@ -53,7 +53,7 @@ def check_triples_table(cursor):
         cursor.execute("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
-                WHERE table_name = %s
+                WHERE table_name = ?
             );
         """, (table_name,))
 
@@ -79,7 +79,7 @@ def get_all_classes(cursor):
     query = f"""
         SELECT DISTINCT obj
         FROM {TRIPLES_TABLE}
-        WHERE pred = %s
+        WHERE pred = ?
         ORDER BY obj
     """
 
@@ -103,7 +103,7 @@ def count_instances(cursor, class_uri):
     query = f"""
         SELECT COUNT(DISTINCT subj)
         FROM {TRIPLES_TABLE}
-        WHERE pred = %s AND obj = %s
+        WHERE pred = ? AND obj = ?
     """
 
     cursor.execute(query, (f"{NS['rdf']}type", class_uri))
@@ -118,7 +118,7 @@ def get_predicates_for_class(cursor, class_uri):
         WHERE t.subj IN (
             SELECT subj
             FROM {TRIPLES_TABLE}
-            WHERE pred = %s AND obj = %s
+            WHERE pred = ? AND obj = ?
         )
         GROUP BY t.pred
         ORDER BY t.pred
@@ -137,11 +137,11 @@ def analyze_predicate_values(cursor, class_uri, predicate):
             MIN(LENGTH(obj)) as min_length,
             MAX(LENGTH(obj)) as max_length
         FROM {TRIPLES_TABLE} t
-        WHERE t.pred = %s
+        WHERE t.pred = ?
           AND t.subj IN (
               SELECT subj
               FROM {TRIPLES_TABLE}
-              WHERE pred = %s AND obj = %s
+              WHERE pred = ? AND obj = ?
           )
     """
 
@@ -159,12 +159,12 @@ def get_class_references(cursor, class_uri):
         FROM {TRIPLES_TABLE} t
         -- t.obj are instances of the target class (class_uri)
         JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.obj
-            AND class_instances.pred = %s AND class_instances.obj = %s
+            AND class_instances.pred = ? AND class_instances.obj = ?
         -- Find what classes the subjects (t.subj) belong to
         JOIN {TRIPLES_TABLE} referring_class ON referring_class.subj = t.subj
-            AND referring_class.pred = %s
+            AND referring_class.pred = ?
         -- Exclude rdf:type predicates
-        WHERE t.pred != %s
+        WHERE t.pred != ?
         GROUP BY referring_class.obj, t.pred
         ORDER BY referring_class.obj, reference_count DESC
     """
@@ -202,12 +202,12 @@ def get_class_references(cursor, class_uri):
         FROM {TRIPLES_TABLE} t
         -- t.subj are instances of the source class (class_uri)
         JOIN {TRIPLES_TABLE} class_instances ON class_instances.subj = t.subj
-            AND class_instances.pred = %s AND class_instances.obj = %s
+            AND class_instances.pred = ? AND class_instances.obj = ?
         -- Find what classes the objects (t.obj) belong to
         JOIN {TRIPLES_TABLE} target_class ON target_class.subj = t.obj
-            AND target_class.pred = %s
+            AND target_class.pred = ?
         -- Exclude rdf:type predicates
-        WHERE t.pred != %s
+        WHERE t.pred != ?
         GROUP BY target_class.obj, t.pred
         ORDER BY target_class.obj, reference_count DESC
     """

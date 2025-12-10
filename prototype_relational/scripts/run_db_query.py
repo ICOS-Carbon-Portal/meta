@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import psycopg2
-from psycopg2.extras import execute_batch
+import duckdb
+
 import json
 import csv
 import sys
@@ -11,14 +11,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
+
 
 
 conn = get_connection()
@@ -30,7 +23,7 @@ label = "http://www.w3.org/2000/01/rdf-schema#label"
 cursor.execute("""
     SELECT pred, obj as label
     FROM rdf_triples
-    WHERE pred = %s
+    WHERE pred = ?
     LIMIT 10
 """, (label,))
 

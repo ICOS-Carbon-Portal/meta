@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
-import psycopg2
+import duckdb
+import sys
+sys.path.insert(0, "..")
+from db_connection import get_connection
 import json
 from datetime import datetime
 from collections import defaultdict
 
 
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
+
 
 
 def find_all_common_prefixes(subjects, min_count=50):

@@ -18,8 +18,9 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 from typing import Dict, Set, List, Tuple, Optional
-import psycopg2
-from psycopg2 import sql
+import duckdb
+sys.path.insert(0, '..')
+from db_connection import get_connection
 from rdflib import Graph, URIRef, Namespace
 from rdflib.namespace import OWL, RDF, RDFS
 
@@ -673,7 +674,8 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
     """
     fk_cols = {fk[0] for fk in (foreign_keys or [])}
 
-    unlogged_keyword = "UNLOGGED " if unlogged else ""
+    # DuckDB doesn't support UNLOGGED tables
+    unlogged_keyword = ""
     lines = [f"CREATE {unlogged_keyword}TABLE IF NOT EXISTS {table_name} ("]
     lines.append("    id TEXT PRIMARY KEY,")
     lines.append("    rdf_subject TEXT NOT NULL UNIQUE,")
@@ -1483,15 +1485,9 @@ Examples:
                 return 0
 
             # Connect to database for execution
-            print(f"Connecting to database at {args.host}:{args.port}...")
+            print("Connecting to DuckDB database...")
             try:
-                conn = psycopg2.connect(
-                    host=args.host,
-                    port=args.port,
-                    user=args.user,
-                    dbname=args.dbname,
-                    password=args.password
-                )
+                conn = get_connection()
                 cursor = conn.cursor()
             except Exception as e:
                 print(f"Error connecting to database: {e}")

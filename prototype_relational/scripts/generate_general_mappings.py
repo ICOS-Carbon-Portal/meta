@@ -5,7 +5,7 @@ These mappings query directly from the rdf_triples table rather than
 predicate-specific tables, providing a general fallback for less common predicates.
 """
 
-import psycopg2
+import duckdb
 import argparse
 import os
 import sys
@@ -35,15 +35,7 @@ def get_predicate_counts():
     return predicate_counts
 
 
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    try:
-        return psycopg2.connect(
-            host="localhost",
-            user="postgres",
-            port=5432,
-            password="ontop"
-        )
+
     except psycopg2.Error as e:
         print(f"Error connecting to database: {e}")
         sys.exit(1)
@@ -211,8 +203,8 @@ def check_if_uri_predicate(cursor, predicate, sample_size=100):
     try:
         cursor.execute("""
             SELECT obj FROM rdf_triples
-            WHERE pred = %s AND obj IS NOT NULL
-            LIMIT %s;
+            WHERE pred = ? AND obj IS NOT NULL
+            LIMIT ?;
         """, (predicate, sample_size))
 
         rows = cursor.fetchall()

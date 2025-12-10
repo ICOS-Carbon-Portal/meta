@@ -2,17 +2,8 @@
 
 from rdflib import Graph, RDF, OWL
 from collections import defaultdict
-import psycopg2
-
-
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
+import duckdb
+from db_connection import get_connection
 
 
 def get_predicate_counts():

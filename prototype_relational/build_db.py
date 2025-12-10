@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import psycopg2
-from psycopg2.extras import execute_batch
+import duckdb
+from db_connection import get_connection
 import json
 import csv
 import sys
@@ -14,15 +14,6 @@ from datetime import datetime
 csv_path = "./dump_full.csv"
 # csv_path = "./dump_mini.csv"
 # csv_path = "./dump_partial.csv"
-
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
 
 def execute_sql_file(conn, path):
     cursor = conn.cursor()
@@ -48,11 +39,11 @@ def get_temporal_data(cursor, subject):
 
     cursor.execute("""
         SELECT
-            MAX(CASE WHEN pred = %s THEN obj END) as start_time,
-            MAX(CASE WHEN pred = %s THEN obj END) as end_time
+            MAX(CASE WHEN pred = ? THEN obj END) as start_time,
+            MAX(CASE WHEN pred = ? THEN obj END) as end_time
         FROM rdf_triples
-        WHERE subj = %s
-          AND pred IN (%s, %s)
+        WHERE subj = ?
+          AND pred IN (?, ?)
     """, (started_at_time_pred, ended_at_time_pred, subject, started_at_time_pred, ended_at_time_pred))
 
     result = cursor.fetchone()
@@ -73,11 +64,11 @@ def get_acquisition_metadata(cursor, acquisition_uri):
 
     cursor.execute("""
         SELECT
-            MAX(CASE WHEN pred = %s THEN obj END) as station_uri,
-            MAX(CASE WHEN pred = %s THEN obj END) as sampling_height
+            MAX(CASE WHEN pred = ? THEN obj END) as station_uri,
+            MAX(CASE WHEN pred = ? THEN obj END) as sampling_height
         FROM rdf_triples
-        WHERE subj = %s
-          AND pred IN (%s, %s)
+        WHERE subj = ?
+          AND pred IN (?, ?)
     """, (was_associated_with_pred, has_sampling_height_pred, acquisition_uri, was_associated_with_pred, has_sampling_height_pred))
 
     result = cursor.fetchone()
@@ -125,23 +116,23 @@ def populate_data_objects_table(conn, max_data_objects=None):
         WITH data_object_subjects AS (
             SELECT DISTINCT subj, obj as hasObjectSpec
             FROM rdf_triples
-            WHERE pred = %s
+            WHERE pred = ?
         )
         SELECT
             t.subj,
             dos.hasObjectSpec,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as name,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasAcquiredBy,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasSubmittedBy,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasStartTime,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasEndTime,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasSha256sum,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasNumberOfRows,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasSizeInBytes,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasActualColumnNames,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as isNextVersionOf,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as wasProducedBy,
-            MAX(CASE WHEN t.pred = %s THEN t.obj END) as hasDoi
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as name,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as wasAcquiredBy,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as wasSubmittedBy,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasStartTime,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasEndTime,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasSha256sum,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasNumberOfRows,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasSizeInBytes,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasActualColumnNames,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as isNextVersionOf,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as wasProducedBy,
+            MAX(CASE WHEN t.pred = ? THEN t.obj END) as hasDoi
         FROM rdf_triples t
         INNER JOIN data_object_subjects dos ON t.subj = dos.subj
         GROUP BY t.subj, dos.hasObjectSpec
@@ -164,7 +155,7 @@ def populate_data_objects_table(conn, max_data_objects=None):
     batch_size = 100000
     total_inserted = 0
     data_to_insert = []
-    insertion_query = "INSERT INTO data_objects (subject, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, wasSubmittedBy, wasAcquiredBy, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insertion_query = "INSERT INTO data_objects (subject, hasObjectSpec, name, acquisition_start_time, acquisition_end_time, acquisition_wasAssociatedWith, acquisition_hasSamplingHeight, wasSubmittedBy, wasAcquiredBy, submission_start_time, submission_end_time, data_start_time, data_end_time, hasSha256sum, hasNumberOfRows, hasSizeInBytes, hasActualColumnNames, isNextVersionOf, wasProducedBy, hasDoi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     for row in data_objects:
         subject, object_spec_uri, name, acquisition_uri, submission_uri, data_start, data_end, sha256sum, number_of_rows, size_in_bytes, column_names, next_version_of_uri, produced_by, doi = row
@@ -199,7 +190,7 @@ def populate_data_objects_table(conn, max_data_objects=None):
         ))
 
         if len(data_to_insert) >= batch_size:
-            execute_batch(cursor, insertion_query, data_to_insert)
+            cursor.executemany(cursor, insertion_query, data_to_insert)
             total_inserted += len(data_to_insert)
             data_to_insert = []
 
@@ -207,7 +198,7 @@ def populate_data_objects_table(conn, max_data_objects=None):
                 print(f"Inserted {total_inserted} data objects...")
                 conn.commit()
 
-    execute_batch(cursor,insertion_query, data_to_insert)
+    cursor.executemany(insertion_query, data_to_insert)
     total_inserted += len(data_to_insert)
 
     conn.commit()
@@ -233,7 +224,7 @@ def update_next_version(conn):
         SELECT e.subj, e.obj as next_version_uri
         FROM rdf_triples e
         JOIN data_objects data_object ON e.subj = data_object.subject
-        WHERE e.pred = %s
+        WHERE e.pred = ?
     """, (is_next_version_of_pred,))
 
     updates_to_make = []
@@ -247,9 +238,9 @@ def update_next_version(conn):
 
     print(f"Updating {len(updates_to_make)} isNextVersionOf foreign key relationships...")
 
-    execute_batch(
+    cursor.executemany(
         cursor,
-        "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
+        "UPDATE data_objects SET isNextVersionOf = ? WHERE subject = ?",
         updates_to_make
     )
     conn.commit()
@@ -267,7 +258,7 @@ def update_next_version(conn):
         SELECT e.subj, e.obj as next_version_uri
         FROM rdf_triples e
         JOIN data_objects data_object ON e.subj = data_object.subject
-        WHERE e.pred = %s
+        WHERE e.pred = ?
     """, (is_next_version_of_pred,))
 
     updates_to_make = []
@@ -281,9 +272,9 @@ def update_next_version(conn):
 
     print(f"Updating {len(updates_to_make)} isNextVersionOf foreign key relationships...")
 
-    execute_batch(
+    cursor.executemany(
         cursor,
-        "UPDATE data_objects SET isNextVersionOf = %s WHERE subject = %s",
+        "UPDATE data_objects SET isNextVersionOf = ? WHERE subject = ?",
         updates_to_make
     )
 
@@ -301,7 +292,7 @@ def populate_keywords_tables(conn):
     query = """
         SELECT subj, obj as keywords_str
         FROM rdf_triples
-        WHERE pred = %s
+        WHERE pred = ?
     """
 
     cursor.execute(query, (keywords_pred,))
@@ -323,15 +314,14 @@ def populate_keywords_tables(conn):
                 # Get or create keyword ID
                 if keyword not in keyword_to_id:
                     # Try to insert the keyword
-                    cursor.execute("INSERT INTO keywords (keyword) VALUES (%s) ON CONFLICT (keyword) DO NOTHING", (keyword,))
-                    cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
+                    cursor.execute("INSERT OR IGNORE INTO keywords (keyword) VALUES (?)", (keyword,))
+                    cursor.execute("SELECT id FROM keywords WHERE keyword = ?", (keyword,))
                     keyword_to_id[keyword] = cursor.fetchone()[0]
 
                 triple_keyword_pairs.append((subject, keyword_to_id[keyword]))
 
-    execute_batch(
-        cursor,
-        "INSERT INTO triple_keywords (subject, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+    cursor.executemany(
+        "INSERT OR IGNORE INTO triple_keywords (subject, keyword_id) VALUES (?, ?)",
         triple_keyword_pairs
     )
 
@@ -381,7 +371,7 @@ def populate_project_keywords(conn, keyword_to_id):
         SELECT p.id, p.subject, e.obj as keywords_str
         FROM projects p
         JOIN rdf_triples e ON p.subject = e.subj
-        WHERE e.pred = %s
+        WHERE e.pred = ?
     """
 
     cursor.execute(query, (keywords_pred,))
@@ -404,9 +394,8 @@ def populate_project_keywords(conn, keyword_to_id):
 
     # Batch insert project-keyword relationships
     if project_keyword_pairs:
-        execute_batch(
-            cursor,
-            "INSERT INTO project_keywords (project_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        cursor.executemany(
+            "INSERT OR IGNORE INTO project_keywords (project_id, keyword_id) VALUES (?, ?)",
             project_keyword_pairs
         )
 
@@ -446,7 +435,7 @@ def populate_projects_table(conn):
         SELECT DISTINCT e.obj as project_uri
         FROM data_objects dobj
         JOIN rdf_triples e ON dobj.hasObjectSpec = e.subj
-        WHERE e.pred = %s
+        WHERE e.pred = ?
     """
 
     cursor.execute(query, (associated_project_pred,))
@@ -465,13 +454,13 @@ def populate_projects_table(conn):
     total_inserted = 0
     for project_uri in unique_project_uris:
         # Check if this project exists in rdf_triples to get name
-        cursor.execute("SELECT obj FROM rdf_triples WHERE subj = %s AND pred = %s", (project_uri, name_pred))
+        cursor.execute("SELECT obj FROM rdf_triples WHERE subj = ? AND pred = ?", (project_uri, name_pred))
         name_row = cursor.fetchone()
 
         name = name_row[0] if name_row else None
 
         cursor.execute(
-            "INSERT INTO projects (subject, name) VALUES (%s, %s) ON CONFLICT (subject) DO NOTHING",
+            "INSERT OR IGNORE INTO projects (subject, name) VALUES (?, ?)",
             (project_uri, name)
         )
         total_inserted += 1
@@ -535,9 +524,8 @@ def populate_aggregate_keywords(conn):
 
     for i in range(0, len(relationships), batch_size):
         batch = relationships[i:i+batch_size]
-        execute_batch(
-            cursor,
-            "INSERT INTO data_object_all_keywords (data_object_id, keyword_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        cursor.executemany(
+            "INSERT OR IGNORE INTO data_object_all_keywords (data_object_id, keyword_id) VALUES (?, ?)",
             batch
         )
         total_inserted += len(batch)

@@ -1,18 +1,9 @@
 #!/usr/bin/python
 
-import psycopg2
+import duckdb
+from db_connection import get_connection
 from collections import defaultdict
 import json
-
-
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
 
 
 def get_predicate_length_stats():

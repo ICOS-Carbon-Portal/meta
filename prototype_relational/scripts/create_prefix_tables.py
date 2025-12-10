@@ -13,7 +13,10 @@ import argparse
 from pathlib import Path
 from collections import defaultdict
 from typing import Dict, Set, List
-import psycopg2
+import duckdb
+import sys
+sys.path.insert(0, "..")
+from db_connection import get_connection
 
 
 def load_prefix_classes(json_path: str) -> dict:

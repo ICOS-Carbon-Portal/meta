@@ -13,7 +13,10 @@ import argparse
 from pathlib import Path
 from collections import defaultdict
 from typing import Dict, Set, Tuple, Optional, List
-import psycopg2
+import duckdb
+import sys
+sys.path.insert(0, "..")
+from db_connection import get_connection
 
 
 # Valid XSD datatypes - only these will be used for literal annotations
@@ -359,7 +362,7 @@ def check_if_uri_object(cursor, predicate: str, table_name: str, sample_size: in
         query = f"""
             SELECT object
             FROM {table_name}
-            WHERE predicate = %s
+            WHERE predicate = ?
             LIMIT {sample_size}
         """
         cursor.execute(query, (predicate,))

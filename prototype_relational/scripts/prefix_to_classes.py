@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
-import psycopg2
+import duckdb
+import sys
+sys.path.insert(0, "..")
+from db_connection import get_connection
 import json
 from datetime import datetime
 from collections import defaultdict
 
 
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
+
 
 
 def shorten_uri(uri):
@@ -44,7 +40,7 @@ def get_subject_classes(conn, prefix):
         FROM rdf_triples t
         JOIN rdf_triples class ON class.subj = t.subj
             AND class.pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-        WHERE t.subj LIKE %s
+        WHERE t.subj LIKE ?
         GROUP BY class.obj
         ORDER BY count DESC
     """
@@ -68,7 +64,7 @@ def get_object_classes(conn, prefix):
         FROM rdf_triples t
         JOIN rdf_triples class ON class.subj = t.obj
             AND class.pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-        WHERE t.obj LIKE %s
+        WHERE t.obj LIKE ?
         GROUP BY class.obj
         ORDER BY count DESC
     """
@@ -90,7 +86,7 @@ def get_predicates_as_subject(conn, prefix):
     query = """
         SELECT pred, COUNT(*) as count
         FROM rdf_triples
-        WHERE subj LIKE %s
+        WHERE subj LIKE ?
         GROUP BY pred
         ORDER BY count DESC
     """
@@ -112,7 +108,7 @@ def get_predicates_as_object(conn, prefix):
     query = """
         SELECT pred, COUNT(*) as count
         FROM rdf_triples
-        WHERE obj LIKE %s
+        WHERE obj LIKE ?
         GROUP BY pred
         ORDER BY count DESC
     """

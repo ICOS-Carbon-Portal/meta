@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
-import psycopg2
+import duckdb
+import sys
+sys.path.insert(0, "..")
+from db_connection import get_connection
 import json
 from datetime import datetime
 from collections import defaultdict
 
 
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
+
 
 
 def load_reference_prefixes(filename='icos_subject_prefixes.json'):
@@ -72,7 +68,7 @@ def analyze_table_prefixes(conn, table_name, prefixes):
     # Count rows that match ANY of the supplied prefixes
     if prefixes:
         # Build a query with OR conditions for all prefixes
-        conditions = ' OR '.join(['rdf_subject LIKE %s'] * len(prefixes))
+        conditions = ' OR '.join(['rdf_subject LIKE ?'] * len(prefixes))
         query = f"""
             SELECT COUNT(*)
             FROM {table_name}

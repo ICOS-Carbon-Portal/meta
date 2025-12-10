@@ -1,16 +1,8 @@
 #!/usr/bin/python
 
-import psycopg2
+import duckdb
+from db_connection import get_connection
 import sys
-
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
 
 def populate_spec_containsDataset():
     """
@@ -59,7 +51,7 @@ def populate_spec_containsDataset():
             SET spec_containsDataset = rdf.obj
             FROM rdf_triples rdf
             WHERE rdf.subj = data_objects.hasObjectSpec
-              AND rdf.pred = %s
+              AND rdf.pred = ?
               AND data_objects.spec_containsDataset IS DISTINCT FROM rdf.obj
         """
 
@@ -156,7 +148,7 @@ def populate_spec_dataset_field(db_column, predicate):
         SET {db_column} = rdf.obj
         FROM rdf_triples rdf
         WHERE rdf.subj = data_objects.spec_containsDataset
-          AND rdf.pred = %s
+          AND rdf.pred = ?
           AND data_objects.{db_column} IS DISTINCT FROM rdf.obj
     """
 

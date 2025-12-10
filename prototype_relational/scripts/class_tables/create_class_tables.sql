@@ -46,7 +46,7 @@ DROP TABLE IF EXISTS ct_webpage_elements CASCADE;
 -- UNION TABLE merging: cpmeta:SimpleObjectSpec, cpmeta:DataObjectSpec
 -- Class: MERGED:ct_object_specs (110 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_specs (
+CREATE TABLE IF NOT EXISTS ct_object_specs (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -71,7 +71,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_specs (
 -- UNION TABLE merging: cpmeta:SpatialCoverage, cpmeta:LatLonBox, cpmeta:Position
 -- Class: MERGED:ct_spatial_coverages (4,164 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_spatial_coverages (
+CREATE TABLE IF NOT EXISTS ct_spatial_coverages (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -91,7 +91,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_spatial_coverages (
 -- UNION TABLE merging: cpmeta:Organization
 -- Class: MERGED:ct_organizations (256 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_organizations (
+CREATE TABLE IF NOT EXISTS ct_organizations (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -110,7 +110,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_organizations (
 -- UNION TABLE merging: cpmeta:Station, cpmeta:AS, cpmeta:ES, cpmeta:OS, cpmeta:SailDrone, cpmeta:IngosStation, cpmeta:AtmoStation
 -- Class: MERGED:ct_stations (623 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_stations (
+CREATE TABLE IF NOT EXISTS ct_stations (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -161,7 +161,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_stations (
 -- UNION TABLE merging: cpmeta:DatasetSpec, cpmeta:TabularDatasetSpec
 -- Class: MERGED:ct_dataset_specs (45 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_specs (
+CREATE TABLE IF NOT EXISTS ct_dataset_specs (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -178,7 +178,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_specs (
 -- UNION TABLE merging: cpmeta:DataObject, cpmeta:DocumentObject
 -- Class: MERGED:ct_static_objects (2,344,302 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_static_objects (
+CREATE TABLE IF NOT EXISTS ct_static_objects (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -221,7 +221,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_static_objects (
 -- Table: ct_data_submissions
 -- Class: cpmeta:DataSubmission (2,344,302 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_submissions (
+CREATE TABLE IF NOT EXISTS ct_data_submissions (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -234,7 +234,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_submissions (
 -- Table: ct_data_acquisitions
 -- Class: cpmeta:DataAcquisition (2,341,317 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_acquisitions (
+CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -249,7 +249,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_acquisitions (
 -- Table: ct_data_productions
 -- Class: cpmeta:DataProduction (1,248,435 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_productions (
+CREATE TABLE IF NOT EXISTS ct_data_productions (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -265,7 +265,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_productions (
 -- Table: ct_variable_infos
 -- Class: cpmeta:VariableInfo (4,957 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_variable_infos (
+CREATE TABLE IF NOT EXISTS ct_variable_infos (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -278,7 +278,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_variable_infos (
 -- Table: ct_instruments
 -- Class: cpmeta:Instrument (4,826 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_instruments (
+CREATE TABLE IF NOT EXISTS ct_instruments (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -299,7 +299,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_instruments (
 -- Table: ct_memberships
 -- Class: cpmeta:Membership (1,870 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_memberships (
+CREATE TABLE IF NOT EXISTS ct_memberships (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -316,7 +316,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_memberships (
 -- Table: ct_persons
 -- Class: cpmeta:Person (1,146 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_persons (
+CREATE TABLE IF NOT EXISTS ct_persons (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -336,7 +336,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_persons (
 -- Table: ct_collections
 -- Class: cpmeta:Collection (778 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_collections (
+CREATE TABLE IF NOT EXISTS ct_collections (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -354,7 +354,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_collections (
 -- Table: ct_dataset_columns
 -- Class: cpmeta:DatasetColumn (270 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_columns (
+CREATE TABLE IF NOT EXISTS ct_dataset_columns (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -373,7 +373,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_columns (
 -- Table: ct_value_types
 -- Class: cpmeta:ValueType (166 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_value_types (
+CREATE TABLE IF NOT EXISTS ct_value_types (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -389,7 +389,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_value_types (
 -- Table: ct_link_boxes
 -- Class: cpmeta:LinkBox (158 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_link_boxes (
+CREATE TABLE IF NOT EXISTS ct_link_boxes (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -404,7 +404,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_link_boxes (
 -- Table: ct_fundings
 -- Class: cpmeta:Funding (115 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_fundings (
+CREATE TABLE IF NOT EXISTS ct_fundings (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -422,7 +422,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_fundings (
 -- Table: ct_dataset_variables
 -- Class: cpmeta:DatasetVariable (76 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_variables (
+CREATE TABLE IF NOT EXISTS ct_dataset_variables (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -436,7 +436,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_dataset_variables (
 -- Table: ct_plain_collections
 -- Class: cpmeta:PlainCollection (50 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_plain_collections (
+CREATE TABLE IF NOT EXISTS ct_plain_collections (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -448,7 +448,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_plain_collections (
 -- Table: ct_funders
 -- Class: cpmeta:Funder (47 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_funders (
+CREATE TABLE IF NOT EXISTS ct_funders (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -460,7 +460,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_funders (
 -- Table: ct_climate_zones
 -- Class: cpmeta:ClimateZone (30 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_climate_zones (
+CREATE TABLE IF NOT EXISTS ct_climate_zones (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -472,7 +472,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_climate_zones (
 -- Table: ct_webpage_elements
 -- Class: cpmeta:WebpageElements (28 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_webpage_elements (
+CREATE TABLE IF NOT EXISTS ct_webpage_elements (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -486,7 +486,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_webpage_elements (
 -- Table: ct_object_formats
 -- Class: cpmeta:ObjectFormat (22 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_formats (
+CREATE TABLE IF NOT EXISTS ct_object_formats (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -500,7 +500,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_formats (
 -- Table: ct_quantity_kinds
 -- Class: cpmeta:QuantityKind (21 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_quantity_kinds (
+CREATE TABLE IF NOT EXISTS ct_quantity_kinds (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -512,7 +512,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_quantity_kinds (
 -- Table: ct_ecosystem_types
 -- Class: cpmeta:EcosystemType (17 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_ecosystem_types (
+CREATE TABLE IF NOT EXISTS ct_ecosystem_types (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -524,7 +524,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_ecosystem_types (
 -- Table: ct_value_formats
 -- Class: cpmeta:ValueFormat (13 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_value_formats (
+CREATE TABLE IF NOT EXISTS ct_value_formats (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -536,7 +536,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_value_formats (
 -- Table: ct_projects
 -- Class: cpmeta:Project (12 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_projects (
+CREATE TABLE IF NOT EXISTS ct_projects (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -553,7 +553,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_projects (
 -- Table: ct_roles
 -- Class: cpmeta:Role (5 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_roles (
+CREATE TABLE IF NOT EXISTS ct_roles (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -565,7 +565,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_roles (
 -- Table: ct_data_themes
 -- Class: cpmeta:DataTheme (4 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_themes (
+CREATE TABLE IF NOT EXISTS ct_data_themes (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -578,7 +578,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_data_themes (
 -- Table: ct_object_encodings
 -- Class: cpmeta:ObjectEncoding (3 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_encodings (
+CREATE TABLE IF NOT EXISTS ct_object_encodings (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -589,7 +589,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_object_encodings (
 -- Table: ct_thematic_centers
 -- Class: cpmeta:ThematicCenter (3 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_thematic_centers (
+CREATE TABLE IF NOT EXISTS ct_thematic_centers (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -602,7 +602,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_thematic_centers (
 -- Table: ct_central_facilities
 -- Class: cpmeta:CentralFacility (2 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_central_facilities (
+CREATE TABLE IF NOT EXISTS ct_central_facilities (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -615,7 +615,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ct_central_facilities (
 -- Table: ct_specific_dataset_types
 -- Class: cpmeta:SpecificDatasetType (2 instances)
 
-CREATE UNLOGGED TABLE IF NOT EXISTS ct_specific_dataset_types (
+CREATE TABLE IF NOT EXISTS ct_specific_dataset_types (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,

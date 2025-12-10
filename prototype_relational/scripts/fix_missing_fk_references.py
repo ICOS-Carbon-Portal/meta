@@ -21,8 +21,8 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 from typing import Dict, Set, List, Tuple, Optional
-import psycopg2
-from psycopg2 import sql
+import duckdb
+
 from generate_class_tables import MERGE_GROUPS
 
 
@@ -325,8 +325,8 @@ def lookup_full_uri(cursor, missing_id: str, target_table: str, prefix_map: Dict
         query = sql.SQL("""
             SELECT DISTINCT obj
             FROM {}
-            WHERE obj LIKE %s
-              AND obj ~ %s
+            WHERE obj LIKE ?
+              AND obj ~ ?
             LIMIT 1
         """).format(sql.Identifier(triples_table))
 
@@ -347,8 +347,8 @@ def lookup_full_uri(cursor, missing_id: str, target_table: str, prefix_map: Dict
         query = sql.SQL("""
             SELECT DISTINCT subj
             FROM {}
-            WHERE subj LIKE %s
-              AND subj ~ %s
+            WHERE subj LIKE ?
+              AND subj ~ ?
             LIMIT 1
         """).format(sql.Identifier(triples_table))
 
@@ -368,8 +368,8 @@ def lookup_full_uri(cursor, missing_id: str, target_table: str, prefix_map: Dict
         query = sql.SQL("""
             SELECT DISTINCT obj
             FROM {}
-            WHERE obj LIKE %s
-              AND obj ~ %s
+            WHERE obj LIKE ?
+              AND obj ~ ?
             LIMIT 1
         """).format(sql.Identifier(triples_table))
 
@@ -388,8 +388,8 @@ def lookup_full_uri(cursor, missing_id: str, target_table: str, prefix_map: Dict
         query = sql.SQL("""
             SELECT DISTINCT subj
             FROM {}
-            WHERE subj LIKE %s
-              AND subj ~ %s
+            WHERE subj LIKE ?
+              AND subj ~ ?
             LIMIT 1
         """).format(sql.Identifier(triples_table))
 

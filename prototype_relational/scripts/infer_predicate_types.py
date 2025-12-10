@@ -15,7 +15,7 @@ import sys
 from collections import defaultdict
 from typing import Dict, Set, List
 from datetime import datetime
-import psycopg2
+import duckdb
 
 
 # Namespace definitions
@@ -80,8 +80,8 @@ def infer_column_type(cursor, predicate_uri: str, triples_table: str = 'rdf_trip
     query = f"""
         SELECT obj
         FROM {triples_table}
-        WHERE pred = %s
-        LIMIT %s
+        WHERE pred = ?
+        LIMIT ?
     """
 
     cursor.execute(query, (predicate_uri, sample_size))

@@ -15,7 +15,7 @@ import argparse
 import sys
 from collections import defaultdict
 from typing import Dict, Set, List, Optional
-import psycopg2
+import duckdb
 
 
 # Namespace definitions
@@ -69,7 +69,7 @@ def compute_cardinality_for_class(cursor, class_uri: str, predicate_uris: List[s
             -- Find all subjects of this class
             SELECT DISTINCT subj
             FROM {triples_table}
-            WHERE pred = %s AND obj = %s
+            WHERE pred = ? AND obj = ?
         ),
         subject_predicate_counts AS (
             -- Count how many values each subject has for each predicate
@@ -79,7 +79,7 @@ def compute_cardinality_for_class(cursor, class_uri: str, predicate_uris: List[s
                 COUNT(*) as value_count
             FROM {triples_table} t
             INNER JOIN class_subjects cs ON t.subj = cs.subj
-            WHERE t.pred = ANY(%s)
+            WHERE t.pred = ANY(?)
             GROUP BY t.pred, t.subj
         )
         -- Aggregate statistics per predicate

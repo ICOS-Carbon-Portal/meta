@@ -1,16 +1,8 @@
 #!/usr/bin/python
 
-import psycopg2
+import duckdb
+from db_connection import get_connection
 import sys
-
-def get_connection():
-    """Create and return a PostgreSQL database connection."""
-    return psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        port=5432,
-        password="ontop"
-    )
 
 def populate_hasObjectSpec():
     """
@@ -59,7 +51,7 @@ def populate_hasObjectSpec():
             SET hasObjectSpec = rdf.obj
             FROM rdf_triples rdf
             WHERE rdf.subj = data_objects.subject
-              AND rdf.pred = %s
+              AND rdf.pred = ?
               AND data_objects.hasObjectSpec IS DISTINCT FROM rdf.obj
         """
 

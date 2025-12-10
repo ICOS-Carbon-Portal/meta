@@ -709,7 +709,8 @@ def topological_sort_tables(fk_map: Dict[str, List[Tuple[str, str, str]]]) -> Li
 def generate_create_table_sql(table_name: str, columns: List[Dict],
                               foreign_keys: List[Tuple[str, str, str]] = None,
                               merge_config: dict = None,
-                              unlogged: bool = False) -> str:
+                              unlogged: bool = False,
+                              include_foreign_keys: bool = True) -> str:
     """
     Generate CREATE TABLE statement
 
@@ -719,6 +720,7 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
         foreign_keys: List of (column_name, ref_table, predicate_uri) tuples
         merge_config: Merge configuration if this is a union table
         unlogged: If True, create UNLOGGED table for faster writes (not crash-safe)
+        include_foreign_keys: If True, include FOREIGN KEY constraints in CREATE TABLE (default: True)
     """
     fk_cols = {fk[0] for fk in (foreign_keys or [])}
 
@@ -755,7 +757,7 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
 
     # Add inline FOREIGN KEY constraints for DuckDB compatibility
     # DuckDB requires FKs to be defined inline during CREATE TABLE
-    if foreign_keys:
+    if include_foreign_keys and foreign_keys:
         for col_name, ref_table, predicate_uri in foreign_keys:
             # Skip array columns (can't have FK constraints)
             is_array = any(col['name'] == col_name and col.get('is_array', False)
@@ -1168,12 +1170,20 @@ Examples:
 
   # Then generate SQL (creates four files: schema, population, FKs, and indexes)
   %(prog)s                                    # Generates create_class_tables.sql + populate_class_tables.sql + create_foreign_keys.sql + create_indexes.sql
-  %(prog)s --min-coverage 50                  # Only include predicates with 50%+ coverage
+  %(prog)s --min-coverage 50                  # Only include predicates with 50%%+ coverage
   %(prog)s --exclude-namespaces rdf,rdfs      # Skip RDF/RDFS predicates
   %(prog)s --drop                             # Include DROP TABLE statements
 
   # Execute directly in database (runs both schema and population)
   %(prog)s --db --host localhost --dbname postgres
+
+  # Workflow with missing FK targets (recommended when data may have missing references):
+  # 1. Generate schema without FKs and populate
+  %(prog)s --no-foreign-keys
+  # 2. Find and fix missing FK targets
+  ./fix_missing_fk_references.py --output fix_fks.sql
+  # 3. Apply fixes and regenerate with FKs
+  %(prog)s
         """
     )
 
@@ -1213,6 +1223,11 @@ Examples:
     unlogged_group.add_argument('--logged', dest='unlogged', action='store_false',
                        help='Create LOGGED tables (crash-safe, but slower)')
     parser.set_defaults(unlogged=True)
+
+    # Foreign key constraints
+    parser.add_argument('--no-foreign-keys', '--no-fk', dest='no_foreign_keys',
+                       action='store_true',
+                       help='Skip foreign key constraints in generated schema (useful for initial population before fixing missing FK targets)')
 
     args = parser.parse_args()
 
@@ -1366,6 +1381,10 @@ Examples:
         schema_lines.append("-- Generated SQL for class-based tables (SCHEMA)")
         schema_lines.append(f"-- Source: {args.input}")
         schema_lines.append(f"-- Total tables: {len(table_names)}")
+        if args.no_foreign_keys:
+            schema_lines.append("-- Foreign key constraints: DISABLED (use --no-foreign-keys flag)")
+        else:
+            schema_lines.append("-- Foreign key constraints: ENABLED")
         schema_lines.append("")
 
         # Sort tables by dependency order (used for both DROP and CREATE)
@@ -1415,7 +1434,8 @@ Examples:
             schema_lines.append("")
 
             # Pass non-array FKs for inline FK creation
-            create_sql = generate_create_table_sql(table_name, columns, non_array_fks, merge_config, args.unlogged)
+            create_sql = generate_create_table_sql(table_name, columns, non_array_fks, merge_config, args.unlogged,
+                                                   include_foreign_keys=not args.no_foreign_keys)
             schema_lines.append(create_sql)
             schema_lines.append("")
 
@@ -1427,22 +1447,39 @@ Examples:
         fk_lines.append("-- Foreign key constraints for DuckDB")
         fk_lines.append(f"-- Source: {args.input}")
         fk_lines.append("")
-        fk_lines.append("-- " + "=" * 70)
-        fk_lines.append("-- NOTE: FOREIGN KEYS ARE DEFINED INLINE")
-        fk_lines.append("-- " + "=" * 70)
-        fk_lines.append("")
-        fk_lines.append("-- For DuckDB compatibility, foreign key constraints are defined")
-        fk_lines.append("-- inline within the CREATE TABLE statements in create_class_tables.sql")
-        fk_lines.append("")
-        fk_lines.append("-- DuckDB does not support ALTER TABLE ADD CONSTRAINT for foreign keys.")
-        fk_lines.append("-- All foreign keys must be defined during table creation.")
-        fk_lines.append("")
-        fk_lines.append("-- Tables are created in dependency order to ensure referenced tables")
-        fk_lines.append("-- exist before referencing tables are created.")
-        fk_lines.append("")
-        fk_lines.append("-- Note: Array columns (multi-valued properties) do not have FK constraints")
-        fk_lines.append("-- as neither PostgreSQL nor DuckDB support foreign key constraints on array columns.")
-        fk_lines.append("")
+
+        if args.no_foreign_keys:
+            fk_lines.append("-- " + "=" * 70)
+            fk_lines.append("-- FOREIGN KEY CONSTRAINTS WERE DISABLED")
+            fk_lines.append("-- " + "=" * 70)
+            fk_lines.append("")
+            fk_lines.append("-- The schema was generated with --no-foreign-keys flag.")
+            fk_lines.append("-- No foreign key constraints were added to the CREATE TABLE statements.")
+            fk_lines.append("")
+            fk_lines.append("-- This is useful for initial population when some FK targets may be missing.")
+            fk_lines.append("-- Workflow:")
+            fk_lines.append("--   1. Populate data without FK constraints")
+            fk_lines.append("--   2. Run fix_missing_fk_references.py to find and fix missing FK targets")
+            fk_lines.append("--   3. Regenerate schema with FKs enabled (without --no-foreign-keys)")
+            fk_lines.append("--   4. Repopulate data with FK constraints enforced")
+            fk_lines.append("")
+        else:
+            fk_lines.append("-- " + "=" * 70)
+            fk_lines.append("-- NOTE: FOREIGN KEYS ARE DEFINED INLINE")
+            fk_lines.append("-- " + "=" * 70)
+            fk_lines.append("")
+            fk_lines.append("-- For DuckDB compatibility, foreign key constraints are defined")
+            fk_lines.append("-- inline within the CREATE TABLE statements in create_class_tables.sql")
+            fk_lines.append("")
+            fk_lines.append("-- DuckDB does not support ALTER TABLE ADD CONSTRAINT for foreign keys.")
+            fk_lines.append("-- All foreign keys must be defined during table creation.")
+            fk_lines.append("")
+            fk_lines.append("-- Tables are created in dependency order to ensure referenced tables")
+            fk_lines.append("-- exist before referencing tables are created.")
+            fk_lines.append("")
+            fk_lines.append("-- Note: Array columns (multi-valued properties) do not have FK constraints")
+            fk_lines.append("-- as neither PostgreSQL nor DuckDB support foreign key constraints on array columns.")
+            fk_lines.append("")
 
         # Generate Index SQL
         print(f"Generating index SQL...")
@@ -1482,14 +1519,19 @@ Examples:
         populate_lines.append("-- Run this script after creating tables with create_class_tables.sql")
         populate_lines.append("")
 
-        # INSERT statements
+        # INSERT statements (in dependency order to respect foreign keys)
         populate_lines.append("-- " + "=" * 70)
-        populate_lines.append("-- POPULATE TABLES")
+        populate_lines.append("-- POPULATE TABLES (in dependency order)")
         populate_lines.append("-- " + "=" * 70)
         populate_lines.append("")
 
-        for class_data in classes:
-            table_name = table_names[class_data['class_uri']]
+        # Use table_order (dependency order) for population, same as schema creation
+        for table_name in table_order:
+            # Skip if table not in our list (referenced but not created)
+            if table_name not in table_to_class:
+                continue
+
+            class_data = table_to_class[table_name]
             columns = columns_map[table_name]
 
             if not columns:

@@ -915,7 +915,7 @@ def generate_insert_sql(table_name: str, class_uri: str, columns: List[Dict],
         union_parts.append('\n'.join(select_lines))
 
     # Combine with UNION ALL
-    lines = [f"INSERT INTO {table_name} (id, rdf_subject, prefix, {type_column}"]
+    lines = [f"INSERT OR IGNORE INTO {table_name} (id, rdf_subject, prefix, {type_column}"]
     for col in columns:
         lines.append(f", {col['name']}")
     lines.append(")")
@@ -934,7 +934,7 @@ def _generate_single_insert_sql(table_name: str, class_uri: str, columns: List[D
     fk_map = fk_map or {}
     fk_cols = {fk[0]: fk[1] for fk in fk_map.get(table_name, [])}
 
-    lines = [f"INSERT INTO {table_name} (id, rdf_subject, prefix"]
+    lines = [f"INSERT OR IGNORE INTO {table_name} (id, rdf_subject, prefix"]
 
     # Add column names
     for col in columns:
@@ -1074,8 +1074,8 @@ def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
     case_parts = ["CASE"]
     for prefix in sorted_prefixes:
         # Use LIKE for pattern matching - escape any SQL wildcards in the prefix
-        escaped_prefix = prefix.replace('%', r'\%')
-        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN '{prefix}'")
+        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
+        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' ESCAPE '\\' THEN '{prefix}'")
 
     # No ELSE clause - will cause error if no prefix matches
     case_parts.append("    END")
@@ -1114,9 +1114,9 @@ def _generate_suffix_extraction_sql(column_expr: str, table_name: str,
     # Build CASE statement with hardcoded positions
     case_parts = ["CASE"]
     for prefix in sorted_prefixes:
-        escaped_prefix = prefix.replace('%', r'\%')
+        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
         position = len(prefix) + 1  # +1 because SUBSTRING is 1-indexed
-        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN {position}")
+        case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' ESCAPE '\\' THEN {position}")
 
     # No ELSE clause - will error if no prefix matches
     case_parts.append("    END")

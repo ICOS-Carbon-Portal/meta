@@ -12,6 +12,7 @@
 -- Populate ct_object_specs
 -- UNION TABLE merging: cpmeta:SimpleObjectSpec, cpmeta:DataObjectSpec
 -- Class: MERGED:ct_object_specs (110 instances)
+SELECT 'Populating ct_object_specs (110 instances)...' AS status;
 INSERT INTO ct_object_specs (id, rdf_subject, prefix, spec_type
 , contains_dataset
 , has_associated_project
@@ -81,6 +82,7 @@ GROUP BY subj
 -- Populate ct_spatial_coverages
 -- UNION TABLE merging: cpmeta:SpatialCoverage, cpmeta:LatLonBox, cpmeta:Position
 -- Class: MERGED:ct_spatial_coverages (4,164 instances)
+SELECT 'Populating ct_spatial_coverages (4,164 instances)...' AS status;
 INSERT INTO ct_spatial_coverages (id, rdf_subject, prefix, coverage_type
 , as_geo_json
 , label
@@ -179,6 +181,7 @@ GROUP BY subj
 -- Populate ct_organizations
 -- UNION TABLE merging: cpmeta:Organization
 -- Class: MERGED:ct_organizations (256 instances)
+SELECT 'Populating ct_organizations (256 instances)...' AS status;
 INSERT INTO ct_organizations (id, rdf_subject, prefix, org_type
 , has_name
 , label
@@ -211,6 +214,7 @@ GROUP BY subj
 -- Populate ct_stations
 -- UNION TABLE merging: cpmeta:Station, cpmeta:AS, cpmeta:ES, cpmeta:OS, cpmeta:SailDrone, cpmeta:IngosStation, cpmeta:AtmoStation
 -- Class: MERGED:ct_stations (623 instances)
+SELECT 'Populating ct_stations (623 instances)...' AS status;
 INSERT INTO ct_stations (id, rdf_subject, prefix, station_type
 , has_name
 , country
@@ -711,6 +715,7 @@ GROUP BY subj
 -- Populate ct_dataset_specs
 -- UNION TABLE merging: cpmeta:DatasetSpec, cpmeta:TabularDatasetSpec
 -- Class: MERGED:ct_dataset_specs (45 instances)
+SELECT 'Populating ct_dataset_specs (45 instances)...' AS status;
 INSERT INTO ct_dataset_specs (id, rdf_subject, prefix, dataset_type
 , has_variable
 , label
@@ -756,6 +761,7 @@ GROUP BY subj
 -- Populate ct_static_objects
 -- UNION TABLE merging: cpmeta:DataObject, cpmeta:DocumentObject
 -- Class: MERGED:ct_static_objects (2,344,302 instances)
+SELECT 'Populating ct_static_objects (2,344,302 instances)...' AS status;
 INSERT INTO ct_static_objects (id, rdf_subject, prefix, object_type
 , has_name
 , has_object_spec
@@ -889,6 +895,7 @@ GROUP BY subj
 
 -- Populate ct_data_submissions
 -- Class: cpmeta:DataSubmission (2,344,302 instances)
+SELECT 'Populating ct_data_submissions (2,344,302 instances)...' AS status;
 INSERT INTO ct_data_submissions (id, rdf_subject, prefix
 , ended_at_time
 , started_at_time
@@ -910,6 +917,7 @@ GROUP BY subj;
 
 -- Populate ct_data_acquisitions
 -- Class: cpmeta:DataAcquisition (2,341,317 instances)
+SELECT 'Populating ct_data_acquisitions (2,341,317 instances)...' AS status;
 INSERT INTO ct_data_acquisitions (id, rdf_subject, prefix
 , was_performed_with
 , ended_at_time
@@ -940,6 +948,7 @@ GROUP BY subj;
 
 -- Populate ct_data_productions
 -- Class: cpmeta:DataProduction (1,248,435 instances)
+SELECT 'Populating ct_data_productions (1,248,435 instances)...' AS status;
 INSERT INTO ct_data_productions (id, rdf_subject, prefix
 , has_end_time
 , was_performed_by
@@ -967,6 +976,7 @@ GROUP BY subj;
 
 -- Populate ct_variable_infos
 -- Class: cpmeta:VariableInfo (4,957 instances)
+SELECT 'Populating ct_variable_infos (4,957 instances)...' AS status;
 INSERT INTO ct_variable_infos (id, rdf_subject, prefix
 , label
 , has_max_value
@@ -988,6 +998,7 @@ GROUP BY subj;
 
 -- Populate ct_instruments
 -- Class: cpmeta:Instrument (4,826 instances)
+SELECT 'Populating ct_instruments (4,826 instances)...' AS status;
 INSERT INTO ct_instruments (id, rdf_subject, prefix
 , has_model
 , has_serial_number
@@ -1025,6 +1036,7 @@ GROUP BY subj;
 
 -- Populate ct_memberships
 -- Class: cpmeta:Membership (1,870 instances)
+SELECT 'Populating ct_memberships (1,870 instances)...' AS status;
 INSERT INTO ct_memberships (id, rdf_subject, prefix
 , label
 , has_role
@@ -1054,6 +1066,7 @@ GROUP BY subj;
 
 -- Populate ct_persons
 -- Class: cpmeta:Person (1,146 instances)
+SELECT 'Populating ct_persons (1,146 instances)...' AS status;
 INSERT INTO ct_persons (id, rdf_subject, prefix
 , has_membership
 , has_first_name
@@ -1089,6 +1102,7 @@ GROUP BY subj;
 
 -- Populate ct_collections
 -- Class: cpmeta:Collection (778 instances)
+SELECT 'Populating ct_collections (778 instances)...' AS status;
 INSERT INTO ct_collections (id, rdf_subject, prefix
 , has_part
 , creator
@@ -1124,6 +1138,7 @@ GROUP BY subj;
 
 -- Populate ct_dataset_columns
 -- Class: cpmeta:DatasetColumn (270 instances)
+SELECT 'Populating ct_dataset_columns (270 instances)...' AS status;
 INSERT INTO ct_dataset_columns (id, rdf_subject, prefix
 , has_column_title
 , has_value_format
@@ -1157,6 +1172,7 @@ GROUP BY subj;
 
 -- Populate ct_value_types
 -- Class: cpmeta:ValueType (166 instances)
+SELECT 'Populating ct_value_types (166 instances)...' AS status;
 INSERT INTO ct_value_types (id, rdf_subject, prefix
 , label
 , has_quantity_kind
@@ -1184,6 +1200,7 @@ GROUP BY subj;
 
 -- Populate ct_link_boxes
 -- Class: cpmeta:LinkBox (158 instances)
+SELECT 'Populating ct_link_boxes (158 instances)...' AS status;
 INSERT INTO ct_link_boxes (id, rdf_subject, prefix
 , has_cover_image
 , has_name
@@ -1209,6 +1226,7 @@ GROUP BY subj;
 
 -- Populate ct_fundings
 -- Class: cpmeta:Funding (115 instances)
+SELECT 'Populating ct_fundings (115 instances)...' AS status;
 INSERT INTO ct_fundings (id, rdf_subject, prefix
 , has_funder
 , label
@@ -1240,6 +1258,7 @@ GROUP BY subj;
 
 -- Populate ct_dataset_variables
 -- Class: cpmeta:DatasetVariable (76 instances)
+SELECT 'Populating ct_dataset_variables (76 instances)...' AS status;
 INSERT INTO ct_dataset_variables (id, rdf_subject, prefix
 , has_value_type
 , has_variable_title
@@ -1263,6 +1282,7 @@ GROUP BY subj;
 
 -- Populate ct_plain_collections
 -- Class: cpmeta:PlainCollection (50 instances)
+SELECT 'Populating ct_plain_collections (50 instances)...' AS status;
 INSERT INTO ct_plain_collections (id, rdf_subject, prefix
 , has_part
 , is_next_version_of
@@ -1282,6 +1302,7 @@ GROUP BY subj;
 
 -- Populate ct_funders
 -- Class: cpmeta:Funder (47 instances)
+SELECT 'Populating ct_funders (47 instances)...' AS status;
 INSERT INTO ct_funders (id, rdf_subject, prefix
 , has_etc_id
 , has_name
@@ -1301,6 +1322,7 @@ GROUP BY subj;
 
 -- Populate ct_climate_zones
 -- Class: cpmeta:ClimateZone (30 instances)
+SELECT 'Populating ct_climate_zones (30 instances)...' AS status;
 INSERT INTO ct_climate_zones (id, rdf_subject, prefix
 , label
 , see_also
@@ -1320,6 +1342,7 @@ GROUP BY subj;
 
 -- Populate ct_webpage_elements
 -- Class: cpmeta:WebpageElements (28 instances)
+SELECT 'Populating ct_webpage_elements (28 instances)...' AS status;
 INSERT INTO ct_webpage_elements (id, rdf_subject, prefix
 , has_linkbox
 , has_cover_image
@@ -1343,6 +1366,7 @@ GROUP BY subj;
 
 -- Populate ct_object_formats
 -- Class: cpmeta:ObjectFormat (22 instances)
+SELECT 'Populating ct_object_formats (22 instances)...' AS status;
 INSERT INTO ct_object_formats (id, rdf_subject, prefix
 , label
 , has_good_flag_value
@@ -1366,6 +1390,7 @@ GROUP BY subj;
 
 -- Populate ct_quantity_kinds
 -- Class: cpmeta:QuantityKind (21 instances)
+SELECT 'Populating ct_quantity_kinds (21 instances)...' AS status;
 INSERT INTO ct_quantity_kinds (id, rdf_subject, prefix
 , label
 , comment
@@ -1385,6 +1410,7 @@ GROUP BY subj;
 
 -- Populate ct_ecosystem_types
 -- Class: cpmeta:EcosystemType (17 instances)
+SELECT 'Populating ct_ecosystem_types (17 instances)...' AS status;
 INSERT INTO ct_ecosystem_types (id, rdf_subject, prefix
 , label
 , comment
@@ -1404,6 +1430,7 @@ GROUP BY subj;
 
 -- Populate ct_value_formats
 -- Class: cpmeta:ValueFormat (13 instances)
+SELECT 'Populating ct_value_formats (13 instances)...' AS status;
 INSERT INTO ct_value_formats (id, rdf_subject, prefix
 , label
 , comment
@@ -1423,6 +1450,7 @@ GROUP BY subj;
 
 -- Populate ct_projects
 -- Class: cpmeta:Project (12 instances)
+SELECT 'Populating ct_projects (12 instances)...' AS status;
 INSERT INTO ct_projects (id, rdf_subject, prefix
 , comment
 , label
@@ -1452,6 +1480,7 @@ GROUP BY subj;
 
 -- Populate ct_roles
 -- Class: cpmeta:Role (5 instances)
+SELECT 'Populating ct_roles (5 instances)...' AS status;
 INSERT INTO ct_roles (id, rdf_subject, prefix
 , label
 , comment
@@ -1471,6 +1500,7 @@ GROUP BY subj;
 
 -- Populate ct_data_themes
 -- Class: cpmeta:DataTheme (4 instances)
+SELECT 'Populating ct_data_themes (4 instances)...' AS status;
 INSERT INTO ct_data_themes (id, rdf_subject, prefix
 , has_icon
 , has_marker_icon
@@ -1492,6 +1522,7 @@ GROUP BY subj;
 
 -- Populate ct_object_encodings
 -- Class: cpmeta:ObjectEncoding (3 instances)
+SELECT 'Populating ct_object_encodings (3 instances)...' AS status;
 INSERT INTO ct_object_encodings (id, rdf_subject, prefix
 , label
 )
@@ -1509,6 +1540,7 @@ GROUP BY subj;
 
 -- Populate ct_thematic_centers
 -- Class: cpmeta:ThematicCenter (3 instances)
+SELECT 'Populating ct_thematic_centers (3 instances)...' AS status;
 INSERT INTO ct_thematic_centers (id, rdf_subject, prefix
 , has_data_theme
 , has_name
@@ -1530,6 +1562,7 @@ GROUP BY subj;
 
 -- Populate ct_central_facilities
 -- Class: cpmeta:CentralFacility (2 instances)
+SELECT 'Populating ct_central_facilities (2 instances)...' AS status;
 INSERT INTO ct_central_facilities (id, rdf_subject, prefix
 , has_name
 , label
@@ -1551,6 +1584,7 @@ GROUP BY subj;
 
 -- Populate ct_specific_dataset_types
 -- Class: cpmeta:SpecificDatasetType (2 instances)
+SELECT 'Populating ct_specific_dataset_types (2 instances)...' AS status;
 INSERT INTO ct_specific_dataset_types (id, rdf_subject, prefix
 , label
 )

@@ -658,6 +658,54 @@ def build_foreign_key_map(classes: List[dict]) -> Dict[str, List[Tuple[str, str,
     return dict(fk_map)
 
 
+def topological_sort_tables(fk_map: Dict[str, List[Tuple[str, str, str]]]) -> List[str]:
+    """
+    Sort tables in dependency order using topological sort.
+    Tables with no dependencies come first.
+
+    Returns list of table names in creation order.
+    """
+    # Build dependency graph: table -> set of tables it depends on
+    dependencies = {}
+    all_tables = set(fk_map.keys())
+
+    for table, fks in fk_map.items():
+        deps = set()
+        for col_name, ref_table, pred_uri in fks:
+            if ref_table != table:  # Ignore self-references
+                deps.add(ref_table)
+                all_tables.add(ref_table)
+        dependencies[table] = deps
+
+    # Add tables with no FKs
+    for table in all_tables:
+        if table not in dependencies:
+            dependencies[table] = set()
+
+    # Kahn's algorithm for topological sort
+    sorted_tables = []
+    no_deps = [t for t, deps in dependencies.items() if not deps]
+
+    while no_deps:
+        table = no_deps.pop(0)
+        sorted_tables.append(table)
+
+        # Remove this table from other tables' dependencies
+        for other_table in list(dependencies.keys()):
+            if table in dependencies[other_table]:
+                dependencies[other_table].remove(table)
+                if not dependencies[other_table]:
+                    no_deps.append(other_table)
+
+    # Check for circular dependencies
+    if len(sorted_tables) != len(all_tables):
+        # Handle circular dependencies by breaking cycles
+        remaining = [t for t in all_tables if t not in sorted_tables]
+        sorted_tables.extend(remaining)
+
+    return sorted_tables
+
+
 def generate_create_table_sql(table_name: str, columns: List[Dict],
                               foreign_keys: List[Tuple[str, str, str]] = None,
                               merge_config: dict = None,
@@ -703,7 +751,21 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
         lines.append(f"    {col['name']} {col_type},")
 
     # Add CHECK constraint: prefix || id = rdf_subject
-    lines.append("    CHECK (prefix || id = rdf_subject)")
+    lines.append("    CHECK (prefix || id = rdf_subject),")
+
+    # Add inline FOREIGN KEY constraints for DuckDB compatibility
+    # DuckDB requires FKs to be defined inline during CREATE TABLE
+    if foreign_keys:
+        for col_name, ref_table, predicate_uri in foreign_keys:
+            # Skip array columns (can't have FK constraints)
+            is_array = any(col['name'] == col_name and col.get('is_array', False)
+                          for col in columns)
+            if not is_array:
+                lines.append(f"    FOREIGN KEY ({col_name}) REFERENCES {ref_table}(id),")
+
+    # Remove trailing comma from last line
+    if lines[-1].endswith(','):
+        lines[-1] = lines[-1][:-1]
 
     lines.append(");")
 
@@ -713,20 +775,13 @@ def generate_create_table_sql(table_name: str, columns: List[Dict],
 def generate_foreign_key_sql(table_name: str, foreign_keys: List[Tuple[str, str, str]]) -> str:
     """
     Generate ALTER TABLE statements to add foreign key constraints
+
+    NOTE: For DuckDB, foreign keys should be added inline during CREATE TABLE.
+    This function is kept for compatibility but returns comments for DuckDB.
     """
-    if not foreign_keys:
-        return ""
-
-    lines = ["BEGIN;\n"]
-    for col_name, ref_table, predicate_uri in foreign_keys:
-        fk_name = f"fk_{table_name}_{col_name}"
-        lines.append(
-            f"ALTER TABLE {table_name} ADD CONSTRAINT {fk_name} "
-            f"FOREIGN KEY ({col_name}) REFERENCES {ref_table}(id);"
-        )
-    lines.append("\nCOMMIT;")
-
-    return '\n'.join(lines)
+    # For DuckDB, FKs are now inline in CREATE TABLE statements
+    # Return empty string as FKs are handled elsewhere
+    return ""
 
 
 def generate_indexes_sql(table_name: str, columns: List[Dict],
@@ -1313,22 +1368,44 @@ Examples:
         schema_lines.append(f"-- Total tables: {len(table_names)}")
         schema_lines.append("")
 
-        schema_lines.append("-- Drop existing tables")
-        for table_name in sorted(table_names.values()):
-            schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
+        # Sort tables by dependency order (used for both DROP and CREATE)
+        print("  Sorting tables by dependency order...")
+        table_order = topological_sort_tables(fk_map)
+        print(f"  Table creation order determined for {len(table_order)} tables")
+
+        # Drop existing tables in reverse dependency order
+        schema_lines.append("-- Drop existing tables (in reverse dependency order)")
+        for table_name in reversed(table_order):
+            # Only drop tables we're managing
+            if table_name in table_names.values():
+                schema_lines.append(f"DROP TABLE IF EXISTS {table_name} CASCADE;")
         schema_lines.append("")
 
         # CREATE TABLE statements
         schema_lines.append("-- " + "=" * 70)
-        schema_lines.append("-- CREATE TABLES")
+        schema_lines.append("-- CREATE TABLES (in dependency order for inline foreign keys)")
         schema_lines.append("-- " + "=" * 70)
         schema_lines.append("")
 
-        for class_data in classes:
-            table_name = table_names[class_data['class_uri']]
+        # Create reverse mapping from table_name to class_data
+        table_to_class = {table_names[c['class_uri']]: c for c in classes}
+
+        # Generate CREATE TABLE statements in dependency order
+        for table_name in table_order:
+            # Skip if table not in our list (referenced but not created)
+            if table_name not in table_to_class:
+                continue
+
+            class_data = table_to_class[table_name]
             columns = columns_map[table_name]
             fks = fk_map.get(table_name, [])
             merge_config = class_data.get('merge_config')
+
+            # Filter out array column FKs (can't have FK constraints)
+            array_col_names = {col['name'] for col in columns if col.get('is_array', False)}
+            non_array_fks = [(col_name, ref_table, pred_uri)
+                            for col_name, ref_table, pred_uri in fks
+                            if col_name not in array_col_names]
 
             schema_lines.append(f"-- Table: {table_name}")
             if merge_config:
@@ -1337,39 +1414,35 @@ Examples:
             schema_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
             schema_lines.append("")
 
-            create_sql = generate_create_table_sql(table_name, columns, fks, merge_config, args.unlogged)
+            # Pass non-array FKs for inline FK creation
+            create_sql = generate_create_table_sql(table_name, columns, non_array_fks, merge_config, args.unlogged)
             schema_lines.append(create_sql)
             schema_lines.append("")
 
-        # Generate Foreign Key SQL
-        print(f"Generating foreign key SQL...")
+        # Generate Foreign Key SQL (now just a note for DuckDB)
+        print(f"Generating foreign key note...")
         fk_lines = []
 
-        # Header
-        fk_lines.append("-- Generated SQL for foreign key constraints")
+        # For DuckDB, FKs are defined inline in CREATE TABLE statements
+        fk_lines.append("-- Foreign key constraints for DuckDB")
         fk_lines.append(f"-- Source: {args.input}")
-        fk_lines.append(f"-- Total tables: {len(table_names)}")
         fk_lines.append("")
         fk_lines.append("-- " + "=" * 70)
-        fk_lines.append("-- FOREIGN KEY CONSTRAINTS")
+        fk_lines.append("-- NOTE: FOREIGN KEYS ARE DEFINED INLINE")
+        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("")
+        fk_lines.append("-- For DuckDB compatibility, foreign key constraints are defined")
+        fk_lines.append("-- inline within the CREATE TABLE statements in create_class_tables.sql")
+        fk_lines.append("")
+        fk_lines.append("-- DuckDB does not support ALTER TABLE ADD CONSTRAINT for foreign keys.")
+        fk_lines.append("-- All foreign keys must be defined during table creation.")
+        fk_lines.append("")
+        fk_lines.append("-- Tables are created in dependency order to ensure referenced tables")
+        fk_lines.append("-- exist before referencing tables are created.")
+        fk_lines.append("")
         fk_lines.append("-- Note: Array columns (multi-valued properties) do not have FK constraints")
-        fk_lines.append("-- PostgreSQL does not support foreign key constraints on array columns")
-        fk_lines.append("-- " + "=" * 70)
+        fk_lines.append("-- as neither PostgreSQL nor DuckDB support foreign key constraints on array columns.")
         fk_lines.append("")
-
-        for table_name, fks in sorted(fk_map.items()):
-            if fks:
-                # Filter out foreign keys for array columns (PostgreSQL doesn't support FK constraints on arrays)
-                columns = columns_map.get(table_name, [])
-                array_col_names = {col['name'] for col in columns if col.get('is_array', False)}
-                non_array_fks = [(col_name, ref_table, pred_uri) for col_name, ref_table, pred_uri in fks
-                                 if col_name not in array_col_names]
-
-                if non_array_fks:
-                    fk_sql = generate_foreign_key_sql(table_name, non_array_fks)
-                    fk_lines.append(f"-- Foreign keys for {table_name}")
-                    fk_lines.append(fk_sql)
-                    fk_lines.append("")
 
         # Generate Index SQL
         print(f"Generating index SQL...")
@@ -1429,6 +1502,11 @@ Examples:
             if merge_config:
                 populate_lines.append(f"-- UNION TABLE merging: {', '.join(merged_from)}")
             populate_lines.append(f"-- Class: {class_data['class_name']} ({class_data['instance_count']:,} instances)")
+
+            # Add progress output (DuckDB-compatible)
+            instance_count = class_data['instance_count']
+            populate_lines.append(f"SELECT 'Populating {table_name} ({instance_count:,} instances)...' AS status;")
+
             insert_sql = generate_insert_sql(
                 table_name, class_data['class_uri'], columns,
                 rdf_type_uri, args.triples_table,
@@ -1520,18 +1598,8 @@ Examples:
                 print(f"\n  Tables populated successfully!")
                 conn.commit()
 
-                # Execute foreign key SQL
-                print("\nExecuting foreign key SQL...")
-                fk_statements = [s.strip() for s in fk_sql.split(';') if s.strip() and not s.strip().startswith('--')]
-                print(f"  {len(fk_statements)} statements to execute")
-
-                for i, statement in enumerate(fk_statements, 1):
-                    if statement:
-                        print(f"  [{i}/{len(fk_statements)}] Executing...", end='\r')
-                        cursor.execute(statement)
-
-                print(f"\n  Foreign keys created successfully!")
-                conn.commit()
+                # Foreign keys are already created inline during CREATE TABLE
+                print("\n  Foreign keys were created inline during table creation")
 
                 # Execute index SQL
                 print("\nExecuting index SQL...")
@@ -1546,7 +1614,7 @@ Examples:
                 print(f"\n  Indexes created successfully!")
                 conn.commit()
 
-                print("\nDone! All tables created, populated, with foreign keys and indexes!")
+                print("\nDone! All tables created and populated with inline foreign keys and indexes!")
 
             except Exception as e:
                 print(f"\nError executing SQL: {e}")

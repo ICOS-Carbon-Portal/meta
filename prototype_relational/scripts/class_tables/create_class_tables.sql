@@ -333,8 +333,6 @@ CREATE TABLE IF NOT EXISTS ct_memberships (
     has_end_time TIMESTAMP WITH TIME ZONE,
     has_extra_role_info TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_role) REFERENCES ct_roles(id),
-    FOREIGN KEY (at_organization) REFERENCES ct_organizations(id)
 );
 
 -- Table: ct_webpage_elements
@@ -379,7 +377,6 @@ CREATE TABLE IF NOT EXISTS ct_data_submissions (
     started_at_time TIMESTAMP WITH TIME ZONE,
     was_associated_with TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (was_associated_with) REFERENCES ct_thematic_centers(id)
 );
 
 -- Table: ct_data_productions
@@ -396,8 +393,6 @@ CREATE TABLE IF NOT EXISTS ct_data_productions (
     comment TEXT,
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (was_performed_by) REFERENCES ct_thematic_centers(id),
-    FOREIGN KEY (was_hosted_by) REFERENCES ct_thematic_centers(id)
 );
 
 -- Table: ct_persons
@@ -469,11 +464,9 @@ CREATE TABLE IF NOT EXISTS ct_stations (
     has_otc_id TEXT,
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_responsible_organization) REFERENCES ct_organizations(id),
     FOREIGN KEY (has_climate_zone) REFERENCES ct_climate_zones(id),
     FOREIGN KEY (has_webpage_elements) REFERENCES ct_webpage_elements(id),
     FOREIGN KEY (has_ecosystem_type) REFERENCES ct_ecosystem_types(id),
-    FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id)
 );
 
 -- Table: ct_dataset_columns
@@ -493,8 +486,6 @@ CREATE TABLE IF NOT EXISTS ct_dataset_columns (
     is_quality_flag_for TEXT[],
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_value_format) REFERENCES ct_value_formats(id),
-    FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id)
 );
 
 -- Table: ct_dataset_variables
@@ -525,7 +516,6 @@ CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
     was_associated_with TEXT,
     has_sampling_height DOUBLE PRECISION,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (was_associated_with) REFERENCES ct_stations(id)
 );
 
 -- Table: ct_dataset_specs
@@ -618,9 +608,6 @@ CREATE TABLE IF NOT EXISTS ct_static_objects (
     see_also TEXT,
     creator TEXT[],
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (was_submitted_by) REFERENCES ct_data_submissions(id),
-    FOREIGN KEY (was_acquired_by) REFERENCES ct_data_acquisitions(id),
-    FOREIGN KEY (was_produced_by) REFERENCES ct_data_productions(id),
     FOREIGN KEY (has_object_spec) REFERENCES ct_object_specs(id),
     FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id)
 );
@@ -641,7 +628,6 @@ CREATE TABLE IF NOT EXISTS ct_collections (
     has_spatial_coverage TEXT,
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (creator) REFERENCES ct_central_facilities(id),
     FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id)
 );
 
@@ -655,6 +641,5 @@ CREATE TABLE IF NOT EXISTS ct_plain_collections (
     has_part TEXT[],
     is_next_version_of TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (is_next_version_of) REFERENCES ct_static_objects(id)
 );
 COMMIT;

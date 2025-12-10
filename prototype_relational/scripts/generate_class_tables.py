@@ -1074,7 +1074,7 @@ def _generate_prefix_extraction_sql(table_name: str, column_expr: str,
     case_parts = ["CASE"]
     for prefix in sorted_prefixes:
         # Use LIKE for pattern matching - escape any SQL wildcards in the prefix
-        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
+        escaped_prefix = prefix.replace('%', r'\%')
         case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN '{prefix}'")
 
     # No ELSE clause - will cause error if no prefix matches
@@ -1114,7 +1114,7 @@ def _generate_suffix_extraction_sql(column_expr: str, table_name: str,
     # Build CASE statement with hardcoded positions
     case_parts = ["CASE"]
     for prefix in sorted_prefixes:
-        escaped_prefix = prefix.replace('_', r'\_').replace('%', r'\%')
+        escaped_prefix = prefix.replace('%', r'\%')
         position = len(prefix) + 1  # +1 because SUBSTRING is 1-indexed
         case_parts.append(f"        WHEN {column_expr} LIKE '{escaped_prefix}%' THEN {position}")
 

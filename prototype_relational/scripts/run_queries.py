@@ -193,24 +193,24 @@ def print_diff(json1, json2, max_lines=50):
         # Display statistics
         if filtered1 > 0 or filtered2 > 0:
             print(f"Filtered bindings (containing meta.fieldsites.se):")
-            print(f"  Endpoint 1: {filtered1} bindings filtered")
-            print(f"  Endpoint 2: {filtered2} bindings filtered")
+            print(f"  Ontop: {filtered1} bindings filtered")
+            print(f"  cpmeta: {filtered2} bindings filtered")
             print()
-        print(f"Bindings only in Endpoint 1: {len(only_in_1)}")
-        print(f"Bindings only in Endpoint 2: {len(only_in_2)}")
+        print(f"Bindings only in Ontop: {len(only_in_1)}")
+        print(f"Bindings only in cpmeta: {len(only_in_2)}")
         print(f"Bindings in both: {len(in_both)}")
 
-        # Show bindings only in Endpoint 1
+        # Show bindings only in Ontop
         if only_in_1:
-            print(f"\n--- Bindings ONLY in Endpoint 1 ({len(only_in_1)} bindings) ---")
+            print(f"\n--- Bindings ONLY in Ontop ({len(only_in_1)} bindings) ---")
             for i, binding in enumerate(sorted(only_in_1, key=lambda x: binding_to_string(x))[:max_lines], 1):
                 print(f"  {i}. {binding_to_string(binding)}")
             if len(only_in_1) > max_lines:
                 print(f"  ... ({len(only_in_1) - max_lines} more bindings not shown)")
 
-        # Show bindings only in Endpoint 2
+        # Show bindings only in cpmeta
         if only_in_2:
-            print(f"\n+++ Bindings ONLY in Endpoint 2 ({len(only_in_2)} bindings) +++")
+            print(f"\n+++ Bindings ONLY in cpmeta ({len(only_in_2)} bindings) +++")
             for i, binding in enumerate(sorted(only_in_2, key=lambda x: binding_to_string(x))[:max_lines], 1):
                 print(f"  {i}. {binding_to_string(binding)}")
             if len(only_in_2) > max_lines:
@@ -317,6 +317,23 @@ def compare_json_results(json1, json2):
         return False
 
 
+def format_binding_for_display(binding):
+    """
+    Format a SPARQL binding object for readable display.
+
+    Args:
+        binding: Dictionary mapping variable names to value objects
+
+    Returns:
+        Formatted string representation of the binding
+    """
+    items = []
+    for var, value_obj in sorted(binding.items()):
+        value = value_obj.get('value', '')
+        items.append(f"{var}={value}")
+    return ', '.join(items)
+
+
 def print_runtime_summary(query_runtimes):
     """
     Display runtime summary with top 10 longest queries and statistics.
@@ -358,15 +375,15 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
     Args:
         matched: List of query IDs where both endpoints succeeded and matched
         mismatched: List of query IDs where both endpoints succeeded but results differ
-        ep1_failures: List of query IDs that failed on endpoint 1 only
+        ep1_failures: List of query IDs that failed on Ontop only
         ep2_failures: List of query IDs that failed on endpoint 2 only
         both_failed: List of query IDs that failed on both endpoints
     """
     print(f"\n{'='*80}")
     print("ENDPOINT COMPARISON SUMMARY")
     print(f"{'='*80}")
-    print("Endpoint 1: http://localhost:65432/sparql (Accept: application/sparql-results+json)")
-    print("Endpoint 2: http://localhost:9094/sparql (Accept: application/sparql-results+json)")
+    print("Ontop: http://localhost:65432/sparql (Accept: application/sparql-results+json)")
+    print("cpmeta: http://localhost:9094/sparql (Accept: application/sparql-results+json)")
     print()
 
     # Results comparison
@@ -380,7 +397,7 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
 
     # Endpoint-specific failures
     print(f"\nEndpoint-specific failures:")
-    print(f"  Failed on endpoint 1 only: {len(ep1_failures)}")
+    print(f"  Failed on Ontop only: {len(ep1_failures)}")
     if ep1_failures:
         print(f"    Query IDs: {', '.join(map(str, ep1_failures))}")
 
@@ -415,7 +432,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
     skipped_count = 0
 
     # Track endpoint comparison results
-    endpoint1_failures = []  # Failed on endpoint 1 only
+    endpoint1_failures = []  # Failed on Ontop only
     endpoint2_failures = []  # Failed on endpoint 2 only
     both_endpoints_failed = []  # Failed on both
     mismatched_results = []  # Both succeeded but results differ
@@ -446,60 +463,23 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         json1 = normalize_json_response(response1)
         json2 = normalize_json_response(response2)
 
-        # Track runtime for Endpoint 1 (primary)
+        # Track runtime for Ontop (primary)
         query_runtimes.append((idx, time1))
 
         # Display results for both endpoints
         result_count1 = len(json1.get('results', {}).get('bindings', [])) if json1 else 0
         result_count2 = len(json2.get('results', {}).get('bindings', [])) if json2 else 0
 
-        # Count fieldsites bindings for each endpoint
-        filtered_count1 = sum(1 for b in json1.get('results', {}).get('bindings', [])
+        # Collect fieldsites bindings for each endpoint
+        filtered_bindings1 = [b for b in json1.get('results', {}).get('bindings', [])
                               if any('meta.fieldsites.se' in str(value_obj.get('value', ''))
-                                    for value_obj in b.values())) if json1 else 0
-        filtered_count2 = sum(1 for b in json2.get('results', {}).get('bindings', [])
+                                    for value_obj in b.values())] if json1 else []
+        filtered_bindings2 = [b for b in json2.get('results', {}).get('bindings', [])
                               if any('meta.fieldsites.se' in str(value_obj.get('value', ''))
-                                    for value_obj in b.values())) if json2 else 0
+                                    for value_obj in b.values())] if json2 else []
+        filtered_count1 = len(filtered_bindings1)
+        filtered_count2 = len(filtered_bindings2)
 
-        # Helper function to convert binding to comparable tuple
-        def binding_to_tuple(binding):
-            items = []
-            for var, value_obj in sorted(binding.items()):
-                value = value_obj.get('value', '')
-                items.append((var, value))
-            return frozenset(items)
-
-        def has_fieldsites(binding):
-            return any('meta.fieldsites.se' in str(value_obj.get('value', ''))
-                      for value_obj in binding.values())
-
-        # Count unique bindings (excluding fieldsites) for duplicate detection
-        bindings1_filtered = [b for b in json1.get('results', {}).get('bindings', [])
-                              if not has_fieldsites(b)] if json1 else []
-        bindings2_filtered = [b for b in json2.get('results', {}).get('bindings', [])
-                              if not has_fieldsites(b)] if json2 else []
-
-        unique_count1 = len(set(binding_to_tuple(b) for b in bindings1_filtered))
-        unique_count2 = len(set(binding_to_tuple(b) for b in bindings2_filtered))
-
-        duplicate_count1 = len(bindings1_filtered) - unique_count1
-        duplicate_count2 = len(bindings2_filtered) - unique_count2
-
-        print(f"\nEndpoint 1 ({endpoint1_host}):")
-        if success1:
-            print(f"  Success ({time1:.3f}s, {result_count1} results, {filtered_count1} filtered)")
-            if duplicate_count1 > 0:
-                print(f"    (Contains {duplicate_count1} duplicate row{'s' if duplicate_count1 != 1 else ''})")
-        else:
-            print(f"  Failed: {error1}")
-
-        print(f"Endpoint 2 ({endpoint2_host}):")
-        if success2:
-            print(f"  Success ({time2:.3f}s, {result_count2} results, {filtered_count2} filtered)")
-            if duplicate_count2 > 0:
-                print(f"    (Contains {duplicate_count2} duplicate row{'s' if duplicate_count2 != 1 else ''})")
-        else:
-            print(f"  Failed: {error2}")
 
         # Handle failures and compare results first
         # Determine if we have a mismatch before printing results
@@ -515,7 +495,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 'error': f"EP1: {error1}, EP2: {error2}"
             })
         elif not success1:
-            # Only endpoint 1 failed
+            # Only Ontop failed
             has_mismatch = True
             endpoint1_failures.append(idx)
             failed_queries.append({
@@ -553,7 +533,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                             results_match = False
                             break
                     else:
-                        # Endpoint 2 failed on retry
+                        # cpmeta failed on retry
                         break
 
             if results_match:
@@ -565,7 +545,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         # Print full results only on mismatch if requested
         if show_results and has_mismatch:
             if success1:
-                print(f"\nResults from Endpoint 1:")
+                print(f"\nResults from Ontop:")
                 print(f"{'─'*80}")
                 # Pretty print JSON with limited output
                 json_str = json.dumps(json1, indent=2) if json1 else response1
@@ -578,7 +558,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 print(f"{'─'*80}")
 
             if success2:
-                print(f"\nResults from Endpoint 2:")
+                print(f"\nResults from cpmeta:")
                 print(f"{'─'*80}")
                 # Pretty print JSON with limited output
                 json_str = json.dumps(json2, indent=2) if json2 else response2
@@ -594,7 +574,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         if not success1 and not success2:
             print(f"\nResult: ⚠️  BOTH ENDPOINTS FAILED")
         elif not success1:
-            print(f"\nResult: ⚠️  ENDPOINT 1 FAILED")
+            print(f"\nResult: ⚠️  Ontop FAILED")
         elif not success2:
             print(f"\nResult: ⚠️  ENDPOINT 2 FAILED")
         else:
@@ -607,9 +587,35 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
             else:
                 print(f"\nResult: ✓ MATCH")
 
-            # Track queries with 1 or fewer results (from Endpoint 1)
+            # Track queries with 1 or fewer results (from Ontop)
             if result_count1 <= 1:
                 small_result_queries.append(idx)
+
+        print(f"\nOntop ({endpoint1_host}):")
+        if success1:
+            print(f"  Success ({time1:.3f}s, {result_count1} results, {filtered_count1} filtered)")
+            if filtered_bindings1:
+                max_show = 10
+                print(f"  Filtered bindings (containing meta.fieldsites.se):")
+                for i, binding in enumerate(filtered_bindings1[:max_show], 1):
+                    print(f"    {i}. {format_binding_for_display(binding)}")
+                if len(filtered_bindings1) > max_show:
+                    print(f"    ... ({len(filtered_bindings1) - max_show} more not shown)")
+        else:
+            print(f"  Failed: {error1}")
+
+        print(f"cpmeta ({endpoint2_host}):")
+        if success2:
+            print(f"  Success ({time2:.3f}s, {result_count2} results, {filtered_count2} filtered)")
+            if filtered_bindings2:
+                max_show = 10
+                print(f"  Filtered bindings (containing meta.fieldsites.se):")
+                for i, binding in enumerate(filtered_bindings2[:max_show], 1):
+                    print(f"    {i}. {format_binding_for_display(binding)}")
+                if len(filtered_bindings2) > max_show:
+                    print(f"    ... ({len(filtered_bindings2) - max_show} more not shown)")
+        else:
+            print(f"  Failed: {error2}")
 
     # Save all rewritten queries to file
     with open(output_file, 'w') as f:

@@ -18,6 +18,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_webpage_elements_has_linkbox_fkey",
+                        "from": [
+                            "has_linkbox"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_link_boxes"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -57,6 +75,24 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_value_types_has_quantity_kind_fkey",
+                        "from": [
+                            "has_quantity_kind"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_quantity_kinds"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -98,6 +134,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_thematic_centers_has_data_theme_fkey",
+                        "from": [
+                            "has_data_theme"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_data_themes"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -117,6 +171,52 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_stations_has_responsible_organization_fkey",
+                        "from": [
+                            "has_responsible_organization"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_stations_has_climate_zone_fkey",
+                        "from": [
+                            "has_climate_zone"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_climate_zones"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_stations_has_spatial_coverage_fkey",
+                        "from": [
+                            "has_spatial_coverage"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_spatial_coverages"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -258,6 +358,38 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_plain_collections_has_part_fkey",
+                        "from": [
+                            "has_part"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_plain_collections_is_next_version_of_fkey",
+                        "from": [
+                            "is_next_version_of"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -277,6 +409,24 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_persons_has_membership_fkey",
+                        "from": [
+                            "has_membership"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_memberships"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -338,6 +488,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_object_formats_see_also_fkey",
+                        "from": [
+                            "see_also"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_value_formats"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -377,6 +545,38 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_memberships_has_role_fkey",
+                        "from": [
+                            "has_role"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_roles"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_memberships_at_organization_fkey",
+                        "from": [
+                            "at_organization"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -418,6 +618,52 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_instruments_has_vendor_fkey",
+                        "from": [
+                            "has_vendor"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_instruments_has_instrument_owner_fkey",
+                        "from": [
+                            "has_instrument_owner"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_instruments_has_instrument_component_fkey",
+                        "from": [
+                            "has_instrument_component"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_instruments"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -437,6 +683,24 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_fundings_has_funder_fkey",
+                        "from": [
+                            "has_funder"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_funders"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -498,6 +762,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_dataset_variables_has_value_type_fkey",
+                        "from": [
+                            "has_value_type"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_value_types"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -518,6 +800,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_dataset_specs_has_variable_fkey",
+                        "from": [
+                            "has_variable"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_dataset_variables"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -537,6 +837,52 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_dataset_columns_has_value_format_fkey",
+                        "from": [
+                            "has_value_format"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_value_formats"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_dataset_columns_has_value_type_fkey",
+                        "from": [
+                            "has_value_type"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_value_types"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_dataset_columns_is_quality_flag_for_fkey",
+                        "from": [
+                            "is_quality_flag_for"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_dataset_columns"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -578,6 +924,24 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_data_submissions_was_associated_with_fkey",
+                        "from": [
+                            "was_associated_with"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_thematic_centers"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -597,6 +961,66 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_data_productions_was_performed_by_fkey",
+                        "from": [
+                            "was_performed_by"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_thematic_centers"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_data_productions_was_hosted_by_fkey",
+                        "from": [
+                            "was_hosted_by"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_thematic_centers"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_data_productions_was_participated_in_by_fkey",
+                        "from": [
+                            "was_participated_in_by"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_data_productions_see_also_fkey",
+                        "from": [
+                            "see_also"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -618,6 +1042,38 @@
                 "added": [
                     "id"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_data_acquisitions_was_performed_with_fkey",
+                        "from": [
+                            "was_performed_with"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_instruments"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_data_acquisitions_was_associated_with_fkey",
+                        "from": [
+                            "was_associated_with"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_stations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -637,6 +1093,80 @@
             "nonNullConstraints": {
                 "added": [
                     "id"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_collections_has_part_fkey",
+                        "from": [
+                            "has_part"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_collections_is_next_version_of_fkey",
+                        "from": [
+                            "is_next_version_of"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_collections"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_collections_creator_fkey",
+                        "from": [
+                            "creator"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_central_facilities"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_collections_see_also_fkey",
+                        "from": [
+                            "see_also"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ct_collections_has_spatial_coverage_fkey",
+                        "from": [
+                            "has_spatial_coverage"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_spatial_coverages"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -711,6 +1241,24 @@
                     "id",
                     "part"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_collections_parts_part_fkey",
+                        "from": [
+                            "part"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -743,6 +1291,24 @@
                 "added": [
                     "id",
                     "next_version"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_collections_next_versions_next_version_fkey",
+                        "from": [
+                            "next_version"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_collections"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -777,6 +1343,24 @@
                     "id",
                     "performed_with"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_data_acquisitions_performed_withs_performed_with_fkey",
+                        "from": [
+                            "performed_with"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_instruments"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -809,6 +1393,24 @@
                 "added": [
                     "id",
                     "participated_in_by"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_data_productions_participated_in_bys_participated_in_by_fkey",
+                        "from": [
+                            "participated_in_by"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_organizations"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -843,6 +1445,24 @@
                     "id",
                     "quality_flag_for"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_dataset_columns_quality_flag_fors_quality_flag_for_fkey",
+                        "from": [
+                            "quality_flag_for"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_dataset_columns"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -875,6 +1495,24 @@
                 "added": [
                     "id",
                     "variable"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_dataset_specs_variables_variable_fkey",
+                        "from": [
+                            "variable"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_dataset_variables"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -974,6 +1612,24 @@
                 "added": [
                     "id",
                     "instrument_component"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_instruments_instrument_components_instrument_component_fkey",
+                        "from": [
+                            "instrument_component"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_instruments"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -1137,6 +1793,24 @@
                     "id",
                     "membership"
                 ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_persons_memberships_membership_fkey",
+                        "from": [
+                            "membership"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_memberships"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
+                ]
             }
         },
         {
@@ -1169,6 +1843,24 @@
                 "added": [
                     "id",
                     "part"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_plain_collections_parts_part_fkey",
+                        "from": [
+                            "part"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_static_objects"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         },
@@ -1624,6 +2316,24 @@
                 "added": [
                     "id",
                     "linkbox"
+                ]
+            },
+            "foreignKeys": {
+                "added": [
+                    {
+                        "name": "ct_webpage_elements_linkboxs_linkbox_fkey",
+                        "from": [
+                            "linkbox"
+                        ],
+                        "to": {
+                            "relation": [
+                                "ct_link_boxes"
+                            ],
+                            "columns": [
+                                "id"
+                            ]
+                        }
+                    }
                 ]
             }
         }

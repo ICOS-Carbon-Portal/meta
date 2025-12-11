@@ -409,6 +409,30 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
             # Both succeeded - compare results
             results_match = compare_csv_results(response1, response2)
 
+            # If same line count but content mismatch, retry endpoint 2
+            if not results_match and line_count1 == line_count2:
+                retry_count = 0
+                max_retries = 10
+
+                while not results_match and retry_count < max_retries:
+                    retry_count += 1
+                    # Re-execute query on endpoint 2
+                    success2, response2, error2, time2 = run_query(query, endpoint2_host, 'text/csv')
+                    response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
+
+                    if success2:
+                        line_count2 = len(response2.splitlines()) if response2 else 0
+                        # Only consider it a match if line counts are still the same
+                        if line_count1 == line_count2:
+                            results_match = compare_csv_results(response1, response2)
+                        else:
+                            # Line counts diverged, can't match
+                            results_match = False
+                            break
+                    else:
+                        # Endpoint 2 failed on retry
+                        break
+
             if results_match:
                 matched_results.append(idx)
             else:

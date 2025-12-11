@@ -7,12 +7,12 @@
 -- ======================================================================
 
 -- Indexes for ct_object_specs
-CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_associated_project ON ct_object_specs(has_associated_project);
-CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_encoding ON ct_object_specs(has_encoding);
-CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_specific_dataset_type ON ct_object_specs(has_specific_dataset_type);
 CREATE INDEX IF NOT EXISTS idx_ct_object_specs_contains_dataset ON ct_object_specs(contains_dataset);
 CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_data_theme ON ct_object_specs(has_data_theme);
+CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_encoding ON ct_object_specs(has_encoding);
 CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_format ON ct_object_specs(has_format);
+CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_associated_project ON ct_object_specs(has_associated_project);
+CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_specific_dataset_type ON ct_object_specs(has_specific_dataset_type);
 CREATE INDEX IF NOT EXISTS idx_ct_object_specs_has_data_level ON ct_object_specs(has_data_level);
 CREATE INDEX IF NOT EXISTS idx_ct_object_specs_label ON ct_object_specs(label);
 
@@ -30,28 +30,25 @@ CREATE INDEX IF NOT EXISTS idx_ct_organizations_has_name ON ct_organizations(has
 
 -- Indexes for ct_stations
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_responsible_organization ON ct_stations(has_responsible_organization);
-CREATE INDEX IF NOT EXISTS idx_ct_stations_has_spatial_coverage ON ct_stations(has_spatial_coverage);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_ecosystem_type ON ct_stations(has_ecosystem_type);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_webpage_elements ON ct_stations(has_webpage_elements);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_climate_zone ON ct_stations(has_climate_zone);
-CREATE INDEX IF NOT EXISTS idx_ct_stations_has_ecosystem_type ON ct_stations(has_ecosystem_type);
+CREATE INDEX IF NOT EXISTS idx_ct_stations_has_spatial_coverage ON ct_stations(has_spatial_coverage);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_name ON ct_stations(has_name);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_country ON ct_stations(country);
-CREATE INDEX IF NOT EXISTS idx_ct_stations_theme ON ct_stations USING GIN (theme);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_atc_id ON ct_stations(has_atc_id);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_etc_id ON ct_stations(has_etc_id);
 CREATE INDEX IF NOT EXISTS idx_ct_stations_has_otc_id ON ct_stations(has_otc_id);
 
 -- Indexes for ct_dataset_specs
-CREATE INDEX IF NOT EXISTS idx_ct_dataset_specs_has_variable ON ct_dataset_specs USING GIN (has_variable);
 CREATE INDEX IF NOT EXISTS idx_ct_dataset_specs_label ON ct_dataset_specs(label);
-CREATE INDEX IF NOT EXISTS idx_ct_dataset_specs_has_column ON ct_dataset_specs USING GIN (has_column);
 
 -- Indexes for ct_static_objects
-CREATE INDEX IF NOT EXISTS idx_ct_static_objects_was_acquired_by ON ct_static_objects(was_acquired_by);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_has_spatial_coverage ON ct_static_objects(has_spatial_coverage);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_has_object_spec ON ct_static_objects(has_object_spec);
-CREATE INDEX IF NOT EXISTS idx_ct_static_objects_was_produced_by ON ct_static_objects(was_produced_by);
+CREATE INDEX IF NOT EXISTS idx_ct_static_objects_was_acquired_by ON ct_static_objects(was_acquired_by);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_was_submitted_by ON ct_static_objects(was_submitted_by);
+CREATE INDEX IF NOT EXISTS idx_ct_static_objects_was_produced_by ON ct_static_objects(was_produced_by);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_has_name ON ct_static_objects(has_name);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_has_sha256sum ON ct_static_objects(has_sha256sum);
 CREATE INDEX IF NOT EXISTS idx_ct_static_objects_has_size_in_bytes ON ct_static_objects(has_size_in_bytes);
@@ -65,7 +62,6 @@ CREATE INDEX IF NOT EXISTS idx_ct_data_submissions_started_at_time ON ct_data_su
 
 -- Indexes for ct_data_acquisitions
 CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_was_associated_with ON ct_data_acquisitions(was_associated_with);
-CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_was_performed_with ON ct_data_acquisitions USING GIN (was_performed_with);
 CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_ended_at_time ON ct_data_acquisitions(ended_at_time);
 CREATE INDEX IF NOT EXISTS idx_ct_data_acquisitions_started_at_time ON ct_data_acquisitions(started_at_time);
 
@@ -86,21 +82,18 @@ CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_model ON ct_instruments(has_mo
 CREATE INDEX IF NOT EXISTS idx_ct_instruments_has_serial_number ON ct_instruments(has_serial_number);
 
 -- Indexes for ct_memberships
-CREATE INDEX IF NOT EXISTS idx_ct_memberships_at_organization ON ct_memberships(at_organization);
 CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_role ON ct_memberships(has_role);
-CREATE INDEX IF NOT EXISTS idx_ct_memberships_label ON ct_memberships USING GIN (label);
+CREATE INDEX IF NOT EXISTS idx_ct_memberships_at_organization ON ct_memberships(at_organization);
 CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_start_time ON ct_memberships(has_start_time);
 CREATE INDEX IF NOT EXISTS idx_ct_memberships_has_end_time ON ct_memberships(has_end_time);
 
 -- Indexes for ct_persons
-CREATE INDEX IF NOT EXISTS idx_ct_persons_has_membership ON ct_persons USING GIN (has_membership);
 CREATE INDEX IF NOT EXISTS idx_ct_persons_has_first_name ON ct_persons(has_first_name);
 CREATE INDEX IF NOT EXISTS idx_ct_persons_has_last_name ON ct_persons(has_last_name);
 
 -- Indexes for ct_collections
 CREATE INDEX IF NOT EXISTS idx_ct_collections_has_spatial_coverage ON ct_collections(has_spatial_coverage);
 CREATE INDEX IF NOT EXISTS idx_ct_collections_creator ON ct_collections(creator);
-CREATE INDEX IF NOT EXISTS idx_ct_collections_has_part ON ct_collections USING GIN (has_part);
 CREATE INDEX IF NOT EXISTS idx_ct_collections_title ON ct_collections(title);
 CREATE INDEX IF NOT EXISTS idx_ct_collections_description ON ct_collections(description);
 
@@ -133,7 +126,6 @@ CREATE INDEX IF NOT EXISTS idx_ct_dataset_variables_label ON ct_dataset_variable
 
 -- Indexes for ct_plain_collections
 CREATE INDEX IF NOT EXISTS idx_ct_plain_collections_is_next_version_of ON ct_plain_collections(is_next_version_of);
-CREATE INDEX IF NOT EXISTS idx_ct_plain_collections_has_part ON ct_plain_collections USING GIN (has_part);
 
 -- Indexes for ct_funders
 CREATE INDEX IF NOT EXISTS idx_ct_funders_has_etc_id ON ct_funders(has_etc_id);
@@ -144,7 +136,6 @@ CREATE INDEX IF NOT EXISTS idx_ct_climate_zones_label ON ct_climate_zones(label)
 CREATE INDEX IF NOT EXISTS idx_ct_climate_zones_see_also ON ct_climate_zones(see_also);
 
 -- Indexes for ct_webpage_elements
-CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_has_linkbox ON ct_webpage_elements USING GIN (has_linkbox);
 CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_has_cover_image ON ct_webpage_elements(has_cover_image);
 CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_label ON ct_webpage_elements(label);
 CREATE INDEX IF NOT EXISTS idx_ct_webpage_elements_comment ON ct_webpage_elements(comment);

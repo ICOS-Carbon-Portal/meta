@@ -815,8 +815,9 @@ def generate_indexes_sql(table_name: str, columns: List[Dict],
         if col['coverage'] >= 90 or 'TIMESTAMP' in col['type']:
             idx_name = f"idx_{table_name}_{col['name']}"
             if is_array:
+                pass
                 # Use GIN index for array columns (enables efficient array operations like ANY, @>, etc.)
-                lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name} USING GIN ({col['name']});")
+                # lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name} USING GIN ({col['name']});")
             else:
                 lines.append(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name}({col['name']});")
 

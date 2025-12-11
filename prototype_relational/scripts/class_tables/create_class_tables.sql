@@ -8,61 +8,50 @@ DROP TABLE IF EXISTS ct_plain_collections CASCADE;
 DROP TABLE IF EXISTS ct_collections CASCADE;
 DROP TABLE IF EXISTS ct_static_objects CASCADE;
 DROP TABLE IF EXISTS ct_object_specs CASCADE;
-DROP TABLE IF EXISTS ct_dataset_specs CASCADE;
 DROP TABLE IF EXISTS ct_data_acquisitions CASCADE;
-DROP TABLE IF EXISTS ct_dataset_variables CASCADE;
-DROP TABLE IF EXISTS ct_dataset_columns CASCADE;
-DROP TABLE IF EXISTS ct_stations CASCADE;
-DROP TABLE IF EXISTS ct_persons CASCADE;
+DROP TABLE IF EXISTS ct_dataset_specs CASCADE;
 DROP TABLE IF EXISTS ct_data_productions CASCADE;
 DROP TABLE IF EXISTS ct_data_submissions CASCADE;
-DROP TABLE IF EXISTS ct_value_types CASCADE;
-DROP TABLE IF EXISTS ct_webpage_elements CASCADE;
-DROP TABLE IF EXISTS ct_memberships CASCADE;
-DROP TABLE IF EXISTS ct_fundings CASCADE;
-DROP TABLE IF EXISTS ct_thematic_centers CASCADE;
-DROP TABLE IF EXISTS ct_instruments CASCADE;
+DROP TABLE IF EXISTS ct_persons CASCADE;
+DROP TABLE IF EXISTS ct_stations CASCADE;
+DROP TABLE IF EXISTS ct_dataset_variables CASCADE;
+DROP TABLE IF EXISTS ct_dataset_columns CASCADE;
 DROP TABLE IF EXISTS ct_object_formats CASCADE;
-DROP TABLE IF EXISTS ct_quantity_kinds CASCADE;
-DROP TABLE IF EXISTS ct_link_boxes CASCADE;
-DROP TABLE IF EXISTS ct_roles CASCADE;
-DROP TABLE IF EXISTS ct_ecosystem_types CASCADE;
-DROP TABLE IF EXISTS ct_variable_infos CASCADE;
-DROP TABLE IF EXISTS ct_funders CASCADE;
-DROP TABLE IF EXISTS ct_spatial_coverages CASCADE;
-DROP TABLE IF EXISTS ct_climate_zones CASCADE;
-DROP TABLE IF EXISTS ct_projects CASCADE;
+DROP TABLE IF EXISTS ct_thematic_centers CASCADE;
+DROP TABLE IF EXISTS ct_memberships CASCADE;
+DROP TABLE IF EXISTS ct_webpage_elements CASCADE;
+DROP TABLE IF EXISTS ct_fundings CASCADE;
+DROP TABLE IF EXISTS ct_instruments CASCADE;
+DROP TABLE IF EXISTS ct_value_types CASCADE;
+DROP TABLE IF EXISTS ct_value_formats CASCADE;
+DROP TABLE IF EXISTS ct_object_encodings CASCADE;
 DROP TABLE IF EXISTS ct_data_themes CASCADE;
+DROP TABLE IF EXISTS ct_roles CASCADE;
+DROP TABLE IF EXISTS ct_climate_zones CASCADE;
+DROP TABLE IF EXISTS ct_link_boxes CASCADE;
+DROP TABLE IF EXISTS ct_variable_infos CASCADE;
+DROP TABLE IF EXISTS ct_projects CASCADE;
+DROP TABLE IF EXISTS ct_spatial_coverages CASCADE;
+DROP TABLE IF EXISTS ct_ecosystem_types CASCADE;
+DROP TABLE IF EXISTS ct_funders CASCADE;
 DROP TABLE IF EXISTS ct_organizations CASCADE;
 DROP TABLE IF EXISTS ct_specific_dataset_types CASCADE;
 DROP TABLE IF EXISTS ct_central_facilities CASCADE;
-DROP TABLE IF EXISTS ct_object_encodings CASCADE;
-DROP TABLE IF EXISTS ct_value_formats CASCADE;
+DROP TABLE IF EXISTS ct_quantity_kinds CASCADE;
 
 -- ======================================================================
 -- CREATE TABLES (in dependency order for inline foreign keys)
 -- ======================================================================
 
--- Table: ct_value_formats
--- Class: cpmeta:ValueFormat (13 instances)
+-- Table: ct_quantity_kinds
+-- Class: cpmeta:QuantityKind (21 instances)
 
-CREATE TABLE IF NOT EXISTS ct_value_formats (
+CREATE TABLE IF NOT EXISTS ct_quantity_kinds (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
     label TEXT,
     comment TEXT,
-    CHECK (prefix || id = rdf_subject)
-);
-
--- Table: ct_object_encodings
--- Class: cpmeta:ObjectEncoding (3 instances)
-
-CREATE TABLE IF NOT EXISTS ct_object_encodings (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    label TEXT,
     CHECK (prefix || id = rdf_subject)
 );
 
@@ -109,45 +98,27 @@ CREATE TABLE IF NOT EXISTS ct_organizations (
     CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_data_themes
--- Class: cpmeta:DataTheme (4 instances)
+-- Table: ct_funders
+-- Class: cpmeta:Funder (47 instances)
 
-CREATE TABLE IF NOT EXISTS ct_data_themes (
+CREATE TABLE IF NOT EXISTS ct_funders (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_icon TEXT,
-    has_marker_icon TEXT,
-    label TEXT,
+    has_etc_id TEXT,
+    has_name TEXT,
     CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_projects
--- Class: cpmeta:Project (12 instances)
+-- Table: ct_ecosystem_types
+-- Class: cpmeta:EcosystemType (17 instances)
 
-CREATE TABLE IF NOT EXISTS ct_projects (
+CREATE TABLE IF NOT EXISTS ct_ecosystem_types (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
+    label TEXT,
     comment TEXT,
-    label TEXT,
-    see_also TEXT,
-    has_keywords TEXT,
-    has_hide_from_search_policy BOOLEAN,
-    has_skip_pid_minting_policy BOOLEAN,
-    has_skip_storage_policy BOOLEAN,
-    CHECK (prefix || id = rdf_subject)
-);
-
--- Table: ct_climate_zones
--- Class: cpmeta:ClimateZone (30 instances)
-
-CREATE TABLE IF NOT EXISTS ct_climate_zones (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    label TEXT,
-    see_also TEXT,
     CHECK (prefix || id = rdf_subject)
 );
 
@@ -171,15 +142,20 @@ CREATE TABLE IF NOT EXISTS ct_spatial_coverages (
     CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_funders
--- Class: cpmeta:Funder (47 instances)
+-- Table: ct_projects
+-- Class: cpmeta:Project (12 instances)
 
-CREATE TABLE IF NOT EXISTS ct_funders (
+CREATE TABLE IF NOT EXISTS ct_projects (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_etc_id TEXT,
-    has_name TEXT,
+    comment TEXT,
+    label TEXT,
+    see_also TEXT,
+    has_keywords TEXT,
+    has_hide_from_search_policy BOOLEAN,
+    has_skip_pid_minting_policy BOOLEAN,
+    has_skip_storage_policy BOOLEAN,
     CHECK (prefix || id = rdf_subject)
 );
 
@@ -193,30 +169,6 @@ CREATE TABLE IF NOT EXISTS ct_variable_infos (
     label TEXT,
     has_max_value DOUBLE PRECISION,
     has_min_value DOUBLE PRECISION,
-    CHECK (prefix || id = rdf_subject)
-);
-
--- Table: ct_ecosystem_types
--- Class: cpmeta:EcosystemType (17 instances)
-
-CREATE TABLE IF NOT EXISTS ct_ecosystem_types (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    label TEXT,
-    comment TEXT,
-    CHECK (prefix || id = rdf_subject)
-);
-
--- Table: ct_roles
--- Class: cpmeta:Role (5 instances)
-
-CREATE TABLE IF NOT EXISTS ct_roles (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    label TEXT,
-    comment TEXT,
     CHECK (prefix || id = rdf_subject)
 );
 
@@ -235,10 +187,22 @@ CREATE TABLE IF NOT EXISTS ct_link_boxes (
     CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_quantity_kinds
--- Class: cpmeta:QuantityKind (21 instances)
+-- Table: ct_climate_zones
+-- Class: cpmeta:ClimateZone (30 instances)
 
-CREATE TABLE IF NOT EXISTS ct_quantity_kinds (
+CREATE TABLE IF NOT EXISTS ct_climate_zones (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    label TEXT,
+    see_also TEXT,
+    CHECK (prefix || id = rdf_subject)
+);
+
+-- Table: ct_roles
+-- Class: cpmeta:Role (5 instances)
+
+CREATE TABLE IF NOT EXISTS ct_roles (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
@@ -247,19 +211,57 @@ CREATE TABLE IF NOT EXISTS ct_quantity_kinds (
     CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_object_formats
--- Class: cpmeta:ObjectFormat (22 instances)
+-- Table: ct_data_themes
+-- Class: cpmeta:DataTheme (4 instances)
 
-CREATE TABLE IF NOT EXISTS ct_object_formats (
+CREATE TABLE IF NOT EXISTS ct_data_themes (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    has_icon TEXT,
+    has_marker_icon TEXT,
+    label TEXT,
+    CHECK (prefix || id = rdf_subject)
+);
+
+-- Table: ct_object_encodings
+-- Class: cpmeta:ObjectEncoding (3 instances)
+
+CREATE TABLE IF NOT EXISTS ct_object_encodings (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
     label TEXT,
-    has_good_flag_value TEXT[],
+    CHECK (prefix || id = rdf_subject)
+);
+
+-- Table: ct_value_formats
+-- Class: cpmeta:ValueFormat (13 instances)
+
+CREATE TABLE IF NOT EXISTS ct_value_formats (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    label TEXT,
     comment TEXT,
+    CHECK (prefix || id = rdf_subject)
+);
+
+-- Table: ct_value_types
+-- Class: cpmeta:ValueType (166 instances)
+
+CREATE TABLE IF NOT EXISTS ct_value_types (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    label TEXT,
+    has_quantity_kind TEXT,
+    has_unit TEXT,
+    comment TEXT,
+    exact_match TEXT,
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (see_also) REFERENCES ct_value_formats(id)
+    FOREIGN KEY (has_quantity_kind) REFERENCES ct_quantity_kinds(id)
 );
 
 -- Table: ct_instruments
@@ -285,20 +287,6 @@ CREATE TABLE IF NOT EXISTS ct_instruments (
     FOREIGN KEY (has_instrument_owner) REFERENCES ct_organizations(id)
 );
 
--- Table: ct_thematic_centers
--- Class: cpmeta:ThematicCenter (3 instances)
-
-CREATE TABLE IF NOT EXISTS ct_thematic_centers (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    has_data_theme TEXT,
-    has_name TEXT,
-    label TEXT,
-    CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_data_theme) REFERENCES ct_data_themes(id)
-);
-
 -- Table: ct_fundings
 -- Class: cpmeta:Funding (115 instances)
 
@@ -318,6 +306,20 @@ CREATE TABLE IF NOT EXISTS ct_fundings (
     FOREIGN KEY (has_funder) REFERENCES ct_funders(id)
 );
 
+-- Table: ct_webpage_elements
+-- Class: cpmeta:WebpageElements (28 instances)
+
+CREATE TABLE IF NOT EXISTS ct_webpage_elements (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    has_linkbox TEXT[],
+    has_cover_image TEXT,
+    label TEXT,
+    comment TEXT,
+    CHECK (prefix || id = rdf_subject)
+);
+
 -- Table: ct_memberships
 -- Class: cpmeta:Membership (1,870 instances)
 
@@ -334,89 +336,72 @@ CREATE TABLE IF NOT EXISTS ct_memberships (
     has_extra_role_info TEXT,
     CHECK (prefix || id = rdf_subject),
     FOREIGN KEY (has_role) REFERENCES ct_roles(id),
+    -- FOREIGN KEY (at_organization) REFERENCES ct_organizations(id)
 );
 
--- Table: ct_webpage_elements
--- Class: cpmeta:WebpageElements (28 instances)
+-- Table: ct_thematic_centers
+-- Class: cpmeta:ThematicCenter (3 instances)
 
-CREATE TABLE IF NOT EXISTS ct_webpage_elements (
+CREATE TABLE IF NOT EXISTS ct_thematic_centers (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_linkbox TEXT[],
-    has_cover_image TEXT,
+    has_data_theme TEXT,
+    has_name TEXT,
     label TEXT,
-    comment TEXT,
-    CHECK (prefix || id = rdf_subject)
+    CHECK (prefix || id = rdf_subject),
+    FOREIGN KEY (has_data_theme) REFERENCES ct_data_themes(id)
 );
 
--- Table: ct_value_types
--- Class: cpmeta:ValueType (166 instances)
+-- Table: ct_object_formats
+-- Class: cpmeta:ObjectFormat (22 instances)
 
-CREATE TABLE IF NOT EXISTS ct_value_types (
+CREATE TABLE IF NOT EXISTS ct_object_formats (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
     label TEXT,
-    has_quantity_kind TEXT,
-    has_unit TEXT,
-    comment TEXT,
-    exact_match TEXT,
-    see_also TEXT,
-    CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_quantity_kind) REFERENCES ct_quantity_kinds(id)
-);
-
--- Table: ct_data_submissions
--- Class: cpmeta:DataSubmission (2,344,302 instances)
-
-CREATE TABLE IF NOT EXISTS ct_data_submissions (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    ended_at_time TIMESTAMP WITH TIME ZONE,
-    started_at_time TIMESTAMP WITH TIME ZONE,
-    was_associated_with TEXT,
-    CHECK (prefix || id = rdf_subject),
-    -- FOREIGN KEY (was_associated_with) REFERENCES ct_thematic_centers(id)
-);
-
--- Table: ct_data_productions
--- Class: cpmeta:DataProduction (1,248,435 instances)
-
-CREATE TABLE IF NOT EXISTS ct_data_productions (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    has_end_time TIMESTAMP WITH TIME ZONE,
-    was_performed_by TEXT,
-    was_hosted_by TEXT,
-    was_participated_in_by TEXT[],
+    has_good_flag_value TEXT[],
     comment TEXT,
     see_also TEXT,
     CHECK (prefix || id = rdf_subject),
-    -- FOREIGN KEY (was_performed_by) REFERENCES ct_thematic_centers(id),
-    -- FOREIGN KEY (was_hosted_by) REFERENCES ct_thematic_centers(id)
+    FOREIGN KEY (see_also) REFERENCES ct_value_formats(id)
 );
 
--- Table: ct_persons
--- Class: cpmeta:Person (1,146 instances)
+-- Table: ct_dataset_columns
+-- Class: cpmeta:DatasetColumn (270 instances)
 
-CREATE TABLE IF NOT EXISTS ct_persons (
+CREATE TABLE IF NOT EXISTS ct_dataset_columns (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_membership TEXT[],
-    has_first_name TEXT,
-    has_last_name TEXT,
-    has_email TEXT,
-    has_etc_id TEXT,
-    has_orcid_id TEXT,
-    has_atc_id TEXT,
-    has_otc_id TEXT,
+    has_column_title TEXT,
+    has_value_format TEXT,
+    has_value_type TEXT,
     label TEXT,
+    is_optional_column BOOLEAN,
     comment TEXT,
-    CHECK (prefix || id = rdf_subject)
+    is_regex_column BOOLEAN,
+    is_quality_flag_for TEXT[],
+    see_also TEXT,
+    CHECK (prefix || id = rdf_subject),
+    FOREIGN KEY (has_value_format) REFERENCES ct_value_formats(id),
+    FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id)
+);
+
+-- Table: ct_dataset_variables
+-- Class: cpmeta:DatasetVariable (76 instances)
+
+CREATE TABLE IF NOT EXISTS ct_dataset_variables (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    has_value_type TEXT,
+    has_variable_title TEXT,
+    label TEXT,
+    is_optional_variable BOOLEAN,
+    CHECK (prefix || id = rdf_subject),
+    FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id)
 );
 
 -- Table: ct_stations
@@ -475,56 +460,56 @@ CREATE TABLE IF NOT EXISTS ct_stations (
     FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id)
 );
 
--- Table: ct_dataset_columns
--- Class: cpmeta:DatasetColumn (270 instances)
+-- Table: ct_persons
+-- Class: cpmeta:Person (1,146 instances)
 
-CREATE TABLE IF NOT EXISTS ct_dataset_columns (
+CREATE TABLE IF NOT EXISTS ct_persons (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_column_title TEXT,
-    has_value_format TEXT,
-    has_value_type TEXT,
+    has_membership TEXT[],
+    has_first_name TEXT,
+    has_last_name TEXT,
+    has_email TEXT,
+    has_etc_id TEXT,
+    has_orcid_id TEXT,
+    has_atc_id TEXT,
+    has_otc_id TEXT,
     label TEXT,
-    is_optional_column BOOLEAN,
     comment TEXT,
-    is_regex_column BOOLEAN,
-    is_quality_flag_for TEXT[],
-    see_also TEXT,
-    CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_value_format) REFERENCES ct_value_formats(id),
-    FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id)
+    CHECK (prefix || id = rdf_subject)
 );
 
--- Table: ct_dataset_variables
--- Class: cpmeta:DatasetVariable (76 instances)
+-- Table: ct_data_submissions
+-- Class: cpmeta:DataSubmission (2,344,302 instances)
 
-CREATE TABLE IF NOT EXISTS ct_dataset_variables (
+CREATE TABLE IF NOT EXISTS ct_data_submissions (
     id TEXT PRIMARY KEY,
     rdf_subject TEXT NOT NULL UNIQUE,
     prefix TEXT NOT NULL,
-    has_value_type TEXT,
-    has_variable_title TEXT,
-    label TEXT,
-    is_optional_variable BOOLEAN,
-    CHECK (prefix || id = rdf_subject),
-    FOREIGN KEY (has_value_type) REFERENCES ct_value_types(id)
-);
-
--- Table: ct_data_acquisitions
--- Class: cpmeta:DataAcquisition (2,341,317 instances)
-
-CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
-    id TEXT PRIMARY KEY,
-    rdf_subject TEXT NOT NULL UNIQUE,
-    prefix TEXT NOT NULL,
-    was_performed_with TEXT[],
     ended_at_time TIMESTAMP WITH TIME ZONE,
     started_at_time TIMESTAMP WITH TIME ZONE,
     was_associated_with TEXT,
-    has_sampling_height DOUBLE PRECISION,
     CHECK (prefix || id = rdf_subject),
-    -- FOREIGN KEY (was_associated_with) REFERENCES ct_stations(id)
+    -- FOREIGN KEY (was_associated_with) REFERENCES ct_thematic_centers(id)
+);
+
+-- Table: ct_data_productions
+-- Class: cpmeta:DataProduction (1,248,435 instances)
+
+CREATE TABLE IF NOT EXISTS ct_data_productions (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    has_end_time TIMESTAMP WITH TIME ZONE,
+    was_performed_by TEXT,
+    was_hosted_by TEXT,
+    was_participated_in_by TEXT[],
+    comment TEXT,
+    see_also TEXT,
+    CHECK (prefix || id = rdf_subject),
+    -- FOREIGN KEY (was_performed_by) REFERENCES ct_thematic_centers(id),
+    -- FOREIGN KEY (was_hosted_by) REFERENCES ct_thematic_centers(id)
 );
 
 -- Table: ct_dataset_specs
@@ -542,6 +527,22 @@ CREATE TABLE IF NOT EXISTS ct_dataset_specs (
     has_column TEXT[],
     comment TEXT,
     CHECK (prefix || id = rdf_subject)
+);
+
+-- Table: ct_data_acquisitions
+-- Class: cpmeta:DataAcquisition (2,341,317 instances)
+
+CREATE TABLE IF NOT EXISTS ct_data_acquisitions (
+    id TEXT PRIMARY KEY,
+    rdf_subject TEXT NOT NULL UNIQUE,
+    prefix TEXT NOT NULL,
+    was_performed_with TEXT[],
+    ended_at_time TIMESTAMP WITH TIME ZONE,
+    started_at_time TIMESTAMP WITH TIME ZONE,
+    was_associated_with TEXT,
+    has_sampling_height DOUBLE PRECISION,
+    CHECK (prefix || id = rdf_subject),
+    -- FOREIGN KEY (was_associated_with) REFERENCES ct_stations(id)
 );
 
 -- Table: ct_object_specs
@@ -618,7 +619,7 @@ CREATE TABLE IF NOT EXISTS ct_static_objects (
     creator TEXT[],
     CHECK (prefix || id = rdf_subject),
     FOREIGN KEY (was_submitted_by) REFERENCES ct_data_submissions(id),
-    -- FOREIGN KEY (was_acquired_by) REFERENCES ct_data_acquisitions(id), missing: aau1UU2dyaP8XgQFdOAt6Qdt
+    -- FOREIGN KEY (was_acquired_by) REFERENCES ct_data_acquisitions(id),
     FOREIGN KEY (was_produced_by) REFERENCES ct_data_productions(id),
     FOREIGN KEY (has_object_spec) REFERENCES ct_object_specs(id),
     FOREIGN KEY (has_spatial_coverage) REFERENCES ct_spatial_coverages(id)

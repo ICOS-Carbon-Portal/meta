@@ -9,10 +9,10 @@
 -- POPULATE TABLES (in dependency order)
 -- ======================================================================
 
--- Populate ct_value_formats
--- Class: cpmeta:ValueFormat (13 instances)
-SELECT 'Populating ct_value_formats (13 instances)...' AS status;
-INSERT OR IGNORE INTO ct_value_formats (id, rdf_subject, prefix
+-- Populate ct_ecosystem_types
+-- Class: cpmeta:EcosystemType (17 instances)
+SELECT 'Populating ct_ecosystem_types (17 instances)...' AS status;
+INSERT OR IGNORE INTO ct_ecosystem_types (id, rdf_subject, prefix
 , label
 , comment
 )
@@ -25,25 +25,75 @@ SELECT
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType'
 )
 GROUP BY subj;
 
--- Populate ct_object_encodings
--- Class: cpmeta:ObjectEncoding (3 instances)
-SELECT 'Populating ct_object_encodings (3 instances)...' AS status;
-INSERT OR IGNORE INTO ct_object_encodings (id, rdf_subject, prefix
+-- Populate ct_data_themes
+-- Class: cpmeta:DataTheme (4 instances)
+SELECT 'Populating ct_data_themes (4 instances)...' AS status;
+INSERT OR IGNORE INTO ct_data_themes (id, rdf_subject, prefix
+, has_icon
+, has_marker_icon
 , label
 )
 SELECT
-    SUBSTRING(subj FROM 42) AS id
+    SUBSTRING(subj FROM 40) AS id
     , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
+    , (    'http://meta.icos-cp.eu/resources/themes') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon' THEN obj ELSE NULL END) AS has_icon
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMarkerIcon' THEN obj ELSE NULL END) AS has_marker_icon
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme'
+)
+GROUP BY subj;
+
+-- Populate ct_quantity_kinds
+-- Class: cpmeta:QuantityKind (21 instances)
+SELECT 'Populating ct_quantity_kinds (21 instances)...' AS status;
+INSERT OR IGNORE INTO ct_quantity_kinds (id, rdf_subject, prefix
+, label
+, comment
+)
+SELECT
+    SUBSTRING(subj FROM 41) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind'
+)
+GROUP BY subj;
+
+-- Populate ct_link_boxes
+-- Class: cpmeta:LinkBox (158 instances)
+SELECT 'Populating ct_link_boxes (158 instances)...' AS status;
+INSERT OR IGNORE INTO ct_link_boxes (id, rdf_subject, prefix
+, has_cover_image
+, has_name
+, has_order_weight
+, label
+, has_webpage_link
+)
+SELECT
+    SUBSTRING(subj FROM 39) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/icos/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage' THEN obj ELSE NULL END) AS has_cover_image
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight' THEN obj::SMALLINT ELSE NULL END) AS has_order_weight
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink' THEN obj ELSE NULL END) AS has_webpage_link
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox'
 )
 GROUP BY subj;
 
@@ -87,6 +137,104 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
+-- Populate ct_climate_zones
+-- Class: cpmeta:ClimateZone (30 instances)
+SELECT 'Populating ct_climate_zones (30 instances)...' AS status;
+INSERT OR IGNORE INTO ct_climate_zones (id, rdf_subject, prefix
+, label
+, see_also
+)
+SELECT
+    SUBSTRING(subj FROM 42) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone'
+)
+GROUP BY subj;
+
+-- Populate ct_roles
+-- Class: cpmeta:Role (5 instances)
+SELECT 'Populating ct_roles (5 instances)...' AS status;
+INSERT OR IGNORE INTO ct_roles (id, rdf_subject, prefix
+, label
+, comment
+)
+SELECT
+    SUBSTRING(subj FROM 40) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/roles/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Role'
+)
+GROUP BY subj;
+
+-- Populate ct_funders
+-- Class: cpmeta:Funder (47 instances)
+SELECT 'Populating ct_funders (47 instances)...' AS status;
+INSERT OR IGNORE INTO ct_funders (id, rdf_subject, prefix
+, has_etc_id
+, has_name
+)
+SELECT
+    SUBSTRING(subj FROM 48) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/organizations/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Funder'
+)
+GROUP BY subj;
+
+-- Populate ct_value_formats
+-- Class: cpmeta:ValueFormat (13 instances)
+SELECT 'Populating ct_value_formats (13 instances)...' AS status;
+INSERT OR IGNORE INTO ct_value_formats (id, rdf_subject, prefix
+, label
+, comment
+)
+SELECT
+    SUBSTRING(subj FROM 42) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ValueFormat'
+)
+GROUP BY subj;
+
+-- Populate ct_object_encodings
+-- Class: cpmeta:ObjectEncoding (3 instances)
+SELECT 'Populating ct_object_encodings (3 instances)...' AS status;
+INSERT OR IGNORE INTO ct_object_encodings (id, rdf_subject, prefix
+, label
+)
+SELECT
+    SUBSTRING(subj FROM 42) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ObjectEncoding'
+)
+GROUP BY subj;
+
 -- Populate ct_organizations
 -- UNION TABLE merging: cpmeta:Organization
 -- Class: MERGED:ct_organizations (256 instances)
@@ -119,78 +267,6 @@ WHERE subj IN (
 )
 GROUP BY subj
 ;
-
--- Populate ct_data_themes
--- Class: cpmeta:DataTheme (4 instances)
-SELECT 'Populating ct_data_themes (4 instances)...' AS status;
-INSERT OR IGNORE INTO ct_data_themes (id, rdf_subject, prefix
-, has_icon
-, has_marker_icon
-, label
-)
-SELECT
-    SUBSTRING(subj FROM 40) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/themes') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasIcon' THEN obj ELSE NULL END) AS has_icon
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMarkerIcon' THEN obj ELSE NULL END) AS has_marker_icon
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DataTheme'
-)
-GROUP BY subj;
-
--- Populate ct_projects
--- Class: cpmeta:Project (12 instances)
-SELECT 'Populating ct_projects (12 instances)...' AS status;
-INSERT OR IGNORE INTO ct_projects (id, rdf_subject, prefix
-, comment
-, label
-, see_also
-, has_keywords
-, has_hide_from_search_policy
-, has_skip_pid_minting_policy
-, has_skip_storage_policy
-)
-SELECT
-    SUBSTRING(subj FROM 42) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/projects') AS prefix
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords' THEN obj ELSE NULL END) AS has_keywords
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_hide_from_search_policy
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipPidMintingPolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_skip_pid_minting_policy
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipStoragePolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_skip_storage_policy
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Project'
-)
-GROUP BY subj;
-
--- Populate ct_climate_zones
--- Class: cpmeta:ClimateZone (30 instances)
-SELECT 'Populating ct_climate_zones (30 instances)...' AS status;
-INSERT OR IGNORE INTO ct_climate_zones (id, rdf_subject, prefix
-, label
-, see_also
-)
-SELECT
-    SUBSTRING(subj FROM 42) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ClimateZone'
-)
-GROUP BY subj;
 
 -- Populate ct_spatial_coverages
 -- UNION TABLE merging: cpmeta:SpatialCoverage, cpmeta:LatLonBox, cpmeta:Position
@@ -291,23 +367,33 @@ WHERE subj IN (
 GROUP BY subj
 ;
 
--- Populate ct_funders
--- Class: cpmeta:Funder (47 instances)
-SELECT 'Populating ct_funders (47 instances)...' AS status;
-INSERT OR IGNORE INTO ct_funders (id, rdf_subject, prefix
-, has_etc_id
-, has_name
+-- Populate ct_projects
+-- Class: cpmeta:Project (12 instances)
+SELECT 'Populating ct_projects (12 instances)...' AS status;
+INSERT OR IGNORE INTO ct_projects (id, rdf_subject, prefix
+, comment
+, label
+, see_also
+, has_keywords
+, has_hide_from_search_policy
+, has_skip_pid_minting_policy
+, has_skip_storage_policy
 )
 SELECT
-    SUBSTRING(subj FROM 48) AS id
+    SUBSTRING(subj FROM 43) AS id
     , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/organizations/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
+    , (    'http://meta.icos-cp.eu/resources/projects/') AS prefix
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords' THEN obj ELSE NULL END) AS has_keywords
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasHideFromSearchPolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_hide_from_search_policy
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipPidMintingPolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_skip_pid_minting_policy
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSkipStoragePolicy' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS has_skip_storage_policy
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Funder'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Project'
 )
 GROUP BY subj;
 
@@ -333,89 +419,109 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate ct_ecosystem_types
--- Class: cpmeta:EcosystemType (17 instances)
-SELECT 'Populating ct_ecosystem_types (17 instances)...' AS status;
-INSERT OR IGNORE INTO ct_ecosystem_types (id, rdf_subject, prefix
-, label
-, comment
-)
-SELECT
-    SUBSTRING(subj FROM 42) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/ontologies/cpmeta/') AS prefix
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/EcosystemType'
-)
-GROUP BY subj;
-
--- Populate ct_roles
--- Class: cpmeta:Role (5 instances)
-SELECT 'Populating ct_roles (5 instances)...' AS status;
-INSERT OR IGNORE INTO ct_roles (id, rdf_subject, prefix
-, label
-, comment
-)
-SELECT
-    SUBSTRING(subj FROM 40) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/roles/') AS prefix
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Role'
-)
-GROUP BY subj;
-
--- Populate ct_link_boxes
--- Class: cpmeta:LinkBox (158 instances)
-SELECT 'Populating ct_link_boxes (158 instances)...' AS status;
-INSERT OR IGNORE INTO ct_link_boxes (id, rdf_subject, prefix
-, has_cover_image
+-- Populate ct_thematic_centers
+-- Class: cpmeta:ThematicCenter (3 instances)
+SELECT 'Populating ct_thematic_centers (3 instances)...' AS status;
+INSERT OR IGNORE INTO ct_thematic_centers (id, rdf_subject, prefix
+, has_data_theme
 , has_name
-, has_order_weight
 , label
-, has_webpage_link
 )
 SELECT
-    SUBSTRING(subj FROM 39) AS id
+    SUBSTRING(subj FROM 48) AS id
     , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/icos/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage' THEN obj ELSE NULL END) AS has_cover_image
+    , (    'http://meta.icos-cp.eu/resources/organizations/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme' THEN SUBSTRING(obj FROM 40) ELSE NULL END) AS has_data_theme
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrderWeight' THEN obj::SMALLINT ELSE NULL END) AS has_order_weight
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasWebpageLink' THEN obj ELSE NULL END) AS has_webpage_link
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter'
 )
 GROUP BY subj;
 
--- Populate ct_quantity_kinds
--- Class: cpmeta:QuantityKind (21 instances)
-SELECT 'Populating ct_quantity_kinds (21 instances)...' AS status;
-INSERT OR IGNORE INTO ct_quantity_kinds (id, rdf_subject, prefix
+-- Populate ct_value_types
+-- Class: cpmeta:ValueType (166 instances)
+SELECT 'Populating ct_value_types (166 instances)...' AS status;
+INSERT OR IGNORE INTO ct_value_types (id, rdf_subject, prefix
 , label
+, has_quantity_kind
+, has_unit
 , comment
+, exact_match
+, see_also
 )
 SELECT
     SUBSTRING(subj FROM 41) AS id
     , subj AS rdf_subject
     , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_quantity_kind
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit' THEN obj ELSE NULL END) AS has_unit
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2004/02/skos/core#exactMatch' THEN obj ELSE NULL END) AS exact_match
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ValueType'
+)
+GROUP BY subj;
+
+-- Populate ct_webpage_elements
+-- Class: cpmeta:WebpageElements (28 instances)
+SELECT 'Populating ct_webpage_elements (28 instances)...' AS status;
+INSERT OR IGNORE INTO ct_webpage_elements (id, rdf_subject, prefix
+, has_linkbox
+, has_cover_image
+, label
+, comment
+)
+SELECT
+    SUBSTRING(subj FROM 39) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/icos/') AS prefix
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox' THEN SUBSTRING(obj FROM 39) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox') AS has_linkbox
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage' THEN obj ELSE NULL END) AS has_cover_image
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/QuantityKind'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements'
+)
+GROUP BY subj;
+
+-- Populate ct_fundings
+-- Class: cpmeta:Funding (115 instances)
+SELECT 'Populating ct_fundings (115 instances)...' AS status;
+INSERT OR IGNORE INTO ct_fundings (id, rdf_subject, prefix
+, has_funder
+, label
+, has_end_date
+, has_start_date
+, award_title
+, award_number
+, comment
+, award_uri
+)
+SELECT
+    SUBSTRING(subj FROM 43) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/fundings/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder' THEN SUBSTRING(obj FROM 48) ELSE NULL END) AS has_funder
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate' THEN obj::DATE ELSE NULL END) AS has_end_date
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate' THEN obj::DATE ELSE NULL END) AS has_start_date
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle' THEN obj ELSE NULL END) AS award_title
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber' THEN obj ELSE NULL END) AS award_number
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI' THEN obj ELSE NULL END) AS award_uri
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Funding'
 )
 GROUP BY subj;
 
@@ -481,60 +587,6 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate ct_thematic_centers
--- Class: cpmeta:ThematicCenter (3 instances)
-SELECT 'Populating ct_thematic_centers (3 instances)...' AS status;
-INSERT OR IGNORE INTO ct_thematic_centers (id, rdf_subject, prefix
-, has_data_theme
-, has_name
-, label
-)
-SELECT
-    SUBSTRING(subj FROM 48) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/organizations/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme' THEN SUBSTRING(obj FROM 40) ELSE NULL END) AS has_data_theme
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasName' THEN obj ELSE NULL END) AS has_name
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ThematicCenter'
-)
-GROUP BY subj;
-
--- Populate ct_fundings
--- Class: cpmeta:Funding (115 instances)
-SELECT 'Populating ct_fundings (115 instances)...' AS status;
-INSERT OR IGNORE INTO ct_fundings (id, rdf_subject, prefix
-, has_funder
-, label
-, has_end_date
-, has_start_date
-, award_title
-, award_number
-, comment
-, award_uri
-)
-SELECT
-    SUBSTRING(subj FROM 43) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/fundings/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFunder' THEN SUBSTRING(obj FROM 48) ELSE NULL END) AS has_funder
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEndDate' THEN obj::DATE ELSE NULL END) AS has_end_date
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasStartDate' THEN obj::DATE ELSE NULL END) AS has_start_date
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardTitle' THEN obj ELSE NULL END) AS award_title
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardNumber' THEN obj ELSE NULL END) AS award_number
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/awardURI' THEN obj ELSE NULL END) AS award_uri
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Funding'
-)
-GROUP BY subj;
-
 -- Populate ct_memberships
 -- Class: cpmeta:Membership (1,870 instances)
 SELECT 'Populating ct_memberships (1,870 instances)...' AS status;
@@ -562,58 +614,6 @@ FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
     WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Membership'
-)
-GROUP BY subj;
-
--- Populate ct_webpage_elements
--- Class: cpmeta:WebpageElements (28 instances)
-SELECT 'Populating ct_webpage_elements (28 instances)...' AS status;
-INSERT OR IGNORE INTO ct_webpage_elements (id, rdf_subject, prefix
-, has_linkbox
-, has_cover_image
-, label
-, comment
-)
-SELECT
-    SUBSTRING(subj FROM 39) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/icos/') AS prefix
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox' THEN SUBSTRING(obj FROM 39) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLinkbox') AS has_linkbox
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasCoverImage' THEN obj ELSE NULL END) AS has_cover_image
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/WebpageElements'
-)
-GROUP BY subj;
-
--- Populate ct_value_types
--- Class: cpmeta:ValueType (166 instances)
-SELECT 'Populating ct_value_types (166 instances)...' AS status;
-INSERT OR IGNORE INTO ct_value_types (id, rdf_subject, prefix
-, label
-, has_quantity_kind
-, has_unit
-, comment
-, exact_match
-, see_also
-)
-SELECT
-    SUBSTRING(subj FROM 41) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasQuantityKind' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_quantity_kind
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasUnit' THEN obj ELSE NULL END) AS has_unit
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2004/02/skos/core#exactMatch' THEN obj ELSE NULL END) AS exact_match
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/ValueType'
 )
 GROUP BY subj;
 
@@ -667,39 +667,61 @@ WHERE subj IN (
 )
 GROUP BY subj;
 
--- Populate ct_persons
--- Class: cpmeta:Person (1,146 instances)
-SELECT 'Populating ct_persons (1,146 instances)...' AS status;
-INSERT OR IGNORE INTO ct_persons (id, rdf_subject, prefix
-, has_membership
-, has_first_name
-, has_last_name
-, has_email
-, has_etc_id
-, has_orcid_id
-, has_atc_id
-, has_otc_id
+-- Populate ct_dataset_columns
+-- Class: cpmeta:DatasetColumn (270 instances)
+SELECT 'Populating ct_dataset_columns (270 instances)...' AS status;
+INSERT OR IGNORE INTO ct_dataset_columns (id, rdf_subject, prefix
+, has_column_title
+, has_value_format
+, has_value_type
 , label
+, is_optional_column
 , comment
+, is_regex_column
+, is_quality_flag_for
+, see_also
 )
 SELECT
     SUBSTRING(subj FROM 41) AS id
     , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/people/') AS prefix
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership' THEN SUBSTRING(obj FROM 46) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership') AS has_membership
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName' THEN obj ELSE NULL END) AS has_first_name
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName' THEN obj ELSE NULL END) AS has_last_name
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail' THEN obj ELSE NULL END) AS has_email
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId' THEN obj ELSE NULL END) AS has_orcid_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
+    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle' THEN obj ELSE NULL END) AS has_column_title
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_value_format
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_value_type
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_optional_column
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_regex_column
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor' THEN SUBSTRING(obj FROM 41) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor') AS is_quality_flag_for
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Person'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn'
+)
+GROUP BY subj;
+
+-- Populate ct_dataset_variables
+-- Class: cpmeta:DatasetVariable (76 instances)
+SELECT 'Populating ct_dataset_variables (76 instances)...' AS status;
+INSERT OR IGNORE INTO ct_dataset_variables (id, rdf_subject, prefix
+, has_value_type
+, has_variable_title
+, label
+, is_optional_variable
+)
+SELECT
+    SUBSTRING(subj FROM 41) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_value_type
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableTitle' THEN obj ELSE NULL END) AS has_variable_title
+    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
+    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalVariable' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_optional_variable
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable'
 )
 GROUP BY subj;
 
@@ -1204,92 +1226,39 @@ WHERE subj IN (
 GROUP BY subj
 ;
 
--- Populate ct_dataset_columns
--- Class: cpmeta:DatasetColumn (270 instances)
-SELECT 'Populating ct_dataset_columns (270 instances)...' AS status;
-INSERT OR IGNORE INTO ct_dataset_columns (id, rdf_subject, prefix
-, has_column_title
-, has_value_format
-, has_value_type
+-- Populate ct_persons
+-- Class: cpmeta:Person (1,146 instances)
+SELECT 'Populating ct_persons (1,146 instances)...' AS status;
+INSERT OR IGNORE INTO ct_persons (id, rdf_subject, prefix
+, has_membership
+, has_first_name
+, has_last_name
+, has_email
+, has_etc_id
+, has_orcid_id
+, has_atc_id
+, has_otc_id
 , label
-, is_optional_column
 , comment
-, is_regex_column
-, is_quality_flag_for
-, see_also
 )
 SELECT
     SUBSTRING(subj FROM 41) AS id
     , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasColumnTitle' THEN obj ELSE NULL END) AS has_column_title
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueFormat' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_value_format
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_value_type
+    , (    'http://meta.icos-cp.eu/resources/people/') AS prefix
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership' THEN SUBSTRING(obj FROM 46) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasMembership') AS has_membership
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasFirstName' THEN obj ELSE NULL END) AS has_first_name
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasLastName' THEN obj ELSE NULL END) AS has_last_name
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail' THEN obj ELSE NULL END) AS has_email
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEtcId' THEN obj ELSE NULL END) AS has_etc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOrcidId' THEN obj ELSE NULL END) AS has_orcid_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAtcId' THEN obj ELSE NULL END) AS has_atc_id
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasOtcId' THEN obj ELSE NULL END) AS has_otc_id
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_optional_column
     , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#comment' THEN obj ELSE NULL END) AS comment
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isRegexColumn' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_regex_column
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor' THEN SUBSTRING(obj FROM 41) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isQualityFlagFor') AS is_quality_flag_for
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#seeAlso' THEN obj ELSE NULL END) AS see_also
 FROM rdf_triples
 WHERE subj IN (
     SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DatasetColumn'
-)
-GROUP BY subj;
-
--- Populate ct_dataset_variables
--- Class: cpmeta:DatasetVariable (76 instances)
-SELECT 'Populating ct_dataset_variables (76 instances)...' AS status;
-INSERT OR IGNORE INTO ct_dataset_variables (id, rdf_subject, prefix
-, has_value_type
-, has_variable_title
-, label
-, is_optional_variable
-)
-SELECT
-    SUBSTRING(subj FROM 41) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasValueType' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS has_value_type
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasVariableTitle' THEN obj ELSE NULL END) AS has_variable_title
-    , MAX(CASE WHEN pred = 'http://www.w3.org/2000/01/rdf-schema#label' THEN obj ELSE NULL END) AS label
-    , BOOL_OR(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/isOptionalVariable' THEN CASE WHEN LOWER(obj) IN ('true', '1') THEN TRUE WHEN LOWER(obj) IN ('false', '0') THEN FALSE ELSE NULL END ELSE NULL END) AS is_optional_variable
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DatasetVariable'
-)
-GROUP BY subj;
-
--- Populate ct_data_acquisitions
--- Class: cpmeta:DataAcquisition (2,341,317 instances)
-SELECT 'Populating ct_data_acquisitions (2,341,317 instances)...' AS status;
-INSERT OR IGNORE INTO ct_data_acquisitions (id, rdf_subject, prefix
-, was_performed_with
-, ended_at_time
-, started_at_time
-, was_associated_with
-, has_sampling_height
-)
-SELECT
-    SUBSTRING(subj FROM 38) AS id
-    , subj AS rdf_subject
-    , (    'http://meta.icos-cp.eu/resources/acq_') AS prefix
-    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith' THEN SUBSTRING(obj FROM 46) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith') AS was_performed_with
-    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#endedAtTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS ended_at_time
-    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#startedAtTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS started_at_time
-    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#wasAssociatedWith' THEN SUBSTRING(obj FROM (CASE
-        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/wdcgg/station/%' ESCAPE '\' THEN 48
-        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/stations/%' ESCAPE '\' THEN 43
-        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/wdcgg/%' ESCAPE '\' THEN 40
-        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/icos/%' ESCAPE '\' THEN 39
-    END)) ELSE NULL END) AS was_associated_with
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_sampling_height
-FROM rdf_triples
-WHERE subj IN (
-    SELECT subj FROM rdf_triples
-    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition'
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/Person'
 )
 GROUP BY subj;
 
@@ -1339,6 +1308,37 @@ WHERE subj IN (
 GROUP BY subj
 ;
 
+-- Populate ct_data_acquisitions
+-- Class: cpmeta:DataAcquisition (2,341,317 instances)
+SELECT 'Populating ct_data_acquisitions (2,341,317 instances)...' AS status;
+INSERT OR IGNORE INTO ct_data_acquisitions (id, rdf_subject, prefix
+, was_performed_with
+, ended_at_time
+, started_at_time
+, was_associated_with
+, has_sampling_height
+)
+SELECT
+    SUBSTRING(subj FROM 38) AS id
+    , subj AS rdf_subject
+    , (    'http://meta.icos-cp.eu/resources/acq_') AS prefix
+    , ARRAY_AGG(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith' THEN SUBSTRING(obj FROM 46) ELSE NULL END) FILTER (WHERE pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/wasPerformedWith') AS was_performed_with
+    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#endedAtTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS ended_at_time
+    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#startedAtTime' THEN obj::TIMESTAMP WITH TIME ZONE ELSE NULL END) AS started_at_time
+    , MAX(CASE WHEN pred = 'http://www.w3.org/ns/prov#wasAssociatedWith' THEN SUBSTRING(obj FROM (CASE
+        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/wdcgg/station/%' ESCAPE '\' THEN 48
+        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/stations/%' ESCAPE '\' THEN 43
+        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/wdcgg/%' ESCAPE '\' THEN 40
+        WHEN obj LIKE 'http://meta.icos-cp.eu/resources/icos/%' ESCAPE '\' THEN 39
+    END)) ELSE NULL END) AS was_associated_with
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasSamplingHeight' THEN obj::DOUBLE PRECISION ELSE NULL END) AS has_sampling_height
+FROM rdf_triples
+WHERE subj IN (
+    SELECT subj FROM rdf_triples
+    WHERE pred = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' AND obj = 'http://meta.icos-cp.eu/ontologies/cpmeta/DataAcquisition'
+)
+GROUP BY subj;
+
 -- Populate ct_object_specs
 -- UNION TABLE merging: cpmeta:SimpleObjectSpec, cpmeta:DataObjectSpec
 -- Class: MERGED:ct_object_specs (110 instances)
@@ -1364,7 +1364,7 @@ SELECT
     , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
     , 'simple' AS spec_type
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS contains_dataset
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_associated_project
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject' THEN SUBSTRING(obj FROM 43) ELSE NULL END) AS has_associated_project
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel' THEN obj::SMALLINT ELSE NULL END) AS has_data_level
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme' THEN SUBSTRING(obj FROM 40) ELSE NULL END) AS has_data_theme
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_encoding
@@ -1389,7 +1389,7 @@ SELECT
     , (    'http://meta.icos-cp.eu/resources/cpmeta/') AS prefix
     , 'data' AS spec_type
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/containsDataset' THEN SUBSTRING(obj FROM 41) ELSE NULL END) AS contains_dataset
-    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_associated_project
+    , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject' THEN SUBSTRING(obj FROM 43) ELSE NULL END) AS has_associated_project
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataLevel' THEN obj::SMALLINT ELSE NULL END) AS has_data_level
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasDataTheme' THEN SUBSTRING(obj FROM 40) ELSE NULL END) AS has_data_theme
     , MAX(CASE WHEN pred = 'http://meta.icos-cp.eu/ontologies/cpmeta/hasEncoding' THEN SUBSTRING(obj FROM 42) ELSE NULL END) AS has_encoding

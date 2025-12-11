@@ -137,7 +137,7 @@
     },
     "ct_projects": {
       "prefix_counts": {
-        "http://meta.icos-cp.eu/resources/projects": 12
+        "http://meta.icos-cp.eu/resources/projects/": 12
       },
       "unknown_prefixes": 6
     },

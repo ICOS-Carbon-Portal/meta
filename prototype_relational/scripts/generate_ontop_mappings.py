@@ -25,7 +25,8 @@ from generate_class_tables import (
     MERGE_GROUPS,
     detect_functional_properties,
     load_cardinality_analysis,
-    get_predicate_columns
+    get_predicate_columns,
+    build_foreign_key_map
 )
 
 def sanitize_table_name(class_name: str) -> str:
@@ -558,6 +559,68 @@ def find_all_array_target_prefixes_from_references(
     return target_results
 
 
+def convert_fk_map_format(
+    fk_map_list: Dict[str, List[Tuple[str, str, str]]]
+) -> Dict[str, Dict[str, Tuple[str, str]]]:
+    """
+    Convert FK map from build_foreign_key_map format to dict-of-dicts format.
+
+    Args:
+        fk_map_list: Dict[table_name] -> List[(col_name, ref_table, pred_uri)]
+
+    Returns:
+        Dict[table_name] -> {col_name -> (ref_table, "id")}
+    """
+    converted = {}
+    for table_name, fk_list in fk_map_list.items():
+        converted[table_name] = {}
+        for col_name, ref_table, pred_uri in fk_list:
+            # All FKs reference the "id" column of the target table
+            converted[table_name][col_name] = (ref_table, "id")
+    return converted
+
+
+def generate_foreign_key_specs(
+    table_name: str,
+    columns: List[str],
+    fk_map: Dict[str, Dict[str, Tuple[str, str]]]
+) -> Optional[Dict]:
+    """
+    Generate foreign key specifications for a lens in Ontop format.
+
+    Args:
+        table_name: Name of the table
+        columns: List of column names to check for FKs (e.g., ["id", "has_vendor"])
+        fk_map: Foreign key mapping from parse_foreign_keys()
+                Dict[table_name] -> {column_name -> (ref_table, ref_column)}
+
+    Returns:
+        Dict with "added" key containing list of FK specifications for Ontop lenses
+        Format: {"added": [{"name": "fk_name", "from": [...], "to": {...}}]}
+        Returns None if no FKs exist for this table's columns
+    """
+    foreign_keys = []
+    table_fks = fk_map.get(table_name, {})
+
+    for col_name, (ref_table, ref_column) in table_fks.items():
+        if col_name in columns:
+            # Generate a unique FK name: table_column_fkey
+            fk_name = f"{table_name}_{col_name}_fkey"
+
+            # Include this FK in the lens specification
+            foreign_keys.append({
+                "name": fk_name,
+                "from": [col_name],
+                "to": {
+                    "relation": [ref_table],
+                    "columns": [ref_column]
+                }
+            })
+
+    # Return in Ontop format with "added" wrapper
+    return {"added": foreign_keys} if foreign_keys else None
+
+
 def generate_mapping_id(table_name: str, predicate_short: str, prefix: Optional[str] = None) -> str:
     """
     Generate a unique, valid mapping ID.
@@ -855,6 +918,24 @@ def _generate_mappings_for_prefix(
             # nonNullConstraints always includes both id and the flattened column
             lens_def["nonNullConstraints"] = {"added": ["id", new_column]}
 
+            # Add foreign keys if the flattened column is a FK reference
+            table_fks = fk_map.get(table_name, {})
+            if column_name in table_fks:
+                ref_table, ref_column = table_fks[column_name]
+                # For FlattenLens, the FK is on the new flattened column
+                # Generate unique FK name
+                fk_name = f"{lens_name}_{new_column}_fkey"
+                lens_def["foreignKeys"] = {
+                    "added": [{
+                        "name": fk_name,
+                        "from": [new_column],
+                        "to": {
+                            "relation": [ref_table],
+                            "columns": [ref_column]
+                        }
+                    }]
+                }
+
             lens_definitions.append(lens_def)
 
             # Build modified source SQL using the lens
@@ -1095,9 +1176,10 @@ def main():
     print(f"Found {len(functional_properties)} functional properties")
     print(f"Found {len(non_functional_properties)} non-functional properties")
 
-    # Parse foreign keys
-    print("\nParsing foreign keys...")
-    fk_map = parse_foreign_keys(fk_sql_file)
+    # Build foreign keys from class analysis (same source as table generation)
+    print("\nBuilding foreign keys from class analysis...")
+    fk_map_from_classes = build_foreign_key_map(class_analysis.get('classes', []))
+    fk_map = convert_fk_map_format(fk_map_from_classes)
     print(f"Found {sum(len(fks) for fks in fk_map.values())} foreign key relationships")
 
     # Generate prefix declarations
@@ -1175,6 +1257,15 @@ def main():
         # Create BasicLens for this table if not already created
         if table_name not in created_basic_lenses:
             basic_lens_name = get_basic_lens_name(table_name)
+
+            # Build list of columns in the base table
+            base_columns = ["id", "rdf_subject", "prefix"]
+            for pred in class_info.get('predicates', []):
+                pred_short = pred.get('predicate_short', '')
+                if pred_short and pred_short != 'rdf:type':
+                    col_name = sanitize_column_name(pred_short)
+                    base_columns.append(col_name)
+
             basic_lens_def = {
                 "type": "BasicLens",
                 "baseRelation": [table_name],
@@ -1186,6 +1277,12 @@ def main():
                     "added": ["id"]
                 }
             }
+
+            # Add foreign keys if any exist
+            fk_specs = generate_foreign_key_specs(table_name, base_columns, fk_map)
+            if fk_specs:
+                basic_lens_def["foreignKeys"] = fk_specs
+
             # Insert BasicLens at the beginning to ensure they come before FlattenLens
             all_lens_definitions.insert(0, basic_lens_def)
             created_basic_lenses.add(table_name)

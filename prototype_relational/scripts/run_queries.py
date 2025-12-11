@@ -4,6 +4,7 @@ import argparse
 import csv
 import difflib
 import io
+import json
 import re
 import requests
 import sys
@@ -19,6 +20,54 @@ def print_query(query, index):
 def rewrite_distinct_keywords(query):
     # Apply distinct_keywords rewrite
     return query.replace("select (cpmeta:distinct_keywords() as ?keywords)", "select ?spec")
+
+def normalize_json_value(value):
+    """
+    Normalize a JSON field value by applying URL decoding and timestamp normalization.
+
+    Args:
+        value: String value from JSON binding
+
+    Returns:
+        Normalized string value
+    """
+    if value is None:
+        return value
+
+    # URL decode
+    value = unquote(value)
+
+    # Timestamp normalization: replace "+00:00" with "Z"
+    value = value.replace("+00:00", "Z")
+
+    # Timestamp normalization: remove milliseconds (e.g., "2023-01-01T12:00:00.123Z" -> "2023-01-01T12:00:00Z")
+    value = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', value)
+
+    return value
+
+def normalize_json_response(json_str):
+    """
+    Parse JSON response and normalize all field values.
+
+    Args:
+        json_str: JSON string from SPARQL endpoint
+
+    Returns:
+        Normalized JSON object, or None if parsing fails
+    """
+    try:
+        data = json.loads(json_str)
+
+        # SPARQL JSON format: {"head": {"vars": [...]}, "results": {"bindings": [...]}}
+        if 'results' in data and 'bindings' in data['results']:
+            for binding in data['results']['bindings']:
+                for var, value_obj in binding.items():
+                    if 'value' in value_obj:
+                        value_obj['value'] = normalize_json_value(value_obj['value'])
+
+        return data
+    except json.JSONDecodeError as e:
+        return None
 
 def run_query(query, host='http://localhost:65432/sparql', accept_header='application/csv'):
     headers = {
@@ -78,60 +127,63 @@ def extract_queries(input_file):
     return queries
 
 
-def print_diff(csv1, csv2, max_lines=50):
+def print_diff(json1, json2, max_lines=50):
     """
-    Print set-based differences between two CSV strings (order-independent).
+    Print set-based differences between two SPARQL JSON results (order-independent).
 
     Args:
-        csv1: First CSV string
-        csv2: Second CSV string
+        json1: First JSON object (parsed)
+        json2: Second JSON object (parsed)
         max_lines: Maximum number of difference lines to display per section (default: 50)
     """
     print(f"\n{'─'*80}")
-    print("Set-based Diff (order-independent, ignoring rows with meta.fieldsites.se):")
+    print("Set-based Diff (order-independent, ignoring bindings with meta.fieldsites.se):")
     print(f"{'─'*80}")
 
     try:
-        # Parse both CSV strings
-        reader1 = csv.reader(io.StringIO(csv1))
-        reader2 = csv.reader(io.StringIO(csv2))
+        # Handle None cases
+        if json1 is None and json2 is None:
+            print("Both results are empty or failed to parse")
+            print(f"{'─'*80}")
+            return
 
-        # Convert to lists to get all rows
-        rows1 = list(reader1)
-        rows2 = list(reader2)
+        bindings1 = json1.get('results', {}).get('bindings', []) if json1 else []
+        bindings2 = json2.get('results', {}).get('bindings', []) if json2 else []
 
         # Handle empty results
-        if len(rows1) == 0 and len(rows2) == 0:
+        if len(bindings1) == 0 and len(bindings2) == 0:
             print("Both results are empty")
             print(f"{'─'*80}")
             return
 
-        # Get headers
-        header1 = rows1[0] if len(rows1) > 0 else []
-        header2 = rows2[0] if len(rows2) > 0 else []
+        # Count total bindings
+        total_bindings1 = len(bindings1)
+        total_bindings2 = len(bindings2)
 
-        # Count total data rows (excluding header)
-        total_rows1 = len(rows1) - 1 if len(rows1) > 1 else 0
-        total_rows2 = len(rows2) - 1 if len(rows2) > 1 else 0
+        # Helper functions
+        def binding_to_tuple(binding):
+            items = []
+            for var, value_obj in sorted(binding.items()):
+                value = value_obj.get('value', '')
+                items.append((var, value))
+            return frozenset(items)
 
+        def has_fieldsites(binding):
+            return any('meta.fieldsites.se' in str(value_obj.get('value', ''))
+                      for value_obj in binding.values())
 
-        # Convert data rows to sets of tuples (skip header)
-        # Filter out rows containing 'meta.fieldsites.se'
-        data1 = set(
-            tuple(cell.strip() for cell in row)
-            for row in rows1[1:]
-            if not any('meta.fieldsites.se' in cell for cell in row)
-        ) if len(rows1) > 1 else set()
+        def binding_to_string(binding_tuple):
+            # Convert frozenset of (var, value) pairs to readable string
+            items = sorted(list(binding_tuple), key=lambda x: x[0])
+            return ', '.join(f"{var}={value}" for var, value in items)
 
-        data2 = set(
-            tuple(cell.strip() for cell in row)
-            for row in rows2[1:]
-            if not any('meta.fieldsites.se' in cell for cell in row)
-        ) if len(rows2) > 1 else set()
+        # Convert bindings to sets (filtering out meta.fieldsites.se)
+        data1 = set(binding_to_tuple(b) for b in bindings1 if not has_fieldsites(b))
+        data2 = set(binding_to_tuple(b) for b in bindings2 if not has_fieldsites(b))
 
-        # Count filtered rows
-        filtered1 = total_rows1 - len(data1)
-        filtered2 = total_rows2 - len(data2)
+        # Count filtered bindings
+        filtered1 = total_bindings1 - len(data1)
+        filtered2 = total_bindings2 - len(data2)
 
         # Calculate set differences
         only_in_1 = data1 - data2
@@ -140,46 +192,32 @@ def print_diff(csv1, csv2, max_lines=50):
 
         # Display statistics
         if filtered1 > 0 or filtered2 > 0:
-            print(f"Filtered rows (containing meta.fieldsites.se):")
-            print(f"  Ontop: {filtered1} rows filtered")
-            print(f"  cpmeta: {filtered2} rows filtered")
+            print(f"Filtered bindings (containing meta.fieldsites.se):")
+            print(f"  Endpoint 1: {filtered1} bindings filtered")
+            print(f"  Endpoint 2: {filtered2} bindings filtered")
             print()
-        print(f"Rows only in Ontop: {len(only_in_1)}")
-        print(f"Rows only in cpmeta: {len(only_in_2)}")
-        print(f"Rows in both: {len(in_both)}")
+        print(f"Bindings only in Endpoint 1: {len(only_in_1)}")
+        print(f"Bindings only in Endpoint 2: {len(only_in_2)}")
+        print(f"Bindings in both: {len(in_both)}")
 
-        # Show rows only in Ontop
+        # Show bindings only in Endpoint 1
         if only_in_1:
-            print(f"\n--- Rows ONLY in Ontop ({len(only_in_1)} rows) ---")
-            for i, row in enumerate(sorted(only_in_1)[:max_lines], 1):
-                print(f"  {i}. {','.join(row)}")
+            print(f"\n--- Bindings ONLY in Endpoint 1 ({len(only_in_1)} bindings) ---")
+            for i, binding in enumerate(sorted(only_in_1, key=lambda x: binding_to_string(x))[:max_lines], 1):
+                print(f"  {i}. {binding_to_string(binding)}")
             if len(only_in_1) > max_lines:
-                print(f"  ... ({len(only_in_1) - max_lines} more rows not shown)")
+                print(f"  ... ({len(only_in_1) - max_lines} more bindings not shown)")
 
-        # Show rows only in cpmeta
+        # Show bindings only in Endpoint 2
         if only_in_2:
-            print(f"\n+++ Rows ONLY in cpmeta ({len(only_in_2)} rows) +++")
-            for i, row in enumerate(sorted(only_in_2)[:max_lines], 1):
-                print(f"  {i}. {','.join(row)}")
+            print(f"\n+++ Bindings ONLY in Endpoint 2 ({len(only_in_2)} bindings) +++")
+            for i, binding in enumerate(sorted(only_in_2, key=lambda x: binding_to_string(x))[:max_lines], 1):
+                print(f"  {i}. {binding_to_string(binding)}")
             if len(only_in_2) > max_lines:
-                print(f"  ... ({len(only_in_2) - max_lines} more rows not shown)")
+                print(f"  ... ({len(only_in_2) - max_lines} more bindings not shown)")
 
     except Exception as e:
-        print(f"Error parsing CSV for diff: {e}")
-        print("Falling back to line-by-line comparison:")
-        # Fall back to simple line diff
-        lines1 = set(csv1.splitlines())
-        lines2 = set(csv2.splitlines())
-        only_1 = lines1 - lines2
-        only_2 = lines2 - lines1
-        if only_1:
-            print(f"\nOnly in Ontop: {len(only_1)} lines")
-            for line in list(only_1)[:max_lines]:
-                print(f"  - {line}")
-        if only_2:
-            print(f"\nOnly in cpmeta: {len(only_2)} lines")
-            for line in list(only_2)[:max_lines]:
-                print(f"  + {line}")
+        print(f"Error processing JSON for diff: {e}")
 
     print(f"{'─'*80}")
 
@@ -231,6 +269,54 @@ def compare_csv_results(csv1, csv2):
         return csv1.strip() == csv2.strip()
 
 
+def compare_json_results(json1, json2):
+    """
+    Compare two SPARQL JSON results as sets of bindings (order-independent).
+    Ignores bindings containing 'meta.fieldsites.se'.
+
+    Args:
+        json1: First JSON object (parsed)
+        json2: Second JSON object (parsed)
+
+    Returns:
+        True if the bindings match (ignoring order), False otherwise
+    """
+    try:
+        # Handle None/error cases
+        if json1 is None and json2 is None:
+            return True
+        if json1 is None or json2 is None:
+            return False
+
+        bindings1 = json1.get('results', {}).get('bindings', [])
+        bindings2 = json2.get('results', {}).get('bindings', [])
+
+        # Handle empty results
+        if len(bindings1) == 0 and len(bindings2) == 0:
+            return True
+
+        # Convert bindings to comparable format (frozen sets of items)
+        # Filter out bindings containing 'meta.fieldsites.se'
+        def binding_to_tuple(binding):
+            # Convert binding to a frozenset of (var, value) pairs for comparison
+            items = []
+            for var, value_obj in sorted(binding.items()):
+                value = value_obj.get('value', '')
+                items.append((var, value))
+            return frozenset(items)
+
+        def has_fieldsites(binding):
+            return any('meta.fieldsites.se' in str(value_obj.get('value', ''))
+                      for value_obj in binding.values())
+
+        set1 = set(binding_to_tuple(b) for b in bindings1 if not has_fieldsites(b))
+        set2 = set(binding_to_tuple(b) for b in bindings2 if not has_fieldsites(b))
+
+        return set1 == set2
+    except Exception as e:
+        return False
+
+
 def print_runtime_summary(query_runtimes):
     """
     Display runtime summary with top 10 longest queries and statistics.
@@ -272,15 +358,15 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
     Args:
         matched: List of query IDs where both endpoints succeeded and matched
         mismatched: List of query IDs where both endpoints succeeded but results differ
-        ep1_failures: List of query IDs that failed on Ontop only
-        ep2_failures: List of query IDs that failed on cpmeta only
+        ep1_failures: List of query IDs that failed on endpoint 1 only
+        ep2_failures: List of query IDs that failed on endpoint 2 only
         both_failed: List of query IDs that failed on both endpoints
     """
     print(f"\n{'='*80}")
     print("ENDPOINT COMPARISON SUMMARY")
     print(f"{'='*80}")
-    print("Ontop: http://localhost:65432/sparql (Accept: application/csv)")
-    print("cpmeta: http://localhost:9094/sparql (Accept: text/csv)")
+    print("Endpoint 1: http://localhost:65432/sparql (Accept: application/sparql-results+json)")
+    print("Endpoint 2: http://localhost:9094/sparql (Accept: application/sparql-results+json)")
     print()
 
     # Results comparison
@@ -294,11 +380,11 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
 
     # Endpoint-specific failures
     print(f"\nEndpoint-specific failures:")
-    print(f"  Failed on Ontop only: {len(ep1_failures)}")
+    print(f"  Failed on endpoint 1 only: {len(ep1_failures)}")
     if ep1_failures:
         print(f"    Query IDs: {', '.join(map(str, ep1_failures))}")
 
-    print(f"  Failed on cpmeta only: {len(ep2_failures)}")
+    print(f"  Failed on endpoint 2 only: {len(ep2_failures)}")
     if ep2_failures:
         print(f"    Query IDs: {', '.join(map(str, ep2_failures))}")
 
@@ -329,8 +415,8 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
     skipped_count = 0
 
     # Track endpoint comparison results
-    endpoint1_failures = []  # Failed on Ontop only
-    endpoint2_failures = []  # Failed on cpmeta only
+    endpoint1_failures = []  # Failed on endpoint 1 only
+    endpoint2_failures = []  # Failed on endpoint 2 only
     both_endpoints_failed = []  # Failed on both
     mismatched_results = []  # Both succeeded but results differ
     matched_results = []  # Both succeeded and results match
@@ -355,27 +441,63 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         endpoint1_host = 'http://localhost:65432/sparql'
         endpoint2_host = 'http://localhost:9094/sparql'
 
-        success1, response1, error1, time1 = run_query(query, endpoint1_host, 'application/csv')
-        success2, response2, error2, time2 = run_query(query, endpoint2_host, 'text/csv')
-        response1 = response1.replace("+00:00", "Z")
-        response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
+        success1, response1, error1, time1 = run_query(query, endpoint1_host, 'application/sparql-results+json')
+        success2, response2, error2, time2 = run_query(query, endpoint2_host, 'application/sparql-results+json')
+        json1 = normalize_json_response(response1)
+        json2 = normalize_json_response(response2)
 
-        # Track runtime for Ontop (primary)
+        # Track runtime for Endpoint 1 (primary)
         query_runtimes.append((idx, time1))
 
         # Display results for both endpoints
-        line_count1 = len(response1.splitlines()) if response1 else 0
-        line_count2 = len(response2.splitlines()) if response2 else 0
+        result_count1 = len(json1.get('results', {}).get('bindings', [])) if json1 else 0
+        result_count2 = len(json2.get('results', {}).get('bindings', [])) if json2 else 0
 
-        print(f"\nOntop ({endpoint1_host}):")
+        # Count fieldsites bindings for each endpoint
+        filtered_count1 = sum(1 for b in json1.get('results', {}).get('bindings', [])
+                              if any('meta.fieldsites.se' in str(value_obj.get('value', ''))
+                                    for value_obj in b.values())) if json1 else 0
+        filtered_count2 = sum(1 for b in json2.get('results', {}).get('bindings', [])
+                              if any('meta.fieldsites.se' in str(value_obj.get('value', ''))
+                                    for value_obj in b.values())) if json2 else 0
+
+        # Helper function to convert binding to comparable tuple
+        def binding_to_tuple(binding):
+            items = []
+            for var, value_obj in sorted(binding.items()):
+                value = value_obj.get('value', '')
+                items.append((var, value))
+            return frozenset(items)
+
+        def has_fieldsites(binding):
+            return any('meta.fieldsites.se' in str(value_obj.get('value', ''))
+                      for value_obj in binding.values())
+
+        # Count unique bindings (excluding fieldsites) for duplicate detection
+        bindings1_filtered = [b for b in json1.get('results', {}).get('bindings', [])
+                              if not has_fieldsites(b)] if json1 else []
+        bindings2_filtered = [b for b in json2.get('results', {}).get('bindings', [])
+                              if not has_fieldsites(b)] if json2 else []
+
+        unique_count1 = len(set(binding_to_tuple(b) for b in bindings1_filtered))
+        unique_count2 = len(set(binding_to_tuple(b) for b in bindings2_filtered))
+
+        duplicate_count1 = len(bindings1_filtered) - unique_count1
+        duplicate_count2 = len(bindings2_filtered) - unique_count2
+
+        print(f"\nEndpoint 1 ({endpoint1_host}):")
         if success1:
-            print(f"  Success ({time1:.3f}s, {line_count1} lines)")
+            print(f"  Success ({time1:.3f}s, {result_count1} results, {filtered_count1} filtered)")
+            if duplicate_count1 > 0:
+                print(f"    (Contains {duplicate_count1} duplicate row{'s' if duplicate_count1 != 1 else ''})")
         else:
             print(f"  Failed: {error1}")
 
-        print(f"cpmeta ({endpoint2_host}):")
+        print(f"Endpoint 2 ({endpoint2_host}):")
         if success2:
-            print(f"  Success ({time2:.3f}s, {line_count2} lines)")
+            print(f"  Success ({time2:.3f}s, {result_count2} results, {filtered_count2} filtered)")
+            if duplicate_count2 > 0:
+                print(f"    (Contains {duplicate_count2} duplicate row{'s' if duplicate_count2 != 1 else ''})")
         else:
             print(f"  Failed: {error2}")
 
@@ -393,7 +515,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 'error': f"EP1: {error1}, EP2: {error2}"
             })
         elif not success1:
-            # Only Ontop failed
+            # Only endpoint 1 failed
             has_mismatch = True
             endpoint1_failures.append(idx)
             failed_queries.append({
@@ -403,35 +525,35 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 'error': error1
             })
         elif not success2:
-            # Only cpmeta failed
+            # Only endpoint 2 failed
             has_mismatch = True
             endpoint2_failures.append(idx)
         else:
             # Both succeeded - compare results
-            results_match = compare_csv_results(response1, response2)
+            results_match = compare_json_results(json1, json2)
 
-            # If same line count but content mismatch, retry cpmeta
-            if not results_match and line_count1 == line_count2:
+            # If same result count but content mismatch, retry endpoint 2
+            if not results_match and result_count1 == result_count2:
                 retry_count = 0
                 max_retries = 10
 
                 while not results_match and retry_count < max_retries:
                     retry_count += 1
-                    # Re-execute query on cpmeta
-                    success2, response2, error2, time2 = run_query(query, endpoint2_host, 'text/csv')
-                    response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
+                    # Re-execute query on endpoint 2
+                    success2, response2, error2, time2 = run_query(query, endpoint2_host, 'application/sparql-results+json')
+                    json2 = normalize_json_response(response2)
 
                     if success2:
-                        line_count2 = len(response2.splitlines()) if response2 else 0
-                        # Only consider it a match if line counts are still the same
-                        if line_count1 == line_count2:
-                            results_match = compare_csv_results(response1, response2)
+                        result_count2 = len(json2.get('results', {}).get('bindings', [])) if json2 else 0
+                        # Only consider it a match if result counts are still the same
+                        if result_count1 == result_count2:
+                            results_match = compare_json_results(json1, json2)
                         else:
-                            # Line counts diverged, can't match
+                            # Result counts diverged, can't match
                             results_match = False
                             break
                     else:
-                        # cpmeta failed on retry
+                        # Endpoint 2 failed on retry
                         break
 
             if results_match:
@@ -443,48 +565,50 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         # Print full results only on mismatch if requested
         if show_results and has_mismatch:
             if success1:
-                print(f"\nResults from Ontop:")
+                print(f"\nResults from Endpoint 1:")
                 print(f"{'─'*80}")
-                # Limit output to 200 lines
-                lines1 = response1.splitlines()
-                if len(lines1) > 200:
-                    print('\n'.join(lines1[:200]))
-                    print(f"\n... ({len(lines1) - 200} more lines truncated)")
+                # Pretty print JSON with limited output
+                json_str = json.dumps(json1, indent=2) if json1 else response1
+                lines = json_str.splitlines()
+                if len(lines) > 200:
+                    print('\n'.join(lines[:200]))
+                    print(f"\n... ({len(lines) - 200} more lines truncated)")
                 else:
-                    print(response1)
+                    print(json_str)
                 print(f"{'─'*80}")
 
             if success2:
-                print(f"\nResults from cpmeta:")
+                print(f"\nResults from Endpoint 2:")
                 print(f"{'─'*80}")
-                # Limit output to 200 lines
-                lines2 = response2.splitlines()
-                if len(lines2) > 200:
-                    print('\n'.join(lines2[:200]))
-                    print(f"\n... ({len(lines2) - 200} more lines truncated)")
+                # Pretty print JSON with limited output
+                json_str = json.dumps(json2, indent=2) if json2 else response2
+                lines = json_str.splitlines()
+                if len(lines) > 200:
+                    print('\n'.join(lines[:200]))
+                    print(f"\n... ({len(lines) - 200} more lines truncated)")
                 else:
-                    print(response2)
+                    print(json_str)
                 print(f"{'─'*80}")
 
         # Print result status
         if not success1 and not success2:
             print(f"\nResult: ⚠️  BOTH ENDPOINTS FAILED")
         elif not success1:
-            print(f"\nResult: ⚠️  Ontop FAILED")
+            print(f"\nResult: ⚠️  ENDPOINT 1 FAILED")
         elif not success2:
-            print(f"\nResult: ⚠️  cpmeta FAILED")
+            print(f"\nResult: ⚠️  ENDPOINT 2 FAILED")
         else:
             # Both succeeded
             if has_mismatch:
                 print(f"\nResult: ✗ MISMATCH")
                 # Show diff if requested
                 if show_results:
-                    print_diff(response1, response2)
+                    print_diff(json1, json2)
             else:
                 print(f"\nResult: ✓ MATCH")
 
-            # Track queries with 1 or fewer rows (from Ontop)
-            if line_count1 <= 2:
+            # Track queries with 1 or fewer results (from Endpoint 1)
+            if result_count1 <= 1:
                 small_result_queries.append(idx)
 
     # Save all rewritten queries to file
@@ -547,9 +671,9 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
     print(f"Executed: {len(queries) - skipped_count}")
     print(f"Skipped: {skipped_count}")
     print(f"Failed: {len(failed_queries)}")
-    print(f"Queries returning ≤1 row: {len(small_result_queries)}")
+    print(f"Queries returning ≤1 result: {len(small_result_queries)}")
     if small_result_queries:
-        print(f"Query indices with ≤1 row: {', '.join(map(str, small_result_queries))}")
+        print(f"Query indices with ≤1 result: {', '.join(map(str, small_result_queries))}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

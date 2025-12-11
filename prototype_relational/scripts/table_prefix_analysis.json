@@ -41,7 +41,7 @@
     },
     "ct_data_themes": {
       "prefix_counts": {
-        "http://meta.icos-cp.eu/resources/themes": 4
+        "http://meta.icos-cp.eu/resources/themes/": 4
       },
       "unknown_prefixes": 5
     },
@@ -155,7 +155,7 @@
     },
     "ct_spatial_coverages": {
       "prefix_counts": {
-        "http://meta.icos-cp.eu/resources/latlonboxes": 7,
+        "http://meta.icos-cp.eu/resources/latlonboxes/": 7,
         "http://meta.icos-cp.eu/resources/position_": 4,
         "http://meta.icos-cp.eu/resources/spcov_": 4153
       },

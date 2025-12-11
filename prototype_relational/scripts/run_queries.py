@@ -8,6 +8,7 @@ import re
 import requests
 import sys
 import time
+from urllib.parse import unquote
 
 def print_query(query, index):
     print(f"\n{'='*80}")
@@ -140,24 +141,24 @@ def print_diff(csv1, csv2, max_lines=50):
         # Display statistics
         if filtered1 > 0 or filtered2 > 0:
             print(f"Filtered rows (containing meta.fieldsites.se):")
-            print(f"  Endpoint 1: {filtered1} rows filtered")
-            print(f"  Endpoint 2: {filtered2} rows filtered")
+            print(f"  Ontop: {filtered1} rows filtered")
+            print(f"  cpmeta: {filtered2} rows filtered")
             print()
-        print(f"Rows only in Endpoint 1: {len(only_in_1)}")
-        print(f"Rows only in Endpoint 2: {len(only_in_2)}")
+        print(f"Rows only in Ontop: {len(only_in_1)}")
+        print(f"Rows only in cpmeta: {len(only_in_2)}")
         print(f"Rows in both: {len(in_both)}")
 
-        # Show rows only in Endpoint 1
+        # Show rows only in Ontop
         if only_in_1:
-            print(f"\n--- Rows ONLY in Endpoint 1 ({len(only_in_1)} rows) ---")
+            print(f"\n--- Rows ONLY in Ontop ({len(only_in_1)} rows) ---")
             for i, row in enumerate(sorted(only_in_1)[:max_lines], 1):
                 print(f"  {i}. {','.join(row)}")
             if len(only_in_1) > max_lines:
                 print(f"  ... ({len(only_in_1) - max_lines} more rows not shown)")
 
-        # Show rows only in Endpoint 2
+        # Show rows only in cpmeta
         if only_in_2:
-            print(f"\n+++ Rows ONLY in Endpoint 2 ({len(only_in_2)} rows) +++")
+            print(f"\n+++ Rows ONLY in cpmeta ({len(only_in_2)} rows) +++")
             for i, row in enumerate(sorted(only_in_2)[:max_lines], 1):
                 print(f"  {i}. {','.join(row)}")
             if len(only_in_2) > max_lines:
@@ -172,11 +173,11 @@ def print_diff(csv1, csv2, max_lines=50):
         only_1 = lines1 - lines2
         only_2 = lines2 - lines1
         if only_1:
-            print(f"\nOnly in Endpoint 1: {len(only_1)} lines")
+            print(f"\nOnly in Ontop: {len(only_1)} lines")
             for line in list(only_1)[:max_lines]:
                 print(f"  - {line}")
         if only_2:
-            print(f"\nOnly in Endpoint 2: {len(only_2)} lines")
+            print(f"\nOnly in cpmeta: {len(only_2)} lines")
             for line in list(only_2)[:max_lines]:
                 print(f"  + {line}")
 
@@ -271,15 +272,15 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
     Args:
         matched: List of query IDs where both endpoints succeeded and matched
         mismatched: List of query IDs where both endpoints succeeded but results differ
-        ep1_failures: List of query IDs that failed on endpoint 1 only
-        ep2_failures: List of query IDs that failed on endpoint 2 only
+        ep1_failures: List of query IDs that failed on Ontop only
+        ep2_failures: List of query IDs that failed on cpmeta only
         both_failed: List of query IDs that failed on both endpoints
     """
     print(f"\n{'='*80}")
     print("ENDPOINT COMPARISON SUMMARY")
     print(f"{'='*80}")
-    print("Endpoint 1: http://localhost:65432/sparql (Accept: application/csv)")
-    print("Endpoint 2: http://localhost:9094/sparql (Accept: text/csv)")
+    print("Ontop: http://localhost:65432/sparql (Accept: application/csv)")
+    print("cpmeta: http://localhost:9094/sparql (Accept: text/csv)")
     print()
 
     # Results comparison
@@ -293,11 +294,11 @@ def print_endpoint_comparison_summary(matched, mismatched, ep1_failures, ep2_fai
 
     # Endpoint-specific failures
     print(f"\nEndpoint-specific failures:")
-    print(f"  Failed on endpoint 1 only: {len(ep1_failures)}")
+    print(f"  Failed on Ontop only: {len(ep1_failures)}")
     if ep1_failures:
         print(f"    Query IDs: {', '.join(map(str, ep1_failures))}")
 
-    print(f"  Failed on endpoint 2 only: {len(ep2_failures)}")
+    print(f"  Failed on cpmeta only: {len(ep2_failures)}")
     if ep2_failures:
         print(f"    Query IDs: {', '.join(map(str, ep2_failures))}")
 
@@ -328,8 +329,8 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
     skipped_count = 0
 
     # Track endpoint comparison results
-    endpoint1_failures = []  # Failed on endpoint 1 only
-    endpoint2_failures = []  # Failed on endpoint 2 only
+    endpoint1_failures = []  # Failed on Ontop only
+    endpoint2_failures = []  # Failed on cpmeta only
     both_endpoints_failed = []  # Failed on both
     mismatched_results = []  # Both succeeded but results differ
     matched_results = []  # Both succeeded and results match
@@ -359,20 +360,20 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         response1 = response1.replace("+00:00", "Z")
         response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
 
-        # Track runtime for endpoint 1 (primary)
+        # Track runtime for Ontop (primary)
         query_runtimes.append((idx, time1))
 
         # Display results for both endpoints
         line_count1 = len(response1.splitlines()) if response1 else 0
         line_count2 = len(response2.splitlines()) if response2 else 0
 
-        print(f"\nEndpoint 1 ({endpoint1_host}):")
+        print(f"\nOntop ({endpoint1_host}):")
         if success1:
             print(f"  Success ({time1:.3f}s, {line_count1} lines)")
         else:
             print(f"  Failed: {error1}")
 
-        print(f"Endpoint 2 ({endpoint2_host}):")
+        print(f"cpmeta ({endpoint2_host}):")
         if success2:
             print(f"  Success ({time2:.3f}s, {line_count2} lines)")
         else:
@@ -392,7 +393,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 'error': f"EP1: {error1}, EP2: {error2}"
             })
         elif not success1:
-            # Only endpoint 1 failed
+            # Only Ontop failed
             has_mismatch = True
             endpoint1_failures.append(idx)
             failed_queries.append({
@@ -402,21 +403,21 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 'error': error1
             })
         elif not success2:
-            # Only endpoint 2 failed
+            # Only cpmeta failed
             has_mismatch = True
             endpoint2_failures.append(idx)
         else:
             # Both succeeded - compare results
             results_match = compare_csv_results(response1, response2)
 
-            # If same line count but content mismatch, retry endpoint 2
+            # If same line count but content mismatch, retry cpmeta
             if not results_match and line_count1 == line_count2:
                 retry_count = 0
                 max_retries = 10
 
                 while not results_match and retry_count < max_retries:
                     retry_count += 1
-                    # Re-execute query on endpoint 2
+                    # Re-execute query on cpmeta
                     success2, response2, error2, time2 = run_query(query, endpoint2_host, 'text/csv')
                     response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
 
@@ -430,7 +431,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                             results_match = False
                             break
                     else:
-                        # Endpoint 2 failed on retry
+                        # cpmeta failed on retry
                         break
 
             if results_match:
@@ -442,7 +443,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         # Print full results only on mismatch if requested
         if show_results and has_mismatch:
             if success1:
-                print(f"\nResults from Endpoint 1:")
+                print(f"\nResults from Ontop:")
                 print(f"{'─'*80}")
                 # Limit output to 200 lines
                 lines1 = response1.splitlines()
@@ -454,7 +455,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 print(f"{'─'*80}")
 
             if success2:
-                print(f"\nResults from Endpoint 2:")
+                print(f"\nResults from cpmeta:")
                 print(f"{'─'*80}")
                 # Limit output to 200 lines
                 lines2 = response2.splitlines()
@@ -469,9 +470,9 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
         if not success1 and not success2:
             print(f"\nResult: ⚠️  BOTH ENDPOINTS FAILED")
         elif not success1:
-            print(f"\nResult: ⚠️  ENDPOINT 1 FAILED")
+            print(f"\nResult: ⚠️  Ontop FAILED")
         elif not success2:
-            print(f"\nResult: ⚠️  ENDPOINT 2 FAILED")
+            print(f"\nResult: ⚠️  cpmeta FAILED")
         else:
             # Both succeeded
             if has_mismatch:
@@ -482,7 +483,7 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
             else:
                 print(f"\nResult: ✓ MATCH")
 
-            # Track queries with 1 or fewer rows (from endpoint 1)
+            # Track queries with 1 or fewer rows (from Ontop)
             if line_count1 <= 2:
                 small_result_queries.append(idx)
 

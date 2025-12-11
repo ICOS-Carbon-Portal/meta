@@ -4,6 +4,7 @@ import argparse
 import csv
 import difflib
 import io
+import re
 import requests
 import sys
 import time
@@ -111,6 +112,7 @@ def print_diff(csv1, csv2, max_lines=50):
         # Count total data rows (excluding header)
         total_rows1 = len(rows1) - 1 if len(rows1) > 1 else 0
         total_rows2 = len(rows2) - 1 if len(rows2) > 1 else 0
+
 
         # Convert data rows to sets of tuples (skip header)
         # Filter out rows containing 'meta.fieldsites.se'
@@ -354,6 +356,8 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
 
         success1, response1, error1, time1 = run_query(query, endpoint1_host, 'application/csv')
         success2, response2, error2, time2 = run_query(query, endpoint2_host, 'text/csv')
+        response1 = response1.replace("+00:00", "Z")
+        response2 = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+(Z)', r'\1\2', response2)
 
         # Track runtime for endpoint 1 (primary)
         query_runtimes.append((idx, time1))

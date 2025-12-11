@@ -830,7 +830,7 @@ source		SELECT
                 id,
                 as_geo_json
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_label_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> rdfs:label {label} .
@@ -838,7 +838,7 @@ source		SELECT
                 id,
                 label
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasEasternBound_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasEasternBound {has_eastern_bound}^^xsd:double .
@@ -846,7 +846,7 @@ source		SELECT
                 id,
                 has_eastern_bound
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasNorthernBound_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasNorthernBound {has_northern_bound}^^xsd:double .
@@ -854,7 +854,7 @@ source		SELECT
                 id,
                 has_northern_bound
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasSouthernBound_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasSouthernBound {has_southern_bound}^^xsd:double .
@@ -862,7 +862,7 @@ source		SELECT
                 id,
                 has_southern_bound
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasWesternBound_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasWesternBound {has_western_bound}^^xsd:double .
@@ -870,7 +870,7 @@ source		SELECT
                 id,
                 has_western_bound
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasLatitude_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasLatitude {has_latitude}^^xsd:double .
@@ -878,7 +878,7 @@ source		SELECT
                 id,
                 has_latitude
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_hasLongitude_resourceslatlon
 target		<http://meta.icos-cp.eu/resources/latlonboxes/{id}> cpmeta:hasLongitude {has_longitude}^^xsd:double .
@@ -886,7 +886,7 @@ source		SELECT
                 id,
                 has_longitude
             FROM lenses.spatial_coverages
-            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes'
+            WHERE prefix = 'http://meta.icos-cp.eu/resources/latlonboxes/'
 
 mappingId	spatial_coverages_asGeoJSON_resourcespositi
 target		<http://meta.icos-cp.eu/resources/position_{id}> cpmeta:asGeoJSON {as_geo_json}^^xsd:string .

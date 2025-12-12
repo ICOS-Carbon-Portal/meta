@@ -29,7 +29,7 @@
 		@newerVersionsAlert(dobj, "data")
 		@incompleteUploadAlert(dobj)
 		@alertWarning("Under moratorium", underMoratorium){
-			@property(s"Will be available for download after (${conf.defaultTimezoneId})", dobj.submission.stop.getDateTimeStr)
+			@moratoriumText
 		}
 		<div class="col-md-8">
 			<div class="row gy-2">
@@ -404,3 +404,10 @@
 @instrumentDeploymentsPresent = @{
 	varMetas.exists(_.exists(_.instrumentDeployments.isDefined))
 }
+
+@moratoriumText = @{
+	s"This dataset will be available for download" +
+	(if(dobj.isPreviewable) " and preview" else "") +
+	s" after ${dobj.submission.stop.getDateTimeStr} (${conf.defaultTimezoneId})"
+}
+

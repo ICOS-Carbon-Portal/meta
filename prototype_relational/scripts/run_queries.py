@@ -639,6 +639,35 @@ def main(input_file, output_file, skip_indexes=None, show_results=False):
                 f.write(f"{'='*80}\n\n")
         print(f"✓ Saved {len(failed_queries)} failed queries to: {failed_queries_file}")
 
+    # Save failed queries in reusable format
+    if failed_queries:
+        failed_reusable_file = 'failed_queries_reusable.txt'
+        failed_indices = sorted([failed['index'] for failed in failed_queries])
+        with open(failed_reusable_file, 'w') as f:
+            for idx in failed_indices:
+                # Write comment header with query number
+                f.write(f"# Query #{idx}\n")
+                # Write the query (with rewrites already applied)
+                query = rewrite_distinct_keywords(queries[idx - 1])  # idx is 1-based
+                f.write(f"{query.strip()}\n")
+                # Write separator
+                f.write(f"{'='*80}\n")
+        print(f"✓ Saved {len(failed_indices)} failed queries (reusable format) to: {failed_reusable_file}")
+
+    # Save mismatched queries in reusable format
+    if mismatched_results:
+        mismatched_reusable_file = 'mismatched_queries_reusable.txt'
+        with open(mismatched_reusable_file, 'w') as f:
+            for idx in sorted(mismatched_results):
+                # Write comment header with query number
+                f.write(f"# Query #{idx}\n")
+                # Write the query (with rewrites already applied)
+                query = rewrite_distinct_keywords(queries[idx - 1])  # idx is 1-based
+                f.write(f"{query.strip()}\n")
+                # Write separator
+                f.write(f"{'='*80}\n")
+        print(f"✓ Saved {len(mismatched_results)} mismatched queries (reusable format) to: {mismatched_reusable_file}")
+
     print(f"\n{'='*80}")
 
     # Print failed query details

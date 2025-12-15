@@ -11,12 +11,14 @@ MAPPING=mapping/generated_all_mappings.obda
 # MAPPING=mapping/spec_and_hasName.obda
 # MAPPING=mapping/edited_all.obda
 
+# echo "Copying DB"
+# cp ../scripts/data/rdfsql.duckdb ontop.duckdb
+
 ONTOP_LOG_LEVEL=DEBUG ../ontop-cli-5.4.0/ontop endpoint \
   --properties="ontop.properties" \
   -l lenses.json \
   --dev \
   --ontology="cpmeta.ttl" \
-  --port=8080 \
+  --port 65432
   --cors-allowed-origins=* \
   --mapping=$MAPPING \
-  --port 65432

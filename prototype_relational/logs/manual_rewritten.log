@@ -16,7 +16,7 @@ prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
                     ?station cpmeta:hasName ?stationName .
                     ?specUri rdfs:label ?spec .
                     filter contains(?spec, "CO2 data")
-                    filter (?submTime > "2025-10-04T22:00:12Z"^^xsd:dateTime)
+                    filter (?submTime > "2024-10-04T22:00:12Z"^^xsd:dateTime)
                   }
                   order by desc(?submTime)
 
@@ -462,7 +462,7 @@ where {
 	?dobj cpmeta:hasStartTime | (cpmeta:wasAcquiredBy / prov:startedAtTime) ?timeStart .
 	?dobj cpmeta:hasEndTime | (cpmeta:wasAcquiredBy / prov:endedAtTime) ?timeEnd .
 
-	FILTER(?submTime > "2025-10-04T22:15:00.445182+00:00"^^xsd:dateTime)
+	FILTER(?submTime > "2024-10-04T22:15:00.445182+00:00"^^xsd:dateTime)
 
 }
 order by desc(?submTime)
@@ -734,7 +734,7 @@ FILTER NOT EXISTS{[] cpmeta:isNextVersionOf ?dobj }
 BIND(substr(str(?dobj), strlen(str(?dobj)) - 23) AS ?pid)
 ?dobj cpmeta:hasName ?fileName .
 ?dobj cpmeta:hasSizeInBytes ?size .
-FILTER((?startTime > "2025-09-28T12:00:00Z"^^xsd:dateTime))
+FILTER((?startTime > "2024-09-28T12:00:00Z"^^xsd:dateTime))
 }
 order by ?startTime
 
@@ -929,7 +929,7 @@ where {
   ?dobj cpmeta:hasSha256sum ?hashSum .
   ?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
   ?dobj cpmeta:wasAcquiredBy [prov:startedAtTime ?timeStart ; prov:endedAtTime ?timeEnd ] .
-  FILTER(?timeEnd >= "2024-12-03T00:00:00Z"^^xsd:dateTime && ?timeStart <= "2025-10-05T20:00:00Z"^^xsd:dateTime)
+  FILTER(?timeEnd >= "2024-12-03T00:00:00Z"^^xsd:dateTime && ?timeStart <= "2024-10-05T20:00:00Z"^^xsd:dateTime)
   ?spec cpmeta:hasDataLevel ?dataLevel ; cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> .
   FILTER(?dataLevel in ("1"^^xsd:integer, "2"^^xsd:integer))
   OPTIONAL{?next_version cpmeta:isNextVersionOf ?dobj}
@@ -986,7 +986,7 @@ where {
     ?dobj cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/etcPhenocamDaily> ;        
         cpmeta:hasSizeInBytes [] .
     FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-    FILTER( ?submTime > "2025-10-05T05:00:00.000Z"^^xsd:dateTime && ?submTime < "2025-10-06T06:00:00.000Z"^^xsd:dateTime)
+    FILTER( ?submTime > "2024-10-05T05:00:00.000Z"^^xsd:dateTime && ?submTime < "2024-10-06T06:00:00.000Z"^^xsd:dateTime)
 }
 
 --------------------------------------------------------------------------------

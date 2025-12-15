@@ -1,0 +1,26 @@
+services:
+  db:
+    container_name: rdfsql
+    image: postgres:17
+    environment:
+      - POSTGRES_PASSWORD=ontop
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    command: >
+        -c max_wal_size=8GB
+        -c synchronous_commit=off
+
+  ontop:
+    tty: true
+    stdin_open: true
+    image: rdfsql-ontop
+    ports:
+      - 65432:65432
+    volumes:
+      - .:/source
+      - /data/staging/prototype-rdfsql:/data
+    build:
+      context: .
+      dockerfile: Dockerfile

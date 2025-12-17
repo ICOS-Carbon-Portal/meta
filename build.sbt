@@ -230,20 +230,3 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)
 	)
-
-/*
-lazy val jobAd = (project in file("jobAd"))
-	.enablePlugins(SbtTwirl)
-	.settings(
-		name := "jobAd",
-		version := "1.0",
-		scalacOptions ++= commonScalacOptions,
-		libraryDependencies ++= Seq(
-			"com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % akkaVersion,
-			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion,
-			"com.fasterxml.uuid"     % "java-uuid-generator"                % "3.1.4",
-			"ch.qos.logback"         % "logback-classic"                    % "1.1.3",
-			"se.lu.nateko.cp"       %% "views-core"                         % "0.1-SNAPSHOT"
-		)
-	)
-*/

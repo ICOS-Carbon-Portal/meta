@@ -48,8 +48,6 @@ def withRepo(callback: SailRepository => Any) = {
 
 	try {
 		callback(repo)
-	} catch {
-		case e: Exception => throw e
 	} finally {
 		repo.shutDown()
 	}
@@ -59,8 +57,6 @@ def withConn(repo: SailRepository)(callback: SailRepositoryConnection => Any) = 
 	val conn = repo.getConnection()
 	try {
 		callback(conn)
-	} catch {
-		case e: Exception => throw e
 	} finally {
 		conn.close()
 	}

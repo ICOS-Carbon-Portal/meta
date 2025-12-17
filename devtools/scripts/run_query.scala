@@ -5,22 +5,30 @@ import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import java.nio.file.{Files, Paths}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
+import org.slf4j.LoggerFactory
 
 val log = LoggerFactory.getLogger("devtools.runQuery")
 
 @main def runQuery(args: String*) = {
-	val queryFilePath = args.head
-	val queryContent = Files.readString(Paths.get(queryFilePath))
-	log.debug(s"queryContent: $queryContent")
+	args.toArray.lift.apply(0) match {
+		case None => {
+			log.error("Expected path of query file as first argument")
+		}
 
-	withRepo { repo =>
-		withConn(repo) { conn =>
-			val results = conn.prepareGraphQuery(queryContent).evaluate()
-			println("Results:")
-			results.forEach { statement =>
-				println(statement)
+		case Some(queryFilePath) => {
+			val queryFilePath = args(0)
+			val queryContent = Files.readString(Paths.get(queryFilePath))
+			log.debug(s"queryContent: $queryContent")
+
+			withRepo { repo =>
+				withConn(repo) { conn =>
+					val results = conn.prepareGraphQuery(queryContent).evaluate()
+					println("Results:")
+					results.forEach { statement =>
+						println(statement)
+					}
+				}
 			}
 		}
 	}

@@ -8,7 +8,7 @@ import com.typesafe.config.Config
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
 import org.slf4j.LoggerFactory
 
-val log = LoggerFactory.getLogger("devtools.runQuery")
+private val log = LoggerFactory.getLogger("devtools.runQuery")
 
 @main def runQuery(args: String*) = {
 	args.toArray.lift.apply(0) match {
@@ -34,12 +34,12 @@ val log = LoggerFactory.getLogger("devtools.runQuery")
 	}
 }
 
-def readConfig(): Config = {
+private def readConfig(): Config = {
 	val path = new java.io.File("application.conf").getAbsoluteFile
 	ConfigFactory.parseFile(path).resolve
 }
 
-def withRepo(callback: SailRepository => Any) = {
+private def withRepo(callback: SailRepository => Any) = {
 	val storagePath = readConfig().getValue("devtools.rdfStorage.path").unwrapped.toString
 	log.info(s"Using rdfStorage path: $storagePath")
 	val storageDir = Paths.get(storagePath).resolve("lmdb")
@@ -53,7 +53,7 @@ def withRepo(callback: SailRepository => Any) = {
 	}
 }
 
-def withConn(repo: SailRepository)(callback: SailRepositoryConnection => Any) = {
+private def withConn(repo: SailRepository)(callback: SailRepositoryConnection => Any) = {
 	val conn = repo.getConnection()
 	try {
 		callback(conn)

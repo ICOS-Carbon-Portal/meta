@@ -64,7 +64,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		.mapMaterializedValue(c => () => {c.cancel(); ()})
 
 
-	def fetchFromEtc(): Future[Validated[State]] =
+	private def fetchFromEtc(): Future[Validated[State]] =
 		val peopleFut = fetchFromTsv(Types.people, getPerson)
 
 		val futfutValVal = for
@@ -91,7 +91,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
+	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
 			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
 				for(
@@ -123,7 +123,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 			}
 	}
 
-	def fetchSensors(stationsVal: Validated[Seq[EtcStation]]): Future[Validated[Seq[EtcInstrument]]] =
+	private def fetchSensors(stationsVal: Validated[Seq[EtcStation]]): Future[Validated[Seq[EtcInstrument]]] =
 		val futfutValVal = for
 			modelDictVal <- getSensorModelDict;
 			compDictVal <- getCompaniesDict;
@@ -162,18 +162,18 @@ object EtcMetaSource{
 
 	type Lookup = Map[String, String]
 	type E = ETC.type
-	type EtcInstrument = TcInstrument[E]
-	type EtcPerson = TcPerson[E]
-	type EtcStation = TcStation[E]
-	type EtcCompany = TcGenericOrg[E]
-	type EtcMembership = Membership[E]
-	class SensorModel(val modelId: String, val compId: Int, val name: String, val description: Option[String])
+	private type EtcInstrument = TcInstrument[E]
+	private type EtcPerson = TcPerson[E]
+	private type EtcStation = TcStation[E]
+	private type EtcCompany = TcGenericOrg[E]
+	private type EtcMembership = Membership[E]
+	private class SensorModel(val modelId: String, val compId: Int, val name: String, val description: Option[String])
 	given Envri = Envri.ICOS
 
 
 	def makeId(id: String): TcId[E] = EtcConf.makeId(id)
 
-	object Types{
+	private object Types{
 		val roles = "teamrole"
 		val people = "team"
 		val stations = "station"
@@ -186,7 +186,7 @@ object EtcMetaSource{
 		val funding = "funding"
 	}
 
-	object Vars{
+	private object Vars{
 		val stationLat = "LOCATION_LAT"
 		val stationLon = "LOCATION_LONG"
 		val staionElev = "LOCATION_ELEV"
@@ -241,9 +241,10 @@ object EtcMetaSource{
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
+		val network = "NETWORK"
 	}
 
-	val rolesLookup: Map[String, Option[Role]] = Map(
+	private val rolesLookup: Map[String, Option[Role]] = Map(
 		"PI"         -> Some(PI),
 		"CO-PI"      -> Some(Researcher),
 		"MANAGER"    -> Some(Administrator),
@@ -268,7 +269,7 @@ object EtcMetaSource{
 			case Some(badOrcid) => new Validated(None, Seq(s"Could not parse Orcid id from string $badOrcid"))
 		}
 
-	def getNumber(varName: String)(using Lookup): Validated[Number] = lookUp(varName).flatMap{
+	private def getNumber(varName: String)(using Lookup): Validated[Number] = lookUp(varName).flatMap{
 		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
 	}
 
@@ -292,7 +293,7 @@ object EtcMetaSource{
 		) yield for(lat <- latOpt; lon <- lonOpt)
 			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None, None)
 
-	def getPerson(using Lookup): Validated[EtcPerson] =
+	private def getPerson(using Lookup): Validated[EtcPerson] =
 		for(
 			fname <- lookUp(Vars.fname).require("person must have first name");
 			lname <- lookUp(Vars.lname).require("person must have last name");
@@ -303,9 +304,9 @@ object EtcMetaSource{
 		) yield
 			TcPerson(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
 
-	def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
+	private def getCountryCode(stId: StationId): Validated[CountryCode] = getCountryCode(stId.id.take(2))
 
-	def getCountryCode(s: String): Validated[CountryCode] = s match{
+	private def getCountryCode(s: String): Validated[CountryCode] = s match{
 		case CountryCode(cc) => Validated.ok(cc)
 		case _ => Validated.error(s + " is not a valid country code")
 	}
@@ -334,7 +335,7 @@ object EtcMetaSource{
 			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
 		) yield (techId, stationId, utc)
 
-	def parseFunders(vocab: CpVocab, lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
+	private def parseFunders(vocab: CpVocab, lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
 		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(using _)))
 		.map(
 			_.distinct.map{funderName =>
@@ -354,7 +355,7 @@ object EtcMetaSource{
 			}.toMap
 		)
 
-	def parseFundings(
+	private def parseFundings(
 		lookups: Seq[Lookup], funders: Map[String, TcFunder[ETC.type]], vocab: CpVocab
 	): Validated[Map[String, Seq[TcFunding[ETC.type]]]] = {
 		val tcIdToFundingVs = lookups.map{lookup =>
@@ -418,7 +419,7 @@ object EtcMetaSource{
 	def toCET(ldt: LocalDateTime): Instant = ldt.atOffset(ZoneOffset.ofHours(1)).toInstant
 	def toCETnoon(ld: LocalDate): Instant = toCET(LocalDateTime.of(ld, LocalTime.of(12, 0)))
 
-	def parseTsv(bs: ByteString): Seq[Lookup] = {
+	private def parseTsv(bs: ByteString): Seq[Lookup] = {
 
 		def parseCells(line: String): Array[String] = line
 			.split("\\t", -1).map(_.trim.stripPrefix("\"").stripSuffix("\"").replaceAll("\"\"", "\""))
@@ -429,7 +430,7 @@ object EtcMetaSource{
 		lines.map(lineStr => colNames.zip(parseCells(lineStr)).toMap).toSeq
 	}
 
-	def getStation(
+	private def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getStationPosition;
@@ -496,7 +497,7 @@ object EtcMetaSource{
 	}
 
 
-	def getMembership(
+	private def getMembership(
 		people: Map[TcId[E], EtcPerson],
 		stations: Map[TcId[E], EtcStation]
 	)(using Lookup): Validated[EtcMembership] = {
@@ -518,7 +519,7 @@ object EtcMetaSource{
 		}
 	}
 
-	def getLogger(sensorsVal: Validated[Seq[EtcInstrument]])(using Lookup): Validated[EtcInstrument] = {
+	private def getLogger(sensorsVal: Validated[Seq[EtcInstrument]])(using Lookup): Validated[EtcInstrument] = {
 		val sensorsDictVal = sensorsVal.map(_.map(sens => sens.tcId -> sens).toMap)
 		val require = requireVar("instrument") _
 		for(
@@ -531,7 +532,7 @@ object EtcMetaSource{
 			instr.copy(tcId = CpVocab.getEtcInstrTcId(stId, loggerId))
 	}
 
-	def getSensor(
+	private def getSensor(
 		modelDict: Map[String, SensorModel],
 		compDict: Map[Int, EtcCompany],
 		deploymentsDict: Map[String, Seq[InstrumentDeployment[E]]]
@@ -651,7 +652,7 @@ object EtcMetaSource{
 		"Dfa", "Dfb", "Dfc", "Dfd", "Dsa", "Dsb", "Dsc", "Dsd", "Dwa", "Dwb", "Dwc", "Dwd", "EF", "ET"
 	)
 
-	def parseClimateZone(cz: String): Validated[UriResource] =
+	private def parseClimateZone(cz: String): Validated[UriResource] =
 		if(koppenZones.contains(cz)) Validated.ok{
 			val czUrl = cz.replace("/", "_") // Aw/As => Aw_As
 			UriResource(new URI(s"${CpmetaVocab.MetaPrefix}koppen_$czUrl"), Some(cz), Nil)
@@ -663,13 +664,13 @@ object EtcMetaSource{
 		"MF", "OSH", "SAV", "SNO", "URB", "WAT", "WET", "WSA"
 	)
 
-	def parseIgbpEcosystem(eco: String): Validated[UriResource] = {
+	private def parseIgbpEcosystem(eco: String): Validated[UriResource] = {
 		if(igbpEcosystems.contains(eco)) Validated.ok(
 			UriResource(new URI(s"${CpmetaVocab.MetaPrefix}igbp_$eco"), Some(eco), Nil)
 		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
 	}
 
-	def parseDoiUris(s: String): Validated[Seq[URI]] = {
+	private def parseDoiUris(s: String): Validated[Seq[URI]] = {
 		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{ustr =>
 			Validated(new URI(ustr)).require(s"Failed parsing $s as |-separated URI list")
 		}.toIndexedSeq

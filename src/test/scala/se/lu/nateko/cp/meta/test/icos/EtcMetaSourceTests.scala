@@ -7,17 +7,17 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
 import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
+import EtcMetaSource.mergeInstrDeployments
 
 import java.time.Instant
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
-	import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.*
-
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
-		InstrumentDeployment[E](
+		InstrumentDeployment[EtcMetaSource.E](
 			UriId(cpId.getOrElse("")),
-			makeId(stId.toString),
+			EtcMetaSource.makeId(stId.toString),
 			UriId(s"ES_$site"),
 			Some(pos),
 			Some(varName),
@@ -114,6 +114,14 @@ class EtcMetaSourceTests extends AnyFunSpec{
 					mkDepl(15, "IT-Ren", p2, "TS_4_2_2", "2020-12-07T11:00:00Z", None, Some("70dcf602_2"))
 				)
 			))
+	}
+
+	describe("fetchStations") {
+		it("parses network property") {
+			// TODO
+			// Note: Break apart TSV fetching from parsing, so it can be properly tested.
+			// Alternatively, mock HTTP response?
+		}
 	}
 
 }

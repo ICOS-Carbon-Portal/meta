@@ -230,3 +230,16 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
 		)
 	)
+lazy val devtools = (project in file("devtools"))
+	.dependsOn(meta)
+	.settings(
+		name := "meta-devtools",
+		version := "0.1.0",
+		Compile / unmanagedSourceDirectories += baseDirectory.value / "scripts",
+		scalacOptions ++= (commonScalacOptions.filterNot(_ == "-Werror")),
+		excludeDependencies ++= Seq(
+			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
+			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
+		)
+	)
+

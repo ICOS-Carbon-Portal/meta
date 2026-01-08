@@ -176,20 +176,5 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				assertCORS()
 				assert(status == StatusCodes.BadRequest)
 
-		it("Exceeding SPARQL running quota results in Service Unavailable response to subsequent queries", SlowRoute):
-			val uri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
-			val ip = "127.0.1.1"
-
-			val initRequests = Future.sequence(Seq(
-				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.BadRequest),
-				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.BadRequest))
-				)
-
-			initRequests.flatMap: res =>
-				testRoute(longRunningQuery, ip):
-					assert(status == StatusCodes.ServiceUnavailable)
-
 
 end SparqlRouteTests

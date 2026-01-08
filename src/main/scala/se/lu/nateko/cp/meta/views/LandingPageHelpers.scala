@@ -46,13 +46,17 @@ object LandingPageHelpers:
 	}
 
 	extension (dobj: DataObject)
+		def isPreviewable(using vocab: CpVocab): Boolean =
+			dobj.specificInfo.fold(
+				spatioTemporal => spatioTemporal.variables.nonEmpty,
+				stationTimeSeries => stationTimeSeries.columns.nonEmpty
+			) ||
+			dobj.specification.self.uri === vocab.cfCompliantNetcdfSpec ||
+			dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
+			dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
+
 		def previewEnabled(using vocab: CpVocab): Boolean =
-			dobj.submission.stop.fold(false)(_.isBefore(Instant.now)) && (
-				dobj.isPreviewable ||
-				dobj.specification.self.uri === vocab.cfCompliantNetcdfSpec ||
-				dobj.specification.format.self.uri === CpmetaVocab.icosMultiImageZipUri ||
-				dobj.specification.format.self.uri === CpmetaVocab.sitesMultiImageZipUri
-			)
+			dobj.submission.stop.fold(false)(_.isBefore(Instant.now)) && dobj.isPreviewable
 
 	def agentString(a: Agent): String = a match {
 		case person: Person =>

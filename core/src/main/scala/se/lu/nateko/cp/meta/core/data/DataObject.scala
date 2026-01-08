@@ -205,11 +205,6 @@ case class DataObject(
 			.filter(_.nonEmpty)
 			.map(_.toSeq.distinct.sorted)
 
-	def isPreviewable: Boolean = specificInfo.fold(
-		spatioTemporal => spatioTemporal.variables.nonEmpty,
-		stationTimeSeries => stationTimeSeries.columns.nonEmpty
-	)
-
 	def documentation: Seq[PlainStaticObject] =
 		val acquisitionDocs = acquisition.map(_.station.specificInfo).collect{
 			case sites: SitesStationSpecifics => sites.documentation

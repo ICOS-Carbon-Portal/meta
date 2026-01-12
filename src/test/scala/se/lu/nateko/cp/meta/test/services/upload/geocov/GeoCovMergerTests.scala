@@ -9,7 +9,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 
-import ClusteringExample.convertStringsToJTS
 import TestGeometries.*
 
 class GeoCovMergerTests extends AnyFunSpec:
@@ -157,3 +156,8 @@ class GeoCovMergerTests extends AnyFunSpec:
 
 			assert(merged == expected)
 end GeoCovMergerTests
+
+private def convertStringsToJTS(geomStrings: String*): Seq[Geometry] =
+	val wktReader = new WKTReader(JtsGeoFactory)
+	geomStrings.map(wktReader.read)
+

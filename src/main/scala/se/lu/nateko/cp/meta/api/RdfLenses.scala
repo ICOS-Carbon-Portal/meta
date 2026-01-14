@@ -66,16 +66,14 @@ object RdfLens:
 	//type EnvriLens = RdfLens[EnvriMetaConn]
 	type CpLens = RdfLens[CpMetaConn]
 
-	def metaLens(primaryCtxt: URI, readCtxts: Seq[URI]): MetaLens = mkLens[MetaConn](primaryCtxt, readCtxts, identity)
-	def collLens(primaryCtxt: URI, readCtxts: Seq[URI]): CollLens = mkLens[CollConn](primaryCtxt, readCtxts, identity)
-	def docLens(primaryCtxt: URI, readCtxts: Seq[URI]): DocLens = mkLens[DocConn](primaryCtxt, readCtxts, identity)
-	def dobjLens(primaryCtxt: URI, readCtxts: Seq[URI]): DobjLens = mkLens[DobjConn](primaryCtxt, readCtxts, identity)
-	def cpLens(primaryCtxt: URI, readCtxts: Seq[URI]): CpLens = mkLens[CpMetaConn](primaryCtxt, readCtxts, identity)
+	def metaLens(primaryCtxt: URI, readCtxts: Seq[URI]): MetaLens = mkLens(primaryCtxt, readCtxts) 
+	def collLens(primaryCtxt: URI, readCtxts: Seq[URI]): CollLens = mkLens(primaryCtxt, readCtxts)
+	def docLens(primaryCtxt: URI, readCtxts: Seq[URI]): DocLens = mkLens(primaryCtxt, readCtxts)
+	def dobjLens(primaryCtxt: URI, readCtxts: Seq[URI]): DobjLens = mkLens(primaryCtxt, readCtxts)
+	def cpLens(primaryCtxt: URI, readCtxts: Seq[URI]): CpLens = mkLens(primaryCtxt, readCtxts)
 
 	val global: GlobLens = conn ?=> conn.withReadContexts(Nil)
 
-	private def mkLens[TSC <: TriplestoreConnection](
-		primary: URI, read: Seq[URI], hider: TriplestoreConnection => TSC
-	): RdfLens[TSC] = conn ?=>
+	private def mkLens(primary: URI, read: Seq[URI]): RdfLens[TriplestoreConnection] = conn ?=>
 		given ValueFactory = conn.factory
-		hider(conn.withContexts(primary.toRdf, read.map(_.toRdf)))
+		conn.withContexts(primary.toRdf, read.map(_.toRdf))	

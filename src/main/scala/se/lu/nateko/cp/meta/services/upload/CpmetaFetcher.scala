@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
 
 import java.net.URI
 
+
 trait CpmetaReader:
 	import StatementSource.*
 	import RdfLens.{MetaConn, DobjConn, DocConn, ItemConn}
@@ -73,7 +74,7 @@ trait CpmetaReader:
 				uri = Some(cov.toJava)
 			)
 
-	def getSubmission(subm: IRI): MetaConn ?=> Validated[DataSubmission] =
+	def getSubmission(subm: IRI): (DobjConn | DocConn) ?=> Validated[DataSubmission] =
 		for
 			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
 			submitter <- getOrganization(submitterUri)
@@ -238,8 +239,6 @@ trait CpmetaReader:
 				then getUriValues(next, metaVocab.dcterms.hasPart)
 				else Seq(next)
 			.filter(isComplete)
-			.filter: next =>
-				getSubmission(next).result.map(_.isUnderMoratorium).getOrElse(false)
 			.toIndexedSeq
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =

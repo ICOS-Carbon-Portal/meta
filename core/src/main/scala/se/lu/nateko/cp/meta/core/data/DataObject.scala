@@ -79,11 +79,7 @@ case class DataProduction(
 	documentation: Option[PlainStaticObject],
 	dateTime: Instant
 )
-case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant]) {
-	def isUnderMoratorium: Boolean = stop
-		.map(_.isAfter(Instant.now))
-		.getOrElse(false)
-}
+case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
 
 case class StationTimeSeriesMeta(
 	acquisition: DataAcquisition,

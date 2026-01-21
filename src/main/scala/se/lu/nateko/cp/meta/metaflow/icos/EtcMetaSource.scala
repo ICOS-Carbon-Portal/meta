@@ -69,7 +69,8 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 
 		val futfutValVal = for
 			peopleVal <- peopleFut;
-			stationsVal <- fetchStations();
+			fundingLookup <- fetchFundings();
+			stationsVal <- fetchFromTsv(Types.stations, getStation(fundingLookup));
 			sensorsVal <- fetchSensors(stationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
@@ -91,16 +92,13 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
-		for(
-			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
-				for(
-					fundersLookup <- parseFunders(vocab, lookups);
-					fundings <- parseFundings(lookups, fundersLookup, vocab)
-				) yield fundings
-			};
-			stations <- fetchFromTsv(Types.stations, getStation(fundLookupV))
-		) yield stations
+	def fetchFundings(): Future[Validated[Map[String, Seq[TcFunding[ETC.type]]]]] = {
+		fetchAndParseTsv(Types.funding).map{lookups =>
+			for(
+				fundersLookup <- parseFunders(vocab, lookups);
+				fundings <- parseFundings(lookups, fundersLookup, vocab)
+			) yield fundings
+		};
 	}
 
 	def getFileMeta: Future[Validated[EtcFileMetadataStore]] = {

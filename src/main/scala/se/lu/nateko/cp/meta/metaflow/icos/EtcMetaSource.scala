@@ -449,9 +449,10 @@ object EtcMetaSource{
 		meanRadiation <- lookUp(Vars.annualRad).map(_.toFloat).optional;
 		descr <- lookUp(Vars.descr).optional;
 		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
-		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseBarSeparated).optional;
-		docDois <- lookUp(Vars.stationDocDois).flatMap(parseBarSeparated).optional;
-		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional
+		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
+		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
+		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
+		networkNames <- lookUp(Vars.network).flatMap(parseBarSeparated).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
@@ -489,7 +490,7 @@ object EtcMetaSource{
 					stationPubs = pubDois.getOrElse(Nil),
 					timeZoneOffset = tzOffset,
 					documentation = Nil, //docs are not provided by TCs
-					networkNames = List()
+					networkNames = networkNames.getOrElse(Seq()).toSet
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
 			),
@@ -673,11 +674,16 @@ object EtcMetaSource{
 		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
 	}
 
-	private def parseBarSeparated(s: String): Validated[Seq[URI]] = {
-		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{ustr =>
-			Validated(new URI(ustr)).require(s"Failed parsing $s as |-separated URI list")
+	// TODO: When can this actually fail? What does the use of Validated do here?
+	private def parseBarSeparated(s: String): Validated[Seq[String]] = {
+		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{item =>
+			Validated(item).require(s"Failed parsing $s as |-separated URI list")
 		}.toIndexedSeq
 		Validated.sequence(valids)
+	}
+
+	def parseDoiUris(s: String): Validated[Seq[URI]] = {
+		parseBarSeparated(s).map(_.map( item => new URI(item)))
 	}
 
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")

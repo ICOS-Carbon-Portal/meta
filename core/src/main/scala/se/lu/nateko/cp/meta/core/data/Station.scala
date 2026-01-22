@@ -117,7 +117,7 @@ case class EtcStationSpecifics(
 	stationPubs: Seq[URI],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject],
-	networkNames: Seq[String]
+	networkNames: Set[String]
 ) extends IcosStationSpecifics with EcoStationSpecifics{
 	override def ecosystems = ecosystemType.toSeq
 }
@@ -152,7 +152,7 @@ object EtcStationSpecifics{
 		stationPubs = Nil,
 		timeZoneOffset = base.timeZoneOffset,
 		documentation = base.documentation,
-		networkNames = Seq()
+		networkNames = Set()
 	)
 }
 

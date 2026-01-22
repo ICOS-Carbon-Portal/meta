@@ -133,10 +133,10 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 			val fundings: Validated[Map[String, Seq[TcFunding[ETC.type]]]] = Validated(Map.empty)
 			val station = getStation(fundings)(using lookups)
+
 			assert(station.errors == List())
-			println(s"station.errors: ${station.errors}")
-			println(s"station: $station")
 			assert(station.result.isDefined == true)
+
 			val tcStation = station.result.get
 			val specifics: EtcStationSpecifics = tcStation.core.specificInfo.asInstanceOf[EtcStationSpecifics]
 			assert(specifics.networkNames == Seq("TestNetwork"))

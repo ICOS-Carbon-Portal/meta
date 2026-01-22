@@ -9,8 +9,14 @@ import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
 import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import EtcMetaSource.mergeInstrDeployments
+import EtcMetaSource.getStation
 
 import java.time.Instant
+import se.lu.nateko.cp.meta.metaflow.TcFunding
+import se.lu.nateko.cp.meta.metaflow.icos.ETC
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.Vars
+import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
@@ -118,9 +124,22 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 	describe("fetchStations") {
 		it("parses network property") {
-			// TODO
-			// Note: Break apart TSV fetching from parsing, so it can be properly tested.
-			// Alternatively, mock HTTP response?
+			// Minimal set of data for a station
+			val lookups = Map(
+				Vars.siteId -> "AT-TestStation",
+				Vars.stationTcId -> "Test-StationID",
+				Vars.siteName -> "Test-SiteName"
+			)
+
+			val fundings: Validated[Map[String, Seq[TcFunding[ETC.type]]]] = Validated(Map.empty)
+			val station = getStation(fundings)(using lookups)
+			assert(station.errors == List())
+			println(s"station.errors: ${station.errors}")
+			println(s"station: $station")
+			assert(station.result.isDefined == true)
+			val tcStation = station.result.get
+			val specifics: EtcStationSpecifics = tcStation.core.specificInfo.asInstanceOf[EtcStationSpecifics]
+			assert(specifics.networkNames == Seq("TestNetwork"))
 		}
 	}
 

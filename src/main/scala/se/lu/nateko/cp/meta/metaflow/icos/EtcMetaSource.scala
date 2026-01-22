@@ -186,7 +186,7 @@ object EtcMetaSource{
 		val funding = "funding"
 	}
 
-	private object Vars{
+	object Vars{
 		val stationLat = "LOCATION_LAT"
 		val stationLon = "LOCATION_LONG"
 		val staionElev = "LOCATION_ELEV"
@@ -430,7 +430,8 @@ object EtcMetaSource{
 		lines.map(lineStr => colNames.zip(parseCells(lineStr)).toMap).toSeq
 	}
 
-	private def getStation(
+	// Public for testing
+	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getStationPosition;
@@ -487,7 +488,8 @@ object EtcMetaSource{
 					stationDocs = docDois.getOrElse(Nil),
 					stationPubs = pubDois.getOrElse(Nil),
 					timeZoneOffset = tzOffset,
-					documentation = Nil//docs are not provided by TCs
+					documentation = Nil, //docs are not provided by TCs
+					networkNames = List()
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
 			),
@@ -591,7 +593,7 @@ object EtcMetaSource{
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
 
 
-	// Public because of testing
+	// Public for testing
 	def mergeInstrDeployments(
 		depls: Seq[(String, InstrumentDeployment[E])]
 	): Map[String, Seq[InstrumentDeployment[E]]] = if(depls.isEmpty) Map.empty else {

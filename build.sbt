@@ -5,15 +5,16 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
 ThisBuild / scalaVersion := "3.3.4"
 
+val isCI = sys.env.get("CI").contains("true")
+
 val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
 	"-deprecation",
-	"-Werror",
 	"-Yexplicit-nulls",
 	"-Wunused:imports"
-)
+) ++ (if (isCI) Seq("-Werror") else Seq.empty)
 
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)

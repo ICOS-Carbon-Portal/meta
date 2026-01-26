@@ -7,6 +7,7 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
 import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
+import se.lu.nateko.cp.meta.metaflow.AssumedRole
 
 import java.time.Instant
 

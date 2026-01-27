@@ -19,6 +19,7 @@ import java.net.URI
 
 import org.scalacheck.Arbitrary.arbitrary
 import se.lu.nateko.cp.meta.core.tests.TestFactory.given
+import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
 import RdfDiffCalcTests.*
 
@@ -123,15 +124,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	describe("Stations") {
 		it("produces associatedNetwork triples") {
-			val station: Station = arbitrary[Station].sample.get
-
-			val etcStation = TcStation[ETC.type](
-				cpId = UriId("DummyId"),
-				tcId = EtcConf.makeId("DummyTcId"),
-				core = station,
-				responsibleOrg = None,
-				funding = Seq()
-			)
+			val etcStation = arbitrary[TcStation[ETC.type]].sample.get
 
 			val etc: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
 			val state: TestState = init(Nil, _ => Nil)

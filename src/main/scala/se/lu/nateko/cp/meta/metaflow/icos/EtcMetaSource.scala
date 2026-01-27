@@ -241,6 +241,7 @@ object EtcMetaSource{
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
+		val network = "NETWORK"
 	}
 
 	val rolesLookup: Map[String, Option[Role]] = Map(

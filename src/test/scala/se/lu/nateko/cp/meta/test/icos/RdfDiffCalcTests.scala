@@ -17,10 +17,8 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
 
-import org.scalacheck.Arbitrary.arbitrary
-import se.lu.nateko.cp.meta.core.tests.TestFactory.{make, given}
-import se.lu.nateko.cp.meta.test.MetaTestFactory.given
-import se.lu.nateko.cp.meta.test.MetaTestFactory.withSpecifics
+import se.lu.nateko.cp.meta.core.tests.TestFactory.make
+import se.lu.nateko.cp.meta.test.MetaTestFactory.{withSpecifics, given}
 
 import RdfDiffCalcTests.*
 

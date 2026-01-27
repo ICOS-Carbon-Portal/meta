@@ -5,23 +5,35 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
 ThisBuild / scalaVersion := "3.3.4"
 
-val isCI = sys.env.get("CI").contains("true")
+def commonScalacOptions(strict: Boolean) = Seq(
 
-val commonScalacOptions = Seq(
 	"-encoding", "UTF-8",
 	"-unchecked",
 	"-feature",
 	"-deprecation",
 	"-Yexplicit-nulls",
 	"-Wunused:imports"
-) ++ (if (isCI) Seq("-Werror") else Seq.empty)
+) ++ (if (strict) Seq("-Werror") else Seq())
+
+val strictCompile = settingKey[Boolean]("Set false to relax warnings for development testing")
+ThisBuild / strictCompile := true
+
+addCommandAlias("devMode",
+	"set ThisBuild / strictCompile := false")
+
+val ensureStrict = taskKey[Unit]("Fails if devMode is enabled")
+ensureStrict := {
+	if (!strictCompile.value) {
+		sys.error("Cannot deploy with strictCompile disable. First run: set ThisBuild / strictCompile := true")
+	}
+}
 
 lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(
 		name := "meta-core",
 		version := "0.7.24",
-		scalacOptions ++= commonScalacOptions,
+		scalacOptions ++= commonScalacOptions(strictCompile.value),
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
@@ -111,7 +123,7 @@ lazy val meta = (project in file("."))
 	.settings(
 		name := "meta",
 		version := "0.11.0",
-		scalacOptions ++= (commonScalacOptions ++ Seq("-Wconf:src=.*(html|xml):s")),
+		scalacOptions ++= (commonScalacOptions(strictCompile.value) ++ Seq("-Wconf:src=.*(html|xml):s")),
 
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
@@ -156,6 +168,7 @@ lazy val meta = (project in file("."))
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(
+			ensureStrict,
 			metaCore / clean,
 			uploadgui / clean,
 			clean,
@@ -188,6 +201,8 @@ lazy val meta = (project in file("."))
 
 		assembly / assemblyRepeatableBuild := false,
 
+		assembly := assembly.dependsOn(ensureStrict).value,
+
 		Compile / resources ++= {
 			val jsFile = (uploadgui / Compile / fastOptJS).value.data
 			val srcMap = new java.io.File(jsFile.getAbsolutePath + ".map")
@@ -218,7 +233,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 	.settings(
 		name := "uploadgui",
 		version := "0.1.3",
-		scalacOptions ++= commonScalacOptions,
+		scalacOptions ++= commonScalacOptions(strictCompile.value),
 
 		scalaJSUseMainModuleInitializer := true,
 

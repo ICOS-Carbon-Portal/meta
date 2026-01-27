@@ -15,7 +15,6 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.metaflow.TcFunding
 import se.lu.nateko.cp.meta.metaflow.icos.ETC
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.Vars
 import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
 
 class EtcMetaSourceTests extends AnyFunSpec{

@@ -8,7 +8,6 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.metaflow.icos.{ATC, ETC, AtcConf, EtcConf}
@@ -17,11 +16,9 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
-import java.time.LocalDate
 
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbitrary
-import io.github.martinhh.derived.scalacheck.given
+import se.lu.nateko.cp.meta.core.tests.TestFactory.given
 
 import RdfDiffCalcTests.*
 
@@ -125,98 +122,6 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	}
 
 	describe("Stations") {
-		// Custom Arbitrary instances for types that can't be auto-derived
-		given Arbitrary[URI] = Arbitrary(
-			Gen.alphaNumStr.map(s => new URI(s"http://example.org/$s"))
-		)
-
-		given Arbitrary[LocalDate] = Arbitrary(
-			for
-				year <- Gen.choose(2000, 2030)
-				month <- Gen.choose(1, 12)
-				day <- Gen.choose(1, 28)
-			yield LocalDate.of(year, month, day)
-		)
-
-		given Arbitrary[CountryCode] = Arbitrary(
-			Gen.oneOf("SE", "DE", "FR", "IT", "ES", "DK", "FI", "NO").map(CountryCode.unapply(_).get)
-		)
-
-		given Arbitrary[Sha256Sum] = Arbitrary(
-			Gen.listOfN(32, Gen.choose(0.toByte, 127.toByte)).map(bytes => new Sha256Sum(bytes.toArray))
-		)
-
-		// Explicit Arbitraries for intermediate types to reduce derivation depth
-		given Arbitrary[UriResource] = Arbitrary(
-			for
-				uri <- arbitrary[URI]
-				label <- arbitrary[Option[String]]
-				comments <- arbitrary[Seq[String]]
-			yield UriResource(uri, label, comments)
-		)
-
-		given Arbitrary[Organization] = Arbitrary(
-			for
-				self <- arbitrary[UriResource]
-				name <- arbitrary[String]
-				email <- arbitrary[Option[String]]
-				website <- arbitrary[Option[URI]]
-			yield Organization(self, name, email, website, None)
-		)
-
-		given Arbitrary[Position] = Arbitrary(
-			for
-				lat <- Gen.choose(-90.0, 90.0)
-				lon <- Gen.choose(-180.0, 180.0)
-				alt <- arbitrary[Option[Float]]
-				label <- arbitrary[Option[String]]
-				uri <- arbitrary[Option[URI]]
-			yield Position(lat, lon, alt, label, uri)
-		)
-
-		given Arbitrary[EtcStationSpecifics] = Arbitrary(
-			for
-				discontinued <- arbitrary[Boolean]
-				timeZoneOffset <- arbitrary[Option[Int]]
-				networkNames <- arbitrary[Set[String]]
-			yield EtcStationSpecifics(
-				theme = None,
-				stationClass = None,
-				labelingDate = None,
-				discontinued = discontinued,
-				climateZone = None,
-				ecosystemType = None,
-				meanAnnualTemp = None,
-				meanAnnualPrecip = None,
-				meanAnnualRad = None,
-				stationDocs = Nil,
-				stationPubs = Nil,
-				timeZoneOffset = timeZoneOffset,
-				documentation = Nil,
-				networkNames = networkNames
-			)
-		)
-
-		given Arbitrary[Station] = Arbitrary(
-			for
-				org <- arbitrary[Organization]
-				id <- arbitrary[String]
-				location <- arbitrary[Option[Position]]
-				countryCode <- arbitrary[Option[CountryCode]]
-				specificInfo <- arbitrary[EtcStationSpecifics]
-			yield Station(
-				org = org,
-				id = id,
-				location = location,
-				coverage = None,
-				responsibleOrganization = None,
-				pictures = Nil,
-				specificInfo = specificInfo,
-				countryCode = countryCode,
-				funding = None
-			)
-		)
-
 		it("produces associatedNetwork triples") {
 			val station: Station = arbitrary[Station].sample.get
 

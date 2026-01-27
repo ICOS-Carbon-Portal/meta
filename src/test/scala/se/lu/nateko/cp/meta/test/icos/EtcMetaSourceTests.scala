@@ -126,10 +126,10 @@ class EtcMetaSourceTests extends AnyFunSpec{
 		it("parses network property") {
 			// Minimal set of data for a station
 			val lookups = Map(
-				Vars.siteId -> "AT-Tst",
-				Vars.stationTcId -> "Test-StationID",
-				Vars.siteName -> "Test-SiteName",
-				Vars.network -> "Network-1 | Network_A"
+				"SITE_ID" -> "AT-Tst",
+				"ID_STATION" -> "Test-StationID",
+				"SITE_NAME" -> "Test-SiteName",
+				"NETWORK" -> "Network-1 | Network_A"
 			)
 
 			val fundings: Validated[Map[String, Seq[TcFunding[ETC.type]]]] = Validated(Map.empty)

@@ -131,15 +131,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		it("skips associatedNetwork triple and logs error when target network does not exist") {
 			// Calculate diff - no triples should be added since network doesn't exist
 			val triples = testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
-
-			// Verify no associatedNetwork triples are produced
-			val assocTriples = triples.filter(_.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
-			assert(assocTriples.isEmpty, s"Expected no associatedNetwork triples, got ${assocTriples.size}")
+			assert(triples == Seq.empty)
 		}
 
 		val factory = testState.tcServer.factory
-		val networkIriStr = "http://test.icos.eu/resources/networks/TestNetwork"
-		val networkIri = factory.createIRI(networkIriStr)
+		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
 
 		it("produces associatedNetwork triples when network exists") {
 			import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -152,7 +148,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
 			assert(addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
-			assert(addTriple.statement.getObject().stringValue() == networkIriStr)
+			assert(addTriple.statement.getObject() == networkIri)
 			assert(addTriple.statement.getObject.isInstanceOf[org.eclipse.rdf4j.model.IRI])
 			assert(addTriple.isAssertion)
 
@@ -164,7 +160,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
 			assert(removeTriple.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
-			assert(removeTriple.statement.getObject.stringValue == networkIriStr)
+			assert(removeTriple.statement.getObject == networkIri)
 			assert(!removeTriple.isAssertion)
 		}
 	}

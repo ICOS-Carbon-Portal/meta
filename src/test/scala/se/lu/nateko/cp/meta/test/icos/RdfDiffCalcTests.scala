@@ -132,7 +132,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			import _root_.se.lu.nateko.cp.meta.test.LogCapture.captureLogs
 			import ch.qos.logback.classic.Level
 
-			val (triples, logs) = captureLogs(RdfDiffCalc.getClass) {
+			val (triples, logs) = captureLogs(classOf[RdfDiffCalc]) {
 				testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
 			}
 			assert(triples == Seq.empty)

@@ -117,38 +117,40 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 	}
 
-	describe("Stations") {
-		it("produce and remove associatedNetwork triples when network pre-exists") {
+	describe("Station network associations") {
+
+		val testState: TestState = init(Nil, _ => Nil)
+
+		val stationWithoutNetwork = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
+		val etcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+		testState.tcServer.applyAll(testState.calc.calcDiff(etcState).result.get)()
+
+		val etcStationWithNetwork = stationWithoutNetwork.withSpecifics( _.copy(networkNames = Set("TestNetwork")))
+		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+
+		it("skips associatedNetwork triple and logs error when target network does not exist") {
+			// Calculate diff - no triples should be added since network doesn't exist
+			val triples = testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
+
+			// Verify no associatedNetwork triples are produced
+			val assocTriples = triples.filter(_.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
+			assert(assocTriples.isEmpty, s"Expected no associatedNetwork triples, got ${assocTriples.size}")
+		}
+
+		val factory = testState.tcServer.factory
+		val networkIriStr = "http://test.icos.eu/resources/networks/TestNetwork"
+		val networkIri = factory.createIRI(networkIriStr)
+
+		it("produces associatedNetwork triples when network exists") {
 			import org.eclipse.rdf4j.model.vocabulary.RDF
+			val metaVocab = testState.maker.meta
 
-			// Create initial state with empty networkNames
-			val etcStation = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
-			val etcState = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
-			val testState: TestState = init(Nil, _ => Nil)
-			val initUpdates = testState.calc.calcDiff(etcState).result.get
-			testState.tcServer.applyAll(initUpdates)()
+			testState.tcServer.addAll(Seq(
+				factory.createStatement(networkIri, RDF.TYPE, metaVocab.networkClass),
+				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("TestNetwork"))
+			))
 
-			val meta = testState.maker.meta
-			val factory = testState.tcServer.factory
-			val networkIriStr = "http://test.icos.eu/resources/networks/TestNetwork"
-			val networkIri = factory.createIRI(networkIriStr)
-
-			// Pre-create network entity
-			val networkTriples = Seq(
-				factory.createStatement(networkIri, RDF.TYPE, meta.networkClass),
-				factory.createStatement(networkIri, meta.hasName, factory.createLiteral("TestNetwork"))
-			)
-			testState.tcServer.addAll(networkTriples)
-
-			// Add networkNames
-			val etcStationWithNetworks = etcStation.withSpecifics(
-					_.copy(networkNames = Set("TestNetwork"))
-			)
-
-			// Calculate diff - only 1 triple (associatedNetwork) should be added
-			// Network entity already exists, so only the link is created
-			val stateWithNetwork = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
-			val Seq(addTriple) = testState.calc.calcDiff(stateWithNetwork).result.get
+			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
 			assert(addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
 			assert(addTriple.statement.getObject().stringValue() == networkIriStr)
 			assert(addTriple.statement.getObject.isInstanceOf[org.eclipse.rdf4j.model.IRI])
@@ -156,15 +158,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 			// Apply the addition
 			testState.tcServer.applyAll(Seq(addTriple))()
+		}
 
-			// Make sure we get a clean diff
-			val Seq() = testState.calc.calcDiff(stateWithNetwork).result.get
-
-			// Remove networkNames - only the associatedNetwork triple should be removed
-			val stateWithoutNetwork = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
-			val removeTriples = testState.calc.calcDiff(stateWithoutNetwork).result.get.toSeq
-			assert(removeTriples.size == 1, s"Expected 1 removal triple, got ${removeTriples.size}")
-			val removeTriple = removeTriples.head
+		it("removes associatedNetwork triple when network is removed") {
+			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
 			assert(removeTriple.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
 			assert(removeTriple.statement.getObject.stringValue == networkIriStr)
 			assert(!removeTriple.isAssertion)

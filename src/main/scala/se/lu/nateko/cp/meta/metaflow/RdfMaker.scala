@@ -211,6 +211,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			eco.stationDocs.map{stDoc =>
 				(iri, meta.hasDocumentationUri, vocab.lit(stDoc))
 			} ++
+			eco.networkNames.map{networkName =>
+				(iri, meta.associatedNetwork, vocab.lit(networkName))
+			} ++
 			plainIcosStationSpecTriples(iri, eco)
 		case atc: AtcStationSpecifics =>
 			atc.wigosId.toSeq.map{wigosId =>

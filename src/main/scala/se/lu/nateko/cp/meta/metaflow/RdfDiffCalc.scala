@@ -17,6 +17,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	import RdfDiffCalc.*
 	import SequenceDiff.*
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
+	private val retractablePredicates = Set(rdfMaker.meta.associatedNetwork)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
@@ -90,9 +91,11 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private def diffBuilder = new RdfDiffBuilder(rdfMaker.meta.factory)
 
 	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] =
-		import RdfDiffBuilder.{Assertion, WeakRetraction}
+		import RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
+		val (retractable, sticky) = from.partition(s => retractablePredicates.contains(s.getPredicate))
 		diffBuilder
-			.update(from, WeakRetraction) // all the properties are 'sticky'
+			.update(sticky, WeakRetraction) // sticky properties only removed when replaced
+			.update(retractable, Retraction) // retractable properties can be removed outright
 			.update(to, Assertion)
 			.build
 

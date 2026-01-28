@@ -118,7 +118,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	}
 
 	describe("Stations") {
-		it("produce associatedNetwork triples") {
+		it("produce and remove associatedNetwork triples") {
 
 			// Create initial state with empty networkNames
 			val etcStation = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
@@ -132,13 +132,22 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 					_.copy(networkNames = Set("TestNetwork"))
 			)
 
-			// Calculate diff and verify associatedNetwork triples
-			val newState: TcState[ETC.type] = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
-			val Some(Seq(triple)) = testState.calc.calcDiff(newState).result : @unchecked
-			val predicate = triple.statement.getPredicate().stringValue()
-			val tripleObject = triple.statement.getObject().stringValue()
-			assert(predicate == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
-			assert(tripleObject == "TestNetwork")
+			// Calculate diff and verify associatedNetwork triples are added
+			val stateWithNetwork: TcState[ETC.type] = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
+			val Some(Seq(addTriple)) = testState.calc.calcDiff(stateWithNetwork).result : @unchecked
+			assert(addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
+			assert(addTriple.statement.getObject().stringValue() == "TestNetwork")
+			assert(addTriple.isAssertion)
+
+			// Apply the addition
+			testState.tcServer.applyAll(Seq(addTriple))()
+
+			// Remove networkNames
+			val stateWithoutNetwork: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
+			val Some(Seq(removeTriple)) = testState.calc.calcDiff(stateWithoutNetwork).result : @unchecked
+			assert(removeTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
+			assert(removeTriple.statement.getObject().stringValue() == "TestNetwork")
+			assert(!removeTriple.isAssertion)
 		}
 	}
 

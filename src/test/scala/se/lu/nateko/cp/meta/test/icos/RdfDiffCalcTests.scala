@@ -119,12 +119,27 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	describe("Stations") {
 		it("produce associatedNetwork triples") {
-			val etcStation = make[TcStation[ETC.type]].withSpecifics(
-				_.copy(networkNames = Set())
+
+			// Create initial state with empty networkNames
+			val etcStation = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
+			val etcState: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
+			val testState: TestState = init(Nil, _ => Nil)
+			val initUpdates = testState.calc.calcDiff(etcState).result.get
+			testState.tcServer.applyAll(initUpdates)()
+
+			// Add networkNames
+			val etcStationWithNetworks = etcStation.copy(
+				core = etcStation.core.copy(
+					specificInfo = etcStation.core.specificInfo.asInstanceOf[EtcStationSpecifics].copy(
+						networkNames = Set("TestNetwork")
+					)
+				)
 			)
 
-			val etc: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
-			val state: TestState = init(Nil, _ => Nil)
+			// Calculate diff and verify associatedNetwork triples
+			val newState: TcState[ETC.type] = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
+			val Some(Seq(triple)) = testState.calc.calcDiff(newState).result : @unchecked
+			assert(triple.statement.getPredicate().stringValue().contains("associatedNetwork"))
 		}
 	}
 

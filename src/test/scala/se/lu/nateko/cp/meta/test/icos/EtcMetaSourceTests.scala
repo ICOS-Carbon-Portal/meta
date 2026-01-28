@@ -131,7 +131,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 				"NETWORK" -> "Network-1 | Network_A"
 			)
 
-			val fundings: Validated[Map[String, Seq[TcFunding[ETC.type]]]] = Validated(Map.empty)
+			val fundings = Validated(Map.empty : Map[String, Seq[TcFunding[ETC.type]]])
 			val station = getStation(fundings)(using lookups)
 
 			assert(station.errors == List())

@@ -122,7 +122,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 			// Create initial state with empty networkNames
 			val etcStation = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
-			val etcState: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
+			val etcState = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
 			val testState: TestState = init(Nil, _ => Nil)
 			val initUpdates = testState.calc.calcDiff(etcState).result.get
 			testState.tcServer.applyAll(initUpdates)()
@@ -133,8 +133,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			)
 
 			// Calculate diff and verify associatedNetwork triples are added
-			val stateWithNetwork: TcState[ETC.type] = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
-			val Some(Seq(addTriple)) = testState.calc.calcDiff(stateWithNetwork).result : @unchecked
+			val stateWithNetwork = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
+			val Seq(addTriple) = testState.calc.calcDiff(stateWithNetwork).result.get
 			assert(addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
 			assert(addTriple.statement.getObject().stringValue() == "TestNetwork")
 			assert(addTriple.isAssertion)
@@ -142,9 +142,12 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			// Apply the addition
 			testState.tcServer.applyAll(Seq(addTriple))()
 
+			// Make sure we get a clean diff
+			val Seq() = testState.calc.calcDiff(stateWithNetwork).result.get
+
 			// Remove networkNames
-			val stateWithoutNetwork: TcState[ETC.type] = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
-			val Some(Seq(removeTriple)) = testState.calc.calcDiff(stateWithoutNetwork).result : @unchecked
+			val stateWithoutNetwork = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
+			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
 			assert(removeTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
 			assert(removeTriple.statement.getObject().stringValue() == "TestNetwork")
 			assert(!removeTriple.isAssertion)

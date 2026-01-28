@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.metaflow
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
@@ -16,8 +17,23 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	import RdfDiffCalc.*
 	import SequenceDiff.*
+	private val log = LoggerFactory.getLogger(getClass)
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 	private val retractablePredicates = Set(rdfMaker.meta.associatedNetwork)
+
+	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] =
+		val associatedNetworkPred = rdfMaker.meta.associatedNetwork
+		updates.filter { upd =>
+			if upd.isAssertion && upd.statement.getPredicate == associatedNetworkPred then
+				upd.statement.getObject match
+					case networkIri: IRI =>
+						val exists = rdfReader.getTcStatements(networkIri).nonEmpty
+						if !exists then
+							log.error(s"Network does not exist: ${networkIri.stringValue}")
+						exists
+					case _ => true
+			else true
+		}
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
@@ -83,9 +99,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
-		rdfReader.keepMeaningful(
+		filterValidNetworkAssociations(rdfReader.keepMeaningful(
 			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
-		)
+		))
 	}
 
 	private def diffBuilder = new RdfDiffBuilder(rdfMaker.meta.factory)

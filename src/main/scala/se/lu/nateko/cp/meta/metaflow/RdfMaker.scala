@@ -212,7 +212,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				(iri, meta.hasDocumentationUri, vocab.lit(stDoc))
 			} ++
 			eco.networkNames.map{networkName =>
-				(iri, meta.associatedNetwork, vocab.lit(networkName))
+				(iri, meta.associatedNetwork, vocab.getNetwork(networkName))
 			} ++
 			plainIcosStationSpecTriples(iri, eco)
 		case atc: AtcStationSpecifics =>

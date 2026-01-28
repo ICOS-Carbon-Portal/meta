@@ -118,7 +118,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	}
 
 	describe("Stations") {
-		it("produce and remove associatedNetwork triples") {
+		it("produce and remove associatedNetwork triples when network pre-exists") {
+			import org.eclipse.rdf4j.model.vocabulary.RDF
 
 			// Create initial state with empty networkNames
 			val etcStation = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
@@ -127,16 +128,30 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val initUpdates = testState.calc.calcDiff(etcState).result.get
 			testState.tcServer.applyAll(initUpdates)()
 
+			val meta = testState.maker.meta
+			val factory = testState.tcServer.factory
+			val networkIriStr = "http://test.icos.eu/resources/networks/TestNetwork"
+			val networkIri = factory.createIRI(networkIriStr)
+
+			// Pre-create network entity
+			val networkTriples = Seq(
+				factory.createStatement(networkIri, RDF.TYPE, meta.networkClass),
+				factory.createStatement(networkIri, meta.hasName, factory.createLiteral("TestNetwork"))
+			)
+			testState.tcServer.addAll(networkTriples)
+
 			// Add networkNames
 			val etcStationWithNetworks = etcStation.withSpecifics(
 					_.copy(networkNames = Set("TestNetwork"))
 			)
 
-			// Calculate diff and verify associatedNetwork triples are added
+			// Calculate diff - only 1 triple (associatedNetwork) should be added
+			// Network entity already exists, so only the link is created
 			val stateWithNetwork = new TcState(stations = Seq(etcStationWithNetworks), roles = Seq(), instruments = Nil)
 			val Seq(addTriple) = testState.calc.calcDiff(stateWithNetwork).result.get
 			assert(addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
-			assert(addTriple.statement.getObject().stringValue() == "TestNetwork")
+			assert(addTriple.statement.getObject().stringValue() == networkIriStr)
+			assert(addTriple.statement.getObject.isInstanceOf[org.eclipse.rdf4j.model.IRI])
 			assert(addTriple.isAssertion)
 
 			// Apply the addition
@@ -145,11 +160,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			// Make sure we get a clean diff
 			val Seq() = testState.calc.calcDiff(stateWithNetwork).result.get
 
-			// Remove networkNames
+			// Remove networkNames - only the associatedNetwork triple should be removed
 			val stateWithoutNetwork = new TcState(stations = Seq(etcStation), roles = Seq(), instruments = Nil)
-			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
-			assert(removeTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork")
-			assert(removeTriple.statement.getObject().stringValue() == "TestNetwork")
+			val removeTriples = testState.calc.calcDiff(stateWithoutNetwork).result.get.toSeq
+			assert(removeTriples.size == 1, s"Expected 1 removal triple, got ${removeTriples.size}")
+			val removeTriple = removeTriples.head
+			assert(removeTriple.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
+			assert(removeTriple.statement.getObject.stringValue == networkIriStr)
 			assert(!removeTriple.isAssertion)
 		}
 	}

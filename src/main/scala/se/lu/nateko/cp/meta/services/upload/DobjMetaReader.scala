@@ -156,7 +156,9 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					meanAnnualRad = meanAnnualRad,
 					stationDocs = getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
 					stationPubs = getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
-					networkNames = getStringValues(stat, metaVocab.associatedNetwork).toSet
+					networkNames = getUriValues(stat, metaVocab.associatedNetwork)
+						.flatMap(networkIri => getOptionalString(networkIri, metaVocab.hasName).result.flatten)
+						.toSet
 				)
 		else if resourceHasType(stat, metaVocab.atmoStationClass) then
 			for

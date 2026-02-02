@@ -47,7 +47,7 @@ object UploadDtoReader{
 					samplingHeight = l3.samplingHeight,
 					production = dataProductionToDto(l3.productionInfo),
 					customLandingPage = dobj.accessUrl.filterNot(uri => uri.getPath.endsWith(dobj.hash.id)),
-					variables = l3.variables.map(_.map(_.label))
+					variables = l3.variables.map(_.map(_.model.uri.toString.split('/').last))
 				))
 				case Right(l2) => Right(StationTimeSeriesDto(
 					station = l2.acquisition.station.org.self.uri,

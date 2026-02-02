@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.upload.Utils.*
 import se.lu.nateko.cp.meta.upload.UploadApp
 
 class FileInput(elemId: String, cb: () => Unit){
-	private val fileInput = getElementById[html.Input](elemId).get
+	private val fileInput = getElementById[html.Input](elemId)
 	private var _hash: Try[Sha256Sum] = file.flatMap(_ => fail("hashsum computing has not started yet"))
 	private var _lastModified: Double = 0
 

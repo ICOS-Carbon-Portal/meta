@@ -113,7 +113,7 @@
 								<select class="form-select" id="submitteridselect"></select>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="new-update-radio">New item/Update</label>
+								<label class="form-label">New item/Update</label>
 								<div>
 									<div id="new-update-radio">
 										<div class="form-check form-check-inline">
@@ -147,7 +147,7 @@
 								</div>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="file-type-radio">Item type</label>
+								<label class="form-label">Item type</label>
 								<div>
 									<div id="file-type-radio">
 										<div class="form-check form-check-inline">
@@ -217,7 +217,7 @@
 						<div class="card-body">
 							<h2>Data</h2>
 							<div class="mb-3">
-								<label class="form-label" for="level-radio">Level</label>
+								<label class="form-label">Level</label>
 								<div>
 									<div id="level-radio">
 										<div class="form-check form-check-inline">
@@ -390,11 +390,13 @@
 							@geoCovSelect("spattemp"){
 							}
 							<div class="mb-3" id="l3varinfo-form">
-								<label class="form-label" for="l3varadd-button">Previewable variables</label>
+								<label class="form-label">Previewable variables</label>
 								<button type="button" id="l3varadd-button" class="btn btn-secondary btn-sm" aria-label="Add variable"><i class="fas fa-plus"></i></button>
 								<div class="input-group l3varinfo-element" style="display: none;">
-									<input type="text" class="form-control varnameInput" placeholder="variable name">
-									<button type="button" class="btn btn-secondary varInfoButton" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+									<select class="form-select varnameInput"></select>
+									<span class="input-group-child-wrapper">
+										<button type="button" class="btn btn-secondary varInfoButton" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+									</span>
 								</div>
 							</div>
 							<div class="mb-3">
@@ -422,7 +424,7 @@
 									<datalist id="agent-list"></datalist>
 								</div>
 								<div class="mb-3">
-									<label class="form-label" for="contributors">Contributors</label>
+									<label class="form-label">Contributors</label>
 									<div id="contributors">
 										<div draggable="true" class="input-group data-list draggable" style="display: none;">
 											<span class="input-group-text"><i class="fas fa-grip-lines"></i></span>
@@ -509,7 +511,7 @@
 								</div>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="document-authors">Authors</label>
+								<label class="form-label">Authors</label>
 								<div id="document-authors">
 									<div draggable="true" class="input-group data-list draggable" style="display: none;">
 										<span class="input-group-text"><i class="fas fa-grip-lines"></i></span>
@@ -634,5 +636,14 @@ write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscree
 	<div class="mb-3 @{lbl}geocov-element @{lbl}latlonbox-element">
 		<label class="form-label" for="@{lbl}geomaxlon">Max longitude</label>
 		<input id="@{lbl}geomaxlon" type="text" class="form-control">
+	</div>
+}
+
+@l3varInputs(selectId: String) = {
+	<div class="input-group l3varinfo-element">
+		<select class="form-select" id=@selectId></select>
+		<span class="input-group-child-wrapper" data-bs-toggle="popover" data-bs-trigger="hover">
+			<button type="button" class="btn btn-secondary varInfoButton" aria-label="Remove variable"><i class="fas fa-times"></i></button>
+		</span>
 	</div>
 }

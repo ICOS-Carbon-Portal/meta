@@ -23,7 +23,9 @@ class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 
 	val plainMandatory = varDefs.filterNot(_.isOptional).flatMap(_.plain)
 
-	private val plainLookup: Map[String, VarMeta] = varDefs.flatMap(_.plain).map(vm => vm.label -> vm).toMap
+	private val plainLookup: Map[String, VarMeta] = varDefs.flatMap(_.plain).map{vm =>
+		vm.model.uri.toString.split('/').last -> vm
+	}.toMap
 
 	private val regexes = varDefs.filter(_.isRegex).sortBy(_.isOptional).map{
 		dv => new Regex(dv.title) -> dv

@@ -25,13 +25,13 @@ object UploadApp {
 	private val loginBlock = new HtmlElements("#login-block")
 	private val formBlock = new HtmlElements("#form-block")
 	private val headerButtons = new HtmlElements("#header-buttons-container")
-	private val modal = getElementById[html.Div]("upload-help-modal").get
+	private val modal = getElementById[html.Div]("upload-help-modal")
 	val progressBar = new ProgressBar("#progress-bar")
-	private val alert = getElementById[html.Div]("alert-placeholder").get
+	private val alert = getElementById[html.Div]("alert-placeholder")
 
 	private def setIframeSrc(src: String): Unit =
 		val iframe = getElementById[dom.html.IFrame]("help-modal-iframe")
-		iframe.foreach(_.src = src)
+		iframe.src = src
 
 	modal.addEventListener("show.bs.modal", { _ =>
 		setIframeSrc("https://www.youtube.com/embed/8TpbRZPaTuU")
@@ -73,7 +73,7 @@ object UploadApp {
 	private def displayLoginButton(authHost: String): Unit = {
 		val url = URIUtils.encodeURI(dom.window.location.href)
 		val href = s"https://$authHost/login/?targetUrl=$url"
-		getElementById[html.Anchor]("login-button").get.setAttribute("href", href)
+		getElementById[html.Anchor]("login-button").setAttribute("href", href)
 		loginBlock.show()
 	}
 

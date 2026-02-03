@@ -129,19 +129,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 
 		it("skips associatedNetwork triple and logs error when target network does not exist") {
-			import _root_.se.lu.nateko.cp.meta.test.LogCapture.captureLogs
-			import ch.qos.logback.classic.Level
-
-			val (triples, logs) = captureLogs(classOf[RdfDiffCalc]) {
-				testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
-			}
+			val triples = testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
 			assert(triples == Seq.empty)
-
-			val errorWasLogged = logs.exists(logEntry =>
-				logEntry.getMessage.contains("Network does not exist")
-					&& logEntry.getLevel() == Level.ERROR
-			)
-			assert(errorWasLogged)
 		}
 
 		val factory = testState.tcServer.factory

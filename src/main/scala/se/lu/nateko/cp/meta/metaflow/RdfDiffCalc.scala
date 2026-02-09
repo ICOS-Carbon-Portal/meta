@@ -22,22 +22,6 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 	private val retractablePredicates = Set(rdfMaker.meta.associatedNetwork)
 
-	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
-		updates.filter {
-			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.associatedNetwork, network: IRI)) => {
-				val networkExists = rdfReader.getTcStatements(network).nonEmpty
-				if (!networkExists) {
-					log.atError()
-						.addKeyValue("network", network.stringValue())
-						.addKeyValue("station", station)
-						.log("Network does not exist")
-				}
-				networkExists
-			}
-			case _ => false
-		}
-	}
-
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
 		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T].require("problem reading CP own orgs");
@@ -105,6 +89,22 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		filterValidNetworkAssociations(rdfReader.keepMeaningful(
 			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
 		))
+	}
+
+	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
+		updates.filter {
+			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.associatedNetwork, network: IRI)) => {
+				val networkExists = rdfReader.getTcStatements(network).nonEmpty
+				if (!networkExists) {
+					log.atError()
+						.addKeyValue("network", network.stringValue())
+						.addKeyValue("station", station)
+						.log("Network does not exist")
+				}
+				networkExists
+			}
+			case _ => false
+		}
 	}
 
 	private def diffBuilder = new RdfDiffBuilder(rdfMaker.meta.factory)

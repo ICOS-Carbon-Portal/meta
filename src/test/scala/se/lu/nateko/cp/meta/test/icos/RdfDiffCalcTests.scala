@@ -326,9 +326,6 @@ end RdfDiffCalcTests
 
 object RdfDiffCalcTests:
 	class TestState(
-		val calc: RdfDiffCalc,
-		val reader: RdfReader,
-		val maker: RdfMaker,
-		val tcServer: InstanceServer,
-		val cpServer: InstanceServer
+		val calc: RdfDiffCalc, val reader: RdfReader, val maker: RdfMaker,
+		val tcServer: InstanceServer, val cpServer: InstanceServer
 	)

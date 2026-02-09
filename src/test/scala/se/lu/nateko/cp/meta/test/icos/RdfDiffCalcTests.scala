@@ -63,7 +63,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
-	describe("person name change") {
+	describe("person name change"){
 
 		Given("starting with an empty state with no own CP statements")
 
@@ -73,17 +73,17 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val diffV = state.calc.calcDiff(atcInitSnap(jane))
 		val initUpdates = diffV.result.get.toIndexedSeq
 
-		it("Then it results in expected sequence of RDF updates") {
+		it("Then it results in expected sequence of RDF updates"){
 			assert(diffV.errors.isEmpty)
 			assert(initUpdates.forall(_.isAssertion))
-			assert(initUpdates.size >= 13) // the number may change if metadata model changes
+			assert(initUpdates.size >= 13) //the number may change if metadata model changes
 		}
 
 		state.tcServer.applyAll(initUpdates)()
 
 		And("reading current TC state back produces expected value")
 
-		it("(has the expected PI, the station and the role)") {
+		it("(has the expected PI, the station and the role)"){
 			val sV = state.reader.getCurrentState[A]
 			assert(sV.errors.isEmpty)
 			val s = sV.result.get
@@ -92,8 +92,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(s.instruments.isEmpty)
 			assert(s.roles.size === 1)
 			val memb = s.roles.head
-			assert(memb.start.isEmpty) // init state was empty, so cannot know when the role was assumed first
-			assert(memb.stop.isEmpty) // just created, so cannot have ended
+			assert(memb.start.isEmpty) //init state was empty, so cannot know when the role was assumed first
+			assert(memb.stop.isEmpty) //just created, so cannot have ended
 			assert(memb.role.kind === PI)
 			assert(memb.role.org === airCpStation)
 			assert(memb.role.holder === jane)
@@ -106,10 +106,10 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val peopleUpdates = state.calc.calcDiff(atcInitSnap(jane2)).result.get
 			.filter(_.statement.getSubject.toString.contains("people")).toIndexedSeq
 
-		it("Then only name-changing updates are applied") {
+		it("Then only name-changing updates are applied"){
 			assert(peopleUpdates.size === 2)
 
-			val gist = peopleUpdates.map { upd =>
+			val gist = peopleUpdates.map{upd =>
 				upd.statement.getObject.stringValue -> upd.isAssertion
 			}.toMap
 
@@ -175,12 +175,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		When("a new snapshot comes where the PI has changed")
 
-		val john =
-			TcPerson[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
+		val john = TcPerson[A](UriId("John_Brown"), Some(aId("pers_1")), "John", "Brown", Some("john.brown@icos-ri.eu"), None)
 		val piUpdates = state.calc.calcDiff(atcInitSnap(john)).result.get.toIndexedSeq
 		state.tcServer.applyAll(piUpdates)()
 
-		it("Then previous PI's membership stays and the new ones' is created and started") {
+		it("Then previous PI's membership stays and the new ones' is created and started"){
 			assert(piUpdates.size >= 10)
 			val membs = state.reader.getCurrentState[A].result.get.roles
 			assert(membs.size === 2)
@@ -194,7 +193,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	}
 
-	describe("CP takes over a description of a PI person") {
+	describe("CP takes over a description of a PI person"){
 
 		Given("starting with a single station with single PI and no own CP statements")
 
@@ -208,9 +207,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val cpJane = TcPerson[A](UriId("Jane_CP"), jane.tcIdOpt, "Jane", "CP", Some("jane.cp@icos-cp.eu"), None)
 		state.cpServer.addAll(state.maker.getStatements(cpJane))
 
-		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements") {
+		it("Then arrival of an unchanged TC metadata snapshot results in deletion of TC's own statements"){
 
-			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq // no change in the TC picture
+			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq //no change in the TC picture
 			state.tcServer.applyAll(updates)()
 
 			val personStats = state.maker.getStatements(jane)
@@ -218,13 +217,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(personStats.forall(deleted.contains))
 		}
 
-		it("And subsequent arrival of an unchanged TC metadata has no further effect") {
+		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
 			val updates2 = state.calc.calcDiff(initSnap).result.get.toIndexedSeq
 			assert(updates2.isEmpty)
 		}
 	}
 
-	describe("CP takes over a description of an organization (not station) where a person has a role") {
+	describe("CP takes over a description of an organization (not station) where a person has a role"){
 
 		Given("starting with a single org with a single researcher and no own CP statements")
 
@@ -241,8 +240,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val cpUni = TcGenericOrg(UriId("cpuni"), Some(aId("uni0")), cpUniOrg)
 		state.cpServer.addAll(state.maker.getStatements(cpUni))
 
-		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead") {
-			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq // no change in the TC picture
+		it("Unchanged TC metadata snapshot results in deletion of TC's own org and in membership using the CP one instead"){
+			val updates = state.calc.calcDiff(initSnap).result.get.toIndexedSeq //no change in the TC picture
 			state.tcServer.applyAll(updates)()
 			val tcUri = state.maker.getIri(uni)
 			val cpUri = state.maker.getIri(cpUni)
@@ -255,7 +254,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(atOrgStats === Map(tcUri -> false, cpUri -> true))
 		}
 
-		it("And subsequent arrival of an unchanged TC metadata has no further effect") {
+		it("And subsequent arrival of an unchanged TC metadata has no further effect"){
 			val updates2 = state.calc.calcDiff(initSnap).result.get.toIndexedSeq
 			assert(updates2.isEmpty)
 		}
@@ -285,6 +284,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val theUpdate = updates.head
 			assert(theUpdate.isAssertion)
 			assert(theUpdate.statement.getObject.stringValue.endsWith(orcidStr))
+
 
 	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
 		val repo = Loading.emptyInMemory
@@ -318,9 +318,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
 		given TcConf[T] = state.tcConf
 		state.stations.flatMap(rdfMaker.getStatements) ++
-			state.roles.flatMap(rdfMaker.getStatements) ++
-			state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
-			state.instruments.flatMap(rdfMaker.getStatements)
+		state.roles.flatMap(rdfMaker.getStatements) ++
+		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
+		state.instruments.flatMap(rdfMaker.getStatements)
 
 end RdfDiffCalcTests
 

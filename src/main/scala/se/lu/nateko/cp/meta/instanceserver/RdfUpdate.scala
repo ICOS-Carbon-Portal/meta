@@ -8,7 +8,9 @@ object RdfAssertion {
 	def unapply(update: RdfUpdate): Option[Statement] = {
 		if (update.isAssertion) {
 			Some(update.statement)
-		} else None
+		} else {
+			None
+		}
 	}
 }
 
@@ -16,6 +18,8 @@ object RdfRejection {
 	def unapply(update: RdfUpdate): Option[Statement] = {
 		if (!update.isAssertion) {
 			Some(update.statement)
-		} else None
+		} else {
+			None
+		}
 	}
 }

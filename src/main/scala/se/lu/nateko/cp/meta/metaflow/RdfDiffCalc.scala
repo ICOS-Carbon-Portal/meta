@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.time.Instant
 import scala.collection.mutable.Buffer
+import scala.util.chaining.*
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
@@ -57,8 +58,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			}
 
 		val stationsDiff = {
-			val seqDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
-			seqDiff.copy(rdfDiff = filterValidNetworkAssociations(seqDiff.rdfDiff))
+			diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
+			.pipe(seqDiff =>
+				seqDiff.copy(rdfDiff = rejectMissingNetworkAssociations(seqDiff.rdfDiff))
+			)
 		}
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
@@ -94,7 +97,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		)
 	}
 
-	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
+	private def rejectMissingNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
 		updates.filter {
 			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.associatedNetwork, network: IRI)) => {
 				val networkExists = rdfReader.getTcStatements(network).nonEmpty

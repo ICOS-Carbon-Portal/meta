@@ -686,6 +686,5 @@ object EtcMetaSource{
 		Validated.sequence(valids)
 	}
 
-
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")
 }

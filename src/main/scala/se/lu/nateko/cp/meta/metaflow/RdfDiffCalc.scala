@@ -3,9 +3,10 @@ package se.lu.nateko.cp.meta.metaflow
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RdfAssertion}
 import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===
@@ -21,22 +22,21 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 	private val retractablePredicates = Set(rdfMaker.meta.associatedNetwork)
 
-	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] =
-		val associatedNetworkPred = rdfMaker.meta.associatedNetwork
-		updates.filter { upd =>
-			if upd.isAssertion && upd.statement.getPredicate == associatedNetworkPred then
-				upd.statement.getObject match
-					case networkIri: IRI =>
-						val exists = rdfReader.getTcStatements(networkIri).nonEmpty
-						if !exists then
-							log.atError()
-									.addKeyValue("network", networkIri.stringValue())
-									.addKeyValue("station", upd.statement.getSubject())
-									.log("Network does not exist")
-						exists
-					case _ => true
-			else true
+	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
+		updates.filter {
+			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.associatedNetwork, network: IRI)) => {
+				val networkExists = rdfReader.getTcStatements(network).nonEmpty
+				if (!networkExists) {
+					log.atError()
+						.addKeyValue("network", network.stringValue())
+						.addKeyValue("station", station)
+						.log("Network does not exist")
+				}
+				networkExists
+			}
+			case _ => false
 		}
+	}
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");

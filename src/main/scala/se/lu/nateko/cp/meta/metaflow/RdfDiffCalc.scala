@@ -56,7 +56,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				case null => f
 			}
 
-		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
+		val stationsDiff = {
+			val seqDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
+			seqDiff.copy(rdfDiff = filterValidNetworkAssociations(seqDiff.rdfDiff))
+		}
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
 
@@ -86,9 +89,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
-		filterValidNetworkAssociations(rdfReader.keepMeaningful(
+		rdfReader.keepMeaningful(
 			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
-		))
+		)
 	}
 
 	private def filterValidNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
@@ -103,7 +106,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				}
 				networkExists
 			}
-			case _ => false
+			case _ => true
 		}
 	}
 
@@ -262,7 +265,7 @@ object RdfDiffCalc{
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
-class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
+final case class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
 
 	def ensureIdPreservation[E <: Entity[T] : CpIdSwapper](entity: E): E =
 		entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)

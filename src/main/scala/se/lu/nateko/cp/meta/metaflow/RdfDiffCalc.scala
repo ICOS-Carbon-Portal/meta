@@ -29,7 +29,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 					case networkIri: IRI =>
 						val exists = rdfReader.getTcStatements(networkIri).nonEmpty
 						if !exists then
-							log.error(s"Network does not exist: ${networkIri.stringValue}")
+							log.atError()
+									.addKeyValue("network", networkIri.stringValue())
+									.addKeyValue("station", upd.statement.getSubject())
+									.log("Network does not exist")
 						exists
 					case _ => true
 			else true

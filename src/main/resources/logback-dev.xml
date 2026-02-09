@@ -2,7 +2,7 @@
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>[%highlight(%level)] %cyan(%logger{0}) %msg %n</pattern>
+                  <pattern>[%highlight(%level)] %cyan(%logger{0}) %msg %replace(%kvp{}){'(.+)', '[$1]'}%n</pattern>
 		</encoder>
 	</appender>
 

@@ -13,7 +13,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.time.Instant
 import scala.collection.mutable.Buffer
-import scala.util.chaining.*
 
 class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
@@ -57,12 +56,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				case null => f
 			}
 
-		val stationsDiff = {
-			diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
-			.pipe(seqDiff =>
-				seqDiff.copy(rdfDiff = rejectMissingNetworkAssociations(seqDiff.rdfDiff))
-			)
-		}
+		val stationsDiff =
+			diff(current.stations, newSnapshot.stations.map(updateStation), Nil)
+			.modifyUpdates(rejectMissingNetworkAssociations)
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
 
@@ -277,6 +273,10 @@ final case class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val 
 		rdfDiff ++ other.rdfDiff,
 		cpIdLookup ++ other.cpIdLookup
 	)
+
+	def modifyUpdates(f: (Seq[RdfUpdate] => Seq[RdfUpdate])): SequenceDiff[T] = {
+		copy(rdfDiff = f(rdfDiff))
+	}
 }
 
 object SequenceDiff:

@@ -127,7 +127,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val etcStationWithNetwork = stationWithoutNetwork.withSpecifics(_.copy(networkNames = Set("TestNetwork")))
 		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 
-		it("does not generate associatedNetwork triple, when network does not exist") {
+		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
 			val triples = testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
 			assert(triples == Seq.empty)
 		}
@@ -135,7 +135,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val factory = testState.tcServer.factory
 		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
 
-		it("produces associatedNetwork triples, when network exists") {
+		it("produces hasAssociatedNetwork triples, when network exists") {
 			import org.eclipse.rdf4j.model.vocabulary.RDF
 			val metaVocab = testState.maker.meta
 
@@ -147,7 +147,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
 			assert(
-				addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/associatedNetwork"
+				addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork"
 			)
 			assert(addTriple.statement.getObject() == networkIri)
 			assert(addTriple.statement.getObject.isInstanceOf[org.eclipse.rdf4j.model.IRI])
@@ -157,10 +157,10 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			testState.tcServer.applyAll(Seq(addTriple))()
 		}
 
-		it("removes associatedNetwork triple, when network is removed") {
+		it("removes hasAssociatedNetwork triple, when network is removed") {
 			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
-			assert(removeTriple.statement.getPredicate.stringValue.endsWith("associatedNetwork"))
+			assert(removeTriple.statement.getPredicate.stringValue.endsWith("hasAssociatedNetwork"))
 			assert(removeTriple.statement.getObject == networkIri)
 			assert(!removeTriple.isAssertion)
 		}

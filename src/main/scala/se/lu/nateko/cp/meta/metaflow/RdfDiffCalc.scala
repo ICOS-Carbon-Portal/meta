@@ -20,7 +20,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	import SequenceDiff.*
 	private val log = LoggerFactory.getLogger(getClass)
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
-	private val retractablePredicates = Set(rdfMaker.meta.associatedNetwork)
+	private val retractablePredicates = Set(rdfMaker.meta.hasAssociatedNetwork)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
@@ -95,7 +95,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	private def rejectMissingNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
 		updates.filter {
-			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.associatedNetwork, network: IRI)) => {
+			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.hasAssociatedNetwork, network: IRI)) => {
 				val networkExists = rdfReader.getTcStatements(network).nonEmpty
 				if (!networkExists) {
 					log.atError()

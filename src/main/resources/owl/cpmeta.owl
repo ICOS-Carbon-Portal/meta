@@ -294,6 +294,16 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/IcosStation"/>
+        <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Network"/>
+        <rdfs:label>associated with network</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject">
@@ -1732,6 +1742,7 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox"/>
+                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Network"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
                 </owl:unionOf>
@@ -2861,6 +2872,15 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/NeonStation">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/Station"/>
         <rdfs:label>NEON station</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Network -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Network">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/prov#Agent"/>
+        <rdfs:label>Network</rdfs:label>
     </owl:Class>
     
 

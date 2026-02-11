@@ -3,6 +3,8 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import java.time.LocalDate
 
+final case class Network(id: String)
+
 case class Station(
 	org: Organization,
 	id: String,
@@ -117,7 +119,7 @@ case class EtcStationSpecifics(
 	stationPubs: Seq[URI],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject],
-	networkNames: Set[String]
+	networks: Set[Network]
 ) extends IcosStationSpecifics with EcoStationSpecifics{
 	override def ecosystems = ecosystemType.toSeq
 }
@@ -152,7 +154,7 @@ object EtcStationSpecifics{
 		stationPubs = Nil,
 		timeZoneOffset = base.timeZoneOffset,
 		documentation = base.documentation,
-		networkNames = Set()
+		networks = Set()
 	)
 }
 

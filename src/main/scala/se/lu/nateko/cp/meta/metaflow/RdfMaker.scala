@@ -121,7 +121,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				s.funding.flatMap{fund =>
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
-				}
+				} ++:
+				s.networks.toSeq.map(network =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
+				)
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
@@ -176,6 +179,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)
 
+		case network: TcNetwork[T] => vocab.getNetwork(network.cpId)
+
 		case s: TcStation[T] => vocab.getStation(s.cpId)
 
 		case ci: TcPlainOrg[T] =>
@@ -210,9 +215,6 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			} ++
 			eco.stationDocs.map{stDoc =>
 				(iri, meta.hasDocumentationUri, vocab.lit(stDoc))
-			} ++
-			eco.networkNames.map{networkName =>
-				(iri, meta.hasAssociatedNetwork, vocab.getNetwork(networkName))
 			} ++
 			plainIcosStationSpecTriples(iri, eco)
 		case atc: AtcStationSpecifics =>

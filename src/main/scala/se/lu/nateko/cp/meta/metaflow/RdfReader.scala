@@ -15,6 +15,8 @@ import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+import se.lu.nateko.cp.meta.core.data.Network
+import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -160,7 +162,13 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
-			funding = funding
+			funding = funding,
+			networks =
+				coreStation.specificInfo match {
+					case specifics: EtcStationSpecifics =>
+						specifics.networks.map(makeTcNetwork)
+					case _ => Set.empty
+				}
 		)
 
 
@@ -179,6 +187,9 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		getTcId(uri).map:
 			TcFunder[T](UriId(uri), _, core)
 
+	private def makeTcNetwork[T <: TC : TcConf](network: Network)(using MetaConn): TcNetwork[T] =
+		val uri = UriId(network.self.uri.toRdf)
+		TcNetwork[T](uri, network)
 
 	private def getRole(iri: IRI): Role =
 		val roleId = UriId(iri).urlSafeString

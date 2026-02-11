@@ -1742,7 +1742,6 @@
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Instrument"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/LinkBox"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Network"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Organization"/>
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/StaticObject"/>
                 </owl:unionOf>
@@ -2879,12 +2878,6 @@
     <!-- http://meta.icos-cp.eu/ontologies/cpmeta/Network -->
 
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/cpmeta/Network">
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/cpmeta/hasName"/>
-                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
         <rdfs:label>Network</rdfs:label>
     </owl:Class>
     

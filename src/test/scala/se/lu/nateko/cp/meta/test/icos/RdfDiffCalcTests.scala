@@ -157,6 +157,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			testState.tcServer.applyAll(Seq(addTriple))()
 		}
 
+		it("reads associated networks") {
+			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
+			assert(station.core.specificInfo.asInstanceOf[EtcStationSpecifics].networkNames == Set("TestNetwork"))
+		}
+
 		it("removes hasAssociatedNetwork triple, when network is removed") {
 			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get

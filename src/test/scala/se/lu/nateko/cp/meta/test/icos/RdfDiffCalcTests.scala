@@ -142,7 +142,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			// Insert the network
 			testState.tcServer.addAll(Seq(
 				factory.createStatement(networkIri, RDF.TYPE, metaVocab.networkClass),
-				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("TestNetwork"))
+				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name"))
 			))
 
 			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get

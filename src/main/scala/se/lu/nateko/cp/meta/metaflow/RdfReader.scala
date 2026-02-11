@@ -167,7 +167,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 				coreStation.specificInfo match {
 					case specifics: EtcStationSpecifics =>
 						specifics.networks.map(makeTcNetwork)
-					case _ => Set.empty
+					case _ => Set.empty // TODO @ggVGc: Don't do this. Put networks retrieval closer to StationSpecifics.
 				}
 		)
 

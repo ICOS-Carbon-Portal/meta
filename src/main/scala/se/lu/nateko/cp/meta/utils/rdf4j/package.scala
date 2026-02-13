@@ -5,6 +5,7 @@ import scala.language.unsafeNulls
 import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
+import org.eclipse.rdf4j.common.transaction.IsolationLevels
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
@@ -63,7 +64,9 @@ extension [T](res: CloseableIteration[T])
 
 extension (repo: Repository)
 
-	def transact(action: RepositoryConnection => Unit): Try[Unit] = transact(action, None)
+	def transact(action: RepositoryConnection => Unit): Try[Unit] =
+		transact(action, Some(IsolationLevels.READ_COMMITTED))
+
 	private def transact(action: RepositoryConnection => Unit, isoLevel: Option[IsolationLevel]): Try[Unit] =
 		Using(repo.getConnection){conn =>
 			isoLevel.fold(conn.begin)(conn.begin)

@@ -60,6 +60,8 @@ object StorageSail:
 				nativeSail.setForceSync(forceSync)
 				log.info("NativeStore instantiated")
 				nativeSail
+		val transIsoLevels = sail.getSupportedIsolationLevels().toArray().mkString(", ")
+		log.info(s"The instantiated Store supports transaction isolation levels: $transIsoLevels")
 		isFreshInit -> sail
 	end apply
 end StorageSail

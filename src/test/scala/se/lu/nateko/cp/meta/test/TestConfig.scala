@@ -18,8 +18,8 @@ object TestConfig {
 	val manager = OWLManager.createOWLOntologyManager
 	val factory = manager.getOWLDataFactory
 	lazy val owlOnto = {
-		getOntologyFromJarResourceFile("/../classes/owl/uiannotations.owl", manager)
-		getOntologyFromJarResourceFile("/../classes/owl/cpmeta.owl", manager)
+		getOntologyFromJarResourceFile("/owl/uiannotations.owl", manager)
+		getOntologyFromJarResourceFile("/owl/cpmeta.owl", manager)
 		getOntologyFromJarResourceFile("/owl/cpmetaui.owl", manager)
 	}
 
@@ -31,7 +31,7 @@ object TestConfig {
 		val factory = repo.getValueFactory
 		val instOnt = factory.createIRI(instOntUri)
 		val ont = factory.createIRI(ontUri)
-		Loading.loadResource(repo, "/../classes/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
+		Loading.loadResource(repo, "/owl/cpmeta.owl", ontUri, RDFFormat.RDFXML)
 		new Rdf4jInstanceServer(repo, Seq(ont, instOnt), instOnt)
 	}
 

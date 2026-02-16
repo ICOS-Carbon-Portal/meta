@@ -123,23 +123,31 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	describe("Station network associations") {
 		val testState: TestState = init(Nil, _ => Nil)
+		val factory = testState.tcServer.factory
 
 		val stationWithoutNetwork = make[TcStation[ETC.type]]
-		val etcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
-		testState.tcServer.applyAll(testState.calc.calcDiff(etcState).result.get)()
+		val initialTcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+		testState.tcServer.applyAll(testState.calc.calcDiff(initialTcState).result.get)()
 
-		val testNetwork = StationNetwork(UriResource(dummyUri, Some("TestNetwork"), Nil))
-		val testTcNetwork = TcNetwork[ETC.type](cpId = UriId("TestNetwork"), core = testNetwork)
-		val etcStationWithNetwork = stationWithoutNetwork
-			.copy(networks = Seq(testTcNetwork))
-		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+		val stationWithNetworkTcState = {
+			val etcStationWithNetwork = stationWithoutNetwork.copy(networks = Seq(
+				TcNetwork[ETC.type](
+					cpId = UriId("TestNetwork"),
+					// The underlying station does not matter during ingestion, and is set to dummyUri in EtcMetaSource,
+					// as a result of non-ideal data modelling
+					core = StationNetwork(URI(""))
+				)
+			))
+
+			new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+		}
 
 		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
-			val triples = testState.calc.calcDiff(tcStateWithNetwork).result.get.toSeq
+			// Simulate ingestion of a station which has associated network, but the network itself is not yet known
+			val triples = testState.calc.calcDiff(stationWithNetworkTcState).result.get.toSeq
 			assert(triples == Seq.empty)
 		}
 
-		val factory = testState.tcServer.factory
 		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
 
 		it("produces hasAssociatedNetwork triples, when network exists") {
@@ -152,7 +160,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name")),
 			))
 
-			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
+			val Seq(addTriple) = testState.calc.calcDiff(stationWithNetworkTcState).result.get
 			assert(
 				addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork"
 			)
@@ -168,7 +176,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
 			val Seq(network) = station.networks
 			assert(network.cpId.toString() == "TestNetwork")
-			assert(network.core.self.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
+			assert(network.core.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {

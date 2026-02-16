@@ -112,7 +112,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				countryCode = countryCode.flatMap(CountryCode.unapply),
 				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder)),
 				networks = getUriValues(stat, metaVocab.hasAssociatedNetwork)
-					.map(iri => StationNetwork(UriResource(iri.toJava, None, Nil)))
+					.map(iri => StationNetwork(iri.toJava))
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>

@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import java.time.LocalDate
 
-final case class StationNetwork(self: UriResource)
+final case class StationNetwork(uri: URI)
 
 case class Station(
 	org: Organization,

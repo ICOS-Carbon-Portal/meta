@@ -137,7 +137,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			assert(station.result.isDefined == true)
 
 			val tcStation = station.result.get
-			assert(tcStation.networks.map(_.core).flatMap(_.self.label).toSet == Set("Network-1", "Network_A"))
+			assert(tcStation.networks.map(_.cpId).toSet == Set(UriId("Network-1"), UriId("Network_A")))
 		}
 	}
 

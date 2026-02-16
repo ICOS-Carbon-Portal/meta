@@ -142,14 +142,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
 
 		it("produces hasAssociatedNetwork triples, when network exists") {
-			import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+			import org.eclipse.rdf4j.model.vocabulary.RDF
 			val metaVocab = testState.maker.meta
 
 			// Insert the network
 			testState.tcServer.addAll(Seq(
 				factory.createStatement(networkIri, RDF.TYPE, metaVocab.networkClass),
 				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name")),
-				factory.createStatement(networkIri, RDFS.LABEL, factory.createLiteral("TestNetwork"))
 			))
 
 			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
@@ -166,7 +165,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		it("reads associated networks") {
 			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
-			assert(station.networks.map(_.core).flatMap(_.self.label).toSet == Set("TestNetwork"))
+			val Seq(network) = station.networks
+			assert(network.cpId.toString() == "TestNetwork")
+			assert(network.core.self.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {

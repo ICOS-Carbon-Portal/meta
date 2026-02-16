@@ -139,7 +139,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 			val tcStation = station.result.get
 			val specifics: EtcStationSpecifics = tcStation.core.specificInfo.asInstanceOf[EtcStationSpecifics]
-			assert(specifics.networkNames == Set("Network-1", "Network_A"))
+			assert(specifics.networks == Set("Network-1", "Network_A"))
 		}
 	}
 

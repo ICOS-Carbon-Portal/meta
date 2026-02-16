@@ -147,6 +147,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				meanAnnualTemp <- getOptionalFloat(stat, metaVocab.hasMeanAnnualTemp)
 				meanAnnualPrecip <- getOptionalFloat(stat, metaVocab.hasMeanAnnualPrecip)
 				meanAnnualRad <- getOptionalFloat(stat, metaVocab.hasMeanAnnualRadiation)
+				networks <- Validated.sequence(getUriValues(stat, metaVocab.hasAssociatedNetwork)).map(getNetwork).toSet
 			yield
 				EtcStationSpecifics(icosSpecs).copy(
 					climateZone = climateZone,
@@ -156,9 +157,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					meanAnnualRad = meanAnnualRad,
 					stationDocs = getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
 					stationPubs = getUriLiteralValues(stat, metaVocab.hasAssociatedPublication),
-					networkNames = getUriValues(stat, metaVocab.hasAssociatedNetwork)
-						.flatMap(networkIri => getOptionalString(networkIri, metaVocab.hasName).result.flatten)
-						.toSet
+					networks = networks
 				)
 		else if resourceHasType(stat, metaVocab.atmoStationClass) then
 			for

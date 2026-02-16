@@ -59,7 +59,8 @@ object MidLowCostMetaSource:
 				pictures = Nil,
 				countryCode = Some(countryCode),
 				specificInfo = IcosCitiesStationSpecifics(None, summon[TcConf[T]].tc.network),
-				funding = None
+				funding = None,
+				networks = Set
 			),
 			responsibleOrg = None,
 			funding = Nil

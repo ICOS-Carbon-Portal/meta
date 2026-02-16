@@ -120,11 +120,11 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	describe("Station network associations") {
 		val testState: TestState = init(Nil, _ => Nil)
 
-		val stationWithoutNetwork = make[TcStation[ETC.type]].withSpecifics(_.copy(networkNames = Set.empty))
+		val stationWithoutNetwork = make[TcStation[ETC.type]].withSpecifics(_.copy(networks = Set.empty))
 		val etcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 		testState.tcServer.applyAll(testState.calc.calcDiff(etcState).result.get)()
 
-		val etcStationWithNetwork = stationWithoutNetwork.withSpecifics(_.copy(networkNames = Set("TestNetwork")))
+		val etcStationWithNetwork = stationWithoutNetwork.withSpecifics(_.copy(networks = Set("TestNetwork")))
 		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 
 		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
@@ -159,7 +159,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		it("reads associated networks") {
 			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
-			assert(station.core.specificInfo.asInstanceOf[EtcStationSpecifics].networkNames == Set("TestNetwork"))
+			assert(station.core.specificInfo.asInstanceOf[EtcStationSpecifics].networks == Set("TestNetwork"))
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {

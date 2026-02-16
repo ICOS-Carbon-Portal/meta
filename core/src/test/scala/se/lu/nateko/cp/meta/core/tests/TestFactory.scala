@@ -81,8 +81,7 @@ object TestFactory:
 			stationDocs = Nil,
 			stationPubs = Nil,
 			timeZoneOffset = timeZoneOffset,
-			documentation = Nil,
-			networks = Set()
+			documentation = Nil
 		)
 	)
 

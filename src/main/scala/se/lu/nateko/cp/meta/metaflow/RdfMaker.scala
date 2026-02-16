@@ -179,8 +179,6 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)
 
-		case network: TcNetwork[T] => vocab.getNetwork(network.cpId)
-
 		case s: TcStation[T] => vocab.getStation(s.cpId)
 
 		case ci: TcPlainOrg[T] =>

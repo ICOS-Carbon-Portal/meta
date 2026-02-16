@@ -17,8 +17,10 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
 
+import se.lu.nateko.cp.meta.core.data.Network
 import se.lu.nateko.cp.meta.core.tests.TestFactory.make
-import se.lu.nateko.cp.meta.test.MetaTestFactory.{withSpecifics, given}
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.dummyUri
+import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
 import RdfDiffCalcTests.*
 
@@ -55,7 +57,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			funding = None
 		),
 		responsibleOrg = None,
-		funding = Nil
+		funding = Nil,
+		networks = Seq.empty
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
@@ -120,11 +123,14 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	describe("Station network associations") {
 		val testState: TestState = init(Nil, _ => Nil)
 
-		val stationWithoutNetwork = make[TcStation[ETC.type]].withSpecifics(_.copy(networks = Set.empty))
+		val stationWithoutNetwork = make[TcStation[ETC.type]]
 		val etcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 		testState.tcServer.applyAll(testState.calc.calcDiff(etcState).result.get)()
 
-		val etcStationWithNetwork = stationWithoutNetwork.withSpecifics(_.copy(networks = Set("TestNetwork")))
+		val testNetwork = Network(UriResource(dummyUri, Some("TestNetwork"), Nil))
+		val testTcNetwork = TcNetwork[ETC.type](cpId = UriId("TestNetwork"), core = testNetwork)
+		val etcStationWithNetwork = stationWithoutNetwork
+			.copy(networks = Seq(testTcNetwork))
 		val tcStateWithNetwork = new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 
 		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
@@ -136,13 +142,14 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
 
 		it("produces hasAssociatedNetwork triples, when network exists") {
-			import org.eclipse.rdf4j.model.vocabulary.RDF
+			import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 			val metaVocab = testState.maker.meta
 
 			// Insert the network
 			testState.tcServer.addAll(Seq(
 				factory.createStatement(networkIri, RDF.TYPE, metaVocab.networkClass),
-				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name"))
+				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name")),
+				factory.createStatement(networkIri, RDFS.LABEL, factory.createLiteral("TestNetwork"))
 			))
 
 			val Seq(addTriple) = testState.calc.calcDiff(tcStateWithNetwork).result.get
@@ -159,7 +166,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		it("reads associated networks") {
 			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
-			assert(station.core.specificInfo.asInstanceOf[EtcStationSpecifics].networks == Set("TestNetwork"))
+			assert(station.networks.map(_.core).flatMap(_.self.label).toSet == Set("TestNetwork"))
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {

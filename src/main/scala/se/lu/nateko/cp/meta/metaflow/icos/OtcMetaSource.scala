@@ -120,7 +120,8 @@ class OtcMetaSource(
 						funding = None
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get),
-					funding = Nil
+					funding = Nil,
+					networks = Seq.empty
 				)
 			}
 		}.map(_.toMap)

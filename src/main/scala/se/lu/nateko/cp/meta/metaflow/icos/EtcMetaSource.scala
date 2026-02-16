@@ -23,6 +23,7 @@ import se.lu.nateko.cp.meta.core.data.{
    Funding,
    Station,
    EtcStationSpecifics,
+   Network,
    PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
@@ -489,13 +490,15 @@ object EtcMetaSource{
 					stationDocs = docDois.getOrElse(Nil),
 					stationPubs = pubDois.getOrElse(Nil),
 					timeZoneOffset = tzOffset,
-					documentation = Nil, //docs are not provided by TCs
-					networks = ??? // TODO: @ggVGc
+					documentation = Nil //docs are not provided by TCs
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
 			),
 			responsibleOrg = None,
-			funding = fundings
+			funding = fundings,
+			networks = networkNames.getOrElse(Nil).map { name =>
+				TcNetwork[E](cpId = UriId(name), core = Network(UriResource(dummyUri, Some(name), Nil)))
+			}
 		)
 	}
 

@@ -15,7 +15,6 @@ import java.time.Instant
 import se.lu.nateko.cp.meta.metaflow.TcFunding
 import se.lu.nateko.cp.meta.metaflow.icos.ETC
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
@@ -138,8 +137,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			assert(station.result.isDefined == true)
 
 			val tcStation = station.result.get
-			val specifics: EtcStationSpecifics = tcStation.core.specificInfo.asInstanceOf[EtcStationSpecifics]
-			assert(specifics.networks == Set("Network-1", "Network_A"))
+			assert(tcStation.networks.map(_.core).flatMap(_.self.label).toSet == Set("Network-1", "Network_A"))
 		}
 	}
 

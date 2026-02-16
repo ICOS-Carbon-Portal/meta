@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 import se.lu.nateko.cp.meta.core.data.Network
-import se.lu.nateko.cp.meta.core.data.EtcStationSpecifics
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -157,18 +156,18 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 				coreStation.funding.toSeq.flatten.map: coref =>
 					makeTcFunder(coref.funder).map: tcFunder =>
 						TcFunding[T](UriId(coref.self.uri), tcFunder, coref)
+			networks <- Validated.sequence(
+				getUriValues(uri, metaVocab.hasAssociatedNetwork).map(iri =>
+					getLabeledResource(iri).map(resource => makeTcNetwork[T](Network(resource)))
+				)
+			)
 		yield TcStation(
 			cpId = UriId(uri),
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
 			funding = funding,
-			networks =
-				coreStation.specificInfo match {
-					case specifics: EtcStationSpecifics =>
-						specifics.networks.map(makeTcNetwork)
-					case _ => Set.empty // TODO @ggVGc: Don't do this. Put networks retrieval closer to StationSpecifics.
-				}
+			networks = networks
 		)
 
 

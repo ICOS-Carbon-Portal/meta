@@ -179,7 +179,8 @@ object AtcMetaSource{
 				funding = None
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),
-			funding = Nil
+			funding = Nil,
+			networks = Seq.empty
 		)
 	}
 

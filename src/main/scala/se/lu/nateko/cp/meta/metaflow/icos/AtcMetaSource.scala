@@ -176,7 +176,8 @@ object AtcMetaSource{
 					timeZoneOffset = tzOffset,
 					documentation = Seq.empty//docs are not provided by the TCs
 				),
-				funding = None
+				funding = None,
+				networks = Nil
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),
 			funding = Nil,

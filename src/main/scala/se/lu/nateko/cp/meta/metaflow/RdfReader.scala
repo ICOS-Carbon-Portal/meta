@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder, UriResource}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
@@ -14,8 +14,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
-import se.lu.nateko.cp.meta.utils.rdf4j.{toJava, toRdf}
-import se.lu.nateko.cp.meta.core.data.Network
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -156,16 +155,15 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 				coreStation.funding.toSeq.flatten.map: coref =>
 					makeTcFunder(coref.funder).map: tcFunder =>
 						TcFunding[T](UriId(coref.self.uri), tcFunder, coref)
-			networks = getUriValues(uri, metaVocab.hasAssociatedNetwork).map(iri =>
-				TcNetwork[T](UriId(iri), Network(UriResource(iri.toJava, None, Nil)))
-			)
 		yield TcStation(
 			cpId = UriId(uri),
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
 			funding = funding,
-			networks = networks
+			networks = coreStation.networks.map(network =>
+					TcNetwork[T](UriId(network.self.uri), network)
+				)
 		)
 
 

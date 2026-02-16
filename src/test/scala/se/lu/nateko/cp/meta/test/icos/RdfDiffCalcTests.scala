@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Network
+import se.lu.nateko.cp.meta.core.data.StationNetwork
 import se.lu.nateko.cp.meta.core.tests.TestFactory.make
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.dummyUri
 import se.lu.nateko.cp.meta.test.MetaTestFactory.given
@@ -54,7 +54,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			pictures = Seq.empty,
 			Some(se),
 			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
-			funding = None
+			funding = None,
+			networks = Nil
 		),
 		responsibleOrg = None,
 		funding = Nil,
@@ -127,7 +128,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val etcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 		testState.tcServer.applyAll(testState.calc.calcDiff(etcState).result.get)()
 
-		val testNetwork = Network(UriResource(dummyUri, Some("TestNetwork"), Nil))
+		val testNetwork = StationNetwork(UriResource(dummyUri, Some("TestNetwork"), Nil))
 		val testTcNetwork = TcNetwork[ETC.type](cpId = UriId("TestNetwork"), core = testNetwork)
 		val etcStationWithNetwork = stationWithoutNetwork
 			.copy(networks = Seq(testTcNetwork))

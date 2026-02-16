@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Pos
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Network
+import se.lu.nateko.cp.meta.core.data.StationNetwork
 
 
 trait TC
@@ -101,7 +101,7 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcNetwork[+T <: TC](cpId: UriId, core: Network)
+case class TcNetwork[+T <: TC](cpId: UriId, core: StationNetwork)
 
 case class TcStation[+T <: TC](
 	cpId: UriId,

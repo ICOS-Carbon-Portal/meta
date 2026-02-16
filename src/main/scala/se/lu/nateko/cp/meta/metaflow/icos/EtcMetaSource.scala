@@ -23,7 +23,7 @@ import se.lu.nateko.cp.meta.core.data.{
    Funding,
    Station,
    EtcStationSpecifics,
-   Network,
+   StationNetwork,
    PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
@@ -460,6 +460,9 @@ object EtcMetaSource{
 			val coreFunding = orig.core.copy(self = orig.core.self.copy(label = Some(label)))
 			orig.copy(core = coreFunding)
 		}
+		val networks = networkNames.getOrElse(Nil).map { name =>
+				TcNetwork[E](cpId = UriId(name), core = StationNetwork(UriResource(dummyUri, Some(name), Nil)))
+			}
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
@@ -492,13 +495,12 @@ object EtcMetaSource{
 					timeZoneOffset = tzOffset,
 					documentation = Nil //docs are not provided by TCs
 				),
-				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
+				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
+				networks = networks.map(_.core)
 			),
 			responsibleOrg = None,
 			funding = fundings,
-			networks = networkNames.getOrElse(Nil).map { name =>
-				TcNetwork[E](cpId = UriId(name), core = Network(UriResource(dummyUri, Some(name), Nil)))
-			}
+			networks = networks
 		)
 	}
 

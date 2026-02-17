@@ -694,7 +694,7 @@ object EtcMetaSource{
 	}
 
 	private def parseBarSeparated(input: String): Seq[String] = {
-		input.split("\\|").map(_.trim).filter(!_.isEmpty)
+		input.split("\\|").map(_.trim).filter(!_.isEmpty).toSeq
 	}
 
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")

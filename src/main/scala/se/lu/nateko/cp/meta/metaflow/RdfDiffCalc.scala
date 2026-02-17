@@ -98,7 +98,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.hasAssociatedNetwork, network: IRI)) => {
 				val networkExists = rdfReader.getTcStatements(network).nonEmpty
 				if (!networkExists) {
-					log.atError()
+					log.atWarn()
 						.addKeyValue("network", network.stringValue())
 						.addKeyValue("station", station)
 						.log("Network does not exist")

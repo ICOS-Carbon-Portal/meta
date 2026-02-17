@@ -14,7 +14,7 @@ object RdfAssertion {
 	}
 }
 
-object RdfRejection {
+object RdfRetraction {
 	def unapply(update: RdfUpdate): Option[Statement] = {
 		if (!update.isAssertion) {
 			Some(update.statement)

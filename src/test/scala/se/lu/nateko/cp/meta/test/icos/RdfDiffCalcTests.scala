@@ -19,7 +19,6 @@ import java.net.URI
 
 import se.lu.nateko.cp.meta.core.data.StationNetwork
 import se.lu.nateko.cp.meta.core.tests.TestFactory.make
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.dummyUri
 import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
 import RdfDiffCalcTests.*

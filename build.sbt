@@ -234,3 +234,5 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scalacheck"    %%% "scalacheck"        % "1.18.0" % "test"
 		)
 	)
+
+// testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oNCXELOPQRM")

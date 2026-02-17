@@ -28,7 +28,8 @@ lazy val metaCore = (project in file("core"))
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
-			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test"
+			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
+			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test"
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",
@@ -106,7 +107,7 @@ fetchGCMDKeywords := {
 }
 
 lazy val meta = (project in file("."))
-	.dependsOn(metaCore)
+	.dependsOn(metaCore, metaCore % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -147,6 +148,7 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
 			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test",
+			"org.scalacheck"        %% "scalacheck"                         % "1.18.0"        % "test",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
 			"org.commonmark"        % "commonmark"                          % "0.24.0",
@@ -228,6 +230,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"io.github.cquiroz" %%% "scala-java-time"   % "2.3.0",
 			"com.typesafe.play" %%% "play-json"         % "2.10.0-RC7",
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.2",
-			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test"
+			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test",
+			"org.scalacheck"    %%% "scalacheck"        % "1.18.0" % "test"
 		)
 	)

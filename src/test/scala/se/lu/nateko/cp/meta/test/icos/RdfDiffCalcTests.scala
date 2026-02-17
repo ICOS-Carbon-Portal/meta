@@ -131,9 +131,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val stationWithNetworkTcState = {
 			val etcStationWithNetwork = stationWithoutNetwork.copy(networks = Seq(
 				TcNetwork[ETC.type](
+					// During ingestion, only the ID is known in EtcMetaSource,
+					// so `core` is set to a dummy value as a result of non-ideal data modelling
 					cpId = UriId("TestNetwork"),
-					// The underlying station does not matter during ingestion, and is set to dummyUri in EtcMetaSource,
-					// as a result of non-ideal data modelling
 					core = StationNetwork(URI(""))
 				)
 			))
@@ -151,24 +151,18 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		it("produces hasAssociatedNetwork triples, when network exists") {
 			import org.eclipse.rdf4j.model.vocabulary.RDF
-			val metaVocab = testState.maker.meta
 
 			// Insert the network
-			testState.tcServer.addAll(Seq(
-				factory.createStatement(networkIri, RDF.TYPE, metaVocab.networkClass),
-				factory.createStatement(networkIri, metaVocab.hasName, factory.createLiteral("Test Network display name")),
-			))
+			testState.tcServer.add(factory.createStatement(networkIri, RDF.TYPE, testState.maker.meta.networkClass))
 
-			val Seq(addTriple) = testState.calc.calcDiff(stationWithNetworkTcState).result.get
-			assert(
-				addTriple.statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork"
-			)
-			assert(addTriple.statement.getObject() == networkIri)
-			assert(addTriple.statement.getObject.isInstanceOf[org.eclipse.rdf4j.model.IRI])
-			assert(addTriple.isAssertion)
+			val Seq(addition) = testState.calc.calcDiff(stationWithNetworkTcState).result.get
+			val statement = addition.statement
+			assert(addition.isAssertion)
+			assert(statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork")
+			assert(statement.getObject() == networkIri)
 
 			// Apply the diff, so that next test can check for removal
-			testState.tcServer.applyAll(Seq(addTriple))()
+			testState.tcServer.applyAll(Seq(addition))()
 		}
 
 		it("reads associated networks") {

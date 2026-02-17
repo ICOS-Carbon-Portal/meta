@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.utils.Validated
 class EtcMetaSourceTests extends AnyFunSpec{
 
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
-		InstrumentDeployment[EtcMetaSource.E](
+		InstrumentDeployment[ETC.type](
 			UriId(cpId.getOrElse("")),
 			EtcMetaSource.makeId(stId.toString),
 			UriId(s"ES_$site"),
@@ -133,12 +133,12 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			val fundings = Validated(Map.empty : Map[String, Seq[TcFunding[ETC.type]]])
 			val station = getStation(fundings)(using lookups)
 
-			assert(station.errors == List())
+			assert(station.errors.size == 0)
 			assert(station.result.isDefined == true)
 
 			val tcStation = station.result.get
 			val tcNetworks = tcStation.networks
-			assert(tcNetworks.map(_.core) === tcStation.core.networks)
+			assert(tcNetworks.map(_.core) === tcStation.core.networks) // this may be unnecessary since the core networks are dummy values
 			assert(tcNetworks.map(_.cpId.toString()).toSet === Set("Network-1", "Network_A"))
 		}
 	}

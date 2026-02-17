@@ -453,16 +453,22 @@ object EtcMetaSource{
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
 		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
-		networkNames <- lookUp(Vars.network).flatMap(parseBarSeparated).optional
+		networkNames <- lookUp(Vars.network).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
 			val coreFunding = orig.core.copy(self = orig.core.self.copy(label = Some(label)))
 			orig.copy(core = coreFunding)
 		}
-		val networks = networkNames.getOrElse(Nil).map { name =>
-			TcNetwork[E](cpId = UriId(name), core = StationNetwork(dummyUri))
-		}
+
+		val networks =
+			networkNames
+				.map(parseBarSeparated)
+				.getOrElse(Nil)
+				.map(name =>
+					TcNetwork[E](cpId = UriId(name), core = StationNetwork(dummyUri))
+				)
+
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
@@ -679,16 +685,16 @@ object EtcMetaSource{
 		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
 	}
 
-	private def parseDoiUris(s: String): Validated[Seq[URI]] = {
-		parseBarSeparated(s).map(_.map(item => new URI(item)))
+	private def parseDoiUris(input: String): Validated[Seq[URI]] = {
+		Validated.sequence(
+			parseBarSeparated(input).map(item =>
+				Validated(new URI(item)).require(s"Failed parsing $input as URI")
+			)
+		)
 	}
 
-	// TODO: When can this actually fail? What does the use of Validated do here?
-	private def parseBarSeparated(s: String): Validated[Seq[String]] = {
-		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{item =>
-			Validated(item).require(s"Failed parsing $s as |-separated URI list")
-		}.toIndexedSeq
-		Validated.sequence(valids)
+	private def parseBarSeparated(input: String): Seq[String] = {
+		input.split("\\|").map(_.trim).filter(!_.isEmpty)
 	}
 
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")

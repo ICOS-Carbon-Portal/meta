@@ -493,7 +493,7 @@ object EtcMetaSource{
 					stationDocs = docDois.getOrElse(Nil),
 					stationPubs = pubDois.getOrElse(Nil),
 					timeZoneOffset = tzOffset,
-					documentation = Nil //docs are not provided by TCs
+					documentation = Nil//docs are not provided by TCs
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
 				networks = networks.map(_.core)

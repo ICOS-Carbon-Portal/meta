@@ -164,8 +164,7 @@ object TestFactory:
 			pictures = Nil,
 			specificInfo = specificInfo,
 			countryCode = countryCode,
-			funding = None,
-			networks = Nil
+			funding = None
 		)
 	)
 

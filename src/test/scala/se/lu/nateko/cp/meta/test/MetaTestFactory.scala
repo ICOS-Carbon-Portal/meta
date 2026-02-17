@@ -35,7 +35,8 @@ object MetaTestFactory:
 				tcId = tcId,
 				core = core,
 				responsibleOrg = None,
-				funding = Seq.empty
+				funding = Seq.empty,
+				networks = Nil
 			)
 		)
 	}

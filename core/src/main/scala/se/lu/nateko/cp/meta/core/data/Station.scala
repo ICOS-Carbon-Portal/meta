@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.core.data
 import java.net.URI
 import java.time.LocalDate
 
-final case class StationNetwork(uri: URI)
+final case class Network(uri: URI)
 
 case class Station(
 	org: Organization,
@@ -15,7 +15,7 @@ case class Station(
 	specificInfo: StationSpecifics,
 	countryCode: Option[CountryCode],
 	funding: Option[Seq[Funding]],
-	networks: Seq[StationNetwork]
+	networks: Seq[Network]
 ){
 	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
 		case Nil => None

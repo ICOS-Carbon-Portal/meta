@@ -130,7 +130,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
 	given RootJsonFormat[Station] = jsonFormat10(Station.apply)
-	given RootJsonFormat[StationNetwork] = jsonFormat1(StationNetwork.apply)
+	given RootJsonFormat[Network] = jsonFormat1(Network.apply)
 
 	given RootJsonFormat[Agent] with{
 

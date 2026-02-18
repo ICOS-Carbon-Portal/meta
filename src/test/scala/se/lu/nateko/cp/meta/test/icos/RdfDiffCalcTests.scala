@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.StationNetwork
+import se.lu.nateko.cp.meta.core.data.Network
 import se.lu.nateko.cp.meta.core.tests.TestFactory.make
 import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
@@ -134,7 +134,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 					// During ingestion, only the ID is known in EtcMetaSource,
 					// so `core` is set to a dummy value as a result of non-ideal data modelling
 					cpId = UriId("TestNetwork"),
-					core = StationNetwork(URI(""))
+					core = Network(URI(""))
 				)
 			))
 

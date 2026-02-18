@@ -23,7 +23,7 @@ import se.lu.nateko.cp.meta.core.data.{
    Funding,
    Station,
    EtcStationSpecifics,
-   StationNetwork,
+   Network,
    PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
@@ -466,7 +466,7 @@ object EtcMetaSource{
 				.map(parseBarSeparated)
 				.getOrElse(Nil)
 				.map(name =>
-					TcNetwork[E](cpId = UriId(name), core = StationNetwork(dummyUri))
+					TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
 				)
 
 		TcStation[E](

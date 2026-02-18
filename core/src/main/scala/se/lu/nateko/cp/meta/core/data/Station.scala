@@ -126,10 +126,10 @@ case class EtcStationSpecifics(
 
 //TODO Consider removing "Unspecified" option later
 enum CityNetwork:
-    case `Munich`, `Paris`, `Zurich`, `Barcelona`, Unspecified
+    case `Munich`, `Paris`, `Zurich`, `Barcelona`, `Bologna`, `Milano`, Unspecified
 
 def cityNetworkFromStr(s: String): CityNetwork = s match
-	case city: ("Munich" | "Paris" | "Zurich" | "Barcelona") => CityNetwork.valueOf(city)
+	case city: ("Munich" | "Paris" | "Zurich" | "Barcelona" | "Bologna" | "Milano") => CityNetwork.valueOf(city)
 	case _ => CityNetwork.Unspecified
 
 

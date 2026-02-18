@@ -58,7 +58,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val stationsDiff =
 			diff(current.stations, newSnapshot.stations.map(updateStation), Nil)
-			.modifyUpdates(rejectMissingNetworkAssociations)
+			.modifyUpdates(_.filterNot(isMissingNetworkAssociation))
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
 
@@ -93,19 +93,21 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		)
 	}
 
-	private def rejectMissingNetworkAssociations(updates: Seq[RdfUpdate]): Seq[RdfUpdate] = {
-		updates.filter {
+	private def isMissingNetworkAssociation(update: RdfUpdate): Boolean = {
+		update match {
 			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.hasAssociatedNetwork, network: IRI)) => {
-				val networkExists = rdfReader.getTcStatements(network).nonEmpty
-				if (!networkExists) {
+				val networkMissing = rdfReader.getTcStatements(network).isEmpty
+				if (networkMissing) {
 					log.atWarn()
 						.addKeyValue("network", network.stringValue())
 						.addKeyValue("station", station)
 						.log("Network does not exist")
 				}
-				networkExists
+
+				networkMissing
 			}
-			case _ => true
+
+			case _ => false
 		}
 	}
 

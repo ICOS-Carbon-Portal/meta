@@ -58,7 +58,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		),
 		responsibleOrg = None,
 		funding = Nil,
-		networks = Seq.empty
+		networks = Nil
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {

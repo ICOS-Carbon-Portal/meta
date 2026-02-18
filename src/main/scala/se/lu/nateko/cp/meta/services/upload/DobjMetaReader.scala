@@ -110,7 +110,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				specificInfo = specificInfo,
 				pictures = getUriLiteralValues(stat, metaVocab.hasDepiction),
 				countryCode = countryCode.flatMap(CountryCode.unapply),
-				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder))
+				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder)),
+				networks = getUriValues(stat, metaVocab.hasAssociatedNetwork).map(iri => Network(iri.toJava))
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>

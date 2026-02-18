@@ -11,6 +11,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	private given BaseUriProvider = makeUriProvider(CpmetaVocab.MetaPrefix)
 
 //	val stationClass = getRelativeRaw("Station")
+	val networkClass = getRelativeRaw("Network")
 	val ingosStationClass = getRelativeRaw("IngosStation")
 	val wdcggStationClass = getRelativeRaw("WdcggStation")
 	val fluxnetStationClass = getRelativeRaw("FluxnetStation")
@@ -176,6 +177,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val hasParisId = getRelativeRaw("hasParisId")
 	val hasZurichId = getRelativeRaw("hasZurichId")
 	val belongsToNetwork = getRelativeRaw("belongsToNetwork")
+	val hasAssociatedNetwork = getRelativeRaw("hasAssociatedNetwork")
 
 	val hasWigosId = getRelativeRaw("hasWigosId")
 

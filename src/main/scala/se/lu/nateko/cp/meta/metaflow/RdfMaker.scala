@@ -121,7 +121,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				s.funding.flatMap{fund =>
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
-				}
+				} ++:
+				s.networks.toSeq.map(network =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
+				)
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:

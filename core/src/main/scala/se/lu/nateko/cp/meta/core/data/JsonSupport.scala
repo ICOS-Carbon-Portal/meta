@@ -129,7 +129,8 @@ object JsonSupport extends CommonJsonSupport:
 	given JsonFormat[FunderIdType] = enumFormat(FunderIdType.valueOf, FunderIdType.values)
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
-	given RootJsonFormat[Station] = jsonFormat9(Station.apply)
+	given RootJsonFormat[Station] = jsonFormat10(Station.apply)
+	given RootJsonFormat[Network] = jsonFormat1(Network.apply)
 
 	given RootJsonFormat[Agent] with{
 

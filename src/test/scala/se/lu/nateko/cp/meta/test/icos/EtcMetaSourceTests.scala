@@ -7,17 +7,21 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Position, PositionUtil}
 import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
+import EtcMetaSource.mergeInstrDeployments
+import EtcMetaSource.getStation
 
 import java.time.Instant
+import se.lu.nateko.cp.meta.metaflow.TcFunding
+import se.lu.nateko.cp.meta.metaflow.icos.ETC
+import se.lu.nateko.cp.meta.utils.Validated
 
 class EtcMetaSourceTests extends AnyFunSpec{
 
-	import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.*
-
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
-		InstrumentDeployment[E](
+		InstrumentDeployment[ETC.type](
 			UriId(cpId.getOrElse("")),
-			makeId(stId.toString),
+			EtcMetaSource.makeId(stId.toString),
 			UriId(s"ES_$site"),
 			Some(pos),
 			Some(varName),
@@ -114,6 +118,29 @@ class EtcMetaSourceTests extends AnyFunSpec{
 					mkDepl(15, "IT-Ren", p2, "TS_4_2_2", "2020-12-07T11:00:00Z", None, Some("70dcf602_2"))
 				)
 			))
+	}
+
+	describe("fetchStations") {
+		it("parses network property") {
+			// Minimal set of data for a station
+			val lookups = Map(
+				"SITE_ID" -> "AT-Tst",
+				"ID_STATION" -> "Test-StationID",
+				"SITE_NAME" -> "Test-SiteName",
+				"NETWORK" -> "Network-1 | Network_A"
+			)
+
+			val fundings = Validated(Map.empty : Map[String, Seq[TcFunding[ETC.type]]])
+			val station = getStation(fundings)(using lookups)
+
+			assert(station.errors.size == 0)
+			assert(station.result.isDefined == true)
+
+			val tcStation = station.result.get
+			val tcNetworks = tcStation.networks
+			assert(tcNetworks.map(_.core) === tcStation.core.networks) // this may be unnecessary since the core networks are dummy values
+			assert(tcNetworks.map(_.cpId.toString()).toSet === Set("Network-1", "Network_A"))
+		}
 	}
 
 }

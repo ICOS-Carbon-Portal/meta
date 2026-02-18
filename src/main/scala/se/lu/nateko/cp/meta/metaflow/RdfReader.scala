@@ -160,7 +160,10 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			tcId = tcIdOpt.getOrElse(throw new MetadataException(s"Station $uri had no TC id associated with it")),
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
-			funding = funding
+			funding = funding,
+			networks = coreStation.networks.map(network =>
+					TcNetwork[T](UriId(network.uri), network)
+				)
 		)
 
 
@@ -178,7 +181,6 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		val uri = core.org.self.uri.toRdf
 		getTcId(uri).map:
 			TcFunder[T](UriId(uri), _, core)
-
 
 	private def getRole(iri: IRI): Role =
 		val roleId = UriId(iri).urlSafeString

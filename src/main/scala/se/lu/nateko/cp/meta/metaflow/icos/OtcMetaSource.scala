@@ -117,10 +117,12 @@ class OtcMetaSource(
 						pictures = pictUri.toSeq,
 						countryCode = ccode,
 						specificInfo = OtcStationSpecifics(None, statClass, None, false, None, Seq.empty),
-						funding = None
+						funding = None,
+						networks = Nil
 					),
 					responsibleOrg = respOrg.flatMap(orgs.get),
-					funding = Nil
+					funding = Nil,
+					networks = Nil
 				)
 			}
 		}.map(_.toMap)

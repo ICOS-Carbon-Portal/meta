@@ -10,12 +10,16 @@ import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.metaflow.icos.{ATC, AtcConf}
+import se.lu.nateko.cp.meta.metaflow.icos.{ATC, ETC, AtcConf, EtcConf}
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
+
+import se.lu.nateko.cp.meta.core.data.Network
+import se.lu.nateko.cp.meta.core.tests.TestFactory.make
+import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
 import RdfDiffCalcTests.*
 
@@ -49,10 +53,12 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			pictures = Seq.empty,
 			Some(se),
 			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
-			funding = None
+			funding = None,
+			networks = Nil
 		),
 		responsibleOrg = None,
-		funding = Nil
+		funding = Nil,
+		networks = Nil
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
@@ -114,7 +120,68 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 	}
 
-	describe("PI change"){
+	describe("Station network associations") {
+		val testState: TestState = init(Nil, _ => Nil)
+		val factory = testState.tcServer.factory
+
+		val stationWithoutNetwork = make[TcStation[ETC.type]]
+		val initialTcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+		testState.tcServer.applyAll(testState.calc.calcDiff(initialTcState).result.get)()
+
+		val stationWithNetworkTcState = {
+			val etcStationWithNetwork = stationWithoutNetwork.copy(networks = Seq(
+				TcNetwork[ETC.type](
+					// During ingestion, only the ID is known in EtcMetaSource,
+					// so `core` is set to a dummy value as a result of non-ideal data modelling
+					cpId = UriId("TestNetwork"),
+					core = Network(URI(""))
+				)
+			))
+
+			new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+		}
+
+		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
+			// Simulate ingestion of a station which has associated network, but the network itself is not yet known
+			val triples = testState.calc.calcDiff(stationWithNetworkTcState).result.get.toSeq
+			assert(triples == Seq.empty)
+		}
+
+		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
+
+		it("produces hasAssociatedNetwork triples, when network exists") {
+			import org.eclipse.rdf4j.model.vocabulary.RDF
+
+			// Insert the network
+			testState.tcServer.add(factory.createStatement(networkIri, RDF.TYPE, testState.maker.meta.networkClass))
+
+			val Seq(addition) = testState.calc.calcDiff(stationWithNetworkTcState).result.get
+			val statement = addition.statement
+			assert(addition.isAssertion)
+			assert(statement.getPredicate().stringValue() == "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedNetwork")
+			assert(statement.getObject() == networkIri)
+
+			// Apply the diff, so that next test can check for removal
+			testState.tcServer.applyAll(Seq(addition))()
+		}
+
+		it("reads associated networks") {
+			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
+			val Seq(network) = station.networks
+			assert(network.cpId.toString() == "TestNetwork")
+			assert(network.core.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
+		}
+
+		it("removes hasAssociatedNetwork triple, when network is removed") {
+			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
+			assert(removeTriple.statement.getPredicate.stringValue.endsWith("hasAssociatedNetwork"))
+			assert(removeTriple.statement.getObject == networkIri)
+			assert(!removeTriple.isAssertion)
+		}
+	}
+
+	describe("PI change") {
 
 		Given("starting with a single station with single PI and no own CP statements")
 

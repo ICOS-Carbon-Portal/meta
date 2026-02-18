@@ -50,6 +50,8 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getOrganization(orgId: UriId)(using Envri) = getRelative("organizations/", orgId)
 
+	def getNetwork(id: UriId)(using Envri) = getRelative("networks/", id)
+
 	def getInstrument(id: UriId)(using Envri) = getRelative("instruments/", id)
 	def getEtcInstrument(station: Int, id: Int) = getInstrument{
 		instrCpId(getEtcInstrTcId(station, id))(EtcConf)

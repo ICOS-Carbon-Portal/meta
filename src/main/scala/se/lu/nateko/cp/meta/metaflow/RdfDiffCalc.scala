@@ -3,8 +3,10 @@ package se.lu.nateko.cp.meta.metaflow
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
+import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RdfAssertion}
 import se.lu.nateko.cp.meta.metaflow.RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.===
@@ -16,7 +18,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	import RdfDiffCalc.*
 	import SequenceDiff.*
+	private val log = LoggerFactory.getLogger(getClass)
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
+	private val retractablePredicates = Set(rdfMaker.meta.hasAssociatedNetwork)
 
 	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
@@ -52,7 +56,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 				case null => f
 			}
 
-		val stationsDiff = diff[T, TcStation[T]](current.stations, newSnapshot.stations.map(updateStation), Nil)
+		val stationsDiff =
+			diff(current.stations, newSnapshot.stations.map(updateStation), Nil)
+			.modifyUpdates(_.filterNot(isMissingNetworkAssociation))
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)
 
@@ -87,12 +93,32 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		)
 	}
 
+	private def isMissingNetworkAssociation(update: RdfUpdate): Boolean = {
+		update match {
+			case RdfAssertion(Rdf4jStatement(station, rdfMaker.meta.hasAssociatedNetwork, network: IRI)) => {
+				val networkMissing = rdfReader.getTcStatements(network).isEmpty
+				if (networkMissing) {
+					log.atWarn()
+						.addKeyValue("network", network.stringValue())
+						.addKeyValue("station", station)
+						.log("Network does not exist")
+				}
+
+				networkMissing
+			}
+
+			case _ => false
+		}
+	}
+
 	private def diffBuilder = new RdfDiffBuilder(rdfMaker.meta.factory)
 
 	private def statsDiff(from: Seq[Statement], to: Seq[Statement]): Seq[RdfUpdate] =
-		import RdfDiffBuilder.{Assertion, WeakRetraction}
+		import RdfDiffBuilder.{Assertion, Retraction, WeakRetraction}
+		val (retractable, sticky) = from.partition(s => retractablePredicates.contains(s.getPredicate))
 		diffBuilder
-			.update(from, WeakRetraction) // all the properties are 'sticky'
+			.update(sticky, WeakRetraction) // sticky properties only removed when replaced
+			.update(retractable, Retraction) // retractable properties can be removed outright
 			.update(to, Assertion)
 			.build
 
@@ -240,7 +266,7 @@ object RdfDiffCalc{
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
-class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
+final case class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
 
 	def ensureIdPreservation[E <: Entity[T] : CpIdSwapper](entity: E): E =
 		entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
@@ -249,6 +275,10 @@ class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup:
 		rdfDiff ++ other.rdfDiff,
 		cpIdLookup ++ other.cpIdLookup
 	)
+
+	def modifyUpdates(modifier: (Seq[RdfUpdate] => Seq[RdfUpdate])): SequenceDiff[T] = {
+		copy(rdfDiff = modifier(rdfDiff))
+	}
 }
 
 object SequenceDiff:

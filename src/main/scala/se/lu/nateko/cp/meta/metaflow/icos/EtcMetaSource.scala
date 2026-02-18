@@ -14,16 +14,17 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{
-   Orcid,
-   Position,
-   CountryCode,
-   Organization,
-   UriResource,
-   Funder,
-   Funding,
-   Station,
-   EtcStationSpecifics,
-   PositionUtil
+	Orcid,
+	Position,
+	CountryCode,
+	Organization,
+	UriResource,
+	Funder,
+	Funding,
+	Station,
+	EtcStationSpecifics,
+	Network,
+	PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmLocalDate, BadmLocalDateTime, BadmYear}
@@ -430,7 +431,8 @@ object EtcMetaSource{
 		lines.map(lineStr => colNames.zip(parseCells(lineStr)).toMap).toSeq
 	}
 
-	private def getStation(
+	// Public for testing
+	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getStationPosition;
@@ -450,13 +452,19 @@ object EtcMetaSource{
 		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
-		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional
+		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
+		networkNames <- lookUp(Vars.network).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
 			val coreFunding = orig.core.copy(self = orig.core.self.copy(label = Some(label)))
 			orig.copy(core = coreFunding)
 		}
+
+		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
+			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
+		)
+
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
@@ -489,10 +497,12 @@ object EtcMetaSource{
 					timeZoneOffset = tzOffset,
 					documentation = Nil//docs are not provided by TCs
 				),
-				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty)
+				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
+				networks = networks.map(_.core)
 			),
 			responsibleOrg = None,
-			funding = fundings
+			funding = fundings,
+			networks = networks
 		)
 	}
 
@@ -591,6 +601,7 @@ object EtcMetaSource{
 		sensorId -> InstrumentDeployment(UriId(""), stationTcId, station.cpId, pos, varName, start, None)
 
 
+	// Public for testing
 	def mergeInstrDeployments(
 		depls: Seq[(String, InstrumentDeployment[E])]
 	): Map[String, Seq[InstrumentDeployment[E]]] = if(depls.isEmpty) Map.empty else {
@@ -670,11 +681,16 @@ object EtcMetaSource{
 		) else Validated.error(s"$eco is not a known IGBP ecosystem type")
 	}
 
-	private def parseDoiUris(s: String): Validated[Seq[URI]] = {
-		val valids = s.split("\\|").map(_.trim).filter(!_.isEmpty).map{ustr =>
-			Validated(new URI(ustr)).require(s"Failed parsing $s as |-separated URI list")
-		}.toIndexedSeq
-		Validated.sequence(valids)
+	private def parseDoiUris(input: String): Validated[Seq[URI]] = {
+		Validated.sequence(
+			parseBarSeparated(input).map(item =>
+				Validated(new URI(item)).require(s"Failed parsing $input as URI")
+			)
+		)
+	}
+
+	private def parseBarSeparated(input: String): Seq[String] = {
+		input.split("\\|").map(_.trim).filter(!_.isEmpty).toSeq
 	}
 
 	val dummyUri = new URI(CpmetaVocab.MetaPrefix + "dummy")

@@ -274,8 +274,8 @@ final case class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val 
 		cpIdLookup ++ other.cpIdLookup
 	)
 
-	def modifyUpdates(f: (Seq[RdfUpdate] => Seq[RdfUpdate])): SequenceDiff[T] = {
-		copy(rdfDiff = f(rdfDiff))
+	def modifyUpdates(modifier: (Seq[RdfUpdate] => Seq[RdfUpdate])): SequenceDiff[T] = {
+		copy(rdfDiff = modifier(rdfDiff))
 	}
 }
 

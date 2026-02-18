@@ -14,17 +14,17 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.EtcConfig
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{
-   Orcid,
-   Position,
-   CountryCode,
-   Organization,
-   UriResource,
-   Funder,
-   Funding,
-   Station,
-   EtcStationSpecifics,
-   Network,
-   PositionUtil
+	Orcid,
+	Position,
+	CountryCode,
+	Organization,
+	UriResource,
+	Funder,
+	Funding,
+	Station,
+	EtcStationSpecifics,
+	Network,
+	PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
 import se.lu.nateko.cp.meta.ingestion.badm.{Badm, BadmLocalDate, BadmLocalDateTime, BadmYear}
@@ -461,13 +461,9 @@ object EtcMetaSource{
 			orig.copy(core = coreFunding)
 		}
 
-		val networks =
-			networkNames
-				.map(parseBarSeparated)
-				.getOrElse(Nil)
-				.map(name =>
-					TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
-				)
+		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
+			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
+		)
 
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),

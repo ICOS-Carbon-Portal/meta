@@ -72,7 +72,7 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 			querySelector[html.Select](div, s".$inputClass").foreach{_.id = s"${inputClass}_$id"}
 		}
 
-		private val varNameInput = new Select[DatasetVar](s"varnameInput_$id", _.label, _.uri.toString, false, notifyUpdate)
+		private val varNameInput = new Select[DatasetVar](s"varnameInput_$id", s => s"${s.label} (${s.title})", _.uri.toString, false, notifyUpdate)
 		varNameInput.setOptions(list)
 
 		div.style.display = ""

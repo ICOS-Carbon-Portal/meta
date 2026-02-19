@@ -76,10 +76,10 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 
 	private def onSpecSelected(spec: ObjSpec): Unit = spec.dataLevel match {
 		case 0 =>
-			productionSwitch.uncheck()
+			if(creatorInput.isEmpty) productionSwitch.uncheck()
 			hide()
 		case 1 | 2 =>
-			productionSwitch.uncheck()
+			if(creatorInput.isEmpty) productionSwitch.uncheck()
 			productionSwitch.enable()
 			show()
 		case 3 =>

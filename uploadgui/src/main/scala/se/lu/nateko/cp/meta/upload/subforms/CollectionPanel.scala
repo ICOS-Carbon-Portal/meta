@@ -21,10 +21,9 @@ class CollectionPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus
 	private val collectionDoc = new HashOptInput("colldoc", notifyUpdate)
 	private val spatialCovSelect = new GeoCoverageSelector(covs, "coll")
 
-	getElementById[html.Button]("rmCollGeoSelection").foreach: button =>
-		button.onclick = event =>
-			event.preventDefault()
-			spatialCovSelect.unselect()
+	getElementById[html.Button]("rmCollGeoSelection").onclick = event =>
+		event.preventDefault()
+		spatialCovSelect.unselect()
 
 	def resetForm(): Unit =
 		collectionTitle.reset()

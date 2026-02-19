@@ -179,7 +179,7 @@ object SparqlQueries {
 
 	private def datasetVarOrColQuery(dataset: URI, typ: String) = s"""prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-		|select ?label ?title ?valueType ?unit ?optional ?regex
+		|select ?var ?label ?title ?valueType ?unit ?optional ?regex
 		|where{
 		|	<$dataset> cpmeta:has${typ} ?var .
 		|	?var rdfs:label ?label; cpmeta:has${typ}Title ?title ; cpmeta:hasValueType ?valueTypeRes .
@@ -190,6 +190,7 @@ object SparqlQueries {
 		|}""".stripMargin
 
 	def toDatasetVar(b: Binding) = DatasetVar(
+		new URI(b("var")),
 		b("label"),
 		b("title"),
 		b("valueType"),

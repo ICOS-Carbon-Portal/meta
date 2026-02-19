@@ -4,14 +4,17 @@ import scala.util.{Try, Success}
 import org.scalajs.dom.html
 import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.collection.mutable
+import se.lu.nateko.cp.meta.upload.DatasetVar
 
 class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
-	def varInfos: Try[Option[Seq[String]]] = if(elems.isEmpty) Success(None) else Try{
+	var list: IndexedSeq[DatasetVar] = IndexedSeq.empty
+
+	def values: Try[Option[Seq[DatasetVar]]] = if(elems.isEmpty) Success(None) else Try{
 		Some(elems.map(_.varInfo.get).toIndexedSeq)
 	}
 
-	def setValues(vars: Option[Seq[String]]): Unit = {
+	def setValues(vars: Option[Seq[DatasetVar]]): Unit = {
 		elems.foreach(_.remove())
 		elems.clear()
 		vars.foreach{vdtos =>
@@ -23,7 +26,7 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 		}
 	}
 
-	private val formDiv = getElementById[html.Div](elemId).get
+	private val formDiv = getElementById[html.Div](elemId)
 	private val template = querySelector[html.Div](formDiv, ".l3varinfo-element").get
 	private var _ordId: Long = 0L
 
@@ -45,9 +48,9 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
 	private class L3VarInfoInput{
 
-		def varInfo: Try[String] = varNameInput.value
+		def varInfo: Try[DatasetVar] = varNameInput.value.withMissingError("Missing variable name")
 
-		def setValue(varName: String): Unit = {
+		def setValue(varName: DatasetVar): Unit = {
 			varNameInput.value = varName
 		}
 
@@ -66,10 +69,11 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 		}
 
 		Seq("varnameInput").foreach{inputClass =>
-			querySelector[html.Input](div, s".$inputClass").foreach{_.id = s"${inputClass}_$id"}
+			querySelector[html.Select](div, s".$inputClass").foreach{_.id = s"${inputClass}_$id"}
 		}
 
-		private val varNameInput = new TextInput(s"varnameInput_$id", notifyUpdate, "variable name")
+		private val varNameInput = new Select[DatasetVar](s"varnameInput_$id", s => s"${s.label} (${s.title})", _.uri.toString, false, notifyUpdate)
+		varNameInput.setOptions(list)
 
 		div.style.display = ""
 

@@ -12,9 +12,9 @@ import org.scalajs.dom.Element
 object Utils {
 
 
-	def getElementById[T <: html.Element : ClassTag](id: String): Option[T] = document.getElementById(id) match{
-		case input: T => Some(input)
-		case _ => None
+	def getElementById[T <: html.Element : ClassTag](id: String): T = document.getElementById(id) match{
+		case input: T => input
+		case _ => throw new Exception(s"Missing #$id element")
 	}
 
 	def querySelector[T <: html.Element : ClassTag](parent: html.Element, selector: String): Option[T] = parent.querySelector(selector) match {

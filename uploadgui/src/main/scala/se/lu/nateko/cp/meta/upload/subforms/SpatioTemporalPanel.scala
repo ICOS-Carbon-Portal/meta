@@ -41,7 +41,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		variables = varInfo.map(_.map(_.uri.toString.split('/').last))
 	)
 
-	def varnames: Try[Option[Seq[String]]] = varInfoForm.values.map(_.map(_.map(_.label)))
+	def varnames: Try[Option[Seq[String]]] = varInfoForm.values.map(_.map(_.map(_.title)))
 
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
 	private val descriptionInput = new DescriptionInput("l3descr", notifyUpdate)

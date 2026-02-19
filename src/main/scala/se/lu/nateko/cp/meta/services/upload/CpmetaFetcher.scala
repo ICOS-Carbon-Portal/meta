@@ -239,8 +239,15 @@ trait CpmetaReader:
 				else Seq(next)
 			.filter(isComplete)
 			.filter: next =>
-				getSubmission(next).result.map(_.isUnderMoratorium).getOrElse(false)
+				!isUnderMoratorium(next)
 			.toIndexedSeq
+
+	private def isUnderMoratorium(item: IRI)(using ItemConn): Boolean =
+		getSingleUri(item, metaVocab.wasSubmittedBy)
+			.flatMap(getSubmission)
+			.result
+			.map(_.isUnderMoratorium)
+			.getOrElse(false)
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
 		resourceHasType(item, metaVocab.plainCollectionClass)

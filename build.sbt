@@ -170,10 +170,14 @@ lazy val meta = (project in file("."))
 		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
 		cpDeployInfraBranch := "master",
 
-		Compile / unmanagedResources ++= {
+		assembly / fullClasspath := {
+			val cp = (assembly / fullClasspath).value
 			val finalJsFile = (uploadgui / Compile / fullOptJS).value.data
-			val mapJsFile = new java.io.File(finalJsFile.getAbsolutePath + ".map")
-			Vector(finalJsFile, mapJsFile)
+			val finalJsMap = new java.io.File(finalJsFile.getAbsolutePath + ".map")
+			val classDir = (Compile / classDirectory).value
+			IO.copyFile(finalJsFile, classDir / finalJsFile.getName)
+			IO.copyFile(finalJsMap, classDir / finalJsMap.getName)
+			cp
 		},
 
 		assembly / assemblyMergeStrategy := {

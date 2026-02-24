@@ -238,8 +238,7 @@ trait CpmetaReader:
 				then getUriValues(next, metaVocab.dcterms.hasPart)
 				else Seq(next)
 			.filter(isComplete)
-			.filter: next =>
-				!isUnderMoratorium(next)
+			.filterNot(isUnderMoratorium)
 			.toIndexedSeq
 
 	private def isUnderMoratorium(item: IRI)(using ItemConn): Boolean =

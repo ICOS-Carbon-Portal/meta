@@ -102,8 +102,10 @@ object Backend {
 		if (spec.dataset.isDefined && (spec.isStationTimeSer || varnames.nonEmpty)) || spec.isZip || spec.isNetCDF then
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
-			val varsJson = encodeURIComponent(Json.toJson(varnames).toString)
-			val varsQ = s"&varnames=$varsJson"
+			val varsQ = if (varnames.nonEmpty) {
+				val varsJson = encodeURIComponent(Json.toJson(varnames).toString)
+				s"&varnames=$varsJson"
+			} else { "" }
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
 			fetchOk("validate data object", url, new RequestInit{

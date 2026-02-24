@@ -96,18 +96,14 @@ object Backend {
 		sparqlSelect(datasetVariableQuery(dataset)).map(_.map(toDatasetVar))
 
 	def tryIngestion(
-		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Option[Seq[String]]
+		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Seq[String]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
-		val hasVars: Boolean = varnames.flatMap(_.headOption).isDefined
-
-		if (spec.dataset.isDefined && (spec.isStationTimeSer || hasVars)) || spec.isZip || spec.isNetCDF then
+		if (spec.dataset.isDefined && (spec.isStationTimeSer || varnames.nonEmpty)) || spec.isZip || spec.isNetCDF then
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
-			val varsQ = varnames.fold(""){vns =>
-				val varsJson = encodeURIComponent(Json.toJson(vns).toString)
-				s"&varnames=$varsJson"
-			}
+			val varsJson = encodeURIComponent(Json.toJson(varnames).toString)
+			val varsQ = s"&varnames=$varsJson"
 
 			val url = s"https://${envriConfig.dataHost}/tryingest?specUri=${spec.uri}$nRowsQ$varsQ"
 			fetchOk("validate data object", url, new RequestInit{

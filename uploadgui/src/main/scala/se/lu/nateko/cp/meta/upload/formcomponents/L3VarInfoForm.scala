@@ -10,19 +10,17 @@ class L3VarInfoForm(elemId: String, notifyUpdate: () => Unit) {
 
 	var list: IndexedSeq[DatasetVar] = IndexedSeq.empty
 
-	def values: Try[Option[Seq[DatasetVar]]] = if(elems.isEmpty) Success(None) else Try{
-		Some(elems.map(_.varInfo.get).toIndexedSeq)
+	def values: Try[Seq[DatasetVar]] = if(elems.isEmpty) Success(Nil) else Try{
+		elems.map(_.varInfo.get).toIndexedSeq
 	}
 
-	def setValues(vars: Option[Seq[DatasetVar]]): Unit = {
+	def setValues(vars: Seq[DatasetVar]): Unit = {
 		elems.foreach(_.remove())
 		elems.clear()
-		vars.foreach{vdtos =>
-			vdtos.foreach{vdto =>
-				val input = new L3VarInfoInput
-				input.setValue(vdto)
-				elems.append(input)
-			}
+		vars.foreach{vdto =>
+			val input = new L3VarInfoInput
+			input.setValue(vdto)
+			elems.append(input)
 		}
 	}
 

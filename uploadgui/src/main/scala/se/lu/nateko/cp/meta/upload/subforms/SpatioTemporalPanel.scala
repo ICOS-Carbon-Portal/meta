@@ -38,10 +38,10 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		samplingHeight = height,
 		production = prod,
 		customLandingPage = customLanding,
-		variables = varInfo.map(_.map(_.uri.toString.split('/').last))
+		variables = varInfo.map(_.uri.toString.split('/').last)
 	)
 
-	def varnames: Try[Seq[String]] = varInfoForm.values.map(_.getOrElse(Seq.empty).map(_.title))
+	def varnames: Try[Seq[String]] = varInfoForm.values.map(_.map(_.title))
 
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
 	private val descriptionInput = new DescriptionInput("l3descr", notifyUpdate)
@@ -55,14 +55,14 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 	private var datasetSpec: Option[URI] = None
-	private var selsectedVars: Option[Seq[String]] = None
+	private var selsectedVars: Seq[String] = Nil
 
 	def resetForm(): Unit = {
 		Iterable(
 			titleInput, descriptionInput, timeStartInput, timeStopInput,
 			temporalResInput, externalPageInput
 		).foreach(_.reset())
-		varInfoForm.setValues(None)
+		varInfoForm.setValues(Nil)
 		spatialCovSelect.resetForm()
 	}
 
@@ -76,9 +76,8 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
 		case GotVariableList(variables) =>
 			varInfoForm.list = variables
-			selsectedVars.map { variables =>
-				varInfoForm.setValues(Some(variables.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
-			}
+			varInfoForm.setValues(selsectedVars.flatMap(uri =>
+					varInfoForm.list.find(_.uri.toString.split('/').last == uri)))
 
 	}
 
@@ -98,14 +97,19 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				samplingHeightInput.value = spatTemp.samplingHeight
 				externalPageInput.value = spatTemp.customLandingPage
 				selsectedVars = spatTemp.variables
-				spatTemp.variables.map { varUris =>
-					datasetSpec.map { dataset => 
-						whenDone(getVariables(dataset)) { variables =>
-							varInfoForm.list = variables
-							varInfoForm.setValues(Some(varUris.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
+					if (selsectedVars.nonEmpty) {
+						datasetSpec match {
+							case None => ()
+							case Some(dataset) => {
+								whenDone(getVariables(dataset)) { variables =>
+									varInfoForm.list = variables
+									varInfoForm.setValues(selsectedVars.flatMap(uri =>
+										varInfoForm.list.find(_.uri.toString.split('/').last == uri)
+									))
+								}
+							}
 						}
 					}
-				}
 				spatialCovSelect.handleReceivedSpatialCoverage(Some(spatTemp.spatial))
 				show()
 			case _ =>

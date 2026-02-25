@@ -398,7 +398,7 @@
 }
 
 @varMetas = @{
-	dobj.specificInfo.fold(_.variables, _.columns)
+	dobj.specificInfo.fold( spatio => Some(spatio.variables), timeSeries => timeSeries.columns)
 }
 
 @instrumentDeploymentsPresent = @{

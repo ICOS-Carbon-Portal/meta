@@ -108,7 +108,7 @@ case class SpatioTemporalMeta(
 	station: Option[Station],
 	samplingHeight: Option[Float],
 	productionInfo: DataProduction,
-	variables: Option[Seq[VarMeta]]
+	variables: Seq[VarMeta]
 ){
 	def acquisition: Option[DataAcquisition] = station.map{
 		DataAcquisition(_, None, Some(temporal.interval), None, None, samplingHeight)
@@ -166,7 +166,7 @@ case class DataObject(
 
 		val varsAndPosits = for
 			cols <- specificInfo.fold(
-				l3 => l3.variables,
+				l3 => Some(l3.variables),
 				l2 => l2.columns
 			).toSeq
 			col <- cols

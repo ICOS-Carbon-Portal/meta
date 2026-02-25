@@ -34,14 +34,14 @@ class OtcMetaSource(
 		comms <- getComments;
 		people <- getPeople;
 		otherOrgs <- getCompsAndInsts;
-		stations <- getStations(otherOrgs, comms);
+		stations <- getStations(otherOrgs, comms).map(_.view.mapValues(TcSourceStation.toTcStation).toMap);
 		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
 		instruments <- getInstruments(orgs, sensorLookup)
 	) yield new TcState(stations.values.toSeq, membs, instruments)
 
-	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
+	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcSourceStation[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 			|select *
@@ -95,34 +95,19 @@ class OtcMetaSource(
 				respOrg <- qresValue(b, "respOrg").flatMap(ensureIriValue).optional
 			) yield{
 
-				TcStation[O](
+				TcSourceStation[O](
 					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
-					core = Station(
-						org = Organization(
-							self = UriResource(
-								uri = otcVocab.dummyUri,
-								label = Some(stIdStr),
-								comments = comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil)
-							),
-							name = name,
-							email = None,
-							website = websiteSt.orElse(websitePlat).map(_.toJava),
-							webpageDetails = None
-						),
-						id = stIdStr,
-						location = posOpt,
-						coverage = coverOpt,
-						responsibleOrganization = None,
-						pictures = pictUri.toSeq,
-						countryCode = ccode,
-						specificInfo = OtcStationSpecifics(None, statClass, None, false, None, Seq.empty),
-						funding = None,
-						networks = Nil
-					),
-					responsibleOrg = respOrg.flatMap(orgs.get),
-					funding = Nil,
-					networks = Nil
+					orgName = name,
+					orgComments = comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
+					orgWebsite = websiteSt.orElse(websitePlat).map(_.toJava),
+					stationId = stIdStr,
+					location = posOpt,
+					coverage = coverOpt,
+					pictures = pictUri.toSeq,
+					countryCode = ccode,
+					specificInfo = OtcStationSpecifics(None, statClass, None, false, None, Seq.empty),
+					responsibleOrg = respOrg.flatMap(orgs.get)
 				)
 			}
 		}.map(_.toMap)

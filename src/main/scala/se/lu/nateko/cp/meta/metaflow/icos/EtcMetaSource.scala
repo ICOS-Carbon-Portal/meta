@@ -21,9 +21,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	UriResource,
 	Funder,
 	Funding,
-	Station,
 	EtcStationSpecifics,
-	Network,
 	PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
@@ -70,29 +68,30 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 
 		val futfutValVal = for
 			peopleVal <- peopleFut;
-			stationsVal <- fetchStations();
-			sensorsVal <- fetchSensors(stationsVal);
+			sourceStationsVal <- fetchStations();
+			tcStationsVal = sourceStationsVal.map(_.map(TcSourceStation.toTcStation));
+			sensorsVal <- fetchSensors(tcStationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
-				stations <- stationsVal;
+				tcStations <- tcStationsVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield
 				val membExtractor: Lookup ?=> Validated[EtcMembership] = getMembership(
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
-					stations.map(s => s.tcId -> s).toMap
+					tcStations.map(s => s.tcId -> s).toMap
 				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
+					new TcState(tcStations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
+	private def fetchStations(): Future[Validated[Seq[TcSourceStation[E]]]] = {
 		for(
 			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
 				for(
@@ -434,7 +433,7 @@ object EtcMetaSource{
 	// Public for testing
 	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
-	)(using Lookup): Validated[EtcStation] = for(
+	)(using Lookup): Validated[TcSourceStation[E]] = for(
 		pos <- getStationPosition;
 		tcIdStr <- lookUp(Vars.stationTcId);
 		fundingsLookup <- fundingsV;
@@ -461,48 +460,32 @@ object EtcMetaSource{
 			orig.copy(core = coreFunding)
 		}
 
-		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
-		)
-
-		TcStation[E](
+		TcSourceStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
-			core = Station(
-				org = Organization(
-					self = UriResource(dummyUri, Some(id), descr.toSeq),
-					name = name,
-					email = None,
-					website = None,
-					webpageDetails = None
-				),
-				id = id,
-				location = pos,
-				coverage = None,
-				responsibleOrganization = None,
-				pictures = picture.toSeq,
-				countryCode = countryCode,
-				specificInfo = EtcStationSpecifics(
-					theme = None,
-					stationClass = stClass,
-					labelingDate = None, //not provided by TCs
-					discontinued = false, //not provided by TCs
-					climateZone = climZone,
-					ecosystemType = ecoType,
-					meanAnnualTemp = meanTemp,
-					meanAnnualPrecip = meanPrecip,
-					meanAnnualRad = meanRadiation,
-					stationDocs = docDois.getOrElse(Nil),
-					stationPubs = pubDois.getOrElse(Nil),
-					timeZoneOffset = tzOffset,
-					documentation = Nil//docs are not provided by TCs
-				),
-				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
-				networks = networks.map(_.core)
+			orgName = name,
+			orgComments = descr.toSeq,
+			stationId = id,
+			location = pos,
+			pictures = picture.toSeq,
+			countryCode = countryCode,
+			specificInfo = EtcStationSpecifics(
+				theme = None,
+				stationClass = stClass,
+				labelingDate = None, //not provided by TCs
+				discontinued = false, //not provided by TCs
+				climateZone = climZone,
+				ecosystemType = ecoType,
+				meanAnnualTemp = meanTemp,
+				meanAnnualPrecip = meanPrecip,
+				meanAnnualRad = meanRadiation,
+				stationDocs = docDois.getOrElse(Nil),
+				stationPubs = pubDois.getOrElse(Nil),
+				timeZoneOffset = tzOffset,
+				documentation = Nil//docs are not provided by TCs
 			),
-			responsibleOrg = None,
 			funding = fundings,
-			networks = networks
+			networkIds = networkNames.map(parseBarSeparated).getOrElse(Nil).map(UriId(_))
 		)
 	}
 

@@ -3,11 +3,11 @@ package se.lu.nateko.cp.meta.metaflow
 import akka.stream.scaladsl.Source
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
+import se.lu.nateko.cp.meta.core.data.{CountryCode, Funder, Funding, GeoFeature, Network, Orcid, Organization, Position, Station, StationSpecifics, UriResource}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
+import java.net.URI
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Network
 
 
 trait TC
@@ -174,3 +174,49 @@ trait TcMetaSource[T <: TC : TcConf]:
 object TcMetaSource:
 	val defaultInstrModel = "N/A"
 	val defaultSerialNum = "N/A"
+
+case class TcSourceStation[+T <: TC](
+	cpId: UriId,
+	tcId: TcId[T],
+	orgName: String,
+	orgComments: Seq[String] = Nil,
+	orgWebsite: Option[URI] = None,
+	stationId: String,
+	location: Option[Position] = None,
+	coverage: Option[GeoFeature] = None,
+	pictures: Seq[URI] = Nil,
+	countryCode: Option[CountryCode] = None,
+	specificInfo: StationSpecifics,
+	responsibleOrg: Option[TcPlainOrg[T]] = None,
+	funding: Seq[TcFunding[T]] = Nil,
+	networkIds: Seq[UriId] = Nil
+)
+
+object TcSourceStation:
+	private val placeholder = new URI("urn:placeholder")
+
+	def toTcStation[T <: TC](s: TcSourceStation[T]): TcStation[T] = TcStation(
+		cpId = s.cpId,
+		tcId = s.tcId,
+		core = Station(
+			org = Organization(
+				self = UriResource(uri = placeholder, label = Some(s.stationId), comments = s.orgComments),
+				name = s.orgName,
+				email = None,
+				website = s.orgWebsite,
+				webpageDetails = None
+			),
+			id = s.stationId,
+			location = s.location,
+			coverage = s.coverage,
+			responsibleOrganization = None,
+			pictures = s.pictures,
+			countryCode = s.countryCode,
+			specificInfo = s.specificInfo,
+			funding = None,
+			networks = Nil
+		),
+		responsibleOrg = s.responsibleOrg,
+		funding = s.funding,
+		networks = s.networkIds.map(id => TcNetwork(cpId = id, core = Network(placeholder)))
+	)

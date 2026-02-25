@@ -22,7 +22,8 @@ class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMet
 	import AtcMetaSource.*
 	override def readState: Validated[State] = for(
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
-			stations <- parseStations(getTableFile(stationsTbl), orgs);
+			sourceStations <- parseStations(getTableFile(stationsTbl), orgs);
+			stations = sourceStations.map(TcSourceStation.toTcStation);
 			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
@@ -135,7 +136,7 @@ object AtcMetaSource{
 		if s == "0" || s == "NO" then new Validated(None, Nil)
 		else Validated(IcosStationClass.valueOf(s))
 
-	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcStation[A]]] = parseFromCsv(path){
+	def parseStations(path: Path, orgs: OrgsMap): Validated[IndexedSeq[TcSourceStation[A]]] = parseFromCsv(path){
 		val demand = lookUpMandatory(stationsTbl) _
 
 		for(
@@ -150,38 +151,23 @@ object AtcMetaSource{
 			country <- demand(CountryCol).flatMap(parseCountryCode).optional;
 			orgIdOpt <- lookUp(StationInstIdCol).map(makeOrgId).optional;
 			tzOffset <- lookUp(TimeZoneCol).map(_.toInt).optional
-		) yield TcStation[A](
+		) yield TcSourceStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = makeId(tcId),
-			core = Station(
-				org = Organization(
-					self = UriResource(uri = EtcMetaSource.dummyUri, label = Some(stIdStr), comments = Nil),
-					name = name,
-					email = None,
-					website = None,
-					webpageDetails = None
-				),
-				id = stIdStr,
-				location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
-				coverage = None,
-				responsibleOrganization = None,
-				pictures = Nil,
-				countryCode = country,
-				specificInfo = AtcStationSpecifics(
-					wigosId = wigosId,
-					theme = None,
-					stationClass = stClass,
-					labelingDate = None, //not provided by TCs
-					discontinued = false, //not provided by TCs
-					timeZoneOffset = tzOffset,
-					documentation = Seq.empty//docs are not provided by the TCs
-				),
-				funding = None,
-				networks = Nil
+			orgName = name,
+			stationId = stIdStr,
+			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
+			countryCode = country,
+			specificInfo = AtcStationSpecifics(
+				wigosId = wigosId,
+				theme = None,
+				stationClass = stClass,
+				labelingDate = None, //not provided by TCs
+				discontinued = false, //not provided by TCs
+				timeZoneOffset = tzOffset,
+				documentation = Seq.empty//docs are not provided by the TCs
 			),
-			responsibleOrg = orgIdOpt.flatMap(orgs.get),
-			funding = Nil,
-			networks = Nil
+			responsibleOrg = orgIdOpt.flatMap(orgs.get)
 		)
 	}
 

@@ -272,7 +272,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 						case Some(interval) =>
 							addInstrDeplInfo(stationUri, interval, columns)
 			columnsOptV.sinkOption.map: columnsOpt =>
-				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt)
+				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt.getOrElse(Nil))
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 

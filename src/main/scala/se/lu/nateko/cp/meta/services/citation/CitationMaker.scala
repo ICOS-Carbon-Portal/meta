@@ -177,9 +177,11 @@ class CitationMaker(
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
 					val vars =
 						if dobj.specification.self.uri === vocab.atmGhgProdSpec then
-							stationTs.columns.fold("")(_.collect{
-								case v if v.valueType.unit.isDefined => v.label
-							}.mkString(" (", ", ", ")"))
+							if (stationTs.columns.nonEmpty)
+								stationTs.columns.collect{
+									case v if v.valueType.unit.isDefined => v.label
+								}.mkString(" (", ", ", ")")
+							else ""
 						else ""
 
 					s"$spec$vars from $station$height"

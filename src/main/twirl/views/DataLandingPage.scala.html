@@ -133,7 +133,7 @@
 
 			<br>
 
-			@for(variables <- varMetas){
+			@if(varMetas.nonEmpty){
 				<h2 class="fs-3 mt-5">Previewable variables</h2>
 				<div class="col-md-12 overflow-auto">
 				<table class="table">
@@ -155,7 +155,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						@for(varInfo <- variables){
+						@for(varInfo <- varMetas){
 							<tr>
 								<td>@(varInfo.label)</td>
 								<td>@(varInfo.valueType.self.label.getOrElse(""))</td>
@@ -398,11 +398,11 @@
 }
 
 @varMetas = @{
-	dobj.specificInfo.fold( spatio => Some(spatio.variables), timeSeries => timeSeries.columns)
+	dobj.specificInfo.fold(_.variables, _.columns)
 }
 
 @instrumentDeploymentsPresent = @{
-	varMetas.exists(_.exists(_.instrumentDeployments.isDefined))
+	varMetas.exists(_.instrumentDeployments.isDefined)
 }
 
 @moratoriumText = @{

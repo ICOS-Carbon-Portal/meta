@@ -183,7 +183,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			)
 		}
 
-		val variableMeasured = asOptArray(dobj.specificInfo.fold(spatio => Some(spatio.variables), timeSeries => timeSeries.columns))(
+		val variableMeasured = asOptArray(dobj.specificInfo.fold((_.variables), _.columns))(
 			variable => JsObject(
 				"@type"       -> JsString("PropertyValue"),
 				"name"        -> JsString(variable.label),

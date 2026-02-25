@@ -65,10 +65,9 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
 			val speciesOk = for(
 				extra <- memb.role.extra;
-				l2 <- dobj.specificInfo.toOption;
-				cols <- l2.columns
+				l2 <- dobj.specificInfo.toOption
 			) yield{
-				val colLabels = cols.map(_.label.toLowerCase)
+				val colLabels = l2.columns.map(_.label.toLowerCase)
 				extra.split(',').map(_.trim.toLowerCase).exists(species =>
 					colLabels.exists(_.contains(species)) ||
 					dobj.specification.self.label.getOrElse("").toLowerCase.contains(species)

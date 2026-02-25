@@ -99,7 +99,9 @@ object Backend {
 		file: File, spec: ObjSpec, nRows: Option[Int], varnames: Seq[String]
 	)(implicit envriConfig: EnvriConfig): Future[Unit] = {
 
-		if (spec.dataset.isDefined && (spec.isStationTimeSer || varnames.nonEmpty)) || spec.isZip || spec.isNetCDF then
+		val hasVars = varnames.nonEmpty
+
+		if (spec.dataset.isDefined && (spec.isStationTimeSer || hasVars)) || spec.isZip || spec.isNetCDF then
 
 			val nRowsQ = nRows.fold("")(nr => s"&nRows=$nr")
 			val varsQ = if (varnames.nonEmpty) {

@@ -99,9 +99,9 @@ class OtcMetaSource(
 					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
 					org = TcSourceOrganization(
-						name, label = None,
+						name,
 						comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
-						websiteSt.orElse(websitePlat).map(_.toJava), email = None
+						websiteSt.orElse(websitePlat).map(_.toJava)
 					),
 					stationId = stIdStr,
 					location = posOpt,

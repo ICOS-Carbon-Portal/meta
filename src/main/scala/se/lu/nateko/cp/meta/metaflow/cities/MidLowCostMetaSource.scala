@@ -44,7 +44,7 @@ object MidLowCostMetaSource:
 		) yield TcSourceStation[T](
 			cpId = TcConf.stationId[T](UriId.escaped(stIdStr)),
 			tcId = summon[TcConf[T]].makeId(stIdStr),
-			org = TcSourceOrganization(name, label = None, Nil, website = None, email = None),
+			org = TcSourceOrganization(name, Nil, website = None),
 			stationId = stIdStr,
 			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
 			countryCode = Some(countryCode),

@@ -106,11 +106,13 @@ case class TcPerson[+T <: TC](
 
 case class TcSourceOrganization(
 	name: String,
-	label: Option[String],
 	comments: Seq[String],
 	website: Option[URI],
-	email: Option[String]
 )
+
+object TcSourceOrganization:
+	def fromOrganization(org: Organization) =
+		TcSourceOrganization(org.name, org.self.comments, org.website)
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def orgInfo: TcSourceOrganization }
 
@@ -124,20 +126,16 @@ case class TcStation[+T <: TC](
 	funding: Seq[TcFunding[T]], // needed to avoid info loss with core.funding
 	networks: Seq[TcNetwork[T]]
 ) extends TcOrg[T] with TcEntity[T]{
-	def orgInfo = TcSourceOrganization(
-		core.org.name, core.org.self.label, core.org.self.comments, core.org.website, core.org.email
-	)
+	def orgInfo = TcSourceOrganization.fromOrganization(core.org)
 }
 
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
-case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]{
-	def orgInfo = TcSourceOrganization(org.name, org.self.label, org.self.comments, org.website, org.email)
-}
-case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]{
-	def orgInfo = TcSourceOrganization(
-		core.org.name, core.org.self.label, core.org.self.comments, core.org.website, core.org.email
-	)
-}
+case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]:
+	def orgInfo = TcSourceOrganization.fromOrganization(org)
+
+case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]:
+	def org = core.org
+	def orgInfo = TcSourceOrganization.fromOrganization(core.org)
 
 case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
@@ -216,7 +214,7 @@ object TcSourceStation:
 	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
 		cpId = station.cpId,
 		tcId = station.tcId,
-		org = station.orgInfo,
+		org = TcSourceOrganization.fromOrganization(station.core.org),
 		stationId = station.core.id,
 		location = station.core.location,
 		coverage = station.core.coverage,

@@ -53,7 +53,7 @@ object MetaTestFactory:
 			yield TcSourceStation(
 				cpId = cpId,
 				tcId = tcId,
-				org = TcSourceOrganization(orgName, label = None, Nil, website = None, email = None),
+				org = TcSourceOrganization(orgName, Nil, website = None),
 				stationId = stationId,
 				specificInfo = specifics,
 				coverage = None,

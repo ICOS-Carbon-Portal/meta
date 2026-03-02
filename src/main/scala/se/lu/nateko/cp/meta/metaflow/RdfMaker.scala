@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.data.{
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.core.data.Organization
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
@@ -91,7 +92,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
-				orgTriples(uri, s.orgInfo) ++:
+				sourceOrgTriples(uri, s.orgInfo) ++:
 				stationTriples(uri, s.specificInfo) ++:
 				s.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri))
@@ -134,7 +135,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, go.orgInfo)
+				orgTriples(uri, go.org)
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -144,7 +145,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
 					)
 				} ++:
-				orgTriples(uri, fu.orgInfo)
+				orgTriples(uri, fu.org)
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -293,17 +294,22 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: TcSourceOrganization): Seq[Triple] = {
-		org.label.map{ lbl =>
-			(iri, RDFS.LABEL, vocab.lit(lbl))
-		} ++:
+	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
+		uriResourceTriples(iri, org.self) :+
+		(iri, meta.hasName, vocab.lit(org.name)) :++
+		org.email.map{ email =>
+			(iri, meta.hasEmail, vocab.lit(email))
+		} :++
+		org.website.map{ website =>
+			(iri, RDFS.SEEALSO, website.toRdf)
+		}
+	}
+
+	private def sourceOrgTriples(iri: IRI, org: TcSourceOrganization): Seq[Triple] = {
 		org.comments.map{ comm =>
 			(iri, RDFS.COMMENT, vocab.lit(comm))
 		} :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
-		org.email.map { email =>
-			(iri, meta.hasEmail, vocab.lit(email))
-		} :++
 		org.website.map{ website =>
 			(iri, RDFS.SEEALSO, website.toRdf)
 		}

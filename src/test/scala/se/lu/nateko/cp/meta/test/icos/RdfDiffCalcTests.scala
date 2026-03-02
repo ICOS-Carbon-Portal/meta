@@ -80,8 +80,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val sV = state.reader.getCurrentState[A]
 			assert(sV.errors.isEmpty)
 			val s = sV.result.get
-			assert(s.tcStations.size === 1)
-			assert(s.tcStations.head === airCpStation)
+			assert(s.sourceStations.size === 1)
+			assert(s.sourceStations.head === airCpStation)
 			assert(s.instruments.isEmpty)
 			assert(s.roles.size === 1)
 			val memb = s.roles.head
@@ -149,10 +149,9 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 
 		it("reads associated networks") {
-			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.tcStations
-			val Seq(network) = station.networks
-			assert(network.cpId.toString() == "TestNetwork")
-			assert(network.core.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
+			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.sourceStations
+			val Seq(networkId) = station.networkIds
+			assert(networkId.toString() == "TestNetwork")
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {
@@ -315,7 +314,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
 		given TcConf[T] = state.tcConf
-		state.tcStations.flatMap(rdfMaker.getStatements) ++
+		state.sourceStations.flatMap(rdfMaker.getStatements) ++
 		state.roles.flatMap(rdfMaker.getStatements) ++
 		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
 		state.instruments.flatMap(rdfMaker.getStatements)

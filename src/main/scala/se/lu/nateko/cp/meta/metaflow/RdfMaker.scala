@@ -80,7 +80,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		fund.core.stop.map{endD =>
 			(iri, meta.hasEndDate, vocab.lit(endD))
 		} ++:
-		uriResourceTriples(iri, fund.core.self) ++:
+		uriResourceTriples(iri, UriResourceInfo(fund.core.self)) ++:
 		Nil
 	}
 
@@ -136,6 +136,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
 				orgTriples(uri, go.org)
+
+			case go: TcGenericSourceOrg[T] =>
+				(uri, RDF.TYPE, meta.orgClass) +:
+				sourceOrgTriples(uri, go.org)
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -285,7 +289,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def uriResourceTriples(iri: IRI, res: UriResource): Seq[Triple] = {
+	private def uriResourceTriples(iri: IRI, res: UriResourceInfo): Seq[Triple] = {
 		res.label.map{ lbl =>
 			(iri, RDFS.LABEL, vocab.lit(lbl))
 		} ++:
@@ -295,23 +299,30 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 	}
 
 	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
-		uriResourceTriples(iri, org.self) :+
-		(iri, meta.hasName, vocab.lit(org.name)) :++
+		sourceOrgTriples(iri, TcSourceOrganization.fromOrganization(org)) :++
 		org.email.map{ email =>
 			(iri, meta.hasEmail, vocab.lit(email))
-		} :++
-		org.website.map{ website =>
-			(iri, RDFS.SEEALSO, website.toRdf)
 		}
 	}
 
 	private def sourceOrgTriples(iri: IRI, org: TcSourceOrganization): Seq[Triple] = {
-		org.comments.map{ comm =>
-			(iri, RDFS.COMMENT, vocab.lit(comm))
-		} :+
+		uriResourceTriples(iri, UriResourceInfo(org)) :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
 		org.website.map{ website =>
 			(iri, RDFS.SEEALSO, website.toRdf)
 		}
+	}
+}
+
+
+private sealed case class UriResourceInfo(label: Option[String], comments: Seq[String])
+
+object UriResourceInfo {
+	def apply(uri: UriResource): UriResourceInfo = {
+		UriResourceInfo(uri.label, uri.comments)
+	}
+
+	def apply(org: TcSourceOrganization): UriResourceInfo = {
+		UriResourceInfo(org.label, org.comments)
 	}
 }

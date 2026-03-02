@@ -202,9 +202,22 @@ case class TcSourceStation[+T <: TC](
 object TcSourceStation:
 	private val placeholder = new URI("urn:placeholder")
 
-	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = {
-		???
-	}
+	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
+		cpId = station.cpId,
+		tcId = station.tcId,
+		orgName = station.core.org.name,
+		orgComments = station.core.org.self.comments,
+		orgWebsite = station.core.org.website,
+		stationId = station.core.id,
+		location = station.core.location,
+		coverage = station.core.coverage,
+		pictures = station.core.pictures,
+		countryCode = station.core.countryCode,
+		specificInfo = station.core.specificInfo,
+		responsibleOrg = station.responsibleOrg,
+		funding = station.funding,
+		networkIds = station.networks.map(_.cpId)
+	)
 
 	// toTcStation should be temporary, and should eventually be removed
 	def toTcStation[T <: TC](s: TcSourceStation[T]): TcStation[T] = TcStation(

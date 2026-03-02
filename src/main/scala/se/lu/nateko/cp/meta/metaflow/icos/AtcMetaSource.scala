@@ -154,7 +154,7 @@ object AtcMetaSource{
 		) yield TcSourceStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = makeId(tcId),
-			org = TcSourceOrganization(name, Nil, website = None),
+			org = TcSourceOrganization(name, Nil, website = None, label = None),
 			stationId = stIdStr,
 			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
 			countryCode = country,

@@ -101,7 +101,8 @@ class OtcMetaSource(
 					org = TcSourceOrganization(
 						name,
 						comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
-						websiteSt.orElse(websitePlat).map(_.toJava)
+						websiteSt.orElse(websitePlat).map(_.toJava),
+						label = None
 					),
 					stationId = stIdStr,
 					location = posOpt,
@@ -117,7 +118,7 @@ class OtcMetaSource(
 		}.map(_.toMap)
 	}
 
-	private def getCompsAndInsts: Validated[Map[IRI, TcGenericOrg[O]]] = {
+	private def getCompsAndInsts: Validated[Map[IRI, TcGenericSourceOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
 		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
@@ -126,15 +127,14 @@ class OtcMetaSource(
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
-		getLookup(q, "org"){(b, tcId) => TcGenericOrg(
+		getLookup(q, "org"){(b, tcId) => TcGenericSourceOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
-			org = Organization(
-				self = UriResource(EtcMetaSource.dummyUri, Option(b.getValue("label")).map(_.stringValue), Nil),
+			org = TcSourceOrganization(
 				name = b.getValue("name").stringValue,
-				email = None,
+				label = Option(b.getValue("label")).map(_.stringValue),
 				website = None,
-				webpageDetails = None
+				comments = Nil
 			)
 		)}.map(_.toMap)
 	}

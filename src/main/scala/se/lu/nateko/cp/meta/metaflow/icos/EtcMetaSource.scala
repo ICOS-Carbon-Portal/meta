@@ -462,7 +462,7 @@ object EtcMetaSource{
 		TcSourceStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
-			org = TcSourceOrganization(name, descr.toSeq, website = None),
+			org = TcSourceOrganization(name, descr.toSeq, website = None, label = None),
 			stationId = id,
 			location = pos,
 			pictures = picture.toSeq,

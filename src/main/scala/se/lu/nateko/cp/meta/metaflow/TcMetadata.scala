@@ -61,6 +61,7 @@ object Entity{
 			case ss: TcStation[T] => ss.copy(cpId = id)
 			case ss: TcSourceStation[T] => ss.copy(cpId = id)
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case go: TcGenericSourceOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
@@ -72,6 +73,7 @@ object Entity{
 	given [T <: TC]: CpIdSwapper[TcPlainOrg[T]] with{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case go: TcGenericSourceOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
@@ -108,11 +110,12 @@ case class TcSourceOrganization(
 	name: String,
 	comments: Seq[String],
 	website: Option[URI],
+	label: Option[String]
 )
 
 object TcSourceOrganization:
 	def fromOrganization(org: Organization) =
-		TcSourceOrganization(org.name, org.self.comments, org.website)
+		TcSourceOrganization(org.name, org.self.comments, org.website, org.self.label)
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def orgInfo: TcSourceOrganization }
 
@@ -132,6 +135,9 @@ case class TcStation[+T <: TC](
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
 case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]:
 	def orgInfo = TcSourceOrganization.fromOrganization(org)
+
+case class TcGenericSourceOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: TcSourceOrganization) extends TcPlainOrg[T]:
+	def orgInfo = org
 
 case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]:
 	def org = core.org

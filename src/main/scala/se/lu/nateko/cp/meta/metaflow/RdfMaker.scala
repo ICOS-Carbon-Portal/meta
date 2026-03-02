@@ -16,8 +16,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	IcosCitiesStationSpecifics,
 	SitesStationSpecifics,
 	NoStationSpecifics,
-	Position,
-	Organization
+	Position
 }
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -92,7 +91,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
-				orgTriples(uri, s.org) ++:
+				orgTriples(uri, s.orgInfo) ++:
 				stationTriples(uri, s.specificInfo) ++:
 				s.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri))
@@ -135,7 +134,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, go.org)
+				orgTriples(uri, go.orgInfo)
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -145,7 +144,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
 					)
 				} ++:
-				orgTriples(uri, fu.org)
+				orgTriples(uri, fu.orgInfo)
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -294,10 +293,15 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
-		uriResourceTriples(iri, org.self) :+
+	private def orgTriples(iri: IRI, org: TcSourceOrganization): Seq[Triple] = {
+		org.label.map{ lbl =>
+			(iri, RDFS.LABEL, vocab.lit(lbl))
+		} ++:
+		org.comments.map{ comm =>
+			(iri, RDFS.COMMENT, vocab.lit(comm))
+		} :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
-		org.email.map{ email =>
+		org.email.map { email =>
 			(iri, meta.hasEmail, vocab.lit(email))
 		} :++
 		org.website.map{ website =>

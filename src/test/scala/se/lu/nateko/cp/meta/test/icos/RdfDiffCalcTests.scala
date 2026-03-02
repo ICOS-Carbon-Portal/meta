@@ -17,7 +17,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, toRdf}
 
 import java.net.URI
 
-import se.lu.nateko.cp.meta.core.data.Network
 import se.lu.nateko.cp.meta.core.tests.TestFactory.make
 import se.lu.nateko.cp.meta.test.MetaTestFactory.given
 
@@ -35,35 +34,26 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	val jane = TcPerson[A](UriId("Jane_Doe"), Some(aId("pers_0")), "Jane", "Doe", Some("jane.doe@icos-ri.eu"), None)
 	val se = CountryCode.unapply("SE").get
 
-	val airCpStation = TcStation[A](
+	val airCpStation = TcSourceStation[A](
 		cpId = UriId("AIR1"),
 		tcId = aId("43"),
-		core = Station(
-			org = Organization(
-				self = UriResource(new URI("http://test.icos.eu/resources/stations/AIR1"), Some("AIR1"), Seq.empty),
-				name = "Airplane 1",
-				email = None,
-				website = None,
-				webpageDetails = None
-			),
-			id = "AIR1",
-			location = None,
-			coverage = None,
-			responsibleOrganization = None,
-			pictures = Seq.empty,
-			Some(se),
-			specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
-			funding = None,
-			networks = Nil
-		),
-		responsibleOrg = None,
+		stationId = "AIR1",
+		orgName = "Airplane 1",
+		specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
+		orgComments = Nil,
+		orgWebsite = None,
+		coverage = None,
+		pictures = Nil,
 		funding = Nil,
-		networks = Nil
+		networkIds = Nil,
+		location = None,
+		countryCode = None,
+		responsibleOrg = None
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
-		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
-		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
+		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, TcSourceStation.toTcStation(airCpStation), None, None), None, None)
+		new TcState[A](sourceStations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
 	describe("person name change"){
@@ -90,8 +80,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val sV = state.reader.getCurrentState[A]
 			assert(sV.errors.isEmpty)
 			val s = sV.result.get
-			assert(s.stations.size === 1)
-			assert(s.stations.head === airCpStation)
+			assert(s.tcStations.size === 1)
+			assert(s.tcStations.head === airCpStation)
 			assert(s.instruments.isEmpty)
 			assert(s.roles.size === 1)
 			val memb = s.roles.head
@@ -124,21 +114,14 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val testState: TestState = init(Nil, _ => Nil)
 		val factory = testState.tcServer.factory
 
-		val stationWithoutNetwork = make[TcStation[ETC.type]]
-		val initialTcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+		val stationWithoutNetwork: TcSourceStation[ETC.type] = make[TcSourceStation[ETC.type]]
+		val initialTcState = new TcState(sourceStations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 		testState.tcServer.applyAll(testState.calc.calcDiff(initialTcState).result.get)()
 
 		val stationWithNetworkTcState = {
-			val etcStationWithNetwork = stationWithoutNetwork.copy(networks = Seq(
-				TcNetwork[ETC.type](
-					// During ingestion, only the ID is known in EtcMetaSource,
-					// so `core` is set to a dummy value as a result of non-ideal data modelling
-					cpId = UriId("TestNetwork"),
-					core = Network(URI(""))
-				)
-			))
+			val etcStationWithNetwork = stationWithoutNetwork.copy(networkIds = Seq(UriId("TestNetwork")))
 
-			new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+			new TcState(sourceStations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 		}
 
 		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
@@ -166,14 +149,14 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 
 		it("reads associated networks") {
-			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
+			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.tcStations
 			val Seq(network) = station.networks
 			assert(network.cpId.toString() == "TestNetwork")
 			assert(network.core.uri == URI("http://test.icos.eu/resources/networks/TestNetwork"))
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {
-			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+			val stateWithoutNetwork = new TcState(sourceStations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
 			assert(removeTriple.statement.getPredicate.stringValue.endsWith("hasAssociatedNetwork"))
 			assert(removeTriple.statement.getObject == networkIri)
@@ -332,7 +315,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
 		given TcConf[T] = state.tcConf
-		state.stations.flatMap(rdfMaker.getStatements) ++
+		state.tcStations.flatMap(rdfMaker.getStatements) ++
 		state.roles.flatMap(rdfMaker.getStatements) ++
 		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
 		state.instruments.flatMap(rdfMaker.getStatements)

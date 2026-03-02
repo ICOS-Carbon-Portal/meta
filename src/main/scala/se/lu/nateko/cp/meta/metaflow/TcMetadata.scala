@@ -79,6 +79,10 @@ object Entity{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
+	given [T <: TC]: CpIdSwapper[TcSourceStation[T]] with{
+		def withCpId(s: TcSourceStation[T], id: UriId) = s.copy(cpId = id)
+	}
+
 	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
 		//noop, because instrument cpIds are expected to be stable
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
@@ -162,7 +166,8 @@ class AssumedRole[+T <: TC](
 
 case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
+class TcState[+T <: TC : TcConf](val sourceStations: Seq[TcSourceStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
+	val tcStations = sourceStations.map(TcSourceStation.toTcStation);
 	def tcConf = implicitly[TcConf[T]]
 }
 
@@ -179,22 +184,29 @@ case class TcSourceStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
 	orgName: String,
-	orgComments: Seq[String] = Nil,
-	orgWebsite: Option[URI] = None,
+	orgComments: Seq[String] ,
+	orgWebsite: Option[URI] ,
 	stationId: String,
-	location: Option[Position] = None,
-	coverage: Option[GeoFeature] = None,
-	pictures: Seq[URI] = Nil,
-	countryCode: Option[CountryCode] = None,
+	location: Option[Position] ,
+	coverage: Option[GeoFeature] ,
+	pictures: Seq[URI] ,
+	countryCode: Option[CountryCode] ,
 	specificInfo: StationSpecifics,
-	responsibleOrg: Option[TcPlainOrg[T]] = None,
-	funding: Seq[TcFunding[T]] = Nil,
-	networkIds: Seq[UriId] = Nil
-)
+	responsibleOrg: Option[TcPlainOrg[T]] ,
+	funding: Seq[TcFunding[T]] ,
+	networkIds: Seq[UriId]
+) extends Entity[T] {
+	override def tcIdOpt = Some(tcId)
+}
 
 object TcSourceStation:
 	private val placeholder = new URI("urn:placeholder")
 
+	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = {
+		???
+	}
+
+	// toTcStation should be temporary, and should eventually be removed
 	def toTcStation[T <: TC](s: TcSourceStation[T]): TcStation[T] = TcStation(
 		cpId = s.cpId,
 		tcId = s.tcId,

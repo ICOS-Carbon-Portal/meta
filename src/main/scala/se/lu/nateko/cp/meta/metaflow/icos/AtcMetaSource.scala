@@ -23,7 +23,7 @@ class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMet
 	override def readState: Validated[State] = for(
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
 			sourceStations <- parseStations(getTableFile(stationsTbl), orgs);
-			stations = sourceStations.map(TcSourceStation.toTcStation);
+			stations = sourceStations;
 			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
@@ -167,13 +167,19 @@ object AtcMetaSource{
 				timeZoneOffset = tzOffset,
 				documentation = Seq.empty//docs are not provided by the TCs
 			),
-			responsibleOrg = orgIdOpt.flatMap(orgs.get)
+			responsibleOrg = orgIdOpt.flatMap(orgs.get),
+			orgComments = Nil,
+			orgWebsite = None,
+			coverage = None,
+			pictures = Nil,
+			funding = Nil,
+			networkIds = Nil
 		)
 	}
 
 	def parseMemberships(
 		contacts: Path, roles: Path,
-		stations: Seq[TcStation[A]]
+		stations: Seq[TcSourceStation[A]]
 	): Validated[IndexedSeq[Membership[A]]] = {
 
 		val stationLookup = stations.map(s => s.tcId -> s).toMap
@@ -198,7 +204,7 @@ object AtcMetaSource{
 				endDate <- lookUpDate(RoleEndCol);
 				extra <- lookUp(SpecielListCol).filter(_ => roleId == 12).optional //only retain for Species PIs
 			) yield {
-				val assumedRole = new AssumedRole[A](role, person, station, roleWeightMap.get(roleId), extra)
+				val assumedRole = new AssumedRole[A](role, person, TcSourceStation.toTcStation(station), roleWeightMap.get(roleId), extra)
 				Membership(UriId(""), assumedRole, startDate, endDate)
 			}
 		}

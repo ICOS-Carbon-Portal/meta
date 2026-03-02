@@ -88,20 +88,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 		val uri = getIri(e)
 
-		val triples: Seq[(IRI, IRI, Value)] = e match{
-
-			case p: TcPerson[T] =>
-				(uri, RDF.TYPE, meta.personClass) +:
-				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
-				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
-				p.email.map{email =>
-					(uri, meta.hasEmail, vocab.lit(email))
-				} ++:
-				p.orcid.map{orcid =>
-					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
-				}.toList
-
-			case s: TcStation[T] =>
+		def getStationStatements(s: TcStation[T]) = {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.core.id)) +:
@@ -125,6 +112,26 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				s.networks.toSeq.map(network =>
 					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
 				)
+		}
+
+		val triples: Seq[(IRI, IRI, Value)] = e match{
+
+			case p: TcPerson[T] =>
+				(uri, RDF.TYPE, meta.personClass) +:
+				(uri, meta.hasFirstName, vocab.lit(p.fname)) +:
+				(uri, meta.hasLastName, vocab.lit(p.lname)) +:
+				p.email.map{email =>
+					(uri, meta.hasEmail, vocab.lit(email))
+				} ++:
+				p.orcid.map{orcid =>
+					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
+				}.toList
+
+			case s: TcSourceStation[T] =>
+				getStationStatements(TcSourceStation.toTcStation(s))
+
+			case s: TcStation[T] =>
+				getStationStatements(s)
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
@@ -180,6 +187,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			vocab.getPerson(p.cpId)
 
 		case s: TcStation[T] => vocab.getStation(s.cpId)
+		case s: TcSourceStation[T] => vocab.getStation(s.cpId)
 
 		case ci: TcPlainOrg[T] =>
 			vocab.getOrganization(ci.cpId)

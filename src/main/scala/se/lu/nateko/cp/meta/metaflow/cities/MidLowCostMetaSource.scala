@@ -19,7 +19,7 @@ class MidLowCostMetaSource[T <: CitiesTC : TcConf](
 
 	override def readState: Validated[State] =
 		for sites <- parseFromCsv(getTableFile(StationsTableName))(parseStation(countryCode))
-		yield TcState(sites.map(TcSourceStation.toTcStation), Nil, Nil)
+		yield TcState(sites, Nil, Nil)
 
 
 object MidLowCostMetaSource:
@@ -48,7 +48,14 @@ object MidLowCostMetaSource:
 			stationId = stIdStr,
 			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
 			countryCode = Some(countryCode),
-			specificInfo = IcosCitiesStationSpecifics(None, summon[TcConf[T]].tc.network)
+			specificInfo = IcosCitiesStationSpecifics(None, summon[TcConf[T]].tc.network),
+			orgComments = Nil,
+			orgWebsite = None,
+			coverage = None,
+			pictures = Nil,
+			responsibleOrg = None,
+			funding = Nil,
+			networkIds = Nil
 		)
 	end parseStation
 

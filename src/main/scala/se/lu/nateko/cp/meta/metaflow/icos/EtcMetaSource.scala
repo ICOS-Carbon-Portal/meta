@@ -76,6 +76,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 			for(
 				people <- peopleVal;
 				tcStations <- tcStationsVal;
+				sourceStations <- sourceStationsVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield
@@ -85,7 +86,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(tcStations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
+					new TcState(sourceStations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 
 		futfutValVal.flatten.map(_.flatMap(identity))
@@ -485,7 +486,10 @@ object EtcMetaSource{
 				documentation = Nil//docs are not provided by TCs
 			),
 			funding = fundings,
-			networkIds = networkNames.map(parseBarSeparated).getOrElse(Nil).map(UriId(_))
+			networkIds = networkNames.map(parseBarSeparated).getOrElse(Nil).map(UriId(_)),
+			orgWebsite = None,
+			coverage = None,
+			responsibleOrg = None
 		)
 	}
 

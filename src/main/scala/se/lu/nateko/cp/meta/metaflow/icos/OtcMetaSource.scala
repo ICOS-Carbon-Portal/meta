@@ -34,12 +34,13 @@ class OtcMetaSource(
 		comms <- getComments;
 		people <- getPeople;
 		otherOrgs <- getCompsAndInsts;
-		stations <- getStations(otherOrgs, comms).map(_.view.mapValues(TcSourceStation.toTcStation).toMap);
+		sourceStations <- getStations(otherOrgs, comms);
+		stations = sourceStations.view.mapValues(TcSourceStation.toTcStation).toMap;
 		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
 		instruments <- getInstruments(orgs, sensorLookup)
-	) yield new TcState(stations.values.toSeq, membs, instruments)
+	) yield new TcState(sourceStations.values.toSeq, membs, instruments)
 
 	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcSourceStation[O]]] = {
 		val q = """
@@ -107,7 +108,9 @@ class OtcMetaSource(
 					pictures = pictUri.toSeq,
 					countryCode = ccode,
 					specificInfo = OtcStationSpecifics(None, statClass, None, false, None, Seq.empty),
-					responsibleOrg = respOrg.flatMap(orgs.get)
+					responsibleOrg = respOrg.flatMap(orgs.get),
+					funding = Nil,
+					networkIds = Nil
 				)
 			}
 		}.map(_.toMap)

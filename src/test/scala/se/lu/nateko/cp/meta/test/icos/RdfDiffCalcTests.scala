@@ -52,7 +52,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	)
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
-		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, TcSourceStation.toTcStation(airCpStation), None, None), None, None)
+		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
 		new TcState[A](sourceStations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
@@ -88,7 +88,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(memb.start.isEmpty) //init state was empty, so cannot know when the role was assumed first
 			assert(memb.stop.isEmpty) //just created, so cannot have ended
 			assert(memb.role.kind === PI)
-			assert(memb.role.org === airCpStation)
+			assert(memb.role.org.cpId === UriId("AIR1"))
 			assert(memb.role.holder === jane)
 		}
 

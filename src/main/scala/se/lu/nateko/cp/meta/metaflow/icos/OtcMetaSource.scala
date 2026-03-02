@@ -35,8 +35,7 @@ class OtcMetaSource(
 		people <- getPeople;
 		otherOrgs <- getCompsAndInsts;
 		sourceStations <- getStations(otherOrgs, comms);
-		stations = sourceStations.view.mapValues(TcSourceStation.toTcStation).toMap;
-		orgs = stations ++ otherOrgs;
+		orgs = sourceStations ++ otherOrgs;
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
 		instruments <- getInstruments(orgs, sensorLookup)

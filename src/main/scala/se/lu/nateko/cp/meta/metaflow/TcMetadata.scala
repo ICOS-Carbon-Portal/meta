@@ -59,6 +59,7 @@ object Entity{
 	given [T <: TC]: CpIdSwapper[TcOrg[T]] with{
 		def withCpId(org: TcOrg[T], id: UriId) = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
+			case ss: TcSourceStation[T] => ss.copy(cpId = id)
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
@@ -194,13 +195,19 @@ case class TcSourceStation[+T <: TC](
 	responsibleOrg: Option[TcPlainOrg[T]] ,
 	funding: Seq[TcFunding[T]] ,
 	networkIds: Seq[UriId]
-) extends Entity[T] {
+) extends Entity[T] with TcOrg[T] {
 	override def tcIdOpt = Some(tcId)
+	override def org = Organization(
+		// TODO: Dummies have move here now. Replace with TcSourceOrganization.
+		self = UriResource(URI("http://dummy.com"), None, orgComments),
+		name = orgName,
+		email = None,
+		website = orgWebsite,
+		webpageDetails = None
+	)
 }
 
 object TcSourceStation:
-	private val placeholder = new URI("urn:placeholder")
-
 	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
 		cpId = station.cpId,
 		tcId = station.tcId,
@@ -216,31 +223,4 @@ object TcSourceStation:
 		responsibleOrg = station.responsibleOrg,
 		funding = station.funding,
 		networkIds = station.networks.map(_.cpId)
-	)
-
-	// toTcStation should be temporary, and should eventually be removed
-	def toTcStation[T <: TC](s: TcSourceStation[T]): TcStation[T] = TcStation(
-		cpId = s.cpId,
-		tcId = s.tcId,
-		core = Station(
-			org = Organization(
-				self = UriResource(uri = placeholder, label = Some(s.stationId), comments = s.orgComments),
-				name = s.orgName,
-				email = None,
-				website = s.orgWebsite,
-				webpageDetails = None
-			),
-			id = s.stationId,
-			location = s.location,
-			coverage = s.coverage,
-			responsibleOrganization = None,
-			pictures = s.pictures,
-			countryCode = s.countryCode,
-			specificInfo = s.specificInfo,
-			funding = None,
-			networks = Nil
-		),
-		responsibleOrg = s.responsibleOrg,
-		funding = s.funding,
-		networks = s.networkIds.map(id => TcNetwork(cpId = id, core = Network(placeholder)))
 	)

@@ -88,29 +88,29 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 		val uri = getIri(e)
 
-		def getStationStatements(s: TcStation[T]) = {
+		def getStationStatements(s: TcSourceStation[T]) = {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
-				(uri, meta.hasStationId, vocab.lit(s.core.id)) +:
-				orgTriples(uri, s.core.org) ++:
-				stationTriples(uri, s.core.specificInfo) ++:
-				s.core.pictures.map{picUri =>
+				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
+				orgTriples(uri, s.org) ++:
+				stationTriples(uri, s.specificInfo) ++:
+				s.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri))
 				} ++:
 				s.responsibleOrg.map{respOrg =>
 					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
 				} ++:
-				s.core.location.toSeq.flatMap(positionTriples(_, uri)) ++:
-				s.core.coverage.toSeq.flatMap(coverageTriples(_, uri)) ++:
-				s.core.countryCode.map{ cc =>
+				s.location.toSeq.flatMap(positionTriples(_, uri)) ++:
+				s.coverage.toSeq.flatMap(coverageTriples(_, uri)) ++:
+				s.countryCode.map{cc =>
 					(uri, meta.countryCode, vocab.lit(cc.code))
 				} ++:
 				s.funding.flatMap{fund =>
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
 				} ++:
-				s.networks.toSeq.map(network =>
-					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
+				s.networkIds.map(id =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(id))
 				)
 		}
 
@@ -128,10 +128,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				}.toList
 
 			case s: TcSourceStation[T] =>
-				getStationStatements(TcSourceStation.toTcStation(s))
+				getStationStatements(s)
 
 			case s: TcStation[T] =>
-				getStationStatements(s)
+				getStationStatements(TcSourceStation.fromTcStation(s))
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:

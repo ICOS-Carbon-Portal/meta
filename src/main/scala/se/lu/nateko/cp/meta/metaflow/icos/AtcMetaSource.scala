@@ -204,7 +204,7 @@ object AtcMetaSource{
 				endDate <- lookUpDate(RoleEndCol);
 				extra <- lookUp(SpecielListCol).filter(_ => roleId == 12).optional //only retain for Species PIs
 			) yield {
-				val assumedRole = new AssumedRole[A](role, person, TcSourceStation.toTcStation(station), roleWeightMap.get(roleId), extra)
+				val assumedRole = new AssumedRole[A](role, person, station, roleWeightMap.get(roleId), extra)
 				Membership(UriId(""), assumedRole, startDate, endDate)
 			}
 		}

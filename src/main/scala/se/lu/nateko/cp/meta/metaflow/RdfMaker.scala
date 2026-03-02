@@ -22,6 +22,7 @@ import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.core.data.Organization
+import java.net.URI
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
@@ -92,7 +93,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
-				sourceOrgTriples(uri, s.orgInfo) ++:
+				orgTriples(uri, OrganizationInfo(s.orgInfo)) ++:
 				stationTriples(uri, s.specificInfo) ++:
 				s.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri))
@@ -135,11 +136,11 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, go.org)
+				orgTriples(uri, OrganizationInfo(go.org))
 
 			case go: TcGenericSourceOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				sourceOrgTriples(uri, go.org)
+				orgTriples(uri, OrganizationInfo(go.org))
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -149,7 +150,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
 					)
 				} ++:
-				orgTriples(uri, fu.org)
+				orgTriples(uri, OrganizationInfo(fu.org))
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -298,16 +299,12 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
-		sourceOrgTriples(iri, TcSourceOrganization.fromOrganization(org)) :++
+	private def orgTriples(iri: IRI, org: OrganizationInfo): Seq[Triple] = {
+		uriResourceTriples(iri, org.resource) :+
+		(iri, meta.hasName, vocab.lit(org.name)) :++
 		org.email.map{ email =>
 			(iri, meta.hasEmail, vocab.lit(email))
-		}
-	}
-
-	private def sourceOrgTriples(iri: IRI, org: TcSourceOrganization): Seq[Triple] = {
-		uriResourceTriples(iri, UriResourceInfo(org)) :+
-		(iri, meta.hasName, vocab.lit(org.name)) :++
+		} :++
 		org.website.map{ website =>
 			(iri, RDFS.SEEALSO, website.toRdf)
 		}
@@ -324,5 +321,32 @@ object UriResourceInfo {
 
 	def apply(org: TcSourceOrganization): UriResourceInfo = {
 		UriResourceInfo(org.label, org.comments)
+	}
+}
+
+private sealed case class OrganizationInfo(
+	resource: UriResourceInfo,
+	name: String,
+	email: Option[String],
+	website: Option[URI],
+)
+
+object OrganizationInfo {
+	def apply(org: Organization): OrganizationInfo = {
+		OrganizationInfo(
+			resource = UriResourceInfo(org.self),
+			name = org.name,
+			email = org.email,
+			website = org.website,
+		)
+	}
+
+	def apply(org: TcSourceOrganization): OrganizationInfo = {
+		OrganizationInfo(
+			email = None,
+			resource = UriResourceInfo(org),
+			name = org.name,
+			website = org.website,
+		)
 	}
 }

@@ -154,7 +154,7 @@ object AtcMetaSource{
 		) yield TcSourceStation[A](
 			cpId = TcConf.stationId[A](UriId.escaped(stIdStr)),
 			tcId = makeId(tcId),
-			orgName = name,
+			org = TcSourceOrganization(name, label = None, Nil, website = None, email = None),
 			stationId = stIdStr,
 			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
 			countryCode = country,
@@ -168,8 +168,6 @@ object AtcMetaSource{
 				documentation = Seq.empty//docs are not provided by the TCs
 			),
 			responsibleOrg = orgIdOpt.flatMap(orgs.get),
-			orgComments = Nil,
-			orgWebsite = None,
 			coverage = None,
 			pictures = Nil,
 			funding = Nil,

@@ -462,8 +462,7 @@ object EtcMetaSource{
 		TcSourceStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
-			orgName = name,
-			orgComments = descr.toSeq,
+			org = TcSourceOrganization(name, label = None, descr.toSeq, website = None, email = None),
 			stationId = id,
 			location = pos,
 			pictures = picture.toSeq,
@@ -485,7 +484,6 @@ object EtcMetaSource{
 			),
 			funding = fundings,
 			networkIds = networkNames.map(parseBarSeparated).getOrElse(Nil).map(UriId(_)),
-			orgWebsite = None,
 			coverage = None,
 			responsibleOrg = None
 		)

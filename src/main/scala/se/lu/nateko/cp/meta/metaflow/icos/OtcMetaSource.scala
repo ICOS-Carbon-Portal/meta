@@ -98,9 +98,11 @@ class OtcMetaSource(
 				TcSourceStation[O](
 					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
-					orgName = name,
-					orgComments = comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
-					orgWebsite = websiteSt.orElse(websitePlat).map(_.toJava),
+					org = TcSourceOrganization(
+						name, label = None,
+						comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
+						websiteSt.orElse(websitePlat).map(_.toJava), email = None
+					),
 					stationId = stIdStr,
 					location = posOpt,
 					coverage = coverOpt,

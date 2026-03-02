@@ -197,30 +197,26 @@ object TcMetaSource:
 case class TcSourceStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
-	orgName: String,
-	orgComments: Seq[String] ,
-	orgWebsite: Option[URI] ,
+	org: TcSourceOrganization,
 	stationId: String,
-	location: Option[Position] ,
-	coverage: Option[GeoFeature] ,
-	pictures: Seq[URI] ,
-	countryCode: Option[CountryCode] ,
+	location: Option[Position],
+	coverage: Option[GeoFeature],
+	pictures: Seq[URI],
+	countryCode: Option[CountryCode],
 	specificInfo: StationSpecifics,
-	responsibleOrg: Option[TcPlainOrg[T]] ,
-	funding: Seq[TcFunding[T]] ,
+	responsibleOrg: Option[TcPlainOrg[T]],
+	funding: Seq[TcFunding[T]],
 	networkIds: Seq[UriId]
 ) extends Entity[T] with TcOrg[T] {
 	override def tcIdOpt = Some(tcId)
-	def orgInfo = TcSourceOrganization(orgName, label = None, orgComments, orgWebsite, email = None)
+	def orgInfo = org
 }
 
 object TcSourceStation:
 	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
 		cpId = station.cpId,
 		tcId = station.tcId,
-		orgName = station.core.org.name,
-		orgComments = station.core.org.self.comments,
-		orgWebsite = station.core.org.website,
+		org = station.orgInfo,
 		stationId = station.core.id,
 		location = station.core.location,
 		coverage = station.core.coverage,

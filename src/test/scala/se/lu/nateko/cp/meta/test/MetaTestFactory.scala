@@ -8,8 +8,6 @@ import se.lu.nateko.cp.meta.core.data.{EtcStationSpecifics, Station}
 import se.lu.nateko.cp.meta.core.tests.TestFactory.given
 import se.lu.nateko.cp.meta.metaflow.{TcSourceStation, TcSourceOrganization}
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
-import se.lu.nateko.cp.meta.core.data.Position
-import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.core.data.StationSpecifics
 
 object MetaTestFactory:

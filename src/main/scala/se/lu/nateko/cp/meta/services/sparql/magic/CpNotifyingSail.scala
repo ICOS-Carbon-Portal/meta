@@ -6,8 +6,11 @@ import akka.Done
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
+import org.eclipse.rdf4j.query.{BindingSet, Dataset}
+import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolverClient
+import org.eclipse.rdf4j.query.impl.SimpleDataset
 import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
 import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
 import org.slf4j.LoggerFactory
@@ -134,5 +137,18 @@ class CpNotifyingSailConnection(
 	): CloseableIteration[? <: Statement] =
 		val ctxs = effectiveContexts(contexts)
 		inner.getStatements(statementOrder, subj, pred, obj, includeInferred, ctxs*)
+
+	override def evaluate(
+		tupleExpr: TupleExpr, dataset: Dataset, bindings: BindingSet, includeInferred: Boolean
+	): CloseableIteration[? <: BindingSet] =
+		val effDataset =
+			if excludedContexts.nonEmpty && (dataset == null || dataset.getDefaultGraphs.isEmpty) then
+				val ds = new SimpleDataset()
+				nonExcludedContexts.foreach:
+					case iri: IRI => ds.addDefaultGraph(iri); ds.addNamedGraph(iri)
+					case _ =>
+				ds
+			else dataset
+		inner.evaluate(tupleExpr, effDataset, bindings, includeInferred)
 
 end CpNotifyingSailConnection

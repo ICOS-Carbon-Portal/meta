@@ -50,6 +50,7 @@ class StaticObjectReader(
 	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
 		getObjFormatForDobj(dobjIri).flatMap: objFormat =>
 			lenses.dataObjectLens(objFormat.toJava)
+		.or(lenses.level0DataObjectLens)
 
 	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)

@@ -20,7 +20,8 @@ class RdfLenses(
 	cpMetaInstances: Map[String, CpLens],
 	val collections: Map[Envri, CollLens],
 	val documents: Map[Envri, DocLens],
-	val dobjPerFormat: Map[Envri, Map[URI, DobjLens]]
+	val dobjPerFormat: Map[Envri, Map[URI, DobjLens]],
+	val level0Lens: Option[Map[Envri, DobjLens]]
 ):
 
 	def metaInstanceLens(using Envri): Validated[MetaLens] = forEnvri(metaInstances, "metadata instances")
@@ -33,6 +34,10 @@ class RdfLenses(
 		forEnvri(dobjPerFormat, "per-data-object-format").flatMap: form2Lens =>
 			new Validated(form2Lens.get(dobjFormat)).require:
 				s"No RDF graphs were configured for data objects of format $dobjFormat for ENVRI $envri"
+
+	def level0DataObjectLens(using envri: Envri): Validated[DobjLens] =
+		new Validated(level0Lens.flatMap(_.get(envri))).require:
+			s"ENVRI $envri has no level0 RDF graph configured"
 
 	def cpLens(metaFlow: MetaFlowConfig): Validated[CpLens] =
 		val servId = metaFlow.cpMetaInstanceServerId

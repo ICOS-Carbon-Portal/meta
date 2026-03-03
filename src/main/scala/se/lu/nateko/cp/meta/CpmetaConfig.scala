@@ -43,7 +43,8 @@ case class DataObjectInstServerDefinition(label: String, format: URI, replayLogF
 case class DataObjectInstServersConfig(
 	commonReadContexts: Seq[URI],
 	uriPrefix: URI,
-	definitions: Seq[DataObjectInstServerDefinition]
+	definitions: Seq[DataObjectInstServerDefinition],
+	level0WriteContext: Option[URI]
 )
 
 case class InstanceServersConfig(
@@ -198,7 +199,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
 	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
-	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
+	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat4(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
 	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat6(CitiesMetaFlowConfig.apply)

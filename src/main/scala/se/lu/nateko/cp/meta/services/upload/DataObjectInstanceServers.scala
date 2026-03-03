@@ -19,7 +19,8 @@ class DataObjectInstanceServers(
 	metaServers: Map[Envri, InstanceServer],
 	collectionServers: Map[Envri, InstanceServer],
 	docServers: Map[Envri, InstanceServer],
-	perFormat: Map[Envri, Map[IRI, InstanceServer]]
+	perFormat: Map[Envri, Map[IRI, InstanceServer]],
+	level0Servers: Map[Envri, InstanceServer]
 )(using envriConfs: EnvriConfigs, factory: ValueFactory):
 
 	export citationProvider.{vocab, metaVocab, metaReader, lenses}
@@ -29,12 +30,22 @@ class DataObjectInstanceServers(
 		new Validated(perFormat.get(envri).flatMap(_.get(format))).require:
 			s"ENVRI $envri unknown or has no instance server configured for data object format '$format'"
 
+	def getInstServerForFormat(format: IRI, dataLevel: Int)(using envri: Envri): Validated[InstanceServer] =
+		if dataLevel == 0 then
+			level0Server.or(getInstServerForFormat(format))
+		else
+			getInstServerForFormat(format)
+
+	def level0Server(using envri: Envri): Validated[InstanceServer] =
+		new Validated(level0Servers.get(envri)).require:
+			s"ENVRI $envri has no level0 instance server configured"
+
 	def getInstServerForStaticObj(objHash: Sha256Sum)(using Envri): Validated[InstanceServer] =
 		vanillaGlobal.access: conn ?=>
 			given GlobConn = RdfLens.global(using conn)
 			val objIri = vocab.getStaticObject(objHash)
 			if metaReader.docObjExists(objIri) then docServer
-			else metaReader.getObjFormatForDobj(objIri).flatMap(getInstServerForFormat)
+			else metaReader.getObjFormatForDobj(objIri).flatMap(getInstServerForFormat).or(level0Server)
 
 	def collectionServer(using envri: Envri): Validated[InstanceServer] =
 		new Validated(collectionServers.get(envri)).require:

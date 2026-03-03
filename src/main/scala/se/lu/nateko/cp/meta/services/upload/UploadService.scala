@@ -106,8 +106,10 @@ class UploadService(
 		val serverV = servers.vanillaGlobal.access:
 			for
 				metaLens <- servers.lenses.metaInstanceLens
-				format <- metaReader.getObjSpecFormat(meta.objectSpecification.toRdf)(using metaLens)
-				server <- servers.getInstServerForFormat(format)
+				specIri = meta.objectSpecification.toRdf
+				format <- metaReader.getObjSpecFormat(specIri)(using metaLens)
+				dataLevel <- metaReader.getSpecDataLevel(specIri)(using metaLens)
+				server <- servers.getInstServerForFormat(format, dataLevel)
 			yield server
 		for
 			server <- serverV.toTry(new MetadataException(_))

@@ -107,40 +107,32 @@ class CpNotifyingSailConnection(
 	excludedContexts: Seq[IRI] = Nil
 ) extends NotifyingSailConnectionWrapper(inner):
 
+	private lazy val nonExcludedContexts: Seq[Resource] =
+		val excludedSet = excludedContexts.toSet[Resource]
+		val ctxIter = inner.getContextIDs()
+		try
+			val buf = scala.collection.mutable.ArrayBuffer.empty[Resource]
+			while ctxIter.hasNext do
+				val ctx = ctxIter.next()
+				if !excludedSet.contains(ctx) then buf += ctx
+			buf.toSeq
+		finally
+			ctxIter.close()
+
+	private def effectiveContexts(contexts: Seq[Resource]): Seq[Resource] =
+		if contexts.isEmpty && excludedContexts.nonEmpty then nonExcludedContexts
+		else contexts
+
 	override def getStatements(
 		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
 	): CloseableIteration[? <: Statement] =
-		val base = inner.getStatements(subj, pred, obj, includeInferred, contexts*)
-		val enriched = enricher.enrich(base, subj, pred, obj)
-		if contexts.isEmpty && excludedContexts.nonEmpty then
-			FilteredIteration(enriched, excludedContexts)
-		else enriched
+		val base = inner.getStatements(subj, pred, obj, includeInferred, effectiveContexts(contexts)*)
+		enricher.enrich(base, subj, pred, obj)
 
 	override def getStatements(
 		statementOrder: StatementOrder, subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
 	): CloseableIteration[? <: Statement] =
-		???
+		val ctxs = effectiveContexts(contexts)
+		inner.getStatements(statementOrder, subj, pred, obj, includeInferred, ctxs*)
 
 end CpNotifyingSailConnection
-
-private class FilteredIteration(
-	inner: CloseableIteration[? <: Statement],
-	excludedContexts: Seq[IRI]
-) extends CloseableIteration[Statement]:
-	private var nextStmt: Statement = null
-	advance()
-
-	private def advance(): Unit =
-		nextStmt = null
-		while nextStmt == null && inner.hasNext do
-			val st = inner.next()
-			if !excludedContexts.contains(st.getContext) then
-				nextStmt = st
-
-	override def hasNext: Boolean = nextStmt != null
-	override def next(): Statement =
-		if nextStmt == null then throw new java.util.NoSuchElementException()
-		val res = nextStmt
-		advance()
-		res
-	override def close(): Unit = inner.close()

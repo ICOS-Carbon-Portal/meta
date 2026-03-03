@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta
 
 import scala.language.unsafeNulls
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
@@ -23,12 +22,10 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, StorageSail}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
-import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
@@ -63,14 +60,7 @@ class MetaDb (
 			case cp: CpNotifyingSail =>
 				val exe = summon[ActorSystem].dispatcher
 				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
-
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
-			case _ =>
-				log.info("Magic SPARQL index is disabled, skipping its initialization")
-				ok
+			case _ => Future.successful("Not a Carbon Portal repository, cannot switch to read-only mode")
 
 
 	override def close(): Unit =
@@ -151,20 +141,13 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
 		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
 
-		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
-
-		val idxFactories = if noMagic then None else
-			val indexHandler = IndexHandler(system.scheduler)
-			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
-			Some(indexHandler -> geoProvider)
-
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val sail = CpNotifyingSail(baseSail, citer)
 		val repo = new SailRepository(sail)
 		repo.init()
 

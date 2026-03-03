@@ -82,7 +82,7 @@ end MetaDb
 
 object MetaDb:
 	def getAllInstanceServerConfigs(confs: InstanceServersConfig): Map[String, InstanceServerConfig] = {
-		confs.specific ++ confs.forDataObjects.values.flatMap{dataObjServers =>
+		val perFormat = confs.forDataObjects.values.flatMap{dataObjServers =>
 			dataObjServers.definitions.map{ servDef =>
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
@@ -95,7 +95,22 @@ object MetaDb:
 				)
 			}
 		}
+		val level0 = confs.forDataObjects.values.flatMap{dataObjServers =>
+			dataObjServers.level0WriteContext.map{ writeCtxt =>
+				level0Label -> InstanceServerConfig(
+					logName = Some(level0Label),
+					skipLogIngestionAtStart = None,
+					logIngestionFromId = None,
+					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
+					writeContext = writeCtxt,
+					ingestion = None
+				)
+			}
+		}
+		confs.specific ++ perFormat ++ level0
 	}
+
+	val level0Label = "level0"
 
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
@@ -128,12 +143,18 @@ object MetaDb:
 					servId -> RdfLens.cpLens(conf.writeContext, readContexts)
 			.toMap
 
+		val level0DobjLens: Map[Envri, RdfLens.DobjLens] = servConf.forDataObjects.flatMap: (envri, conf) =>
+			conf.level0WriteContext.map[(Envri, RdfLens.DobjLens)]: writeCtxt =>
+				val readCtxts = writeCtxt +: conf.commonReadContexts
+				envri -> RdfLens.dobjLens(writeCtxt, readCtxts)
+
 		RdfLenses(
 			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
 			cpMetaInstances = cpOwn,
 			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
 			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
-			dobjPerFormat = perFormat
+			dobjPerFormat = perFormat,
+			level0Lens = if level0DobjLens.isEmpty then None else Some(level0DobjLens)
 		)
 	end getLenses
 end MetaDb
@@ -164,7 +185,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val level0Contexts: Seq[IRI] = config.instanceServers.forDataObjects.values
+			.flatMap(_.level0WriteContext)
+			.map(_.toRdf(using citer.server.factory))
+			.toSeq
+
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, level0Contexts)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -248,7 +274,11 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val vanillaRepo = citationProvider.repo
 		val sparqlRunner = new Rdf4jSparqlRunner(vanillaRepo)
 
-		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
+		val level0Servers: Map[Envri, InstanceServer] = config.instanceServers.forDataObjects.flatMap:
+			case (envri, dobjServConfs) =>
+				dobjServConfs.level0WriteContext.map(_ => envri -> instanceServers(level0Label))
+
+		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers, level0Servers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

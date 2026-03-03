@@ -29,7 +29,8 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
-	citer: CitationProvider
+	citer: CitationProvider,
+	excludedContexts: Seq[IRI] = Nil
 )(using EnvriConfigs) extends NotifyingSailWrapper(inner):
 
 	private val log = LoggerFactory.getLogger(getClass())
@@ -42,7 +43,7 @@ class CpNotifyingSail(
 
 	override def getConnection(): NotifyingSailConnection =
 		val innerConn = inner.getConnection()
-		val enriched = CpNotifyingSailConnection(innerConn, enricher)
+		val enriched = CpNotifyingSailConnection(innerConn, enricher, excludedContexts)
 		listener.foreach(enriched.addConnectionListener)
 		readonlyErrMessage.fold(enriched)(ReadonlyConnectionWrapper(enriched, _))
 
@@ -102,14 +103,18 @@ end CpNotifyingSail
 
 class CpNotifyingSailConnection(
 	inner: NotifyingSailConnection,
-	enricher: StatementsEnricher
+	enricher: StatementsEnricher,
+	excludedContexts: Seq[IRI] = Nil
 ) extends NotifyingSailConnectionWrapper(inner):
 
 	override def getStatements(
 		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
 	): CloseableIteration[? <: Statement] =
 		val base = inner.getStatements(subj, pred, obj, includeInferred, contexts*)
-		enricher.enrich(base, subj, pred, obj)
+		val enriched = enricher.enrich(base, subj, pred, obj)
+		if contexts.isEmpty && excludedContexts.nonEmpty then
+			FilteredIteration(enriched, excludedContexts)
+		else enriched
 
 	override def getStatements(
 		statementOrder: StatementOrder, subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
@@ -117,3 +122,25 @@ class CpNotifyingSailConnection(
 		???
 
 end CpNotifyingSailConnection
+
+private class FilteredIteration(
+	inner: CloseableIteration[? <: Statement],
+	excludedContexts: Seq[IRI]
+) extends CloseableIteration[Statement]:
+	private var nextStmt: Statement = null
+	advance()
+
+	private def advance(): Unit =
+		nextStmt = null
+		while nextStmt == null && inner.hasNext do
+			val st = inner.next()
+			if !excludedContexts.contains(st.getContext) then
+				nextStmt = st
+
+	override def hasNext: Boolean = nextStmt != null
+	override def next(): Statement =
+		if nextStmt == null then throw new java.util.NoSuchElementException()
+		val res = nextStmt
+		advance()
+		res
+	override def close(): Unit = inner.close()

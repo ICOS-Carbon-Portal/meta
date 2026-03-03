@@ -52,6 +52,9 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	def getObjSpecFormat(spec: IRI)(using MetaConn): Validated[IRI] =
 		getSingleUri(spec, metaVocab.hasFormat)
 
+	def getSpecDataLevel(spec: IRI)(using MetaConn): Validated[Int] =
+		getSingleInt(spec, metaVocab.hasDataLevel)
+
 	def getObjFormatForDobj(dobj: IRI)(using GlobConn): Validated[IRI] =
 		getSingleUri(dobj, metaVocab.hasObjectSpec).flatMap(getObjSpecFormat)
 

@@ -17,8 +17,7 @@ import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIn
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 
@@ -77,23 +76,12 @@ private object TestRepo {
 		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
 	private def initRepo(): Future[Repository] = {
-
-		/**
-		The repo is created three times:
-			1) to ingest the test RDF file into a fresh new triplestore
-			2) to restart the triplestore to create the magic SPARQL index
-			3) to dump the SPARQL index to disk, re-start, read the index
-			data structure, and initialize the index from it
-		**/
-
 		log.info("Initializing")
 		val start = System.currentTimeMillis()
 		for
 			() <- ingestTriplestore(dir)
-			idxData <- createIndex(dir)
 			sail = makeSail(dir)
 			() = sail.init()
-			_ = sail.initSparqlMagicIndex(Some(idxData))
 			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 		yield SailRepository(sail)
 	}
@@ -130,37 +118,19 @@ private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): F
 	ingestion.map(Done => repo.shutDown())
 }
 
-private def createIndex(dir: Path)(using ActorSystem, ExecutionContext): Future[IndexData] = {
-	val sail = makeSail(dir)
-	sail.init()
-	for
-		_ <- sail.initSparqlMagicIndex(None)
-		_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
-		_ = sail.shutDown()
-		idxData <- IndexHandler.restore()
-	yield idxData
-}
-
 private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem) = {
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
 		recreateAtStartup = false,
-		indices = metaConf.rdfStorage.indices,
-		disableCpIndex = false,
-		recreateCpIndexAtStartup = true
+		indices = metaConf.rdfStorage.indices
 	)
 
 	val (freshInit, base) = StorageSail.apply(rdfConf)
-	val indexUpdaterFactory = IndexHandler(system.scheduler)
-	val geoFactory = GeoIndexProvider()
-	val idxFactories = if freshInit then None
-	else
-		Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
 	import TestRepo.given
-	CpNotifyingSail(base, idxFactories, citer)
+	CpNotifyingSail(base, citer)
 }
 
 object CitationClientDummy extends CitationClient {

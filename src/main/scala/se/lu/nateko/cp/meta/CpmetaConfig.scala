@@ -153,9 +153,7 @@ case class RdfStorageConfig(
 	lmdb: Option[LmdbConfig],
 	path: String,
 	recreateAtStartup: Boolean,
-	indices: String,
-	disableCpIndex: Boolean,
-	recreateCpIndexAtStartup: Boolean
+	indices: String
 )
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
@@ -235,7 +233,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

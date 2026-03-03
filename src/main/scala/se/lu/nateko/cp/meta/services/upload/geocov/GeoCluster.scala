@@ -6,8 +6,6 @@ import org.locationtech.jts.algorithm.ConvexHull
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.operation.union.UnaryUnionOp
 import org.locationtech.jts.simplify.DouglasPeuckerSimplifier
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
-
 import scala.collection.mutable
 
 object GeoCluster:

@@ -13,7 +13,7 @@ import java.nio.file.{FileVisitOption, Files, Paths}
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
 
-	def apply(conf: RdfStorageConfig): (Boolean, MainSail) =
+	def apply(conf: RdfStorageConfig): (Boolean, StoreSail) =
 		val subFolder = if conf.lmdb.isDefined then "lmdb" else "native"
 		val storageDir = Paths.get(conf.path).resolve(subFolder)
 		val didNotExist = !Files.exists(storageDir)
@@ -35,7 +35,7 @@ object StorageSail:
 		)
 
 		val forceSync = !isFreshInit
-		val sail: MainSail = conf.lmdb match
+		val sail: StoreSail = conf.lmdb match
 			case Some(lmdb) =>
 				val lmdbConf = new LmdbStoreConfig()
 				lmdbConf.setForceSync(forceSync)

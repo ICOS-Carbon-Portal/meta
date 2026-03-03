@@ -11,10 +11,7 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{IterableHasAsScala, IteratorHasAsScala}
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
 @tags.DbTest
 class QueryTests extends AsyncFunSpec {
@@ -189,7 +186,7 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2016-08-18T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("955627", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"), 
-				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432Z", XSD.DATETIME),
+				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432977Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject")
 			)
 	}
@@ -284,7 +281,7 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("52584", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/AuW_XXhpYP9I3JChs-KdjZAW"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796Z", XSD.DATETIME),
+				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796085Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject")
 			)	
 	}
@@ -297,7 +294,7 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME),
 				"size" -> f.createLiteral("54145", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/2m-Tsf7Q8f9Dhqw4nsHh3ECg"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885Z", XSD.DATETIME), 
+				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885254Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject")
 			)
 	}
@@ -521,7 +518,7 @@ class QueryTests extends AsyncFunSpec {
 	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 81, 5){
 		f => Map(
 			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/UxugPrSsx3GRm6GnUq-iCQGd"),
-			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)
+			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077671Z", XSD.DATETIME)
 		)
 	}
 
@@ -533,106 +530,6 @@ class QueryTests extends AsyncFunSpec {
 		)
 	}
 
-	describeQ(TestQueries.geoFilter, "Statistics of data object origins with geo filter", 50, 0){
-		f => Map(
-			"dataType" -> f.createLiteral("ETC NRT Fluxes"),
-			"station" -> f.createIRI("http://meta.icos-cp.eu/resources/stations/ES_SE-Sto"),
-			"dataLevel" -> f.createLiteral("1", XSD.INTEGER),
-			"count" -> f.createLiteral("1", XSD.INTEGER),
-			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
-		)
-	}
-
-	describe("Magic query") {
-		it("filters on keywords from data object, associated project and spec") {
-			val factory = db.repo.getValueFactory()
-
-			// An object which has the unique keyword: "test keyword"
-			val objectId = "08ArGBmAQHiig_xtrwmprrL7";
-
-			// Query all the relevant keywords to make sure test data matches our expectations
-			val allKeywordsQuery = s"""
-				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select ?objKeywords ?specKeywords where {
-					BIND(<https://meta.icos-cp.eu/objects/${objectId}> as ?object)
-					?object cpmeta:hasObjectSpec ?spec .
-					?object cpmeta:hasKeywords ?objKeywords .
-					?spec cpmeta:hasAssociatedProject ?proj .
-					?spec cpmeta:hasKeywords ?specKeywords .
-				}
-			"""
-
-			// Verify that our object has the associated keywords we expect
-			val objKeyword = "test keyword"
-			val specKeyword = "carbon flux"
-			val projKeyword = "ICOS"
-
-			val List(allKeywords) = runSparqlSync(allKeywordsQuery)
-			assert(bindingsFromRow(allKeywords) == Map(
-				"objKeywords" -> factory.createLiteral(objKeyword),
-				"specKeywords" -> factory.createLiteral(specKeyword),
-			))
-
-			// The combination of `hasObjectSpec` and `hasKeyword` is a
-			// minimal requirement for triggering the magic query path.
-			// The predicate `hasKeyword` is virtual, and only available in the magic filtering query.
-			def magicFilterQuery(keyword : String) = {
-				s"""
-					prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-					select ?obj where {
-						?obj cpmeta:hasObjectSpec ?spec .
-						?obj cpmeta:hasKeyword "${keyword}"
-					}
-				"""
-			}
-
-			val List(objResult) = runSparqlSync(magicFilterQuery(objKeyword))
-			info(s"$objResult")
-
-			// Make sure we got the object we were looking for
-			assert(objResult.getBinding("obj").getValue().stringValue().endsWith(objectId))
-
-			def findTargetObject(bindings: Iterable[BindingSet]) : Option[BindingSet] =
-				bindings.find(binds => binds.getBinding("obj").getValue().stringValue().endsWith(objectId))
-
-			// And all results should be equivalent
-			assert(findTargetObject(runSparqlSync(magicFilterQuery(specKeyword))) == Some(objResult))
-			assert(findTargetObject(runSparqlSync(magicFilterQuery(projKeyword))) == Some(objResult))
-		}
-	}
-
-	describe("Distinct keywords magic query") {
-		it("returns keywords") {
-			// An object which has the unique keyword: "test keyword",
-			// associated with project keyword "ICOS" and spec keyword "carbon flux"
-			val objectName = "anthropogenic.persector.201911.nc"
-
-			// Include FILTER clause, which does not get included in magic query,
-			// but is sometimes part of the query from the portal.
-			// Note: Filter clauses, will currently be IGNORED!
-			//			 This is also true for all other clauses which are not handled by DataObjectFetchNode.
-			val magicKeywordQuery = s"""
-				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-				select (cpmeta:distinct_keywords() AS ?keywords) where {
-					FILTER(STRSTARTS(str(?spec), "this_will_be_ignored")) .
-					?obj cpmeta:hasObjectSpec ?spec .
-					?obj cpmeta:hasName "$objectName" .
-					?obj cpmeta:hasKeyword ?k
-				}
-				limit 5
-			"""
-
-			val List(magicResult) = runSparqlSync(magicKeywordQuery)
-			val resultKeywords = magicResult.getBinding("keywords").getValue().stringValue().split(",").toSet
-			assert(resultKeywords == Set("test keyword", "carbon flux", "ICOS"))
-		}
-	}
-
-	private def runSparqlSync(query: String): List[BindingSet] = {
-		Await.result(db.runSparql(query), Duration.apply(5, TimeUnit.SECONDS)).toList
-	}
-
-	private def bindingsFromRow(row: BindingSet): Map[String, Value] = {
-		row.iterator().asScala.map(b => (b.getName, b.getValue)).toMap
-	}
+	// geoFilter test removed: geo:sfIntersects was implemented by the magic index's GeoIndex
+	// Magic query tests removed: cpmeta:hasKeyword and cpmeta:distinct_keywords() were virtual predicates/functions only available via the magic index
 }

@@ -22,8 +22,7 @@ class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMet
 	import AtcMetaSource.*
 	override def readState: Validated[State] = for(
 			orgs <- readAllOrgs(getTableFile(instrumentsTbl), getTableFile(stationsTbl));
-			sourceStations <- parseStations(getTableFile(stationsTbl), orgs);
-			stations = sourceStations;
+			stations <- parseStations(getTableFile(stationsTbl), orgs);
 			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield

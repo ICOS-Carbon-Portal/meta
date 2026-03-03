@@ -432,7 +432,7 @@ object EtcMetaSource{
 	// Public for testing
 	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
-	)(using Lookup): Validated[TcSourceStation[E]] = for(
+	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getStationPosition;
 		tcIdStr <- lookUp(Vars.stationTcId);
 		fundingsLookup <- fundingsV;

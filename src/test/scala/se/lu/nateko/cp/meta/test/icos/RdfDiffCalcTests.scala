@@ -51,7 +51,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	def atcInitSnap(pi: TcPerson[A]): TcState[A] = {
 		val piMemb = Membership[A](UriId(""), new AssumedRole(PI, pi, airCpStation, None, None), None, None)
-		new TcState[A](sourceStations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
+		new TcState[A](stations = Seq(airCpStation), roles = Seq(piMemb), instruments = Nil)
 	}
 
 	describe("person name change"){
@@ -78,8 +78,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val sV = state.reader.getCurrentState[A]
 			assert(sV.errors.isEmpty)
 			val s = sV.result.get
-			assert(s.sourceStations.size === 1)
-			assert(s.sourceStations.head === airCpStation)
+			assert(s.stations.size === 1)
+			assert(s.stations.head === airCpStation)
 			assert(s.instruments.isEmpty)
 			assert(s.roles.size === 1)
 			val memb = s.roles.head
@@ -113,13 +113,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		val factory = testState.tcServer.factory
 
 		val stationWithoutNetwork: TcSourceStation[ETC.type] = make[TcSourceStation[ETC.type]]
-		val initialTcState = new TcState(sourceStations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+		val initialTcState = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 		testState.tcServer.applyAll(testState.calc.calcDiff(initialTcState).result.get)()
 
 		val stationWithNetworkTcState = {
 			val etcStationWithNetwork = stationWithoutNetwork.copy(networkIds = Seq(UriId("TestNetwork")))
 
-			new TcState(sourceStations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
+			new TcState(stations = Seq(etcStationWithNetwork), roles = Seq(), instruments = Nil)
 		}
 
 		it("does not generate hasAssociatedNetwork triple, when network does not exist") {
@@ -147,13 +147,13 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 
 		it("reads associated networks") {
-			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.sourceStations
+			val Seq(station) = testState.reader.getCurrentState[ETC.type].result.get.stations
 			val Seq(networkId) = station.networkIds
 			assert(networkId.toString() == "TestNetwork")
 		}
 
 		it("removes hasAssociatedNetwork triple, when network is removed") {
-			val stateWithoutNetwork = new TcState(sourceStations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
+			val stateWithoutNetwork = new TcState(stations = Seq(stationWithoutNetwork), roles = Seq(), instruments = Nil)
 			val Seq(removeTriple) = testState.calc.calcDiff(stateWithoutNetwork).result.get
 			assert(removeTriple.statement.getPredicate.stringValue.endsWith("hasAssociatedNetwork"))
 			assert(removeTriple.statement.getObject == networkIri)
@@ -312,7 +312,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
 		given TcConf[T] = state.tcConf
-		state.sourceStations.flatMap(rdfMaker.getStatements) ++
+		state.stations.flatMap(rdfMaker.getStatements) ++
 		state.roles.flatMap(rdfMaker.getStatements) ++
 		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++
 		state.instruments.flatMap(rdfMaker.getStatements)

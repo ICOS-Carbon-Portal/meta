@@ -38,7 +38,7 @@ object CitiesMetaFlow:
 	end init
 
 	def injectNetworkInfo(state: TcState[ATC.type]): TcState[ATC.type] =
-		val stations = state.sourceStations.map: s =>
+		val stations = state.stations.map: s =>
 			val citySpec = s.specificInfo match
 				case atc: AtcStationSpecifics => IcosCitiesStationSpecifics(atc.timeZoneOffset, CityNetwork.Paris)
 				case _ => throw MetadataException("Unexpected station-specific info, must be AtcStationSpecifics")

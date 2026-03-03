@@ -31,7 +31,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		def plainOrgs(s: TcState[T]): Seq[TcPlainOrg[T]] = uniqBestId(
 			(
 				s.instruments.flatMap(_.owner) ++ s.instruments.flatMap(_.vendor) ++
-				s.roles.map(_.role.org) ++ s.sourceStations.flatMap{st =>
+				s.roles.map(_.role.org) ++ s.stations.flatMap{st =>
 					st.funding.map(_.funder) ++ st.responsibleOrg
 				}
 			).collect{
@@ -57,7 +57,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 			}
 
 		val stationsDiff =
-			diff(current.sourceStations, newSnapshot.sourceStations.map(updateStation), Nil)
+			diff(current.stations, newSnapshot.stations.map(updateStation), Nil)
 			.modifyUpdates(_.filterNot(isMissingNetworkAssociation))
 
 		val orgsDiff: SequenceDiff[T] = plainOrgsDiff.concat(stationsDiff)

@@ -37,7 +37,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	val airCpStation = TcSourceStation[A](
 		cpId = UriId("AIR1"),
 		tcId = aId("43"),
-		org = TcSourceOrganization("Airplane 1", Nil, None, None),
+		org = OrganizationInfo("Airplane 1", Nil, None, None),
 		stationId = "AIR1",
 		specificInfo = AtcStationSpecifics(Some("wigos"), None, None, None, false, None, Nil),
 		coverage = None,

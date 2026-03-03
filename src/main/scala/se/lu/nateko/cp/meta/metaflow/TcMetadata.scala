@@ -106,18 +106,18 @@ case class TcPerson[+T <: TC](
 	orcid: Option[Orcid]
 ) extends Entity[T]
 
-case class TcSourceOrganization(
+case class OrganizationInfo(
 	name: String,
 	comments: Seq[String],
 	website: Option[URI],
 	label: Option[String]
 )
 
-object TcSourceOrganization:
+object OrganizationInfo:
 	def fromOrganization(org: Organization) =
-		TcSourceOrganization(org.name, org.self.comments, org.website, org.self.label)
+		OrganizationInfo(org.name, org.self.comments, org.website, org.self.label)
 
-sealed trait TcOrg[+T <: TC] extends Entity[T]{ def orgInfo: TcSourceOrganization }
+sealed trait TcOrg[+T <: TC] extends Entity[T]{ def orgInfo: OrganizationInfo }
 
 case class TcNetwork[+T <: TC](cpId: UriId, core: Network)
 
@@ -129,19 +129,19 @@ case class TcStation[+T <: TC](
 	funding: Seq[TcFunding[T]], // needed to avoid info loss with core.funding
 	networks: Seq[TcNetwork[T]]
 ) extends TcOrg[T] with TcEntity[T]{
-	def orgInfo = TcSourceOrganization.fromOrganization(core.org)
+	def orgInfo = OrganizationInfo.fromOrganization(core.org)
 }
 
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
 case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]:
-	def orgInfo = TcSourceOrganization.fromOrganization(org)
+	def orgInfo = OrganizationInfo.fromOrganization(org)
 
-case class TcGenericSourceOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: TcSourceOrganization) extends TcPlainOrg[T]:
+case class TcGenericSourceOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: OrganizationInfo) extends TcPlainOrg[T]:
 	def orgInfo = org
 
 case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]:
 	def org = core.org
-	def orgInfo = TcSourceOrganization.fromOrganization(core.org)
+	def orgInfo = OrganizationInfo.fromOrganization(core.org)
 
 case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
@@ -201,7 +201,7 @@ object TcMetaSource:
 case class TcSourceStation[+T <: TC](
 	cpId: UriId,
 	tcId: TcId[T],
-	org: TcSourceOrganization,
+	org: OrganizationInfo,
 	stationId: String,
 	location: Option[Position],
 	coverage: Option[GeoFeature],
@@ -220,7 +220,7 @@ object TcSourceStation:
 	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
 		cpId = station.cpId,
 		tcId = station.tcId,
-		org = TcSourceOrganization.fromOrganization(station.core.org),
+		org = OrganizationInfo.fromOrganization(station.core.org),
 		stationId = station.core.id,
 		location = station.core.location,
 		coverage = station.core.coverage,

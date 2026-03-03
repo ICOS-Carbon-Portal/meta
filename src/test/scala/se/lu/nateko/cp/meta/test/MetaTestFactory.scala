@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{EtcStationSpecifics, Station}
 import se.lu.nateko.cp.meta.core.tests.TestFactory.given
-import se.lu.nateko.cp.meta.metaflow.{TcSourceStation, TcSourceOrganization}
+import se.lu.nateko.cp.meta.metaflow.{TcSourceStation, OrganizationInfo}
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
 import se.lu.nateko.cp.meta.core.data.StationSpecifics
 
@@ -51,7 +51,7 @@ object MetaTestFactory:
 			yield TcSourceStation(
 				cpId = cpId,
 				tcId = tcId,
-				org = TcSourceOrganization(orgName, Nil, website = None, label = None),
+				org = OrganizationInfo(orgName, Nil, website = None, label = None),
 				stationId = stationId,
 				specificInfo = specifics,
 				coverage = None,

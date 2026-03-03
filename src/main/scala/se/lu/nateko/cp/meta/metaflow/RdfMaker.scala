@@ -93,7 +93,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
-				orgTriples(uri, OrganizationInfo(s.orgInfo)) ++:
+				orgTriples(uri, OrgInfo(s.orgInfo)) ++:
 				stationTriples(uri, s.specificInfo) ++:
 				s.pictures.map{picUri =>
 					(uri, meta.hasDepiction, vocab.lit(picUri))
@@ -136,11 +136,11 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, OrganizationInfo(go.org))
+				orgTriples(uri, OrgInfo(go.org))
 
 			case go: TcGenericSourceOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, OrganizationInfo(go.org))
+				orgTriples(uri, OrgInfo(go.org))
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -150,7 +150,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
 					)
 				} ++:
-				orgTriples(uri, OrganizationInfo(fu.org))
+				orgTriples(uri, OrgInfo(fu.org))
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -299,7 +299,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: OrganizationInfo): Seq[Triple] = {
+	private def orgTriples(iri: IRI, org: OrgInfo): Seq[Triple] = {
 		uriResourceTriples(iri, org.resource) :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
 		org.email.map{ email =>
@@ -312,28 +312,28 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 }
 
 
-private sealed case class UriResourceInfo(label: Option[String], comments: Seq[String])
+private final case class UriResourceInfo(label: Option[String], comments: Seq[String])
 
 object UriResourceInfo {
 	def apply(uri: UriResource): UriResourceInfo = {
 		UriResourceInfo(uri.label, uri.comments)
 	}
 
-	def apply(org: TcSourceOrganization): UriResourceInfo = {
+	def apply(org: OrganizationInfo): UriResourceInfo = {
 		UriResourceInfo(org.label, org.comments)
 	}
 }
 
-private sealed case class OrganizationInfo(
+private final case class OrgInfo(
 	resource: UriResourceInfo,
 	name: String,
 	email: Option[String],
 	website: Option[URI],
 )
 
-object OrganizationInfo {
-	def apply(org: Organization): OrganizationInfo = {
-		OrganizationInfo(
+object OrgInfo {
+	def apply(org: Organization): OrgInfo = {
+		OrgInfo(
 			resource = UriResourceInfo(org.self),
 			name = org.name,
 			email = org.email,
@@ -341,8 +341,8 @@ object OrganizationInfo {
 		)
 	}
 
-	def apply(org: TcSourceOrganization): OrganizationInfo = {
-		OrganizationInfo(
+	def apply(org: OrganizationInfo): OrgInfo = {
+		OrgInfo(
 			email = None,
 			resource = UriResourceInfo(org),
 			name = org.name,

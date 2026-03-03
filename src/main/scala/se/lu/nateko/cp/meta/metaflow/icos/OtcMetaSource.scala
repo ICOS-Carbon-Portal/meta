@@ -98,7 +98,7 @@ class OtcMetaSource(
 				TcSourceStation[O](
 					cpId = stationId(UriId.escaped(stIdStr)),
 					tcId = tcId,
-					org = TcSourceOrganization(
+					org = OrganizationInfo(
 						name,
 						comments.getOrElse(stUri, Nil) ++ comments.getOrElse(platUri, Nil),
 						websiteSt.orElse(websitePlat).map(_.toJava),
@@ -130,7 +130,7 @@ class OtcMetaSource(
 		getLookup(q, "org"){(b, tcId) => TcGenericSourceOrg(
 			cpId = UriId(tcId.id),
 			tcIdOpt = Some(tcId),
-			org = TcSourceOrganization(
+			org = OrganizationInfo(
 				name = b.getValue("name").stringValue,
 				label = Option(b.getValue("label")).map(_.stringValue),
 				website = None,

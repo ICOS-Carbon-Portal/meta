@@ -338,14 +338,16 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				if spec.specificDatasetType != DatasetType.SpatioTemporal
 				then errors += "Wrong type of dataset for this object spec (must be spatiotemporal)"
 				else
-					for vars <- spTempMeta.variables do spec.datasetSpec.fold(
-						errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
-					): dsSpec =>
-						val valTypeLookupV = metaReader.getValTypeLookup(dsSpec.self.uri.toRdf)
-						errors ++= valTypeLookupV.errors
-						for valTypeLookup <- valTypeLookupV; varName <- vars do
-							if valTypeLookup.lookup(varName).isEmpty then errors +=
-								s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
+					if (spTempMeta.variables.nonEmpty) {
+						spec.datasetSpec.fold(
+							errors += s"Data object specification ${spec.self.uri} lacks a dataset specification; cannot accept variable info."
+						): dsSpec =>
+							val valTypeLookupV = metaReader.getValTypeLookup(dsSpec.self.uri.toRdf)
+							errors ++= valTypeLookupV.errors
+							for valTypeLookup <- valTypeLookupV; varName <- spTempMeta.variables do
+								if valTypeLookup.lookup(varName).isEmpty then errors +=
+									s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
+					}
 
 			case Right(stationMeta) =>
 				if spec.specificDatasetType != DatasetType.StationTimeSeries

@@ -272,7 +272,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 						case Some(interval) =>
 							addInstrDeplInfo(stationUri, interval, columns)
 			columnsOptV.sinkOption.map: columnsOpt =>
-				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt)
+				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt.getOrElse(Nil))
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 
@@ -325,7 +325,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				station = station,
 				samplingHeight = samplingHeightOpt.flatten,
 				productionInfo = prod,
-				variables = Some(variables.flatten).filterNot(_.isEmpty)
+				variables = variables.flatten()
 			)
 
 	def getContributors(objIri: IRI, contribPredicate: IRI)(using conn: DobjConn | DocConn): Validated[IndexedSeq[Agent]] = 

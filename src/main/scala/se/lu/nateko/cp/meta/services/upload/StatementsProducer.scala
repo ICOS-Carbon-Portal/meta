@@ -201,7 +201,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(acq, metaVocab.prov.wasAssociatedWith, meta.forStation.map(_.toRdf)) ++
 		makeSt(acq, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		makeSt(objUri, RDFS.SEEALSO, meta.customLandingPage.map(_.toRdf)) ++
-		meta.variables.toSeq.flatten.flatMap(getL3VarInfoStatements(objUri, hash, _))
+		meta.variables.flatMap(getL3VarInfoStatements(objUri, hash, _))
 	}
 
 	private def getStationDataStatements(hash: Sha256Sum, meta: StationTimeSeriesDto)(using Envri): Seq[Statement] = {

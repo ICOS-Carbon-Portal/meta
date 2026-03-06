@@ -86,7 +86,7 @@ case class SpatioTemporalDto(
 	forStation: Option[URI],
 	samplingHeight: Option[Float],
 	customLandingPage: Option[URI],
-	variables: Option[Seq[String]]
+	variables: Seq[String]
 )
 
 case class DataProductionDto(

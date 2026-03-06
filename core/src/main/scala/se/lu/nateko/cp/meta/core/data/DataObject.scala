@@ -86,7 +86,7 @@ case class StationTimeSeriesMeta(
 	productionInfo: Option[DataProduction],
 	nRows: Option[Int],
 	coverage: Option[GeoFeature],
-	columns: Option[Seq[VarMeta]]
+	columns: Seq[VarMeta]
 )
 
 case class ValueType(self: UriResource, quantityKind: Option[UriResource], unit: Option[String])
@@ -108,7 +108,7 @@ case class SpatioTemporalMeta(
 	station: Option[Station],
 	samplingHeight: Option[Float],
 	productionInfo: DataProduction,
-	variables: Option[Seq[VarMeta]]
+	variables: Seq[VarMeta]
 ){
 	def acquisition: Option[DataAcquisition] = station.map{
 		DataAcquisition(_, None, Some(temporal.interval), None, None, samplingHeight)
@@ -164,11 +164,12 @@ case class DataObject(
 			l2 => l2.coverage.orElse(l2.acquisition.coverage)
 		)
 
+		val cols = specificInfo.fold(
+			l3 => l3.variables,
+			l2 => l2.columns
+		)
+
 		val varsAndPosits = for
-			cols <- specificInfo.fold(
-				l3 => l3.variables,
-				l2 => l2.columns
-			).toSeq
 			col <- cols
 			deps <- col.instrumentDeployments.toSeq
 			dep <- deps

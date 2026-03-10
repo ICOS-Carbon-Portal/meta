@@ -4,11 +4,11 @@ import org.scalajs.dom.{html, document}
 import se.lu.nateko.cp.meta.upload.Utils.*
 
 class Select[T](elemId: String, labeller: T => String, titleMaker: T => String, autoselect: Boolean = false, cb: () => Unit = () => ()){
-	private val select = getElementById[html.Select](elemId).get
+	private val select = getElementById[html.Select](elemId)
 	private var _values: IndexedSeq[T] = IndexedSeq.empty
 
 	select.onchange = _ => cb()
-	getElementById[html.Form]("form-block").get.onreset = _ => {
+	getElementById[html.Form]("form-block").onreset = _ => {
 		select.selectedIndex = -1
 		cb()
 	}

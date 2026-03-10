@@ -14,7 +14,7 @@ private abstract class TextInputElement extends html.Object{
 }
 
 abstract class GenericTextInput[T](elemId: String, cb: () => Unit, init: Try[T])(parser: String => Try[T], serializer: T => String) {
-	private val input: TextInputElement = getElementById[html.Element](elemId).get.asInstanceOf[TextInputElement]
+	private val input: TextInputElement = getElementById[html.Element](elemId).asInstanceOf[TextInputElement]
 	private var _value: Try[T] = init
 
 	def value: Try[T] = _value

@@ -7,11 +7,13 @@ import se.lu.nateko.cp.meta.SpatioTemporalDto
 import se.lu.nateko.cp.meta.UploadDto
 import se.lu.nateko.cp.meta.core.data.TemporalCoverage
 import se.lu.nateko.cp.meta.upload.*
+import se.lu.nateko.cp.meta.upload.UploadApp.whenDone
 
 import scala.util.Try
 
 import formcomponents.*
 import Utils.*
+import java.net.URI
 
 class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSubBus) extends PanelSubform(".l3-section"){
 
@@ -26,7 +28,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		prod <- productionDto;
 		customLanding <- externalPageInput.value;
 		height <- samplingHeightInput.value;
-		varInfo <- varInfoForm.varInfos
+		varInfo <- varInfoForm.values
 	yield SpatioTemporalDto(
 		title = title,
 		description = descr,
@@ -36,10 +38,10 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		samplingHeight = height,
 		production = prod,
 		customLandingPage = customLanding,
-		variables = varInfo
+		variables = varInfo.map(_.map(_.uri.toString.split('/').last))
 	)
 
-	def varnames: Try[Option[Seq[String]]] = varInfoForm.varInfos
+	def varnames: Try[Option[Seq[String]]] = varInfoForm.values.map(_.map(_.map(_.title)))
 
 	private val titleInput = new TextInput("l3title", notifyUpdate, "elaborated product title")
 	private val descriptionInput = new DescriptionInput("l3descr", notifyUpdate)
@@ -52,6 +54,8 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val spatialCovSelect = new GeoCoverageSelector(covs, "spattemp")
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
+	private var datasetSpec: Option[URI] = None
+	private var selsectedVars: Option[Seq[String]] = None
 
 	def resetForm(): Unit = {
 		Iterable(
@@ -68,7 +72,14 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case ObjSpecSelected(spec) =>
 			if(spec.isSpatiotemporal) show() else hide()
 			if(spec.isNetCDF) varInfoForm.show() else varInfoForm.hide()
+			datasetSpec = spec.dataset
 		case GotStationsList(stations) => stationSelect.setOptions(stations)
+		case GotVariableList(variables) =>
+			varInfoForm.list = variables
+			selsectedVars.map { variables =>
+				varInfoForm.setValues(Some(variables.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
+			}
+
 	}
 
 	private def handleDto(upDto: UploadDto): Unit = upDto match {
@@ -86,7 +97,15 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 				) stationSelect.value = stat
 				samplingHeightInput.value = spatTemp.samplingHeight
 				externalPageInput.value = spatTemp.customLandingPage
-				varInfoForm.setValues(spatTemp.variables)
+				selsectedVars = spatTemp.variables
+				spatTemp.variables.map { varUris =>
+					datasetSpec.map { dataset => 
+						whenDone(getVariables(dataset)) { variables =>
+							varInfoForm.list = variables
+							varInfoForm.setValues(Some(varUris.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
+						}
+					}
+				}
 				spatialCovSelect.handleReceivedSpatialCoverage(Some(spatTemp.spatial))
 				show()
 			case _ =>

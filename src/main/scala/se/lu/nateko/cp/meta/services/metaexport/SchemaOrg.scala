@@ -10,6 +10,7 @@ import se.lu.nateko.cp.doi.meta.{GenericName, PersonalName}
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.services.citation.CitationMaker.getTemporalCoverageDisplay
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -17,7 +18,7 @@ import se.lu.nateko.cp.meta.views.LandingPageHelpers.doiAgentUri
 import spray.json.*
 
 import java.net.URI
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{LocalDate, ZoneId, ZoneOffset}
 
 import doi.DescriptionType.Abstract as DoiAbstract
 
@@ -140,6 +141,15 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 			if allDescrs.isEmpty then JsNull else
 				JsString(truncateDescription(allDescrs.mkString("\n")))
 
+		val zoneId = ZoneId.of(envriConf.defaultTimezoneId)
+		val temporalCoverageDisplay: Option[String] = getTemporalCoverageDisplay(dobj, zoneId)
+		val name = asOptJsString{
+			(dobj.references.title, temporalCoverageDisplay) match
+				case (Some(title), Some(temporal)) => Some(s"$title, $temporal")
+				case (Some(title), None)           => Some(title)
+				case _                             => None
+		}
+
 		val modified = JsString(
 			(dobj.production.map(_.dateTime).toSeq :+ dobj.submission.start).sorted.head.toString
 		)
@@ -195,6 +205,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 		objCommonJson(dobj) ++ JsObject(
 			"@type"                 -> JsString("Dataset"),
 			"description"           -> description,
+			"name"                  -> name,
 			"includedInDataCatalog" -> JsObject(
 				"@type" -> JsString("DataCatalog"),
 				"name"  -> JsString(envriConf.dataHost)

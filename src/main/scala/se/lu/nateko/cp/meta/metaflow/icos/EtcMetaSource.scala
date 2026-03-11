@@ -21,9 +21,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	UriResource,
 	Funder,
 	Funding,
-	Station,
 	EtcStationSpecifics,
-	Network,
 	PositionUtil
 }
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, StationId}
@@ -70,29 +68,29 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 
 		val futfutValVal = for
 			peopleVal <- peopleFut;
-			stationsVal <- fetchStations();
-			sensorsVal <- fetchSensors(stationsVal);
+			sourceStationsVal <- fetchStations();
+			sensorsVal <- fetchSensors(sourceStationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
-				stations <- stationsVal;
+				sourceStations <- sourceStationsVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield
 				val membExtractor: Lookup ?=> Validated[EtcMembership] = getMembership(
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
-					stations.map(s => s.tcId -> s).toMap
+					sourceStations.map(s => s.tcId -> s).toMap
 				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
+					new TcState(sourceStations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
+	private def fetchStations(): Future[Validated[Seq[TcSourceStation[E]]]] = {
 		for(
 			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
 				for(
@@ -165,7 +163,7 @@ object EtcMetaSource{
 	type E = ETC.type
 	private type EtcInstrument = TcInstrument[E]
 	private type EtcPerson = TcPerson[E]
-	private type EtcStation = TcStation[E]
+	private type EtcStation = TcSourceStation[E]
 	private type EtcCompany = TcGenericOrg[E]
 	private type EtcMembership = Membership[E]
 	private class SensorModel(val modelId: String, val compId: Int, val name: String, val description: Option[String])
@@ -461,48 +459,33 @@ object EtcMetaSource{
 			orig.copy(core = coreFunding)
 		}
 
-		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
-		)
-
-		TcStation[E](
+		TcSourceStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
-			core = Station(
-				org = Organization(
-					self = UriResource(dummyUri, Some(id), descr.toSeq),
-					name = name,
-					email = None,
-					website = None,
-					webpageDetails = None
-				),
-				id = id,
-				location = pos,
-				coverage = None,
-				responsibleOrganization = None,
-				pictures = picture.toSeq,
-				countryCode = countryCode,
-				specificInfo = EtcStationSpecifics(
-					theme = None,
-					stationClass = stClass,
-					labelingDate = None, //not provided by TCs
-					discontinued = false, //not provided by TCs
-					climateZone = climZone,
-					ecosystemType = ecoType,
-					meanAnnualTemp = meanTemp,
-					meanAnnualPrecip = meanPrecip,
-					meanAnnualRad = meanRadiation,
-					stationDocs = docDois.getOrElse(Nil),
-					stationPubs = pubDois.getOrElse(Nil),
-					timeZoneOffset = tzOffset,
-					documentation = Nil//docs are not provided by TCs
-				),
-				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
-				networks = networks.map(_.core)
+			org = OrganizationInfo(name, descr.toSeq, website = None, label = None),
+			stationId = id,
+			location = pos,
+			pictures = picture.toSeq,
+			countryCode = countryCode,
+			specificInfo = EtcStationSpecifics(
+				theme = None,
+				stationClass = stClass,
+				labelingDate = None, //not provided by TCs
+				discontinued = false, //not provided by TCs
+				climateZone = climZone,
+				ecosystemType = ecoType,
+				meanAnnualTemp = meanTemp,
+				meanAnnualPrecip = meanPrecip,
+				meanAnnualRad = meanRadiation,
+				stationDocs = docDois.getOrElse(Nil),
+				stationPubs = pubDois.getOrElse(Nil),
+				timeZoneOffset = tzOffset,
+				documentation = Nil//docs are not provided by TCs
 			),
-			responsibleOrg = None,
 			funding = fundings,
-			networks = networks
+			networkIds = networkNames.map(parseBarSeparated).getOrElse(Nil).map(UriId(_)),
+			coverage = None,
+			responsibleOrg = None
 		)
 	}
 
@@ -576,12 +559,12 @@ object EtcMetaSource{
 		startLocal <- getLocalDateTime(Vars.deploymentStart, LocalTime.MIN, 1, 1).optional;
 		stationTcId = makeId(stationTcIdStr);
 		station <- new Validated(stationLookup.get(stationTcId)).require(s"Failed to look up a station with ETC id $stationTcId");
-		tzOpt = station.core.specificInfo match{
+		tzOpt = station.specificInfo match{
 			case etc: EtcStationSpecifics => etc.timeZoneOffset
 			case _ => None
 		};
 		tz <- new Validated(tzOpt).require(s"Could not look up time zone offset for station with id $stationTcId");
-		statPos <- new Validated(station.core.location).require(s"Position for station with id $stationTcId could not be looked up")
+		statPos <- new Validated(station.location).require(s"Position for station with id $stationTcId could not be looked up")
 	yield
 		inline val Rearth = 6371000d
 

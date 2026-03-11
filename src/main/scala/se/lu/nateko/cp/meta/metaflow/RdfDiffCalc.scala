@@ -41,7 +41,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val plainOrgsDiff = diff[T, TcPlainOrg[T]](plainOrgs(current), plainOrgs(newSnapshot), cpOwnOrgs)
 
-		def updateStation(st: TcStation[T]): TcStation[T] = st.copy(
+		def updateStation(st: TcSourceStation[T]): TcSourceStation[T] = st.copy(
 			responsibleOrg = st.responsibleOrg.map(o => plainOrgsDiff.ensureIdPreservation(o)),
 			funding = st.funding.map(updateFunding)
 		)

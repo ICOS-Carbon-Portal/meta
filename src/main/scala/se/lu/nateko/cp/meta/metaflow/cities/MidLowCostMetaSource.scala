@@ -8,7 +8,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.metaflow.icos.AtcMetaSource.{lookUpMandatory, parseFromCsv}
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.{Lookup, dummyUri}
+import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.Lookup
 import se.lu.nateko.cp.meta.utils.Validated
 
 class MidLowCostMetaSource[T <: CitiesTC : TcConf](
@@ -33,7 +33,7 @@ object MidLowCostMetaSource:
 	extension(s: String)
 		def commaToDot: String = s.replace(',', '.')
 
-	def parseStation[T <: CitiesTC : TcConf](countryCode: CountryCode)(using Lookup): Validated[TcStation[T]] =
+	def parseStation[T <: CitiesTC : TcConf](countryCode: CountryCode)(using Lookup): Validated[TcSourceStation[T]] =
 		val demand = lookUpMandatory(StationsTableName) _
 		for(
 			stIdStr <- demand(StationIdCol);
@@ -41,30 +41,19 @@ object MidLowCostMetaSource:
 			lon <- demand(LonCol).map(_.commaToDot.toDouble);
 			alt <- demand(AltCol).map(_.commaToDot.toFloat);
 			name <- demand(StationNameCol)
-		) yield TcStation[T](
+		) yield TcSourceStation[T](
 			cpId = TcConf.stationId[T](UriId.escaped(stIdStr)),
 			tcId = summon[TcConf[T]].makeId(stIdStr),
-			core = Station(
-				org = Organization(
-					self = UriResource(uri = dummyUri, label = Some(stIdStr), comments = Nil),
-					name = name,
-					email = None,
-					website = None,
-					webpageDetails = None
-				),
-				id = stIdStr,
-				location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
-				coverage = None,
-				responsibleOrganization = None,
-				pictures = Nil,
-				countryCode = Some(countryCode),
-				specificInfo = IcosCitiesStationSpecifics(None, summon[TcConf[T]].tc.network),
-				funding = None,
-				networks = Nil
-			),
+			org = OrganizationInfo(name, Nil, website = None, label = None),
+			stationId = stIdStr,
+			location = Some(Position(lat, lon, Some(alt), Some(s"$name position"), None)),
+			countryCode = Some(countryCode),
+			specificInfo = IcosCitiesStationSpecifics(None, summon[TcConf[T]].tc.network),
+			coverage = None,
+			pictures = Nil,
 			responsibleOrg = None,
 			funding = Nil,
-			networks = Seq.empty
+			networkIds = Nil
 		)
 	end parseStation
 

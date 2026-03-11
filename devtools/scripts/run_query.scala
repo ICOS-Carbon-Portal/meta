@@ -3,8 +3,6 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import java.nio.file.{Files, Paths}
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
 import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.query.QueryLanguage
@@ -27,13 +25,7 @@ Currently only runs graph queries, that is queries of the form:
 
  */
 
-def rdfStoragePath = {
-	val path = readConfig().getValue("devtools.runQuery.rdfStoragePath").unwrapped.toString
-	log.info(s"Using rdfStorage path: $path")
-	path
-}
-
-val log = LoggerFactory.getLogger("devtools.runQuery")
+private val log = LoggerFactory.getLogger("devtools.runQuery")
 
 @main def runQuery(args: String*) = {
 	args.toArray.lift.apply(0) match {
@@ -58,13 +50,8 @@ val log = LoggerFactory.getLogger("devtools.runQuery")
 	}
 }
 
-private def readConfig(): Config = {
-	val path = new java.io.File("application.conf").getAbsoluteFile
-	ConfigFactory.parseFile(path).resolve
-}
-
 private def withRepo(callback: SailRepository => Any) = {
-	val storageDir = Paths.get(rdfStoragePath).resolve("lmdb")
+	val storageDir = Paths.get(devtools.config.rdfStoragePath).resolve("lmdb")
 	val sail = LmdbStore(storageDir.toFile, new LmdbStoreConfig())
 	var repo = new SailRepository(sail)
 

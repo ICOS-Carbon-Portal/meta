@@ -243,7 +243,7 @@ lazy val devtools = (project in file("devtools"))
 	.settings(
 		name := "meta-devtools",
 		version := "0.1.0",
-		Compile / unmanagedSourceDirectories += baseDirectory.value / "scripts",
+		Compile / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "scripts", baseDirectory.value / "lib"),
 		scalacOptions ++= (commonScalacOptions.filterNot(_ == "-Werror")),
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),

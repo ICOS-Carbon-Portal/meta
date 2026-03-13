@@ -40,7 +40,7 @@ object StorageSail:
 				val lmdbConf = new LmdbStoreConfig()
 				lmdbConf.setForceSync(forceSync)
 				lmdbConf.setTripleIndexes(conf.indices)
-				lmdbConf.setAutoGrow(!isFreshInit)
+				lmdbConf.setAutoGrow(true)
 
 				lmdbConf.setTripleDBSize:
 					Math.max(lmdb.tripleDbSize, LmdbStoreConfig.TRIPLE_DB_SIZE)

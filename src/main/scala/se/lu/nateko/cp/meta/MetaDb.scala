@@ -44,7 +44,7 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val magicRepo: SailRepository,
+	val magicRepo: Repository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -58,17 +58,23 @@ class MetaDb (
 	val uriSerializer: UriSerializer =
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
+	private def cpNotifyingSail: Option[CpNotifyingSail] = magicRepo match
+		case sr: SailRepository => sr.getSail match
+			case cp: CpNotifyingSail => Some(cp)
+			case _ => None
+		case _ => None
+
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail =>
+		cpNotifyingSail match
+			case Some(cp) =>
 				val exe = summon[ActorSystem].dispatcher
 				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
+			case None => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
 
 	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
-			case _ =>
+		cpNotifyingSail match
+			case Some(cp) => cp.initSparqlMagicIndex(idxData)
+			case None =>
 				log.info("Magic SPARQL index is disabled, skipping its initialization")
 				ok
 
@@ -148,25 +154,32 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config0)
 
-		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
+		given EnvriConfigs = config0.core.envriConfigs
 
-		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
-
-		val idxFactories = if noMagic then None else
-			val indexHandler = IndexHandler(system.scheduler)
-			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
-			Some(indexHandler -> geoProvider)
+		val (isFreshInit, citer, repo, cpSailOpt) = config0.rdfStorage.graphdb match
+			case Some(gdb) =>
+				import org.eclipse.rdf4j.repository.http.HTTPRepository
+				val httpRepo = new HTTPRepository(gdb.serverUrl, gdb.repositoryId)
+				httpRepo.init()
+				log.info(s"Connected to GraphDB repository '${gdb.repositoryId}' at ${gdb.serverUrl}")
+				val c = CitationProvider.fromRepo(httpRepo, citCache, metaCache, config0)
+				(false, c, httpRepo, None)
+			case None =>
+				val (isFresh, baseSail) = StorageSail.apply(config0.rdfStorage)
+				val c = CitationProvider(baseSail, citCache, metaCache, config0)
+				val noMagic = isFresh || config0.rdfStorage.disableCpIndex
+				val idxFactories = if noMagic then None else
+					val indexHandler = IndexHandler(system.scheduler)
+					val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
+					Some(indexHandler -> geoProvider)
+				val cpSail = CpNotifyingSail(baseSail, idxFactories, c)
+				val sailRepo = new SailRepository(cpSail)
+				sailRepo.init()
+				(isFresh, c, sailRepo, Some(cpSail))
 
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
-
-		given EnvriConfigs = config.core.envriConfigs
-
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
-		val repo = new SailRepository(sail)
-		repo.init()
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
@@ -216,8 +229,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
 			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
-			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
-				"readonly mode; restart the server for proper operation")
+			if isFreshInit then cpSailOpt.foreach(_.makeReadonly("This was a fresh RDF store initialization, running in " +
+				"readonly mode; restart the server for proper operation"))
 			db
 		end for
 	end apply

@@ -160,7 +160,7 @@ case class RdfStorageConfig(
 )
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
-case class GraphDbConfig(ruleset: String, disableSameAs: Boolean)
+case class GraphDbConfig(serverUrl: String, repositoryId: String)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig

@@ -14,9 +14,7 @@ object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
 
 	def apply(conf: RdfStorageConfig): (Boolean, MainSail) =
-		val subFolder = conf.graphdb match
-			case Some(_) => "graphdb"
-			case None    => if conf.lmdb.isDefined then "lmdb" else "native"
+		val subFolder = if conf.lmdb.isDefined then "lmdb" else "native"
 		val storageDir = Paths.get(conf.path).resolve(subFolder)
 		val didNotExist = !Files.exists(storageDir)
 
@@ -37,43 +35,31 @@ object StorageSail:
 		)
 
 		val forceSync = !isFreshInit
-		val sail: MainSail = conf.graphdb match
-			case Some(gdb) =>
-				import com.ontotext.graphdb.GraphDBSail
-				import com.ontotext.graphdb.config.GraphDBConfig
-				val gdbConf = new GraphDBConfig()
-				gdbConf.setStorage(storageDir.toString)
-				gdbConf.setRuleset(gdb.ruleset)
-				gdbConf.setDisableSameAs(gdb.disableSameAs)
-				val gdbSail = new GraphDBSail(gdbConf)
-				log.info("GraphDBSail instantiated")
-				gdbSail
+		val sail: MainSail = conf.lmdb match
+			case Some(lmdb) =>
+				val lmdbConf = new LmdbStoreConfig()
+				lmdbConf.setForceSync(forceSync)
+				lmdbConf.setTripleIndexes(conf.indices)
+				lmdbConf.setAutoGrow(!isFreshInit)
+
+				lmdbConf.setTripleDBSize:
+					Math.max(lmdb.tripleDbSize, LmdbStoreConfig.TRIPLE_DB_SIZE)
+				lmdbConf.setValueDBSize:
+					Math.max(lmdb.valueDbSize, LmdbStoreConfig.VALUE_DB_SIZE)
+				lmdbConf.setValueCacheSize:
+					Math.max(lmdb.valueCacheSize, LmdbStoreConfig.VALUE_CACHE_SIZE)
+				lmdbConf.setValueIDCacheSize:
+					Math.max(lmdb.valueCacheSize / 2, LmdbStoreConfig.VALUE_ID_CACHE_SIZE)
+
+				val lmdbSail = LmdbStore(storageDir.toFile, lmdbConf)
+				log.info("LmdbStore instantiated")
+				lmdbSail
 			case None =>
-				conf.lmdb match
-					case Some(lmdb) =>
-						val lmdbConf = new LmdbStoreConfig()
-						lmdbConf.setForceSync(forceSync)
-						lmdbConf.setTripleIndexes(conf.indices)
-						lmdbConf.setAutoGrow(!isFreshInit)
-
-						lmdbConf.setTripleDBSize:
-							Math.max(lmdb.tripleDbSize, LmdbStoreConfig.TRIPLE_DB_SIZE)
-						lmdbConf.setValueDBSize:
-							Math.max(lmdb.valueDbSize, LmdbStoreConfig.VALUE_DB_SIZE)
-						lmdbConf.setValueCacheSize:
-							Math.max(lmdb.valueCacheSize, LmdbStoreConfig.VALUE_CACHE_SIZE)
-						lmdbConf.setValueIDCacheSize:
-							Math.max(lmdb.valueCacheSize / 2, LmdbStoreConfig.VALUE_ID_CACHE_SIZE)
-
-						val lmdbSail = LmdbStore(storageDir.toFile, lmdbConf)
-						log.info("LmdbStore instantiated")
-						lmdbSail
-					case None =>
-						val indices = if isFreshInit then "" else conf.indices
-						val nativeSail = NativeStore(storageDir.toFile, indices)
-						nativeSail.setForceSync(forceSync)
-						log.info("NativeStore instantiated")
-						nativeSail
+				val indices = if isFreshInit then "" else conf.indices
+				val nativeSail = NativeStore(storageDir.toFile, indices)
+				nativeSail.setForceSync(forceSync)
+				log.info("NativeStore instantiated")
+				nativeSail
 		isFreshInit -> sail
 	end apply
 end StorageSail

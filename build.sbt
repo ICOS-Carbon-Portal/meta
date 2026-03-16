@@ -72,7 +72,6 @@ val akkaVersion = "2.6.18"
 val akkaHttpVersion = "10.2.8"
 val rdf4jVersion = "5.0.2"
 val owlApiVersion = "5.1.20"
-val graphdbVersion = "10.7.4"
 
 val noGeronimo = ExclusionRule(organization = "org.apache.geronimo.specs")
 val noOwlApiDistr = ExclusionRule("net.sourceforge.owlapi", "owlapi-distribution")
@@ -115,8 +114,6 @@ lazy val meta = (project in file("."))
 		version := "0.11.0",
 		scalacOptions ++= (commonScalacOptions ++ Seq("-Wconf:src=.*(html|xml):s")),
 
-		resolvers += "Ontotext Releases" at "https://maven.ontotext.com/repository/owlim-releases",
-
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
@@ -129,10 +126,10 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-http"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
-			"com.ontotext.graphdb"   % "graphdb-runtime"                    % graphdbVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,

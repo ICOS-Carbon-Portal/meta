@@ -173,7 +173,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val serversFut =
 			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
+			val singleThreadExe = if (config.rdfStorage.lmdb.isEmpty && config.rdfStorage.graphdb.isEmpty) || isFreshInit then
 				val ctxt = Executors.newSingleThreadExecutor()
 				Some(ExecutionContext.fromExecutorService(ctxt))
 			else None

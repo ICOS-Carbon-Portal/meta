@@ -151,6 +151,7 @@ case class SparqlServerConfig(
 
 case class RdfStorageConfig(
 	lmdb: Option[LmdbConfig],
+	graphdb: Option[GraphDbConfig],
 	path: String,
 	recreateAtStartup: Boolean,
 	indices: String,
@@ -159,6 +160,7 @@ case class RdfStorageConfig(
 )
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
+case class GraphDbConfig(ruleset: String, disableSameAs: Boolean)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
@@ -232,7 +234,8 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[GraphDbConfig] = jsonFormat2(GraphDbConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat7(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

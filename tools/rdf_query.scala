@@ -19,9 +19,9 @@ Currently only runs graph queries, that is queries of the form:
 
  */
 
-private val log = LoggerFactory.getLogger("devtools.runQuery")
+private val log = LoggerFactory.getLogger("devtools.rdfQuery")
 
-@main def runQuery(args: String*) = {
+@main def rdfQuery(args: String*) = {
 	args.toArray.lift.apply(0) match {
 		case None => {
 			log.error("Expected path of query file as first argument")

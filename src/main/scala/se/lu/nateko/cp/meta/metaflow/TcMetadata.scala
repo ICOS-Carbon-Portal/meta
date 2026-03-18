@@ -3,11 +3,11 @@ package se.lu.nateko.cp.meta.metaflow
 import akka.stream.scaladsl.Source
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
+import se.lu.nateko.cp.meta.core.data.{CountryCode, Funder, Funding, GeoFeature, Network, Orcid, Organization, Position, Station, StationSpecifics}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
+import java.net.URI
 import java.time.Instant
-import se.lu.nateko.cp.meta.core.data.Network
 
 
 trait TC
@@ -59,7 +59,9 @@ object Entity{
 	given [T <: TC]: CpIdSwapper[TcOrg[T]] with{
 		def withCpId(org: TcOrg[T], id: UriId) = org match{
 			case ss: TcStation[T] => ss.copy(cpId = id)
+			case ss: TcSourceStation[T] => ss.copy(cpId = id)
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case go: TcGenericSourceOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
@@ -71,12 +73,17 @@ object Entity{
 	given [T <: TC]: CpIdSwapper[TcPlainOrg[T]] with{
 		def withCpId(org: TcPlainOrg[T], id: UriId) = org match{
 			case go: TcGenericOrg[T] => go.copy(cpId = id)
+			case go: TcGenericSourceOrg[T] => go.copy(cpId = id)
 			case fu: TcFunder[T] => fu.copy(cpId = id)
 		}
 	}
 
 	given [T <: TC]: CpIdSwapper[TcStation[T]] with{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
+	}
+
+	given [T <: TC]: CpIdSwapper[TcSourceStation[T]] with{
+		def withCpId(s: TcSourceStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
 	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
@@ -99,7 +106,18 @@ case class TcPerson[+T <: TC](
 	orcid: Option[Orcid]
 ) extends Entity[T]
 
-sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
+case class OrganizationInfo(
+	name: String,
+	comments: Seq[String],
+	website: Option[URI],
+	label: Option[String]
+)
+
+object OrganizationInfo:
+	def fromOrganization(org: Organization) =
+		OrganizationInfo(org.name, org.self.comments, org.website, org.self.label)
+
+sealed trait TcOrg[+T <: TC] extends Entity[T]{ def orgInfo: OrganizationInfo }
 
 case class TcNetwork[+T <: TC](cpId: UriId, core: Network)
 
@@ -111,14 +129,19 @@ case class TcStation[+T <: TC](
 	funding: Seq[TcFunding[T]], // needed to avoid info loss with core.funding
 	networks: Seq[TcNetwork[T]]
 ) extends TcOrg[T] with TcEntity[T]{
-	def org = core.org
+	def orgInfo = OrganizationInfo.fromOrganization(core.org)
 }
 
 sealed trait TcPlainOrg[+T <: TC] extends TcOrg[T]
-case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]
-case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]{
+case class TcGenericOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: Organization) extends TcPlainOrg[T]:
+	def orgInfo = OrganizationInfo.fromOrganization(org)
+
+case class TcGenericSourceOrg[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], org: OrganizationInfo) extends TcPlainOrg[T]:
+	def orgInfo = org
+
+case class TcFunder[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Funder) extends TcPlainOrg[T]:
 	def org = core.org
-}
+	def orgInfo = OrganizationInfo.fromOrganization(core.org)
 
 case class TcInstrument[+T <: TC : TcConf](
 	tcId: TcId[T],
@@ -162,7 +185,7 @@ class AssumedRole[+T <: TC](
 
 case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
+class TcState[+T <: TC : TcConf](val stations: Seq[TcSourceStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
 	def tcConf = implicitly[TcConf[T]]
 }
 
@@ -174,3 +197,37 @@ trait TcMetaSource[T <: TC : TcConf]:
 object TcMetaSource:
 	val defaultInstrModel = "N/A"
 	val defaultSerialNum = "N/A"
+
+case class TcSourceStation[+T <: TC](
+	cpId: UriId,
+	tcId: TcId[T],
+	org: OrganizationInfo,
+	stationId: String,
+	location: Option[Position],
+	coverage: Option[GeoFeature],
+	pictures: Seq[URI],
+	countryCode: Option[CountryCode],
+	specificInfo: StationSpecifics,
+	responsibleOrg: Option[TcPlainOrg[T]],
+	funding: Seq[TcFunding[T]],
+	networkIds: Seq[UriId]
+) extends Entity[T] with TcOrg[T] {
+	override def tcIdOpt = Some(tcId)
+	def orgInfo = org
+}
+
+object TcSourceStation:
+	def fromTcStation[T <: TC](station: TcStation[T]): TcSourceStation[T] = TcSourceStation(
+		cpId = station.cpId,
+		tcId = station.tcId,
+		org = OrganizationInfo.fromOrganization(station.core.org),
+		stationId = station.core.id,
+		location = station.core.location,
+		coverage = station.core.coverage,
+		pictures = station.core.pictures,
+		countryCode = station.core.countryCode,
+		specificInfo = station.core.specificInfo,
+		responsibleOrg = station.responsibleOrg,
+		funding = station.funding,
+		networkIds = station.networks.map(_.cpId)
+	)

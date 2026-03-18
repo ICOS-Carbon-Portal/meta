@@ -63,7 +63,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 	private given factory: ValueFactory = metaVocab.factory
 
 	def getCurrentState[T <: TC : TcConf](using MetaConn, DocConn): Validated[TcState[T]] = for
-		stations <- getStations[T]
+		stations <- getTcSourceStations
 		memberships <- getMemberships
 		instruments <- getInstruments
 	yield
@@ -139,9 +139,11 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		)
 
 
-	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
-		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
+	def getTcSourceStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcSourceStation[T]]] =
+		getEntities[T, TcSourceStation[T]](conf.stationClass(metaVocab))(getTcSourceStation)
 
+	private def getTcSourceStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcSourceStation[T]] =
+			getTcStation(tcIdOpt, uri).map(TcSourceStation.fromTcStation)
 
 	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcStation[T]] =
 		for

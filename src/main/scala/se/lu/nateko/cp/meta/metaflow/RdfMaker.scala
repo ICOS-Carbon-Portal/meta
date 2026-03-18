@@ -16,12 +16,13 @@ import se.lu.nateko.cp.meta.core.data.{
 	IcosCitiesStationSpecifics,
 	SitesStationSpecifics,
 	NoStationSpecifics,
-	Position,
-	Organization
+	Position
 }
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+import se.lu.nateko.cp.meta.core.data.Organization
+import java.net.URI
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
@@ -80,13 +81,39 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		fund.core.stop.map{endD =>
 			(iri, meta.hasEndDate, vocab.lit(endD))
 		} ++:
-		uriResourceTriples(iri, fund.core.self) ++:
+		uriResourceTriples(iri, UriResourceInfo(fund.core.self)) ++:
 		Nil
 	}
 
 	def getStatements[T <: TC : TcConf](e: Entity[T]): Seq[Statement] = {
 
 		val uri = getIri(e)
+
+		def getStationStatements(s: TcSourceStation[T]) = {
+				val stationClass = implicitly[TcConf[T]].stationClass(meta)
+				(uri, RDF.TYPE, stationClass) +:
+				(uri, meta.hasStationId, vocab.lit(s.stationId)) +:
+				orgTriples(uri, OrgInfo(s.orgInfo)) ++:
+				stationTriples(uri, s.specificInfo) ++:
+				s.pictures.map{picUri =>
+					(uri, meta.hasDepiction, vocab.lit(picUri))
+				} ++:
+				s.responsibleOrg.map{respOrg =>
+					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
+				} ++:
+				s.location.toSeq.flatMap(positionTriples(_, uri)) ++:
+				s.coverage.toSeq.flatMap(coverageTriples(_, uri)) ++:
+				s.countryCode.map{cc =>
+					(uri, meta.countryCode, vocab.lit(cc.code))
+				} ++:
+				s.funding.flatMap{fund =>
+					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
+					fundingTriples(fund)
+				} ++:
+				s.networkIds.map(id =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(id))
+				)
+		}
 
 		val triples: Seq[(IRI, IRI, Value)] = e match{
 
@@ -101,34 +128,19 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
 				}.toList
 
+			case s: TcSourceStation[T] =>
+				getStationStatements(s)
+
 			case s: TcStation[T] =>
-				val stationClass = implicitly[TcConf[T]].stationClass(meta)
-				(uri, RDF.TYPE, stationClass) +:
-				(uri, meta.hasStationId, vocab.lit(s.core.id)) +:
-				orgTriples(uri, s.core.org) ++:
-				stationTriples(uri, s.core.specificInfo) ++:
-				s.core.pictures.map{picUri =>
-					(uri, meta.hasDepiction, vocab.lit(picUri))
-				} ++:
-				s.responsibleOrg.map{respOrg =>
-					(uri, meta.hasResponsibleOrganization, getIri(respOrg))
-				} ++:
-				s.core.location.toSeq.flatMap(positionTriples(_, uri)) ++:
-				s.core.coverage.toSeq.flatMap(coverageTriples(_, uri)) ++:
-				s.core.countryCode.map{ cc =>
-					(uri, meta.countryCode, vocab.lit(cc.code))
-				} ++:
-				s.funding.flatMap{fund =>
-					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
-					fundingTriples(fund)
-				} ++:
-				s.networks.toSeq.map(network =>
-					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
-				)
+				getStationStatements(TcSourceStation.fromTcStation(s))
 
 			case go: TcGenericOrg[T] =>
 				(uri, RDF.TYPE, meta.orgClass) +:
-				orgTriples(uri, go.org)
+				orgTriples(uri, OrgInfo(go.org))
+
+			case go: TcGenericSourceOrg[T] =>
+				(uri, RDF.TYPE, meta.orgClass) +:
+				orgTriples(uri, OrgInfo(go.org))
 
 			case fu: TcFunder[T] =>
 				(uri, RDF.TYPE, meta.funderClass) +:
@@ -138,7 +150,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 						(uri, meta.funderIdentifierType, vocab.lit(idType.toString))
 					)
 				} ++:
-				orgTriples(uri, fu.org)
+				orgTriples(uri, OrgInfo(fu.org))
 
 			case instr: TcInstrument[T] =>
 				(uri, RDF.TYPE, meta.instrumentClass) +:
@@ -180,6 +192,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			vocab.getPerson(p.cpId)
 
 		case s: TcStation[T] => vocab.getStation(s.cpId)
+		case s: TcSourceStation[T] => vocab.getStation(s.cpId)
 
 		case ci: TcPlainOrg[T] =>
 			vocab.getOrganization(ci.cpId)
@@ -277,7 +290,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def uriResourceTriples(iri: IRI, res: UriResource): Seq[Triple] = {
+	private def uriResourceTriples(iri: IRI, res: UriResourceInfo): Seq[Triple] = {
 		res.label.map{ lbl =>
 			(iri, RDFS.LABEL, vocab.lit(lbl))
 		} ++:
@@ -286,8 +299,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		}
 	}
 
-	private def orgTriples(iri: IRI, org: Organization): Seq[Triple] = {
-		uriResourceTriples(iri, org.self) :+
+	private def orgTriples(iri: IRI, org: OrgInfo): Seq[Triple] = {
+		uriResourceTriples(iri, org.resource) :+
 		(iri, meta.hasName, vocab.lit(org.name)) :++
 		org.email.map{ email =>
 			(iri, meta.hasEmail, vocab.lit(email))
@@ -295,5 +308,45 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		org.website.map{ website =>
 			(iri, RDFS.SEEALSO, website.toRdf)
 		}
+	}
+}
+
+
+private final case class UriResourceInfo(label: Option[String], comments: Seq[String])
+
+object UriResourceInfo {
+	def apply(uri: UriResource): UriResourceInfo = {
+		UriResourceInfo(uri.label, uri.comments)
+	}
+
+	def apply(org: OrganizationInfo): UriResourceInfo = {
+		UriResourceInfo(org.label, org.comments)
+	}
+}
+
+private final case class OrgInfo(
+	resource: UriResourceInfo,
+	name: String,
+	email: Option[String],
+	website: Option[URI],
+)
+
+object OrgInfo {
+	def apply(org: Organization): OrgInfo = {
+		OrgInfo(
+			resource = UriResourceInfo(org.self),
+			name = org.name,
+			email = org.email,
+			website = org.website,
+		)
+	}
+
+	def apply(org: OrganizationInfo): OrgInfo = {
+		OrgInfo(
+			email = None,
+			resource = UriResourceInfo(org),
+			name = org.name,
+			website = org.website,
+		)
 	}
 }

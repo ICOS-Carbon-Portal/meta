@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 
-sbt "devtools/runMain $*"
+sbt "tools/runMain $*"

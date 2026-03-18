@@ -6,22 +6,16 @@ import java.nio.file.{Files, Paths}
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
 import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.query.QueryLanguage
+import tools.shared.config.rdfStoragePath
 
 /*
 === Description ===
 Quick script for running SPARQL queries against local RDF storage.
+Uses the shared rdfStoragePath configured for tools
 Currently only runs graph queries, that is queries of the form:
 
 	construct { ?a ?b ?c }
 	where { ... }
-
-=== Example configuration snippet for application.conf ===
-
-	devtools {
-		runQuery {
-			rdfStoragePath: "./someRdfStorageDir"
-		}
-	}
 
  */
 
@@ -51,7 +45,7 @@ private val log = LoggerFactory.getLogger("devtools.runQuery")
 }
 
 private def withRepo(callback: SailRepository => Any) = {
-	val storageDir = Paths.get(devtools.config.rdfStoragePath).resolve("lmdb")
+	val storageDir = Paths.get(rdfStoragePath).resolve("lmdb")
 	val sail = LmdbStore(storageDir.toFile, new LmdbStoreConfig())
 	var repo = new SailRepository(sail)
 

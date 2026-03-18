@@ -1,10 +1,10 @@
-package devtools.config
+package tools.shared.config
 
 import com.typesafe.config.{ConfigFactory, Config}
 import org.slf4j.LoggerFactory
 
 def rdfStoragePath = {
-	val path = readConfig().getValue("devtools.rdfStoragePath").nn.unwrapped.toString
+	val path = readConfig().getValue("tools.rdfStoragePath").nn.unwrapped.toString
 	log.info(s"Using rdfStorage path: $path")
 	path
 }
@@ -14,5 +14,5 @@ private def readConfig(): Config = {
 	ConfigFactory.parseFile(path).nn.resolve.nn
 }
 
-private val log = LoggerFactory.getLogger("devtools.Config").nn
+private val log = LoggerFactory.getLogger("tools.Config").nn
 

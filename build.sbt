@@ -238,12 +238,12 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scalacheck"    %%% "scalacheck"        % "1.18.0" % "test"
 		)
 	)
-lazy val devtools = (project in file("devtools"))
+lazy val tools = (project in file("tools"))
 	.dependsOn(meta)
 	.settings(
-		name := "meta-devtools",
+		name := "meta-tools",
 		version := "0.1.0",
-		Compile / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "scripts", baseDirectory.value / "lib"),
+		Compile / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "scripts", baseDirectory.value / "shared"),
 		scalacOptions ++= (commonScalacOptions.filterNot(_ == "-Werror")),
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),

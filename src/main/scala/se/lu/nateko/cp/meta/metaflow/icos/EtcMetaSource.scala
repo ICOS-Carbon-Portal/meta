@@ -200,63 +200,62 @@ object EtcMetaSource{
 		case Funding extends TableType("funding")
 	}
 
-	private object Vars{
-		val stationLat = "LOCATION_LAT"
-		val stationLon = "LOCATION_LONG"
-		val staionElev = "LOCATION_ELEV"
-		val fname = "TEAM_MEMBER_FIRSTNAME"
-		val lname = "TEAM_MEMBER_LASTNAME"
-		val email = "TEAM_MEMBER_EMAIL"
-		val orcid = "TEAM_MEMBER_ORCID"
-		val role = "TEAM_MEMBER_ROLE"
-		val roleStart = "TEAM_MEMBER_WORKSTART"
-		val roleEnd = "TEAM_MEMBER_WORKEND"
-		val authorOrder = "TEAM_MEMBER_AUTHORDER"
-		val persId = "ID_TEAM"
-		val companyTcId = "ID_COMPANY"
-		val companyName = "COMPANY"
-		val stationTcId = "ID_STATION"
-		val siteName = "SITE_NAME"
-		val siteId = "SITE_ID"
-		val stationClass = "CLASS_ICOS"
-		val descr = "SITE_DESC"
-		val pictureUrl = "URL_PICTURE"
-		val utcOffset = "UTC_OFFSET"
-		val annualTemp = "MAT"
-		val annualPrecip = "MAP"
-		val annualRad = "MAR"
-		val climateZone = "CLIMATE_KOPPEN"
-		val ecosystemIGBP = "IGBP"
-		val stationDocDois = "REFERENCE_DOI_D"
-		val stationDataPubDois = "REFERENCE_DOI_P"
-		val timeZoneOffset = "UTC_OFFSET"
-		val loggerSensorId = "LOGGER_SENSOR_ID"
-		val loggerId = "LOGGER_ID"
-		val sensorModelId = "ID_MODEL"
-		val sensorName = "NAME"
-		val sensorDescription = "DESCRIPTION"
-		val sensorId = "ID_SENSOR"
-		val sensorSerial = "SN"
-		val sensorVar = "VARIABLE"
-		val sensorLat = "LAT"
-		val sensorNorthSouthOffset = "NSDIST"
-		val sensorLon = "LONG"
-		val sensorEastWestOffset = "EWDIST"
-		val sensorHeight = "HEIGHT"
-		val deploymentStart = "START_DATE"
-		val fileId = "FILE_ID"
-		val fileLoggerId = "FILE_LOGGER_ID"
-		val fileFormat = "FILE_FORMAT"
-		val fileType = "FILE_TYPE"
-		val fundingOrgName = "FUNDING_ORGANIZATION"
-		val fundingAwardNumber = "FUNDING_GRANT"
-		val fundingAwardUri = "FUNDING_GRANT_URL"
-		val fundingAwardTitle = "FUNDING_TITLE"
-		val fundingStart = "FUNDING_DATE_START"
-		val fundingEnd = "FUNDING_DATE_END"
-		val fundingComment = "FUNDING_COMMENT"
-		val network = "NETWORK"
-	}
+	private enum Var(val colName: String):
+		case StationLat extends Var("LOCATION_LAT")
+		case StationLon extends Var("LOCATION_LONG")
+		case StationElev extends Var("LOCATION_ELEV")
+		case Fname extends Var("TEAM_MEMBER_FIRSTNAME")
+		case Lname extends Var("TEAM_MEMBER_LASTNAME")
+		case Email extends Var("TEAM_MEMBER_EMAIL")
+		case OrcidId extends Var("TEAM_MEMBER_ORCID")
+		case MemberRole extends Var("TEAM_MEMBER_ROLE")
+		case RoleStart extends Var("TEAM_MEMBER_WORKSTART")
+		case RoleEnd extends Var("TEAM_MEMBER_WORKEND")
+		case AuthorOrder extends Var("TEAM_MEMBER_AUTHORDER")
+		case PersId extends Var("ID_TEAM")
+		case CompanyTcId extends Var("ID_COMPANY")
+		case CompanyName extends Var("COMPANY")
+		case StationTcId extends Var("ID_STATION")
+		case SiteName extends Var("SITE_NAME")
+		case SiteId extends Var("SITE_ID")
+		case StationClass extends Var("CLASS_ICOS")
+		case Descr extends Var("SITE_DESC")
+		case PictureUrl extends Var("URL_PICTURE")
+		case UtcOffset extends Var("UTC_OFFSET")
+		case AnnualTemp extends Var("MAT")
+		case AnnualPrecip extends Var("MAP")
+		case AnnualRad extends Var("MAR")
+		case ClimateZone extends Var("CLIMATE_KOPPEN")
+		case EcosystemIGBP extends Var("IGBP")
+		case StationDocDois extends Var("REFERENCE_DOI_D")
+		case StationDataPubDois extends Var("REFERENCE_DOI_P")
+		case TimeZoneOffset extends Var("UTC_OFFSET")
+		case LoggerSensorId extends Var("LOGGER_SENSOR_ID")
+		case LoggerId extends Var("LOGGER_ID")
+		case SensorModelId extends Var("ID_MODEL")
+		case SensorName extends Var("NAME")
+		case SensorDescription extends Var("DESCRIPTION")
+		case SensorId extends Var("ID_SENSOR")
+		case SensorSerial extends Var("SN")
+		case SensorVar extends Var("VARIABLE")
+		case SensorLat extends Var("LAT")
+		case SensorNorthSouthOffset extends Var("NSDIST")
+		case SensorLon extends Var("LONG")
+		case SensorEastWestOffset extends Var("EWDIST")
+		case SensorHeight extends Var("HEIGHT")
+		case DeploymentStart extends Var("START_DATE")
+		case FileId extends Var("FILE_ID")
+		case FileLoggerId extends Var("FILE_LOGGER_ID")
+		case FileFormat extends Var("FILE_FORMAT")
+		case FileType extends Var("FILE_TYPE")
+		case FundingOrgName extends Var("FUNDING_ORGANIZATION")
+		case FundingAwardNumber extends Var("FUNDING_GRANT")
+		case FundingAwardUri extends Var("FUNDING_GRANT_URL")
+		case FundingAwardTitle extends Var("FUNDING_TITLE")
+		case FundingStart extends Var("FUNDING_DATE_START")
+		case FundingEnd extends Var("FUNDING_DATE_END")
+		case FundingComment extends Var("FUNDING_COMMENT")
+		case NetworkName extends Var("NETWORK")
 
 	private val rolesLookup: Map[String, Option[Role]] = Map(
 		"PI"         -> Some(PI),
@@ -273,47 +272,52 @@ object EtcMetaSource{
 		"AFFILIATED" -> None
 	)
 
-	def lookUp(varName: String)(using lookup: Lookup): Validated[String] =
-		new Validated(lookup.get(varName).filter(_.length > 0))
+	def lookUp(colName: String)(using lookup: Lookup): Validated[String] =
+		new Validated(lookup.get(colName).filter(_.length > 0))
 
-	def lookUpOrcid(varName: String)(using Lookup): Validated[Option[Orcid]] =
-		lookUp(varName).optional.flatMap{
+	private def lookUp(variable: Var)(using Lookup): Validated[String] = lookUp(variable.colName)
+
+	def lookUpOrcid(colName: String)(using Lookup): Validated[Option[Orcid]] =
+		lookUp(colName).optional.flatMap{
 			case Some(Orcid(orc)) => Validated.ok(Some(orc))
 			case None => Validated.ok(None)
 			case Some(badOrcid) => new Validated(None, Seq(s"Could not parse Orcid id from string $badOrcid"))
 		}
 
-	private def getNumber(varName: String)(using Lookup): Validated[Number] = lookUp(varName).flatMap{
-		str => Validated(Badm.numParser.parse(str)).require(s"$varName must have been a number (was $str)")
+	private def lookUpOrcid(v: Var)(using Lookup): Validated[Option[Orcid]] =
+		lookUpOrcid(v.colName)
+
+	private def getNumber(variable: Var)(using Lookup): Validated[Number] = lookUp(variable).flatMap{
+		str => Validated(Badm.numParser.parse(str)).require(s"${variable.colName} must have been a number (was $str)")
 	}
 
 	private def getLocalDateTime(
-		varName: String, defaultTime: LocalTime, defaultMonth: Int, defaultDay: Int
-	)(using Lookup): Validated[LocalDateTime] = lookUp(varName).flatMap{
+		variable: Var, defaultTime: LocalTime, defaultMonth: Int, defaultDay: Int
+	)(using Lookup): Validated[LocalDateTime] = lookUp(variable).flatMap{
 		case Badm.Date(BadmLocalDateTime(dt)) => Validated.ok(dt)
 		case Badm.Date(BadmLocalDate(date)) => Validated.ok(date.atTime(defaultTime))
 		case Badm.Date(BadmYear(year)) => Validated.ok(LocalDate.of(year, defaultMonth, defaultDay).atTime(defaultTime))
-		case bv => Validated.error(s"$varName must have been a BADM-format local date(-time) (was $bv)")
+		case bv => Validated.error(s"${variable.colName} must have been a BADM-format local date(-time) (was $bv)")
 	}
 
-	private def getLocalDate(varName: String, defaultMonth: Int, defaultDay: Int)(using Lookup): Validated[LocalDate] =
-		getLocalDateTime(varName, LocalTime.NOON, defaultMonth, defaultDay).map(_.toLocalDate)
+	private def getLocalDate(variable: Var, defaultMonth: Int, defaultDay: Int)(using Lookup): Validated[LocalDate] =
+		getLocalDateTime(variable, LocalTime.NOON, defaultMonth, defaultDay).map(_.toLocalDate)
 
 	private def getStationPosition(using Lookup): Validated[Option[Position]] =
 		for(
-			latOpt <- getNumber(Vars.stationLat).optional;
-			lonOpt <- getNumber(Vars.stationLon).optional;
-			alt <- getNumber(Vars.staionElev).optional
+			latOpt <- getNumber(Var.StationLat).optional;
+			lonOpt <- getNumber(Var.StationLon).optional;
+			alt <- getNumber(Var.StationElev).optional
 		) yield for(lat <- latOpt; lon <- lonOpt)
 			yield Position(lat.doubleValue, lon.doubleValue, alt.map(_.floatValue), None, None)
 
 	private def getPerson(using Lookup): Validated[EtcPerson] =
 		for(
-			fname <- lookUp(Vars.fname).require("person must have first name");
-			lname <- lookUp(Vars.lname).require("person must have last name");
-			tcId <- lookUp(Vars.persId).require("unique ETC's id is required for a person");
-			email <- lookUp(Vars.email).optional;
-			orcid <- lookUpOrcid(Vars.orcid);
+			fname <- lookUp(Var.Fname).require("person must have first name");
+			lname <- lookUp(Var.Lname).require("person must have last name");
+			tcId <- lookUp(Var.PersId).require("unique ETC's id is required for a person");
+			email <- lookUp(Var.Email).optional;
+			orcid <- lookUpOrcid(Var.OrcidId);
 			cpId = CpVocab.getPersonCpId(fname, lname)
 		) yield
 			TcPerson(cpId, Some(makeId(tcId)), fname, lname, email.map(_.toLowerCase), orcid)
@@ -327,8 +331,8 @@ object EtcMetaSource{
 
 	private def getCompany(vocab: CpVocab)(using Lookup): Validated[(Int, EtcCompany)] =
 		for(
-			tcId <- getNumber(Vars.companyTcId).map(_.intValue).require("company must have integer id");
-			name <- lookUp(Vars.companyName).require("company must have a name");
+			tcId <- getNumber(Var.CompanyTcId).map(_.intValue).require("company must have integer id");
+			name <- lookUp(Var.CompanyName).require("company must have a name");
 			cpId = UriId(s"etcorg_$tcId");
 			orgUri = vocab.getOrganization(cpId).toJava;
 			core = Organization(UriResource(orgUri, None, Nil), name, None, None, None)
@@ -336,21 +340,21 @@ object EtcMetaSource{
 
 	private def getSensorModel(using Lookup): Validated[(String, SensorModel)] =
 		for(
-			modelId <- lookUp(Vars.sensorModelId).require("sensor model must have id");
-			compId <- getNumber(Vars.companyTcId).map(_.intValue).require("sensor model must have vendor company id");
-			name <- lookUp(Vars.sensorName).require("sensor model must have name");
-			descript <- lookUp(Vars.sensorDescription).optional
+			modelId <- lookUp(Var.SensorModelId).require("sensor model must have id");
+			compId <- getNumber(Var.CompanyTcId).map(_.intValue).require("sensor model must have vendor company id");
+			name <- lookUp(Var.SensorName).require("sensor model must have name");
+			descript <- lookUp(Var.SensorDescription).optional
 		) yield modelId -> new SensorModel(modelId, compId, name, descript)
 
 	private def getSiteUtc(using Lookup): Validated[(Int, StationId, Option[Int])] =
 		for(
-			techId <- lookUp(Vars.stationTcId).map(_.toInt);
-			stationId <- lookUp(Vars.siteId).map{case StationId(sId) => sId};
-			utc <- lookUp(Vars.utcOffset).map(_.toInt).optional
+			techId <- lookUp(Var.StationTcId).map(_.toInt);
+			stationId <- lookUp(Var.SiteId).map{case StationId(sId) => sId};
+			utc <- lookUp(Var.UtcOffset).map(_.toInt).optional
 		) yield (techId, stationId, utc)
 
 	private def parseFunders(vocab: CpVocab, lookups: Seq[Lookup]): Validated[Map[String, TcFunder[ETC.type]]] = Validated
-		.sequence(lookups.map(lookUp(Vars.fundingOrgName)(using _)))
+		.sequence(lookups.map(lookUp(Var.FundingOrgName)(using _)))
 		.map(
 			_.distinct.map{funderName =>
 				val cpId = UriId.escaped(funderName)
@@ -375,14 +379,14 @@ object EtcMetaSource{
 		val tcIdToFundingVs = lookups.map{lookup =>
 			given Lookup = lookup
 			for
-				stationTcId <- lookUp(Vars.stationTcId).require("missing ETC technical station id in funding table");
-				funderName <- lookUp(Vars.fundingOrgName).require(s"missing funder name for funding of station $stationTcId");
-				awardTitle <- lookUp(Vars.fundingAwardTitle).optional;
-				awardNumber <- lookUp(Vars.fundingAwardNumber).optional;
-				fStart <- getLocalDate(Vars.fundingStart, 1, 1).optional;
-				fEnd <- getLocalDate(Vars.fundingEnd, 12, 1).optional;
-				comment <- lookUp(Vars.fundingComment).optional;
-				url <- lookUp(Vars.fundingAwardUri).map(uriStr => new URI(uriStr)).filter(_.isAbsolute).optional;
+				stationTcId <- lookUp(Var.StationTcId).require("missing ETC technical station id in funding table");
+				funderName <- lookUp(Var.FundingOrgName).require(s"missing funder name for funding of station $stationTcId");
+				awardTitle <- lookUp(Var.FundingAwardTitle).optional;
+				awardNumber <- lookUp(Var.FundingAwardNumber).optional;
+				fStart <- getLocalDate(Var.FundingStart, 1, 1).optional;
+				fEnd <- getLocalDate(Var.FundingEnd, 12, 1).optional;
+				comment <- lookUp(Var.FundingComment).optional;
+				url <- lookUp(Var.FundingAwardUri).map(uriStr => new URI(uriStr)).filter(_.isAbsolute).optional;
 				tcFunder <- new Validated(funders.get(funderName)).require(s"Funder lookup failed for $funderName")
 			yield
 				val idComps: Seq[String] = stationTcId +:
@@ -414,17 +418,17 @@ object EtcMetaSource{
 		stationLookupV: Validated[Map[Int, StationId]]
 	)(using Lookup): Validated[(EtcFileMetaKey, EtcFileMeta)] =
 		for(
-			stationTcId <- lookUp(Vars.stationTcId).map(_.toInt).require("technical station id missing");
+			stationTcId <- lookUp(Var.StationTcId).map(_.toInt).require("technical station id missing");
 			stationLookup <- stationLookupV;
 			stationId <- new Validated(stationLookup.get(stationTcId))
 				.require(s"Could not find ETC site id for technical station id $stationTcId");
-			fileId <- lookUp(Vars.fileId).map(_.toInt).require("wrong or missing file id");
-			loggerId <- lookUp(Vars.fileLoggerId).map(_.toInt).require("wrong or missing logger id");
-			isBinary <- lookUp(Vars.fileFormat).collect{
+			fileId <- lookUp(Var.FileId).map(_.toInt).require("wrong or missing file id");
+			loggerId <- lookUp(Var.FileLoggerId).map(_.toInt).require("wrong or missing logger id");
+			isBinary <- lookUp(Var.FileFormat).collect{
 					case "ASCII" => false
 					case "Binary" => true
 				}.require("file format must be 'ASCII' or 'Binary'");
-			fileType <- lookUp(Vars.fileType).map(DataType.valueOf)
+			fileType <- lookUp(Var.FileType).map(DataType.valueOf)
 		) yield {
 			EtcFileMetaKey(station = stationId, loggerId = loggerId, fileId = fileId, dataType = fileType) ->
 				EtcFileMeta(fileType, isBinary)
@@ -449,24 +453,24 @@ object EtcMetaSource{
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
 		pos <- getStationPosition;
-		tcIdStr <- lookUp(Vars.stationTcId);
+		tcIdStr <- lookUp(Var.StationTcId);
 		fundingsLookup <- fundingsV;
-		name <- lookUp(Vars.siteName);
-		id <- lookUp(Vars.siteId);
+		name <- lookUp(Var.SiteName);
+		id <- lookUp(Var.SiteId);
 		etcStationId <- new Validated(StationId.unapply(id)).require(s"$id is not a proper ETC station id");
-		stClass <- lookUp(Vars.stationClass).flatMap(AtcMetaSource.parseStationClass).optional;
+		stClass <- lookUp(Var.StationClass).flatMap(AtcMetaSource.parseStationClass).optional;
 		countryCode <- getCountryCode(id.take(2)).optional;
-		climZone <- lookUp(Vars.climateZone).flatMap(parseClimateZone).optional;
-		ecoType <- lookUp(Vars.ecosystemIGBP).flatMap(parseIgbpEcosystem).optional;
-		meanTemp <- lookUp(Vars.annualTemp).map(_.toFloat).optional;
-		meanPrecip <- lookUp(Vars.annualPrecip).map(_.toFloat).optional;
-		meanRadiation <- lookUp(Vars.annualRad).map(_.toFloat).optional;
-		descr <- lookUp(Vars.descr).optional;
-		picture <- lookUp(Vars.pictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
-		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
-		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
-		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
-		networkNames <- lookUp(Vars.network).optional
+		climZone <- lookUp(Var.ClimateZone).flatMap(parseClimateZone).optional;
+		ecoType <- lookUp(Var.EcosystemIGBP).flatMap(parseIgbpEcosystem).optional;
+		meanTemp <- lookUp(Var.AnnualTemp).map(_.toFloat).optional;
+		meanPrecip <- lookUp(Var.AnnualPrecip).map(_.toFloat).optional;
+		meanRadiation <- lookUp(Var.AnnualRad).map(_.toFloat).optional;
+		descr <- lookUp(Var.Descr).optional;
+		picture <- lookUp(Var.PictureUrl).map(s => new URI(s.replace("download", "preview"))).optional;
+		pubDois <- lookUp(Var.StationDataPubDois).flatMap(parseDoiUris).optional;
+		docDois <- lookUp(Var.StationDocDois).flatMap(parseDoiUris).optional;
+		tzOffset <- lookUp(Var.TimeZoneOffset).map(_.toInt).optional;
+		networkNames <- lookUp(Var.NetworkName).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
@@ -526,15 +530,15 @@ object EtcMetaSource{
 	)(using Lookup): Validated[EtcMembership] = {
 		val require = requireVar("membership") _
 		for(
-			persId <- require(Vars.persId);
-			stationTcId <- require(Vars.stationTcId);
-			roleStr <- require(Vars.role);
+			persId <- require(Var.PersId);
+			stationTcId <- require(Var.StationTcId);
+			roleStr <- require(Var.MemberRole);
 			roleOpt <- new Validated(rolesLookup.get(roleStr)).require(s"Unknown ETC role: $roleStr");
 			role <- new Validated(roleOpt);
-			roleEnd <- getLocalDate(Vars.roleEnd, 12, 1).map(toCETnoon).optional;
-			roleStart <- getLocalDate(Vars.roleStart, 1, 1).map(toCETnoon).optional;
+			roleEnd <- getLocalDate(Var.RoleEnd, 12, 1).map(toCETnoon).optional;
+			roleStart <- getLocalDate(Var.RoleStart, 1, 1).map(toCETnoon).optional;
 			person <- new Validated(people.get(makeId(persId))).require(s"Person not found for tcId = $persId");
-			contribWeight <- lookUp(Vars.authorOrder).map(s => - s.toInt).optional;
+			contribWeight <- lookUp(Var.AuthorOrder).map(s => - s.toInt).optional;
 			station <- new Validated(stations.get(makeId(stationTcId))).require(s"Station not found for tcId = $stationTcId (persId = $persId)")
 		) yield {
 			val assumedRole = new AssumedRole[E](role, person, station, contribWeight, None)
@@ -546,9 +550,9 @@ object EtcMetaSource{
 		val sensorsDictVal = sensorsVal.map(_.map(sens => sens.tcId -> sens).toMap)
 		val require = requireVar("instrument") _
 		for(
-			stId <- require(Vars.stationTcId).map(_.toInt);
-			loggerId <- require(Vars.loggerId).map(_.toInt);
-			sensorTcId <- require(Vars.loggerSensorId);
+			stId <- require(Var.StationTcId).map(_.toInt);
+			loggerId <- require(Var.LoggerId).map(_.toInt);
+			sensorTcId <- require(Var.LoggerSensorId);
 			sensorDict <- sensorsDictVal;
 			instr <- new Validated(sensorDict.get(makeId(sensorTcId))).require(s"Could not look up logger by sensor id $sensorTcId")
 		) yield
@@ -560,9 +564,9 @@ object EtcMetaSource{
 		compDict: Map[Int, EtcCompany],
 		deploymentsDict: Map[String, Seq[InstrumentDeployment[E]]]
 	)(using Lookup): Validated[EtcInstrument] = for(
-		tcIdStr <- lookUp(Vars.sensorId).require("sensor must have id");
-		modelId <- lookUp(Vars.sensorModelId).require("sensor must have model id");
-		serial <- lookUp(Vars.sensorSerial).require("sensor must have serial number");
+		tcIdStr <- lookUp(Var.SensorId).require("sensor must have id");
+		modelId <- lookUp(Var.SensorModelId).require("sensor must have model id");
+		serial <- lookUp(Var.SensorSerial).require("sensor must have serial number");
 		model <- new Validated(modelDict.get(modelId)).require(s"Sensor model (id = $modelId) not found");
 		vendor <- new Validated(compDict.get(model.compId)).require(s"Sensor vendor with id = ${model.compId} was not found").optional
 	) yield
@@ -578,15 +582,15 @@ object EtcMetaSource{
 	private def getSensorDeployment(
 		stationLookup: Map[TcId[E], EtcStation]
 	)(using Lookup): Validated[(String, InstrumentDeployment[E])] = for
-		stationTcIdStr <- lookUp(Vars.stationTcId).require("sensor deployment must have technical station id");
-		varName <- lookUp(Vars.sensorVar).optional;
-		sensorId <- lookUp(Vars.sensorId).require("sensor deployment must have sensor id");
-		latOpt <- getNumber(Vars.sensorLat).map(_.doubleValue).optional;
-		northOpt <- getNumber(Vars.sensorNorthSouthOffset).map(_.doubleValue).optional;
-		lonOpt <- getNumber(Vars.sensorLon).map(_.doubleValue).optional;
-		eastOpt <- getNumber(Vars.sensorEastWestOffset).map(_.doubleValue).optional;
-		heightOpt <- getNumber(Vars.sensorHeight).map(_.floatValue).optional;
-		startLocal <- getLocalDateTime(Vars.deploymentStart, LocalTime.MIN, 1, 1).optional;
+		stationTcIdStr <- lookUp(Var.StationTcId).require("sensor deployment must have technical station id");
+		varName <- lookUp(Var.SensorVar).optional;
+		sensorId <- lookUp(Var.SensorId).require("sensor deployment must have sensor id");
+		latOpt <- getNumber(Var.SensorLat).map(_.doubleValue).optional;
+		northOpt <- getNumber(Var.SensorNorthSouthOffset).map(_.doubleValue).optional;
+		lonOpt <- getNumber(Var.SensorLon).map(_.doubleValue).optional;
+		eastOpt <- getNumber(Var.SensorEastWestOffset).map(_.doubleValue).optional;
+		heightOpt <- getNumber(Var.SensorHeight).map(_.floatValue).optional;
+		startLocal <- getLocalDateTime(Var.DeploymentStart, LocalTime.MIN, 1, 1).optional;
 		stationTcId = makeId(stationTcIdStr);
 		station <- new Validated(stationLookup.get(stationTcId)).require(s"Failed to look up a station with ETC id $stationTcId");
 		tzOpt = station.core.specificInfo match{
@@ -668,8 +672,8 @@ object EtcMetaSource{
 	private def minOptInst(i1: Option[Instant], i2: Option[Instant]): Option[Instant] =
 		Seq(i1, i2).flatten.sorted.headOption
 
-	private def requireVar(hint: String)(varName: String)(using Lookup) =
-		lookUp(varName).require(s"$varName is required for $hint info")
+	private def requireVar(hint: String)(variable: Var)(using Lookup) =
+		lookUp(variable).require(s"${variable.colName} is required for $hint info")
 
 	private val koppenZones = Set(
 		"Af", "Am", "Aw/As", "BSh", "BWh", "BWk", "Cfa", "Cfb", "Cfc", "Csa", "Csb", "Csc", "Cwa", "Cwb", "Cwc",

@@ -41,12 +41,11 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 
 
-class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[Seq[EtcMetaSource.Lookup]])(using system: ActorSystem) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
 	import system.dispatcher
 
 	private val log = Logging.getLogger(system, this)
-	private val baseEtcApiUrl = Uri(conf.metaService.toString)
 
 	override def state: Source[State, () => Unit] = Source
 		.tick(35.seconds, 5.hours, NotUsed)
@@ -147,12 +146,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)).map(_.map(mergeInstrDeployments))
 	}
 
-	private def fetchAndParseTsv[T](tableType: String): Future[Seq[Lookup]] = Http()
-		.singleRequest(HttpRequest(
-			uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
-		))
-		.flatMap(_.entity.toStrict(3.seconds))
-		.map(ent => parseTsv(ent.data))
+	private def fetchAndParseTsv(tableType: String): Future[Seq[Lookup]] = fetchTsv(tableType)
 
 	private def fetchFromTsv[T](tableType: String, extractor: Lookup ?=> Validated[T]): Future[Validated[Seq[T]]] =
 		fetchAndParseTsv(tableType).map(lookups => Validated.sequence(lookups.map(extractor(using _))))
@@ -162,6 +156,18 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 object EtcMetaSource{
 
 	type Lookup = Map[String, String]
+
+	def apply(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer): EtcMetaSource =
+		import system.dispatcher
+		val baseEtcApiUrl = Uri(conf.metaService.toString)
+		new EtcMetaSource(conf, vocab, tableType =>
+			Http()
+				.singleRequest(HttpRequest(
+					uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
+				))
+				.flatMap(_.entity.toStrict(3.seconds))
+				.map(ent => parseTsv(ent.data))
+		)
 	type E = ETC.type
 	private type EtcInstrument = TcInstrument[E]
 	private type EtcPerson = TcPerson[E]

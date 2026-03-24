@@ -16,7 +16,7 @@ class EtcFileMetadataProvider(conf: EtcConfig, vocab: CpVocab)(using system: Act
 	import system.dispatcher
 
 	private val log = Logging.getLogger(system, this)
-	private val metaSrc = new EtcMetaSource(conf, vocab)
+	private val metaSrc = EtcMetaSource(conf, vocab)
 	private var inner: Option[EtcFileMetadataStore] = None
 	private var retryCount: Int = 0
 

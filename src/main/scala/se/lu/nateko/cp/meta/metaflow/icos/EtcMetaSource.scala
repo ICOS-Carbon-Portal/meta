@@ -41,7 +41,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 
 
-class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[Seq[EtcMetaSource.Lookup]])(using system: ActorSystem) extends TcMetaSource[ETC.type] {
+class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: EtcMetaSource.TsvFetcher)(using system: ActorSystem) extends TcMetaSource[ETC.type] {
 	import EtcMetaSource.*
 	import system.dispatcher
 
@@ -65,13 +65,13 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 
 
 	private def fetchFromEtc(): Future[Validated[State]] =
-		val peopleFut = fetchFromTsv(Types.people, getPerson)
+		val peopleFut = fetchFromTsv(TableType.People, getPerson)
 
 		val futfutValVal = for
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
 			sensorsVal <- fetchSensors(stationsVal);
-			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
+			instrumentsVal <- fetchFromTsv(TableType.Instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
@@ -83,7 +83,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 					people.flatMap(p => p.tcIdOpt.map(_ -> p)).toMap,
 					stations.map(s => s.tcId -> s).toMap
 				)
-				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
+				fetchFromTsv(TableType.Roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
 					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
@@ -93,24 +93,24 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
-			fundLookupV <- fetchAndParseTsv(Types.funding).map{lookups =>
+			fundLookupV <- fetchAndParseTsv(TableType.Funding).map{lookups =>
 				for(
 					fundersLookup <- parseFunders(vocab, lookups);
 					fundings <- parseFundings(lookups, fundersLookup, vocab)
 				) yield fundings
 			};
-			stations <- fetchFromTsv(Types.stations, getStation(fundLookupV))
+			stations <- fetchFromTsv(TableType.Stations, getStation(fundLookupV))
 		) yield stations
 	}
 
 	def getFileMeta: Future[Validated[EtcFileMetadataStore]] = {
-		val utcFut = fetchFromTsv(Types.stations, getSiteUtc)
+		val utcFut = fetchFromTsv(TableType.Stations, getSiteUtc)
 
 		val fileMetaFut = utcFut.flatMap{utcInfo =>
 			val idLookup = utcInfo.map(_.map{
 				case (tcId, id, _) => tcId -> id
 			}.toMap)
-			fetchFromTsv[(EtcFileMetaKey, EtcFileMeta)](Types.files, getSingleFileMeta(idLookup))
+			fetchFromTsv[(EtcFileMetaKey, EtcFileMeta)](TableType.Files, getSingleFileMeta(idLookup))
 		}
 
 		for(utcV <- utcFut; fileMetaV <- fileMetaFut) yield
@@ -130,25 +130,25 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 			deplDictVal <- stationsVal.map(getDeploymentsDict).liftFuture
 		yield Validated.liftFuture:
 			for(modelDict <- modelDictVal; compDict <- compDictVal; deplDict <- deplDictVal.flatten) yield
-				fetchFromTsv(Types.sensors, getSensor(modelDict, compDict, deplDict))
+				fetchFromTsv(TableType.Sensors, getSensor(modelDict, compDict, deplDict))
 		futfutValVal.flatten.map(_.flatten)
 
 
 	private def getCompaniesDict: Future[Validated[Map[Int, EtcCompany]]] =
-		fetchFromTsv(Types.companies, getCompany(vocab)).map(_.map(_.toMap))
+		fetchFromTsv(TableType.Companies, getCompany(vocab)).map(_.map(_.toMap))
 
 	private def getSensorModelDict: Future[Validated[Map[String, SensorModel]]] =
-		fetchFromTsv(Types.sensorModels, getSensorModel).map(_.map(_.toMap))
+		fetchFromTsv(TableType.SensorModels, getSensorModel).map(_.map(_.toMap))
 
 	private def getDeploymentsDict(stations: Seq[EtcStation]): Future[Validated[Map[String, Seq[InstrumentDeployment[E]]]]] = {
 		val stationLookup = stations.map(s => s.tcId -> s).toMap
 
-		fetchFromTsv(Types.meteosens, getSensorDeployment(stationLookup)).map(_.map(mergeInstrDeployments))
+		fetchFromTsv(TableType.Meteosens, getSensorDeployment(stationLookup)).map(_.map(mergeInstrDeployments))
 	}
 
-	private def fetchAndParseTsv(tableType: String): Future[Seq[Lookup]] = fetchTsv(tableType)
+	private def fetchAndParseTsv(tableType: TableType): Future[Seq[Lookup]] = fetchTsv(tableType)
 
-	private def fetchFromTsv[T](tableType: String, extractor: Lookup ?=> Validated[T]): Future[Validated[Seq[T]]] =
+	private def fetchFromTsv[T](tableType: TableType, extractor: Lookup ?=> Validated[T]): Future[Validated[Seq[T]]] =
 		fetchAndParseTsv(tableType).map(lookups => Validated.sequence(lookups.map(extractor(using _))))
 
 }
@@ -156,18 +156,25 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 object EtcMetaSource{
 
 	type Lookup = Map[String, String]
+	type TsvFetcher = TableType => Future[Seq[Lookup]]
 
-	def apply(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer): EtcMetaSource =
+	def apply(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, mat: Materializer): EtcMetaSource = {
 		import system.dispatcher
 		val baseEtcApiUrl = Uri(conf.metaService.toString)
-		new EtcMetaSource(conf, vocab, tableType =>
+
+		val fetcher: TsvFetcher = tableType => {
 			Http()
-				.singleRequest(HttpRequest(
-					uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType))
-				))
-				.flatMap(_.entity.toStrict(3.seconds))
-				.map(ent => parseTsv(ent.data))
-		)
+			.singleRequest(HttpRequest(
+				uri = baseEtcApiUrl.withQuery(Uri.Query("type" -> tableType.urlParam))
+			))
+			.flatMap(_.entity.toStrict(3.seconds))
+			.map(ent => parseTsv(ent.data))
+		}
+
+		new EtcMetaSource(conf, vocab, fetcher)
+	}
+
+
 	type E = ETC.type
 	private type EtcInstrument = TcInstrument[E]
 	private type EtcPerson = TcPerson[E]
@@ -180,17 +187,17 @@ object EtcMetaSource{
 
 	def makeId(id: String): TcId[E] = EtcConf.makeId(id)
 
-	private object Types{
-		val roles = "teamrole"
-		val people = "team"
-		val stations = "station"
-		val companies = "companies"
-		val instruments = "logger"
-		val sensorModels = "models2"
-		val sensors = "sensors"
-		val meteosens = "meteosens2"
-		val files = "file"
-		val funding = "funding"
+	enum TableType(val urlParam: String) {
+		case Roles extends TableType("teamrole")
+		case People extends TableType("team")
+		case Stations extends TableType("station")
+		case Companies extends TableType("companies")
+		case Instruments extends TableType("logger")
+		case SensorModels extends TableType("models2")
+		case Sensors extends TableType("sensors")
+		case Meteosens extends TableType("meteosens2")
+		case Files extends TableType("file")
+		case Funding extends TableType("funding")
 	}
 
 	private object Vars{

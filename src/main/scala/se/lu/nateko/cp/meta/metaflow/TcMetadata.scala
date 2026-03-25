@@ -22,6 +22,7 @@ trait TcConf[+T <: TC]{
 	def stationPrefix: String
 	def tcPrefix: String
 	def stationClass(meta: CpmetaVocab): IRI
+	def networkClass(meta: CpmetaVocab): IRI
 	def tcIdPredicate(meta: CpmetaVocab): IRI
 }
 
@@ -79,6 +80,10 @@ object Entity{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
+	given [T <: TC]: CpIdSwapper[TcNetwork[T]] with{
+		def withCpId(s: TcNetwork[T], id: UriId) = s.copy(cpId = id)
+	}
+
 	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
 		//noop, because instrument cpIds are expected to be stable
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
@@ -101,7 +106,8 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcNetwork[+T <: TC](cpId: UriId, core: Network)
+case class TcNetwork[+T <: TC](cpId: UriId, core: Network) extends TcEntity[T] {
+}
 
 case class TcStation[+T <: TC](
 	cpId: UriId,
@@ -164,7 +170,7 @@ case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option
 
 class TcState[+T <: TC: TcConf](
 	val stations: Seq[TcStation[T]],
-	val networks: Seq[Network],
+	val networks: Seq[TcNetwork[T]],
 	val roles: Seq[Membership[T]],
 	val instruments: Seq[TcInstrument[T]]
 ) {

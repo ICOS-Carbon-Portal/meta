@@ -86,6 +86,16 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			getStation(station).map(Some.apply)
 		else Validated.ok(None)
 
+	def getNetwork(iri: IRI): DocConn ?=> Validated[Network] = {
+		for {
+			id <- getSingleString(iri, metaVocab.hasStationId)
+			label   <- getOptionalString(iri, RDFS.LABEL)
+			description   <- getOptionalString(iri, RDFS.COMMENT)
+			website <- getOptionalUri(iri, RDFS.SEEALSO).map(_.map(_.toJava))
+		}
+		yield Network(iri.toJava, label, description, website)
+	}
+
 	def getStation(stat: IRI): DocConn ?=> Validated[Station] =
 		for
 			org <- getOrganization(stat)

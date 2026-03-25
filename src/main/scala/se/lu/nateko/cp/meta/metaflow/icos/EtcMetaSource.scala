@@ -93,7 +93,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	def fetchNetworks(): Future[Validated[Seq[Network]]] =
+	def fetchNetworks(): Future[Validated[Seq[TcNetwork[ETC.type]]]] =
 		fetchFromTsv(TableType.Networks, getNetwork(vocab))
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
@@ -447,13 +447,16 @@ object EtcMetaSource{
 	}
 
 	// Public for testing
-	def getNetwork(vocab: CpVocab)(using Lookup): Validated[Network] =
+	def getNetwork(vocab: CpVocab)(using Lookup): Validated[TcNetwork[ETC.type]] =
 		for
 			id      <- lookUp(Var.NetworkId).require("network must have an ID")
 			label   <- lookUp(Var.NetworkName).optional
 			descr   <- lookUp(Var.NetworkDescription).optional
 			website <- lookUp(Var.NetworkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
-		yield Network(vocab.getNetwork(UriId(id)).toJava, label, descr, website)
+		yield TcNetwork(
+				cpId = UriId(id),
+				core = Network(dummyUri, label, descr, website)
+			)
 
 	// Public for testing
 	def getStation(

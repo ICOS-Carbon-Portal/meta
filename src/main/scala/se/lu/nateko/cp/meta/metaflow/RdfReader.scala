@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder, Network}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
-import se.lu.nateko.cp.meta.utils.rdf4j.{toRdf, toJava}
+import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -140,19 +140,20 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		)
 
 
-	def getNetworks(using MetaConn): Validated[Seq[Network]] =
-		Validated.sequence(getDirectClassMembers(metaVocab.networkClass).toSeq.map(iri =>
-			for {
-				label   <- getOptionalString(iri, RDFS.LABEL)
-				description   <- getOptionalString(iri, RDFS.COMMENT)
-				website <- getOptionalUri(iri, RDFS.SEEALSO).map(_.map(_.toJava))
-			}
-			yield Network(iri.toJava, label, description, website)
-		))
+	def getNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] =
+		getEntities[T, TcNetwork[T]](conf.networkClass(metaVocab))(getTcNetwork)
 
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
 
+	private def getTcNetwork[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcNetwork[T]] = {
+		for
+			coreNetwork <- metaReader.getNetwork(uri)
+		yield TcNetwork(
+			cpId = UriId(uri),
+			core = coreNetwork,
+		)
+	}
 
 	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcStation[T]] =
 		for

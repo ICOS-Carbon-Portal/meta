@@ -15,6 +15,7 @@ given AtcConf: TcConf[ATC.type] with
 	val tcPrefix = "ATC"
 
 	def stationClass(meta: CpmetaVocab) = meta.atmoStationClass
+	def networkClass(meta: CpmetaVocab) = None
 
 	def tcIdPredicate(meta: CpmetaVocab) = meta.hasAtcId
 
@@ -25,6 +26,7 @@ given EtcConf: TcConf[ETC.type] with
 	val tcPrefix = "ETC"
 
 	def stationClass(meta: CpmetaVocab) = meta.ecoStationClass
+	def networkClass(meta: CpmetaVocab) = Some(meta.ecoNetworkClass)
 
 	def tcIdPredicate(meta: CpmetaVocab) = meta.hasEtcId
 
@@ -35,5 +37,6 @@ given OtcConf: TcConf[OTC.type] with
 	val tcPrefix = "OTC"
 
 	def stationClass(meta: CpmetaVocab) = meta.oceStationClass
+	def networkClass(meta: CpmetaVocab) = None
 
 	def tcIdPredicate(meta: CpmetaVocab) = meta.hasOtcId

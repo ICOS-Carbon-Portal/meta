@@ -332,7 +332,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 	def getStatements[T <: TC](rdfMaker: RdfMaker, state: TcState[T]): Seq[Statement] =
 		given TcConf[T] = state.tcConf
-		state.networks.flatMap(rdfMaker.getNetworkStatements) ++
+		state.networks.flatMap(rdfMaker.getStatements) ++
 		state.stations.flatMap(rdfMaker.getStatements) ++
 		state.roles.flatMap(rdfMaker.getStatements) ++
 		state.roles.map(_.role.holder).flatMap(rdfMaker.getStatements) ++

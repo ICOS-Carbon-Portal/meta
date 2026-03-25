@@ -140,8 +140,13 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		)
 
 
-	def getNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] =
-		getEntities[T, TcNetwork[T]](conf.networkClass(metaVocab))(getTcNetwork)
+	def getNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] = {
+		conf.networkClass(metaVocab) match {
+			case Some(networkClass) => getEntities[T, TcNetwork[T]](networkClass)(getTcNetwork)
+			case None => Validated(Nil)
+		}
+	}
+
 
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)

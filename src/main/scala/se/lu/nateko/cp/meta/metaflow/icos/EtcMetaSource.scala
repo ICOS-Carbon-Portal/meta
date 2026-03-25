@@ -455,7 +455,7 @@ object EtcMetaSource{
 			website <- lookUp(Var.NetworkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
 		yield TcNetwork(
 				cpId = UriId(id),
-				core = Network(dummyUri, label, descr, website)
+				core = Network(UriResource(dummyUri, label, descr.toSeq), website)
 			)
 
 	// Public for testing

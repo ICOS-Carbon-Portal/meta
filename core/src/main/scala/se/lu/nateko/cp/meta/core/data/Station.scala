@@ -4,9 +4,7 @@ import java.net.URI
 import java.time.LocalDate
 
 final case class Network(
-	uri: URI,
-	label: Option[String] = None,
-	description: Option[String] = None,
+	uri: UriResource,
 	website: Option[URI] = None
 )
 

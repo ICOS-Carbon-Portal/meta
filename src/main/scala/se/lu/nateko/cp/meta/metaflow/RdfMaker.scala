@@ -102,6 +102,14 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
 				}.toList
 
+			case network: TcNetwork[T] =>
+				implicitly[TcConf[T]].networkClass(meta)match {
+					case Some(networkClass) =>
+						(uri, RDF.TYPE, networkClass) +:
+						uriResourceTriples(uri, network.core.uri)
+					case None => Nil
+				}
+
 			case s: TcStation[T] =>
 				val stationClass = implicitly[TcConf[T]].stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
@@ -175,15 +183,6 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		(triples ++ tcIdTriple).map(factory.tripleToStatement)
 	}
 
-	def getNetworkStatements(network: Network): Seq[Statement] =
-		val iri = network.uri.toRdf
-		val triples: Seq[(IRI, IRI, Value)] =
-			(iri, RDF.TYPE, meta.networkClass) +:
-			network.label.map(label => (iri, RDFS.LABEL, vocab.lit(label))) ++:
-			network.description.map(description => (iri, RDFS.COMMENT, vocab.lit(description))) ++:
-			network.website.map(url => (iri, RDFS.SEEALSO, url.toRdf)) ++:
-			Nil
-		triples.map(factory.tripleToStatement)
 
 	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
 

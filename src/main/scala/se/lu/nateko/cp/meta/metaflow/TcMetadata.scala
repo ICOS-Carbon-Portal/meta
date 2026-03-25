@@ -22,7 +22,7 @@ trait TcConf[+T <: TC]{
 	def stationPrefix: String
 	def tcPrefix: String
 	def stationClass(meta: CpmetaVocab): IRI
-	def networkClass(meta: CpmetaVocab): IRI
+	def networkClass(meta: CpmetaVocab): Option[IRI]
 	def tcIdPredicate(meta: CpmetaVocab): IRI
 }
 
@@ -106,7 +106,8 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcNetwork[+T <: TC](cpId: UriId, core: Network) extends TcEntity[T] {
+case class TcNetwork[+T <: TC](cpId: UriId, core: Network) extends Entity[T] {
+	def tcIdOpt = None
 }
 
 case class TcStation[+T <: TC](

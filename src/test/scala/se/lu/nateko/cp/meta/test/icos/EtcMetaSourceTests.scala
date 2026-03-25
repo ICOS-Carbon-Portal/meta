@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import EtcMetaSource.mergeInstrDeployments
 import EtcMetaSource.getStation
+import EtcMetaSource.getNetwork
 
 import java.time.Instant
 import se.lu.nateko.cp.meta.metaflow.TcFunding
@@ -17,6 +18,13 @@ import se.lu.nateko.cp.meta.metaflow.icos.ETC
 import se.lu.nateko.cp.meta.utils.Validated
 
 class EtcMetaSourceTests extends AnyFunSpec{
+	import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+	import se.lu.nateko.cp.meta.services.CpVocab
+	import eu.icoscp.envri.Envri
+	import se.lu.nateko.cp.meta.test.TestConfig.envriConfs
+	given Envri = Envri.ICOS
+	private val vocab = new CpVocab(SimpleValueFactory.getInstance())
+
 
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
 		InstrumentDeployment[ETC.type](
@@ -120,7 +128,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			))
 	}
 
-	describe("fetchStations") {
+	describe("getStation") {
 		it("parses network property") {
 			// Minimal set of data for a station
 			val lookups = Map(
@@ -143,9 +151,23 @@ class EtcMetaSourceTests extends AnyFunSpec{
 		}
 	}
 
-	describe("fetchNetworks") {
-		it("ingests networks") {
-			???
+	describe("getNetwork") {
+		it("parses network") {
+			val lookups = Map(
+				"ID" -> "AMF",
+				"NETWORK" -> "AmeriFlux",
+				"NETWORK_DESCRIPTION" -> "North, Central and South America Network.",
+				"NETWORK_URL" -> "https://ameriflux.lbl.gov"
+			)
+
+			val result = getNetwork(vocab)(using lookups)
+			assert(result.errors.isEmpty)
+			assert(result.result.get.uri.toString.endsWith("/networks/AMF"))
+		}
+
+		it("fails without ID") {
+			val result = getNetwork(vocab)(using Map.empty)
+			assert(result.result.isEmpty)
 		}
 	}
 }

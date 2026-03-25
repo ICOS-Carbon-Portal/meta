@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.{CpLens, DocConn, DocLens, MetaConn, MetaLens}
 import se.lu.nateko.cp.meta.api.UriId
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Funder, Network}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.*
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
-import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+import se.lu.nateko.cp.meta.utils.rdf4j.{toRdf, toJava}
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -139,6 +139,9 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			stop = stop
 		)
 
+
+	def getNetworks(using MetaConn): Validated[Seq[Network]] =
+		Validated.ok(getDirectClassMembers(metaVocab.networkClass).map(iri => Network(iri.toJava)).toSeq)
 
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)

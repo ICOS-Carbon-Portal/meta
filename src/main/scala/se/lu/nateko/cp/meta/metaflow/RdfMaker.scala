@@ -17,7 +17,8 @@ import se.lu.nateko.cp.meta.core.data.{
 	SitesStationSpecifics,
 	NoStationSpecifics,
 	Position,
-	Organization
+	Organization,
+	Network
 }
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -173,6 +174,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		val tcIdTriple = e.tcIdOpt.map{tcId => (uri, tcIdPredicate, vocab.lit(tcId.id))}
 		(triples ++ tcIdTriple).map(factory.tripleToStatement)
 	}
+
+	def getNetworkStatements(network: Network): Seq[Statement] =
+		Seq(factory.tripleToStatement((network.uri.toRdf, RDF.TYPE, meta.networkClass)))
 
 	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
 

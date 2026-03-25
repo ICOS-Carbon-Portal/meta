@@ -26,7 +26,7 @@ class AtcMetaSource(conf: MetaUploadConf)(using ActorSystem) extends FileDropMet
 			instruments <- parseInstruments(getTableFile(instrumentsTbl), orgs);
 			membs <- parseMemberships(getTableFile("combineContacts"), getTableFile("combineRoles"), stations)
 		) yield
-			new TcState(stations, membs, instruments)
+			new TcState(stations, Nil, membs, instruments)
 
 
 object AtcMetaSource{

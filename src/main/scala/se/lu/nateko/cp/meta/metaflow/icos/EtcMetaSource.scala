@@ -93,9 +93,8 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
 
-	def fetchNetworks(): Future[Validated[Seq[Network]]] = {
-		???
-	}
+	def fetchNetworks(): Future[Validated[Seq[Network]]] =
+		fetchFromTsv(TableType.Networks, getNetwork(vocab))
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
@@ -197,6 +196,7 @@ object EtcMetaSource{
 		val meteosens = "meteosens2"
 		val files = "file"
 		val funding = "funding"
+		case Networks extends TableType("networks")
 	}
 
 	private object Vars{
@@ -255,6 +255,7 @@ object EtcMetaSource{
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
 		val network = "NETWORK"
+		val NetworkId = "ID"
 	}
 
 	private val rolesLookup: Map[String, Option[Role]] = Map(
@@ -442,6 +443,12 @@ object EtcMetaSource{
 
 		lines.map(lineStr => colNames.zip(parseCells(lineStr)).toMap).toSeq
 	}
+
+	// Public for testing
+	def getNetwork(vocab: CpVocab)(using Lookup): Validated[Network] =
+		lookUp(Var.NetworkId).require("network must have an ID").map(id =>
+			Network(vocab.getNetwork(UriId(id)).toJava)
+		)
 
 	// Public for testing
 	def getStation(

@@ -88,8 +88,16 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
+		val networksDiff: Seq[RdfUpdate] = {
+			val fromUris = current.networks.map(_.uri).toSet
+			newSnapshot.networks
+				.filterNot(n => fromUris.contains(n.uri))
+				.flatMap(rdfMaker.getNetworkStatements)
+				.map(RdfUpdate(_, true))
+		}
+
 		rdfReader.keepMeaningful(
-			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
+			networksDiff ++ orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
 		)
 	}
 

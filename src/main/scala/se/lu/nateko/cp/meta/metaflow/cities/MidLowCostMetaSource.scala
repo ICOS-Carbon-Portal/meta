@@ -19,7 +19,7 @@ class MidLowCostMetaSource[T <: CitiesTC : TcConf](
 
 	override def readState: Validated[State] =
 		for sites <- parseFromCsv(getTableFile(StationsTableName))(parseStation(countryCode))
-		yield TcState(sites, Nil, Nil)
+		yield TcState(sites, Nil, Nil, Nil)
 
 
 object MidLowCostMetaSource:

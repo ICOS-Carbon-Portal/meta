@@ -167,6 +167,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 		it("fails without ID") {
 			val result = getNetwork(vocab)(using Map.empty)
+			assert(result.errors == Seq("network must have an ID"))
 			assert(result.result.isEmpty)
 		}
 	}

@@ -141,7 +141,14 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 
 
 	def getNetworks(using MetaConn): Validated[Seq[Network]] =
-		Validated.ok(getDirectClassMembers(metaVocab.networkClass).map(iri => Network(iri.toJava)).toSeq)
+		Validated.sequence(getDirectClassMembers(metaVocab.networkClass).toSeq.map(iri =>
+			for {
+				label   <- getOptionalString(iri, RDFS.LABEL)
+				description   <- getOptionalString(iri, RDFS.COMMENT)
+				website <- getOptionalUri(iri, RDFS.SEEALSO).map(_.map(_.toJava))
+			}
+			yield Network(iri.toJava, label, description, website)
+		))
 
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)

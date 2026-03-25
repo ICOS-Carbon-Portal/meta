@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.core.data
 
 import scala.language.unsafeNulls
 
+import java.net.URI
 import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.crypto.JsonSupport.given
 import se.lu.nateko.cp.meta.core.toTypedJson
@@ -130,7 +131,7 @@ object JsonSupport extends CommonJsonSupport:
 	given RootJsonFormat[Funder] = jsonFormat2(Funder.apply)
 	given RootJsonFormat[Funding] = jsonFormat7(Funding.apply)
 	given RootJsonFormat[Station] = jsonFormat10(Station.apply)
-	given RootJsonFormat[Network] = jsonFormat1(Network.apply)
+	given RootJsonFormat[Network] = jsonFormat4(Network.apply)
 
 	given RootJsonFormat[Agent] with{
 

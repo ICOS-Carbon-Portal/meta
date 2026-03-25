@@ -256,7 +256,9 @@ object EtcMetaSource{
 		val fundingComment = "FUNDING_COMMENT"
 		val network = "NETWORK"
 		val NetworkId = "ID"
+		val NetworkDescription = "NETWORK_DESCRIPTION"
 	}
+		case NetworkUrl extends Var("NETWORK_URL")
 
 	private val rolesLookup: Map[String, Option[Role]] = Map(
 		"PI"         -> Some(PI),
@@ -446,9 +448,12 @@ object EtcMetaSource{
 
 	// Public for testing
 	def getNetwork(vocab: CpVocab)(using Lookup): Validated[Network] =
-		lookUp(Var.NetworkId).require("network must have an ID").map(id =>
-			Network(vocab.getNetwork(UriId(id)).toJava)
-		)
+		for
+			id      <- lookUp(Var.NetworkId).require("network must have an ID")
+			label   <- lookUp(Var.NetworkName).optional
+			descr   <- lookUp(Var.NetworkDescription).optional
+			website <- lookUp(Var.NetworkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
+		yield Network(vocab.getNetwork(UriId(id)).toJava, label, descr, website)
 
 	// Public for testing
 	def getStation(

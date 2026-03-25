@@ -176,7 +176,14 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 	}
 
 	def getNetworkStatements(network: Network): Seq[Statement] =
-		Seq(factory.tripleToStatement((network.uri.toRdf, RDF.TYPE, meta.networkClass)))
+		val iri = network.uri.toRdf
+		val triples: Seq[(IRI, IRI, Value)] =
+			(iri, RDF.TYPE, meta.networkClass) +:
+			network.label.map(label => (iri, RDFS.LABEL, vocab.lit(label))) ++:
+			network.description.map(description => (iri, RDFS.COMMENT, vocab.lit(description))) ++:
+			network.website.map(url => (iri, RDFS.SEEALSO, url.toRdf)) ++:
+			Nil
+		triples.map(factory.tripleToStatement)
 
 	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
 

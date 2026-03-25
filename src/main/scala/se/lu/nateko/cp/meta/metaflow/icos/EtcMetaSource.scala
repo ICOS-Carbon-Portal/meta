@@ -70,12 +70,14 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 		val futfutValVal = for
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
+			networksVal <- fetchNetworks();
 			sensorsVal <- fetchSensors(stationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
 				stations <- stationsVal;
+				networks <- networksVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield
@@ -85,11 +87,15 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
+					new TcState(stations, networks, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
+
+	def fetchNetworks(): Future[Validated[Seq[Network]]] = {
+		???
+	}
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(

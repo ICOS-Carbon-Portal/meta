@@ -143,4 +143,9 @@ class EtcMetaSourceTests extends AnyFunSpec{
 		}
 	}
 
+	describe("fetchNetworks") {
+		it("ingests networks") {
+			???
+		}
+	}
 }

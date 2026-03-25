@@ -162,9 +162,15 @@ class AssumedRole[+T <: TC](
 
 case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
+class TcState[+T <: TC: TcConf](
+	val stations: Seq[TcStation[T]],
+	val networks: Seq[Network],
+	val roles: Seq[Membership[T]],
+	val instruments: Seq[TcInstrument[T]]
+) {
 	def tcConf = implicitly[TcConf[T]]
 }
+
 
 trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]

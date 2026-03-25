@@ -66,8 +66,9 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		stations <- getStations[T]
 		memberships <- getMemberships
 		instruments <- getInstruments
+		networks <- getNetworks
 	yield
-		TcState(stations, memberships, instruments)
+		TcState(stations, networks, memberships, instruments)
 
 	def getMemberships[T <: TC : TcConf](using MetaConn, DocConn): Validated[Seq[Membership[T]]] = {
 		import CardinalityExpectation.AtMostOne

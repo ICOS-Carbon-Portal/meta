@@ -248,6 +248,7 @@ object EtcMetaSource{
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
+		val stationNetworks = "NETWORK"
 		val networkName = "NETWORK"
 		val networkId = "ID"
 		val networkDescription = "NETWORK_DESCRIPTION"
@@ -475,7 +476,7 @@ object EtcMetaSource{
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
 		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
-		networkNames <- lookUp(Vars.networkName).optional
+		networkNames <- lookUp(Vars.stationNetworks).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name

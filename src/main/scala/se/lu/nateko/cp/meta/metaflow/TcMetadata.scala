@@ -106,9 +106,7 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcNetwork[+T <: TC](cpId: UriId, core: Network) extends Entity[T] {
-	def tcIdOpt = None
-}
+case class TcNetwork[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Network) extends Entity[T]
 
 case class TcStation[+T <: TC](
 	cpId: UriId,

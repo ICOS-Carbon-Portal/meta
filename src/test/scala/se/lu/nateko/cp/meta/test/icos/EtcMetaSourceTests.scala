@@ -154,6 +154,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			val result = getNetwork(using lookups)
 			assert(result.errors.isEmpty)
 			assert(result.result.get.cpId.toString == "AMF")
+			assert(result.result.get.tcIdOpt.map(_.id) == Some("AMF"))
 		}
 
 		it("fails without ID") {

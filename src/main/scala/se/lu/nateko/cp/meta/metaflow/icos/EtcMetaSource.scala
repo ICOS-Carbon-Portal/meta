@@ -450,7 +450,7 @@ object EtcMetaSource{
 			website <- lookUp(Vars.networkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
 		yield TcNetwork(
 				cpId = UriId(id),
-				// Dummy IRI, since it will be populated by RdfReader based on cpId
+				tcIdOpt = Some(makeId(id)),
 				core = Network(UriResource(dummyUri, label, descr.toSeq), website)
 			)
 

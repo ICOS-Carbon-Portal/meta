@@ -177,6 +177,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			coreNetwork <- metaReader.getNetwork(uri)
 		yield TcNetwork(
 			cpId = UriId(uri),
+			tcIdOpt = tcIdOpt,
 			core = coreNetwork,
 		)
 	}

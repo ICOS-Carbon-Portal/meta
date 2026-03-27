@@ -180,6 +180,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		val network = TcNetwork[ETC.type](
 			cpId = UriId("ICOS"),
+			tcIdOpt = Some(EtcConf.makeId("ICOS")),
 			core = Network(
 				self = UriResource(new URI("http://dummy"), Some("ICOS Network"), Seq("A description")),
 				website = Some(new URI("https://www.icos-cp.eu"))
@@ -208,7 +209,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 			val Seq(readNetwork) = readState.networks
 			assert(readNetwork.cpId === UriId("ICOS"))
-			assert(readNetwork.tcIdOpt == None)
+			assert(readNetwork.tcIdOpt === Some(EtcConf.makeId("ICOS")))
 			assert(readNetwork.core.self.label === Some("ICOS Network"))
 			assert(readNetwork.core.self.comments === Seq("A description"))
 			assert(readNetwork.core.website === Some(new URI("https://www.icos-cp.eu")))

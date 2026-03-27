@@ -125,6 +125,7 @@ lazy val meta = (project in file("."))
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
+			"io.sentry"              % "sentry"                             % "8.37.1",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,

@@ -169,6 +169,8 @@ case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 
 case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
 
+case class SentryConfig(dsn: String)
+
 case class CpmetaConfig(
 	port: Int,
 	httpBindInterface: String,
@@ -183,7 +185,8 @@ case class CpmetaConfig(
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig,
 	citations: CitationConfig,
-	statsClient: StatsClientConfig
+	statsClient: StatsClientConfig,
+	sentry: Option[SentryConfig]
 )
 
 object ConfigLoader extends CpmetaJsonProtocol:
@@ -238,8 +241,9 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
+	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

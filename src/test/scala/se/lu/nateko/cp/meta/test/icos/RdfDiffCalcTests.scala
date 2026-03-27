@@ -175,10 +175,10 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 	}
 
-	describe("ETC Networks") {
+	describe("ETC Network") {
 		val testState: TestState = init(Nil, _ => Nil)
 
-		val network = TcNetwork[ETC.type](
+		val sourceNetwork = TcNetwork[ETC.type](
 			cpId = UriId("ICOS"),
 			tcIdOpt = Some(EtcConf.makeId("ICOS")),
 			core = Network(
@@ -189,12 +189,12 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 
 		val tcState = new TcState[ETC.type](
 			stations = Nil,
-			networks = Seq(network),
+			networks = Seq(sourceNetwork),
 			roles = Nil,
 			instruments = Nil
 		)
 
-		it("are ingested") {
+		it("is ingested") {
 			val diff = testState.calc.calcDiff(tcState)
 			assert(diff.errors.isEmpty)
 			val updates = diff.result.get.toIndexedSeq
@@ -214,6 +214,29 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(readNetwork.core.self.label === Some("ICOS Network"))
 			assert(readNetwork.core.self.comments === Seq("A description"))
 			assert(readNetwork.core.website === Some(new URI("https://www.icos-cp.eu")))
+		}
+
+		it("has only one rdf:comment after description change") {
+			val updatedNetwork = sourceNetwork.copy(
+				core = sourceNetwork.core.copy(
+					self = sourceNetwork.core.self.copy(comments = Seq("A new description"))
+				)
+			)
+			val updatedTcState = new TcState[ETC.type](
+				stations = Nil,
+				networks = Seq(updatedNetwork),
+				roles = Nil,
+				instruments = Nil
+			)
+
+			val diff = testState.calc.calcDiff(updatedTcState)
+			assert(diff.errors.isEmpty)
+			testState.tcServer.applyAll(diff.result.get)()
+
+			val state = testState.reader.getCurrentState[ETC.type]
+			assert(state.errors.isEmpty)
+			val Seq(readNetwork) = state.result.get.networks
+			assert(readNetwork.core.self.comments === Seq("A new description"))
 		}
 	}
 

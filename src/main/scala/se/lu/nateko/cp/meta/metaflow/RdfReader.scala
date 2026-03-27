@@ -139,8 +139,10 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			stop = stop
 		)
 
+
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
+
 
 	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcStation[T]] =
 		for

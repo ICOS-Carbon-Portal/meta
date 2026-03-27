@@ -142,7 +142,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(triples == Seq.empty)
 		}
 
-		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/TestNetwork")
+		val networkIri = factory.createIRI("http://test.icos.eu/resources/networks/ETC/TestNetwork")
 
 		it("produces hasAssociatedNetwork triples, when network exists") {
 			import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -210,6 +210,7 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			val Seq(readNetwork) = readState.networks
 			assert(readNetwork.cpId === UriId("ICOS"))
 			assert(readNetwork.tcIdOpt === Some(EtcConf.makeId("ICOS")))
+			assert(readNetwork.core.self.uri.toString() === "http://test.icos.eu/resources/networks/ETC/ICOS")
 			assert(readNetwork.core.self.label === Some("ICOS Network"))
 			assert(readNetwork.core.self.comments === Seq("A description"))
 			assert(readNetwork.core.website === Some(new URI("https://www.icos-cp.eu")))

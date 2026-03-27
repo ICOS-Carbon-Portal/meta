@@ -105,7 +105,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				summon[TcConf[T]].networkClass(meta) match {
 					case Some(networkClass) =>
 						(uri, RDF.TYPE, networkClass) +:
-						uriResourceTriples(uri, network.core.self)
+						uriResourceTriples(uri, network.core.self) ++:
+						network.core.website.map(w => (uri, RDFS.SEEALSO, w.toRdf)).toSeq
 					case None => Nil
 				}
 

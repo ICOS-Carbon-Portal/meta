@@ -175,6 +175,49 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 	}
 
+	describe("ETC Networks") {
+		val testState: TestState = init(Nil, _ => Nil)
+
+		val networkCpId = UriId("ICOS")
+		val networkTcId = EtcConf.makeId(networkCpId.urlSafeString)
+		val network = TcNetwork[ETC.type](
+			cpId = networkCpId,
+			core = Network(
+				self = UriResource(new URI("http://dummy"), Some("ICOS Network"), Seq("A description")),
+				website = Some(new URI("https://www.icos-cp.eu"))
+			)
+		)
+
+		val tcState = new TcState[ETC.type](
+			stations = Nil,
+			networks = Seq(network),
+			roles = Nil,
+			instruments = Nil
+		)
+
+		it("are ingested") {
+			val diffV = testState.calc.calcDiff(tcState)
+			assert(diffV.errors.isEmpty)
+			val updates = diffV.result.get.toIndexedSeq
+			assert(updates.nonEmpty)
+			assert(updates.forall(_.isAssertion))
+
+			testState.tcServer.applyAll(updates)()
+
+			val stateV = testState.reader.getCurrentState[ETC.type]
+			assert(stateV.errors.isEmpty)
+			val readState = stateV.result.get
+			assert(readState.networks.size === 1)
+
+			val readNetwork = readState.networks.head
+			assert(readNetwork.cpId === networkCpId)
+			assert(readNetwork.tcIdOpt === Some(networkTcId))
+			assert(readNetwork.core.self.label === Some("ICOS Network"))
+			assert(readNetwork.core.self.comments === Seq("A description"))
+			assert(readNetwork.core.website === Some(new URI("https://www.icos-cp.eu")))
+		}
+	}
+
 	describe("PI change") {
 
 		Given("starting with a single station with single PI and no own CP statements")

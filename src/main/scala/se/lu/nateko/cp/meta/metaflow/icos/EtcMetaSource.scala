@@ -484,10 +484,6 @@ object EtcMetaSource{
 			orig.copy(core = coreFunding)
 		}
 
-		val stationNetworks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			UriId(name)
-		)
-
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
@@ -525,7 +521,9 @@ object EtcMetaSource{
 			),
 			responsibleOrg = None,
 			funding = fundings,
-			networks = stationNetworks
+			networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
+				UriId(name)
+			)
 		)
 	}
 

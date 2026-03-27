@@ -66,7 +66,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 		stations <- getStations[T]
 		memberships <- getMemberships
 		instruments <- getInstruments
-		networks <- getNetworks
+		networks <- getTcNetworks
 	yield
 		TcState(stations, networks, memberships, instruments)
 
@@ -139,26 +139,8 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			stop = stop
 		)
 
-
-	def getNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] = {
-		conf.networkClass(metaVocab) match {
-			case Some(networkClass) => getEntities[T, TcNetwork[T]](networkClass)(getTcNetwork)
-			case None => Validated(Nil)
-		}
-	}
-
-
 	def getStations[T <: TC](using conf: TcConf[T], mconn: MetaConn, dconn: DocConn): Validated[Seq[TcStation[T]]] =
 		getEntities[T, TcStation[T]](conf.stationClass(metaVocab))(getTcStation)
-
-	private def getTcNetwork[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcNetwork[T]] = {
-		for
-			coreNetwork <- metaReader.getNetwork(uri)
-		yield TcNetwork(
-			cpId = UriId(uri),
-			core = coreNetwork,
-		)
-	}
 
 	private def getTcStation[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcStation[T]] =
 		for
@@ -178,11 +160,24 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
 			funding = funding,
-			networks = coreStation.networks.map(network =>
-					TcNetwork[T](UriId(network.uri.uri), network)
-				)
+			networks = coreStation.networks.map(UriId(_))
 		)
 
+	def getTcNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] = {
+		conf.networkClass(metaVocab) match {
+			case Some(networkClass) => getEntities[T, TcNetwork[T]](networkClass)(getTcNetwork)
+			case None => Validated(Nil)
+		}
+	}
+
+	private def getTcNetwork[T <: TC : TcConf](tcIdOpt: Option[TcId[T]], uri: IRI)(using MetaConn, DocConn): Validated[TcNetwork[T]] = {
+		for
+			coreNetwork <- metaReader.getNetwork(uri)
+		yield TcNetwork(
+			cpId = UriId(uri),
+			core = coreNetwork,
+		)
+	}
 
 	private def getGenericOrg[T <: TC](tcId: Option[TcId[T]], uri: IRI)(using MetaConn): Validated[TcGenericOrg[T]] =
 		metaReader.getOrganization(uri).map: core =>

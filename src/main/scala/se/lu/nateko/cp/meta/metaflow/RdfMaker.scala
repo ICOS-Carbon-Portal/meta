@@ -17,8 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	SitesStationSpecifics,
 	NoStationSpecifics,
 	Position,
-	Organization,
-	Network
+	Organization
 }
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -103,10 +102,10 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				}.toList
 
 			case network: TcNetwork[T] =>
-				implicitly[TcConf[T]].networkClass(meta)match {
+				summon[TcConf[T]].networkClass(meta) match {
 					case Some(networkClass) =>
 						(uri, RDF.TYPE, networkClass) +:
-						uriResourceTriples(uri, network.core.uri)
+						uriResourceTriples(uri, network.core.self)
 					case None => Nil
 				}
 
@@ -131,8 +130,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
 				} ++:
-				s.networks.toSeq.map(network =>
-					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
+				s.networks.toSeq.map(networkUri =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(networkUri))
 				)
 
 			case go: TcGenericOrg[T] =>
@@ -183,7 +182,6 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		(triples ++ tcIdTriple).map(factory.tripleToStatement)
 	}
 
-
 	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
 
 		case p: TcPerson[T] =>
@@ -199,6 +197,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 		case depl: InstrumentDeployment[T] =>
 			vocab.getInstrDeployment(depl.cpId)
+
+		case network: TcNetwork[T] =>
+			vocab.getNetwork(network.cpId)
 	}
 
 	private def stationTriples(iri: IRI, s: StationSpecifics): Seq[Triple] =  s match{

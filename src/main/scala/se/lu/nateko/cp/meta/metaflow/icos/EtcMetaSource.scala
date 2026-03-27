@@ -455,6 +455,7 @@ object EtcMetaSource{
 			website <- lookUp(Vars.networkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
 		yield TcNetwork(
 				cpId = UriId(id),
+				// Dummy IRI, since it will be populated by RdfReader based on cpId
 				core = Network(UriResource(dummyUri, label, descr.toSeq), website)
 			)
 
@@ -488,8 +489,8 @@ object EtcMetaSource{
 			orig.copy(core = coreFunding)
 		}
 
-		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			TcNetwork[E](cpId = UriId(name), core = Network(UriResource(dummyUri, None, Nil), None))
+		val stationNetworks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
+			UriId(name)
 		)
 
 		TcStation[E](
@@ -525,11 +526,11 @@ object EtcMetaSource{
 					documentation = Nil//docs are not provided by TCs
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
-				networks = networks.map(_.core)
+				networks = Nil // Dummy
 			),
 			responsibleOrg = None,
 			funding = fundings,
-			networks = networks
+			networks = stationNetworks
 		)
 	}
 

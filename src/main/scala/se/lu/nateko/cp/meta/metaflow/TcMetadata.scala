@@ -116,7 +116,7 @@ case class TcStation[+T <: TC](
 	core: Station,
 	responsibleOrg: Option[TcPlainOrg[T]], //needed to avoid info loss with core.responsibleOrganization
 	funding: Seq[TcFunding[T]], // needed to avoid info loss with core.funding
-	networks: Seq[TcNetwork[T]]
+	networks: Seq[UriId]
 ) extends TcOrg[T] with TcEntity[T]{
 	def org = core.org
 }

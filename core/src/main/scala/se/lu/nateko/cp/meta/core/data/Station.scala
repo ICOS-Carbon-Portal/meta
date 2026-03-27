@@ -4,7 +4,7 @@ import java.net.URI
 import java.time.LocalDate
 
 final case class Network(
-	uri: UriResource,
+	self: UriResource,
 	website: Option[URI]
 )
 
@@ -18,7 +18,7 @@ case class Station(
 	specificInfo: StationSpecifics,
 	countryCode: Option[CountryCode],
 	funding: Option[Seq[Funding]],
-	networks: Seq[Network]
+	networks: Seq[URI]
 ){
 	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
 		case Nil => None

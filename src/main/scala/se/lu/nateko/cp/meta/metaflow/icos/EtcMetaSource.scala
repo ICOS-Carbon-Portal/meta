@@ -94,7 +94,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab, fetchTsv: String => Future[
 	end fetchFromEtc
 
 	def fetchNetworks(): Future[Validated[Seq[TcNetwork[ETC.type]]]] =
-		fetchFromTsv(TableType.Networks, getNetwork(vocab))
+		fetchFromTsv(Types.Networks, getNetwork(vocab))
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
@@ -196,7 +196,7 @@ object EtcMetaSource{
 		val meteosens = "meteosens2"
 		val files = "file"
 		val funding = "funding"
-		case Networks extends TableType("networks")
+		val Networks = "networks"
 	}
 
 	private object Vars{
@@ -254,11 +254,11 @@ object EtcMetaSource{
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
-		val network = "NETWORK"
-		val NetworkId = "ID"
-		val NetworkDescription = "NETWORK_DESCRIPTION"
+		val networkName = "NETWORK"
+		val networkId = "ID"
+		val networkDescription = "NETWORK_DESCRIPTION"
+		val networkUrl = "NETWORK_URL"
 	}
-		case NetworkUrl extends Var("NETWORK_URL")
 
 	private val rolesLookup: Map[String, Option[Role]] = Map(
 		"PI"         -> Some(PI),
@@ -449,10 +449,10 @@ object EtcMetaSource{
 	// Public for testing
 	def getNetwork(vocab: CpVocab)(using Lookup): Validated[TcNetwork[ETC.type]] =
 		for
-			id      <- lookUp(Var.NetworkId).require("network must have an ID")
-			label   <- lookUp(Var.NetworkName).optional
-			descr   <- lookUp(Var.NetworkDescription).optional
-			website <- lookUp(Var.NetworkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
+			id      <- lookUp(Vars.networkId).require("network must have an ID")
+			label   <- lookUp(Vars.networkName).optional
+			descr   <- lookUp(Vars.networkDescription).optional
+			website <- lookUp(Vars.networkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
 		yield TcNetwork(
 				cpId = UriId(id),
 				core = Network(UriResource(dummyUri, label, descr.toSeq), website)
@@ -480,7 +480,7 @@ object EtcMetaSource{
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
 		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
-		networkNames <- lookUp(Vars.network).optional
+		networkNames <- lookUp(Vars.networkName).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
@@ -489,7 +489,7 @@ object EtcMetaSource{
 		}
 
 		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
+			TcNetwork[E](cpId = UriId(name), core = Network(UriResource(dummyUri, None, Nil), None))
 		)
 
 		TcStation[E](

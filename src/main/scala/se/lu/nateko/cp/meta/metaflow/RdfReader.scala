@@ -179,7 +179,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
 			funding = funding,
 			networks = coreStation.networks.map(network =>
-					TcNetwork[T](UriId(network.uri), network)
+					TcNetwork[T](UriId(network.uri.uri), network)
 				)
 		)
 

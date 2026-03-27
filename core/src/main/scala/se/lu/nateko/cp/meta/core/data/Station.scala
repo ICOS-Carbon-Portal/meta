@@ -5,7 +5,7 @@ import java.time.LocalDate
 
 final case class Network(
 	uri: UriResource,
-	website: Option[URI] = None
+	website: Option[URI]
 )
 
 case class Station(

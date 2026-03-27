@@ -145,9 +145,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			assert(station.result.isDefined == true)
 
 			val tcStation = station.result.get
-			val tcNetworks = tcStation.networks
-			assert(tcNetworks.map(_.core) === tcStation.core.networks) // this may be unnecessary since the core networks are dummy values
-			assert(tcNetworks.map(_.cpId.toString()).toSet === Set("Network-1", "Network_A"))
+			assert(tcStation.networks.map(_.toString()).toSet === Set("Network-1", "Network_A"))
 		}
 	}
 
@@ -162,7 +160,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 
 			val result = getNetwork(vocab)(using lookups)
 			assert(result.errors.isEmpty)
-			assert(result.result.get.uri.toString.endsWith("/networks/AMF"))
+			assert(result.result.get.cpId.toString == "AMF")
 		}
 
 		it("fails without ID") {

@@ -26,7 +26,7 @@ given EtcConf: TcConf[ETC.type] with
 	val tcPrefix = "ETC"
 
 	def stationClass(meta: CpmetaVocab) = meta.ecoStationClass
-	def networkClass(meta: CpmetaVocab) = Some(meta.ecoNetworkClass)
+	def networkClass(meta: CpmetaVocab) = Some(meta.etcNetworkClass)
 
 	def tcIdPredicate(meta: CpmetaVocab) = meta.hasEtcId
 

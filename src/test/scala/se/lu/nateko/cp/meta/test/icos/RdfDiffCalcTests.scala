@@ -178,10 +178,8 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 	describe("ETC Networks") {
 		val testState: TestState = init(Nil, _ => Nil)
 
-		val networkCpId = UriId("ICOS")
-		val networkTcId = EtcConf.makeId(networkCpId.urlSafeString)
 		val network = TcNetwork[ETC.type](
-			cpId = networkCpId,
+			cpId = UriId("ICOS"),
 			core = Network(
 				self = UriResource(new URI("http://dummy"), Some("ICOS Network"), Seq("A description")),
 				website = Some(new URI("https://www.icos-cp.eu"))
@@ -196,22 +194,21 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		)
 
 		it("are ingested") {
-			val diffV = testState.calc.calcDiff(tcState)
-			assert(diffV.errors.isEmpty)
-			val updates = diffV.result.get.toIndexedSeq
+			val diff = testState.calc.calcDiff(tcState)
+			assert(diff.errors.isEmpty)
+			val updates = diff.result.get.toIndexedSeq
 			assert(updates.nonEmpty)
 			assert(updates.forall(_.isAssertion))
 
 			testState.tcServer.applyAll(updates)()
 
-			val stateV = testState.reader.getCurrentState[ETC.type]
-			assert(stateV.errors.isEmpty)
-			val readState = stateV.result.get
-			assert(readState.networks.size === 1)
+			val state = testState.reader.getCurrentState[ETC.type]
+			assert(state.errors.isEmpty)
+			val readState = state.result.get
 
-			val readNetwork = readState.networks.head
-			assert(readNetwork.cpId === networkCpId)
-			assert(readNetwork.tcIdOpt === Some(networkTcId))
+			val Seq(readNetwork) = readState.networks
+			assert(readNetwork.cpId === UriId("ICOS"))
+			assert(readNetwork.tcIdOpt == None)
 			assert(readNetwork.core.self.label === Some("ICOS Network"))
 			assert(readNetwork.core.self.comments === Seq("A description"))
 			assert(readNetwork.core.website === Some(new URI("https://www.icos-cp.eu")))

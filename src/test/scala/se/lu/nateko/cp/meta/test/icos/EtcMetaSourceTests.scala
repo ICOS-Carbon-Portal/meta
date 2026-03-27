@@ -18,13 +18,6 @@ import se.lu.nateko.cp.meta.metaflow.icos.ETC
 import se.lu.nateko.cp.meta.utils.Validated
 
 class EtcMetaSourceTests extends AnyFunSpec{
-	import org.eclipse.rdf4j.model.impl.SimpleValueFactory
-	import se.lu.nateko.cp.meta.services.CpVocab
-	import eu.icoscp.envri.Envri
-	import se.lu.nateko.cp.meta.test.TestConfig.envriConfs
-	given Envri = Envri.ICOS
-	private val vocab = new CpVocab(SimpleValueFactory.getInstance())
-
 
 	private def mkDepl(stId: Int, site: String, pos: Position, varName: String, start: String, stop: Option[String] = None, cpId: Option[String] = None) =
 		InstrumentDeployment[ETC.type](
@@ -158,13 +151,13 @@ class EtcMetaSourceTests extends AnyFunSpec{
 				"NETWORK_URL" -> "https://ameriflux.lbl.gov"
 			)
 
-			val result = getNetwork(vocab)(using lookups)
+			val result = getNetwork(using lookups)
 			assert(result.errors.isEmpty)
 			assert(result.result.get.cpId.toString == "AMF")
 		}
 
 		it("fails without ID") {
-			val result = getNetwork(vocab)(using Map.empty)
+			val result = getNetwork(using Map.empty)
 			assert(result.errors == Seq("network must have an ID"))
 			assert(result.result.isEmpty)
 		}

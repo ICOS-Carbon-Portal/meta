@@ -95,7 +95,7 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 	end fetchFromEtc
 
 	def fetchNetworks(): Future[Validated[Seq[TcNetwork[ETC.type]]]] =
-		fetchFromTsv(Types.Networks, getNetwork(vocab))
+		fetchFromTsv(Types.Networks, getNetwork)
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
@@ -442,7 +442,7 @@ object EtcMetaSource{
 	}
 
 	// Public for testing
-	def getNetwork(vocab: CpVocab)(using Lookup): Validated[TcNetwork[ETC.type]] =
+	def getNetwork(using Lookup): Validated[TcNetwork[ETC.type]] =
 		for
 			id      <- lookUp(Vars.networkId).require("network must have an ID")
 			label   <- lookUp(Vars.networkName).optional

@@ -22,6 +22,7 @@ trait TcConf[+T <: TC]{
 	def stationPrefix: String
 	def tcPrefix: String
 	def stationClass(meta: CpmetaVocab): IRI
+	def networkClass(meta: CpmetaVocab): Option[IRI]
 	def tcIdPredicate(meta: CpmetaVocab): IRI
 }
 
@@ -79,6 +80,10 @@ object Entity{
 		def withCpId(s: TcStation[T], id: UriId) = s.copy(cpId = id)
 	}
 
+	given [T <: TC]: CpIdSwapper[TcNetwork[T]] with{
+		def withCpId(s: TcNetwork[T], id: UriId) = s.copy(cpId = id)
+	}
+
 	given [T <: TC]: CpIdSwapper[TcInstrument[T]] with{
 		//noop, because instrument cpIds are expected to be stable
 		def withCpId(instr: TcInstrument[T], id: UriId) = instr
@@ -101,7 +106,7 @@ case class TcPerson[+T <: TC](
 
 sealed trait TcOrg[+T <: TC] extends Entity[T]{ def org: Organization }
 
-case class TcNetwork[+T <: TC](cpId: UriId, core: Network)
+case class TcNetwork[+T <: TC](cpId: UriId, tcIdOpt: Option[TcId[T]], core: Network) extends Entity[T]
 
 case class TcStation[+T <: TC](
 	cpId: UriId,
@@ -109,7 +114,7 @@ case class TcStation[+T <: TC](
 	core: Station,
 	responsibleOrg: Option[TcPlainOrg[T]], //needed to avoid info loss with core.responsibleOrganization
 	funding: Seq[TcFunding[T]], // needed to avoid info loss with core.funding
-	networks: Seq[TcNetwork[T]]
+	networks: Seq[UriId]
 ) extends TcOrg[T] with TcEntity[T]{
 	def org = core.org
 }
@@ -162,9 +167,15 @@ class AssumedRole[+T <: TC](
 
 case class Membership[+T <: TC](cpId: UriId, role: AssumedRole[T], start: Option[Instant], stop: Option[Instant])
 
-class TcState[+T <: TC : TcConf](val stations: Seq[TcStation[T]], val roles: Seq[Membership[T]], val instruments: Seq[TcInstrument[T]]){
+class TcState[+T <: TC: TcConf](
+	val stations: Seq[TcStation[T]],
+	val networks: Seq[TcNetwork[T]],
+	val roles: Seq[Membership[T]],
+	val instruments: Seq[TcInstrument[T]]
+) {
 	def tcConf = implicitly[TcConf[T]]
 }
+
 
 trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]

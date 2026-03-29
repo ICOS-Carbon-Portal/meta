@@ -39,7 +39,7 @@ class OtcMetaSource(
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
 		instruments <- getInstruments(orgs, sensorLookup)
-	) yield new TcState(stations.values.toSeq, membs, instruments)
+	) yield new TcState(stations.values.toSeq, Nil, membs, instruments)
 
 	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
 		val q = """

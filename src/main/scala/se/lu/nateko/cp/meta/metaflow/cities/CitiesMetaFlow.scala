@@ -43,6 +43,6 @@ object CitiesMetaFlow:
 				case atc: AtcStationSpecifics => IcosCitiesStationSpecifics(atc.timeZoneOffset, CityNetwork.Paris)
 				case _ => throw MetadataException("Unexpected station-specific info, must be AtcStationSpecifics")
 			s.copy(core = s.core.copy(specificInfo = citySpec))
-		TcState(stations, state.roles, state.instruments)
+		TcState(stations, Nil, state.roles, state.instruments)
 
 end CitiesMetaFlow

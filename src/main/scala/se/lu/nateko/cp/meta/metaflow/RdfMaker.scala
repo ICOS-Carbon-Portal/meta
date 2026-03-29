@@ -31,7 +31,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 	def createStatement(subj: Resource, pred: IRI, v: Value): Statement =
 		factory.createStatement(subj, pred, v)
 
-	def getStatements[T <: TC](memb: Membership[T]): Seq[Statement] = {
+	def getStatements[T <: TC : TcConf](memb: Membership[T]): Seq[Statement] = {
 		val uri = vocab.getMembership(memb.cpId)
 		val holder = memb.role.holder
 		val role = memb.role.kind
@@ -61,7 +61,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		triples.map(factory.tripleToStatement)
 	}
 
-	private def fundingTriples[T <: TC](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
+	private def fundingTriples[T <: TC : TcConf](fund: TcFunding[T]): Seq[(IRI, IRI, Value)] = {
 		val iri = vocab.getFunding(fund.cpId)
 		(iri, RDF.TYPE, meta.fundingClass) +:
 		(iri, meta.hasFunder, getIri(fund.funder)) +:
@@ -101,8 +101,18 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasOrcidId, vocab.lit(orcid.id))
 				}.toList
 
+			case network: TcNetwork[T] =>
+				summon[TcConf[T]].networkClass(meta) match {
+					case Some(networkClass) =>
+						(uri, RDF.TYPE, networkClass) +:
+						uriResourceTriples(uri, network.core.self) ++:
+						network.core.website.map(w => (uri, RDFS.SEEALSO, w.toRdf)).toSeq
+					case None => Nil
+				}
+
 			case s: TcStation[T] =>
-				val stationClass = implicitly[TcConf[T]].stationClass(meta)
+				val conf = summon[TcConf[T]]
+				val stationClass = conf.stationClass(meta)
 				(uri, RDF.TYPE, stationClass) +:
 				(uri, meta.hasStationId, vocab.lit(s.core.id)) +:
 				orgTriples(uri, s.core.org) ++:
@@ -122,8 +132,8 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 					(uri, meta.hasFunding, vocab.getFunding(fund.cpId)) +:
 					fundingTriples(fund)
 				} ++:
-				s.networks.toSeq.map(network =>
-					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(network.cpId))
+				s.networks.toSeq.map(networkId =>
+					(uri, meta.hasAssociatedNetwork, vocab.getNetwork(conf.tcPrefix, networkId))
 				)
 
 			case go: TcGenericOrg[T] =>
@@ -174,7 +184,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 		(triples ++ tcIdTriple).map(factory.tripleToStatement)
 	}
 
-	def getIri[T <: TC](e: Entity[T]): IRI =  e match{
+	def getIri[T <: TC : TcConf](e: Entity[T]): IRI =  e match{
 
 		case p: TcPerson[T] =>
 			vocab.getPerson(p.cpId)
@@ -189,6 +199,9 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
 		case depl: InstrumentDeployment[T] =>
 			vocab.getInstrDeployment(depl.cpId)
+
+		case network: TcNetwork[T] =>
+			vocab.getNetwork(summon[TcConf[T]].tcPrefix, network.cpId)
 	}
 
 	private def stationTriples(iri: IRI, s: StationSpecifics): Seq[Triple] =  s match{

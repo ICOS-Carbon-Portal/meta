@@ -71,12 +71,14 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 		val futfutValVal = for
 			peopleVal <- peopleFut;
 			stationsVal <- fetchStations();
+			networksVal <- fetchNetworks();
 			sensorsVal <- fetchSensors(stationsVal);
 			instrumentsVal <- fetchFromTsv(Types.instruments, getLogger(sensorsVal))
 		yield Validated.liftFuture:
 			for(
 				people <- peopleVal;
 				stations <- stationsVal;
+				networks <- networksVal;
 				sensors <- sensorsVal;
 				instruments <- instrumentsVal
 			) yield
@@ -86,11 +88,14 @@ class EtcMetaSource(conf: EtcConfig, vocab: CpVocab)(using system: ActorSystem, 
 				)
 				fetchFromTsv(Types.roles, membExtractor).map(_.map{membs =>
 					//TODO Consider that after mapping to CP roles, a person may (in theory) have duplicate roles at the same station
-					new TcState(stations, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
+					new TcState(stations, networks, membs, instruments ++ sensors.filterNot(_.deployments.isEmpty))
 				})
 
 		futfutValVal.flatten.map(_.flatMap(identity))
 	end fetchFromEtc
+
+	def fetchNetworks(): Future[Validated[Seq[TcNetwork[ETC.type]]]] =
+		fetchFromTsv(Types.Networks, getNetwork)
 
 	private def fetchStations(): Future[Validated[Seq[EtcStation]]] = {
 		for(
@@ -185,6 +190,7 @@ object EtcMetaSource{
 		val meteosens = "meteosens2"
 		val files = "file"
 		val funding = "funding"
+		val Networks = "networks"
 	}
 
 	private object Vars{
@@ -242,7 +248,11 @@ object EtcMetaSource{
 		val fundingStart = "FUNDING_DATE_START"
 		val fundingEnd = "FUNDING_DATE_END"
 		val fundingComment = "FUNDING_COMMENT"
-		val network = "NETWORK"
+		val stationNetworks = "NETWORK"
+		val networkName = "NETWORK"
+		val networkId = "ID"
+		val networkDescription = "NETWORK_DESCRIPTION"
+		val networkUrl = "NETWORK_URL"
 	}
 
 	private val rolesLookup: Map[String, Option[Role]] = Map(
@@ -432,6 +442,19 @@ object EtcMetaSource{
 	}
 
 	// Public for testing
+	def getNetwork(using Lookup): Validated[TcNetwork[ETC.type]] =
+		for
+			id      <- lookUp(Vars.networkId).require("network must have an ID")
+			label   <- lookUp(Vars.networkName).optional
+			descr   <- lookUp(Vars.networkDescription).optional
+			website <- lookUp(Vars.networkUrl).map(s => new URI(s)).filter(_.isAbsolute).optional
+		yield TcNetwork(
+				cpId = UriId(id),
+				tcIdOpt = Some(makeId(id)),
+				core = Network(UriResource(dummyUri, label, descr.toSeq), website)
+			)
+
+	// Public for testing
 	def getStation(
 		fundingsV: Validated[Map[String, Seq[TcFunding[ETC.type]]]]
 	)(using Lookup): Validated[EtcStation] = for(
@@ -453,17 +476,13 @@ object EtcMetaSource{
 		pubDois <- lookUp(Vars.stationDataPubDois).flatMap(parseDoiUris).optional;
 		docDois <- lookUp(Vars.stationDocDois).flatMap(parseDoiUris).optional;
 		tzOffset <- lookUp(Vars.timeZoneOffset).map(_.toInt).optional;
-		networkNames <- lookUp(Vars.network).optional
+		networkNames <- lookUp(Vars.stationNetworks).optional
 	) yield {
 		val fundings = fundingsLookup.get(tcIdStr).getOrElse(Nil).map{orig =>
 			val label = orig.core.awardTitle.getOrElse("?") + " to " + name
 			val coreFunding = orig.core.copy(self = orig.core.self.copy(label = Some(label)))
 			orig.copy(core = coreFunding)
 		}
-
-		val networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
-			TcNetwork[E](cpId = UriId(name), core = Network(dummyUri))
-		)
 
 		TcStation[E](
 			cpId = CpVocab.etcStationUriId(etcStationId),
@@ -498,11 +517,13 @@ object EtcMetaSource{
 					documentation = Nil//docs are not provided by TCs
 				),
 				funding = Option(fundings.map(_.core)).filterNot(_.isEmpty),
-				networks = networks.map(_.core)
+				networks = Nil // Dummy
 			),
 			responsibleOrg = None,
 			funding = fundings,
-			networks = networks
+			networks = networkNames.map(parseBarSeparated).getOrElse(Nil).map(name =>
+				UriId(name)
+			)
 		)
 	}
 

@@ -88,8 +88,10 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val rolesRdfDiff = rolesDiff[T](current.roles, tcRoles)
 
+		val networksDiff = diff[T, TcNetwork[T]](current.networks, newSnapshot.networks, Nil)
+
 		rdfReader.keepMeaningful(
-			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff
+			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff ++ networksDiff.rdfDiff
 		)
 	}
 
@@ -236,7 +238,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	end diff
 
-	def rolesDiff[T <: TC](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
+	def rolesDiff[T <: TC : TcConf](cp: Seq[Membership[T]], tc: Seq[Membership[T]]): Seq[RdfUpdate] = {
 		val cpMap = cp.groupBy(m => m.role.id)
 		val tcMap = tc.groupBy(m => m.role.id)
 		val newIds = tcMap.keySet.diff(cpMap.keySet).toSeq

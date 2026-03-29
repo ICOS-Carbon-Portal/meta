@@ -20,6 +20,7 @@ sealed class CityTcConf[CTC <: CitiesTC](
 	val stationPrefix = tc.network.toString
 	val tcPrefix = tc.network.toString
 	def stationClass(meta: CpmetaVocab): IRI = classGetter(meta)
+	def networkClass(meta: CpmetaVocab) = None
 	def tcIdPredicate(meta: CpmetaVocab): IRI = predGetter(meta)
 
 given MunichConf: TcConf[MunichMidLow.type] =

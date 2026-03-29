@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.metaflow.InstrumentDeployment
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource
 import EtcMetaSource.mergeInstrDeployments
 import EtcMetaSource.getStation
+import EtcMetaSource.getNetwork
 
 import java.time.Instant
 import se.lu.nateko.cp.meta.metaflow.TcFunding
@@ -120,7 +121,7 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			))
 	}
 
-	describe("fetchStations") {
+	describe("getStation") {
 		it("parses network property") {
 			// Minimal set of data for a station
 			val lookups = Map(
@@ -137,10 +138,29 @@ class EtcMetaSourceTests extends AnyFunSpec{
 			assert(station.result.isDefined == true)
 
 			val tcStation = station.result.get
-			val tcNetworks = tcStation.networks
-			assert(tcNetworks.map(_.core) === tcStation.core.networks) // this may be unnecessary since the core networks are dummy values
-			assert(tcNetworks.map(_.cpId.toString()).toSet === Set("Network-1", "Network_A"))
+			assert(tcStation.networks.map(_.toString()).toSet === Set("Network-1", "Network_A"))
 		}
 	}
 
+	describe("getNetwork") {
+		it("parses network") {
+			val lookups = Map(
+				"ID" -> "AMF",
+				"NETWORK" -> "AmeriFlux",
+				"NETWORK_DESCRIPTION" -> "North, Central and South America Network.",
+				"NETWORK_URL" -> "https://ameriflux.lbl.gov"
+			)
+
+			val result = getNetwork(using lookups)
+			assert(result.errors.isEmpty)
+			assert(result.result.get.cpId.toString == "AMF")
+			assert(result.result.get.tcIdOpt.map(_.id) == Some("AMF"))
+		}
+
+		it("fails without ID") {
+			val result = getNetwork(using Map.empty)
+			assert(result.errors == Seq("network must have an ID"))
+			assert(result.result.isEmpty)
+		}
+	}
 }

@@ -86,6 +86,16 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			getStation(station).map(Some.apply)
 		else Validated.ok(None)
 
+	def getNetwork(iri: IRI): DocConn ?=> Validated[Network] = {
+		for {
+			label <- getOptionalString(iri, RDFS.LABEL)
+			website <- getOptionalUri(iri, RDFS.SEEALSO).map(_.map(_.toJava))
+		}
+		yield
+			val descriptions = getStringValues(iri, RDFS.COMMENT)
+			Network(UriResource(iri.toJava, label, descriptions), website)
+	}
+
 	def getStation(stat: IRI): DocConn ?=> Validated[Station] =
 		for
 			org <- getOrganization(stat)
@@ -111,7 +121,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				pictures = getUriLiteralValues(stat, metaVocab.hasDepiction),
 				countryCode = countryCode.flatMap(CountryCode.unapply),
 				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder)),
-				networks = getUriValues(stat, metaVocab.hasAssociatedNetwork).map(iri => Network(iri.toJava))
+				networks = getUriValues(stat, metaVocab.hasAssociatedNetwork).map(iri => iri.toJava)
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>

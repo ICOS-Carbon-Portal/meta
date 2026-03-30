@@ -18,9 +18,6 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 
-	private def initSentry(config: CpmetaConfig): Unit =
-		config.sentry.foreach(conf => Sentry.init(conf.dsn))
-
 	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
@@ -81,3 +78,9 @@ object Main extends App with CpmetaJsonProtocol{
 		system.terminate()
 	}
 }
+
+private def initSentry(config: CpmetaConfig): Unit =
+	config.sentry match {
+		case Some(conf) => Sentry.init(conf.dsn)
+		case None => ()
+	}

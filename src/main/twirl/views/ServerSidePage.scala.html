@@ -8,12 +8,11 @@
 	header: Option[String],
 	headerExtra: Option[Html] = None,
 	extraMetaTags: Option[Html] = None,
-	bootstrapJavascript: Boolean = false,
 	subHeading: Option[String] = None,
 	breadcrumbs: Option[Html] = None,
 	tabs: Option[Html] = None
 )(body: Html)(implicit envri: Envri, conf: EnvriConfig)
-@CommonPage(title, bootstrapJavascript){
+@CommonPage(title){
 	@extraMetaTags
 	@LandingPageStyle()
 }{

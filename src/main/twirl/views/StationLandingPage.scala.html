@@ -291,6 +291,14 @@
 			}
 		}
 	}
+	@if(station.networks.nonEmpty) {
+		@htmlProperty{Associated networks}{
+			@for((network, i) <- station.networks.zipWithIndex) {
+				@if(i > 0) {<span> / </span>}
+				<a href=@{network.self.uri.getRawPath}>@{network.self.label.getOrElse(network.self.uri.toString)}</a>
+			}
+		}
+	}
 	@if(webpageDetailsPresent) {
 		@for(pos <- station.location){
 			@property("Latitude/Longitude", s"${pos.lat}, ${pos.lon}")

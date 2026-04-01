@@ -18,7 +18,7 @@ case class Station(
 	specificInfo: StationSpecifics,
 	countryCode: Option[CountryCode],
 	funding: Option[Seq[Funding]],
-	networks: Seq[URI]
+	networks: Seq[Network]
 ){
 	def fullCoverage: Option[GeoFeature] = List(location, coverage).flatten match{
 		case Nil => None

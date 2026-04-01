@@ -108,6 +108,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			specificInfo <- getStationSpecifics(stat)
 			countryCode <- getOptionalString(stat, metaVocab.countryCode)
 			funding <- getFundings(stat)
+			networks <- Validated.sequence(getUriValues(stat, metaVocab.hasAssociatedNetwork).map(getNetwork))
 		yield
 			val labeledCov = coverage.map: cov =>
 				if cov.label.isDefined then cov else cov.withLabel(org.name)
@@ -121,7 +122,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				pictures = getUriLiteralValues(stat, metaVocab.hasDepiction),
 				countryCode = countryCode.flatMap(CountryCode.unapply),
 				funding = Option(funding).filterNot(_.isEmpty).map(_.sorted(using fundingOrder)),
-				networks = getUriValues(stat, metaVocab.hasAssociatedNetwork).map(iri => iri.toJava)
+				networks = networks
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>

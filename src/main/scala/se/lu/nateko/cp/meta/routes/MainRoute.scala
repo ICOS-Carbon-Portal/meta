@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.Materializer
+import io.sentry.Sentry
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
@@ -21,6 +22,7 @@ object MainRoute {
 
 	def exceptionHandler(using envriConfigs: EnvriConfigs) = ExceptionHandler{
 		case ex =>
+			Sentry.captureException(ex)
 			val extractEnvri = AuthenticationRouting.extractEnvriDirective
 			extractEnvri { implicit envri =>
 				given EnvriConfig = envriConfigs(envri)

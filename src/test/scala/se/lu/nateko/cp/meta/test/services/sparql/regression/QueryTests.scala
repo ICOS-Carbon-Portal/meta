@@ -301,19 +301,18 @@ class QueryTests extends AsyncFunSpec {
 
 	describeQ(TestQueries.drought2018AtmoProductStations, "Metadata about all stations included in the drought2018AtmoProduct", expectRows = 96, sampleIndex = 50, sortColumn = "Long_name") {
 		f => Map(
-			"height" ->  f.createLiteral("125.0", XSD.FLOAT), 
-			"Short_name" -> f.createLiteral("KRE"), 
-			"lon" -> f.createLiteral("15.08", XSD.DOUBLE), 
-			"lat" -> f.createLiteral("49.572", XSD.DOUBLE), 
-			"Long_name" -> f.createLiteral("Křešín u Pacova"), 
+			"height" ->  f.createLiteral("50.0", XSD.FLOAT),
+			"Short_name" -> f.createLiteral("KRE"),
+			"lon" -> f.createLiteral("15.08", XSD.DOUBLE),
+			"lat" -> f.createLiteral("49.572", XSD.DOUBLE),
+			"Long_name" -> f.createLiteral("Křešín u Pacova"),
 			"Country" -> f.createLiteral("CZ")
 			)
 	}
 
-	describeQ(TestQueries.icosCitation("<https://meta.icos-cp.eu/objects/FCZAo0M_gnyN0RZ4I1J6llzM>"), "Citation of specified data object", expectRows = 1, sampleIndex = 0, sortColumn = "cit") {
-		f => Map(
-				"cit" -> f.createLiteral("Kubistin, D., Plaß-Dülmer, C., Lindauer, M., Schumacher, M. (2018). ICOS ATC CO2 Release from Hohenpeissenberg (50.0 m), 2017-02-15–2017-12-31, ICOS RI, https://hdl.handle.net/11676/FCZAo0M_gnyN0RZ4I1J6llzM")
-			)
+	// hasCitationString is no longer injected via SPARQL (moved to application layer); OPTIONAL returns unbound
+	describeQ(TestQueries.icosCitation("<https://meta.icos-cp.eu/objects/FCZAo0M_gnyN0RZ4I1J6llzM>"), "Citation of specified data object", expectRows = 1, sampleIndex = 0) {
+		f => Map()
 	}
 
 	describeQ(TestQueries.prodsPerDomain("atmosphere"), "Level 1 and 2 data product names and specifications for selected domain", expectRows = 14, sampleIndex = 5) {
@@ -450,8 +449,13 @@ class QueryTests extends AsyncFunSpec {
 		f => Map("stationId" -> f.createLiteral("DE-Msr"))
 	}
 
-	describeQ(TestQueries.licenceSetForDataObjectList, "Licenses for data object list", 1, 0){
-		f => Map("lic" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"))
+	// dcterms:license is no longer injected via SPARQL (was enriched dynamically); returns 0 rows
+	describe("Licenses for data object list") {
+		it("should return 0 rows") {
+			db.runSparql(TestQueries.licenceSetForDataObjectList).map { r =>
+				assert(r.toVector.size === 0)
+			}
+		}
 	}
 
 	describeQ(TestQueries.ingestionUploadTaskColumnFormats, "IngestionUploadTask column formats", 16, 8, sortColumn = "colName"){

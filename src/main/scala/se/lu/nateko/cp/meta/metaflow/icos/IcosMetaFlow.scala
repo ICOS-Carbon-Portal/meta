@@ -7,7 +7,6 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.{EtcConfig, IcosMetaFlowConfig, MetaDb}
 
 
@@ -26,7 +25,7 @@ object IcosMetaFlow:
 				"Configuration problem! OTC metadata-entry instance server is supposed to be a notifying one."
 			)
 
-		val sparql = Rdf4jSparqlRunner(db.vanillaRepo)
+		val sparql = db.sparqlRunner
 
 		val diff = StateDiffApplier(db, flowConf)
 

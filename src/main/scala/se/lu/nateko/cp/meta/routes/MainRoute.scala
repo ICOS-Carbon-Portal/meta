@@ -11,7 +11,6 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
-import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
@@ -37,7 +36,7 @@ object MainRoute {
 		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sparqler = new Rdf4jSparqlRunner(db.magicRepo)
+		val sparqler = db.sparqlRunner
 		val sparqlRoute = SparqlRoute(config.sparql)
 
 		val staticRoute = StaticRoute(sparqler, config.onto)
@@ -59,7 +58,7 @@ object MainRoute {
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(
-			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql
+			db.sparqlRunner, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql, db.dropTripleObjects
 		).route
 
 		handleExceptions(exceptionHandler){

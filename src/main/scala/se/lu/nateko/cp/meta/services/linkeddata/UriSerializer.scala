@@ -20,9 +20,8 @@ import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
-import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api
@@ -30,7 +29,7 @@ import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
@@ -48,7 +47,6 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.util.Using
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 
 
 trait UriSerializer {
@@ -86,7 +84,8 @@ object UriSerializer{
 }
 
 class Rdf4jUriSerializer(
-	repo: Repository,
+	server: InstanceServer,
+	sparqlRunner: SparqlRunner,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
@@ -100,8 +99,7 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	import RdfLens.{MetaConn, GlobConn, DocConn}
 
-	private given ValueFactory = repo.getValueFactory
-	private val server = new Rdf4jInstanceServer(repo)
+	private given ValueFactory = SimpleValueFactory.getInstance()
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
@@ -110,7 +108,7 @@ class Rdf4jUriSerializer(
 		new PageContentMarshalling(config.core.handleProxies, stats)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
-		.compose(uri => () => getStatementsIter(uri, repo))
+		.compose(uri => () => getStatementsIter(uri, server))
 
 	val marshaller: ToResponseMarshaller[Uri] = Marshaller.oneOf(
 		Marshaller[Uri, HttpResponse](
@@ -189,7 +187,7 @@ class Rdf4jUriSerializer(
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
 		given EnvriConfig = envries(envri)
-		getViewInfo(uri, repo).fold(
+		getViewInfo(uri, sparqlRunner).fold(
 			err => HttpResponse(
 				status = StatusCodes.InternalServerError,
 				entity = HttpEntity(
@@ -303,17 +301,16 @@ private object Rdf4jUriSerializer{
 
 	val Limit = 500
 
-	private def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
-		val uri = repo.getValueFactory.createIRI(res.toString)
-		repo.access(conn => conn.getStatements(uri, null, null, false)) ++
-		repo.access(conn => conn.getStatements(null, null, uri, false))
+	private def getStatementsIter(res: Uri, server: InstanceServer): CloseableIterator[Statement] = {
+		val uri = SimpleValueFactory.getInstance().createIRI(res.toString)
+		server.getStatements(Some(uri), None, None) ++
+		server.getStatements(None, None, Some(uri))
 	}
 
-	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>
-		val conn = use(repo.getConnection())
+	def getViewInfo(res: Uri, sparqlRunner: SparqlRunner): Try[ResourceViewInfo] = Using.Manager{use =>
 
 		val propInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate().asCloseableIterator
+			sparqlRunner.evaluateTupleQuery(SparqlQuery(resourceViewInfoQuery(res)))
 		).map{bset =>
 
 			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
@@ -330,7 +327,7 @@ private object Rdf4jUriSerializer{
 		}.flatten.take(Limit).toIndexedSeq
 
 		val usageInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate().asCloseableIterator
+			sparqlRunner.evaluateTupleQuery(SparqlQuery(resourceUsageInfoQuery(res)))
 		).map{bset =>
 			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
 		}.flatten.take(Limit).toIndexedSeq

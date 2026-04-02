@@ -238,18 +238,19 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test",
 			"org.scalacheck"    %%% "scalacheck"        % "1.18.0" % "test"
 		),
-		unmanagedSources.in(Compile) ++= {
-			val commonPath = "src/main/scala/se/lu/nateko/cp/meta"
-			val commonCorePath = s"core/$commonPath/core"
-			Seq(
-				s"$commonCorePath/crypto/Sha256Sum.scala",
-				s"$commonCorePath/data/GeoFeatures.scala",
-				s"$commonCorePath/data/TemporalFeatures.scala",
-	
-			).map(path => new java.io.File(path).getAbsoluteFile)
-		},
 
-		)
+		Compile / unmanagedSources ++= {
+			Seq(
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/crypto/Sha256Sum.scala",
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/data/GeoFeatures.scala",
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/data/TemporalFeatures.scala",
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/data/Envri.scala",
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/data/GeoFeatures.scala",
+				"core/src/main/scala/se/lu/nateko/cp/meta/core/data/package.scala",
+				"src/main/scala/OntoConstants.scala",
+				"src/main/scala/UploadDtos.scala",
+			).map(path => new java.io.File(path).getAbsoluteFile)
+		}
 	)
 lazy val tools = (project in file("tools"))
 	.dependsOn(meta)

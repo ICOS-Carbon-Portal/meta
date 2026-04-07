@@ -15,7 +15,7 @@ import scala.util.{Try, Using}
 
 object QleverUpdateLogIngester:
 
-	val ChunkSize = 1000
+	val ChunkSize = 1
 
 	def ingest(
 		updates: CloseableIterator[RdfUpdate],
@@ -32,6 +32,7 @@ object QleverUpdateLogIngester:
 					val triples = stmts.map(toNTripleStr).mkString(" ")
 					s"$verb { GRAPH <${writeContext.stringValue}> { $triples } }"
 				.mkString(" ; ")
+				println(s"updateStr: $updateStr")
 				Await.result(client.sparqlUpdate(updateStr), 120.seconds)
 
 		Using(updates): updates =>
@@ -40,7 +41,9 @@ object QleverUpdateLogIngester:
 					client.sparqlUpdate(s"CLEAR GRAPH <${writeContext.stringValue}>"),
 					60.seconds
 				)
-			updates.sliding(ChunkSize, ChunkSize).foreach(chunk => sendChunk(chunk).get)
+			updates.sliding(ChunkSize, ChunkSize).foreach(chunk =>
+					println(s"chunk: $chunk")
+					sendChunk(chunk).get)
 
 	private def toConsecutiveGroups(updates: Seq[RdfUpdate]): List[(Boolean, Vector[Statement])] =
 		updates.foldLeft(List.empty[(Boolean, Vector[Statement])]):

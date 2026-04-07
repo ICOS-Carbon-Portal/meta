@@ -151,7 +151,8 @@ case class SparqlServerConfig(
 
 case class QleverConfig(
 	endpoint: String,
-	recreateAtStartup: Boolean
+	recreateAtStartup: Boolean,
+	accessToken: Option[String]
 )
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
@@ -228,7 +229,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[QleverConfig] = jsonFormat2(QleverConfig.apply)
+	given RootJsonFormat[QleverConfig] = jsonFormat3(QleverConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

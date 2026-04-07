@@ -26,10 +26,13 @@ class QleverClient(val config: QleverConfig)(using system: ActorSystem, mat: Mat
 		http.singleRequest(request)
 
 	def sparqlUpdate(update: String): Future[Done] =
+		val formFields = config.accessToken match
+			case Some(token) => Map("update" -> update, "access-token" -> token)
+			case None => Map("update" -> update)
 		val request = HttpRequest(
 			method = HttpMethods.POST,
 			uri = endpoint,
-			entity = FormData("update" -> update).toEntity
+			entity = FormData(formFields).toEntity
 		)
 		http.singleRequest(request).flatMap: resp =>
 			if resp.status.isSuccess then

@@ -56,7 +56,6 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 					log.error(s"[$logName] Ingestion failed: ${err.getMessage}", err)
 
 		log.info(s"Finished. $succeeded succeeded, $failed failed out of ${targets.size} total.")
-		if failed > 0 then System.exit(1)
 	finally
 		Await.result(system.terminate(), 30.seconds)
 		log.info("ActorSystem terminated.")

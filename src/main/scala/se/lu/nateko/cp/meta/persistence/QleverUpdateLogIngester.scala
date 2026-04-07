@@ -15,7 +15,7 @@ import scala.util.{Try, Using}
 
 object QleverUpdateLogIngester:
 
-	val ChunkSize = 1
+	val ChunkSize = 100
 
 	def ingest(
 		updates: CloseableIterator[RdfUpdate],

@@ -58,15 +58,15 @@ class QleverClient(val config: QleverConfig)(using system: ActorSystem, mat: Mat
 		graphStoreRequest(TSOP, graphUri, statementsToNTriples(statements))
 
 	def graphStoreClear(graphUri: String): Future[Done] =
-		graphStoreRequest(HttpMethods.DELETE, graphUri, "")
+		graphStoreRequest(HttpMethods.DELETE, graphUri, "", accept404 = true)
 
-	private def graphStoreRequest(method: HttpMethod, graphUri: String, body: String): Future[Done] =
+	private def graphStoreRequest(method: HttpMethod, graphUri: String, body: String, accept404: Boolean = false): Future[Done] =
 		val uri = endpoint.withQuery(Uri.Query("graph" -> graphUri))
 		val authHeaders = config.accessToken.map(t => RawHeader("Authorization", s"Bearer $t")).toList
 		val entity = if body.nonEmpty then HttpEntity(ContentType(NTriples), body) else HttpEntity.Empty
 		val request = HttpRequest(method = method, uri = uri, headers = authHeaders, entity = entity)
 		http.singleRequest(request).flatMap: resp =>
-			if resp.status.isSuccess then
+			if resp.status.isSuccess || (accept404 && resp.status.intValue == 404) then
 				resp.entity.discardBytes().future()
 			else
 				resp.entity.toStrict(5.seconds).flatMap: strict =>

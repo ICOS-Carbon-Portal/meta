@@ -5,13 +5,15 @@ import scala.language.unsafeNulls
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.{IRI, Statement}
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.sparql.QleverClient
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
 
 object QleverUpdateLogIngester:
@@ -27,38 +29,48 @@ object QleverUpdateLogIngester:
 
 		val graphUri = writeContext.stringValue
 
-		var totalSent = 0
-
-		def sendBatch(isAssertion: Boolean, stmts: Iterable[Statement]): Unit =
-			val kind = if isAssertion then "adding" else "removing"
-			val size = stmts.size
-			val fut = if isAssertion then client.graphStoreAdd(graphUri, stmts)
-						else client.graphStoreRemove(graphUri, stmts)
-			Await.result(fut, 120.seconds)
-			totalSent += size
-			println(s"Qlever $graphUri: $kind $size triples (total $totalSent)")
-
 		Using(updates): updates =>
 			if clearFirst then
 				Await.result(client.graphStoreClear(graphUri), 60.seconds)
 
-			val buffer = ArrayBuffer.empty[Statement]
-			var currentIsAssertion = true
-			var bufferNonEmpty = false
+			val repo = new SailRepository(new MemoryStore)
+			repo.init()
 
-			for update <- updates do
-				if bufferNonEmpty && (update.isAssertion != currentIsAssertion || buffer.size >= ChunkSize) then
-					sendBatch(currentIsAssertion, buffer)
-					buffer.clear()
-					bufferNonEmpty = false
+			try
+				var updatesProcessed = 0
+				Using.resource(repo.getConnection): conn =>
+					for update <- updates do
+						if update.isAssertion then
+							conn.add(update.statement)
+						else
+							conn.remove(update.statement)
+						updatesProcessed += 1
+						if updatesProcessed % 100000 == 0 then
+							println(s"Qlever $graphUri: processed $updatesProcessed updates into in-memory store")
 
-				if !bufferNonEmpty then
-					currentIsAssertion = update.isAssertion
-					bufferNonEmpty = true
+				println(s"Qlever $graphUri: finished processing $updatesProcessed updates, sending to Qlever")
 
-				buffer += update.statement
+				var totalSent = 0
+				Using.resource(repo.getConnection): conn =>
+					val allStatements = conn.getStatements(null, null, null)
+					try
+						val batch = new java.util.ArrayList[Statement](ChunkSize)
+						for stmt <- allStatements.iterator.asScala do
+							batch.add(stmt)
+							if batch.size >= ChunkSize then
+								Await.result(client.graphStoreAdd(graphUri, batch.asScala), 120.seconds)
+								totalSent += batch.size
+								println(s"Qlever $graphUri: adding ${batch.size} triples (total $totalSent)")
+								batch.clear()
+						if !batch.isEmpty then
+							Await.result(client.graphStoreAdd(graphUri, batch.asScala), 120.seconds)
+							totalSent += batch.size
+							println(s"Qlever $graphUri: adding ${batch.size} triples (total $totalSent)")
+					finally
+						allStatements.close()
 
-			if bufferNonEmpty then
-				sendBatch(currentIsAssertion, buffer)
+				println(s"Qlever $graphUri: done, sent $totalSent triples total")
+			finally
+				repo.shutDown()
 
 end QleverUpdateLogIngester

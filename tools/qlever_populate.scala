@@ -53,7 +53,6 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 				case Failure(err) =>
 					log.error(s"[$logName] Ingestion failed: ${err.getMessage}", err)
 					log.info(s"Finished. $succeeded succeeded, failed on $logName out of ${targets.size} total.")
-					System.exit(1)
 
 		log.info(s"Finished. $succeeded succeeded out of ${targets.size} total.")
 	finally

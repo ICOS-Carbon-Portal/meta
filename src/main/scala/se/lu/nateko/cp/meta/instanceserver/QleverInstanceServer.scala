@@ -48,13 +48,12 @@ class QleverInstanceServer(
 	override def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = Try:
 		if updates.nonEmpty then
 			cotransact
+			val graphUri = writeContext.stringValue
 			val groups = buildConsecutiveGroups(updates)
-			val updateStr = groups.map: (isAssert, stmts) =>
-				val verb = if isAssert then "INSERT DATA" else "DELETE DATA"
-				val triples = stmts.map(tripleStr).mkString(" ")
-				s"$verb { GRAPH <${writeContext.stringValue}> { $triples } }"
-			.mkString(" ; ")
-			Await.result(client.sparqlUpdate(updateStr), 60.seconds)
+			for (isAssert, stmts) <- groups do
+				val fut = if isAssert then client.graphStoreAdd(graphUri, stmts)
+				          else client.graphStoreRemove(graphUri, stmts)
+				Await.result(fut, 60.seconds)
 
 	override def shutDown(): Unit = ()
 
@@ -159,9 +158,6 @@ private def sparqlLiteral(lit: Literal): String =
 		if dt != null && dt.stringValue != "http://www.w3.org/2001/XMLSchema#string" then
 			s"\"$escaped\"^^<${dt.stringValue}>"
 		else s"\"$escaped\""
-
-private def tripleStr(s: Statement): String =
-	s"${sparqlTerm(s.getSubject)} <${s.getPredicate.stringValue}> ${sparqlTerm(s.getObject)} ."
 
 private def buildSelectQuery(
 	readContexts: Seq[IRI],

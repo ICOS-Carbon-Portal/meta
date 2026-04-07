@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import org.eclipse.rdf4j.model.{BNode, IRI, Literal, Statement, Value}
+import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.services.sparql.QleverClient
@@ -24,61 +24,29 @@ object QleverUpdateLogIngester:
 		writeContext: IRI
 	)(using ActorSystem, Materializer): Try[Unit] =
 
+		val graphUri = writeContext.stringValue
+
 		def sendChunk(chunk: Seq[RdfUpdate]): Unit =
 			if chunk.nonEmpty then
 				val groups = toConsecutiveGroups(chunk)
-				val updateStr = groups.map: (isAssert, stmts) =>
-					val verb = if isAssert then "INSERT DATA" else "DELETE DATA"
-					val triples = stmts.map(toNTripleStr).mkString(" ")
-					s"$verb { GRAPH <${writeContext.stringValue}> { $triples } }"
-				.mkString(" ; ")
-				println(s"updateStr: $updateStr")
-				Await.result(client.sparqlUpdate(updateStr), 120.seconds)
+				for (isAssert, stmts) <- groups do
+					println(s"stmts: $stmts")
+					val fut = if isAssert then client.graphStoreAdd(graphUri, stmts)
+										else client.graphStoreRemove(graphUri, stmts)
+					Await.result(fut, 120.seconds)
 
 		Using(updates): updates =>
 			if clearFirst then
-				Await.result(
-					client.sparqlUpdate(s"CLEAR GRAPH <${writeContext.stringValue}>"),
-					60.seconds
-				)
+				Await.result(client.graphStoreClear(graphUri), 60.seconds)
 			for chunk <- updates.sliding(ChunkSize, ChunkSize) do
-				println(s"chunk: $chunk")
 				sendChunk(chunk)
 
-	private def toConsecutiveGroups(updates: Seq[RdfUpdate]): List[(Boolean, Vector[Statement])] =
-		updates.foldLeft(List.empty[(Boolean, Vector[Statement])]):
+	private def toConsecutiveGroups(updates: Seq[RdfUpdate]): List[(Boolean, Vector[org.eclipse.rdf4j.model.Statement])] =
+		updates.foldLeft(List.empty[(Boolean, Vector[org.eclipse.rdf4j.model.Statement])]):
 			case ((isAssert, stmts) :: rest, update) if isAssert == update.isAssertion =>
 				(isAssert, stmts :+ update.statement) :: rest
 			case (groups, update) =>
 				(update.isAssertion, Vector(update.statement)) :: groups
 		.reverse
-
-	private def toNTripleStr(s: Statement): String =
-		s"${toSparqlTerm(s.getSubject)} <${s.getPredicate.stringValue}> ${toSparqlTerm(s.getObject)} ."
-
-	private def toSparqlTerm(v: Value): String = v match
-		case iri: IRI => s"<${iri.stringValue}>"
-		case lit: Literal => toSparqlLiteral(lit)
-		case bnode: BNode => s"_:${bnode.getID}"
-
-	private val XsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean"
-
-	private def toSparqlLiteral(lit: Literal): String =
-		val label = lit.getDatatype match
-			case dt if dt != null && dt.stringValue == XsdBoolean => lit.getLabel.toLowerCase
-			case _ => lit.getLabel
-		val escaped = label
-			.replace("\\", "\\\\")
-			.replace("\"", "\\\"")
-			.replace("\n", "\\n")
-			.replace("\r", "\\r")
-			.replace("\t", "\\t")
-		val lang = lit.getLanguage
-		if lang.isPresent then s"\"$escaped\"@${lang.get}"
-		else
-			val dt = lit.getDatatype
-			if dt != null && dt.stringValue != "http://www.w3.org/2001/XMLSchema#string" then
-				s"\"$escaped\"^^<${dt.stringValue}>"
-			else s"\"$escaped\""
 
 end QleverUpdateLogIngester

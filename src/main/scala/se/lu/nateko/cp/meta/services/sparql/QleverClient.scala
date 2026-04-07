@@ -75,16 +75,9 @@ class QleverClient(val config: QleverConfig)(using system: ActorSystem, mat: Mat
 	private def statementsToNTriples(statements: Iterable[Statement]): String =
 		val model = new LinkedHashModel()
 		statements.foreach: stmt =>
-			model.add(normalizeStatement(stmt))
+			model.add(stmt)
 		val sw = new StringWriter()
 		Rio.write(model, sw, RDFFormat.NTRIPLES)
 		sw.toString
-
-	private def normalizeStatement(stmt: Statement): Statement =
-		stmt.getObject match
-			case lit: Literal if lit.getDatatype != null && lit.getDatatype.stringValue == XsdBoolean =>
-				val normalized = vf.createLiteral(lit.getLabel.toLowerCase, lit.getDatatype)
-				vf.createStatement(stmt.getSubject, stmt.getPredicate, normalized)
-			case _ => stmt
 
 end QleverClient

@@ -172,7 +172,7 @@ private def buildSelectQuery(
 	val triple = s"$sPattern $pPattern $oPattern"
 	val graphPart = readContexts match
 		case Nil => triple
-		case ctxs => ctxs.map(ctx => s"GRAPH <${ctx.stringValue}> { $triple }").mkString(" UNION ")
+		case ctxs => ctxs.map(ctx => s"{ GRAPH <${ctx.stringValue}> { $triple } }").mkString(" UNION ")
 	s"SELECT $sExpr $pExpr $oExpr WHERE { $graphPart }"
 
 private def buildAskQuery(
@@ -185,5 +185,5 @@ private def buildAskQuery(
 	val triple = s"$sPattern $pPattern $oPattern"
 	val graphPart = readContexts match
 		case Nil => triple
-		case ctxs => ctxs.map(ctx => s"GRAPH <${ctx.stringValue}> { $triple }").mkString(" UNION ")
+		case ctxs => ctxs.map(ctx => s"{ GRAPH <${ctx.stringValue}> { $triple } }").mkString(" UNION ")
 	s"ASK WHERE { $graphPart }"

@@ -41,7 +41,6 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 		val qleverClient = new QleverClient(config.qlever)
 		val factory = SimpleValueFactory.getInstance().nn
 		var succeeded = 0
-		var failed = 0
 
 		for (logName, writeCtxUri) <- targets do
 			log.info(s"[$logName] Starting ingestion into <$writeCtxUri>...")
@@ -52,10 +51,10 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 					succeeded += 1
 					log.info(s"[$logName] Ingestion complete.")
 				case Failure(err) =>
-					failed += 1
 					log.error(s"[$logName] Ingestion failed: ${err.getMessage}", err)
+					log.info(s"Finished. $succeeded succeeded, failed on $logName out of ${targets.size} total.")
 
-		log.info(s"Finished. $succeeded succeeded, $failed failed out of ${targets.size} total.")
+		log.info(s"Finished. $succeeded succeeded out of ${targets.size} total.")
 	finally
 		Await.result(system.terminate(), 30.seconds)
 		log.info("ActorSystem terminated.")

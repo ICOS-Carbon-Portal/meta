@@ -140,8 +140,13 @@ private def sparqlTerm(v: Value): String = v match
 	case lit: Literal => sparqlLiteral(lit)
 	case bnode: BNode => s"_:${bnode.getID}"
 
+private val XsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean"
+
 private def sparqlLiteral(lit: Literal): String =
-	val escaped = lit.getLabel
+	val label = lit.getDatatype match
+		case dt if dt != null && dt.stringValue == XsdBoolean => lit.getLabel.toLowerCase
+		case _ => lit.getLabel
+	val escaped = label
 		.replace("\\", "\\\\")
 		.replace("\"", "\\\"")
 		.replace("\n", "\\n")

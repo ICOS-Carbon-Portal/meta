@@ -24,7 +24,7 @@ object QleverUpdateLogIngester:
 		writeContext: IRI
 	)(using ActorSystem, Materializer): Try[Unit] =
 
-		def sendChunk(chunk: Seq[RdfUpdate]): Try[Unit] = Try:
+		def sendChunk(chunk: Seq[RdfUpdate]): Unit =
 			if chunk.nonEmpty then
 				val groups = toConsecutiveGroups(chunk)
 				val updateStr = groups.map: (isAssert, stmts) =>
@@ -41,9 +41,9 @@ object QleverUpdateLogIngester:
 					client.sparqlUpdate(s"CLEAR GRAPH <${writeContext.stringValue}>"),
 					60.seconds
 				)
-			updates.sliding(ChunkSize, ChunkSize).foreach(chunk =>
-					println(s"chunk: $chunk")
-					sendChunk(chunk).get)
+			for chunk <- updates.sliding(ChunkSize, ChunkSize) do
+				println(s"chunk: $chunk")
+				sendChunk(chunk)
 
 	private def toConsecutiveGroups(updates: Seq[RdfUpdate]): List[(Boolean, Vector[Statement])] =
 		updates.foldLeft(List.empty[(Boolean, Vector[Statement])]):
@@ -58,7 +58,22 @@ object QleverUpdateLogIngester:
 
 	private def toSparqlTerm(v: Value): String = v match
 		case iri: IRI => s"<${iri.stringValue}>"
-		case lit: Literal => lit.toString()
+		case lit: Literal => toSparqlLiteral(lit)
 		case bnode: BNode => s"_:${bnode.getID}"
+
+	private def toSparqlLiteral(lit: Literal): String =
+		val escaped = lit.getLabel
+			.replace("\\", "\\\\")
+			.replace("\"", "\\\"")
+			.replace("\n", "\\n")
+			.replace("\r", "\\r")
+			.replace("\t", "\\t")
+		val lang = lit.getLanguage
+		if lang.isPresent then s"\"$escaped\"@${lang.get}"
+		else
+			val dt = lit.getDatatype
+			if dt != null && dt.stringValue != "http://www.w3.org/2001/XMLSchema#string" then
+				s"\"$escaped\"^^<${dt.stringValue}>"
+			else s"\"$escaped\""
 
 end QleverUpdateLogIngester

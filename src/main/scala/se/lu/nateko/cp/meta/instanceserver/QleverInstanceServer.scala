@@ -137,8 +137,23 @@ end QleverTriplestoreConnection
 
 private def sparqlTerm(v: Value): String = v match
 	case iri: IRI => s"<${iri.stringValue}>"
-	case lit: Literal => lit.toString()
+	case lit: Literal => sparqlLiteral(lit)
 	case bnode: BNode => s"_:${bnode.getID}"
+
+private def sparqlLiteral(lit: Literal): String =
+	val escaped = lit.getLabel
+		.replace("\\", "\\\\")
+		.replace("\"", "\\\"")
+		.replace("\n", "\\n")
+		.replace("\r", "\\r")
+		.replace("\t", "\\t")
+	val lang = lit.getLanguage
+	if lang.isPresent then s"\"$escaped\"@${lang.get}"
+	else
+		val dt = lit.getDatatype
+		if dt != null && dt.stringValue != "http://www.w3.org/2001/XMLSchema#string" then
+			s"\"$escaped\"^^<${dt.stringValue}>"
+		else s"\"$escaped\""
 
 private def tripleStr(s: Statement): String =
 	s"${sparqlTerm(s.getSubject)} <${s.getPredicate.stringValue}> ${sparqlTerm(s.getObject)} ."

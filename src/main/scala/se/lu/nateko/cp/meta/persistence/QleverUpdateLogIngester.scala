@@ -16,7 +16,7 @@ import scala.util.{Try, Using}
 
 object QleverUpdateLogIngester:
 
-	val ChunkSize = 100
+	val ChunkSize = 1000
 
 	def ingest(
 		updates: CloseableIterator[RdfUpdate],
@@ -27,10 +27,16 @@ object QleverUpdateLogIngester:
 
 		val graphUri = writeContext.stringValue
 
+		var totalSent = 0
+
 		def sendBatch(isAssertion: Boolean, stmts: Iterable[Statement]): Unit =
+			val kind = if isAssertion then "adding" else "removing"
+			val size = stmts.size
 			val fut = if isAssertion then client.graphStoreAdd(graphUri, stmts)
 						else client.graphStoreRemove(graphUri, stmts)
 			Await.result(fut, 120.seconds)
+			totalSent += size
+			println(s"Qlever $graphUri: $kind $size triples (total $totalSent)")
 
 		Using(updates): updates =>
 			if clearFirst then

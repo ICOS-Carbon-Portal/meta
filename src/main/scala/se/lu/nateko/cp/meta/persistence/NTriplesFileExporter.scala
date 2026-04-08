@@ -20,6 +20,8 @@ object NTriplesFileExporter:
 	val ChunkSize = 10000
 	private val vf = SimpleValueFactory.getInstance()
 	private val XsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean"
+	private val XsdInteger = "http://www.w3.org/2001/XMLSchema#integer"
+	private val XsdDateTimeIri = vf.createIRI("http://www.w3.org/2001/XMLSchema#dateTime")
 
 	def writeNTriples(
 		updates: CloseableIterator[RdfUpdate],
@@ -76,11 +78,23 @@ object NTriplesFileExporter:
 			finally
 				repo.shutDown()
 
+	private def looksLikeDateTime(label: String): Boolean =
+		label.endsWith("Z") || label.matches("\\d{4}-\\d{2}-\\d{2}.*")
+
 	private def normalizeStatement(stmt: Statement): Statement =
 		stmt.getObject match
-			case lit: Literal if lit.getDatatype != null && lit.getDatatype.stringValue == XsdBoolean =>
-				val normalized = vf.createLiteral(lit.getLabel.toLowerCase, lit.getDatatype)
-				vf.createStatement(stmt.getSubject, stmt.getPredicate, normalized)
+			case lit: Literal if lit.getDatatype != null =>
+				val rawLabel = lit.getLabel
+				val dtype = lit.getDatatype.stringValue
+				val trimmed = rawLabel.trim
+				val normalizedLabel = if dtype == XsdBoolean then trimmed.toLowerCase else trimmed
+				val normalizedType =
+					if dtype == XsdInteger && looksLikeDateTime(trimmed) then XsdDateTimeIri
+					else lit.getDatatype
+				if normalizedLabel != rawLabel || (normalizedType ne lit.getDatatype) then
+					vf.createStatement(stmt.getSubject, stmt.getPredicate,
+						vf.createLiteral(normalizedLabel, normalizedType))
+				else stmt
 			case _ => stmt
 
 end NTriplesFileExporter

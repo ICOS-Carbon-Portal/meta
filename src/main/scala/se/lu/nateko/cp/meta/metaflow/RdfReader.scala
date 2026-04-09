@@ -162,7 +162,7 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 			core = coreStation,
 			responsibleOrg = respOrg.collect{case org: TcPlainOrg[T] => org},
 			funding = funding,
-			networks = coreStation.networks.map(UriId(_))
+			networks = coreStation.networks.map(n => UriId(n.self.uri))
 		)
 
 	def getTcNetworks[T <: TC](using conf: TcConf[T])(using MetaConn, DocConn): Validated[Seq[TcNetwork[T]]] = {

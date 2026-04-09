@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import io.sentry.Sentry
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
@@ -22,6 +23,7 @@ object Main extends App with CpmetaJsonProtocol{
 	private given ExecutionContext = system.dispatcher
 
 	val config: CpmetaConfig = ConfigLoader.default
+	initSentry(config)
 	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 
@@ -54,13 +56,15 @@ object Main extends App with CpmetaJsonProtocol{
 		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
 		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
 	) yield {
-		sys.addShutdownHook{
+		sys.addShutdownHook {
 			metaflow.cancel()
-			try
+			try {
 				Await.result(binding.unbind(), 10.seconds)
-			finally
+			} finally {
 				db.close()
+				Sentry.close()
 				println("Metadata db has been shut down")
+			}
 
 			println("meta service shutdown successful")
 		}
@@ -68,7 +72,15 @@ object Main extends App with CpmetaJsonProtocol{
 	}
 
 	startup.failed.foreach{err =>
+		Sentry.captureException(err)
+		Sentry.flush(5000)
 		log.error(err, "Could not start meta service")
 		system.terminate()
 	}
 }
+
+private def initSentry(config: CpmetaConfig): Unit =
+	config.sentry match {
+		case Some(conf) => Sentry.init(conf.dsn)
+		case None => ()
+	}

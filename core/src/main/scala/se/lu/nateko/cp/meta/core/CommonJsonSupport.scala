@@ -62,7 +62,17 @@ trait CommonJsonSupport:
 
 	given JsonFormat[TimeInterval] = DefaultJsonProtocol.jsonFormat2(TimeInterval.apply)
 
-	export se.lu.nateko.cp.cpauth.core.JsonSupport.enumFormat
+	def enumFormat[T](valueOf: String => T, values: Array[T]): RootJsonFormat[T] = new RootJsonFormat[T]:
+		def write(v: T): JsValue = JsString(v.toString)
+		def read(json: JsValue): T = json match
+			case JsString(s) =>
+				try valueOf(s)
+				catch case _: IllegalArgumentException =>
+					val allowed = values.map(v => s"'$v'").mkString(", ")
+					deserializationError(s"Got '$s', expected one of: $allowed")
+			case _ =>
+				val allowed = values.map(v => s"'$v'").mkString(", ")
+				deserializationError(s"Expected a JSON string, one of: $allowed")
 
 	given [T] (using JsonWriter[T]): RootJsonFormat[WithErrors[T]] with
 		def read(json: JsValue): WithErrors[T] = ??? // should not be needed

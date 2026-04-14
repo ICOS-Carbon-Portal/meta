@@ -4,7 +4,7 @@
 @(breadcrumbs: Map[Envri, IndexedSeq[(String, String)]])(implicit envri: Envri)
 @if(breadcrumbs.get(envri).isEmpty) {} else {
 	<nav aria-label="breadcrumb">
-		<ol class="breadcrumb bg-light p-2">
+		<ol class="breadcrumb">
 			@for((label, url) <- breadcrumbs(envri)){
 				<li class="breadcrumb-item"><a href="@url">@label</a></li>
 			}

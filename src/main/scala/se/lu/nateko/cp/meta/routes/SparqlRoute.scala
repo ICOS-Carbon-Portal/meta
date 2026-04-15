@@ -38,8 +38,14 @@ object SparqlRoute:
 	val withPermissiveCorsHeader: Directive0 = optionalHeaderValueByType(Origin).tflatMap{
 		case Tuple1(Some(orHeader)) =>
 			val headers = orHeader.origins.map(`Access-Control-Allow-Origin`.apply)
-			respondWithHeaders(headers)
-		case Tuple1(None) => respondWithHeaders(`Access-Control-Allow-Origin`.*)
+			respondWithHeaders(headers) & withRequestTimeoutResponse(_ =>
+				HttpResponse(StatusCodes.ServiceUnavailable, headers = headers.toList, entity = "SPARQL execution timeout")
+			)
+		case Tuple1(None) =>
+			val header = `Access-Control-Allow-Origin`.*
+			respondWithHeaders(header) & withRequestTimeoutResponse(_ =>
+				HttpResponse(StatusCodes.ServiceUnavailable, headers = List(header), entity = "SPARQL execution timeout")
+			)
 	}
 
 	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route =

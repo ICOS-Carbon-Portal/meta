@@ -33,8 +33,7 @@ module.exports = React.createClass({
 	render: function(){
 		var state = this.state;
 		var btnVariant = state.btnVariant || "btn-outline-secondary";
-		var marginClass = state.noLeftMargin ? "" : " ms-xl-2";
-		var buttonClasses = "btn btn-sm text-nowrap flex-shrink-0" + marginClass + " " + btnVariant;
+		var buttonClasses = "btn btn-sm text-nowrap flex-shrink-0 " + btnVariant;
 
 		if(state.label){
 			var icon = state.icon ? <span className={"fas fa-" + state.icon + " me-1"}></span> : null;

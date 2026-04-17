@@ -8,7 +8,7 @@ module.exports = React.createClass({
 	render: function(){
 
 		var ind = this.props.individual;
-		var itemClasses = "list-group-item" + (ind.isChosen ? " list-group-item-info" : "");
+		var itemClasses = "list-group-item" + (ind.isSelected ? " list-group-item-info" : "");
 
 		return <li className={itemClasses} title={ind.displayName} onClick={ind.clickHandler} style={{padding: '0px'}} role="menuitem">
 

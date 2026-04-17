@@ -5,12 +5,13 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, InstOntoServerConfig, ReplaceDto, UpdateDto}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import spray.json.*
 
 import java.net.URI
 import scala.language.implicitConversions
 
-class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJsonProtocol{
+class MetadataEntryRouting(authRouting: AuthenticationRouting)(using envriConfigs: EnvriConfigs) extends CpmetaJsonProtocol{
 
 	def entryRoute(instOntos: Map[String, InstOnto], ontoConfs: Map[String, InstOntoServerConfig]): Route = {
 		val ontoInfos = ontoConfs.map{
@@ -31,6 +32,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 
 	def singleOntoRoute(instOnto: InstOnto, authorizedUsers: Seq[String]): Route = {
 		val onto = instOnto.onto
+		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 		get{
 			pathSuffix("getExposedClasses"){
 				complete(onto.getExposedClasses.map(_.withFallbackBaseUri(instOnto.getWriteContext)))
@@ -38,6 +40,14 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting) extends CpmetaJso
 			pathSuffix("listIndividuals"){
 				parameter("classUri"){ uriStr =>
 					complete(instOnto.getIndividuals(new URI(uriStr)))
+				}
+			} ~
+			pathSuffix("getIndividualsSparql"){
+				extractEnvri{ envri =>
+					parameter("classUri"){ uriStr =>
+						val subjectPrefix = Some(envriConfigs(envri).metaItemPrefix.toString)
+						complete(JsObject("query" -> JsString(instOnto.getIndividualsSparql(new URI(uriStr), subjectPrefix))))
+					}
 				}
 			} ~
 			pathSuffix("getIndividual"){

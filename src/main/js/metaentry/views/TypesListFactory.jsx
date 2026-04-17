@@ -2,7 +2,7 @@ var capped = require('../utils.js').ensureLength(30);
 var Widget = require('./widgets/Widget.jsx');
 var ScreenHeightColumn = require('./ScreenHeightColumn.jsx');
 
-module.exports = function(typesStore, chooseTypeAction){
+module.exports = function(typesStore, selectTypeAction){
 
 	return React.createClass({
 
@@ -15,16 +15,16 @@ module.exports = function(typesStore, chooseTypeAction){
 				<ScreenHeightColumn>
 					<div className="list-group" role="menu">{
 
-						this.state.types.map(function(theType){
+					this.state.types.map(function(theType){
 
-							var clickHandler = _.partial(chooseTypeAction, theType.uri);
-							var isChosen = (theType.uri == self.state.chosen);
-							var fullName = theType.displayName;
+						var clickHandler = _.partial(selectTypeAction, theType.uri);
+						var isSelected = (theType.uri == self.state.selected);
+						var fullName = theType.displayName;
 
-							return <li
-								className={"cp-lnk list-group-item" + (isChosen ? " list-group-item-info" : "")}
-								key={theType.uri} title={fullName} onClick={clickHandler} role="menuitem">
-								{capped(fullName)}
+						return <li
+							className={"cp-lnk list-group-item" + (isSelected ? " list-group-item-info" : "")}
+							key={theType.uri} title={fullName} onClick={clickHandler} role="menuitem">
+							{capped(fullName)}
 							</li>;
 						})
 

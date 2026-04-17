@@ -1,6 +1,6 @@
 var actions = Reflux.createActions([
-	"chooseMetaType",
-	"chooseIndividual",
+	"selectMetaType",
+	"selectIndividual",
 	"requestUpdate",
 	"checkUriOrSuffix",
 	"createIndividual",
@@ -9,13 +9,13 @@ var actions = Reflux.createActions([
 
 var Backend = require('./backend.js');
 
-var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.chooseMetaType, actions.checkUriOrSuffix);
-var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.chooseMetaType, actions.chooseIndividual, actions.createIndividual, actions.removeIndividual);
-var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.chooseIndividual, actions.requestUpdate);
+var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.selectMetaType, actions.checkUriOrSuffix);
+var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.selectMetaType, actions.selectIndividual, actions.createIndividual, actions.removeIndividual);
+var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.selectIndividual, actions.requestUpdate);
 
-var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.chooseMetaType);
+var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.selectMetaType);
 var IndividualAdder = require('./views/IndividualAdderFactory.jsx')(TypesStore, actions.checkUriOrSuffix, actions.createIndividual);
-var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.chooseIndividual, actions.removeIndividual, IndividualAdder);
+var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsStore, actions.selectIndividual, actions.removeIndividual, IndividualAdder);
 var EditView = require('./views/EditViewFactory.jsx')(EditStore, actions.requestUpdate);
 
 module.exports = React.createClass({
@@ -28,4 +28,3 @@ module.exports = React.createClass({
 		</div>;
 	}
 });
-

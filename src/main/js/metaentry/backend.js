@@ -12,6 +12,13 @@ export default {
 		return ajax.getJson(url);
 	},
 
+	getIndividualsSparql(classUri){
+		var url = 'getIndividualsSparql?classUri=' + encodeURIComponent(classUri);
+		return ajax.getJson(url).then(function(response){
+			return response.query;
+		});
+	},
+
 	getIndividual(uri){
 		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
 		return ajax.getJson(url);
@@ -48,4 +55,3 @@ export default {
 		return ajax.getJson(url);
 	}
 };
-

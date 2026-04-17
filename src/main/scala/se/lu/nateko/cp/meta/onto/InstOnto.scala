@@ -44,6 +44,85 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		val labeler = onto.getLabelerForClassIndividuals(classUri)
 		getPropValueHolders(RDF.TYPE, classUri.toRdf).map(labeler.getInfo)
 
+	def getIndividualsSparql(classUri: URI, subjectPrefix: Option[String]): String =
+		val classInfo = onto.getClassInfo(classUri)
+		val propUris = (
+			classInfo.properties.map {
+				case p: DataPropertyDto => p.resource.uri
+				case p: ObjectPropertyDto => p.resource.uri
+			} ++ Seq(RDFS.LABEL.toJava, RDFS.COMMENT.toJava)
+		).distinct.filterNot(_ == RDF.TYPE.toJava)
+
+		val usedNames = scala.collection.mutable.Set.empty[String]
+		def uniqueVarName(propUri: URI): String =
+			val base = sparqlVarBase(propUri)
+			val name = Iterator.from(1)
+				.map(i => if i == 1 then base else s"$base$i")
+				.find(name => !usedNames.contains(name))
+				.get
+			usedNames += name
+			name
+
+		val bindings = propUris.map(uri => (uri, uniqueVarName(uri)))
+		val selectVars = ("?s" +: bindings.map{case (_, name) => s"?$name"}).mkString(" ")
+		val optionalPatterns = bindings
+			.map{case (uri, name) => s"\tOPTIONAL { ?s ${sparqlPredicate(uri)} ?$name . }"}
+			.mkString("\n")
+		val subjectPrefixFilter = subjectPrefix
+			.map(prefix => s"\tFILTER(STRSTARTS(STR(?s), ${sparqlStringLiteral(prefix)}))")
+			.getOrElse("")
+
+		s"""PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+		|PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		|PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|
+		|SELECT $selectVars
+		|WHERE {
+		|	?s rdf:type <${classUri.toString}> .
+		|$subjectPrefixFilter
+		|$optionalPatterns
+		|}
+		|ORDER BY ?s""".stripMargin
+
+	private def sparqlPredicate(uri: URI): String =
+		val cpmetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
+		val rdfsPrefix = "http://www.w3.org/2000/01/rdf-schema#"
+		val str = uri.toString
+		if str.startsWith(cpmetaPrefix) then
+			val suffix = str.substring(cpmetaPrefix.length)
+			if suffix.matches("[A-Za-z_][A-Za-z0-9_\\.-]*") then s"cpmeta:$suffix"
+			else s"<$str>"
+		else if str.startsWith(rdfsPrefix) then
+			val suffix = str.substring(rdfsPrefix.length)
+			if suffix.matches("[A-Za-z_][A-Za-z0-9_\\.-]*") then s"rdfs:$suffix"
+			else s"<$str>"
+		else s"<$str>"
+
+	private def sparqlVarBase(propUri: URI): String =
+		if propUri == RDFS.LABEL.toJava then "label"
+		else if propUri == RDFS.COMMENT.toJava then "comment"
+		else
+			val local = Option(propUri.getFragment)
+				.orElse(Option(propUri.getPath).flatMap(_.split('/').lastOption))
+				.getOrElse("value")
+			val withoutHasPrefix =
+				if local.startsWith("has") && local.length > 3 && local.charAt(3).isUpper
+				then local.substring(3)
+				else local
+			val lowerCamel = withoutHasPrefix.headOption
+				.map(ch => ch.toLower.toString + withoutHasPrefix.substring(1))
+				.getOrElse("value")
+			val clean = lowerCamel
+				.replaceAll("[^A-Za-z0-9_]", "_")
+				.replaceAll("^[^A-Za-z_]+", "")
+			if clean.isEmpty then "value" else clean
+
+	private def sparqlStringLiteral(str: String): String =
+		val escaped = str
+			.replace("\\", "\\\\")
+			.replace("\"", "\\\"")
+		s"\"$escaped\""
+
 
 	def getRangeValues(individClassUri: URI, propUri: URI): Seq[ResourceDto] = {
 		assert(individClassUri != null)//just to silence the not-used warning;

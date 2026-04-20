@@ -164,7 +164,7 @@ lazy val meta = (project in file("."))
 		).value,
 		cpDeployPlaybook := "core.yml",
 		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-		cpDeployInfraBranch := "master",
+		cpDeployInfraBranch := "valter/virtuoso/fs4",
 
 		assembly / fullClasspath := {
 			val cp = (assembly / fullClasspath).value

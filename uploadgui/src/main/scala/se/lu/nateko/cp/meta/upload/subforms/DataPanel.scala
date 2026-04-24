@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.upload.subforms
 import scala.language.unsafeNulls
 
 import scala.scalajs.js
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.util.Try
 
 import se.lu.nateko.cp.meta.upload.*
@@ -52,8 +53,10 @@ class DataPanel(
 		val keyword = keywordSuggestionInput.value.trim
 		if keyword.nonEmpty then
 			val context = Option(keywordSuggestionContext.value.trim).filter(_.nonEmpty)
-			whenDone(Backend.suggestKeyword(KeywordSuggestion(keyword, context))): _ =>
-				js.Dynamic.global.bootstrap.Modal.getInstance(keywordSuggestionModal).hide()
+			val modal = js.Dynamic.global.bootstrap.Modal.getOrCreateInstance(keywordSuggestionModal)
+			val sendSuggestion = Backend.suggestKeyword(KeywordSuggestion(keyword, context))
+			sendSuggestion.onComplete(_ => modal.hide())
+			whenDone(sendSuggestion): _ =>
 				keywordSuggestionInput.value = ""
 				keywordSuggestionContext.value = ""
 				showAlert("Keyword suggestion sent. Thank you!", "alert alert-success")

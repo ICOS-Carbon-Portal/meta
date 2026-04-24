@@ -172,7 +172,7 @@ object Backend {
 
 	def suggestKeyword(suggestion: KeywordSuggestion): Future[Unit] =
 		val json = Json.toJson(suggestion)
-		fetchOk("suggest keyword", "/uploadgui/suggestkeyword", new RequestInit{
+		fetchOk("suggest keyword", "/upload/suggestkeyword", new RequestInit{
 			method = HttpMethod.POST
 			body = Json.stringify(json)
 			headers = Dictionary("Content-Type" -> "application/json")

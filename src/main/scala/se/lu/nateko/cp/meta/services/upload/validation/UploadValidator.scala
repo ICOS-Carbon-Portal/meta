@@ -36,7 +36,7 @@ object UploadValidator:
 	val allowedKeywords: Set[String] =
 		import spray.json.*
 		import DefaultJsonProtocol.*
-		val stream = getClass.getClassLoader.getResourceAsStream("keywords.json")
+		val stream = UploadValidator.getClass.getClassLoader.getResourceAsStream("keywords.json")
 		try
 			val content = scala.io.Source.fromInputStream(stream, "UTF-8").mkString
 			content.parseJson.convertTo[Array[String]].toSet

@@ -67,8 +67,8 @@ object StaticRoute {
 		} ~
 		uploadGuiRoute("uploadgui", false) ~
 		uploadGuiRoute("uploadguidev", true) ~
-		path("uploadgui" / "gcmdkeywords.json"){
-			getFromResource("gcmdkeywords.json")
+		path("uploadgui" / "keywords.json"){
+			getFromResource("keywords.json")
 		} ~
 		(get & pathPrefix(Segment)){page =>
 			extractEnvriOpt{envri =>

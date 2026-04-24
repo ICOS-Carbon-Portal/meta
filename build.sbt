@@ -1,5 +1,3 @@
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import sbt.librarymanagement.InclExclRule
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "se.lu.nateko.cp"
@@ -86,25 +84,6 @@ frontendBuild := {
 	else sys.error("Front end build error")
 }
 
-val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
-fetchGCMDKeywords := {
-	import scala.sys.process._
-	val log = streams.value.log
-	val jsonPath = "./src/main/resources/gcmdkeywords.json"
-	val tmpFile = file(jsonPath + "~")
-	val exitCode = (
-		url("https://gcmd.earthdata.nasa.gov/kms/tree/concept_scheme/sciencekeywords") #>
-		Seq("jq", "[.tree.treeData[].children[].children[] | .. | objects | .title]") #>
-		tmpFile
-	).!
-	if(exitCode == 0) {
-		Files.move(tmpFile.toPath, file(jsonPath).toPath, REPLACE_EXISTING)
-		log.info("Fetched GCMD keywords list")
-	} else log.error(
-		"Error while fetching GCMD keywords list! Check that the machine " +
-		s"you are deploying from has an older file at $jsonPath"
-	)
-}
 
 lazy val meta = (project in file("."))
 	.dependsOn(metaCore, metaCore % "test->test")
@@ -165,8 +144,7 @@ lazy val meta = (project in file("."))
 			clean,
 			metaCore / Test / test,
 			Test / test,
-			frontendBuild,
-			fetchGCMDKeywords
+			frontendBuild
 		).value,
 		cpDeployPlaybook := "core.yml",
 		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),

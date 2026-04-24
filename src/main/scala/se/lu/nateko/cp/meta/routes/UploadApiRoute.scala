@@ -16,7 +16,8 @@ import se.lu.nateko.cp.meta.core.etcupload.JsonSupport.given
 import se.lu.nateko.cp.meta.metaflow.MetaUploadService
 import se.lu.nateko.cp.meta.services.*
 import se.lu.nateko.cp.meta.services.upload.*
-import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, ObjectUploadDto, StaticCollectionDto}
+import se.lu.nateko.cp.cpauth.core.EmailSender
+import se.lu.nateko.cp.meta.{CpmetaJsonProtocol, KeywordSuggestion, KeywordSuggestionConfig, ObjectUploadDto, StaticCollectionDto}
 
 import java.net.URI
 import scala.collection.immutable.Seq
@@ -56,12 +57,14 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 		service: UploadService,
 		authRouting: AuthenticationRouting,
 		metaFlows: Seq[MetaUploadService],
-		coreConf: MetaCoreConfig
+		coreConf: MetaCoreConfig,
+		keywordSuggestion: Option[KeywordSuggestionConfig]
 	)(using Materializer): Route = handleExceptions(errHandler):
 
 		given EnvriConfigs = coreConf.envriConfigs
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
+		keywordSuggestion.fold(reject)(keywordSuggestionRoute(_, authRouting)) ~
 		pathPrefix("upload"){
 			pathPrefix(Segment){uplServiceId =>
 				metaFlows.find(_.dirName == uplServiceId).fold(reject): uplService =>
@@ -131,4 +134,19 @@ object UploadApiRoute extends CpmetaJsonProtocol{
 	end apply
 
 	def reportAccessUri(uriTry: Try[AccessUri]): Route = complete(uriTry.get.uri.toString)
+
+	private def keywordSuggestionRoute(conf: KeywordSuggestionConfig, authRouting: AuthenticationRouting): Route =
+		val mailer = EmailSender(conf.mailing)
+		(post & path("uploadgui" / "suggestkeyword")):
+			authRouting.mustBeLoggedIn: uploader =>
+				replyWithErrorOnBadContent:
+					entity(as[KeywordSuggestion]): sugg =>
+						if conf.mailSendingActive then
+							mailer.sendText(
+								to = Seq(conf.recipientEmail),
+								subject = s"Keyword suggestion: ${sugg.keyword}",
+								body = s"Suggested keyword: ${sugg.keyword}\n\nContext: ${sugg.context.getOrElse("(none)")}\n\nSuggested by: ${uploader.email}",
+								cc = Seq(uploader.email)
+							)
+						complete(StatusCodes.OK)
 }

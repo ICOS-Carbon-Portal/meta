@@ -115,3 +115,5 @@ case class ReferencesDto(
 	autodeprecateSameFilenameObjects: Option[Boolean],
 	partialUpload: Option[Boolean]
 )
+
+case class KeywordSuggestion(keyword: String, context: Option[String])

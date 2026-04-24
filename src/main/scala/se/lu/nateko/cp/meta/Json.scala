@@ -109,6 +109,7 @@ trait CpmetaJsonProtocol extends CommonJsonSupport{
 	given RootJsonFormat[StationTimeSeriesDto] = jsonFormat9(StationTimeSeriesDto.apply)
 	given RootJsonFormat[SpatioTemporalDto] = jsonFormat9(SpatioTemporalDto.apply)
 	given RootJsonFormat[ReferencesDto] = jsonFormat6(ReferencesDto.apply)
+	given RootJsonFormat[KeywordSuggestion] = jsonFormat2(KeywordSuggestion.apply)
 	given RootJsonFormat[DataObjectDto] = jsonFormat8(DataObjectDto.apply)
 	given RootJsonFormat[DocObjectDto] = jsonFormat9(DocObjectDto.apply)
 

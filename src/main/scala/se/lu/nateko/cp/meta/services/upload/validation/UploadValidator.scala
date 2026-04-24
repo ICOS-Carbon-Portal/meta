@@ -32,6 +32,16 @@ def bothOk(try1: Try[NotUsed], try2: => Try[NotUsed]): Try[NotUsed] = try1.flatM
 def userFail(msg: String) = Failure(new UploadUserErrorException(msg))
 def authFail(msg: String) = Failure(new UnauthorizedUploadException(msg))
 
+object UploadValidator:
+	val allowedKeywords: Set[String] =
+		import spray.json.*
+		import DefaultJsonProtocol.*
+		val stream = getClass.getClassLoader.getResourceAsStream("keywords.json")
+		try
+			val content = scala.io.Source.fromInputStream(stream, "UTF-8").mkString
+			content.parseJson.convertTo[Array[String]].toSet
+		finally stream.close()
+
 class UploadValidator(servers: DataObjectInstanceServers):
 	import servers.{ metaVocab, vocab, metaReader, lenses }
 	import RdfLens.{MetaConn, DobjConn, DocConn, CollConn, GlobConn}
@@ -60,7 +70,8 @@ class UploadValidator(servers: DataObjectInstanceServers):
 					yield spec
 			}.toTry(new UploadUserErrorException(_))
 			_ <- userAuthorizedByThemesAndProjects(spec, submConf);
-			_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)))
+			_ <- validateDescription(meta.specificInfo.fold(_.description, _.production.flatMap(_.comment)));
+			_ <- validateKeywords(meta);
 			given DobjConn <- lenses.dataObjectLens(spec.format.self.uri).toTry(new MetadataException(_))
 			amended <- for
 				_ <- scoped.validatePrevVers(meta)
@@ -306,6 +317,12 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			case _ => meta
 
 	end validateSpatialCoverage
+
+	private def validateKeywords(meta: DataObjectDto): Try[NotUsed] =
+		meta.references.flatMap(_.keywords).fold(ok): keywords =>
+			keywords.find(!UploadValidator.allowedKeywords.contains(_)) match
+				case None => ok
+				case Some(bad) => userFail(s"'$bad' is not in the allowed keyword list")
 
 	private def validateDescription(descr: Option[String]): Try[NotUsed] = descr.fold(ok)(
 		doc => if (doc.length <= 5000) then ok else userFail("Description is too long, maximum 5000 characters")

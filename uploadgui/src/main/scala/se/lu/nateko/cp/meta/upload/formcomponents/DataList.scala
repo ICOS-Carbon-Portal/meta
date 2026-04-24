@@ -44,10 +44,7 @@ class DataList[T](elemId: String, val labeller: T => String) {
 	}
 }
 
-class KeywordDataList(elemId: String) extends DataList[String](elemId, identity) {
-	override protected val lookupIsActive: Boolean = false
-	override def lookupValue(label: String): Option[String] = Some(label)
-}
+class KeywordDataList(elemId: String) extends DataList[String](elemId, identity)
 
 class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Unit) {
 

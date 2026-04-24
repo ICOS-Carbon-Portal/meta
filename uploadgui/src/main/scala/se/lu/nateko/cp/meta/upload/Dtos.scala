@@ -37,3 +37,5 @@ case class SamplingPoint(uri: URI, latitude: Double, longitude: Double, name: St
 class SpatialCoverage(val uri: Option[URI], val label: String)
 
 case class DatasetVar(label: String, title: String, valueType: String, unit: String, isOptional: Boolean, isRegex: Boolean)
+
+case class KeywordSuggestion(keyword: String, context: Option[String])

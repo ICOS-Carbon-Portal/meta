@@ -167,8 +167,17 @@ object Backend {
 		.flatMap(parseTo[Doi])
 
 	def getKeywordList(using envri: Envri): Future[IndexedSeq[String]] =
-		fetchOk("fetch keyword list", "/uploadgui/gcmdkeywords.json")
+		fetchOk("fetch keyword list", "/uploadgui/keywords.json")
 			.flatMap(parseTo[IndexedSeq[String]])
+
+	def suggestKeyword(suggestion: KeywordSuggestion): Future[Unit] =
+		val json = Json.toJson(suggestion)
+		fetchOk("suggest keyword", "/uploadgui/suggestkeyword", new RequestInit{
+			method = HttpMethod.POST
+			body = Json.stringify(json)
+			headers = Dictionary("Content-Type" -> "application/json")
+			credentials = RequestCredentials.include
+		}).map(_ => ())
 
 	private val parseBinding: PartialFunction[JsValue, Binding] = {
 		case b: JsObject => b.fields.map{

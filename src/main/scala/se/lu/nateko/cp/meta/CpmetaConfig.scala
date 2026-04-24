@@ -116,6 +116,12 @@ case class UploadServiceConfig(
 	etc: EtcConfig
 )
 
+case class KeywordSuggestionConfig(
+	recipientEmail: String,
+	mailSendingActive: Boolean,
+	mailing: EmailConfig
+)
+
 case class LabelingServiceConfig(
 	instanceServerId: String,
 	provisionalInfoInstanceServerId: String,
@@ -186,7 +192,8 @@ case class CpmetaConfig(
 	sparql: SparqlServerConfig,
 	citations: CitationConfig,
 	statsClient: StatsClientConfig,
-	sentry: Option[SentryConfig]
+	sentry: Option[SentryConfig],
+	keywordSuggestion: Option[KeywordSuggestionConfig]
 )
 
 object ConfigLoader extends CpmetaJsonProtocol:
@@ -232,6 +239,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
+	given RootJsonFormat[KeywordSuggestionConfig] = jsonFormat3(KeywordSuggestionConfig.apply)
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
@@ -243,7 +251,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

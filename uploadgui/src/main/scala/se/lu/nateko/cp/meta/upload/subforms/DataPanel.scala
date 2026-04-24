@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.upload.subforms
 
 import scala.language.unsafeNulls
 
+import scala.scalajs.js
 import scala.util.Try
 
 import se.lu.nateko.cp.meta.upload.*
@@ -10,15 +11,16 @@ import se.lu.nateko.cp.meta.{UploadDto, DataObjectDto}
 import formcomponents.*
 import Utils.*
 import se.lu.nateko.cp.meta.SubmitterProfile
-import UploadApp.whenDone
+import UploadApp.{whenDone, showAlert}
 import java.net.URI
 import java.time.Instant
 import eu.icoscp.envri.Envri
+import org.scalajs.dom.html
 
 
 class DataPanel(
 	objSpecs: IndexedSeq[ObjSpec],
-	gcmdKeywords: IndexedSeq[String],
+	allowedKeywords: IndexedSeq[String],
 	submitter: () => Option[SubmitterProfile]
 )(using bus: PubSubBus, envri: Envri) extends PanelSubform(".data-section"){
 	def nRows: Try[Option[Int]] = nRowsInput.value.withErrorContext("Number of rows")
@@ -33,13 +35,28 @@ class DataPanel(
 	private val dataTypeKeywords = new TagCloud("data-keywords")
 	private val keywordsInput = new TextInput("keywords", () => (), "keywords")
 	private val keywordList = new KeywordDataList("keyword-list")
-	keywordList.values = gcmdKeywords
+	keywordList.values = allowedKeywords
 	private val licenceUrl = new UriOptInput("licenceselect", notifyUpdate)
 	private val moratoriumInput = new InstantOptInput("moratoriuminput", notifyUpdate)
 	private val extraKeywordsDiv = new HtmlElements(".keywords-block")
 	private val extraKeywords = new DataListForm("extra-keywords", keywordList, notifyUpdate)
 	private val varInfoButton = new Button("data-type-variable-list-button", showVarInfoModal)
 	private val varInfoModal = new Modal("data-type-info-modal")
+
+	private val keywordSuggestionModal = getElementById[html.Div]("keyword-suggestion-modal").get
+	private val keywordSuggestionInput = getElementById[html.Input]("suggest-keyword-input").get
+	private val keywordSuggestionContext = getElementById[html.TextArea]("suggest-keyword-context").get
+	private val submitSuggestionButton = getElementById[html.Button]("submit-keyword-suggestion").get
+
+	submitSuggestionButton.onclick = _ =>
+		val keyword = keywordSuggestionInput.value.trim
+		if keyword.nonEmpty then
+			val context = Option(keywordSuggestionContext.value.trim).filter(_.nonEmpty)
+			whenDone(Backend.suggestKeyword(KeywordSuggestion(keyword, context))): _ =>
+				js.Dynamic.global.bootstrap.Modal.getInstance(keywordSuggestionModal).hide()
+				keywordSuggestionInput.value = ""
+				keywordSuggestionContext.value = ""
+				showAlert("Keyword suggestion sent. Thank you!", "alert alert-success")
 
 
 	def resetForm(): Unit = {

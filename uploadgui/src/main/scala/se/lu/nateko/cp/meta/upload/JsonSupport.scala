@@ -135,6 +135,8 @@ object JsonSupport:
 					val errors = results.collect { case JsError(errors) => errors }.flatten
 					JsError(errors)
 
+	given OFormat[KeywordSuggestion] = Json.format[KeywordSuggestion]
+
 	given Reads[SubmitterProfile] = Json.reads[SubmitterProfile]
 
 	given Reads[Envri] with

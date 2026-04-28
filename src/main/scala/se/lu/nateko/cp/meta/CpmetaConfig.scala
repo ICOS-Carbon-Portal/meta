@@ -149,7 +149,7 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class QleverConfig(
+case class HttpRdfStoreConfig(
 	endpoint: String,
 	recreateAtStartup: Boolean,
 	accessToken: Option[String]
@@ -174,7 +174,7 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	qlever: QleverConfig,
+	rdfStorage: HttpRdfStoreConfig,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -229,7 +229,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[QleverConfig] = jsonFormat3(QleverConfig.apply)
+	given RootJsonFormat[HttpRdfStoreConfig] = jsonFormat3(HttpRdfStoreConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

@@ -85,7 +85,7 @@ class Rdf4jSparqlServer(
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
 		() => {
-			val timeout = (config.maxQueryRuntimeSec + 1).seconds
+			val timeout = (1000).seconds
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
 			val errPromise = Promise[ByteString]()
 			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>

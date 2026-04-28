@@ -5,9 +5,9 @@ import akka.stream.Materializer
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
-import se.lu.nateko.cp.meta.persistence.QleverUpdateLogIngester
+import se.lu.nateko.cp.meta.persistence.HttpRdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.services.sparql.QleverClient
+import se.lu.nateko.cp.meta.services.sparql.HttpRdfStoreClient
 import tools.shared.config.cpmetaConfig
 
 import java.net.URI
@@ -15,9 +15,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
-private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
+private val log = LoggerFactory.getLogger("devtools.rdfstorePopulate")
 
-@main def qleverPopulate(args: String*) =
+@main def rdfstorePopulate(args: String*) =
 
 	log.info("Loading configuration...")
 	val config = cpmetaConfig
@@ -31,14 +31,14 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 			log.warn(s"Filter was: ${filterNames.mkString(", ")}")
 		System.exit(1)
 
-	log.info(s"Will ingest ${targets.size} RDF log(s) into QLever at ${config.qlever.endpoint}")
+	log.info(s"Will ingest ${targets.size} RDF log(s) into RDF storage at ${config.rdfStorage.endpoint}")
 	targets.foreach((name, ctx) => log.info(s"  - $name -> $ctx"))
 
-	given system: ActorSystem = ActorSystem("qleverPopulate")
+	given system: ActorSystem = ActorSystem("rdfstorePopulate")
 	given Materializer = Materializer(system)
 
 	try
-		val qleverClient = new QleverClient(config.qlever)
+		val rdfStoreClient = new HttpRdfStoreClient(config.rdfStorage)
 		val factory = SimpleValueFactory.getInstance().nn
 		var succeeded = 0
 
@@ -46,7 +46,7 @@ private val log = LoggerFactory.getLogger("devtools.qleverPopulate")
 			log.info(s"[$logName] Starting ingestion into <$writeCtxUri>...")
 			val writeContext = factory.createIRI(writeCtxUri.toString)
 			val rdfLog = PostgresRdfLog(logName, config.rdfLog, factory)
-			QleverUpdateLogIngester.ingest(rdfLog.updates, qleverClient, true, writeContext) match
+			HttpRdfUpdateLogIngester.ingest(rdfLog.updates, rdfStoreClient, true, writeContext) match
 				case Success(_) =>
 					succeeded += 1
 					log.info(s"[$logName] Ingestion complete.")

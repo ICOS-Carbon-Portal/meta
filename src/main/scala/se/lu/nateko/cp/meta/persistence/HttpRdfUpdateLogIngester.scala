@@ -9,20 +9,20 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.services.sparql.QleverClient
+import se.lu.nateko.cp.meta.services.sparql.HttpRdfStoreClient
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
 
-object QleverUpdateLogIngester:
+object HttpRdfUpdateLogIngester:
 
 	val ChunkSize = 1000
 
 	def ingest(
 		updates: CloseableIterator[RdfUpdate],
-		client: QleverClient,
+		client: HttpRdfStoreClient,
 		clearFirst: Boolean,
 		writeContext: IRI
 	)(using ActorSystem, Materializer): Try[Unit] =
@@ -46,9 +46,9 @@ object QleverUpdateLogIngester:
 							conn.remove(update.statement)
 						updatesProcessed += 1
 						if updatesProcessed % 100000 == 0 then
-							println(s"Qlever $graphUri: processed $updatesProcessed updates into in-memory store")
+							println(s"RDF storage $graphUri: processed $updatesProcessed updates into in-memory store")
 
-				println(s"Qlever $graphUri: finished processing $updatesProcessed updates, sending to Qlever")
+				println(s"RDF storage $graphUri: finished processing $updatesProcessed updates, sending to RDF storage")
 
 				var totalSent = 0
 				Using.resource(repo.getConnection): conn =>
@@ -60,17 +60,17 @@ object QleverUpdateLogIngester:
 							if batch.size >= ChunkSize then
 								Await.result(client.graphStoreAdd(graphUri, batch.asScala), 120.seconds)
 								totalSent += batch.size
-								println(s"Qlever $graphUri: adding ${batch.size} triples (total $totalSent)")
+								println(s"RDF storage $graphUri: adding ${batch.size} triples (total $totalSent)")
 								batch.clear()
 						if !batch.isEmpty then
 							Await.result(client.graphStoreAdd(graphUri, batch.asScala), 120.seconds)
 							totalSent += batch.size
-							println(s"Qlever $graphUri: adding ${batch.size} triples (total $totalSent)")
+							println(s"RDF storage $graphUri: adding ${batch.size} triples (total $totalSent)")
 					finally
 						allStatements.close()
 
-				println(s"Qlever $graphUri: done, sent $totalSent triples total")
+				println(s"RDF storage $graphUri: done, sent $totalSent triples total")
 			finally
 				repo.shutDown()
 
-end QleverUpdateLogIngester
+end HttpRdfUpdateLogIngester

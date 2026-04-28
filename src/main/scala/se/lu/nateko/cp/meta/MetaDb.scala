@@ -11,18 +11,18 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlRunner, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, QleverInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, HttpRdfInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.QleverUpdateLogIngester
+import se.lu.nateko.cp.meta.persistence.HttpRdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{QleverClient, QleverSparqlServer}
+import se.lu.nateko.cp.meta.services.sparql.{HttpRdfStoreClient, HttpRdfSparqlServer}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
-import se.lu.nateko.cp.meta.services.{FileStorageService, QleverSparqlRunner, ServiceException}
+import se.lu.nateko.cp.meta.services.{FileStorageService, HttpRdfSparqlRunner, ServiceException}
 
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
@@ -53,7 +53,7 @@ class MetaDb(
 		new Rdf4jUriSerializer(vanillaGlob, sparqlRunner, vocab, metaVocab, lenses, citer.doiCiter, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		Future.successful("QLever backend: read-only mode switching not supported")
+		Future.successful("HTTP RDF backend: read-only mode switching not supported")
 
 	override def close(): Unit =
 		sparql.shutdown()
@@ -129,10 +129,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config)
 
-		val qleverClient = new QleverClient(config.qlever)
+		val rdfStoreClient = new HttpRdfStoreClient(config.rdfStorage)
 
 		// Global InstanceServer (reads across all graphs, no write context) for CitationProvider
-		val globalServer = new QleverInstanceServer(qleverClient, Nil, null)
+		val globalServer = new HttpRdfInstanceServer(rdfStoreClient, Nil, null)
 		val citer = CitationProvider(globalServer, citCache, metaCache, config)
 
 		given EnvriConfigs = config.core.envriConfigs
@@ -143,7 +143,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val serversFut =
 			given ExecutionContext = ExecutionContext.global
 
-			makeInstanceServers(qleverClient, Ingestion.allProviders, config).andThen:
+			makeInstanceServers(rdfStoreClient, Ingestion.allProviders, config).andThen:
 				case _ => log.info("instance servers created")
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield
@@ -155,7 +155,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val sparqlRunner = new QleverSparqlRunner(qleverClient)
+			val sparqlRunner = new HttpRdfSparqlRunner(rdfStoreClient)
 			val uploadService = makeUploadService(citer, instanceServers, sparqlRunner, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
@@ -166,15 +166,15 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf)
 			}
 
-			val sparqlServer = new QleverSparqlServer(qleverClient, config.sparql)
+			val sparqlServer = new HttpRdfSparqlServer(rdfStoreClient, config.sparql)
 
-			val dropTripleObjs = makeDropTripleObjects(qleverClient)
+			val dropTripleObjs = makeDropTripleObjects(rdfStoreClient)
 
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, sparqlRunner, citer, config, dropTripleObjs)
 		end for
 	end apply
 
-	private def makeDropTripleObjects(client: QleverClient): (IRI, IRI, Seq[IRI]) => Try[Unit] =
+	private def makeDropTripleObjects(client: HttpRdfStoreClient): (IRI, IRI, Seq[IRI]) => Try[Unit] =
 		(subj, pred, ctxts) => Try:
 			import scala.concurrent.Await
 			import scala.concurrent.duration.DurationInt
@@ -217,7 +217,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(qleverClient: QleverClient, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer =
+	private def makeInstanceServer(rdfStoreClient: HttpRdfStoreClient, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer =
 
 		given factory: ValueFactory = SimpleValueFactory.getInstance()
 
@@ -229,20 +229,20 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
 
-				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.qlever.recreateAtStartup)
+				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
 				then
 					val cleanFirst = conf.logIngestionFromId.isEmpty
 					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
 					log.info(s"Ingesting from RDF log $logName $msgDetail...")
 					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-					QleverUpdateLogIngester.ingest(updates, qleverClient, cleanFirst, writeContext).get
+					HttpRdfUpdateLogIngester.ingest(updates, rdfStoreClient, cleanFirst, writeContext).get
 					log.info(s"Ingesting from RDF log $logName done!")
 
-				val qleverServer = new QleverInstanceServer(qleverClient, readContexts, writeContext)
-				new LoggingInstanceServer(qleverServer, rdfLog)
+				val rdfServer = new HttpRdfInstanceServer(rdfStoreClient, readContexts, writeContext)
+				new LoggingInstanceServer(rdfServer, rdfLog)
 
 			case None =>
-				new QleverInstanceServer(qleverClient, readContexts, writeContext)
+				new HttpRdfInstanceServer(rdfStoreClient, readContexts, writeContext)
 		end match
 
 	end makeInstanceServer
@@ -292,7 +292,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	}
 
 	private def makeInstanceServers(
-		qleverClient: QleverClient,
+		rdfStoreClient: HttpRdfStoreClient,
 		providersFactory: => Map[String, StatementProvider],
 		config: CpmetaConfig
 	)(using ExecutionContext): Future[Map[String, InstanceServer]] =
@@ -309,7 +309,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			import IngestionMode.{EAGER, BACKGROUND}
 
 			val basicInit: Future[InstanceServer] =
-				val init = Future(makeInstanceServer(qleverClient, servConf, config))
+				val init = Future(makeInstanceServer(rdfStoreClient, servConf, config))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{
@@ -340,7 +340,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 									Ingestion.ingest(server, ingester, valueFactory)
 								case extractor: Extractor =>
 									// Extractors require a Repository; use an empty in-memory repo as placeholder
-									// TODO: provide QLever-backed repo to extractors
+									// TODO: provide HTTP RDF-backed repo to extractors
 									val emptyRepo = se.lu.nateko.cp.meta.utils.rdf4j.Loading.emptyInMemory
 									Ingestion.ingest(server, extractor, emptyRepo)
 							).andThen:

@@ -21,7 +21,7 @@ import akka.stream.Materializer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 
-class QleverSparqlServer(client: QleverClient, config: SparqlServerConfig)(using system: ActorSystem, mat: Materializer) extends SparqlServer:
+class HttpRdfSparqlServer(client: HttpRdfStoreClient, config: SparqlServerConfig)(using system: ActorSystem, mat: Materializer) extends SparqlServer:
 	import Rdf4jSparqlServer.{tupleQueryProtocolOptions, graphQueryProtocolOptions, plainResponse}
 
 	private given ExecutionContext = system.dispatcher
@@ -58,10 +58,10 @@ class QleverSparqlServer(client: QleverClient, config: SparqlServerConfig)(using
 								Future.successful(resp.entity.dataBytes)
 							else
 								resp.entity.toStrict(30.seconds).flatMap: strict =>
-									Future.failed(Exception(s"QLever error ${resp.status}: ${strict.data.utf8String}"))
+									Future.failed(Exception(s"SPARQL proxy error ${resp.status}: ${strict.data.utf8String}"))
 					)
 					.mapMaterializedValue(_ => NotUsed)
 				HttpResponse(entity = HttpEntity(responseType, entitySource))
 		)
 
-end QleverSparqlServer
+end HttpRdfSparqlServer

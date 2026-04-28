@@ -13,14 +13,14 @@ import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.rio.Rio
 import org.eclipse.rdf4j.rio.helpers.StatementCollector
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
-import se.lu.nateko.cp.meta.services.sparql.QleverClient
+import se.lu.nateko.cp.meta.services.sparql.HttpRdfStoreClient
 
 import java.io.ByteArrayInputStream
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-class QleverSparqlRunner(client: QleverClient)(using system: ActorSystem, mat: Materializer) extends SparqlRunner:
+class HttpRdfSparqlRunner(client: HttpRdfStoreClient)(using system: ActorSystem, mat: Materializer) extends SparqlRunner:
 	private given scala.concurrent.ExecutionContext = system.dispatcher
 
 	override def evaluateTupleQuery(q: SparqlQuery): CloseableIterator[BindingSet] =
@@ -45,7 +45,7 @@ class QleverSparqlRunner(client: QleverClient)(using system: ActorSystem, mat: M
 		val resp = Await.result(client.sparqlQuery(query, acceptMime), 65.seconds)
 		val strict = Await.result(resp.entity.toStrict(60.seconds), 65.seconds)
 		if !resp.status.isSuccess() then
-			throw Exception(s"QLever query failed with ${resp.status}: ${strict.data.utf8String}")
+			throw Exception(s"SPARQL query failed with ${resp.status}: ${strict.data.utf8String}")
 		strict.data.toArray
 
-end QleverSparqlRunner
+end HttpRdfSparqlRunner

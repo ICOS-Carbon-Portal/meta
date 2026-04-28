@@ -10,7 +10,7 @@ import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.resultio.helpers.QueryResultCollector
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONParser
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
-import se.lu.nateko.cp.meta.services.sparql.QleverClient
+import se.lu.nateko.cp.meta.services.sparql.HttpRdfStoreClient
 import spray.json.{JsBoolean, JsonParser}
 
 import java.io.ByteArrayInputStream
@@ -20,8 +20,8 @@ import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.{IterableHasAsScala, IteratorHasAsScala}
 import scala.util.Try
 
-class QleverInstanceServer(
-	client: QleverClient,
+class HttpRdfInstanceServer(
+	client: HttpRdfStoreClient,
 	val readContexts: Seq[IRI],
 	val writeContext: IRI
 )(using system: ActorSystem, mat: Materializer) extends InstanceServer:
@@ -35,10 +35,10 @@ class QleverInstanceServer(
 		vf.createIRI(prefix.stringValue.stripSuffix("/") + "/", UUID.randomUUID.toString)
 
 	override def withContexts(read: Seq[IRI], write: IRI): InstanceServer =
-		new QleverInstanceServer(client, read, write)
+		new HttpRdfInstanceServer(client, read, write)
 
 	override def getConnection(): TriplestoreConnection & SparqlRunner =
-		new QleverTriplestoreConnection(client, writeContext, readContexts)
+		new HttpRdfTriplestoreConnection(client, writeContext, readContexts)
 
 	override def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement] =
 		val conn = getConnection()
@@ -65,11 +65,11 @@ class QleverInstanceServer(
 				(update.isAssertion, Vector(update.statement)) :: groups
 		.reverse
 
-end QleverInstanceServer
+end HttpRdfInstanceServer
 
 
-class QleverTriplestoreConnection(
-	client: QleverClient,
+class HttpRdfTriplestoreConnection(
+	client: HttpRdfStoreClient,
 	val primaryContext: IRI,
 	val readContexts: Seq[IRI]
 )(using system: ActorSystem, mat: Materializer) extends TriplestoreConnection, SparqlRunner:
@@ -80,7 +80,7 @@ class QleverTriplestoreConnection(
 	override def factory: ValueFactory = vf
 
 	override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection =
-		new QleverTriplestoreConnection(client, primary, read)
+		new HttpRdfTriplestoreConnection(client, primary, read)
 
 	override def close(): Unit = ()
 
@@ -128,10 +128,10 @@ class QleverTriplestoreConnection(
 		val resp = Await.result(client.sparqlQuery(query, acceptMime), 65.seconds)
 		val strict = Await.result(resp.entity.toStrict(60.seconds), 65.seconds)
 		if !resp.status.isSuccess() then
-			throw Exception(s"QLever query failed with ${resp.status}: ${strict.data.utf8String}")
+			throw Exception(s"SPARQL query failed with ${resp.status}: ${strict.data.utf8String}")
 		strict.data.toArray
 
-end QleverTriplestoreConnection
+end HttpRdfTriplestoreConnection
 
 
 private def sparqlTerm(v: Value): String = v match
@@ -139,12 +139,8 @@ private def sparqlTerm(v: Value): String = v match
 	case lit: Literal => sparqlLiteral(lit)
 	case bnode: BNode => s"_:${bnode.getID}"
 
-private val XsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean"
-
 private def sparqlLiteral(lit: Literal): String =
-	val label = lit.getDatatype match
-		case dt if dt != null && dt.stringValue == XsdBoolean => lit.getLabel.toLowerCase
-		case _ => lit.getLabel
+	val label = lit.getLabel
 	val escaped = label
 		.replace("\\", "\\\\")
 		.replace("\"", "\\\"")

@@ -210,7 +210,7 @@ In bash shell, one can also format the JSON after fetching using [jq](https://jq
 
 The JSON can also be redirected into a file for later reuse:
 
-`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq . > metaPackage.json`
+`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq > metaPackage.json`
 
 Important: the `submitterId` field value is on purpose left empty in the returned JSON object. For spatiotemporal data objects, the geospatial metadata section in the returned JSON must also be edited before reuse, as it is not formatted in a way that can be interpreted by the upload mechanism.
 

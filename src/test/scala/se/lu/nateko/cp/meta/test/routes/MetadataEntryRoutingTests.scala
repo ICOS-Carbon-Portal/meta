@@ -36,7 +36,7 @@ class MetadataEntryRoutingTests extends AnyFunSpec with ScalatestRouteTest:
 					val responseJson = responseAs[String].parseJson.asJsObject
 					val query = responseJson.fields("query").convertTo[String]
 					assert(query.contains("SELECT ?s"))
-					assert(query.contains("FILTER(STRSTARTS(STR(?s), \"http://meta.icos-cp.eu/\"))"))
+					assert(query.contains("""FILTER(STRSTARTS(STR(?s), "http://meta.icos-cp.eu/"))"""))
 
 		it("returns bad request for unknown host"):
 			Get(s"/getIndividualsSparql?classUri=$encodedClassUri")

@@ -1,8 +1,10 @@
 package se.lu.nateko.cp.meta.test
 
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
+import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
+import scala.jdk.CollectionConverters.SetHasAsScala
 
 import java.net.URI
 
@@ -11,6 +13,10 @@ class InstOntoTests extends AnyFunSpec{
 	val onto = new Onto(TestConfig.owlOnto)
 	val instOnto = new InstOnto(TestConfig.instServer, onto)
 	val stationClassUri = new URI(TestConfig.ontUri + "Station")
+	private def parseTupleQuery(query: String): ParsedTupleQuery =
+		(new SPARQLParser).parseQuery(query, null) match
+			case parsed: ParsedTupleQuery => parsed
+			case other => fail(s"Expected ParsedTupleQuery, got ${other.getClass.getSimpleName}")
 
 	describe("getIndividual"){
 
@@ -35,43 +41,32 @@ class InstOntoTests extends AnyFunSpec{
 	}
 
 	describe("getIndividualsSparql"){
-
 		it("includes basic query structure and common projected properties"){
 			val query = instOnto.getIndividualsSparql(stationClassUri, None)
+			val parsed = parseTupleQuery(query)
+			val bindingNames = parsed.getTupleExpr.nn.getBindingNames.nn.asScala
 
-			assert(query.contains("SELECT ?s"))
+			assert(bindingNames.contains("s"))
+			assert(bindingNames.contains("label"))
+			assert(bindingNames.contains("comment"))
+			assert(bindingNames.contains("seeAlso"))
 			assert(query.contains(s"?s rdf:type <$stationClassUri> ."))
 			assert(query.contains("ORDER BY ?s"))
-			assert(query.contains("rdfs:label"))
-			assert(query.contains("rdfs:comment"))
 		}
 
 		it("includes subject prefix filter when provided"){
-			val prefix = "http://meta.icos-cp.eu/"
+			val prefix = new URI("http://meta.icos-cp.eu/")
 			val query = instOnto.getIndividualsSparql(stationClassUri, Some(prefix))
+			parseTupleQuery(query)
 
-			assert(query.contains(s"FILTER(STRSTARTS(STR(?s), \"$prefix\"))"))
+			assert(query.contains(s"""FILTER(STRSTARTS(STR(?s), "$prefix"))"""))
 		}
 
 		it("omits subject prefix filter when not provided"){
 			val query = instOnto.getIndividualsSparql(stationClassUri, None)
+			parseTupleQuery(query)
 
 			assert(!query.contains("STRSTARTS(STR(?s),"))
-		}
-
-		it("escapes quotes and backslashes in subject prefix"){
-			val prefix = "http://meta.icos-cp.eu/path\\with\\slash/\"quoted\""
-			val query = instOnto.getIndividualsSparql(stationClassUri, Some(prefix))
-
-			assert(query.contains("path\\\\with\\\\slash"))
-			assert(query.contains("\\\"quoted\\\""))
-		}
-
-		it("produces a syntactically valid SPARQL query"){
-			val query = instOnto.getIndividualsSparql(stationClassUri, Some("http://meta.icos-cp.eu/"))
-
-			(new SPARQLParser).parseQuery(query, null)
-			assert(true)
 		}
 	}
 }

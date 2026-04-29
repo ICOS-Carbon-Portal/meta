@@ -45,7 +45,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(using envriConfig
 			pathSuffix("getIndividualsSparql"){
 				extractEnvri{ envri =>
 					parameter("classUri"){ uriStr =>
-						val subjectPrefix = Some(envriConfigs(envri).metaItemPrefix.toString)
+						val subjectPrefix = Some(envriConfigs(envri).metaItemPrefix)
 						complete(JsObject("query" -> JsString(instOnto.getIndividualsSparql(new URI(uriStr), subjectPrefix))))
 					}
 				}

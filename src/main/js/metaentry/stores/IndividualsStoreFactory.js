@@ -33,6 +33,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			Backend.listIndividuals(selectedType).then(
 				function(individuals){
 
+					// Ignore stale async responses after the user switched type.
 					if(selectedType !== self.selectedType) return;
 
 					self.state.individuals = individuals;
@@ -47,6 +48,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			Backend.getIndividualsSparql(selectedType).then(
 				function(individualsSparql){
 
+					// Ignore stale async responses after the user switched type.
 					if(selectedType !== self.selectedType) return;
 
 					self.state.individualsSparql = individualsSparql;

@@ -2,8 +2,8 @@
 @import se.lu.nateko.cp.meta.core.data.EnvriConfig
 
 @(orgExt: OrganizationExtra[AnyRef])(implicit conf: EnvriConfig)
-@if(orgExt.staff.isEmpty) {} else {
-	<h2 class="fs-3 mt-5">Current staff</h2>
+@if(orgExt.staff.isEmpty) {<span id="station-staff"></span>} else {
+	<h2 id="station-staff" class="fs-3 mt-5">Current staff</h2>
 	<table class="table">
 		<thead>
 			<tr>

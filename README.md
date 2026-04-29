@@ -19,7 +19,7 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 
 ## Upload instructions (manual)
 
-Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app.
+Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app. For files larger than 1 GB, scripting-based upload is recommended.
 
 ---
 
@@ -111,7 +111,7 @@ For the spatiotemporal data objects, the metadata package has the same general s
 Clarifications:
 
 - `submitterId` will be provided by the CP's technical people. This is not the same as username for logging in with CPauth.
-- `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems. It's a 32-byte binary sequence, and must be represented as a string property, containing either hex or base64 encoding.
+- `hashSum` is so-called SHA256 hashsum. It can be easily computed from command line using `sha256sum` tool on most Unix-based systems, or by executing `certutil -hashfile [file location] SHA256` from the Windows command line. It's a 32-byte binary sequence, and must be represented as a string property, containing either hex or base64 encoding.
 - `fileName` is required but can be freely chosen by you. Every data object is stored and distributed as a single file.
 - `specificInfo` for station-specific time series objects
 	- `station` is CP's URL representing the station that acquired the data. The lists of stations can be found for example here: [ATC](https://meta.icos-cp.eu/ontologies/cpmeta/AS), [ETC](https://meta.icos-cp.eu/ontologies/cpmeta/ES), [OTC](https://meta.icos-cp.eu/ontologies/cpmeta/OS).
@@ -202,11 +202,21 @@ As with data object uploads, this metadata package must be HTTP-POSTed to `https
 
 When scripting uploads of multiple objects, it can be convenient to use an upload-metadata package of an existing object as an example or a template. The reconstructed package can be fetched using the following request:
 
-`curl https://meta.icos-cp.eu/dtodownload?uri=<langing page URL>`
+`curl https://meta.icos-cp.eu/dtodownload?uri=<landing page URL>`
 
-In bash shell, one can also format the JSON after fetching, as in this example:
+In bash shell, one can also format the JSON after fetching using [jq](https://jqlang.org/), as in this example:
 
-`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | python3 -m json.tool`
+`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq .`
+
+The JSON can also be redirected into a file for later reuse:
+
+`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq . > metaPackage.json`
+
+Important: the `submitterId` field value is on purpose left empty in the returned JSON object. For spatiotemporal data objects, the geospatial metadata section in the returned JSON must also be edited before reuse, as it is not formatted in a way that can be interpreted by the upload mechanism.
+
+### Updating the metadata of an existing object
+
+To update the metadata of an existing object, first prepare a complete metadata package JSON file containing all relevant key-value pairs, including new or updated ones, while removing those that are no longer applicable. Then apply the same procedure as when registering the data object for the first time.
 
 ---
 

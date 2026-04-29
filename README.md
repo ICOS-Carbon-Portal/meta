@@ -206,7 +206,7 @@ When scripting uploads of multiple objects, it can be convenient to use an uploa
 
 In bash shell, one can also format the JSON after fetching using [jq](https://jqlang.org/), as in this example:
 
-`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq .`
+`curl https://meta.icos-cp.eu/dtodownload?uri=https://meta.icos-cp.eu/objects/n7cB5kS4U1E5A3mXKtEUCF9s | jq`
 
 The JSON can also be redirected into a file for later reuse:
 

@@ -21,7 +21,7 @@ object DataListInput {
 }
 
 class DataList[T](elemId: String, val labeller: T => String) {
-	private val list = getElementById[html.DataList](elemId).get
+	private val list = getElementById[html.DataList](elemId)
 	private var _values = IndexedSeq.empty[T]
 	private val valLookup = mutable.Map.empty[String, T]
 	protected val lookupIsActive: Boolean = true
@@ -65,7 +65,7 @@ class DataListForm[T](elemId: String, list: DataList[T], notifyUpdate: () => Uni
 		}
 	}
 
-	private val formDiv = getElementById[html.Div](elemId).get
+	private val formDiv = getElementById[html.Div](elemId)
 	private val template = querySelector[html.Div](formDiv, ".data-list").get
 	private var _ordId: Long = 0L
 	private val addButton = querySelector[html.Button](formDiv, "#add-element").get

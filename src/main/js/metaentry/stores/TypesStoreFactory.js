@@ -1,4 +1,4 @@
-export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
+export default function(Backend, selectTypeAction, checkUriOrSuffixAction){
 
 	const uriCheck = _.debounce(
 		function(uri, onSuccess){
@@ -19,15 +19,15 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 		getInitialState: function(){
 			return {
 				types: [],
-				chosen: null,
-				chosenIdx: -1,
+				selected: null,
+				selectedIdx: -1,
 				candidateUri: null,
 				uriAvailable: false
 			};
 		},
 
 		init: function(){
-			this.listenTo(chooseTypeAction, this.setChosenType);
+			this.listenTo(selectTypeAction, this.setSelectedType);
 			this.listenTo(checkUriOrSuffixAction, this.checkUriOrSuffix);
 			this.state = this.getInitialState();
 			var self = this;
@@ -41,16 +41,16 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 			);
 		},
 
-		setChosenType: function(chosenType){
+		setSelectedType: function(selectedType){
 
-			if(this.state.chosen != chosenType){
+			if(this.state.selected != selectedType){
 
-				const chosenIdx = _.findIndex(this.state.types, theType => (theType.uri == chosenType));
+				const selectedIdx = _.findIndex(this.state.types, theType => (theType.uri == selectedType));
 
 				this.state = _.extend(this.getInitialState(), {
 					types: this.state.types,
-					chosen: chosenType,
-					chosenIdx
+					selected: selectedType,
+					selectedIdx
 				});
 
 				this.publishState();
@@ -59,7 +59,7 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 		},
 
 		checkUriOrSuffix: function(uriOrSuffix){
-			if(!uriOrSuffix || this.state.chosenIdx < 0 || this.state.chosenIdx >= this.state.types.length){
+			if(!uriOrSuffix || this.state.selectedIdx < 0 || this.state.selectedIdx >= this.state.types.length){
 				_.extend(this.state, {uriAvailable: false, candidateUri: null})
 				this.publishState()
 				return
@@ -69,7 +69,7 @@ export default function(Backend, chooseTypeAction, checkUriOrSuffixAction){
 			var uri = uriOrSuffix.match(regex)
 
 			if(!uri || uri.length == 0){
-				var uriBase = this.state.types[this.state.chosenIdx].newInstanceBaseUri;
+				var uriBase = this.state.types[this.state.selectedIdx].newInstanceBaseUri;
 				var uri = uriBase + encodeURIComponent(uriOrSuffix.trim().replace(/ /g, '_'))
 			}
 

@@ -32,8 +32,29 @@ module.exports = React.createClass({
 
 	render: function(){
 		var state = this.state;
+		var btnVariant = state.btnVariant || "btn-outline-secondary";
+		var buttonClasses = "btn btn-sm text-nowrap flex-shrink-0 " + btnVariant;
 
-		if(state.isDisabled) return null;
+		if(state.label){
+			var icon = state.icon ? <span className={"fas fa-" + state.icon + " me-1"}></span> : null;
+			return <button
+				type="button"
+				className={buttonClasses}
+				onClick={state.clickHandler}
+				disabled={!!state.isDisabled}
+			>{icon}{state.label}</button>;
+		}
+
+		if(state.asButton){
+			return <button
+				type="button"
+				className={buttonClasses}
+				onClick={state.clickHandler}
+				disabled={!!state.isDisabled}
+			><span className={"fas fa-" + state.icon}></span></button>;
+		}
+
+			if(state.isDisabled) return null;
 
 		var cssClasses = "fas fa-" + state.icon;
 		return <span className={cssClasses} onClick={state.clickHandler} role="button"></span>;

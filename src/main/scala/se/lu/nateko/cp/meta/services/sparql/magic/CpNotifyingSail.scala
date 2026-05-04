@@ -23,12 +23,12 @@ import scala.util.{Failure, Success}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 
-type StoreSail = FederatedServiceResolverClient & NotifyingSail:
+type MainSail = FederatedServiceResolverClient & NotifyingSail:
 	def setEvaluationStrategyFactory(factory: EvaluationStrategyFactory): Unit
 
 
 class CpNotifyingSail(
-	inner: StoreSail,
+	inner: MainSail,
 	citer: CitationProvider
 )(using EnvriConfigs) extends NotifyingSailWrapper(inner):
 

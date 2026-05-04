@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
 
-import se.lu.nateko.cp.meta.services.sparql.StoreSail
+import se.lu.nateko.cp.meta.services.sparql.MainSail
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 import StatementsEnricher.StatIter

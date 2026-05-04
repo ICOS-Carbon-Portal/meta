@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.RdfStorageConfig
 
 import java.nio.file.{FileVisitOption, Files, Paths}
 
-type StoreSail = FederatedServiceResolverClient & NotifyingSail:
+type MainSail = FederatedServiceResolverClient & NotifyingSail:
 	def setEvaluationStrategyFactory(factory: EvaluationStrategyFactory): Unit
 
 object StorageSail:

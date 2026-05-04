@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
 import java.util.Arrays
 import scala.collection.immutable.SeqMap
 
-class StatementsEnricher(val citer: CitationProvider) {
+private[enriched] class StatementsEnricher(val citer: CitationProvider) {
 	import StatementsEnricher.StatIter
 	import citer.metaVocab
 	private given factory: ValueFactory = metaVocab.factory

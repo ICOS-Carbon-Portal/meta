@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.sail.{NotifyingSailConnection, UpdateContext}
 
 import scala.util.control.NoStackTrace
 
-class ReadonlyConnectionWrapper(conn: NotifyingSailConnection, errorMessage: String) extends NotifyingSailConnectionWrapper(conn){
+private[enriched] class ReadonlyConnectionWrapper(conn: NotifyingSailConnection, errorMessage: String) extends NotifyingSailConnectionWrapper(conn){
 
 	override def addStatement(modify: UpdateContext, subj: Resource, pred: IRI, obj: Value, contexts: Resource*): Unit =
 		writeFail
@@ -30,4 +30,4 @@ class ReadonlyConnectionWrapper(conn: NotifyingSailConnection, errorMessage: Str
 
 }
 
-class WritingForbiddenException(msg: String) extends IllegalAccessException(msg) with NoStackTrace
+private class WritingForbiddenException(msg: String) extends IllegalAccessException(msg) with NoStackTrace

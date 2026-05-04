@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.RdfStorageConfig
 
 import java.nio.file.{FileVisitOption, Files, Paths}
 
-object StorageSail:
+private[enriched] object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
 
 	def apply(conf: RdfStorageConfig): (Boolean, MainSail) =

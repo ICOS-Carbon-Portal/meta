@@ -128,6 +128,7 @@ lazy val meta = (project in file("."))
 			"io.sentry"              % "sentry"                             % "8.37.1",
 			"io.sentry"              % "sentry-logback"                     % "8.37.1",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,

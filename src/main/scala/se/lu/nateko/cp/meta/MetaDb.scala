@@ -41,7 +41,7 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val magicRepo: SailRepository,
+	val repo: SailRepository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -56,17 +56,17 @@ class MetaDb (
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		magicRepo.getSail match
+		repo.getSail match
 			case cp: CpNotifyingSail =>
 				val exe = summon[ActorSystem].dispatcher
-				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
+				cp.makeReadonlyAndDumpCaches(msg)(using exe)
 			case _ => Future.successful("Not a Carbon Portal repository, cannot switch to read-only mode")
 
 
 	override def close(): Unit =
 		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
-		magicRepo.shutDown()
+		repo.shutDown()
 
 end MetaDb
 

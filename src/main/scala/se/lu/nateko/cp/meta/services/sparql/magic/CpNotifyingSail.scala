@@ -49,7 +49,7 @@ class CpNotifyingSail(
 	def makeReadonly(errorMessage: String): Unit =
 		readonlyErrMessage = Some(errorMessage)
 
-	def makeReadonlyDumpIndexAndCaches(errorMessage: String)(using ExecutionContext): Future[String] =
+	def makeReadonlyAndDumpCaches(errorMessage: String)(using ExecutionContext): Future[String] =
 		if readonlyErrMessage.isDefined then
 			readonlyErrMessage = Some(errorMessage)
 			Future.successful("Triple store already in read-only mode")

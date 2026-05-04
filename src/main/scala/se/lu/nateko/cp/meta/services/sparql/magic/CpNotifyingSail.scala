@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
-import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategy
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
@@ -21,6 +21,8 @@ import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
 
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+
+import StatementsEnricher.StatIter
 
 
 type MainSail = FederatedServiceResolverClient & NotifyingSail:
@@ -67,6 +69,13 @@ class CpNotifyingSail(
 
 
 end CpNotifyingSail
+
+private class CpEnrichedTripleSource(base: TripleSource, enricher: StatementsEnricher) extends TripleSource{
+
+	override def getStatements(subj: Resource, pred: IRI, obj: Value, ctxts: Resource*): StatIter =
+		enricher.enrich(base.getStatements(subj, pred, obj, ctxts*), subj, pred, obj)
+	override def getValueFactory(): ValueFactory = base.getValueFactory
+}
 
 
 class CpEnrichingEvaluationStrategyFactory(

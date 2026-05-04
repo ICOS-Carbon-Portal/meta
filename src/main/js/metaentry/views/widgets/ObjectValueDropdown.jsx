@@ -10,7 +10,7 @@ export default React.createClass({
 
 		const instruction = _.isEmpty(rangeValues)
 			? "Enter URL to be the new value:"
-			: "Double-click and choose the new value (type to search), or enter a URL:";
+			: "Double-click and select the new value (type to search), or enter a URL:";
 
 		const saveDisabled = this.state && !this.state.valid;
 		const saveButtClass = "btn btn-" + (saveDisabled ? "danger" : "primary");
@@ -59,4 +59,3 @@ export default React.createClass({
 	},
 
 });
-

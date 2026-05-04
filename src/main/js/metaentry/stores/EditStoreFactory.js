@@ -1,6 +1,6 @@
 var Individual = require('../models/Individual.js');
 
-module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
+module.exports = function(Backend, selectIndividAction, requestUpdateAction){
 	return Reflux.createStore({
 
 		getInitialState: function(){
@@ -20,7 +20,7 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 		},
 
 		init: function(){
-			this.listenTo(chooseIndividAction, this.handleIndividChoice);
+			this.listenTo(selectIndividAction, this.handleIndividChoice);
 			this.listenTo(requestUpdateAction, this.handleUpdateRequest);
 		},
 
@@ -164,4 +164,3 @@ module.exports = function(Backend, chooseIndividAction, requestUpdateAction){
 		}
 	});
 };
-

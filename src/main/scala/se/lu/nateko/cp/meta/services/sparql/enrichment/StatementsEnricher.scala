@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.enriched
+package se.lu.nateko.cp.meta.services.sparql.enrichment
 
 import scala.language.unsafeNulls
 
@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
 import java.util.Arrays
 import scala.collection.immutable.SeqMap
 
-private[enriched] class StatementsEnricher(val citer: CitationProvider) {
+private[enrichment] class StatementsEnricher(val citer: CitationProvider) {
 	import StatementsEnricher.StatIter
 	import citer.metaVocab
 	private given factory: ValueFactory = metaVocab.factory

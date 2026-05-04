@@ -22,7 +22,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, StorageSail}
-import se.lu.nateko.cp.meta.services.sparql.enriched.EnrichingSail
+import se.lu.nateko.cp.meta.services.sparql.enrichment.EnrichingSail
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}

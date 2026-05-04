@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.enriched
+package se.lu.nateko.cp.meta.services.sparql.enrichment
 
 import scala.language.unsafeNulls
 
@@ -23,8 +23,6 @@ import se.lu.nateko.cp.meta.services.sparql.MainSail
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
 import StatementsEnricher.StatIter
-type MainSail = FederatedServiceResolverClient & NotifyingSail:
-
 
 class EnrichingSail(
 	inner: MainSail,

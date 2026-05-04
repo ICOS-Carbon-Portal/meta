@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package se.lu.nateko.cp.meta.services.sparql.enrichment
 
 import scala.language.unsafeNulls
 
@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
 import java.util.Arrays
 import scala.collection.immutable.SeqMap
 
-class StatementsEnricher(val citer: CitationProvider) {
+private[enrichment] class StatementsEnricher(val citer: CitationProvider) {
 	import StatementsEnricher.StatIter
 	import citer.metaVocab
 	private given factory: ValueFactory = metaVocab.factory
@@ -31,22 +31,22 @@ class StatementsEnricher(val citer: CitationProvider) {
 	private def getExtras(subj: Resource, pred: IRI, obj: Value): StatIter = {
 		if(subj == null || obj != null) empty //lookup by magic values/predicates not possible
 		else{
-			val magicFactories = magicPredValueFactories(subj)
-			if(pred != null && !magicFactories.contains(pred)) empty //not a magic predicate
+			val citationFactories = citationPredValueFactories(subj)
+			if(pred != null && !citationFactories.contains(pred)) empty //not a magic predicate
 			else if(pred == null) {
-				val extras = magicFactories.iterator.flatMap{
+				val extras = citationFactories.iterator.flatMap{
 					(pred, thunk) => thunk().map(v => factory.createStatement(subj, pred, v))
 				}
 				new CollectionIteration(Arrays.asList(extras.toArray*))
 			}
 			else (
-				for(thunk <- magicFactories.get(pred); v <- thunk()) yield
+				for(thunk <- citationFactories.get(pred); v <- thunk()) yield
 					new SingletonIteration(factory.createStatement(subj, pred, v))
 			).getOrElse(empty)
 		}
 	}
 
-	private def magicPredValueFactories(subj: Resource): Map[IRI, () => Option[Value]] = {
+	private def citationPredValueFactories(subj: Resource): Map[IRI, () => Option[Value]] = {
 		var refsCache: Option[Option[References]] = None
 		SeqMap(
 			metaVocab.hasBiblioInfo -> (() => {

@@ -1,14 +1,20 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package se.lu.nateko.cp.meta.services.sparql
 
 import scala.language.unsafeNulls
 
+import org.eclipse.rdf4j.sail.NotifyingSail
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
 import org.eclipse.rdf4j.sail.lmdb.config.LmdbStoreConfig
 import org.eclipse.rdf4j.sail.nativerdf.NativeStore
+import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
+import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolverClient
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStorageConfig
 
 import java.nio.file.{FileVisitOption, Files, Paths}
+
+type MainSail = FederatedServiceResolverClient & NotifyingSail:
+	def setEvaluationStrategyFactory(factory: EvaluationStrategyFactory): Unit
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())

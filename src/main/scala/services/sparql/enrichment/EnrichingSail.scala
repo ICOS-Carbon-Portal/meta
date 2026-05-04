@@ -1,18 +1,17 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package se.lu.nateko.cp.meta.services.sparql.enrichment
 
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.order.StatementOrder
-import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
+import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.Dataset
 import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategy
-import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategyFactory
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.{DefaultEvaluationStrategy, DefaultEvaluationStrategyFactory, EvaluationStatistics}
-import org.eclipse.rdf4j.query.algebra.evaluation.federation.{FederatedServiceResolver, FederatedServiceResolverClient}
+import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
-import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection}
+import org.eclipse.rdf4j.sail.NotifyingSailConnection
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 
@@ -20,14 +19,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.Selectable.reflectiveSelectable
 import scala.util.{Failure, Success}
 
+import se.lu.nateko.cp.meta.services.sparql.MainSail
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 
+import StatementsEnricher.StatIter
 
-type MainSail = FederatedServiceResolverClient & NotifyingSail:
-	def setEvaluationStrategyFactory(factory: EvaluationStrategyFactory): Unit
-
-
-class CpNotifyingSail(
+class EnrichingSail(
 	inner: MainSail,
 	citer: CitationProvider
 )(using EnvriConfigs) extends NotifyingSailWrapper(inner):
@@ -66,7 +63,14 @@ class CpNotifyingSail(
 			}
 
 
-end CpNotifyingSail
+end EnrichingSail
+
+private class CpEnrichedTripleSource(base: TripleSource, enricher: StatementsEnricher) extends TripleSource{
+
+	override def getStatements(subj: Resource, pred: IRI, obj: Value, ctxts: Resource*): StatIter =
+		enricher.enrich(base.getStatements(subj, pred, obj, ctxts*), subj, pred, obj)
+	override def getValueFactory(): ValueFactory = base.getValueFactory
+}
 
 
 class CpEnrichingEvaluationStrategyFactory(

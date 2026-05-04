@@ -151,13 +151,15 @@ case class VirtuosoConfig(
 	host: String,
 	username: String,
 	password: String
+	recreateAtStartup: Boolean
 )
 
 case class CitationConfig(
 	style: String,
 	eagerWarmUp: Boolean,
 	timeoutSec: Int,
-	doi: DoiConfig
+	doi: DoiConfig,
+	derivedCitationsGraph: URI
 )
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
@@ -232,10 +234,10 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[VirtuosoConfig] = jsonFormat3(VirtuosoConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat5(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)

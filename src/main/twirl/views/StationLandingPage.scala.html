@@ -16,7 +16,46 @@
 	@if(webpageDetailsPresent) {
 		@for(details <- station.org.webpageDetails) {
 			@for(cover <- details.coverImage) {
-			<div class="cover-image position-relative" style="background: url(@{cover}) center/cover; height: 450px; width: 100vw; left: -12px; top: -24px;">
+			<style>
+				.cover-image {
+					background: url(@{cover}) center/cover;
+					height: 450px;
+					width: 100vw;
+					position: relative;
+					left: -12px;
+					top: -24px;
+					text-shadow: -1px 1px 2px var(--bs-dark);
+				}
+
+				/* Smaller than Bootstrap XL breakpoint */
+				@@media all and (max-width: 1199.98px) {
+					.cover-image {
+						height: 386px;
+					}
+				}
+
+				/* Smaller than Bootstrap L breakpoint */
+				@@media all and (max-width: 991.98px) {
+					.cover-image {
+						height: 310px;
+					}
+				}
+
+				/* Smaller than Bootstrap M breakpoint */
+				@@media all and (max-width: 767.98px) {
+					.cover-image {
+						height: 247px;
+					}
+				}
+
+				/* Smaller than Bootstrap S breakpoint */
+				@@media all and (max-width: 575.98px) {
+					.cover-image {
+						height: 186px;
+					}
+				}
+			</style>
+			<div class="cover-image">
 				<div class="d-flex justify-content-center align-items-center h-100">
 						<h1 class="text-light text-center">
 							@envri STATION<br><strong style="font-size: calc(1.375rem + 6.5vw);">@{stationShortName(station)}</strong>
@@ -26,8 +65,8 @@
 			}
 			@for(descr <- details.self.comments.headOption){
 			<div class="container-xl">
-				<div class="row my-5">
-					<div class="col-lg-6 px-5 my-2">
+				<div class="row mb-5 mt-3 mt-lg-5">
+					<div class="col-lg-6 px-lg-5 my-2">
 						<h2>@{stationShortName(station)}</h2>
 						@descr
 					</div>
@@ -220,7 +259,7 @@
 }
 
 @quickfact(value: String, icon: String, descr: Option[String] = None) = {
-	<div class="col-4 col-md-2 p-3 d-flex flex-column align-items-center">
+	<div class="col-6 col-sm-4 col-md-2 p-3 d-flex flex-column align-items-center">
 		<div class="rounded-circle d-flex align-items-center justify-content-center bg-primary" style="height: 72px; width: 72px;">
 			<i class="fas @icon fs-1 text-light"></i>
 		</div>

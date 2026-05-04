@@ -150,15 +150,20 @@ case class SparqlServerConfig(
 )
 
 case class RdfStorageConfig(
-	lmdb: Option[LmdbConfig],
-	path: String,
-	recreateAtStartup: Boolean,
-	indices: String
+	sparqlEndpoint: String,
+	updateEndpoint: Option[String],
+	username: Option[String],
+	password: Option[String],
+	recreateAtStartup: Boolean
 )
 
-case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
-
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
+case class CitationConfig(
+	style: String,
+	eagerWarmUp: Boolean,
+	timeoutSec: Int,
+	doi: DoiConfig,
+	derivedCitationsGraph: URI
+)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
@@ -232,11 +237,10 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat5(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)

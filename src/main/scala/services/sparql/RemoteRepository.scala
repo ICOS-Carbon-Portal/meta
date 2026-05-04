@@ -5,18 +5,12 @@ import scala.language.unsafeNulls
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.slf4j.LoggerFactory
-
-case class RemoteRepositoryConfig(
-	sparqlEndpoint: String,
-	updateEndpoint: Option[String],
-	username: Option[String],
-	password: Option[String]
-)
+import se.lu.nateko.cp.meta.RdfStorageConfig
 
 object RemoteRepository:
 	private val log = LoggerFactory.getLogger(getClass())
 
-	def apply(conf: RemoteRepositoryConfig): Repository =
+	def apply(conf: RdfStorageConfig): Repository =
 		val updateUrl = conf.updateEndpoint.getOrElse(conf.sparqlEndpoint)
 		val repo = new SPARQLRepository(conf.sparqlEndpoint, updateUrl)
 		for

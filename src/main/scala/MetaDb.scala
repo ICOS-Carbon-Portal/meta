@@ -8,7 +8,6 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
@@ -17,12 +16,11 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServe
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, StorageSail}
-import se.lu.nateko.cp.meta.services.sparql.enrichment.EnrichingSail
+import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, ReadonlyRepository, RemoteRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -41,7 +39,7 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: SailRepository,
+	val repo: ReadonlyRepository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -56,11 +54,20 @@ class MetaDb (
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		repo.getSail match
-			case cp: EnrichingSail =>
-				val exe = summon[ActorSystem].dispatcher
-				cp.makeReadonlyAndDumpCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal repository, cannot switch to read-only mode")
+		given exe: ExecutionContext = summon[ActorSystem].dispatcher
+		if repo.isReadonly then
+			repo.makeReadonly(msg)
+			Future.successful("Triple store already in read-only mode")
+		else
+			repo.makeReadonly(msg)
+			val citClient = citer.doiCiter
+			val citationsDump = CitationClient.writeCitCache(citClient)
+			val doiMetaDump = CitationClient.writeDoiCache(citClient)
+			Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
+				"Switched the triple store to read-only mode. Citations cache dumped to disk"
+			).andThen:
+				case Success(message) => log.info(message)
+				case Failure(err) => log.error(err, "Fail while dumping citations cache to disk")
 
 
 	override def close(): Unit =
@@ -138,8 +145,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config0)
 
-		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
+		val remoteRepo = RemoteRepository.apply(config0.rdfStorage)
+		val isFreshInit = detectFreshInit(remoteRepo, config0)
+		val citer = CitationProvider(remoteRepo, citCache, metaCache, config0)
 
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
@@ -147,28 +155,17 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = EnrichingSail(baseSail, citer)
-		val repo = new SailRepository(sail)
-		repo.init()
+		val repo = new ReadonlyRepository(remoteRepo)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
 
 		val serversFut =
-			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
+			val singleThreadExe = if isFreshInit then
 				val ctxt = Executors.newSingleThreadExecutor()
 				Some(ExecutionContext.fromExecutorService(ctxt))
 			else None
 
-			/*
-			 LMDB seems to work fine under fully parallel write conditions,
-			 with the exception of full re-building of the triplestore database from rdflog.
-			 Note that in the typical meta service restart scenario RDF storage is not re-built,
-			 but multi-threaded initialization can be beneficial for startup time, because some
-			 of RDF-graph-init jobs are expensive and are best run as background even after the
-			 server starts up (see `enum IngestionMode` in CpmetaConfig.scala)
-			*/
 			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
 
 			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
@@ -199,11 +196,21 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
 			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
-			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
+			if isFreshInit then repo.makeReadonly("This was a fresh RDF store initialization, running in " +
 				"readonly mode; restart the server for proper operation")
 			db
 		end for
 	end apply
+
+	private def detectFreshInit(repo: Repository, config: CpmetaConfig): Boolean =
+		import scala.language.unsafeNulls
+		val ask = "ASK { ?s ?p ?o }"
+		val conn = repo.getConnection()
+		try
+			val hasAny = conn.prepareBooleanQuery(org.eclipse.rdf4j.query.QueryLanguage.SPARQL, ask).evaluate()
+			!hasAny || config.rdfStorage.recreateAtStartup
+		finally
+			conn.close()
 
 	private def makeUploadService(
 		citationProvider: CitationProvider,

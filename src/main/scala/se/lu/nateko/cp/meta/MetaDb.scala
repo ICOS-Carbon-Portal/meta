@@ -22,7 +22,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.services.sparql.enriched.{CpNotifyingSail, StorageSail}
+import se.lu.nateko.cp.meta.services.sparql.enriched.{EnrichingSail, StorageSail}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -57,7 +57,7 @@ class MetaDb (
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		repo.getSail match
-			case cp: CpNotifyingSail =>
+			case cp: EnrichingSail =>
 				val exe = summon[ActorSystem].dispatcher
 				cp.makeReadonlyAndDumpCaches(msg)(using exe)
 			case _ => Future.successful("Not a Carbon Portal repository, cannot switch to read-only mode")
@@ -147,7 +147,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, citer)
+		val sail = EnrichingSail(baseSail, citer)
 		val repo = new SailRepository(sail)
 		repo.init()
 

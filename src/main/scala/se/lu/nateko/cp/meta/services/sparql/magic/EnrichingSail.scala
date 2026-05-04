@@ -29,7 +29,7 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 	def setEvaluationStrategyFactory(factory: EvaluationStrategyFactory): Unit
 
 
-class CpNotifyingSail(
+class EnrichingSail(
 	inner: MainSail,
 	citer: CitationProvider
 )(using EnvriConfigs) extends NotifyingSailWrapper(inner):
@@ -68,7 +68,7 @@ class CpNotifyingSail(
 			}
 
 
-end CpNotifyingSail
+end EnrichingSail
 
 private class CpEnrichedTripleSource(base: TripleSource, enricher: StatementsEnricher) extends TripleSource{
 

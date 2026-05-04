@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, In
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationMaterializer, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
@@ -39,6 +39,7 @@ class MetaDb (
 	val sparql: SparqlServer,
 	val repo: Repository,
 	val citer: CitationProvider,
+	val materializer: CitationMaterializer,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
@@ -142,6 +143,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		given EnvriConfigs = config.core.envriConfigs
 
 		val repo = remoteRepo
+		val materializer = new CitationMaterializer(remoteRepo, citer, config.citations.derivedCitationsGraph)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
@@ -172,8 +174,16 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			scheduleCitationMaterialization(materializer, config)
 		end for
 	end apply
+
+	private def scheduleCitationMaterialization(materializer: CitationMaterializer, config: CpmetaConfig): Unit =
+		import scala.concurrent.duration.DurationInt
+		val delay = if config.citations.eagerWarmUp then 60.seconds else 5.seconds
+		system.scheduler.scheduleOnce(delay):
+			materializer.materializeAll().failed.foreach: err =>
+				log.error(err, "Citation materialization failed")
 
 	private def makeUploadService(
 		citationProvider: CitationProvider,

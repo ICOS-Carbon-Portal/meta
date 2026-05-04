@@ -17,7 +17,8 @@ import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIn
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
-import se.lu.nateko.cp.meta.services.sparql.enriched.{EnrichingSail, StorageSail}
+import se.lu.nateko.cp.meta.services.sparql.StorageSail
+import se.lu.nateko.cp.meta.services.sparql.enriched.EnrichingSail
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
 

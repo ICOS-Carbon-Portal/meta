@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package se.lu.nateko.cp.meta.services.sparql.enriched
 
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper

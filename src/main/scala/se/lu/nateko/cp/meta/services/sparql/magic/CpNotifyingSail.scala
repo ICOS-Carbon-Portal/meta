@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql.magic
+package se.lu.nateko.cp.meta.services.sparql.enriched
 
 import scala.language.unsafeNulls
 

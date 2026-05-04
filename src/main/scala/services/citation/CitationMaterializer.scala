@@ -7,6 +7,7 @@ import akka.event.Logging
 import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -46,6 +47,34 @@ class CitationMaterializer(
 		val written = writeInBatches(subjects)
 		log.info(s"Citation materialization finished, wrote $written triples")
 		written
+
+	def refreshForDoi(doi: Doi)(using ExecutionContext): Future[Int] =
+		val subjects = subjectsWithDoi(doi)
+		if subjects.isEmpty then
+			log.info(s"dropCache for $doi: no matching subjects in the store, skipping materialization")
+			Future.successful(0)
+		else
+			log.info(s"dropCache for $doi: refreshing materialization for ${subjects.size} subjects")
+			materializeFor(subjects)
+
+	private def subjectsWithDoi(doi: Doi): IndexedSeq[IRI] =
+		val q = s"""
+			|SELECT DISTINCT ?s WHERE {
+			|  ?s <${metaVocab.hasDoi}> ?d .
+			|  FILTER(STR(?d) = "${doi.toString}")
+			|}""".stripMargin
+		val conn = repo.getConnection()
+		try
+			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
+			val buf = ArrayBuffer.empty[IRI]
+			try
+				while result.hasNext() do
+					result.next().getValue("s") match
+						case iri: IRI => buf += iri
+						case _ => ()
+			finally result.close()
+			buf.toIndexedSeq
+		finally conn.close()
 
 	def materializeFor(subjects: Iterable[IRI])(using ExecutionContext): Future[Int] = Future:
 		val subjList = subjects.toIndexedSeq

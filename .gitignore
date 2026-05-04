@@ -55,7 +55,5 @@ __pycache__/
 /.lwjgl/
 /ssl/
 /metaflowUploads/
-/sparqlMagicIndex.bin
-/sparqlMagicIndex.bin.bak
 /citationsCacheDump.json
 /doiMetaCacheDump.json

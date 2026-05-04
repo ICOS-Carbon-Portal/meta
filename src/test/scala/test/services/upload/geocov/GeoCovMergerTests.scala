@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import org.locationtech.jts.geom.{Coordinate, Geometry}
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.magic.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.upload.geocov.JtsGeoFactory
 import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 

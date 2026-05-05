@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, ReadonlyRepository, RemoteRepository}
+import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, RemoteRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -37,7 +37,7 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: ReadonlyRepository,
+	val repo: Repository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -51,21 +51,16 @@ class MetaDb (
 	val uriSerializer: UriSerializer =
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
-	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
+	def dumpIndexAndCaches(msg: String): Future[String] =
 		given exe: ExecutionContext = summon[ActorSystem].dispatcher
-		if repo.isReadonly then
-			repo.makeReadonly(msg)
-			Future.successful("Triple store already in read-only mode")
-		else
-			repo.makeReadonly(msg)
-			val citClient = citer.doiCiter
-			val citationsDump = CitationClient.writeCitCache(citClient)
-			val doiMetaDump = CitationClient.writeDoiCache(citClient)
-			Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
-				"Switched the triple store to read-only mode. Citations cache dumped to disk"
-			).andThen:
-				case Success(message) => log.info(message)
-				case Failure(err) => log.error(err, "Fail while dumping citations cache to disk")
+		val citClient = citer.doiCiter
+		val citationsDump = CitationClient.writeCitCache(citClient)
+		val doiMetaDump = CitationClient.writeDoiCache(citClient)
+		Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
+			"Switched the triple store to read-only mode. Citations cache dumped to disk"
+		).andThen:
+			case Success(message) => log.info(message)
+			case Failure(err) => log.error(err, "Fail while dumping citations cache to disk")
 
 
 	override def close(): Unit =
@@ -146,7 +141,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val repo = new ReadonlyRepository(remoteRepo)
+		val repo = remoteRepo
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")

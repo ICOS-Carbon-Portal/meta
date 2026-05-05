@@ -42,7 +42,7 @@ lazy val metaCore = (project in file("core"))
 			"CountryCode" -> "string",
 		),
 		cpCodeGenSources := {
-			val dir = (Compile / scalaSource).value / "se" / "lu" / "nateko" / "cp" / "meta" / "core" / "data"
+			val dir = (Compile / scalaSource).value / "data"
 			Seq(
 				dir / "GeoFeatures.scala", dir / "TemporalFeatures.scala", dir / "DataItem.scala", dir / "DataObject.scala",
 				dir / "Station.scala", dir / "Instrument.scala", dir / "package.scala"
@@ -238,7 +238,20 @@ lazy val uploadgui = (project in file("uploadgui"))
 			"se.lu.nateko.cp"   %%% "doi-common"        % "0.4.2",
 			"org.scalatest"     %%% "scalatest"         % "3.2.11" % "test",
 			"org.scalacheck"    %%% "scalacheck"        % "1.18.0" % "test"
-		)
+		),
+
+		Compile / unmanagedSources ++= {
+			Seq(
+				"core/src/main/scala/crypto/Sha256Sum.scala",
+				"core/src/main/scala/data/GeoFeatures.scala",
+				"core/src/main/scala/data/TemporalFeatures.scala",
+				"core/src/main/scala/data/Envri.scala",
+				"core/src/main/scala/data/GeoFeatures.scala",
+				"core/src/main/scala/data/package.scala",
+				"src/main/scala/OntoConstants.scala",
+				"src/main/scala/UploadDtos.scala",
+			).map(path => new java.io.File(path).getAbsoluteFile)
+		}
 	)
 lazy val tools = (project in file("tools"))
 	.dependsOn(meta)

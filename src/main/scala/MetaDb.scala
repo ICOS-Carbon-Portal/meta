@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, ReadonlyRepository, RemoteRepository}
+import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, ReadonlyRepository, VirtuosoRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -140,7 +140,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	def apply(citCache: CitationCache, metaCache: DoiCache, config: CpmetaConfig): Future[MetaDb] =
 
 		validateConfig(config)
-		val citer = CitationProvider(remoteRepo, citCache, metaCache, config0)
 
 		val remoteRepo = new VirtuosoRepository(config.virtuoso)
 		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
@@ -180,16 +179,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		end for
 	end apply
-
-	private def detectFreshInit(repo: Repository, config: CpmetaConfig): Boolean =
-		import scala.language.unsafeNulls
-		val ask = "ASK { ?s ?p ?o }"
-		val conn = repo.getConnection()
-		try
-			val hasAny = conn.prepareBooleanQuery(org.eclipse.rdf4j.query.QueryLanguage.SPARQL, ask).evaluate()
-			!hasAny || config.rdfStorage.recreateAtStartup
-		finally
-			conn.close()
 
 	private def makeUploadService(
 		citationProvider: CitationProvider,

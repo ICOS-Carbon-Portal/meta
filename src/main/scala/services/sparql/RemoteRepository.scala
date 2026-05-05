@@ -11,8 +11,7 @@ object RemoteRepository:
 	private val log = LoggerFactory.getLogger(getClass())
 
 	def apply(conf: RdfStorageConfig): Repository =
-		val updateUrl = conf.updateEndpoint.getOrElse(conf.sparqlEndpoint)
-		val repo = new SPARQLRepository(conf.sparqlEndpoint, updateUrl)
+		val repo = new SPARQLRepository(conf.sparqlEndpoint, conf.updateEndpoint)
 		for
 			user <- conf.username
 			pass <- conf.password

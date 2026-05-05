@@ -11,12 +11,13 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationMaterializer, CitationProvider, CitationStyle}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import scala.concurrent.duration.Duration
@@ -66,6 +67,8 @@ private object TestRepo {
 	private given ExecutionContext = system.dispatcher
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
 
+	private val config = ConfigLoader.default
+
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
 		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
 
@@ -74,10 +77,19 @@ private object TestRepo {
 		val start = System.currentTimeMillis()
 		val repo = SailRepository(MemoryStore())
 		repo.init()
-		ingestTriplestore(repo).map: _ =>
+		for
+			_ <- ingestTriplestore(repo)
+			_ <- materializeCitations(repo)
+		yield
 			log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 			repo
 	}
+
+	private def materializeCitations(repo: Repository): Future[Int] =
+		val citClientFactory: List[Doi] => CitationClient = _ => CitationClientDummy
+		val citer = new CitationProvider(repo, citClientFactory, config)
+		val materializer = new CitationMaterializer(repo, citer, config.citations.derivedCitationsGraph)
+		materializer.materializeAll()
 
 	def checkout() = {
 		log.info("Checkout")

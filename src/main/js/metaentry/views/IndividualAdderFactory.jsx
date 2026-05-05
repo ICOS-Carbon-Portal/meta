@@ -31,7 +31,7 @@ module.exports = function(typesStore, checkUriOrSuffixAction, createIndividualAc
 		clickHandler: function(){
 			if(this.state.uriAvailable) createIndividualAction({
 				uri: this.state.candidateUri,
-				type: this.state.chosen
+				type: this.state.selected
 			})
 			this.cancelAddition()
 		},
@@ -53,4 +53,3 @@ module.exports = function(typesStore, checkUriOrSuffixAction, createIndividualAc
 	});
 
 };
-

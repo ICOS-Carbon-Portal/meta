@@ -151,7 +151,7 @@ case class SparqlServerConfig(
 
 case class RdfStorageConfig(
 	sparqlEndpoint: String,
-	updateEndpoint: Option[String],
+	updateEndpoint: String,
 	username: Option[String],
 	password: Option[String],
 	recreateAtStartup: Boolean

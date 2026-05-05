@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
@@ -27,7 +26,6 @@ import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, Ser
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
-import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -84,8 +82,6 @@ object MetaDb:
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
 					logName = Some(servDef.label),
-					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
-					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 					writeContext = writeCtxt,
 					ingestion = None
@@ -141,17 +137,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
+	def apply(citCache: CitationCache, metaCache: DoiCache, config: CpmetaConfig): Future[MetaDb] =
 
-		validateConfig(config0)
+		validateConfig(config)
 
-		val remoteRepo = RemoteRepository.apply(config0.rdfStorage)
-		val isFreshInit = detectFreshInit(remoteRepo, config0)
-		val citer = CitationProvider(remoteRepo, citCache, metaCache, config0)
-
-		val config: CpmetaConfig = if isFreshInit
-			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
-			else config0
+		val remoteRepo = RemoteRepository.apply(config.rdfStorage)
+		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
 
 		given EnvriConfigs = config.core.envriConfigs
 
@@ -161,18 +152,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			case _ => log.info("ontology servers created")
 
 		val serversFut =
-			val singleThreadExe = if isFreshInit then
-				val ctxt = Executors.newSingleThreadExecutor()
-				Some(ExecutionContext.fromExecutorService(ctxt))
-			else None
-
-			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
-
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
-				case _ =>
-					log.info("instance servers created")
-					singleThreadExe.foreach(_.shutdown())
-
+			makeInstanceServers(repo, Ingestion.allProviders, config)
+			.andThen( _ => log.info("instance servers created"))
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield
 			log.info("both instance servers and onto servers created")
@@ -195,22 +176,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
-			if isFreshInit then repo.makeReadonly("This was a fresh RDF store initialization, running in " +
-				"readonly mode; restart the server for proper operation")
-			db
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		end for
 	end apply
-
-	private def detectFreshInit(repo: Repository, config: CpmetaConfig): Boolean =
-		import scala.language.unsafeNulls
-		val ask = "ASK { ?s ?p ?o }"
-		val conn = repo.getConnection()
-		try
-			val hasAny = conn.prepareBooleanQuery(org.eclipse.rdf4j.query.QueryLanguage.SPARQL, ask).evaluate()
-			!hasAny || config.rdfStorage.recreateAtStartup
-		finally
-			conn.close()
 
 	private def makeUploadService(
 		citationProvider: CitationProvider,
@@ -254,16 +222,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		conf.logName match
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
-
-				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-				then
-					val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
-					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
-					log.info(s"Ingesting from RDF log $logName $msgDetail...")
-					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-					RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
-					log.info(s"Ingesting from RDF log $logName done!")
-
 				val rdf4jServer = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 

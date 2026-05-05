@@ -244,7 +244,7 @@
 		<div class="rounded-circle d-flex align-items-center justify-content-center bg-primary" style="height: 72px; width: 72px;">
 			<i class="fas @icon fs-1 text-light"></i>
 		</div>
-		<div class="fs-3 fw-semibold text-center">@value</div>
+		<div class="@if(value.length >= 25){fs-lg} else {fs-3} fw-semibold text-center">@value</div>
 		@for(descr <- descr){
 			<div class="text-dark @if(envri != Envri.SITES){fw-semibold} text-center">@descr</div>
 		}

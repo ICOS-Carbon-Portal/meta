@@ -12,10 +12,7 @@ object RemoteRepository:
 
 	def apply(conf: RdfStorageConfig): Repository =
 		val repo = new SPARQLRepository(conf.sparqlEndpoint, conf.updateEndpoint)
-		for
-			user <- conf.username
-			pass <- conf.password
-		do repo.setUsernameAndPassword(user, pass)
+		repo.setUsernameAndPassword(conf.username, conf.password)
 		repo.init()
 		log.info(s"SPARQLRepository initialised against ${conf.sparqlEndpoint}")
 		repo

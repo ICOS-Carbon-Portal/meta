@@ -150,8 +150,8 @@ case class SparqlServerConfig(
 case class RdfStorageConfig(
 	sparqlEndpoint: String,
 	updateEndpoint: String,
-	username: Option[String],
-	password: Option[String]
+	username: String,
+	password: String
 )
 
 case class CitationConfig(

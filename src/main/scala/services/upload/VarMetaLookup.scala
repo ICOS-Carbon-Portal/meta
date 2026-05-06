@@ -32,6 +32,8 @@ class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 		dv => new Regex(dv.title) -> dv
 	}
 
+	def lookup(varUri: URI): Option[VarMeta] = plainLookup.get(UriId(varUri).urlSafeString)
+
 	def lookup(varName: String): Option[VarMeta] = plainLookup.get(varName).orElse:
 		regexes.collectFirst:
 			case (reg, dv) if reg.matches(varName) =>

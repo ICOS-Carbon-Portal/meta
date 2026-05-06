@@ -38,7 +38,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		samplingHeight = height,
 		production = prod,
 		customLandingPage = customLanding,
-		variables = varInfo.map(_.map(_.uri.toString.split('/').last))
+		variables = varInfo.map(_.map(_.uri))
 	)
 
 	def varnames: Try[Option[Seq[String]]] = varInfoForm.values.map(_.map(_.map(_.title)))
@@ -55,7 +55,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 	private val varInfoForm = new L3VarInfoForm("l3varinfo-form", notifyUpdate)
 	private val externalPageInput = new UriOptInput("l3landingpage", notifyUpdate)
 	private var datasetSpec: Option[URI] = None
-	private var selsectedVars: Option[Seq[String]] = None
+	private var selsectedVars: Option[Seq[URI]] = None
 
 	def resetForm(): Unit = {
 		Iterable(
@@ -77,7 +77,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 		case GotVariableList(variables) =>
 			varInfoForm.list = variables
 			selsectedVars.map { variables =>
-				varInfoForm.setValues(Some(variables.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
+				varInfoForm.setValues(Some(variables.flatMap(uri => varInfoForm.list.find(_.uri == uri))))
 			}
 
 	}
@@ -102,7 +102,7 @@ class SpatioTemporalPanel(covs: IndexedSeq[SpatialCoverage])(implicit bus: PubSu
 					datasetSpec.map { dataset => 
 						whenDone(getVariables(dataset)) { variables =>
 							varInfoForm.list = variables
-							varInfoForm.setValues(Some(varUris.flatMap(uri => varInfoForm.list.find(_.uri.toString.split('/').last == uri))))
+							varInfoForm.setValues(Some(varUris.flatMap(uri => varInfoForm.list.find(_.uri == uri))))
 						}
 					}
 				}

@@ -10,11 +10,12 @@ import se.lu.nateko.cp.meta.RdfStorageConfig
 object RemoteRepository:
 	private val log = LoggerFactory.getLogger(getClass())
 
-	def apply(conf: RdfStorageConfig): Repository =
+	def apply(conf: RdfStorageConfig): Repository = {
 		val repo = new SPARQLRepository(conf.sparqlEndpoint, conf.updateEndpoint)
 		repo.setUsernameAndPassword(conf.username, conf.password)
 		repo.init()
 		log.info(s"SPARQLRepository initialised against ${conf.sparqlEndpoint}")
 		repo
+	}
 
 end RemoteRepository

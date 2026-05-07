@@ -90,9 +90,6 @@
 						@for(meanAnnualPrecip <- ecoSpecifics.flatMap(_.meanAnnualPrecip)){
 							@quickfact(s"$meanAnnualPrecip mm", "fa-cloud-rain", Some("Mean annual precipitation"))
 						}
-						@for(climateZone <- ecoSpecifics.flatMap(_.climateZone).flatMap(_.label)){
-							@quickfact(climateZone, "fa-image", Some("Climate zone"))
-						}
 					</div>
 				</div>
 			</div>

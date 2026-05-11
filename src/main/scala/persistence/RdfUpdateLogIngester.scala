@@ -10,14 +10,12 @@ import scala.util.{Try, Using}
 
 object RdfUpdateLogIngester:
 
-	val ChunkSize = 100000
-
 	def ingestIntoMemory(updates: CloseableIterator[RdfUpdate], contexts: IRI*): Repository =
 		val repo = Loading.emptyInMemory
-		ingest(updates, repo, false, contexts*)
+		ingest(updates, repo, 100000, false, contexts*)
 		repo
 
-	def ingest(updates: CloseableIterator[RdfUpdate], repo: Repository, cleanFirst: Boolean, contexts: IRI*): Try[Unit] =
+	def ingest(updates: CloseableIterator[RdfUpdate], repo: Repository, chunkSize: Int, cleanFirst: Boolean, contexts: IRI*): Try[Unit] =
 
 		def commitChunk(chunk: Seq[RdfUpdate]): Try[Unit] = repo.transact(
 			conn =>
@@ -30,7 +28,7 @@ object RdfUpdateLogIngester:
 
 		Using(updates): updates =>
 			if cleanFirst then clean(repo, contexts*).get //throw exception if failed to clean
-			updates.sliding(ChunkSize, ChunkSize).foreach(commitChunk(_).get)
+			updates.grouped(chunkSize).foreach(commitChunk(_).get)
 
 	end ingest
 

@@ -12,36 +12,36 @@ private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 
 private val ChunkSize = 10
 
-@main def populateTriplestore(_args: String*): Unit =
+@main def populateTriplestore(args: String*): Unit =
 	val config = ConfigLoader.default
 	val repo = RemoteRepository.apply(config.rdfStorage)
-	try
-		given factory: ValueFactory = repo.getValueFactory
+	given factory: ValueFactory = repo.getValueFactory
 
-		val allConfs = MetaDb.getAllInstanceServerConfigs(config.instanceServers)
-		val selectedConfs = _args.headOption.fold(allConfs): id =>
-			allConfs.get(id).map(id -> _).toMap
+	val allConfs = MetaDb.getAllInstanceServerConfigs(config.instanceServers)
+	val selectedConfs = args.headOption.fold(allConfs): id =>
+		allConfs.get(id).map(id -> _).toMap
 
-		for {
-			(_id, conf) <- selectedConfs
-			logName <- conf.logName
-		} do {
-			val rdfLog = PostgresRdfLog(logName, config.rdfLog, factory)
-			log.info(s"Ingesting from RDF log $logName into memory...")
-			val memRepo = RdfUpdateLogIngester.ingestIntoMemory(rdfLog.updates)
-			try
-				val ctx = conf.writeContext.toRdf
-				RdfUpdateLogIngester.clean(repo, ctx).get
-				val statements = memRepo.accessEagerly(conn =>
-					conn.getStatements(null, null, null, false).asPlainScalaIterator.toVector
-				)
-				log.info(s"Writing ${statements.size} statements from $logName to remote store...")
-				statements.grouped(ChunkSize).foreach(chunk =>
-					repo.transact(conn => chunk.foreach(st => conn.add(st, ctx))).get
-				)
-				log.info(s"Ingesting from RDF log $logName done!")
-			finally
-				memRepo.shutDown()
-		}
-	finally
-		repo.shutDown()
+	for {
+		(_id, conf) <- selectedConfs
+		logName <- conf.logName
+	} do {
+		val rdfLog = PostgresRdfLog(logName, config.rdfLog, factory)
+		log.info(s"Ingesting from RDF log $logName into memory...")
+		val memRepo = RdfUpdateLogIngester.ingestIntoMemory(rdfLog.updates)
+		val ctx = conf.writeContext.toRdf
+		// RdfUpdateLogIngester.clean(repo, ctx).get
+		val statements = memRepo.accessEagerly(conn =>
+			conn.getStatements(null, null, null, false).asPlainScalaIterator.toVector
+		)
+		memRepo.shutDown()
+		log.info(s"Writing ${statements.size} statements from $logName to remote store...")
+		repo.accessEagerly(conn =>
+			conn.begin()
+			conn.remove(null: org.eclipse.rdf4j.model.Resource, null, null, ctx)
+			statements.grouped(ChunkSize).foreach(chunk =>
+				chunk.foreach(st => conn.add(st, ctx))
+			)
+		)
+		log.info(s"Ingesting from RDF log $logName done!")
+	}
+	repo.shutDown()

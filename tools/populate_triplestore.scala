@@ -1,22 +1,25 @@
 import scala.language.unsafeNulls
+import scala.util.Using
 
 import org.slf4j.LoggerFactory
-import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.{Statement, ValueFactory}
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import se.lu.nateko.cp.meta.RdflogConfig
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+
+private val ChunkSize = 1000000
 
 private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 
-private val ChunkSize = 100000
-
 @main def populateTriplestore(args: String*): Unit = {
-	import scala.util.Using
 	import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
-	import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-	import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, asPlainScalaIterator}
+	import se.lu.nateko.cp.meta.utils.rdf4j.asPlainScalaIterator
 	import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
 	val config = ConfigLoader.default
 	val virtuosoConf = config.virtuoso
-	given factory: SimpleValueFactory = SimpleValueFactory.getInstance()
+	val factory = SimpleValueFactory.getInstance()
 
 	val graphUpdateEndpoint = s"${virtuosoConf.host}/sparql-graph-crud-auth"
 	val graphStore = new HttpGraphStore(graphUpdateEndpoint, virtuosoConf.username, virtuosoConf.password)
@@ -30,24 +33,8 @@ private val ChunkSize = 100000
 		(_id, conf) <- selectedConfs
 		logName <- conf.logName
 	} do {
-		val rdfLog = PostgresRdfLog(logName, config.rdfLog, factory)
 		val graphUri = conf.writeContext.toString
-
-		log.info(s"$logName: replaying updates into in-memory repository")
-		val memRepo = Loading.emptyInMemory
-		Using.resource(rdfLog.updates) { updates =>
-			var replayed = 0
-			Using.resource(memRepo.getConnection) { conn =>
-				updates.foreach { update =>
-					if update.isAssertion then conn.add(update.statement)
-					else conn.remove(update.statement)
-					replayed += 1
-					if replayed % 100000 == 0 then
-						log.info(s"$logName: ${replayed / 1000}k updates replayed")
-				}
-			}
-			log.info(s"$logName: $replayed updates replayed")
-		}
+		val memRepo = replayRdfLog(config.rdfLog, factory, logName)
 
 		log.info(s"$graphUri: clearing")
 		if (graphStore.clear(graphUri)) {
@@ -75,12 +62,29 @@ private val ChunkSize = 100000
 	println(s"ALL DONE!")
 }
 
-trait GraphStore extends AutoCloseable {
-	def clear(graphUri: String): Boolean
-	def upload(graphUri: String, statements: Seq[Statement]): Unit
+private def replayRdfLog(rdfLogConfig: RdflogConfig, factory: ValueFactory, logName: String): SailRepository = {
+	val rdfLog = PostgresRdfLog(logName, rdfLogConfig, factory)
+	log.info(s"$logName: replaying updates into in-memory repository")
+	val memRepo = Loading.emptyInMemory
+	Using.resource(rdfLog.updates) { updates =>
+		var replayed = 0
+		Using.resource(memRepo.getConnection) { conn =>
+			updates.foreach { update =>
+				if (update.isAssertion) conn.add(update.statement)
+				else conn.remove(update.statement)
+				replayed += 1
+				if (replayed % 100000 == 0) {
+					log.info(s"$logName: ${replayed / 1000}k updates replayed")
+				}
+			}
+		}
+		log.info(s"$logName: $replayed updates replayed")
+	}
+
+	memRepo
 }
 
-class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends GraphStore {
+private final class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends AutoCloseable {
 	import java.net.URLEncoder
 	import java.io.ByteArrayOutputStream
 	import scala.util.Using
@@ -115,29 +119,34 @@ class HttpGraphStore(baseEndpoint: String, username: String, password: String) e
 
 		execute(post) { response =>
 			val status = response.getStatusLine.getStatusCode
-			if status >= 400 then
+			if (status >= 400) {
 				throw new RuntimeException(s"Upload to $graphUri failed ($status): ${errorBody(response)}")
+			}
 		}
 	}
 
-	def clear(graphUri: String): Boolean =
+	def clear(graphUri: String): Boolean = {
 		execute(new HttpDelete(endpointFor(graphUri))) { response =>
-			response.getStatusLine.getStatusCode match
+			response.getStatusLine.getStatusCode match {
 				case 404 => false // Graph did not exist
 				case status if status >= 400 =>
 					throw new RuntimeException(s"Clearing graph $graphUri failed ($status): ${errorBody(response)}")
 				case _ => true
+			}
 		}
+	}
 
 	def close(): Unit = httpClient.close()
 
-	private def endpointFor(graphUri: String): String =
+	private def endpointFor(graphUri: String): String = {
 		s"$baseEndpoint?graph-uri=${URLEncoder.encode(graphUri, "UTF-8")}"
+	}
 
-	private def execute[T](request: HttpUriRequest)(handler: HttpResponse => T): T =
+	private def execute[T](request: HttpUriRequest)(handler: HttpResponse => T): T = {
 		Using.resource(httpClient.execute(request))(handler)
+	}
 
-	private def errorBody(response: HttpResponse): String =
+	private def errorBody(response: HttpResponse): String = {
 		Option(response.getEntity).fold("")(EntityUtils.toString)
-
+	}
 }

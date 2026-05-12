@@ -136,7 +136,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config)
 
-		val remoteRepo = RemoteRepository.apply(config.rdfStorage)
+		val remoteRepo = new RemoteRepository(config.rdfStorage)
 		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
 
 		given EnvriConfigs = config.core.envriConfigs

@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, RemoteRepository}
+import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, VirtuosoRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -136,7 +136,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		validateConfig(config)
 
-		val remoteRepo = new RemoteRepository(config.rdfStorage)
+		val remoteRepo = new VirtuosoRepository(config.virtuoso)
 		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
 
 		given EnvriConfigs = config.core.envriConfigs

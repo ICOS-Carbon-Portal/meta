@@ -147,9 +147,8 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class RdfStorageConfig(
-	sparqlEndpoint: String,
-	updateEndpoint: String,
+case class VirtuosoConfig(
+	host: String,
 	username: String,
 	password: String
 )
@@ -179,7 +178,7 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	rdfStorage: RdfStorageConfig,
+	virtuoso: VirtuosoConfig,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -234,7 +233,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
+	given RootJsonFormat[VirtuosoConfig] = jsonFormat3(VirtuosoConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat5(CitationConfig.apply)

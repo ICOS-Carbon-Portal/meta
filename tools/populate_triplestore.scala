@@ -13,10 +13,11 @@ private val ChunkSize = 100000
 	import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
 	val config = ConfigLoader.default
-	val rdfConf = config.rdfStorage
+	val virtuosoConf = config.virtuoso
 	given factory: SimpleValueFactory = SimpleValueFactory.getInstance()
 
-	val graphStore = new HttpGraphStore(rdfConf.updateEndpoint, rdfConf.username, rdfConf.password)
+	val graphUpdateEndpoint = s"${virtuosoConf.host}/sparql-graph-crud-auth"
+	val graphStore = new HttpGraphStore(graphUpdateEndpoint, virtuosoConf.username, virtuosoConf.password)
 
 	val allConfs = MetaDb.getAllInstanceServerConfigs(config.instanceServers)
 	val selectedConfs = args.headOption.fold(allConfs) { id =>
@@ -31,7 +32,7 @@ private val ChunkSize = 100000
 		val graphUri = conf.writeContext.toString
 
 		log.info(s"$graphUri: clearing")
-		if(graphStore.clear(graphUri)) {
+		if (graphStore.clear(graphUri)) {
 			log.info(s"$graphUri: cleared")
 		} else {
 			log.info("$graphUri: did not exist")
@@ -87,7 +88,7 @@ class HttpGraphStore(baseEndpoint: String, username: String, password: String) e
 		val post = new HttpPost(endpointFor(graphUri))
 		post.setEntity(new ByteArrayEntity(baos.toByteArray, ContentType.create("application/n-triples")))
 
-		execute(post){ response =>
+		execute(post) { response =>
 			val status = response.getStatusLine.getStatusCode
 			if status >= 400 then
 				throw new RuntimeException(s"Upload to $graphUri failed ($status): ${errorBody(response)}")
@@ -95,7 +96,7 @@ class HttpGraphStore(baseEndpoint: String, username: String, password: String) e
 	}
 
 	def clear(graphUri: String): Boolean =
-		execute(new HttpDelete(endpointFor(graphUri))){response =>
+		execute(new HttpDelete(endpointFor(graphUri))) { response =>
 			response.getStatusLine.getStatusCode match
 				case 404 => false // Graph did not exist
 				case status if status >= 400 =>

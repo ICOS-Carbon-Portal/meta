@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.model.Statement
 import meta.tools.replayRdfLog
 
-private val ChunkSize = 1000000
+private val ChunkSize = 100000
 
 private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 

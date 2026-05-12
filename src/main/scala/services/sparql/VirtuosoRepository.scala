@@ -25,6 +25,10 @@ final class VirtuosoRepository(conf: VirtuosoConfig)
 	}
 }
 
+// We need to set a custom HTTP client that simply does Basic auth
+// in order for Virtuoso interaction to work.
+// As far as I understand, the difference is that a custom client sends authorization
+// when challenged, while default behaviour is to send a pre-emptive auth.
 private def makeHttpClient(conf: VirtuosoConfig): CloseableHttpClient = {
 	val credsProvider = new BasicCredentialsProvider()
 	credsProvider.setCredentials(

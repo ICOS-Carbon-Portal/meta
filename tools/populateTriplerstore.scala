@@ -3,7 +3,7 @@ import scala.util.Using
 
 import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.model.Statement
-import meta.tools.replayRdfLog
+import meta.tools.shared.replayRdfLog
 
 private val ChunkSize = 100000
 

@@ -1,4 +1,4 @@
-package meta.tools
+package meta.tools.shared
 
 import scala.language.unsafeNulls
 import scala.util.Using
@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 
-private val log = LoggerFactory.getLogger("tools.RdfLogReplay")
+private val log = LoggerFactory.getLogger("tools.shared.replayRdfLog")
 
 def replayRdfLog(rdfLogConfig: RdflogConfig, factory: ValueFactory, logName: String): SailRepository = {
 	val rdfLog = PostgresRdfLog(logName, rdfLogConfig, factory)

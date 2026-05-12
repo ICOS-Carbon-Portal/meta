@@ -4,7 +4,7 @@ import java.io.{BufferedOutputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
 import org.slf4j.LoggerFactory
 import org.eclipse.rdf4j.rio.{Rio, RDFFormat}
-import meta.tools.replayRdfLog
+import meta.tools.shared.replayRdfLog
 
 private val log = LoggerFactory.getLogger("tools.exportTriples")
 

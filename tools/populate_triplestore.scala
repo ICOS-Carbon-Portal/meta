@@ -8,8 +8,10 @@ private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 private val ChunkSize = 100000
 
 @main def populateTriplestore(args: String*): Unit = {
+	import scala.util.Using
 	import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
 	import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+	import se.lu.nateko.cp.meta.utils.rdf4j.{Loading, asPlainScalaIterator}
 	import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
 	val config = ConfigLoader.default
@@ -31,19 +33,42 @@ private val ChunkSize = 100000
 		val rdfLog = PostgresRdfLog(logName, config.rdfLog, factory)
 		val graphUri = conf.writeContext.toString
 
+		log.info(s"$logName: replaying updates into in-memory repository")
+		val memRepo = Loading.emptyInMemory
+		Using.resource(rdfLog.updates) { updates =>
+			var replayed = 0
+			Using.resource(memRepo.getConnection) { conn =>
+				updates.foreach { update =>
+					if update.isAssertion then conn.add(update.statement)
+					else conn.remove(update.statement)
+					replayed += 1
+					if replayed % 100000 == 0 then
+						log.info(s"$logName: ${replayed / 1000}k updates replayed")
+				}
+			}
+			log.info(s"$logName: $replayed updates replayed")
+		}
+
 		log.info(s"$graphUri: clearing")
 		if (graphStore.clear(graphUri)) {
 			log.info(s"$graphUri: cleared")
 		} else {
-			log.info("$graphUri: did not exist")
+			log.info(s"$graphUri: did not exist")
 		}
 
+		log.info(s"$logName: uploading final statements")
 		var written = 0
-		rdfLog.updates.grouped(ChunkSize).foreach { chunk =>
-			graphStore.upload(graphUri, chunk.map(_.statement))
-			written += chunk.size
-			log.info(s"$logName: ${written / 1000}k statements written")
+		Using.resource(memRepo.getConnection) { conn =>
+			Using.resource(conn.getStatements(null, null, null)) { stmts =>
+				val statements = stmts.asPlainScalaIterator
+				statements.grouped(ChunkSize).foreach { chunk =>
+					graphStore.upload(graphUri, chunk)
+					written += chunk.size
+					log.info(s"$logName: ${written / 1000}k statements written")
+				}
+			}
 		}
+		memRepo.shutDown()
 		log.info(s"Ingesting from RDF log $logName done!")
 	}
 	graphStore.close()

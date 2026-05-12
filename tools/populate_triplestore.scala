@@ -56,13 +56,15 @@ trait GraphStore extends AutoCloseable {
 
 class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends GraphStore {
 	import java.net.URLEncoder
+	import java.io.ByteArrayOutputStream
+	import scala.util.Using
+	import org.apache.http.HttpResponse
 	import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
-	import org.apache.http.client.methods.{HttpDelete, HttpPost}
+	import org.apache.http.client.methods.{HttpDelete, HttpPost, HttpUriRequest}
 	import org.apache.http.entity.{ByteArrayEntity, ContentType}
 	import org.apache.http.impl.client.{BasicCredentialsProvider, HttpClients}
 	import org.apache.http.util.EntityUtils
 	import org.eclipse.rdf4j.rio.{Rio, RDFFormat}
-	import java.io.ByteArrayOutputStream
 
 	private val httpClient = {
 		val credsProvider = new BasicCredentialsProvider()
@@ -75,28 +77,6 @@ class HttpGraphStore(baseEndpoint: String, username: String, password: String) e
 			.build()
 	}
 
-	private def endpointFor(graphUri: String): String =
-		s"$baseEndpoint?graph-uri=${URLEncoder.encode(graphUri, "UTF-8")}"
-
-	def clear(graphUri: String): Boolean = {
-		try {
-			val response = httpClient.execute(new HttpDelete(endpointFor(graphUri)))
-			try {
-				val status = response.getStatusLine.getStatusCode
-				if (status >= 400) {
-					val body = EntityUtils.toString(response.getEntity)
-					log.info(s"Clearing graph $graphUri failed ($status): $body")
-					return false
-				}
-			} finally {
-				EntityUtils.consume(response.getEntity)
-			}
-		} catch {
-			RuntimeException => return false
-		}
-		return true
-	}
-
 	def upload(graphUri: String, statements: Seq[Statement]): Unit = {
 		val baos = new ByteArrayOutputStream()
 		val writer = Rio.createWriter(RDFFormat.NTRIPLES, baos)
@@ -106,17 +86,32 @@ class HttpGraphStore(baseEndpoint: String, username: String, password: String) e
 
 		val post = new HttpPost(endpointFor(graphUri))
 		post.setEntity(new ByteArrayEntity(baos.toByteArray, ContentType.create("application/n-triples")))
-		val response = httpClient.execute(post)
-		try {
+
+		execute(post){ response =>
 			val status = response.getStatusLine.getStatusCode
-			if (status >= 400) {
-				val body = EntityUtils.toString(response.getEntity)
-				throw new RuntimeException(s"Upload to $graphUri failed ($status): $body")
-			}
-		} finally {
-			EntityUtils.consume(response.getEntity)
+			if status >= 400 then
+				throw new RuntimeException(s"Upload to $graphUri failed ($status): ${errorBody(response)}")
 		}
 	}
 
+	def clear(graphUri: String): Boolean =
+		execute(new HttpDelete(endpointFor(graphUri))){response =>
+			response.getStatusLine.getStatusCode match
+				case 404 => false // Graph did not exist
+				case status if status >= 400 =>
+					throw new RuntimeException(s"Clearing graph $graphUri failed ($status): ${errorBody(response)}")
+				case _ => true
+		}
+
 	def close(): Unit = httpClient.close()
+
+	private def endpointFor(graphUri: String): String =
+		s"$baseEndpoint?graph-uri=${URLEncoder.encode(graphUri, "UTF-8")}"
+
+	private def execute[T](request: HttpUriRequest)(handler: HttpResponse => T): T =
+		Using.resource(httpClient.execute(request))(handler)
+
+	private def errorBody(response: HttpResponse): String =
+		Option(response.getEntity).fold("")(EntityUtils.toString)
+
 }

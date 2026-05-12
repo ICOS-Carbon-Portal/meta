@@ -47,8 +47,8 @@ private val log = LoggerFactory.getLogger("tools.exportTriples")
 					val writer = Rio.createWriter(RDFFormat.NTRIPLES, os)
 					writer.startRDF()
 					var written = 0
-					statements.asPlainScalaIterator.foreach { stmt =>
-						writer.handleStatement(stmt)
+					statements.asPlainScalaIterator.foreach { statement =>
+						writer.handleStatement(statement)
 						written += 1
 						if (written % 100000 == 0) {
 							log.info(s"$logName: ${written / 1000}k statements written")

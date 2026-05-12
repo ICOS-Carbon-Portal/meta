@@ -38,19 +38,14 @@ private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 		val graphUri = conf.writeContext.toString
 		val memRepo = replayRdfLog(config.rdfLog, factory, logName)
 
-		log.info(s"$graphUri: clearing")
-		if (graphStore.clear(graphUri)) {
-			log.info(s"$graphUri: cleared")
-		} else {
-			log.info(s"$graphUri: did not exist")
-		}
+		log.info(s"$logName: clearing")
+		graphStore.clear(graphUri)
 
 		log.info(s"$logName: uploading final statements")
 		var written = 0
 		Using.resource(memRepo.getConnection) { conn =>
-			Using.resource(conn.getStatements(null, null, null)) { stmts =>
-				val statements = stmts.asPlainScalaIterator
-				statements.grouped(ChunkSize).foreach { chunk =>
+			Using.resource(conn.getStatements(null, null, null)) { statements =>
+				statements.asPlainScalaIterator.grouped(ChunkSize).foreach { chunk =>
 					graphStore.upload(graphUri, chunk)
 					written += chunk.size
 					log.info(s"$logName: ${written / 1000}k statements written")
@@ -108,10 +103,16 @@ private final class HttpGraphStore(baseEndpoint: String, username: String, passw
 	def clear(graphUri: String): Boolean = {
 		execute(new HttpDelete(endpointFor(graphUri))) { response =>
 			response.getStatusLine.getStatusCode match {
-				case 404 => false // Graph did not exist
+				case 404 => {
+					log.info(s"$graphUri: did not exist")
+					false
+				}
 				case status if status >= 400 =>
 					throw new RuntimeException(s"Clearing graph $graphUri failed ($status): ${errorBody(response)}")
-				case _ => true
+				case _ => {
+					log.info(s"$graphUri: cleared")
+					true
+				}
 			}
 		}
 	}

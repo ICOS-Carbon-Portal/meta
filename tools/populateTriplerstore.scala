@@ -88,14 +88,14 @@ private final class HttpGraphStore(baseEndpoint: String, username: String, passw
 	}
 
 	def upload(graphUri: String, statements: Seq[Statement]): Unit = {
-		val baos = new ByteArrayOutputStream()
-		val writer = Rio.createWriter(RDFFormat.NTRIPLES, baos)
+		val outStream = new ByteArrayOutputStream()
+		val writer = Rio.createWriter(RDFFormat.NTRIPLES, outStream)
 		writer.startRDF()
 		statements.foreach(writer.handleStatement)
 		writer.endRDF()
 
 		val post = new HttpPost(endpointFor(graphUri))
-		post.setEntity(new ByteArrayEntity(baos.toByteArray, ContentType.create("application/n-triples")))
+		post.setEntity(new ByteArrayEntity(outStream.toByteArray, ContentType.create("application/n-triples")))
 
 		execute(post) { response =>
 			val status = response.getStatusLine.getStatusCode

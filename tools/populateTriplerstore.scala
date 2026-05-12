@@ -61,7 +61,7 @@ private val log = LoggerFactory.getLogger("tools.populateTriplestore")
 		log.info(s"Ingesting from RDF log $logName done!")
 	}
 	graphStore.close()
-	println(s"ALL DONE!")
+	log.info("All graphs ingested!")
 }
 
 private final class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends AutoCloseable {

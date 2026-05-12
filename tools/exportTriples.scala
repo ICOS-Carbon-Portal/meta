@@ -61,5 +61,5 @@ private val log = LoggerFactory.getLogger("tools.exportTriples")
 		}
 		memRepo.shutDown()
 	}
-	println("ALL DONE!")
+	log.info("All graphs exported!")
 }

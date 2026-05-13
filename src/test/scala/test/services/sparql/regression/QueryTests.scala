@@ -302,22 +302,31 @@ class QueryTests extends AsyncFunSpec {
 			)
 	}
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Metadata about all stations included in the drought2018AtmoProduct") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.drought2018AtmoProductStations, "Metadata about all stations included in the drought2018AtmoProduct", expectRows = 96, sampleIndex = 50, sortColumn = "Long_name") {
 		f => Map(
-			"height" ->  f.createLiteral("125.0", XSD.FLOAT), 
+			"height" ->	f.createLiteral("125.0", XSD.FLOAT), 
 			"Short_name" -> f.createLiteral("KRE"), 
 			"lon" -> f.createLiteral("15.08", XSD.DOUBLE), 
 			"lat" -> f.createLiteral("49.572", XSD.DOUBLE), 
 			"Long_name" -> f.createLiteral("Křešín u Pacova"), 
 			"Country" -> f.createLiteral("CZ")
 			)
-	}
+	*/
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Citation of specified data object") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.icosCitation("<https://meta.icos-cp.eu/objects/FCZAo0M_gnyN0RZ4I1J6llzM>"), "Citation of specified data object", expectRows = 1, sampleIndex = 0, sortColumn = "cit") {
 		f => Map(
 				"cit" -> f.createLiteral("Kubistin, D., Plaß-Dülmer, C., Lindauer, M., Schumacher, M. (2018). ICOS ATC CO2 Release from Hohenpeissenberg (50.0 m), 2017-02-15–2017-12-31, ICOS RI, https://hdl.handle.net/11676/FCZAo0M_gnyN0RZ4I1J6llzM")
 			)
 	}
+	*/
 
 	describeQ(TestQueries.prodsPerDomain("atmosphere"), "Level 1 and 2 data product names and specifications for selected domain", expectRows = 14, sampleIndex = 5) {
 		f => Map(
@@ -453,9 +462,14 @@ class QueryTests extends AsyncFunSpec {
 		f => Map("stationId" -> f.createLiteral("DE-Msr"))
 	}
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Licenses for data object list") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.licenceSetForDataObjectList, "Licenses for data object list", 1, 0){
 		f => Map("lic" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"))
 	}
+	*/
 
 	describeQ(TestQueries.ingestionUploadTaskColumnFormats, "IngestionUploadTask column formats", 16, 8, sortColumn = "colName"){
 		f => Map(

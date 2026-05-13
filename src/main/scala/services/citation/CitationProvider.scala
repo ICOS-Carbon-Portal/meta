@@ -8,8 +8,7 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
+import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
@@ -26,27 +25,21 @@ import CitationClient.DoiCache
 
 object CitationProvider:
 	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
 			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		new CitationProvider(sail, citClientFactory, conf)
+		new CitationProvider(repo, citClientFactory, conf)
 
 
 class CitationProvider(
-	sail: Sail,
+	val repo: Repository,
 	citClientFactory: List[Doi] => CitationClient,
 	conf: CpmetaConfig,
 )(using system: ActorSystem):
 	private val log = Logging.getLogger(system, this)
 	import StatementSource.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
-
-	val repo = new SailRepository(sail)
-	private val sailName = sail.getClass.getSimpleName
-	log.info(s"Initializing $sailName SailRepository...")
-	repo.init()
-	log.info(s"$sailName initialized")
 
 	val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)

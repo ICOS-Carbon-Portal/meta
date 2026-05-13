@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.instanceserver.{LoggingInstanceServer, Rdf4jInstanceServer}
-import se.lu.nateko.cp.meta.persistence.{InMemoryRdfLog, RdfUpdateLogIngester}
+import se.lu.nateko.cp.meta.persistence.InMemoryRdfLog
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class InstanceServerTests extends AnyFunSpec{
@@ -25,7 +25,7 @@ class InstanceServerTests extends AnyFunSpec{
 
 			val log = new InMemoryRdfLog()
 
-			val rdf4jRepo = RdfUpdateLogIngester.ingestIntoMemory(log.updates, ctxt)
+			val rdf4jRepo = new SailRepository(new MemoryStore)
 
 			val innerInstServer = new Rdf4jInstanceServer(rdf4jRepo, ctxt)
 			val loggingServer = new LoggingInstanceServer(innerInstServer, log)

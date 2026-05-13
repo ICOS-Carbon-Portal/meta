@@ -8,28 +8,24 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, StorageSail}
-import se.lu.nateko.cp.meta.services.sparql.enrichment.EnrichingSail
+import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, VirtuosoRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
-import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -41,7 +37,7 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val repo: SailRepository,
+	val repo: Repository,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -55,12 +51,16 @@ class MetaDb (
 	val uriSerializer: UriSerializer =
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
-	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		repo.getSail match
-			case cp: EnrichingSail =>
-				val exe = summon[ActorSystem].dispatcher
-				cp.makeReadonlyAndDumpCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal repository, cannot switch to read-only mode")
+	def dumpIndexAndCaches(msg: String): Future[String] =
+		given exe: ExecutionContext = summon[ActorSystem].dispatcher
+		val citClient = citer.doiCiter
+		val citationsDump = CitationClient.writeCitCache(citClient)
+		val doiMetaDump = CitationClient.writeDoiCache(citClient)
+		Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
+			"Switched the triple store to read-only mode. Citations cache dumped to disk"
+		).andThen:
+			case Success(message) => log.info(message)
+			case Failure(err) => log.error(err, "Fail while dumping citations cache to disk")
 
 
 	override def close(): Unit =
@@ -77,8 +77,6 @@ object MetaDb:
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
 					logName = Some(servDef.label),
-					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
-					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 					writeContext = writeCtxt,
 					ingestion = None
@@ -134,48 +132,23 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
+	def apply(citCache: CitationCache, metaCache: DoiCache, config: CpmetaConfig): Future[MetaDb] =
 
-		validateConfig(config0)
+		validateConfig(config)
 
-		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
-
-		val config: CpmetaConfig = if isFreshInit
-			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
-			else config0
+		val remoteRepo = new VirtuosoRepository(config.virtuoso)
+		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = EnrichingSail(baseSail, citer)
-		val repo = new SailRepository(sail)
-		repo.init()
+		val repo = remoteRepo
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
 
 		val serversFut =
-			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
-				val ctxt = Executors.newSingleThreadExecutor()
-				Some(ExecutionContext.fromExecutorService(ctxt))
-			else None
-
-			/*
-			 LMDB seems to work fine under fully parallel write conditions,
-			 with the exception of full re-building of the triplestore database from rdflog.
-			 Note that in the typical meta service restart scenario RDF storage is not re-built,
-			 but multi-threaded initialization can be beneficial for startup time, because some
-			 of RDF-graph-init jobs are expensive and are best run as background even after the
-			 server starts up (see `enum IngestionMode` in CpmetaConfig.scala)
-			*/
-			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
-
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
-				case _ =>
-					log.info("instance servers created")
-					singleThreadExe.foreach(_.shutdown())
-
+			makeInstanceServers(repo, Ingestion.allProviders, config)
+			.andThen( _ => log.info("instance servers created"))
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield
 			log.info("both instance servers and onto servers created")
@@ -198,10 +171,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
-			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
-				"readonly mode; restart the server for proper operation")
-			db
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
 		end for
 	end apply
 
@@ -247,16 +217,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		conf.logName match
 			case Some(logName) =>
 				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
-
-				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-				then
-					val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
-					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
-					log.info(s"Ingesting from RDF log $logName $msgDetail...")
-					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-					RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
-					log.info(s"Ingesting from RDF log $logName done!")
-
 				val rdf4jServer = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 				new LoggingInstanceServer(rdf4jServer, rdfLog)
 

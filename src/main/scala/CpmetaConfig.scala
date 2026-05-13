@@ -32,13 +32,11 @@ case class IngestionConfig(
 case class InstanceServerConfig(
 	writeContext: URI,
 	logName: Option[String],
-	skipLogIngestionAtStart: Option[Boolean],
-	logIngestionFromId: Option[Int],
 	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
 )
 
-case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
+case class DataObjectInstServerDefinition(label: String, format: URI)
 
 case class DataObjectInstServersConfig(
 	commonReadContexts: Seq[URI],
@@ -149,16 +147,18 @@ case class SparqlServerConfig(
 	adminUsers: Seq[String]
 )
 
-case class RdfStorageConfig(
-	lmdb: Option[LmdbConfig],
-	path: String,
-	recreateAtStartup: Boolean,
-	indices: String
+case class VirtuosoConfig(
+	host: String,
+	username: String,
+	password: String
 )
 
-case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
-
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
+case class CitationConfig(
+	style: String,
+	eagerWarmUp: Boolean,
+	timeoutSec: Int,
+	doi: DoiConfig
+)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
@@ -177,7 +177,7 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	rdfStorage: RdfStorageConfig,
+	virtuoso: VirtuosoConfig,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -197,8 +197,8 @@ object ConfigLoader extends CpmetaJsonProtocol:
 
 	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
-	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
-	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[InstanceServerConfig] = jsonFormat4(InstanceServerConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat2(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
@@ -232,8 +232,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat4(RdfStorageConfig.apply)
+	given RootJsonFormat[VirtuosoConfig] = jsonFormat3(VirtuosoConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

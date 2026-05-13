@@ -8,6 +8,7 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
@@ -22,6 +23,7 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 	initSentry(config)
+	PostgresRdfLog.checkConnection(config.rdfLog)
 	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 

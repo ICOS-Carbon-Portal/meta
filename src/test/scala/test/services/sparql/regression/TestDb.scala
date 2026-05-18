@@ -107,15 +107,14 @@ private object TestRepo {
 	}
 }
 
-private def ingestTriplestore(repo: Repository)(using ActorSystem, ExecutionContext): Future[Unit] = {
-	given BnodeStabilizers = new BnodeStabilizers
-	val factory = repo.getValueFactory
-	executeSequentially(graphIriToFile): (uriStr, filename) =>
-		val graphIri = factory.createIRI(uriStr)
-		val server = Rdf4jInstanceServer(repo, graphIri)
-		val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-		Ingestion.ingest(server, ingester, factory).map(_ => Done)
-	.map(_ => ())
+private def ingestTriplestore(repo: Repository)(using ActorSystem, ExecutionContext): Future[Done] = {
+		given BnodeStabilizers = new BnodeStabilizers
+		val factory = repo.getValueFactory
+		executeSequentially(graphIriToFile): (uriStr, filename) =>
+			val graphIri = factory.createIRI(uriStr)
+			val server = Rdf4jInstanceServer(repo, graphIri)
+			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
+			Ingestion.ingest(server, ingester, factory).map(_ => Done)
 }
 
 object CitationClientDummy extends CitationClient {

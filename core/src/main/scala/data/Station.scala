@@ -105,6 +105,7 @@ case class OtcStationSpecifics(
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
+	operationalPeriod: Option[String],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics

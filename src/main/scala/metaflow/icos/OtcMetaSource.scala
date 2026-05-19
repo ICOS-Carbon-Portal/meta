@@ -64,6 +64,7 @@ class OtcMetaSource(
 			|	optional {?plat rdfs:seeAlso ?seeAlsoPlat }
 			|	optional {?st otc:countryCode ?countryCode }
 			|	optional {?st otc:hasStationClass ?stationClass }
+			|	optional {?st otc:hasOperationalPeriod ?operationalPeriod }
 			|	optional {?st otc:hasResponsibleOrg ?respOrg }
 			|	optional {?st rdfs:seeAlso ?seeAlsoSt }
 			|}
@@ -77,6 +78,7 @@ class OtcMetaSource(
 				lonOpt <- qresValue(b, "lon").flatMap(parseDouble).optional;
 				geoJsonOpt <- qresValue(b, "geoJson").map(_.stringValue).optional;
 				statClass <- qresValue(b, "stationClass").map(v => IcosStationClass.valueOf(v.stringValue)).optional;
+				operationalPeriod <- qresValue(b, "operationalPeriod").map(_.stringValue).optional;
 				ccode <- qresValue(b, "countryCode").flatMap{v =>
 					val ccStr = v.stringValue
 					CountryCode.unapply(ccStr).fold(Validated.error(s"Bad country code $ccStr")){
@@ -116,7 +118,15 @@ class OtcMetaSource(
 						responsibleOrganization = None,
 						pictures = pictUri.toSeq,
 						countryCode = ccode,
-						specificInfo = OtcStationSpecifics(None, statClass, None, false, None, Seq.empty),
+						specificInfo = OtcStationSpecifics(
+							theme = None,
+							stationClass = statClass,
+							labelingDate = None,
+							discontinued = false,
+							operationalPeriod = operationalPeriod,
+							timeZoneOffset = None,
+							documentation = Seq.empty
+						),
 						funding = None,
 						networks = Nil
 					),
@@ -340,4 +350,3 @@ class OtcMetaVocab(val factory: ValueFactory) extends CustomVocab{
 		)
 	}
 }
-

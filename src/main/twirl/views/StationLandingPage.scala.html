@@ -183,11 +183,7 @@
 }
 
 @operationalPeriod = @{
-	station.specificInfo match {
-		case sites: SitesStationSpecifics => sites.operationalPeriod
-		case otc: OtcStationSpecifics => otc.operationalPeriod
-		case _ => None
-	}
+	station.specificInfo.operationalPeriod
 }
 
 @ecoSpecifics = @{

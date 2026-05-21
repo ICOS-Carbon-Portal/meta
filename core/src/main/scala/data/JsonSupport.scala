@@ -243,7 +243,7 @@ object JsonSupport extends CommonJsonSupport:
 	given JsonFormat[IcosStationClass] = enumFormat(IcosStationClass.valueOf, IcosStationClass.values)
 	given RootJsonFormat[AtcStationSpecifics] = jsonFormat7(AtcStationSpecifics.apply)
 	given RootJsonFormat[EtcStationSpecifics] = jsonFormat13(EtcStationSpecifics.apply)
-	given RootJsonFormat[OtcStationSpecifics] = jsonFormat6(OtcStationSpecifics.apply)
+	given RootJsonFormat[OtcStationSpecifics] = jsonFormat7(OtcStationSpecifics.apply)
 	given RootJsonFormat[SitesStationSpecifics] = jsonFormat8(SitesStationSpecifics.apply)
 	given JsonFormat[CityNetwork] with
 		def write(cn: CityNetwork): JsValue = JsString(cn.toString)
@@ -281,4 +281,3 @@ object JsonSupport extends CommonJsonSupport:
 	}
 
 end JsonSupport
-

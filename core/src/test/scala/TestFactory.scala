@@ -108,6 +108,7 @@ object TestFactory:
 			stationClass = None,
 			labelingDate = None,
 			discontinued = discontinued,
+			operationalPeriod = None,
 			timeZoneOffset = None,
 			documentation = Nil
 		)

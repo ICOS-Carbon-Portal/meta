@@ -194,6 +194,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			themeUri <- getOptionalUri(thematicCenter, metaVocab.hasDataTheme)
 			theme <- themeUri.map(getDataTheme).sinkOption
 			stationClass <- getOptionalString(stat, metaVocab.hasStationClass)
+			operationalPeriod <- getOptionalString(stat, metaVocab.hasOperationalPeriod)
 			timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 			discontOpt <- getOptionalBool(stat, metaVocab.isDiscontinued)
 			documentation <- getDocumentationObjs(stat)
@@ -203,6 +204,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				stationClass = stationClass.map(IcosStationClass.valueOf),
 				labelingDate = lblDate,
 				discontinued = discontOpt.getOrElse(false),
+				operationalPeriod = operationalPeriod,
 				timeZoneOffset = timeZoneOffset,
 				documentation = documentation
 			)

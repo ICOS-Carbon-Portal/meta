@@ -176,6 +176,16 @@
 	}
 }
 
+@otcSpecifics = @{
+	Option(station.specificInfo).collect{
+		case otc: OtcStationSpecifics => otc
+	}
+}
+
+@operationalPeriod = @{
+	station.specificInfo.operationalPeriod
+}
+
 @ecoSpecifics = @{
 	Option(station.specificInfo).collect{
 		case eco: EcoStationSpecifics => eco
@@ -346,10 +356,8 @@
 			}
 		}
 	}
-	@for(sites <- sitesSpecifics){
-		@for(operationalPeriod <- sites.operationalPeriod) {
-			@property("Operational period", operationalPeriod)
-		}
+	@for(period <- operationalPeriod) {
+		@property("Operational period", period)
 	}
 	@for(document <- stationDocs) {
 		@htmlProperty{Documentation}{<a href=@{document.res.getRawPath}>@{document.name}</a>}

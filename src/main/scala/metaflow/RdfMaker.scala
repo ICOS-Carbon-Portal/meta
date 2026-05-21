@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	StationSpecifics,
 	EtcStationSpecifics,
 	AtcStationSpecifics,
+	OtcStationSpecifics,
 	IcosStationSpecifics,
 	IcosCitiesStationSpecifics,
 	SitesStationSpecifics,
@@ -233,8 +234,11 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 				(iri, meta.hasWigosId, vocab.lit(wigosId))
 			} ++
 			plainIcosStationSpecTriples(iri, atc)
-		case icos: IcosStationSpecifics =>
-			plainIcosStationSpecTriples(iri, icos)
+		case otc: OtcStationSpecifics =>
+			otc.operationalPeriod.toSeq.map{period =>
+				(iri, meta.hasOperationalPeriod, vocab.lit(period))
+			} ++
+			plainIcosStationSpecTriples(iri, otc)
 		case cities: IcosCitiesStationSpecifics =>
 			(iri, meta.belongsToNetwork, vocab.lit(cities.network.toString)) +:
 			cities.timeZoneOffset.toSeq.map: tzoff =>

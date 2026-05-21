@@ -47,7 +47,9 @@ enum FunderIdType:
 
 case class Funder(org: Organization, id: Option[(String, FunderIdType)])
 
-case object NoStationSpecifics extends StationSpecifics
+case object NoStationSpecifics extends StationSpecifics{
+	override def operationalPeriod: Option[String] = None
+}
 
 sealed trait EcoStationSpecifics extends StationSpecifics{
 	def climateZone: Option[UriResource]
@@ -76,7 +78,9 @@ sealed trait IcosStationSpecifics extends StationSpecifics{
 	def documentation: Seq[PlainStaticObject]
 }
 
-sealed trait StationSpecifics
+sealed trait StationSpecifics{
+	def operationalPeriod: Option[String]
+}
 
 case class AtcStationSpecifics(
 	wigosId: Option[String],
@@ -86,7 +90,9 @@ case class AtcStationSpecifics(
 	discontinued: Boolean,
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
-) extends IcosStationSpecifics
+) extends IcosStationSpecifics{
+	override def operationalPeriod: Option[String] = None
+}
 
 object AtcStationSpecifics{
 	def apply(base: IcosStationSpecifics, wigosId: Option[String]): AtcStationSpecifics = AtcStationSpecifics(
@@ -105,6 +111,7 @@ case class OtcStationSpecifics(
 	stationClass: Option[IcosStationClass],
 	labelingDate: Option[LocalDate],
 	discontinued: Boolean,
+	operationalPeriod: Option[String],
 	timeZoneOffset: Option[Int],
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics
@@ -125,6 +132,7 @@ case class EtcStationSpecifics(
 	documentation: Seq[PlainStaticObject]
 ) extends IcosStationSpecifics with EcoStationSpecifics{
 	override def ecosystems = ecosystemType.toSeq
+	override def operationalPeriod: Option[String] = None
 }
 
 //TODO Consider removing "Unspecified" option later
@@ -140,7 +148,9 @@ def cityNetworkFromStr(s: String): CityNetwork = s match
 case class IcosCitiesStationSpecifics(
 	timeZoneOffset: Option[Int],
 	network: CityNetwork
-) extends StationSpecifics
+) extends StationSpecifics{
+	override def operationalPeriod: Option[String] = None
+}
 
 object EtcStationSpecifics{
 	def apply(base: IcosStationSpecifics): EtcStationSpecifics = EtcStationSpecifics(

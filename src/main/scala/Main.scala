@@ -19,14 +19,15 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 
-	args.headOption match
+	args.headOption match {
 		case Some("populateTriplestore") =>
 			cli.TriplestorePopulator.run(config, None)
 
 		case _ =>
 			startServer()
+	}
 
-	private def startServer(): Unit =
+	private def startServer(): Unit = {
 		given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
 		val log = Logging.getLogger(system, this)
 		given ExecutionContext = system.dispatcher
@@ -64,11 +65,12 @@ object Main extends App with CpmetaJsonProtocol{
 			log.error(err, "Could not start meta service")
 			system.terminate()
 		}
-	end startServer
+	}
+
+	private def initSentry(config: CpmetaConfig): Unit =
+		config.sentry match {
+			case Some(conf) => Sentry.init(conf.dsn)
+			case None => ()
+	}
 }
 
-private def initSentry(config: CpmetaConfig): Unit =
-	config.sentry match {
-		case Some(conf) => Sentry.init(conf.dsn)
-		case None => ()
-	}

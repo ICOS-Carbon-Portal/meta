@@ -21,8 +21,8 @@ object Main extends App with CpmetaJsonProtocol{
 
 	args.headOption match
 		case Some("populateTriplestore") =>
-			PostgresRdfLog.checkConnection(config.rdfLog)
-			services.sparql.TriplestorePopulator.run(config, args.lift(1))
+			cli.TriplestorePopulator.run(config, None)
+
 		case _ =>
 			startServer()
 

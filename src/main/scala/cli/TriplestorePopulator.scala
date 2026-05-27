@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.sparql
+package se.lu.nateko.cp.meta.cli
 
 import scala.language.unsafeNulls
 import scala.util.Using
@@ -23,7 +23,7 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb, RdflogConfig}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.utils.rdf4j.asPlainScalaIterator
 
-object TriplestorePopulator:
+private object TriplestorePopulator:
 
 	private val ChunkSize = 100000
 	private val log = LoggerFactory.getLogger("TriplestorePopulator")

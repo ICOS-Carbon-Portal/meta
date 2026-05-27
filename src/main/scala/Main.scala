@@ -15,11 +15,11 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, read
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object Main extends App with CpmetaJsonProtocol{
+object Main extends CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 
-	args.headOption match {
+	def main(args: Array[String]): Unit = args.headOption match {
 		case Some("populateTriplestore") =>
 			cli.TriplestorePopulator.run(config, None)
 

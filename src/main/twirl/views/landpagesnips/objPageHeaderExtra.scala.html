@@ -5,8 +5,14 @@
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
 <div class="d-flex gap-1 flex-shrink-0">
-	<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
-	<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
-	<a class="btn btn-warning" href="@{getDownloadURL(dobj)}">Download</a>
+	@if(dobj.accessUrl.fold(true)(_.getHost == envriConf.dataHost)){
+		<button id="meta-add-to-cart-button" class="btn btn-warning d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Add to cart</button>
+		<button id="meta-remove-from-cart-button" class="btn btn-outline-secondary d-none" data-id="@{staticObjLandingPage(dobj.hash)}">Remove from cart</button>
+	}
+	@dobj.accessUrl.filter(_.getHost != envriConf.dataHost).fold{
+		<a class="btn btn-warning" href="@{getDownloadURL(dobj)}">Download</a>
+	}{ externalUrl =>
+		<a class="btn btn-warning" href="@{externalUrl}" target="_blank" rel="noopener noreferrer">View data</a>
+	}
 </div>
 

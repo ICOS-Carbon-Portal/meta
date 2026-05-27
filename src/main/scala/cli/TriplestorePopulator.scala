@@ -23,12 +23,12 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb, RdflogConfig}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.utils.rdf4j.asPlainScalaIterator
 
-private object TriplestorePopulator:
+object TriplestorePopulator:
 
 	private val ChunkSize = 100000
 	private val log = LoggerFactory.getLogger("TriplestorePopulator")
 
-	def run(config: CpmetaConfig, instanceServerIdOpt: Option[String]): Unit =
+	def run(config: CpmetaConfig, onlyInstanceServer: Option[String]): Unit =
 		val virtuosoConf = config.virtuoso
 		val factory = SimpleValueFactory.getInstance()
 
@@ -36,9 +36,9 @@ private object TriplestorePopulator:
 		val graphStore = new HttpGraphStore(graphUpdateEndpoint, virtuosoConf.username, virtuosoConf.password)
 
 		val allConfs = MetaDb.getAllInstanceServerConfigs(config.instanceServers)
-		val selectedConfs = instanceServerIdOpt.fold(allConfs) { id =>
-			allConfs.get(id).map(id -> _).toMap
-		}
+		val selectedConfs = onlyInstanceServer match
+			case None     => allConfs
+			case Some(id) => Map(id -> allConfs.get(id).get)
 
 		for
 			(_id, conf) <- selectedConfs

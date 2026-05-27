@@ -17,44 +17,54 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 
-	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
-	private val log = Logging.getLogger(system, this)
-	private given ExecutionContext = system.dispatcher
-
 	val config: CpmetaConfig = ConfigLoader.default
-	initSentry(config)
-	PostgresRdfLog.checkConnection(config.rdfLog)
-	given EnvriConfigs = config.core.envriConfigs
-	val metaFactory = new MetaDbFactory
 
-	val startup = for(
-		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
-		db <- metaFactory(citCache, doiCache, config);
-		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
-		route = MainRoute(db, metaflow, config);
-		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
-	) yield {
-		sys.addShutdownHook {
-			metaflow.cancel()
-			try {
-				Await.result(binding.unbind(), 10.seconds)
-			} finally {
-				db.close()
-				Sentry.close()
-				println("Metadata db has been shut down")
+	args.headOption match
+		case Some("populateTriplestore") =>
+			PostgresRdfLog.checkConnection(config.rdfLog)
+			services.sparql.TriplestorePopulator.run(config, args.lift(1))
+		case _ =>
+			startServer()
+
+	private def startServer(): Unit =
+		given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
+		val log = Logging.getLogger(system, this)
+		given ExecutionContext = system.dispatcher
+
+		initSentry(config)
+		PostgresRdfLog.checkConnection(config.rdfLog)
+		given EnvriConfigs = config.core.envriConfigs
+		val metaFactory = new MetaDbFactory
+
+		val startup = for(
+			(citCache, doiCache) <- readCitCache().zip(readDoiCache());
+			db <- metaFactory(citCache, doiCache, config);
+			metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
+			route = MainRoute(db, metaflow, config);
+			binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
+		) yield {
+			sys.addShutdownHook {
+				metaflow.cancel()
+				try {
+					Await.result(binding.unbind(), 10.seconds)
+				} finally {
+					db.close()
+					Sentry.close()
+					println("Metadata db has been shut down")
+				}
+
+				println("meta service shutdown successful")
 			}
-
-			println("meta service shutdown successful")
+			log.info(binding.toString)
 		}
-		log.info(binding.toString)
-	}
 
-	startup.failed.foreach{err =>
-		Sentry.captureException(err)
-		Sentry.flush(5000)
-		log.error(err, "Could not start meta service")
-		system.terminate()
-	}
+		startup.failed.foreach{err =>
+			Sentry.captureException(err)
+			Sentry.flush(5000)
+			log.error(err, "Could not start meta service")
+			system.terminate()
+		}
+	end startServer
 }
 
 private def initSentry(config: CpmetaConfig): Unit =

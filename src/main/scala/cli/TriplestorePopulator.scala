@@ -23,12 +23,12 @@ import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb, RdflogConfig}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.utils.rdf4j.asPlainScalaIterator
 
-object TriplestorePopulator:
+object TriplestorePopulator {
 
 	private val ChunkSize = 100000
 	private val log = LoggerFactory.getLogger("TriplestorePopulator")
 
-	def run(config: CpmetaConfig, onlyInstanceServer: Option[String]): Unit =
+	def run(config: CpmetaConfig, onlyInstanceServer: Option[String]): Unit = {
 		val virtuosoConf = config.virtuoso
 		val factory = SimpleValueFactory.getInstance()
 
@@ -66,9 +66,9 @@ object TriplestorePopulator:
 
 		graphStore.close()
 		log.info("All graphs ingested!")
-	end run
+	}
 
-	private def replayRdfLog(rdfLogConfig: RdflogConfig, factory: ValueFactory, logName: String): SailRepository =
+	private def replayRdfLog(rdfLogConfig: RdflogConfig, factory: ValueFactory, logName: String): SailRepository = {
 		val rdfLog = PostgresRdfLog(logName, rdfLogConfig, factory)
 		log.info(s"$logName: replaying updates into in-memory repository")
 		val memRepo = new SailRepository(new MemoryStore)
@@ -87,9 +87,9 @@ object TriplestorePopulator:
 			log.info(s"$logName: $replayed updates replayed")
 		}
 		memRepo
-	end replayRdfLog
+	}
 
-	private final class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends AutoCloseable:
+	private final class HttpGraphStore(baseEndpoint: String, username: String, password: String) extends AutoCloseable {
 
 		private val httpClient =
 			val credsProvider = new BasicCredentialsProvider()
@@ -140,7 +140,6 @@ object TriplestorePopulator:
 
 		private def errorBody(response: HttpResponse): String =
 			Option(response.getEntity).fold("")(EntityUtils.toString)
+	}
 
-	end HttpGraphStore
-
-end TriplestorePopulator
+}

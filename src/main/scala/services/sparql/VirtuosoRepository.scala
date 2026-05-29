@@ -4,6 +4,8 @@ import scala.language.unsafeNulls
 
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.impl.client.{BasicCredentialsProvider, HttpClients}
+import org.eclipse.rdf4j.http.client.SPARQLProtocolSession
+import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.VirtuosoConfig
@@ -18,6 +20,15 @@ final class VirtuosoRepository(conf: VirtuosoConfig)
 	setHttpClient(httpClient)
 	super.init()
 	log.info(s"Initialised against ${conf.host}")
+
+	// Request SPARQL/JSON instead of the default SPARQL/XML for tuple results.
+	// This avoids SAXParseException when the result contains control characters, which
+	// apparently some of our data does. In JSON, they are properly escaped.
+	override def createSPARQLProtocolSession(): SPARQLProtocolSession = {
+		val session = super.createSPARQLProtocolSession()
+		session.setPreferredTupleQueryResultFormat(TupleQueryResultFormat.JSON)
+		session
+	}
 
 	override def shutDownInternal(): Unit = {
 		try { super.shutDownInternal() }

@@ -15,50 +15,62 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, read
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object Main extends App with CpmetaJsonProtocol{
-
-	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
-	private val log = Logging.getLogger(system, this)
-	private given ExecutionContext = system.dispatcher
+object Main extends CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
-	initSentry(config)
-	PostgresRdfLog.checkConnection(config.rdfLog)
-	given EnvriConfigs = config.core.envriConfigs
-	val metaFactory = new MetaDbFactory
 
-	val startup = for(
-		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
-		db <- metaFactory(citCache, doiCache, config);
-		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
-		route = MainRoute(db, metaflow, config);
-		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
-	) yield {
-		sys.addShutdownHook {
-			metaflow.cancel()
-			try {
-				Await.result(binding.unbind(), 10.seconds)
-			} finally {
-				db.close()
-				Sentry.close()
-				println("Metadata db has been shut down")
-			}
+	def main(args: Array[String]): Unit = args.headOption match {
+		case Some("populateTriplestore") =>
+			cli.TriplestorePopulator.run(config, None)
 
-			println("meta service shutdown successful")
-		}
-		log.info(binding.toString)
+		case _ =>
+			startServer()
 	}
 
-	startup.failed.foreach{err =>
-		Sentry.captureException(err)
-		Sentry.flush(5000)
-		log.error(err, "Could not start meta service")
-		system.terminate()
+	private def startServer(): Unit = {
+		given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
+		val log = Logging.getLogger(system, this)
+		given ExecutionContext = system.dispatcher
+
+		initSentry(config)
+		PostgresRdfLog.checkConnection(config.rdfLog)
+		given EnvriConfigs = config.core.envriConfigs
+		val metaFactory = new MetaDbFactory
+
+		val startup = for(
+			(citCache, doiCache) <- readCitCache().zip(readDoiCache());
+			db <- metaFactory(citCache, doiCache, config);
+			metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
+			route = MainRoute(db, metaflow, config);
+			binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
+		) yield {
+			sys.addShutdownHook {
+				metaflow.cancel()
+				try {
+					Await.result(binding.unbind(), 10.seconds)
+				} finally {
+					db.close()
+					Sentry.close()
+					println("Metadata db has been shut down")
+				}
+
+				println("meta service shutdown successful")
+			}
+			log.info(binding.toString)
+		}
+
+		startup.failed.foreach{err =>
+			Sentry.captureException(err)
+			Sentry.flush(5000)
+			log.error(err, "Could not start meta service")
+			system.terminate()
+		}
+	}
+
+	private def initSentry(config: CpmetaConfig): Unit =
+		config.sentry match {
+			case Some(conf) => Sentry.init(conf.dsn)
+			case None => ()
 	}
 }
 
-private def initSentry(config: CpmetaConfig): Unit =
-	config.sentry match {
-		case Some(conf) => Sentry.init(conf.dsn)
-		case None => ()
-	}

@@ -263,8 +263,9 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 				Seq(makeSt(itemIri, metaVocab.hasSpatialCoverage, covUri.toRdf))
 
 
-	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varName: String)(using Envri): Seq[Statement] = {
-		val vUri = vocab.getVarInfo(hash, varName)
+	private def getL3VarInfoStatements(objIri: IRI, hash: Sha256Sum, varUri: URI)(using Envri): Seq[Statement] = {
+		val varName = UriId(varUri).urlSafeString
+		val vUri = vocab.getVarInfo(hash, varUri)
 		Seq(
 			makeSt(objIri, metaVocab.hasActualVariable, vUri),
 			makeSt(vUri, RDF.TYPE, metaVocab.variableInfoClass),

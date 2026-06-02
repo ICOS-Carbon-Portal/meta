@@ -87,6 +87,11 @@ class DataPanel(
 			if(objSpec.isStationTimeSer && isNotAtcTimeSeries && isNotWdcgg && isNotNetCDF) nRowsInput.enable() else nRowsInput.disable()
 			if(objSpec.dataset.nonEmpty) varInfoButton.enable() else disableVarInfoButton()
 			dataTypeKeywords.setList(objSpec.keywords)
+			objSpec.dataset.foreach(dataset => {
+				whenDone(getVariables(dataset)) { variables =>
+					bus.publish(GotVariableList(variables))
+				}
+			})
 			bus.publish(ObjSpecSelected(objSpec))
 		}
 		notifyUpdate()

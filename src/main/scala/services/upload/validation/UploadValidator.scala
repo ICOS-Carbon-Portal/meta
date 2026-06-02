@@ -343,9 +343,9 @@ class UploadValidator(servers: DataObjectInstanceServers):
 					): dsSpec =>
 						val valTypeLookupV = metaReader.getValTypeLookup(dsSpec.self.uri.toRdf)
 						errors ++= valTypeLookupV.errors
-						for valTypeLookup <- valTypeLookupV; varName <- vars do
-							if valTypeLookup.lookup(varName).isEmpty then errors +=
-								s"Variable name '$varName' is not compatible with dataset specification ${dsSpec.self.uri}"
+						for valTypeLookup <- valTypeLookupV; varUri <- vars do
+							if valTypeLookup.lookup(varUri).isEmpty then errors +=
+								s"Variable URI '$varUri' is not compatible with dataset specification ${dsSpec.self.uri}"
 
 			case Right(stationMeta) =>
 				if spec.specificDatasetType != DatasetType.StationTimeSeries

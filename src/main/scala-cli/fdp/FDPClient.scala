@@ -89,6 +89,8 @@ class FDPClient private(val host: Uri, token: String):
 		val resp = authRequest.delete(dataset).send()
 		val respMsg = processHttpResponse(resp, s"Failed to delete resource $dataset.")
 
+	def getToken: String = token
+
 end FDPClient
 
 object FDPClient:
@@ -117,3 +119,6 @@ object FDPClient:
 		val password = System.console().readPassword()
 		val user = User(email.mkString, password.mkString)
 		apply(host, user)
+
+	def tokenInit(host: Uri, token: String): FDPClient =
+		new FDPClient(host, token)

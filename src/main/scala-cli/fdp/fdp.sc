@@ -106,13 +106,41 @@ OParser.parse(parser, args, Config()) match
 			case _ => println("Error: wrong usage\nTry --help for more information")
 	case _ =>
 
+def tokenFile: os.Path =
+	os.home / ".fdpToken"
+
+def saveToken(host: Uri, token: String): Unit =
+	println(s"Saving token in $tokenFile.")
+	os.write.over(tokenFile, ujson.write(ujson.Obj("host" -> host.toString, "token" -> token)))
+
+def loadValidToken(host: Uri): Option[String] =
+	if !os.exists(tokenFile) then None
+	else
+		try
+			val json = ujson.read(os.read(tokenFile))
+			val savedHost = json("host").str
+			val token = json("token").str
+			if savedHost != host.toString then None
+			else
+				val exp = ujson.read(
+					new String(java.util.Base64.getUrlDecoder.decode(token.split("\\.")(1)))
+				)("exp").num.toLong
+				if exp > System.currentTimeMillis() / 1000 then Some(token) else None
+		catch case _ => None
+
 def initFdp(config: Config): FDPClient =
 	val hostUri = uri"${config.host}"
-	val fromOptions =
-		for user <- config.username; pass <- config.password
-		yield FDPClient(hostUri, User(user, pass))
-	fromOptions.getOrElse:
-		FDPClient.interactiveInit(hostUri)
+	loadValidToken(hostUri) match
+		case Some(token) =>
+			FDPClient.tokenInit(hostUri, token)
+		case None =>
+			val fromOptions =
+				for user <- config.username; pass <- config.password
+				yield FDPClient(hostUri, User(user, pass))
+			val client = fromOptions.getOrElse:
+				FDPClient.interactiveInit(hostUri)
+			saveToken(hostUri, client.getToken)
+			client
 
 def showMetadata(config: Config) =
 	val uri = s"${config.host}${config.path}"

@@ -1,4 +1,8 @@
-module.exports = function(Backend, selectTypeAction, selectIndividAction, createIndividualAction, deleteIndividualAction){
+function localName(uri) {
+	return uri.substring(uri.lastIndexOf('/') + 1);
+}
+
+module.exports = function(Backend, selectTypeAction, selectIndividAction, createIndividualAction, deleteIndividualAction, initialIndividualName){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -17,6 +21,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 				addingInstance: false, //needed by the IndividualsList view to hide the IndividualAdder when refreshing
 				selectedIndividual: null
 			};
+			this.pendingIndividualName = initialIndividualName || null;
 			this.listenTo(selectTypeAction, this.fetchIndividuals);
 			this.listenTo(selectIndividAction, this.updateSelectedIndivid);
 			this.listenTo(createIndividualAction, this.createIndividual);
@@ -37,6 +42,14 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					if(selectedType !== self.selectedType) return;
 
 					self.state.individuals = individuals;
+
+					if(self.pendingIndividualName){
+						var name = self.pendingIndividualName;
+						self.pendingIndividualName = null;
+						var match = _.find(individuals, function(i){ return localName(i.uri) === name; });
+						if(match) selectIndividAction(match.uri);
+					}
+
 					self.publishState();
 				},
 				function(err){

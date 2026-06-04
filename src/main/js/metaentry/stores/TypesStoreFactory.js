@@ -1,4 +1,8 @@
-export default function(Backend, selectTypeAction, checkUriOrSuffixAction){
+function localName(uri) {
+	return uri.substring(uri.lastIndexOf('/') + 1);
+}
+
+export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initialTypeName){
 
 	const uriCheck = _.debounce(
 		function(uri, onSuccess){
@@ -35,6 +39,10 @@ export default function(Backend, selectTypeAction, checkUriOrSuffixAction){
 			Backend.listClasses().then(
 				function(types){
 					self.state.types = _.sortBy(types, 'displayName');
+					if(initialTypeName){
+						var match = _.find(self.state.types, function(t){ return localName(t.uri) === initialTypeName; });
+						if(match) selectTypeAction(match.uri);
+					}
 					self.publishState();
 				},
 				function(err){console.log(err);}

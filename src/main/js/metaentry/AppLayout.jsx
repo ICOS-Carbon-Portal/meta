@@ -8,9 +8,12 @@ var actions = Reflux.createActions([
 ]);
 
 var Backend = require('./backend.js');
+var urlManager = require('./urlManager.js');
 
-var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.selectMetaType, actions.checkUriOrSuffix);
-var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.selectMetaType, actions.selectIndividual, actions.createIndividual, actions.removeIndividual);
+var initialPath = urlManager.readPath();
+
+var TypesStore = require('./stores/TypesStoreFactory.js')(Backend, actions.selectMetaType, actions.checkUriOrSuffix, initialPath.typeName);
+var IndividualsStore = require('./stores/IndividualsStoreFactory.js')(Backend, actions.selectMetaType, actions.selectIndividual, actions.createIndividual, actions.removeIndividual, initialPath.individualName);
 var EditStore = require('./stores/EditStoreFactory.js')(Backend, actions.selectIndividual, actions.requestUpdate);
 
 var TypesList = require('./views/TypesListFactory.jsx')(TypesStore, actions.selectMetaType);
@@ -19,8 +22,24 @@ var IndividualsList = require('./views/IndividualsListFactory.jsx')(IndividualsS
 var EditView = require('./views/EditViewFactory.jsx')(EditStore, actions.requestUpdate);
 
 module.exports = React.createClass({
-	render: function(){
+	mixins: [Reflux.ListenerMixin],
 
+	getInitialState: function(){
+		return {selectedType: null, selectedIndividual: null};
+	},
+
+	componentDidMount: function(){
+		this.listenTo(TypesStore, function(s){
+			this.setState({selectedType: s.selected});
+			urlManager.updatePath(s.selected, this.state.selectedIndividual);
+		}.bind(this));
+		this.listenTo(IndividualsStore, function(s){
+			this.setState({selectedIndividual: s.selectedIndividual});
+			urlManager.updatePath(this.state.selectedType, s.selectedIndividual);
+		}.bind(this));
+	},
+
+	render: function(){
 		return <div className="row" style={{marginTop: "2px"}}>
 			<div className="col-md-2"><TypesList /></div>
 			<div className="col-md-3"><IndividualsList /></div>

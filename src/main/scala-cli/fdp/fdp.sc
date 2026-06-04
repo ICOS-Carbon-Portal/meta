@@ -99,7 +99,7 @@ end parser
 OParser.parse(parser, args, Config()) match
 	case Some(config) =>
 		config.command match
-			case ShowMetadata => showMetadata(config)
+			case ShowMetadata => println(getMetadata(config))
 			case UploadL2Icos => uploadL2ICOS(config)
 			case UploadDatasetFromFile => uploadDatasetFromFile(config)
 			case DeleteAllDatasets => deleteAllDatasets(config)
@@ -142,10 +142,9 @@ def initFdp(config: Config): FDPClient =
 			saveToken(hostUri, client.getToken)
 			client
 
-def showMetadata(config: Config) =
+def getMetadata(config: Config): String =
 	val uri = s"${config.host}${config.path}"
-	val ttl = quickRequest.get(uri"$uri").send().body
-	println(ttl)
+	quickRequest.get(uri"$uri").send().body
 
 def uploadL2ICOS(config: Config) =
 	val fdp = initFdp(config)

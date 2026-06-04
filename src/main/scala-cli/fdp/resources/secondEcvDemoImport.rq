@@ -26,10 +26,10 @@ CONSTRUCT {
 	{
 		SELECT ?dobjSpec ?ecv (group_concat(?dobjSpecComm; separator=". ") AS ?dobjSpecComment) WHERE {
 			VALUES (?dobjSpec ?ecv){
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <http://fdpdemo.envri.eu/variable/6a43782b-13da-40a0-a65c-63480a940231>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <http://fdpdemo.envri.eu/variable/9150a404-40eb-41ae-b835-4077b989713f>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <http://fdpdemo.envri.eu/variable/c0b74231-0790-469b-9886-f8ff15eead5b>)
-				(<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://fdpdemo.envri.eu/variable/8b61fc50-1c1d-4c58-8934-7e3d236b7ef7>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject> <https://vocab.nerc.ac.uk/collection/EXV/current/EXV013>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcCh4L2DataObject> <https://vocab.nerc.ac.uk/collection/EXV/current/EXV013>)
+				(<http://meta.icos-cp.eu/resources/cpmeta/atcN2oL2DataObject> <https://vocab.nerc.ac.uk/collection/EXV/current/EXV013>)
+				#(<http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteosens> <http://fdpdemo.envri.eu/variable/8b61fc50-1c1d-4c58-8934-7e3d236b7ef7>)
 			}
 			OPTIONAL{?dobjSpec rdfs:comment ?dobjSpecComm }
 		}

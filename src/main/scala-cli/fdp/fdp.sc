@@ -231,6 +231,7 @@ def createRepo(model: Model): SailRepository =
 
 def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 	s"""
+		|PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|PREFIX dct: <http://purl.org/dc/terms/>
 		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
 		|PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -242,6 +243,7 @@ def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 		|	?ds dct:hasVersion "1.0" .
 		|	?ds dcat:version "1.0" .
 		|	?ds dct:license <https://data.icos-cp.eu/licence> .
+		|	<https://data.icos-cp.eu/licence> rdfs:label "ICOS license" .
 		|	?ds dcat:contactPoint <https://www.icos-ri.eu> .
 		|	?ds dct:publisher <https://www.icos-cp.eu/> .
 		|	<https://www.icos-cp.eu/> a foaf:Agent .
@@ -256,6 +258,7 @@ def constructDatasetSparqlQuery(catalog: Uri, dataset: Uri): String =
 
 def constructDistributionSparqlQuery(dataset: Uri, datasetFdpUri: Uri): String =
 	s"""
+		|PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|PREFIX dct: <http://purl.org/dc/terms/>
 		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
 		|PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
@@ -272,6 +275,7 @@ def constructDistributionSparqlQuery(dataset: Uri, datasetFdpUri: Uri): String =
 		|	_:dist dcat:version "1.0" .
 		|	_:dist dcat:mediaType ?media .
 		|	_:dist dct:license <https://data.icos-cp.eu/licence> .
+		|	<https://data.icos-cp.eu/licence> rdfs:label "ICOS license" .
 		|	_:dist dct:publisher <https://www.icos-cp.eu/> .
 		|	<https://www.icos-cp.eu/> a foaf:Agent .
 		|	<https://www.icos-cp.eu/> foaf:name "ICOS"^^xsd:string .

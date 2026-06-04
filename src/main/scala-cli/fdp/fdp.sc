@@ -24,11 +24,13 @@ import scala.util.Using
 val GetSettings = "getSettings"
 val ShowMetadata = "showMetadata"
 val UploadL2Icos = "uploadL2ICOS"
+val UploadSeaDataNet = "uploadSeaDataNet"
 val UploadDatasetFromFile = "uploadDatasetFromFile"
 val DeleteAllDatasets = "deleteAllDatasets"
 
 val sparqlEndpoint: Uri = uri"https://meta.icos-cp.eu/sparql"
 val ConstructQueryFile = os.pwd / os.RelPath("resources/secondEcvDemoImport.rq")
+val sdnTtlCollectionUri: Uri = uri"https://cdi.seadatanet.org/envri-hub/collection.ttl"
 
 case class Config(
 	host: String = "",
@@ -89,6 +91,10 @@ val parser =
 			.text("Upload metadata of ICOS L2 objects to a catalog")
 			.action((_, c) => c.copy(command = UploadL2Icos))
 			.children(catalogParser, nDatasetsParser, dryRunParser),
+		cmd(UploadSeaDataNet)
+			.text("Upload metadata of SeaDataNet aggregated datasets to a catalog")
+			.action((_, c) => c.copy(command = UploadSeaDataNet))
+			.children(catalogParser, nDatasetsParser, dryRunParser),
 		cmd(UploadDatasetFromFile)
 			.text("Upload metadata from a Turtle file")
 			.action((_, c) => c.copy(command = UploadDatasetFromFile))
@@ -106,6 +112,7 @@ OParser.parse(parser, args, Config()) match
 			case GetSettings => println(getSettings(config))
 			case ShowMetadata => println(getMetadata(config))
 			case UploadL2Icos => uploadL2ICOS(config)
+			case UploadSeaDataNet => uploadSeaDataNet(config)
 			case UploadDatasetFromFile => uploadDatasetFromFile(config)
 			case DeleteAllDatasets => deleteAllDatasets(config)
 			case _ => println("Error: wrong usage\nTry --help for more information")
@@ -181,6 +188,36 @@ def uploadL2ICOS(config: Config) =
 					fdp.postAndPublishDistributions(distributionTurtle)
 	if manager.isFailure then manager.get
 
+def uploadSeaDataNet(config: Config) =
+	val fdp = initFdp(config)
+	val catalogUri = fdp.catalogUriInFdp(config.catalog)
+	val sdnTtl = quickRequest.get(sdnTtlCollectionUri).send().body
+	val model = Rio.parse(StringReader(sdnTtl), "", RDFFormat.TURTLE)
+	val repo = createRepo(model)
+	val result = Using(repo.getConnection()): conn =>
+		val limit = if config.nDatasets > 0 then s" LIMIT ${config.nDatasets}" else ""
+		val datasetsQuery = s"SELECT ?dataset WHERE { ?dataset a <${DCAT.DATASET}> }$limit"
+		val datasetUris = collectQueryResults(conn, datasetsQuery, "dataset")
+		datasetUris.foreach: datasetUri =>
+			val dataset = uri"$datasetUri"
+			val datasetQuery = constructSdnDatasetQuery(catalogUri, dataset)
+			val datasetTurtle = evaluateGraphQuery(conn, datasetQuery)
+			if config.dryRun then
+				println(datasetTurtle)
+			else
+				val datasetsFdpUris = fdp.postAndPublishDatasets(datasetTurtle)
+				for datasetFdpUri <- datasetsFdpUris do
+					val distQuery = s"""SELECT ?dist WHERE {
+						<$datasetUri> <${DCAT.HAS_DISTRIBUTION}> ?dist .
+					}"""
+					val distUris = collectQueryResults(conn, distQuery, "dist")
+					distUris.foreach: distUri =>
+						val dist = uri"$distUri"
+						val distributionQuery = constructSdnDistributionQuery(dist, datasetFdpUri)
+						val distributionTurtle = evaluateGraphQuery(conn, distributionQuery)
+						fdp.postAndPublishDistributions(distributionTurtle)
+	if result.isFailure then result.get
+
 def uploadDatasetFromFile(config: Config) =
 	val fdp = initFdp(config)
 	val catalogUri = fdp.catalogUriInFdp(config.catalog)
@@ -205,6 +242,13 @@ def evaluateGraphQuery(conn: RepositoryConnection, query: String): String =
 	val preparedQuery = conn.prepareGraphQuery(query)
 	preparedQuery.evaluate(turtleWriter)
 	writer.toString
+
+def collectQueryResults(conn: RepositoryConnection, query: String, varName: String): List[String] =
+	val result = conn.prepareTupleQuery(query).evaluate()
+	val buffer = scala.collection.mutable.ListBuffer.empty[String]
+	try result.forEach(b => buffer += b.getValue(varName).toString)
+	finally result.close()
+	buffer.toList
 
 def stringToPath(path: String): os.Path =
 	if path.startsWith("/") then os.Path(path)
@@ -288,5 +332,68 @@ def constructDistributionSparqlQuery(dataset: Uri, datasetFdpUri: Uri): String =
 		|	?ds dcat:downloadURL ?dlUri .
 		|	?ds dcat:byteSize ?size .
 		|	?ds dcat:mediaType ?media .
+		|}
+	""".stripMargin
+
+def constructSdnDatasetQuery(catalog: Uri, dataset: Uri): String =
+	s"""
+		|PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|PREFIX dct: <http://purl.org/dc/terms/>
+		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
+		|PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+		|
+		|CONSTRUCT {
+		|	?ds dct:isPartOf <$catalog> .
+		|	?ds ?pred ?obj .
+		|	?obj ?subPred ?subObj .
+		|	?ds dct:hasVersion "1.0" .
+		|	?ds dcat:version "1.0" .
+		|	?ds dct:license <https://creativecommons.org/licenses/by/4.0/> .
+		|	<https://creativecommons.org/licenses/by/4.0/> rdfs:label "CC-BY" .
+		|	?ds dct:publisher <https://www.seadatanet.org/> .
+		|	<https://www.seadatanet.org/> a foaf:Agent .
+		|	<https://www.seadatanet.org/> foaf:name "SeaDataNet"^^xsd:string .
+		|}
+		|WHERE {
+		|	VALUES ?ds {<$dataset>}
+		|	?ds ?pred ?obj .
+		|	FILTER(?pred != dcat:distribution)
+		|	OPTIONAL { ?obj ?subPred ?subObj . }
+		|}
+	""".stripMargin
+
+def constructSdnDistributionQuery(dist: Uri, datasetFdpUri: Uri): String =
+	s"""
+		|PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|PREFIX dct: <http://purl.org/dc/terms/>
+		|PREFIX dcat: <http://www.w3.org/ns/dcat#>
+		|PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+		|
+		|CONSTRUCT {
+		|	?dist a <${DCAT.DISTRIBUTION}> .
+		|	?dist dct:isPartOf <$datasetFdpUri> .
+		|	?dist ?pred ?obj .
+		|	?dist dcat:mediaType ?mediaTypeString .
+		|	?dist dct:hasVersion "1.0" .
+		|	?dist dcat:version "1.0" .
+		|	?dist dct:license <https://creativecommons.org/licenses/by/4.0/> .
+		|	<https://creativecommons.org/licenses/by/4.0/> rdfs:label "CC-BY" .
+		|	?dist dct:publisher <https://www.seadatanet.org/> .
+		|	<https://www.seadatanet.org/> a foaf:Agent .
+		|	<https://www.seadatanet.org/> foaf:name "SeaDataNet"^^xsd:string .
+		|}
+		|WHERE {
+		|	{
+		|		VALUES ?dist {<$dist>}
+		|		?dist ?pred ?obj
+		|		FILTER(?pred = dct:title || ?pred = dcat:downloadURL)
+		|	}
+		|	UNION
+		|	{
+		|		VALUES ?dist {<$dist>}
+		|		OPTIONAL { ?dist dcat:mediaType ?mediaTypeOpt . }
+		|		BIND(COALESCE(?mediaTypeOpt, <https://www.iana.org/assignments/media-types/application/vnd.apache.parquet>) AS ?mediaType)
+		|		BIND(REPLACE(STR(?mediaType), "^.*/([^/]+/[^/]+)$", "$$1") AS ?mediaTypeString)
+		|	}
 		|}
 	""".stripMargin

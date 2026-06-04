@@ -21,6 +21,7 @@ import scopt.OParser
 import scala.util.Using
 
 
+val GetSettings = "getSettings"
 val ShowMetadata = "showMetadata"
 val UploadL2Icos = "uploadL2ICOS"
 val UploadDatasetFromFile = "uploadDatasetFromFile"
@@ -77,6 +78,9 @@ val parser =
 		hostParser,
 		userParser,
 		passwordParser,
+		cmd(GetSettings)
+			.text("Print the FAIR Data Point's settings")
+			.action((_, c) => c.copy(command = GetSettings)),
 		cmd(ShowMetadata)
 			.text("Print the metadata of a resource")
 			.action((_, c) => c.copy(command = ShowMetadata))
@@ -99,6 +103,7 @@ end parser
 OParser.parse(parser, args, Config()) match
 	case Some(config) =>
 		config.command match
+			case GetSettings => println(getSettings(config))
 			case ShowMetadata => println(getMetadata(config))
 			case UploadL2Icos => uploadL2ICOS(config)
 			case UploadDatasetFromFile => uploadDatasetFromFile(config)
@@ -141,6 +146,11 @@ def initFdp(config: Config): FDPClient =
 				FDPClient.interactiveInit(hostUri)
 			saveToken(hostUri, client.getToken)
 			client
+
+def getSettings(config: Config): String =
+	val fdp = initFdp(config)
+	val uri = uri"${config.host}/settings"
+	quickRequest.auth.bearer(fdp.getToken).get(uri).send().body
 
 def getMetadata(config: Config): String =
 	val uri = s"${config.host}${config.path}"

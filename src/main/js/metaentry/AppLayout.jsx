@@ -31,7 +31,7 @@ module.exports = React.createClass({
 	componentDidMount: function(){
 		this.listenTo(TypesStore, function(s){
 			this.setState({selectedType: s.selected});
-			urlManager.updatePath(s.selected, this.state.selectedIndividual);
+			urlManager.updatePath(s.selected, null);
 		}.bind(this));
 		this.listenTo(IndividualsStore, function(s){
 			this.setState({selectedIndividual: s.selectedIndividual});

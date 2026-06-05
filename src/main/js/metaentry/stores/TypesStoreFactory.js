@@ -1,6 +1,4 @@
-function localName(uri) {
-	return uri.substring(uri.lastIndexOf('/') + 1);
-}
+var urlManager = require('../urlManager.js');
 
 export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initialTypeName){
 
@@ -40,7 +38,8 @@ export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initi
 				function(types){
 					self.state.types = _.sortBy(types, 'displayName');
 					if(initialTypeName){
-						var match = _.find(self.state.types, function(t){ return localName(t.uri) === initialTypeName; });
+						var requestedTypeName = urlManager.pathNameFromLocalName(initialTypeName);
+						var match = _.find(self.state.types, function(t){ return urlManager.pathName(t.uri) === requestedTypeName; });
 						if(match) selectTypeAction(match.uri);
 					}
 					self.publishState();

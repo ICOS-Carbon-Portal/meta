@@ -56,7 +56,7 @@ object StaticRoute {
 			} ~ {
 				config.instOntoServers.get(ontId) match {
 					case Some(ontConfig) => extractEnvri{envri =>
-							val servePage = complete(views.html.MetaentryPage(ontConfig.serviceTitle)(envri, envriConfigs(envri)))
+							val servePage = complete(views.html.MetaentryPage(ontConfig.serviceTitle, ontId)(envri, envriConfigs(envri)))
 							pathSingleSlash{ servePage } ~ path(Remaining){ _ => servePage }
 						}
 					case None =>

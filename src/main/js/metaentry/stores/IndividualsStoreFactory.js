@@ -1,6 +1,4 @@
-function localName(uri) {
-	return uri.substring(uri.lastIndexOf('/') + 1);
-}
+var urlManager = require('../urlManager.js');
 
 module.exports = function(Backend, selectTypeAction, selectIndividAction, createIndividualAction, deleteIndividualAction, initialIndividualName){
 	return Reflux.createStore({
@@ -33,6 +31,8 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			var self = this;
 			self.selectedType = selectedType;
 			self.state.selectedType = selectedType;
+			self.state.selectedIndividual = null;
+			selectIndividAction(null);
 			self.publishState();
 
 			Backend.listIndividuals(selectedType).then(
@@ -44,9 +44,9 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					self.state.individuals = individuals;
 
 					if(self.pendingIndividualName){
-						var name = self.pendingIndividualName;
+						var name = urlManager.pathNameFromLocalName(self.pendingIndividualName);
 						self.pendingIndividualName = null;
-						var match = _.find(individuals, function(i){ return localName(i.uri) === name; });
+						var match = _.find(individuals, function(i){ return urlManager.pathName(i.uri) === name; });
 						if(match) selectIndividAction(match.uri);
 					}
 

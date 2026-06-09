@@ -70,7 +70,7 @@
 				}
 			}
 			@property("File name", dobj.fileName)
-			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium && dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)) {
+			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium) {
 				@htmlProperty{Zip contents}{@zipContents(dobj)}
 			}
 			@for(size <- dobj.size){

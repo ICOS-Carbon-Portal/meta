@@ -32,9 +32,11 @@ defmodule CitationPopulator.DataCiteQueue do
   """
   def drain, do: GenServer.call(__MODULE__, :drain, :infinity)
 
+  @log_every 500
+
   @impl true
   def init(nil) do
-    {:ok, %{pending: :queue.new(), running: 0, written: 0, failed: 0, drainers: []}}
+    {:ok, %{pending: :queue.new(), running: 0, done: 0, written: 0, failed: 0, drainers: []}}
   end
 
   @impl true
@@ -75,7 +77,15 @@ defmodule CitationPopulator.DataCiteQueue do
   end
 
   defp task_finished(state) do
-    state = start_jobs(%{state | running: state.running - 1})
+    state = start_jobs(%{state | running: state.running - 1, done: state.done + 1})
+
+    if rem(state.done, @log_every) == 0 do
+      Logger.info(
+        "DataCite queue progress: #{state.done} subjects done " <>
+          "(#{state.written} triples written, #{state.failed} failed), " <>
+          "#{state.running + :queue.len(state.pending)} pending"
+      )
+    end
 
     if idle?(state) and state.drainers != [] do
       {stats, state} = take_stats(state)
@@ -101,7 +111,8 @@ defmodule CitationPopulator.DataCiteQueue do
 
   defp idle?(state), do: state.running == 0 and :queue.is_empty(state.pending)
 
-  defp take_stats(state), do: {{state.written, state.failed}, %{state | written: 0, failed: 0}}
+  defp take_stats(state),
+    do: {{state.written, state.failed}, %{state | done: 0, written: 0, failed: 0}}
 
   defp process(job) do
     case References.complete_deferred(job.mode, job.doi, job.refs_base) do
@@ -113,7 +124,7 @@ defmodule CitationPopulator.DataCiteQueue do
           end
 
         count = Writer.write(job.graph, triples)
-        Logger.info("[#{job.tag}] DataCite queue: wrote #{count} triples for #{job.uri}")
+        Logger.debug("[#{job.tag}] DataCite queue: wrote #{count} triples for #{job.uri}")
         {:ok, count}
 
       {:error, reason} ->

@@ -7,7 +7,7 @@ defmodule CitationPopulator.Throttle do
 
   use GenServer
 
-  @interval_ms 100
+  @interval_ms 150
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 

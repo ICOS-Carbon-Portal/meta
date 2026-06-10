@@ -58,7 +58,7 @@ All via environment variables:
 
 | Variable | Default |
 | --- | --- |
-| `VIRTUOSO_HOST` | `https://metalocal-virtuoso.icos-cp.eu` |
+| `VIRTUOSO_HOST` | `http://localhost:8890` |
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/citations/` |

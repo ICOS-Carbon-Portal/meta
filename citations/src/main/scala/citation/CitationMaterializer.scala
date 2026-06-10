@@ -22,8 +22,9 @@ import scala.concurrent.{ExecutionContext, Future}
  * StatementsEnricher: with a remote SPARQL backend we cannot inject values at
  * query-evaluation time, so we materialize them ahead of time instead.
  *
- * The derived graph is treated as a cache: it is cleared and rebuilt by
- * `materializeAll`.
+ * `materializeAll` is incremental: it leaves the derived graph in place and only
+ * materializes citations for citable subjects that do not already have any triple
+ * in the derived graph. This avoids re-fetching from DataCite on every run.
  */
 class CitationMaterializer(
 	repo: Repository,
@@ -41,11 +42,15 @@ class CitationMaterializer(
 	def materializeAll()(using ExecutionContext): Future[Int] = Future:
 		val startNanos = System.nanoTime()
 		log.info(s"Citation materialization started (graph $derivedGraph)")
-		repo.transact(_.clear(graphIri))
-		log.info("Cleared derived citations graph, listing citable subjects...")
+		log.info("Listing citable subjects...")
 		val listStartNanos = System.nanoTime()
-		val subjects = listCitableSubjects()
-		log.info(f"Found ${subjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s, materializing citations...")
+		val allSubjects = listCitableSubjects()
+		val alreadyMaterialized = listMaterializedSubjects()
+		val subjects = allSubjects.filterNot(alreadyMaterialized.contains)
+		log.info(
+			f"Found ${allSubjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
+			f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to materialize), materializing citations..."
+		)
 		val written = writeInBatches(subjects)
 		log.info(f"Citation materialization finished, wrote $written triples in ${(System.nanoTime() - startNanos) / 1e9}%.0f s")
 		written
@@ -56,9 +61,20 @@ class CitationMaterializer(
 			|  ?s a ?t .
 			|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>, <${metaVocab.collectionClass}>))
 			|}""".stripMargin
+		querySubjects(q).toIndexedSeq
+
+	/** Subjects that already have at least one triple in the derived citations graph. */
+	private def listMaterializedSubjects(): Set[IRI] =
+		val q = s"""
+			|SELECT DISTINCT ?s WHERE {
+			|  GRAPH <$derivedGraph> { ?s ?p ?o }
+			|}""".stripMargin
+		querySubjects(q).toSet
+
+	private def querySubjects(query: String): collection.Seq[IRI] =
 		val conn = repo.getConnection()
 		try
-			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
+			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
 			val buf = ArrayBuffer.empty[IRI]
 			try
 				while result.hasNext() do
@@ -66,7 +82,7 @@ class CitationMaterializer(
 						case iri: IRI => buf += iri
 						case _ => ()
 			finally result.close()
-			buf.toIndexedSeq
+			buf
 		finally conn.close()
 
 	private def writeInBatches(subjects: IndexedSeq[IRI]): Int =

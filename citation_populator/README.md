@@ -38,11 +38,17 @@ The computation is a port of the Scala citation stack:
 
 Behavior notes, mirroring the Scala service:
 
-* Subjects with a DOI get their citation strings (elsevier-harvard HTML,
-  BibTeX, RIS) and DOI metadata from DataCite's public REST API; if any
-  DataCite lookup fails the subject is skipped for this run (the Scala
-  materializer's DataCite-queue failure behavior) — never materialized
-  with placeholder text. Transient DataCite errors (429/5xx) are retried.
+* Subjects with a DOI are not handled inline: the worker writes their
+  DataCite-independent triples (the licence) immediately and pushes a job to
+  the `DataCiteQueue` GenServer, which fetches the citation strings
+  (elsevier-harvard HTML, BibTeX, RIS) and DOI metadata from DataCite's
+  public REST API on its own task pool and writes `hasBiblioInfo` +
+  `hasCitationString` as the lookups complete, concurrently with the main
+  pass. A run finishes when both the main pass and the queue are done. If a
+  DataCite lookup fails, the subject's remaining triples are skipped for
+  this run — never materialized with placeholder text (note: the
+  already-written licence triple makes such a subject count as materialized
+  on later runs). Transient DataCite errors (429/5xx) are retried.
 * Subjects without a DOI get structural citations (ICOS / SITES / ICOS
   Cities / document variants), attribution-based author lists, funding
   acknowledgements and BibTeX/RIS assembled from triplestore data.

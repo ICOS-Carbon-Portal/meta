@@ -42,11 +42,19 @@ defmodule CitationPopulator do
         "(#{MapSet.size(materialized)} already materialized, #{total} to populate)"
     )
 
+    # 1: subjects processed, 2: triples written — for the periodic progress log
+    progress = :atomics.new(2, [])
+    started_ms = System.monotonic_time(:millisecond)
+
     main_written =
       todo
       |> Enum.with_index(1)
       |> Task.async_stream(
-        fn {{uri, class}, idx} -> populate("#{idx}/#{total}", uri, class, graph) end,
+        fn {{uri, class}, idx} ->
+          count = populate("#{idx}/#{total}", uri, class, graph)
+          log_progress(progress, count, total, started_ms)
+          count
+        end,
         max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
         ordered: false,
         timeout: :infinity
@@ -115,27 +123,43 @@ defmodule CitationPopulator do
     case result do
       {:ok, refs} ->
         count = Writer.write(graph, Writer.all_triples(uri, refs))
-        Logger.info("[#{tag}] Wrote #{count} triples for #{uri}")
+        Logger.debug("[#{tag}] Wrote #{count} triples for #{uri}")
         count
 
       {:deferred, job} ->
         count = Writer.write(graph, Writer.licence_triple(uri, job.refs_base))
         DataCiteQueue.push(Map.merge(job, %{uri: uri, tag: tag, graph: graph}))
-
-        Logger.info(
-          "[#{tag}] Deferred #{uri} to the DataCite queue (DOI #{elem(job.doi, 0)}/#{elem(job.doi, 1)}, " <>
-            "wrote #{count} triples now)"
-        )
-
+        Logger.debug("[#{tag}] Deferred #{uri} to the DataCite queue")
         count
 
       :none ->
-        Logger.info("[#{tag}] No citation triples produced for #{uri}")
+        Logger.debug("[#{tag}] No citation triples produced for #{uri}")
         0
 
       {:error, reason} ->
         Logger.warning("[#{tag}] Skipping #{uri}: #{reason}")
         0
+    end
+  end
+
+  @log_every 500
+
+  defp log_progress(progress, written_now, total, started_ms) do
+    :atomics.add(progress, 2, written_now)
+    processed = :atomics.add_get(progress, 1, 1)
+
+    if rem(processed, @log_every) == 0 or processed == total do
+      written = :atomics.get(progress, 2)
+      elapsed_s = (System.monotonic_time(:millisecond) - started_ms) / 1000
+      rate = if elapsed_s > 0, do: processed / elapsed_s, else: 0.0
+      eta_s = if rate > 0, do: round((total - processed) / rate), else: 0
+
+      Logger.info(
+        "Progress: #{processed}/#{total} subjects " <>
+          "(#{Float.round(100.0 * processed / total, 1)}%), #{written} triples written, " <>
+          "#{Float.round(rate, 1)} subj/s, ETA #{eta_s} s, " <>
+          "#{DataCiteQueue.pending()} pending in the DataCite queue"
+      )
     end
   end
 end

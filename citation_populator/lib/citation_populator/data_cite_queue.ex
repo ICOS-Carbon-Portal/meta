@@ -10,6 +10,10 @@ defmodule CitationPopulator.DataCiteQueue do
   :full (complete References to merge with the DataCite bundle) or
   :citation_only (only the HTML citation string is materialized). On a
   DataCite failure the subject's remaining triples are skipped for this run.
+
+  The queue also owns the DataCite rate limit (all DataCite traffic comes
+  from its tasks): await_slot/0 hands out request slots @slot_interval_ms
+  apart, and backoff/1 pauses the handout when DataCite answers 429.
   """
 
   use GenServer
@@ -18,6 +22,7 @@ defmodule CitationPopulator.DataCiteQueue do
   alias CitationPopulator.{References, Writer}
 
   @fetch_concurrency 8
+  @slot_interval_ms 150
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
@@ -32,16 +37,44 @@ defmodule CitationPopulator.DataCiteQueue do
   """
   def drain, do: GenServer.call(__MODULE__, :drain, :infinity)
 
+  @doc "Blocks the caller until its DataCite rate-limit slot is due."
+  def await_slot do
+    delay = GenServer.call(__MODULE__, :slot, :infinity)
+    if delay > 0, do: Process.sleep(delay)
+    :ok
+  end
+
+  @doc """
+  Pauses slot handout for the given time, on top of any pause already in
+  effect. Used when DataCite answers 429: the whole client is over the rate
+  limit, so every fetch task should back off, not just the one that hit it.
+  """
+  def backoff(ms), do: GenServer.cast(__MODULE__, {:backoff, ms})
+
   @log_every 500
 
   @impl true
   def init(nil) do
-    {:ok, %{pending: :queue.new(), running: 0, done: 0, written: 0, failed: 0, drainers: []}}
+    {:ok,
+     %{
+       pending: :queue.new(),
+       running: 0,
+       done: 0,
+       written: 0,
+       failed: 0,
+       drainers: [],
+       next_slot_at: System.monotonic_time(:millisecond)
+     }}
   end
 
   @impl true
   def handle_cast({:push, job}, state) do
     {:noreply, start_jobs(%{state | pending: :queue.in(job, state.pending)})}
+  end
+
+  def handle_cast({:backoff, ms}, state) do
+    paused_until = System.monotonic_time(:millisecond) + ms
+    {:noreply, %{state | next_slot_at: max(state.next_slot_at, paused_until)}}
   end
 
   @impl true
@@ -56,6 +89,12 @@ defmodule CitationPopulator.DataCiteQueue do
     else
       {:noreply, %{state | drainers: [from | state.drainers]}}
     end
+  end
+
+  def handle_call(:slot, _from, state) do
+    now = System.monotonic_time(:millisecond)
+    slot = max(now, state.next_slot_at)
+    {:reply, slot - now, %{state | next_slot_at: slot + @slot_interval_ms}}
   end
 
   @impl true

@@ -16,7 +16,6 @@ defmodule CitationPopulator.Application do
     )
 
     children = [
-      CitationPopulator.Throttle,
       {Task.Supervisor, name: CitationPopulator.TaskSupervisor},
       CitationPopulator.DataCiteQueue
     ]

@@ -10,31 +10,6 @@ defmodule CitationPopulator.Sparql do
 
   alias CitationPopulator.Http
 
-  @page_size 100_000
-
-  @doc """
-  Runs a SELECT query in pages and concatenates the results. Needed for large
-  result sets: SPARQL endpoints cap the rows of a single result set
-  (Virtuoso's ResultSetMaxRows and similar), silently truncating it.
-
-  Uses Virtuoso's "scrollable cursor" pattern — ORDER BY in a subselect with
-  OFFSET/LIMIT outside — since a plain sorted LIMIT/OFFSET is rejected beyond
-  MaxSortedTopRows (10k). The offset advances by the rows actually received
-  and the loop only stops on an empty page, so it stays correct under any
-  per-result row cap. The query must not itself use ORDER BY, LIMIT or OFFSET.
-  """
-  def select_paged(query, order_by), do: select_paged(query, order_by, 0, [])
-
-  defp select_paged(query, order_by, offset, acc) do
-    page =
-      "SELECT * WHERE { { #{query} ORDER BY #{order_by} } } LIMIT #{@page_size} OFFSET #{offset}"
-
-    case select(page) do
-      [] -> acc |> Enum.reverse() |> Enum.concat()
-      rows -> select_paged(query, order_by, offset + length(rows), [rows | acc])
-    end
-  end
-
   @doc "Runs a SELECT query and returns the list of binding maps from the JSON results."
   def select(query) do
     headers = [{"accept", "application/sparql-results+json"}]

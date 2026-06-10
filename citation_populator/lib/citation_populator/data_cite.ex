@@ -19,9 +19,6 @@ defmodule CitationPopulator.DataCite do
 
   @api "https://api.datacite.org"
   @style "elsevier-harvard"
-  # Cooldown after a 429 when DataCite sends no Retry-After header. Their
-  # rate-limit window is 5 minutes, so short retries just burn requests.
-  @rate_limit_cooldown_ms 30_000
   @log_lookups_every 100
 
   @doc "Parses a DOI like the Scala Doi.parse: 10.<digits>/<word chars>, suffix uppercased."
@@ -88,9 +85,7 @@ defmodule CitationPopulator.DataCite do
         {:ok, body}
 
       {:ok, %Req.Response{status: 429} = resp} ->
-        cooldown = retry_after_ms(resp)
-        Logger.info("DataCite rate limit hit, backing off for #{div(cooldown, 1000)} s")
-        DataCiteQueue.backoff(cooldown)
+        DataCiteQueue.backoff(rate_limit_cooldown(resp))
         get_with_retry(url, headers)
 
       {:ok, %Req.Response{status: status, body: body}} ->
@@ -104,12 +99,28 @@ defmodule CitationPopulator.DataCite do
   defp transient?(_req, %Req.Response{status: status}), do: status in [500, 502, 503]
   defp transient?(_req, _exception), do: true
 
+  # The server's own guidance on how long to back off, or nil (the queue
+  # then applies its adaptive default).
+  defp rate_limit_cooldown(resp) do
+    retry_after_ms(resp) || rate_limit_reset_ms(resp)
+  end
+
   defp retry_after_ms(resp) do
     with [value | _] <- Req.Response.get_header(resp, "retry-after"),
          {seconds, _rest} <- Integer.parse(value) do
       seconds * 1000
     else
-      _ -> @rate_limit_cooldown_ms
+      _ -> nil
+    end
+  end
+
+  # x-ratelimit-reset is the epoch second when the rate-limit window resets.
+  defp rate_limit_reset_ms(resp) do
+    with [value | _] <- Req.Response.get_header(resp, "x-ratelimit-reset"),
+         {epoch_s, _rest} <- Integer.parse(value) do
+      max((epoch_s - System.os_time(:second)) * 1000, 1_000)
+    else
+      _ -> nil
     end
   end
 

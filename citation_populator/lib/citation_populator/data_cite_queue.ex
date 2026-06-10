@@ -23,6 +23,12 @@ defmodule CitationPopulator.DataCiteQueue do
 
   @fetch_concurrency 8
   @slot_interval_ms 150
+  # Cooldown after a rate-limit hit when DataCite gives no header guidance:
+  # starts at the base and doubles per consecutive incident (their window is
+  # 5 minutes, so waking up after 30 s usually just hits the limit again),
+  # resetting once a lookup succeeds.
+  @base_backoff_ms 30_000
+  @max_backoff_ms 300_000
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
@@ -45,11 +51,14 @@ defmodule CitationPopulator.DataCiteQueue do
   end
 
   @doc """
-  Pauses slot handout for the given time, on top of any pause already in
-  effect. Used when DataCite answers 429: the whole client is over the rate
-  limit, so every fetch task should back off, not just the one that hit it.
+  Pauses slot handout after a 429: the whole client is over the rate limit,
+  so every fetch task backs off, not just the one that hit it. `suggested_ms`
+  is the server's own guidance (Retry-After / rate-limit-reset headers), or
+  nil to apply the adaptive default. The up-to-@fetch_concurrency requests
+  already in flight when the pause begins all report the same incident;
+  only the first extends the pause (and logs).
   """
-  def backoff(ms), do: GenServer.cast(__MODULE__, {:backoff, ms})
+  def backoff(suggested_ms), do: GenServer.cast(__MODULE__, {:backoff, suggested_ms})
 
   @log_every 500
 
@@ -63,7 +72,8 @@ defmodule CitationPopulator.DataCiteQueue do
        written: 0,
        failed: 0,
        drainers: [],
-       next_slot_at: System.monotonic_time(:millisecond)
+       next_slot_at: System.monotonic_time(:millisecond),
+       backoff_ms: @base_backoff_ms
      }}
   end
 
@@ -72,9 +82,24 @@ defmodule CitationPopulator.DataCiteQueue do
     {:noreply, start_jobs(%{state | pending: :queue.in(job, state.pending)})}
   end
 
-  def handle_cast({:backoff, ms}, state) do
-    paused_until = System.monotonic_time(:millisecond) + ms
-    {:noreply, %{state | next_slot_at: max(state.next_slot_at, paused_until)}}
+  def handle_cast({:backoff, suggested_ms}, state) do
+    now = System.monotonic_time(:millisecond)
+
+    # When a pause is already far in the future, this 429 came from a request
+    # that was in flight when the pause began — same incident, ignore it.
+    if state.next_slot_at <= now + @slot_interval_ms * @fetch_concurrency * 2 do
+      ms = suggested_ms || state.backoff_ms
+      Logger.info("DataCite rate limit hit, backing off for #{div(ms, 1000)} s")
+
+      # Escalate the headerless default for the next consecutive incident.
+      backoff_ms =
+        if suggested_ms, do: state.backoff_ms, else: min(state.backoff_ms * 2, @max_backoff_ms)
+
+      {:noreply,
+       %{state | next_slot_at: max(state.next_slot_at, now + ms), backoff_ms: backoff_ms}}
+    else
+      {:noreply, state}
+    end
   end
 
   @impl true
@@ -103,7 +128,9 @@ defmodule CitationPopulator.DataCiteQueue do
 
     state =
       case result do
-        {:ok, count} -> %{state | written: state.written + count}
+        # a success also means we are no longer rate limited: reset the
+        # adaptive backoff for the next incident
+        {:ok, count} -> %{state | written: state.written + count, backoff_ms: @base_backoff_ms}
         :failed -> %{state | failed: state.failed + 1}
       end
 

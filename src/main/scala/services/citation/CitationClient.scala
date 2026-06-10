@@ -11,7 +11,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
@@ -74,6 +75,27 @@ class CitationClientImpl (
 	private val http = Http()
 	private val doiClientFactory = DoiClientFactory(config.doi)
 
+	// DataCite rate-limits clients (HTTP 429). All outgoing DataCite calls (citation
+	// strings and DOI metadata) are funnelled through this single stream, which
+	// dispatches at most `dataCiteMaxRequestsPerSecond` task-starts per second.
+	// Requests beyond the buffer are dropped and re-attempted on the next access/materialization.
+	private val ThrottleBufferSize = 1 << 16
+	private val dataCiteThrottle: SourceQueueWithComplete[() => Unit] =
+		Source
+			.queue[() => Unit](ThrottleBufferSize, OverflowStrategy.dropNew, maxConcurrentOffers = ThrottleBufferSize)
+			.throttle(config.dataCiteMaxRequestsPerSecond, 1.second)
+			.toMat(Sink.foreach(_()))(Keep.left)
+			.run()
+
+	private def throttled[T](task: => Future[T]): Future[T] =
+		val p = Promise[T]()
+		dataCiteThrottle.offer(() => p.completeWith(task)).onComplete:
+			case Success(QueueOfferResult.Enqueued) => () // task will run (and complete p) when a rate-limit slot frees up
+			case Success(other) =>
+				p.tryFailure(new Exception(s"DataCite request was not scheduled (throttle queue: $other)") with NoStackTrace)
+			case Failure(err) => p.tryFailure(err)
+		p.future
+
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] =
 		val key = doi -> citationStyle
 		withTimeout(fetchIfNeeded(key, citCache, fetchCitation), s"Citation formatting for $doi")
@@ -105,7 +127,7 @@ class CitationClientImpl (
 				case _ => fut
 		}
 
-	private def fetchCitation(key: Key): Future[String] =
+	private def fetchCitation(key: Key): Future[String] = throttled:
 		val (doi, style) = key
 		http.singleRequest(
 			request = HttpRequest(
@@ -138,7 +160,7 @@ class CitationClientImpl (
 			case Success(cit) => log.debug(s"Fetched $cit")
 		}
 
-	private def fetchDoiMeta(doi: Doi): Future[DoiMeta] =
+	private def fetchDoiMeta(doi: Doi): Future[DoiMeta] = throttled:
 		doiClientFactory.client.getMetadata(doi).flatMap{
 			case None => Future.failed(new Exception(s"No metadata found for DOI $doi") with NoStackTrace)
 			case Some(value) => Future.successful(value)

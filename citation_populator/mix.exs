@@ -13,7 +13,8 @@ defmodule CitationPopulator.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :inets, :ssl]
+      extra_applications: [:logger, :inets, :ssl],
+      mod: {CitationPopulator.Application, []}
     ]
   end
 end

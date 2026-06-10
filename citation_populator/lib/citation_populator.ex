@@ -10,8 +10,9 @@ defmodule CitationPopulator do
     * `cpmeta:hasCitationString` — the plain-text citation
     * `dcterms:license` — the licence IRI
 
-  Deliberately unoptimized: subjects are processed sequentially with one
-  SPARQL query/update per step and no caching, batching or concurrency.
+  Subjects are processed concurrently (MAX_CONCURRENCY, default 16), each
+  one still as a plain sequence of SPARQL queries, DataCite calls (globally
+  throttled to 10 req/s) and one SPARQL update — no caching or batching.
 
   Only subjects with no triples in the derived graph are populated;
   already-materialized subjects are left untouched (even if stale).
@@ -38,9 +39,13 @@ defmodule CitationPopulator do
     written =
       todo
       |> Enum.with_index(1)
-      |> Enum.reduce(0, fn {{uri, class}, idx}, acc ->
-        acc + populate("#{idx}/#{total}", uri, class, graph)
-      end)
+      |> Task.async_stream(
+        fn {{uri, class}, idx} -> populate("#{idx}/#{total}", uri, class, graph) end,
+        max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.reduce(0, fn {:ok, count}, acc -> acc + count end)
 
     Logger.info("Citation population finished, wrote #{written} triples")
     written

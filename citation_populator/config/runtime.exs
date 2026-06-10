@@ -9,4 +9,5 @@ config :citation_populator,
   virtuoso_username: System.get_env("VIRTUOSO_USERNAME", "dba"),
   virtuoso_password: System.get_env("VIRTUOSO_PASSWORD", "dba"),
   derived_citations_graph:
-    System.get_env("DERIVED_CITATIONS_GRAPH", "http://meta.icos-cp.eu/derived/citations/")
+    System.get_env("DERIVED_CITATIONS_GRAPH", "http://meta.icos-cp.eu/derived/citations/"),
+  max_concurrency: String.to_integer(System.get_env("MAX_CONCURRENCY", "16"))

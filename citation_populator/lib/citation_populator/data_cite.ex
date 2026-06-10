@@ -66,6 +66,8 @@ defmodule CitationPopulator.DataCite do
   end
 
   defp get_with_retry(url, headers, attempt \\ 1) do
+    CitationPopulator.Throttle.await()
+
     case Http.get(url, headers) do
       {:ok, status, _headers, body} when status in 200..299 ->
         {:ok, body}

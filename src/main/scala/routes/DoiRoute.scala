@@ -8,11 +8,10 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationMaterializer}
+import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
-import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 
 object DoiRoute extends CpmetaJsonProtocol{
@@ -20,9 +19,8 @@ object DoiRoute extends CpmetaJsonProtocol{
 		service: DoiService,
 		authRouting: AuthenticationRouting,
 		doiCitClient: CitationClient,
-		materializer: CitationMaterializer,
 		coreConf: MetaCoreConfig
-	)(using logBus : LoggingBus, exe: ExecutionContext): Route = {
+	)(using logBus : LoggingBus): Route = {
 
 		val log = Logging.getLogger(logBus, this)
 		given EnvriConfigs = coreConf.envriConfigs
@@ -51,10 +49,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 		pathPrefix("dois" / "dropCache"){
 			post{
 				path(Remaining){maybeDoi =>
-					val doi = Doi.parse(maybeDoi).get
-					doiCitClient.dropCache(doi)
-					materializer.refreshForDoi(doi).failed.foreach: err =>
-						log.error(err, s"Failed to refresh materialized citations for $doi")
+					doiCitClient.dropCache(Doi.parse(maybeDoi).get)
 					complete(StatusCodes.OK)
 				}
 			} ~

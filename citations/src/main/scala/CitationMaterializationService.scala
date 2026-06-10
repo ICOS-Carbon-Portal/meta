@@ -57,5 +57,5 @@ object CitationMaterializationService:
 	def apply(materializer: CitationMaterializer, conf: CitationConfig)(using ActorSystem): CitationMaterializationService =
 		val interval = conf.materializeIntervalMinutes.minutes
 		// Give the citation cache a head start before the first full run.
-		val initialDelay = if conf.eagerWarmUp then 60.seconds else 5.seconds
+		val initialDelay = 5.seconds
 		new CitationMaterializationService(materializer, interval, initialDelay)

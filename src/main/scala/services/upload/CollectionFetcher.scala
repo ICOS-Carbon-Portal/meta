@@ -18,13 +18,14 @@ import se.lu.nateko.cp.meta.instanceserver.StatementSource.{
 	getOptionalString
 }
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.citation.CitationInfoProvider
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 
 
-class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
+class CollectionReader(val metaVocab: CpmetaVocab, citer: CitationInfoProvider) extends CpmetaReader:
 
 	import metaVocab.{dcterms => dct}
 
@@ -96,7 +97,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				references = References.empty
 			)
 			//TODO Consider adding collection-specific logic for licence information
-			val refs = citer(init).copy(title = Some(init.title))
+			val refs = citer.getItemCitationInfo(init, coll)(using RdfLens.global(using collConn)).copy(title = Some(init.title))
 			val bestGeoCov = init.coverage.orElse:
 				for
 					doi <- refs.doi

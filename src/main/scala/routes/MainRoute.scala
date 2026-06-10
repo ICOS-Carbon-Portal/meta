@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.upload.DoiService
+import se.lu.nateko.cp.meta.services.upload.{CitationServiceClient, DoiService}
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
 
@@ -44,8 +44,9 @@ object MainRoute {
 		val authRouting = new AuthenticationRouting(config.auth)
 		val authRoute = authRouting.route
 		val uploadRoute = UploadApiRoute(db.uploadService, authRouting, metaFlow.uploadServices, config.core)
-		val doiService = new DoiService(config.citations.doi, db.uriSerializer)
-		val doiRoute = DoiRoute(doiService, authRouting, db.citer.doiCiter, config.core)
+		val citationClient = new CitationServiceClient(config.citations.serviceUrl)
+		val doiService = new DoiService(config.citations.doi, citationClient)
+		val doiRoute = DoiRoute(doiService, authRouting, citationClient, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
@@ -59,7 +60,7 @@ object MainRoute {
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(
-			db.repo, db.instanceServers, authRouting, db.dumpIndexAndCaches, config.sparql
+			db.repo, db.instanceServers, authRouting, config.sparql
 		).route
 
 		handleExceptions(exceptionHandler){

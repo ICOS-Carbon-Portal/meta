@@ -15,13 +15,11 @@ import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, In
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, VirtuosoRepository}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
-import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
+import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, MetaReaders, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
@@ -38,30 +36,17 @@ class MetaDb (
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	val repo: Repository,
-	val citer: CitationProvider,
+	val readers: MetaReaders,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
-	private val log = Logging.getLogger(system, this)
-	def metaReader: StaticObjectReader = citer.metaReader
-	def vanillaRepo: Repository = citer.repo
-	def vanillaGlob: InstanceServer = citer.server
+	def metaReader: StaticObjectReader = readers.metaReader
+	def vanillaRepo: Repository = readers.repo
+	def vanillaGlob: InstanceServer = readers.server
 
 	val uriSerializer: UriSerializer =
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
-
-	def dumpIndexAndCaches(msg: String): Future[String] =
-		given exe: ExecutionContext = summon[ActorSystem].dispatcher
-		val citClient = citer.doiCiter
-		val citationsDump = CitationClient.writeCitCache(citClient)
-		val doiMetaDump = CitationClient.writeDoiCache(citClient)
-		Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
-			"Switched the triple store to read-only mode. Citations cache dumped to disk"
-		).andThen:
-			case Success(message) => log.info(message)
-			case Failure(err) => log.error(err, "Fail while dumping citations cache to disk")
-
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, config)
 
 	override def close(): Unit =
 		sparql.shutdown()
@@ -132,12 +117,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationCache, metaCache: DoiCache, config: CpmetaConfig): Future[MetaDb] =
+	def apply(config: CpmetaConfig): Future[MetaDb] =
 
 		validateConfig(config)
 
 		val remoteRepo = new VirtuosoRepository(config.virtuoso)
-		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
+		val readers = new MetaReaders(remoteRepo, config)
 
 		given EnvriConfigs = config.core.envriConfigs
 
@@ -159,30 +144,30 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(citer, instanceServers, config)
+			val uploadService = makeUploadService(readers, instanceServers, config)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
-				val metaVocab = citer.metaVocab
+				val metaVocab = readers.metaVocab
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf)
 			}
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, readers, config)
 		end for
 	end apply
 
 	private def makeUploadService(
-		citationProvider: CitationProvider,
+		readers: MetaReaders,
 		instanceServers: Map[String, InstanceServer],
 		config: CpmetaConfig
 	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
-		val vanillaGlob: InstanceServer = citationProvider.server
+		val vanillaGlob: InstanceServer = readers.server
 		given factory: ValueFactory = vanillaGlob.factory
 		given EnvriConfigs = config.core.envriConfigs
 
@@ -198,10 +183,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val uploadConf = config.dataUploadService
 
-		val vanillaRepo = citationProvider.repo
+		val vanillaRepo = readers.repo
 		val sparqlRunner = new Rdf4jSparqlRunner(vanillaRepo)
 
-		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, readers, metaServers, collectionServers, docInstServs, perFormatServers)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

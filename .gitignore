@@ -8,6 +8,7 @@ npm-debug.log
 /views/target/
 /uploadgui/target/
 /citations/target/
+/keyword-materializer/target/
 /lib/
 /project/project/
 /project/target/

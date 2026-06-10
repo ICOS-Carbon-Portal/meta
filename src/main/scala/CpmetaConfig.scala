@@ -165,6 +165,11 @@ case class CitationConfig(
 )
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
+case class KeywordMaterializationConfig(
+	derivedGraph: URI,
+	refreshIntervalMinutes: Int
+)
+
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
 }
@@ -187,6 +192,7 @@ case class CpmetaConfig(
 	core: MetaCoreConfig,
 	sparql: SparqlServerConfig,
 	citations: CitationConfig,
+	keywordMaterialization: KeywordMaterializationConfig,
 	statsClient: StatsClientConfig,
 	sentry: Option[SentryConfig]
 )
@@ -240,11 +246,12 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat8(CitationConfig.apply)
+	given RootJsonFormat[KeywordMaterializationConfig] = jsonFormat2(KeywordMaterializationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

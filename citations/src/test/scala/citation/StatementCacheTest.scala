@@ -76,6 +76,21 @@ class StatementCacheTest extends AnyFunSpec:
 			assert(cache.stats.queries === queriesAfterFirst)
 		}
 
+		it("stays consistent under concurrent access"){
+			import scala.concurrent.{Await, Future}
+			import scala.concurrent.duration.DurationInt
+			import scala.concurrent.ExecutionContext.Implicits.global
+			val (cache, conn) = makeConn
+			val readers = (1 to 16).map: _ =>
+				Future:
+					(1 to 200).foreach: _ =>
+						assert(conn.getStatements(objA, null, null).toIndexedSeq.size === 3)
+						assert(conn.getStatements(null, isNextVersionOf, objA).toIndexedSeq.map(_.getSubject) === Seq(objB))
+						assert(conn.hasStatement(objA, name, null))
+						cache.prefetch(Seq(objA, objB))
+			Await.result(Future.sequence(readers), 30.seconds)
+		}
+
 		it("serves prefetched subjects, their referrers and referenced resources without further queries"){
 			val (cache, conn) = makeConn
 			cache.prefetch(Seq(objA))

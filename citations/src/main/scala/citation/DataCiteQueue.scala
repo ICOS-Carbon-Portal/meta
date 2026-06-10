@@ -38,6 +38,7 @@ class DataCiteQueue(
 
 	private val log = Logging.getLogger(system, this)
 	private given Materializer = Materializer.matFromSystem(using system)
+	private val blockingEc = system.dispatchers.lookup(CitationMaterializer.BlockingDispatcher)
 
 	private val pushedCount, droppedCount, failedCount, processedCount = AtomicInteger(0)
 
@@ -48,16 +49,18 @@ class DataCiteQueue(
 		.mapAsync(1): entry =>
 			dataCiteLookups(entry.doi).map(allOk => entry -> allOk)
 		.groupedWithin(WriteBatchSize, WriteBatchMaxDelay)
-		.map: batch =>
-			val (ok, failed) = batch.partition(_._2)
-			failedCount.addAndGet(failed.size)
-			for (entry, _) <- failed do
-				log.warning(
-					s"DataCite lookups failed for DOI ${entry.doi}, skipping ${entry.subj} (will be retried on the next run)"
-				)
-			val written = if ok.isEmpty then 0 else writeBatch(ok.map(_._1.subj))
-			processedCount.addAndGet(batch.size)
-			written
+		.mapAsync(1): batch =>
+			Future {
+				val (ok, failed) = batch.partition(_._2)
+				failedCount.addAndGet(failed.size)
+				for (entry, _) <- failed do
+					log.warning(
+						s"DataCite lookups failed for DOI ${entry.doi}, skipping ${entry.subj} (will be retried on the next run)"
+					)
+				val written = if ok.isEmpty then 0 else writeBatch(ok.map(_._1.subj))
+				processedCount.addAndGet(batch.size)
+				written
+			}(using blockingEc)
 		.toMat(Sink.fold(0)(_ + _))(Keep.both)
 		.run()
 

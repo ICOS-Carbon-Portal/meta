@@ -209,7 +209,10 @@ object CitationClient:
 		)
 
 	private def readCache[K, V](file: Path)(parser: Vector[JsValue] => (K, V)): Future[TrieMap[K, Future[V]]] =
-		Future{
+		if !Files.exists(file) then
+			log.info(s"No citation cache dump found at $file, starting with an empty cache")
+			Future.successful(TrieMap.empty)
+		else Future{
 			val dump = Files.readString(file).parseJson
 			val tuples = dump match
 				case JsArray(arrs) => arrs.collect{
@@ -217,11 +220,13 @@ object CitationClient:
 						val (k, v) = parser(cells)
 						k -> Future.successful(v)
 				}
-				case _ => throw Exception("Citation/DOI dump was not a JSON array")
-			TrieMap.apply(tuples*)
+				case _ => throw Exception("dump was not a JSON array")
+			val cache = TrieMap.apply(tuples*)
+			log.info(s"Loaded ${cache.size} entries from citation cache dump $file")
+			cache
 		}.recover{
 			case err: Throwable =>
-				log.error("Could not read cache dump", err)
+				log.warn(s"Could not read citation cache dump at $file ($err), starting with an empty cache")
 				TrieMap.empty
 		}
 

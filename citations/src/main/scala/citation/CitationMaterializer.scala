@@ -25,6 +25,11 @@ import scala.concurrent.{ExecutionContext, Future}
  * `materializeAll` is incremental: it leaves the derived graph in place and only
  * materializes citations for citable subjects that do not already have any triple
  * in the derived graph. This avoids re-fetching from DataCite on every run.
+ *
+ * Reading the metadata needed to compute the citations goes through a
+ * [[StatementCache]]: each batch of subjects is warmed up with a few bulk SPARQL
+ * queries, and the readers then run against the cache instead of issuing one
+ * remote SPARQL request per statement pattern.
  */
 class CitationMaterializer(
 	repo: Repository,
@@ -89,12 +94,16 @@ class CitationMaterializer(
 		val total = subjects.size
 		val batchCount = (total + WriteBatchSize - 1) / WriteBatchSize
 		val startNanos = System.nanoTime()
+		val cache = new StatementCache(repo, log)
+		val cacheConn = new CachingConnection(cache)
 		var totalWritten = 0
 		var processed = 0
 		subjects.zipWithIndex.grouped(WriteBatchSize).zipWithIndex.foreach: (indexedChunk, batchIdx) =>
 			val batchStartNanos = System.nanoTime()
+			val statsBefore = cache.stats
+			cache.prefetch(indexedChunk.map(_._1))
 			val triples = indexedChunk.flatMap: (subj, idx) =>
-				triplesFor(subj, idx + 1, total)
+				triplesFor(subj, idx + 1, total, cacheConn)
 			repo.transact: conn =>
 				for t <- triples do conn.add(t, graphIri)
 			totalWritten += triples.size
@@ -107,25 +116,25 @@ class CitationMaterializer(
 				f"Citation materialization progress: batch ${batchIdx + 1}/$batchCount in ${batchMs} ms, " +
 				f"$processed/$total subjects processed (${100.0 * processed / total}%.1f%%), " +
 				f"$totalWritten triples written so far, ${elapsedS}%.0f s elapsed, " +
-				f"${rate}%.1f subj/s, ETA ${etaS}%.0f s"
+				f"${rate}%.1f subj/s, ETA ${etaS}%.0f s; sparql: ${cache.stats.minus(statsBefore)}"
 			)
 		totalWritten
 
-	private def triplesFor(subj: IRI, subjNo: Int, total: Int): IndexedSeq[Statement] =
+	private def triplesFor(subj: IRI, subjNo: Int, total: Int, conn: CachingConnection): IndexedSeq[Statement] =
 		val startNanos = System.nanoTime()
 		log.debug(s"[$subjNo/$total] Materializing citation for $subj ...")
 		val out = ArrayBuffer.empty[Statement]
 
-		val refs: Option[References] = citer.getReferences(subj)
+		val refs: Option[References] = citer.getReferences(subj, conn)
 		val hasBiblio = biblioLiteral(refs).map: lit =>
 			out += factory.createStatement(subj, metaVocab.hasBiblioInfo, lit)
 		.isDefined
 
-		val citationOpt = refs.fold(citer.getCitation(subj))(_.citationString)
+		val citationOpt = refs.fold(citer.getCitation(subj, conn))(_.citationString)
 		citationOpt.foreach: cit =>
 			out += factory.createStatement(subj, metaVocab.hasCitationString, factory.createStringLiteral(cit))
 
-		val licenceOpt = refs.fold(citer.getLicence(subj))(_.licence)
+		val licenceOpt = refs.fold(citer.getLicence(subj, conn))(_.licence)
 		licenceOpt.foreach: lic =>
 			out += factory.createStatement(subj, metaVocab.dcterms.license, lic.url.toRdf)
 

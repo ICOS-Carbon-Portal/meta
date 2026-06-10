@@ -9,9 +9,12 @@ defmodule CitationPopulator.Application do
     # bottleneck concurrent subject processing.
     :httpc.set_options(max_sessions: 64)
 
-    Supervisor.start_link([CitationPopulator.Throttle],
-      strategy: :one_for_one,
-      name: CitationPopulator.Supervisor
-    )
+    children = [
+      CitationPopulator.Throttle,
+      {Task.Supervisor, name: CitationPopulator.TaskSupervisor},
+      CitationPopulator.DataCiteQueue
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one, name: CitationPopulator.Supervisor)
   end
 end

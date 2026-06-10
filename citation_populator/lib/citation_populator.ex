@@ -10,17 +10,23 @@ defmodule CitationPopulator do
     * `cpmeta:hasCitationString` — the plain-text citation
     * `dcterms:license` — the licence IRI
 
-  Subjects are processed concurrently (MAX_CONCURRENCY, default 16), each
-  one still as a plain sequence of SPARQL queries, DataCite calls (globally
-  throttled to 10 req/s) and one SPARQL update — no caching or batching.
+  Subjects are processed concurrently (MAX_CONCURRENCY, default 16). DOI
+  subjects are not handled inline: the worker writes their DataCite-
+  independent triples (the licence), hands the rest to the [`DataCiteQueue`]
+  GenServer and moves on; the queue fetches from DataCite (globally
+  throttled to 10 req/s) and writes the DataCite-dependent triples as the
+  lookups complete. A run finishes when both the main pass and the queue
+  are done.
 
   Only subjects with no triples in the derived graph are populated;
-  already-materialized subjects are left untouched (even if stale).
+  already-materialized subjects are left untouched (even if stale). Note
+  that this includes DOI subjects whose DataCite lookups failed in an
+  earlier run: their licence triple makes them count as materialized.
   """
 
   require Logger
 
-  alias CitationPopulator.{References, Sparql, Vocab}
+  alias CitationPopulator.{DataCiteQueue, References, Sparql, Vocab, Writer}
 
   def run do
     graph = Application.fetch_env!(:citation_populator, :derived_citations_graph)
@@ -36,7 +42,7 @@ defmodule CitationPopulator do
         "(#{MapSet.size(materialized)} already materialized, #{total} to populate)"
     )
 
-    written =
+    main_written =
       todo
       |> Enum.with_index(1)
       |> Task.async_stream(
@@ -47,7 +53,30 @@ defmodule CitationPopulator do
       )
       |> Enum.reduce(0, fn {:ok, count}, acc -> acc + count end)
 
-    Logger.info("Citation population finished, wrote #{written} triples")
+    case DataCiteQueue.pending() do
+      0 ->
+        :ok
+
+      pending ->
+        Logger.info(
+          "Main pass done, wrote #{main_written} triples; " <>
+            "waiting for the DataCite queue (#{pending} subjects pending)"
+        )
+    end
+
+    {queue_written, queue_failed} = DataCiteQueue.drain()
+    written = main_written + queue_written
+
+    skipped =
+      if queue_failed == 0,
+        do: "",
+        else: " (#{queue_failed} subjects skipped on DataCite failures)"
+
+    Logger.info(
+      "Citation population finished, wrote #{written} triples " <>
+        "(#{queue_written} via the DataCite queue)#{skipped}"
+    )
+
     written
   end
 
@@ -85,10 +114,20 @@ defmodule CitationPopulator do
 
     case result do
       {:ok, refs} ->
-        write(tag, uri, graph, triples_for(uri, refs))
+        count = Writer.write(graph, Writer.all_triples(uri, refs))
+        Logger.info("[#{tag}] Wrote #{count} triples for #{uri}")
+        count
 
-      {:citation_only, citation} ->
-        write(tag, uri, graph, [{uri, Vocab.has_citation_string(), literal(citation)}])
+      {:deferred, job} ->
+        count = Writer.write(graph, Writer.licence_triple(uri, job.refs_base))
+        DataCiteQueue.push(Map.merge(job, %{uri: uri, tag: tag, graph: graph}))
+
+        Logger.info(
+          "[#{tag}] Deferred #{uri} to the DataCite queue (DOI #{elem(job.doi, 0)}/#{elem(job.doi, 1)}, " <>
+            "wrote #{count} triples now)"
+        )
+
+        count
 
       :none ->
         Logger.info("[#{tag}] No citation triples produced for #{uri}")
@@ -98,46 +137,5 @@ defmodule CitationPopulator do
         Logger.warning("[#{tag}] Skipping #{uri}: #{reason}")
         0
     end
-  end
-
-  defp write(tag, uri, graph, triples) do
-    Sparql.update(insert_data(graph, triples))
-    Logger.info("[#{tag}] Wrote #{length(triples)} triples for #{uri}")
-    length(triples)
-  end
-
-  defp triples_for(uri, refs) do
-    biblio = [{uri, Vocab.has_biblio_info(), literal(JSON.encode!(refs))}]
-
-    citation =
-      case refs["citationString"] do
-        cit when is_binary(cit) -> [{uri, Vocab.has_citation_string(), literal(cit)}]
-        _ -> []
-      end
-
-    licence =
-      case refs["licence"] do
-        %{"url" => url} when is_binary(url) -> [{uri, Vocab.dcterms_license(), "<#{url}>"}]
-        _ -> []
-      end
-
-    biblio ++ citation ++ licence
-  end
-
-  defp insert_data(graph, triples) do
-    body = Enum.map_join(triples, "\n", fn {s, p, o} -> "  <#{s}> <#{p}> #{o} ." end)
-    "INSERT DATA { GRAPH <#{graph}> {\n#{body}\n} }"
-  end
-
-  defp literal(string) do
-    escaped =
-      string
-      |> String.replace("\\", "\\\\")
-      |> String.replace("\"", "\\\"")
-      |> String.replace("\n", "\\n")
-      |> String.replace("\r", "\\r")
-      |> String.replace("\t", "\\t")
-
-    "\"#{escaped}\""
   end
 end

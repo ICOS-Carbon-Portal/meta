@@ -4,11 +4,13 @@ defmodule CitationPopulator.References do
   LiveCitationMaker.getCitationInfo / getItemCitationInfo plus the relevant
   parts of StaticObjectReader and CollectionReader.
 
-  DOI-backed subjects get their citation strings (HTML/BibTeX/RIS) and DOI
-  metadata from DataCite; everything else is assembled structurally from
-  triplestore data. Like the Scala materializer (which defers DOI subjects
-  until all DataCite lookups succeed and skips them on failure), a DataCite
-  failure skips the subject rather than materializing placeholder text.
+  Subjects without a DOI are assembled structurally from triplestore data
+  and returned complete. DOI subjects are returned as a deferred job: the
+  structural part (refs_base) is computed here, and the DataCiteQueue later
+  merges in the DataCite-fetched citation strings (HTML/BibTeX/RIS) and DOI
+  metadata via complete_deferred/3. Like the Scala materializer, a DataCite
+  failure skips the subject's DataCite-dependent triples rather than
+  materializing placeholder text.
   """
 
   require Logger
@@ -30,12 +32,14 @@ defmodule CitationPopulator.References do
 
   @doc """
   Returns:
-    {:ok, refs}            — full references computed
-    {:citation_only, cit}  — subject outside the known object/collection URI
-                             prefixes (or an untitled collection); only the
-                             DOI citation could be computed
-    :none                  — nothing computable for this subject
-    {:error, reason}       — DataCite failure etc.; skip the subject
+    {:ok, refs}        — full references computed (no DataCite needed)
+    {:deferred, job}   — DOI subject: job = %{mode, doi, refs_base} for the
+                         DataCiteQueue; mode :full merges the DataCite bundle
+                         into refs_base, mode :citation_only (subjects outside
+                         the known URI prefixes, untitled collections) only
+                         materializes the DOI citation string
+    :none              — nothing computable for this subject
+    {:error, reason}   — skip the subject
   """
   def build(uri, class, derived_graph) do
     cond do
@@ -59,98 +63,92 @@ defmodule CitationPopulator.References do
     obj = Reader.data_object(uri)
     doi = DataCite.parse_doi(obj.doi_raw)
 
-    with {:ok, bundle} <- fetch_doi_bundle(doi) do
-      columns =
-        if obj.spec.dataset_type == :station_time_series,
-          do: Columns.for_object(obj.spec.dataset, obj.actual_columns_json)
+    columns =
+      if obj.spec.dataset_type == :station_time_series,
+        do: Columns.for_object(obj.spec.dataset, obj.actual_columns_json)
 
-      obj = Map.put(obj, :columns, columns)
-      pid = data_object_pid(obj, envri)
-      pid_url = Envri.pid_url(obj.doi_raw, pid)
+    obj = Map.put(obj, :columns, columns)
+    pid = data_object_pid(obj, envri)
+    pid_url = Envri.pid_url(obj.doi_raw, pid)
 
-      cit_info =
-        case envri do
-          :sites -> Citation.sites_citation(obj, pid_url)
-          _ -> Citation.icos_citation(obj, envri, pid_url)
-        end
+    cit_info =
+      case envri do
+        :sites -> Citation.sites_citation(obj, pid_url)
+        _ -> Citation.icos_citation(obj, envri, pid_url)
+      end
 
-      licence = Licence.resolve(uri, obj.spec.uri, obj.spec.project_uri, envri, graph)
-      keywords = parse_comma_sep(obj.keywords_raw)
+    licence = Licence.resolve(uri, obj.spec.uri, obj.spec.project_uri, envri, graph)
+    keywords = parse_comma_sep(obj.keywords_raw)
 
-      structured = %{
-        pid_url: pid_url,
-        file_name: obj.file_name,
-        hash_id: obj.hash_id,
-        authors: non_empty(cit_info.authors),
-        title: cit_info.title,
-        temp_cov: cit_info.temp_cov,
-        year: cit_info.year,
-        note: if(obj.spec.dataset_type == :spatio_temporal, do: obj.l3.description),
-        keywords: keywords,
-        publisher: obj.subm.submitter_name,
-        licence_url: licence["url"],
-        doi_raw: obj.doi_raw,
-        pid: pid
-      }
+    structured = %{
+      pid_url: pid_url,
+      file_name: obj.file_name,
+      hash_id: obj.hash_id,
+      authors: non_empty(cit_info.authors),
+      title: cit_info.title,
+      temp_cov: cit_info.temp_cov,
+      year: cit_info.year,
+      note: if(obj.spec.dataset_type == :spatio_temporal, do: obj.l3.description),
+      keywords: keywords,
+      publisher: obj.subm.submitter_name,
+      licence_url: licence["url"],
+      doi_raw: obj.doi_raw,
+      pid: pid
+    }
 
-      refs =
-        %{"licence" => licence}
-        |> put_opt("citationString", bundle[:html] || cit_info.cit_text)
-        |> Map.put("citationBibTex", bundle[:bibtex] || Structured.to_bibtex(structured))
-        |> Map.put("citationRis", bundle[:ris] || Structured.to_ris(structured))
-        |> put_opt("doi", bundle[:meta])
-        |> put_opt("keywords", keywords)
-        |> put_opt("authors", non_empty(cit_info.authors))
-        |> put_opt("title", cit_info.title)
-        |> put_opt("temporalCoverageDisplay", cit_info.temp_cov)
-        |> put_opt("acknowledgements", non_empty(acknowledgements(obj)))
+    refs =
+      %{"licence" => licence}
+      |> put_opt("citationString", cit_info.cit_text)
+      |> Map.put("citationBibTex", Structured.to_bibtex(structured))
+      |> Map.put("citationRis", Structured.to_ris(structured))
+      |> put_opt("keywords", keywords)
+      |> put_opt("authors", non_empty(cit_info.authors))
+      |> put_opt("title", cit_info.title)
+      |> put_opt("temporalCoverageDisplay", cit_info.temp_cov)
+      |> put_opt("acknowledgements", non_empty(acknowledgements(obj)))
 
-      {:ok, refs}
-    end
+    finish(refs, doi)
   end
 
   defp build_doc(uri, envri, graph) do
     obj = Reader.doc_object(uri)
     doi = DataCite.parse_doi(obj.doi_raw)
 
-    with {:ok, bundle} <- fetch_doi_bundle(doi) do
-      authors = Agent.read_contributors(obj.creator_uris)
-      pid = doc_object_pid(obj, envri)
-      pid_url = Envri.pid_url(obj.doi_raw, pid)
-      cit_info = Citation.doc_citation(obj, envri, authors, pid_url)
-      licence = Licence.resolve(uri, nil, nil, envri, graph)
-      keywords = parse_comma_sep(obj.keywords_raw)
+    authors = Agent.read_contributors(obj.creator_uris)
+    pid = doc_object_pid(obj, envri)
+    pid_url = Envri.pid_url(obj.doi_raw, pid)
+    cit_info = Citation.doc_citation(obj, envri, authors, pid_url)
+    licence = Licence.resolve(uri, nil, nil, envri, graph)
+    keywords = parse_comma_sep(obj.keywords_raw)
 
-      structured = %{
-        pid_url: pid_url,
-        file_name: obj.file_name,
-        hash_id: obj.hash_id,
-        authors: non_empty(authors),
-        # documents have no temporal coverage, so the BibTeX/RIS title tag
-        # (title + coverage) is absent — same as in Scala
-        title: cit_info.title,
-        temp_cov: nil,
-        year: cit_info.year,
-        note: nil,
-        keywords: keywords,
-        publisher: obj.subm.submitter_name,
-        licence_url: licence["url"],
-        doi_raw: obj.doi_raw,
-        pid: pid
-      }
+    structured = %{
+      pid_url: pid_url,
+      file_name: obj.file_name,
+      hash_id: obj.hash_id,
+      authors: non_empty(authors),
+      # documents have no temporal coverage, so the BibTeX/RIS title tag
+      # (title + coverage) is absent — same as in Scala
+      title: cit_info.title,
+      temp_cov: nil,
+      year: cit_info.year,
+      note: nil,
+      keywords: keywords,
+      publisher: obj.subm.submitter_name,
+      licence_url: licence["url"],
+      doi_raw: obj.doi_raw,
+      pid: pid
+    }
 
-      refs =
-        %{"licence" => licence}
-        |> put_opt("citationString", bundle[:html] || cit_info.cit_text)
-        |> Map.put("citationBibTex", bundle[:bibtex] || Structured.to_bibtex(structured))
-        |> Map.put("citationRis", bundle[:ris] || Structured.to_ris(structured))
-        |> put_opt("doi", bundle[:meta])
-        |> put_opt("keywords", keywords)
-        |> put_opt("authors", non_empty(authors))
-        |> put_opt("title", cit_info.title)
+    refs =
+      %{"licence" => licence}
+      |> put_opt("citationString", cit_info.cit_text)
+      |> Map.put("citationBibTex", Structured.to_bibtex(structured))
+      |> Map.put("citationRis", Structured.to_ris(structured))
+      |> put_opt("keywords", keywords)
+      |> put_opt("authors", non_empty(authors))
+      |> put_opt("title", cit_info.title)
 
-      {:ok, refs}
-    end
+    finish(refs, doi)
   end
 
   defp build_collection(uri) do
@@ -167,23 +165,38 @@ defmodule CitationPopulator.References do
           # DOI citation when the collection cannot be read.
           doi_citation_only(uri)
         else
-          with {:ok, bundle} <- fetch_doi_bundle(doi) do
-            refs =
-              %{"title" => coll.title}
-              |> put_opt("citationString", (bundle || %{})[:html])
-              |> put_opt("citationBibTex", (bundle || %{})[:bibtex])
-              |> put_opt("citationRis", (bundle || %{})[:ris])
-              |> put_opt("doi", (bundle || %{})[:meta])
-
-            {:ok, refs}
-          end
+          finish(%{"title" => coll.title}, doi)
         end
     end
   end
 
-  # All four DataCite lookups must succeed before a DOI subject is
-  # materialized (the Scala dataCiteReady gate); nil DOI means no bundle.
-  defp fetch_doi_bundle(nil), do: {:ok, nil}
+  defp finish(refs, nil), do: {:ok, refs}
+  defp finish(refs, doi), do: {:deferred, %{mode: :full, doi: doi, refs_base: refs}}
+
+  @doc """
+  Completes a deferred DataCiteQueue job: fetches the DataCite data and
+  returns the final References map (:full) or just the citation string
+  (:citation_only). All lookups must succeed (the Scala dataCiteReady gate).
+  """
+  def complete_deferred(:citation_only, doi, _refs_base) do
+    with {:ok, citation} <- DataCite.fetch_citation(doi, :html) do
+      {:ok, %{"citationString" => citation}}
+    else
+      {:error, reason} ->
+        {:error, "DataCite citation for #{DataCite.doi_to_string(doi)} failed: #{reason}"}
+    end
+  end
+
+  def complete_deferred(:full, doi, refs_base) do
+    with {:ok, bundle} <- fetch_doi_bundle(doi) do
+      {:ok,
+       refs_base
+       |> Map.put("citationString", bundle.html)
+       |> Map.put("citationBibTex", bundle.bibtex)
+       |> Map.put("citationRis", bundle.ris)
+       |> Map.put("doi", bundle.meta)}
+    end
+  end
 
   defp fetch_doi_bundle(doi) do
     with {:ok, html} <- DataCite.fetch_citation(doi, :html),
@@ -201,17 +214,8 @@ defmodule CitationPopulator.References do
     raw = Rdf.values("SELECT ?doi WHERE { <#{uri}> cpmeta:hasDoi ?doi }", "doi") |> List.first()
 
     case DataCite.parse_doi(raw) do
-      nil ->
-        :none
-
-      doi ->
-        case DataCite.fetch_citation(doi, :html) do
-          {:ok, cit} ->
-            {:citation_only, cit}
-
-          {:error, reason} ->
-            {:error, "DataCite citation for #{DataCite.doi_to_string(doi)} failed: #{reason}"}
-        end
+      nil -> :none
+      doi -> {:deferred, %{mode: :citation_only, doi: doi, refs_base: %{}}}
     end
   end
 

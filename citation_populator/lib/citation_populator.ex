@@ -2,16 +2,16 @@ defmodule CitationPopulator do
   @moduledoc """
   Populates the derived-citations named graph in Virtuoso with the citation
   triples for all citable subjects (data objects, document objects and
-  collections) — the same three triples the Scala citations service
-  materializes:
+  collections) — a standalone replacement for the Scala citations service's
+  materializer, computing everything itself from raw SPARQL over HTTP and
+  the DataCite REST API:
 
     * `cpmeta:hasBiblioInfo` — the subject's `References` as compact JSON
     * `cpmeta:hasCitationString` — the plain-text citation
     * `dcterms:license` — the licence IRI
 
-  Deliberately unoptimized: subjects are processed sequentially, one raw
-  SPARQL query/update over HTTP per step, and the citation data itself comes
-  from the citations service HTTP API, which computes it freshly.
+  Deliberately unoptimized: subjects are processed sequentially with one
+  SPARQL query/update per step and no caching, batching or concurrency.
 
   Only subjects with no triples in the derived graph are populated;
   already-materialized subjects are left untouched (even if stale).
@@ -19,20 +19,7 @@ defmodule CitationPopulator do
 
   require Logger
 
-  alias CitationPopulator.{MetaService, Sparql}
-
-  @cpmeta "http://meta.icos-cp.eu/ontologies/cpmeta/"
-  @citable_classes [@cpmeta <> "DataObject", @cpmeta <> "DocumentObject", @cpmeta <> "Collection"]
-  @has_citation_string @cpmeta <> "hasCitationString"
-  @has_biblio_info @cpmeta <> "hasBiblioInfo"
-  @dcterms_license "http://purl.org/dc/terms/license"
-
-  # The citations service serves these placeholders instead of a DOI citation
-  # while the DataCite lookup is pending or failed; they must not end up in
-  # the triplestore, so such subjects are retried and eventually skipped.
-  @pending_prefixes ["Fetching...", "Error fetching DOI citation"]
-  @pending_retries 10
-  @pending_retry_delay_ms 5_000
+  alias CitationPopulator.{References, Sparql, Vocab}
 
   def run do
     graph = Application.fetch_env!(:citation_populator, :derived_citations_graph)
@@ -60,7 +47,8 @@ defmodule CitationPopulator do
   end
 
   defp list_citable_subjects do
-    values = Enum.map_join(@citable_classes, " ", &"<#{&1}>")
+    classes = [Vocab.data_object_class(), Vocab.doc_object_class(), Vocab.collection_class()]
+    values = Enum.map_join(classes, " ", &"<#{&1}>")
 
     """
     SELECT DISTINCT ?s ?class WHERE {
@@ -83,70 +71,48 @@ defmodule CitationPopulator do
   end
 
   defp populate(tag, uri, class, graph) do
-    case fetch_references(tag, uri, class, @pending_retries) do
-      {:ok, refs} ->
-        triples = triples_for(uri, refs)
-        Sparql.update(insert_data(graph, triples))
-        Logger.info("[#{tag}] Wrote #{length(triples)} triples for #{uri}")
-        length(triples)
+    result =
+      try do
+        References.build(uri, class, graph)
+      rescue
+        e -> {:error, Exception.format(:error, e, __STACKTRACE__) |> String.slice(0, 500)}
+      end
 
-      :skip ->
+    case result do
+      {:ok, refs} ->
+        write(tag, uri, graph, triples_for(uri, refs))
+
+      {:citation_only, citation} ->
+        write(tag, uri, graph, [{uri, Vocab.has_citation_string(), literal(citation)}])
+
+      :none ->
+        Logger.info("[#{tag}] No citation triples produced for #{uri}")
+        0
+
+      {:error, reason} ->
+        Logger.warning("[#{tag}] Skipping #{uri}: #{reason}")
         0
     end
   end
 
-  defp fetch_references(tag, uri, class, retries_left) do
-    case MetaService.fetch_references(uri, class) do
-      {:ok, refs} ->
-        cond do
-          not citation_pending?(refs) ->
-            {:ok, refs}
-
-          retries_left > 0 ->
-            Logger.info(
-              "[#{tag}] DOI citation for #{uri} not ready yet, " <>
-                "retrying in #{div(@pending_retry_delay_ms, 1000)} s"
-            )
-
-            Process.sleep(@pending_retry_delay_ms)
-            fetch_references(tag, uri, class, retries_left - 1)
-
-          true ->
-            Logger.warning("[#{tag}] Skipping #{uri}: DOI citation still not ready")
-            :skip
-        end
-
-      :not_found ->
-        Logger.warning("[#{tag}] Skipping #{uri}: not found in the citations service")
-        :skip
-
-      {:error, reason} ->
-        Logger.warning("[#{tag}] Skipping #{uri}: #{reason}")
-        :skip
-    end
-  end
-
-  defp citation_pending?(refs) do
-    refs
-    |> Map.take(["citationString", "citationBibTex", "citationRis"])
-    |> Map.values()
-    |> Enum.any?(fn cit ->
-      is_binary(cit) and String.starts_with?(cit, @pending_prefixes)
-    end)
+  defp write(tag, uri, graph, triples) do
+    Sparql.update(insert_data(graph, triples))
+    Logger.info("[#{tag}] Wrote #{length(triples)} triples for #{uri}")
+    length(triples)
   end
 
   defp triples_for(uri, refs) do
-    biblio = [{uri, @has_biblio_info, literal(JSON.encode!(refs))}]
+    biblio = [{uri, Vocab.has_biblio_info(), literal(JSON.encode!(refs))}]
 
     citation =
       case refs["citationString"] do
-        cit when is_binary(cit) -> [{uri, @has_citation_string, literal(cit)}]
+        cit when is_binary(cit) -> [{uri, Vocab.has_citation_string(), literal(cit)}]
         _ -> []
       end
 
     licence =
       case refs["licence"] do
-        %{"url" => url} when is_binary(url) -> [{uri, @dcterms_license, "<#{url}>"}]
+        %{"url" => url} when is_binary(url) -> [{uri, Vocab.dcterms_license(), "<#{url}>"}]
         _ -> []
       end
 

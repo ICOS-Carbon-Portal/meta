@@ -12,18 +12,21 @@ import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * Derives `hasKeyword` (singular) triples from the `hasKeywords` (plural) string
- * lists that live in the Virtuoso triplestore, and writes them into a dedicated
- * derived named graph.
+ * Materializes `hasKeyword` (singular) triples onto data and document objects and
+ * writes them into a dedicated derived named graph.
  *
- * This replaces the lookup support that the deleted "magic index" used to provide:
- * with a remote SPARQL backend we cannot expand the comma-separated keyword list
- * at query-evaluation time, so we materialize one triple per individual keyword
- * ahead of time instead.
+ * This replaces the lookup support that the deleted "magic index" used to provide.
+ * The index treated an object as carrying a keyword if it appeared in any of three
+ * sources, unioned together: the object's own `hasKeywords`, its spec's `hasKeywords`
+ * (`hasObjectSpec`), and the spec's project's `hasKeywords` (`hasAssociatedProject`).
+ * With a remote SPARQL backend we cannot expand that comma-separated, inherited list
+ * at query-evaluation time, so we materialize one `hasKeyword` triple per distinct
+ * inherited keyword onto each object ahead of time instead.
  *
  * The derived graph is treated as a cache: `materializeAll` clears and rebuilds it,
  * making each run idempotent.
@@ -48,11 +51,51 @@ class KeywordMaterializer(
 		written
 
 	private def writeDerivedKeywords(): Int =
+		writeInBatches(collectObjectKeywords())
+
+	/**
+	 * For every data/document object, the union of its own keywords, its spec's
+	 * keywords and the spec's project's keywords (the same three sources the magic
+	 * index unioned). Comma-separated lists are parsed and de-duplicated per object.
+	 */
+	private def collectObjectKeywords(): mutable.Map[IRI, mutable.Set[String]] =
 		val q = s"""
-			|SELECT ?s ?keywords WHERE {
-			|  ?s <${metaVocab.hasKeywords}> ?keywords .
+			|SELECT ?obj ?keywords WHERE {
+			|  ?obj a ?t .
+			|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>))
+			|  {
+			|    ?obj <${metaVocab.hasKeywords}> ?keywords .
+			|  } UNION {
+			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
+			|    ?spec <${metaVocab.hasKeywords}> ?keywords .
+			|  } UNION {
+			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
+			|    ?spec <${metaVocab.hasAssociatedProject}> ?proj .
+			|    ?proj <${metaVocab.hasKeywords}> ?keywords .
+			|  }
 			|}""".stripMargin
 
+		val keywordsByObj = mutable.Map.empty[IRI, mutable.Set[String]]
+
+		val conn = repo.getConnection()
+		try
+			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
+			try
+				while result.hasNext() do
+					val bindings = result.next()
+					bindings.getValue("obj") match
+						case obj: IRI =>
+							val keywordsStr = Option(bindings.getValue("keywords")).fold("")(_.stringValue)
+							val kws = parseCommaSepList(keywordsStr)
+							if kws.nonEmpty then
+								keywordsByObj.getOrElseUpdate(obj, mutable.Set.empty) ++= kws
+						case _ => ()
+			finally result.close()
+		finally conn.close()
+
+		keywordsByObj
+
+	private def writeInBatches(keywordsByObj: mutable.Map[IRI, mutable.Set[String]]): Int =
 		var total = 0
 		val batch = ArrayBuffer.empty[Statement]
 
@@ -65,21 +108,9 @@ class KeywordMaterializer(
 				total += toWrite.size
 				batch.clear()
 
-		val conn = repo.getConnection()
-		try
-			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
-			try
-				while result.hasNext() do
-					val bindings = result.next()
-					bindings.getValue("s") match
-						case subj: IRI =>
-							val keywordsStr = Option(bindings.getValue("keywords")).fold("")(_.stringValue)
-							for kw <- parseCommaSepList(keywordsStr) do
-								batch += factory.createStatement(subj, metaVocab.hasKeyword, factory.createStringLiteral(kw))
-								if batch.size >= WriteBatchSize then flush()
-						case _ => ()
-			finally result.close()
-		finally conn.close()
+		for (obj, kws) <- keywordsByObj; kw <- kws do
+			batch += factory.createStatement(obj, metaVocab.hasKeyword, factory.createStringLiteral(kw))
+			if batch.size >= WriteBatchSize then flush()
 
 		flush()
 		total

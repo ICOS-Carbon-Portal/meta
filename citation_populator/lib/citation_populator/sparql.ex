@@ -4,53 +4,77 @@ defmodule CitationPopulator.Sparql do
   no triplestore driver.
 
   Queries go unauthenticated to `<virtuoso>/sparql`. Updates go to
-  `<virtuoso>/sparql-auth` with Basic auth first, falling back to Digest
-  auth (Virtuoso's default challenge) when the server demands it.
+  `<virtuoso>/sparql-auth`: the first attempt carries no credentials —
+  Virtuoso only offers its WWW-Authenticate challenge to requests without
+  an Authorization header — and the challenge is then answered with Digest
+  or Basic auth, whichever the server asks for.
   """
 
-  alias CitationPopulator.Http
+  # Transport-level errors are retried: Virtuoso closes idle keep-alive
+  # connections, and a request racing such a close surfaces as "socket
+  # closed". That's safe for queries, and for our updates too (INSERT DATA
+  # is idempotent). HTTP-level failures are NOT retried — a failed update
+  # must fail the run. Bodies are decoded by us (SPARQL JSON results have
+  # their own media type), and the big subject-listing query needs a
+  # generous timeout.
+  @req_options [
+    retry: &__MODULE__.transport_error?/2,
+    max_retries: 3,
+    retry_log_level: :info,
+    decode_body: false,
+    receive_timeout: 600_000
+  ]
+
+  @doc false
+  def transport_error?(_req, %Req.Response{}), do: false
+  def transport_error?(_req, _exception), do: true
 
   @doc "Runs a SELECT query and returns the list of binding maps from the JSON results."
   def select(query) do
     headers = [{"accept", "application/sparql-results+json"}]
 
-    case Http.post_form(query_endpoint(), %{"query" => query}, headers) do
-      {:ok, 200, _headers, body} -> JSON.decode!(body)["results"]["bindings"]
-      other -> raise "SPARQL query failed: #{describe(other)}"
+    case post_form(query_endpoint(), %{"query" => query}, headers) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        JSON.decode!(body)["results"]["bindings"]
+
+      other ->
+        raise "SPARQL query failed: #{describe(other)}"
     end
   end
 
-  @doc """
-  Runs a SPARQL update against the authenticated endpoint. Raises on failure.
-
-  The first attempt carries no credentials: Virtuoso only offers its
-  WWW-Authenticate challenge to requests without an Authorization header
-  (a preemptively-authenticated request gets a bare 401). The challenge is
-  then answered with Digest or Basic auth, whichever the server asks for.
-  """
+  @doc "Runs a SPARQL update against the authenticated endpoint. Raises on failure."
   def update(update) do
     params = %{"update" => update}
 
-    case Http.post_form(update_endpoint(), params, []) do
-      {:ok, status, _headers, _body} when status in 200..299 -> :ok
-      {:ok, 401, headers, _body} -> update_authenticated(params, authorization(headers))
-      other -> raise "SPARQL update failed: #{describe(other)}"
+    case post_form(update_endpoint(), params) do
+      {:ok, %Req.Response{status: status}} when status in 200..299 ->
+        :ok
+
+      {:ok, %Req.Response{status: 401} = resp} ->
+        update_authenticated(params, authorization(resp))
+
+      other ->
+        raise "SPARQL update failed: #{describe(other)}"
     end
   end
 
   defp update_authenticated(params, auth) do
-    case Http.post_form(update_endpoint(), params, [{"authorization", auth}]) do
-      {:ok, status, _headers, _body} when status in 200..299 -> :ok
+    case post_form(update_endpoint(), params, [{"authorization", auth}]) do
+      {:ok, %Req.Response{status: status}} when status in 200..299 -> :ok
       other -> raise "SPARQL update failed (authenticated): #{describe(other)}"
     end
   end
 
-  defp authorization(headers) do
-    case List.keyfind(headers, "www-authenticate", 0) do
-      {_, "Digest " <> params} ->
+  defp post_form(url, params, headers \\ []) do
+    Req.post(url, [form: params, headers: headers] ++ @req_options)
+  end
+
+  defp authorization(resp) do
+    case Req.Response.get_header(resp, "www-authenticate") do
+      ["Digest " <> params | _] ->
         digest_authorization(parse_challenge(params), "POST", URI.parse(update_endpoint()).path)
 
-      {_, "Basic" <> _} ->
+      ["Basic" <> _ | _] ->
         "Basic " <> Base.encode64("#{username()}:#{password()}")
 
       other ->
@@ -101,10 +125,10 @@ defmodule CitationPopulator.Sparql do
 
   defp md5_hex(string), do: :crypto.hash(:md5, string) |> Base.encode16(case: :lower)
 
-  defp describe({:ok, status, _headers, body}),
+  defp describe({:ok, %Req.Response{status: status, body: body}}),
     do: "HTTP #{status}: #{String.slice(body, 0, 500)}"
 
-  defp describe({:error, reason}), do: inspect(reason)
+  defp describe({:error, exception}), do: Exception.message(exception)
 
   defp query_endpoint, do: virtuoso_host() <> "/sparql"
   defp update_endpoint, do: virtuoso_host() <> "/sparql-auth"

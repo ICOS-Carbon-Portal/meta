@@ -14,13 +14,11 @@ defmodule CitationPopulator.DataCite do
 
   require Logger
 
-  alias CitationPopulator.{DataCiteQueue, Http}
+  alias CitationPopulator.DataCiteQueue
   import CitationPopulator.Util, only: [put_opt: 3]
 
   @api "https://api.datacite.org"
   @style "elsevier-harvard"
-  @retries 5
-  @retry_delay_ms 2_000
   # Cooldown after a 429 when DataCite sends no Retry-After header. Their
   # rate-limit window is 5 minutes, so short retries just burn requests.
   @rate_limit_cooldown_ms 30_000
@@ -72,34 +70,46 @@ defmodule CitationPopulator.DataCite do
     end
   end
 
-  defp get_with_retry(url, headers, attempt \\ 1) do
+  # Req retries transient failures (5xx, transport errors) with exponential
+  # backoff itself; 429 is excluded from that and handled by us, since being
+  # over the rate limit must pause the whole queue and never drop a subject.
+  @req_options [
+    decode_body: false,
+    receive_timeout: 60_000,
+    max_retries: 4,
+    retry_log_level: :info
+  ]
+
+  defp get_with_retry(url, headers) do
     DataCiteQueue.await_slot()
 
-    case Http.get(url, headers) do
-      {:ok, status, _headers, body} when status in 200..299 ->
+    case Req.get(url, [headers: headers, retry: &transient?/2] ++ @req_options) do
+      {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
-      # Rate limited: pause the queue's slot handout and retry indefinitely —
-      # being over the rate limit must never drop a subject.
-      {:ok, 429, resp_headers, _body} ->
-        cooldown = retry_after_ms(resp_headers)
+      {:ok, %Req.Response{status: 429} = resp} ->
+        cooldown = retry_after_ms(resp)
         Logger.info("DataCite rate limit hit, backing off for #{div(cooldown, 1000)} s")
         DataCiteQueue.backoff(cooldown)
-        get_with_retry(url, headers, attempt)
+        get_with_retry(url, headers)
 
-      {:ok, status, _headers, _body} when status in [500, 502, 503] and attempt < @retries ->
-        Process.sleep(@retry_delay_ms * attempt)
-        get_with_retry(url, headers, attempt + 1)
-
-      {:ok, status, _headers, body} ->
+      {:ok, %Req.Response{status: status, body: body}} ->
         {:error, "DataCite responded with HTTP #{status}: #{String.slice(body, 0, 200)}"}
 
-      {:error, _reason} when attempt < @retries ->
-        Process.sleep(@retry_delay_ms * attempt)
-        get_with_retry(url, headers, attempt + 1)
+      {:error, exception} ->
+        {:error, "DataCite request failed: #{Exception.message(exception)}"}
+    end
+  end
 
-      {:error, reason} ->
-        {:error, "DataCite request failed: #{inspect(reason)}"}
+  defp transient?(_req, %Req.Response{status: status}), do: status in [500, 502, 503]
+  defp transient?(_req, _exception), do: true
+
+  defp retry_after_ms(resp) do
+    with [value | _] <- Req.Response.get_header(resp, "retry-after"),
+         {seconds, _rest} <- Integer.parse(value) do
+      seconds * 1000
+    else
+      _ -> @rate_limit_cooldown_ms
     end
   end
 
@@ -117,15 +127,6 @@ defmodule CitationPopulator.DataCite do
     end
 
     result
-  end
-
-  defp retry_after_ms(resp_headers) do
-    with {_name, value} <- List.keyfind(resp_headers, "retry-after", 0),
-         {seconds, _rest} <- Integer.parse(value) do
-      seconds * 1000
-    else
-      _ -> @rate_limit_cooldown_ms
-    end
   end
 
   @doc false

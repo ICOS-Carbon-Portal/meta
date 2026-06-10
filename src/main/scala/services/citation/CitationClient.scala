@@ -18,8 +18,6 @@ import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[DoiMeta]}
 import se.lu.nateko.cp.doi.core.JsonSupport.{given RootJsonFormat[Doi]}
 import se.lu.nateko.cp.meta.CitationConfig
 import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
-import se.lu.nateko.cp.meta.utils.Mergeable
-import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.async.errorLite
 import se.lu.nateko.cp.meta.utils.async.timeLimit
 
@@ -73,10 +71,6 @@ class CitationClientImpl (
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache
 
-	if(config.eagerWarmUp)
-		scheduler.scheduleOnce(35.seconds)(warmUpCache(warmupOneCitation, "citation"))
-		scheduler.scheduleOnce(15.seconds)(warmUpCache(warmupOneDoiMeta, "metadata"))
-
 	private val http = Http()
 	private val doiClientFactory = DoiClientFactory(config.doi)
 
@@ -109,49 +103,6 @@ class CitationClientImpl (
 					recache()
 					fut
 				case _ => fut
-		}
-
-	def warmupOneCitation(doi: Doi): Future[Validated[Done]] =
-		log.debug(s"Warming up citation cache for DOI $doi")
-
-		val allFuts = CitationStyle.values.map{ citStyle =>
-			fetchIfNeeded(doi -> citStyle, citCache, fetchCitation).transform{
-				case Success(_) => Success(Validated.ok(Done))
-				case Failure(err) => Success(Validated.error(err.getMessage))
-			}
-		}
-		Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
-
-	def warmupOneDoiMeta(doi: Doi): Future[Validated[Done]] =
-		log.debug(s"Warming up doi meta cache for DOI $doi")
-
-		fetchIfNeeded(doi, doiCache, fetchDoiMeta).transform{
-			case Success(_) => Success(Validated.ok(Done))
-			case Failure(err) => Success(Validated.error(err.getMessage))
-		}
-
-	private def warmUpCache(warmupOne: Doi => Future[Validated[Done]], cacheType: String): Unit =
-		val MaxErrors = 5
-		def warmUp(dois: List[Doi], soFar: Validated[Done]): Future[Validated[Done]] =
-			if soFar.errors.length > MaxErrors then
-				val msg = s"Got more than $MaxErrors errors while warming up DOI $cacheType cache, cancelling for now"
-				Future.successful(soFar.withExtraError(msg))
-			else dois match
-				case Nil => Future.successful(soFar)
-				case head :: tail =>
-					warmupOne(head).flatMap{ first =>
-						warmUp(tail, Validated.merge(soFar, first))
-					}
-
-		warmUp(knownDois, Validated.ok(Done)).onComplete{
-			case Success(v) if v.errors.nonEmpty =>
-				log.warning(s"DOI $cacheType cache warmup encountered the following errors (will retry later):\n" +
-					v.errors.mkString("\n"))
-				scheduler.scheduleOnce(1.hours)(warmUpCache(warmupOne, cacheType))
-			case Success(v) =>
-				log.info(s"DOI $cacheType cache warmup success")
-			case Failure(exception) =>
-				log.error(s"DOI $cacheType cache warmup problem", exception)
 		}
 
 	private def fetchCitation(key: Key): Future[String] =

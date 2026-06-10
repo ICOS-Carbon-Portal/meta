@@ -14,7 +14,7 @@ defmodule CitationPopulator.DataCite do
 
   require Logger
 
-  alias CitationPopulator.{Http, Throttle}
+  alias CitationPopulator.{DataCiteQueue, Http}
   import CitationPopulator.Util, only: [put_opt: 3]
 
   @api "https://api.datacite.org"
@@ -73,18 +73,18 @@ defmodule CitationPopulator.DataCite do
   end
 
   defp get_with_retry(url, headers, attempt \\ 1) do
-    Throttle.await()
+    DataCiteQueue.await_slot()
 
     case Http.get(url, headers) do
       {:ok, status, _headers, body} when status in 200..299 ->
         {:ok, body}
 
-      # Rate limited: pause the global throttle and retry indefinitely —
+      # Rate limited: pause the queue's slot handout and retry indefinitely —
       # being over the rate limit must never drop a subject.
       {:ok, 429, resp_headers, _body} ->
         cooldown = retry_after_ms(resp_headers)
         Logger.info("DataCite rate limit hit, backing off for #{div(cooldown, 1000)} s")
-        Throttle.backoff(cooldown)
+        DataCiteQueue.backoff(cooldown)
         get_with_retry(url, headers, attempt)
 
       {:ok, status, _headers, _body} when status in [500, 502, 503] and attempt < @retries ->
@@ -112,7 +112,7 @@ defmodule CitationPopulator.DataCite do
     if rem(n, @log_lookups_every) == 0 do
       Logger.info(
         "DataCite progress: #{n} lookups completed, " <>
-          "#{CitationPopulator.DataCiteQueue.pending()} subjects in the queue"
+          "#{DataCiteQueue.pending()} subjects in the queue"
       )
     end
 

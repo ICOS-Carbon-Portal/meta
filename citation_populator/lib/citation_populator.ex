@@ -13,8 +13,8 @@ defmodule CitationPopulator do
   Subjects are processed concurrently (MAX_CONCURRENCY, default 16). DOI
   subjects are not handled inline: the worker writes their DataCite-
   independent triples (the licence), hands the rest to the [`DataCiteQueue`]
-  GenServer and moves on; the queue fetches from DataCite (globally
-  throttled to 10 req/s) and writes the DataCite-dependent triples as the
+  GenServer and moves on; the queue fetches from DataCite (rate-limited by
+  the queue itself) and writes the DataCite-dependent triples as the
   lookups complete. A run finishes when both the main pass and the queue
   are done.
 

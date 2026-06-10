@@ -8,8 +8,8 @@ dependencies (Elixir >= 1.18 for the built-in `JSON` module).
 
 Subjects are processed concurrently (`MAX_CONCURRENCY` workers, default 16),
 but each subject is still handled in the plainest possible way: a sequence
-of SPARQL queries, DataCite GETs (globally throttled to 10 requests/second,
-like the Scala service) and one SPARQL `INSERT DATA` — no caching, batching
+of SPARQL queries, DataCite GETs (rate-limited by the DataCite queue, one
+request per 150 ms) and one SPARQL `INSERT DATA` — no caching, batching
 or prefetching.
 
 ## What it does

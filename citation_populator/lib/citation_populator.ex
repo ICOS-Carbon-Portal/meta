@@ -56,7 +56,7 @@ defmodule CitationPopulator do
       ?s a ?class .
     }
     """
-    |> Sparql.select_paged("?s")
+    |> Sparql.select()
     |> Enum.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
@@ -66,7 +66,7 @@ defmodule CitationPopulator do
       GRAPH <#{graph}> { ?s ?p ?o }
     }
     """
-    |> Sparql.select_paged("?s")
+    |> Sparql.select()
     |> MapSet.new(fn row -> row["s"]["value"] end)
   end
 

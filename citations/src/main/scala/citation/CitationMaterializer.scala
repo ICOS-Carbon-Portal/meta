@@ -7,12 +7,15 @@ import akka.event.Logging
 import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.data.References
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 /**
  * Writes the three "magic" virtual triples (hasBiblioInfo, hasCitationString,
@@ -30,6 +33,12 @@ import scala.concurrent.{ExecutionContext, Future}
  * [[StatementCache]]: each batch of subjects is warmed up with a few bulk SPARQL
  * queries, and the readers then run against the cache instead of issuing one
  * remote SPARQL request per statement pattern.
+ *
+ * Subjects whose citation needs DataCite data that is not cached yet are not
+ * materialized in the main pass: they are pushed to a [[DataCiteQueue]] (which
+ * triggers the lookups immediately) and materialized, in push order, as their
+ * DataCite lookups complete, concurrently with the main pass. A run finishes
+ * when both the main pass and the queue are done.
  */
 class CitationMaterializer(
 	repo: Repository,
@@ -44,21 +53,43 @@ class CitationMaterializer(
 
 	private val WriteBatchSize = 1000
 
-	def materializeAll()(using ExecutionContext): Future[Int] = Future:
+	def materializeAll()(using ExecutionContext): Future[Int] =
 		val startNanos = System.nanoTime()
-		log.info(s"Citation materialization started (graph $derivedGraph)")
-		log.info("Listing citable subjects...")
-		val listStartNanos = System.nanoTime()
-		val allSubjects = listCitableSubjects()
-		val alreadyMaterialized = listMaterializedSubjects()
-		val subjects = allSubjects.filterNot(alreadyMaterialized.contains)
-		log.info(
-			f"Found ${allSubjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
-			f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to materialize), materializing citations..."
-		)
-		val written = writeInBatches(subjects)
-		log.info(f"Citation materialization finished, wrote $written triples in ${(System.nanoTime() - startNanos) / 1e9}%.0f s")
-		written
+		val cache = new StatementCache(repo, log)
+		val cacheConn = new CachingConnection(cache)
+		val dcQueue = new DataCiteQueue(citer.doiCiter, subjs => writeDataCiteBatch(subjs, cache, cacheConn))
+
+		val mainPass = Future:
+			log.info(s"Citation materialization started (graph $derivedGraph)")
+			log.info("Listing citable subjects...")
+			val listStartNanos = System.nanoTime()
+			val allSubjects = listCitableSubjects()
+			val alreadyMaterialized = listMaterializedSubjects()
+			val subjects = allSubjects.filterNot(alreadyMaterialized.contains)
+			log.info(
+				f"Found ${allSubjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
+				f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to materialize), materializing citations..."
+			)
+			writeInBatches(subjects, cache, cacheConn, dcQueue)
+
+		mainPass.transformWith:
+			case scala.util.Failure(err) =>
+				// always shut the queue down, so no stream outlives the run
+				dcQueue.drain().transform(_ => scala.util.Failure(err))
+			case Success(mainWritten) =>
+				if dcQueue.pending > 0 then log.info(
+					s"Main pass done, wrote $mainWritten triples; waiting for the DataCite queue (${dcQueue.pending} subjects pending)"
+				)
+				dcQueue.drain().map: queueWritten =>
+					val written = mainWritten + queueWritten
+					val skipped =
+						if dcQueue.failed + dcQueue.dropped == 0 then ""
+						else s" (${dcQueue.failed} subjects skipped on DataCite failures, ${dcQueue.dropped} dropped from the queue)"
+					log.info(
+						f"Citation materialization finished, wrote $written triples " +
+						f"($queueWritten via the DataCite queue)$skipped in ${(System.nanoTime() - startNanos) / 1e9}%.0f s"
+					)
+					written
 
 	private def listCitableSubjects(): IndexedSeq[IRI] =
 		val q = s"""
@@ -90,23 +121,33 @@ class CitationMaterializer(
 			buf
 		finally conn.close()
 
-	private def writeInBatches(subjects: IndexedSeq[IRI]): Int =
+	private def writeInBatches(
+		subjects: IndexedSeq[IRI], cache: StatementCache, cacheConn: CachingConnection, dcQueue: DataCiteQueue
+	): Int =
 		val total = subjects.size
 		val batchCount = (total + WriteBatchSize - 1) / WriteBatchSize
 		val startNanos = System.nanoTime()
-		val cache = new StatementCache(repo, log)
-		val cacheConn = new CachingConnection(cache)
 		var totalWritten = 0
+		var totalDeferred = 0
 		var processed = 0
 		subjects.zipWithIndex.grouped(WriteBatchSize).zipWithIndex.foreach: (indexedChunk, batchIdx) =>
 			val batchStartNanos = System.nanoTime()
 			val statsBefore = cache.stats
 			cache.prefetch(indexedChunk.map(_._1))
-			val triples = indexedChunk.flatMap: (subj, idx) =>
-				triplesFor(subj, idx + 1, total, cacheConn)
+			val triples = ArrayBuffer.empty[Statement]
+			var deferred = 0
+			for (subj, idx) <- indexedChunk do
+				subjectDoi(subj, cacheConn) match
+					case Some(doi) if !dataCiteReady(doi) =>
+						dcQueue.push(subj, doi)
+						deferred += 1
+						log.debug(s"[${idx + 1}/$total] Deferred $subj to the DataCite queue (DOI $doi)")
+					case _ =>
+						triples ++= triplesFor(subj, s"${idx + 1}/$total", cacheConn)
 			repo.transact: conn =>
 				for t <- triples do conn.add(t, graphIri)
 			totalWritten += triples.size
+			totalDeferred += deferred
 			processed += indexedChunk.size
 			val batchMs = (System.nanoTime() - batchStartNanos) / 1000000
 			val elapsedS = (System.nanoTime() - startNanos) / 1e9
@@ -115,14 +156,47 @@ class CitationMaterializer(
 			log.info(
 				f"Citation materialization progress: batch ${batchIdx + 1}/$batchCount in ${batchMs} ms, " +
 				f"$processed/$total subjects processed (${100.0 * processed / total}%.1f%%), " +
-				f"$totalWritten triples written so far, ${elapsedS}%.0f s elapsed, " +
-				f"${rate}%.1f subj/s, ETA ${etaS}%.0f s; sparql: ${cache.stats.minus(statsBefore)}"
+				f"$totalWritten triples written so far, $totalDeferred deferred to the DataCite queue, " +
+				f"${elapsedS}%.0f s elapsed, ${rate}%.1f subj/s, ETA ${etaS}%.0f s; sparql: ${cache.stats.minus(statsBefore)}"
 			)
 		totalWritten
 
-	private def triplesFor(subj: IRI, subjNo: Int, total: Int, conn: CachingConnection): IndexedSeq[Statement] =
+	/** Materializes a batch of subjects coming back from the DataCite queue; runs on the
+	 *  queue's stream, concurrently with the main pass. */
+	private def writeDataCiteBatch(subjs: Seq[IRI], cache: StatementCache, cacheConn: CachingConnection): Int =
+		cache.prefetch(subjs)
+		val triples = subjs.flatMap(subj => triplesFor(subj, "DataCite queue", cacheConn)).toIndexedSeq
+		repo.transact: conn =>
+			for t <- triples do conn.add(t, graphIri)
+		.get
+		log.info(s"DataCite queue: materialized ${subjs.size} subjects (${triples.size} triples)")
+		triples.size
+
+	/** The first valid DOI of the subject, if any. */
+	private def subjectDoi(subj: IRI, conn: CachingConnection): Option[Doi] =
+		StatementSource.getStringValues(subj, metaVocab.hasDoi)(using conn)
+			.flatMap(Doi.parse(_).toOption)
+			.headOption
+
+	/** Whether all DataCite lookups needed to cite the given DOI have already succeeded.
+	 *  Triggers (throttled, asynchronous) lookups of whatever is missing as a side
+	 *  effect, so a deferred subject's DataCite data is being fetched while it waits
+	 *  in the queue. */
+	private def dataCiteReady(doi: Doi): Boolean =
+		import citer.doiCiter
+		val citationsReady = DataCiteQueue.NeededStyles
+			.map(style => doiCiter.getCitationEager(doi, style))
+			.forall:
+				case Some(Success(_)) => true
+				case _ => false
+		val doiMetaReady = doiCiter.getDoiEager(doi) match
+			case Some(Success(_)) => true
+			case _ => false
+		citationsReady && doiMetaReady
+
+	private def triplesFor(subj: IRI, tag: String, conn: CachingConnection): IndexedSeq[Statement] =
 		val startNanos = System.nanoTime()
-		log.debug(s"[$subjNo/$total] Materializing citation for $subj ...")
+		log.debug(s"[$tag] Materializing citation for $subj ...")
 		val out = ArrayBuffer.empty[Statement]
 
 		val refs: Option[References] = citer.getReferences(subj, conn)
@@ -140,10 +214,10 @@ class CitationMaterializer(
 
 		val durMs = (System.nanoTime() - startNanos) / 1000000
 		if out.isEmpty then
-			log.info(s"[$subjNo/$total] No citation triples produced for $subj (${durMs} ms)")
+			log.info(s"[$tag] No citation triples produced for $subj (${durMs} ms)")
 		else
 			log.info(
-				s"[$subjNo/$total] Materialized ${out.size} triples for $subj in ${durMs} ms " +
+				s"[$tag] Materialized ${out.size} triples for $subj in ${durMs} ms " +
 				s"[biblio=$hasBiblio, citation=${citationOpt.isDefined}, licence=${licenceOpt.isDefined}]"
 			)
 		out.toIndexedSeq

@@ -9,6 +9,12 @@ defmodule CitationPopulator.Application do
     # bottleneck concurrent subject processing.
     :httpc.set_options(max_sessions: 64)
 
+    # Shared counter behind the every-N-lookups DataCite progress log.
+    :persistent_term.put(
+      {CitationPopulator.DataCite, :lookup_counter},
+      :atomics.new(1, [])
+    )
+
     children = [
       CitationPopulator.Throttle,
       {Task.Supervisor, name: CitationPopulator.TaskSupervisor},

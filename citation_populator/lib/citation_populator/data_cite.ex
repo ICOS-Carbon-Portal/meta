@@ -24,6 +24,7 @@ defmodule CitationPopulator.DataCite do
   # Cooldown after a 429 when DataCite sends no Retry-After header. Their
   # rate-limit window is 5 minutes, so short retries just burn requests.
   @rate_limit_cooldown_ms 30_000
+  @log_lookups_every 100
 
   @doc "Parses a DOI like the Scala Doi.parse: 10.<digits>/<word chars>, suffix uppercased."
   def parse_doi(s) when is_binary(s) do
@@ -39,7 +40,7 @@ defmodule CitationPopulator.DataCite do
 
   @doc "Fetches a formatted citation string (style :html | :bibtex | :ris)."
   def fetch_citation(doi, style) do
-    with {:ok, body} <- get_with_retry(citation_url(doi, style), []) do
+    with {:ok, body} <- count_lookup(get_with_retry(citation_url(doi, style), [])) do
       case String.trim(body) do
         "" -> {:error, "got empty citation text"}
         cit -> {:ok, cit}
@@ -59,7 +60,8 @@ defmodule CitationPopulator.DataCite do
   def fetch_doi_meta({prefix, suffix} = doi) do
     url = "#{@api}/dois/#{prefix}/#{suffix}"
 
-    with {:ok, body} <- get_with_retry(url, [{"accept", "application/vnd.api+json"}]) do
+    with {:ok, body} <-
+           count_lookup(get_with_retry(url, [{"accept", "application/vnd.api+json"}])) do
       case JSON.decode(body) do
         {:ok, %{"data" => %{"attributes" => attrs}}} when is_map(attrs) ->
           {:ok, map_attributes(attrs, doi)}
@@ -99,6 +101,22 @@ defmodule CitationPopulator.DataCite do
       {:error, reason} ->
         {:error, "DataCite request failed: #{inspect(reason)}"}
     end
+  end
+
+  # Counts a completed lookup (success or failure, retries not counted
+  # separately) and logs progress with the current queue size every N.
+  defp count_lookup(result) do
+    counter = :persistent_term.get({__MODULE__, :lookup_counter})
+    n = :atomics.add_get(counter, 1, 1)
+
+    if rem(n, @log_lookups_every) == 0 do
+      Logger.info(
+        "DataCite progress: #{n} lookups completed, " <>
+          "#{CitationPopulator.DataCiteQueue.pending()} subjects in the queue"
+      )
+    end
+
+    result
   end
 
   defp retry_after_ms(resp_headers) do

@@ -90,12 +90,64 @@ class CitationClientImpl (
 
 	private def throttled[T](task: => Future[T]): Future[T] =
 		val p = Promise[T]()
-		dataCiteThrottle.offer(() => p.completeWith(task)).onComplete:
+		val queuedAtNanos = System.nanoTime()
+		dataCiteThrottle.offer{() =>
+			val waitedMs = (System.nanoTime() - queuedAtNanos) / 1000000
+			if waitedMs > 1000 then log.debug(s"DataCite request waited ${waitedMs} ms in the throttle queue before dispatch")
+			p.completeWith(task)
+		}.onComplete:
 			case Success(QueueOfferResult.Enqueued) => () // task will run (and complete p) when a rate-limit slot frees up
 			case Success(other) =>
 				p.tryFailure(new Exception(s"DataCite request was not scheduled (throttle queue: $other)") with NoStackTrace)
 			case Failure(err) => p.tryFailure(err)
 		p.future
+
+	// Times a single outgoing DataCite call, logs it at debug, and feeds the aggregate
+	// progress summary that is emitted at info every `DataCiteLogEveryN` requests.
+	private def timedDataCite[T](desc: String)(task: => Future[T]): Future[T] =
+		val startNanos = System.nanoTime()
+		task.andThen: res =>
+			val durMs = (System.nanoTime() - startNanos) / 1000000
+			res match
+				case Success(_)   => log.debug(s"DataCite OK: $desc in ${durMs} ms")
+				case Failure(err) => log.debug(s"DataCite FAILED: $desc in ${durMs} ms: ${err.getMessage}")
+			recordDataCite(durMs, res.isSuccess)
+
+	private val DataCiteLogEveryN = 100
+	private object dcStats:
+		var doneTotal = 0L
+		var failedTotal = 0L
+		var winCount = 0
+		var winFailed = 0
+		var winTotalMs = 0L
+		var winMinMs = Long.MaxValue
+		var winMaxMs = 0L
+		var winStartNanos = System.nanoTime()
+
+	private def recordDataCite(durMs: Long, ok: Boolean): Unit = dcStats.synchronized:
+		dcStats.doneTotal += 1
+		dcStats.winCount += 1
+		if !ok then
+			dcStats.failedTotal += 1
+			dcStats.winFailed += 1
+		dcStats.winTotalMs += durMs
+		dcStats.winMinMs = math.min(dcStats.winMinMs, durMs)
+		dcStats.winMaxMs = math.max(dcStats.winMaxMs, durMs)
+		if dcStats.winCount >= DataCiteLogEveryN then
+			val elapsedS = (System.nanoTime() - dcStats.winStartNanos) / 1e9
+			val rate = if elapsedS > 0 then dcStats.winCount / elapsedS else 0.0
+			val avg = dcStats.winTotalMs.toDouble / dcStats.winCount
+			log.info(
+				f"DataCite progress: ${dcStats.doneTotal} requests done (${dcStats.failedTotal} failed total); " +
+				f"last ${dcStats.winCount} (${dcStats.winFailed} failed): avg ${avg}%.0f ms, " +
+				f"min ${dcStats.winMinMs} ms, max ${dcStats.winMaxMs} ms, ~${rate}%.1f req/s"
+			)
+			dcStats.winCount = 0
+			dcStats.winFailed = 0
+			dcStats.winTotalMs = 0L
+			dcStats.winMinMs = Long.MaxValue
+			dcStats.winMaxMs = 0L
+			dcStats.winStartNanos = System.nanoTime()
 
 	def getCitation(doi: Doi, citationStyle: CitationStyle): Future[String] =
 		val key = doi -> citationStyle
@@ -130,41 +182,45 @@ class CitationClientImpl (
 
 	private def fetchCitation(key: Key): Future[String] = throttled:
 		val (doi, style) = key
-		http.singleRequest(
-			request = HttpRequest(
-				uri = style match {
-					case CitationStyle.bibtex => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
-					case CitationStyle.ris    => s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
-					case CitationStyle.HTML   => s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
-					case CitationStyle.TEXT   => s"https://citation.doi.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+		timedDataCite(s"$style citation for $doi"){
+			http.singleRequest(
+				request = HttpRequest(
+					uri = style match {
+						case CitationStyle.bibtex => s"https://api.datacite.org/dois/application/x-bibtex/${doi.prefix}/${doi.suffix}"
+						case CitationStyle.ris    => s"https://api.datacite.org/dois/application/x-research-info-systems/${doi.prefix}/${doi.suffix}"
+						case CitationStyle.HTML   => s"https://api.datacite.org/dois/text/x-bibliography/${doi.prefix}/${doi.suffix}?style=${config.style}"
+						case CitationStyle.TEXT   => s"https://citation.doi.org/format?doi=${doi.prefix}%2F${doi.suffix}&style=${config.style}&lang=en-US"
+					}
+				),
+				settings = ConnectionPoolSettings(system).withMaxConnections(6).withMaxOpenRequests(10000)
+			).flatMap{resp =>
+				Unmarshal(resp).to[String].flatMap{payload =>
+					if(resp.status.isSuccess) Future.successful(payload)
+					//the payload is the error message/page from the citation service
+					else errorLite(resp.status.defaultMessage + " " + payload)
 				}
-			),
-			settings = ConnectionPoolSettings(system).withMaxConnections(6).withMaxOpenRequests(10000)
-		).flatMap{resp =>
-			Unmarshal(resp).to[String].flatMap{payload =>
-				if(resp.status.isSuccess) Future.successful(payload)
-				//the payload is the error message/page from the citation service
-				else errorLite(resp.status.defaultMessage + " " + payload)
 			}
-		}
-		.flatMap{citation =>
-			if(citation.trim.isEmpty)
-				errorLite("got empty citation text")
-			else
-				Future.successful(citation.trim)
-		}
-		.recoverWith{
-			case err => errorLite(s"Error fetching citation string for ${key._1} from DataCite: ${err.getMessage}")
-		}
-		.andThen{
-			case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)
-			case Success(cit) => log.debug(s"Fetched $cit")
+			.flatMap{citation =>
+				if(citation.trim.isEmpty)
+					errorLite("got empty citation text")
+				else
+					Future.successful(citation.trim)
+			}
+			.recoverWith{
+				case err => errorLite(s"Error fetching citation string for ${key._1} from DataCite: ${err.getMessage}")
+			}
+			.andThen{
+				case Failure(err) => log.warning("Citation fetching error: " + err.getMessage)
+				case Success(cit) => log.debug(s"Fetched $cit")
+			}
 		}
 
 	private def fetchDoiMeta(doi: Doi): Future[DoiMeta] = throttled:
-		doiClientFactory.client.getMetadata(doi).flatMap{
-			case None => Future.failed(new Exception(s"No metadata found for DOI $doi") with NoStackTrace)
-			case Some(value) => Future.successful(value)
+		timedDataCite(s"metadata for $doi"){
+			doiClientFactory.client.getMetadata(doi).flatMap{
+				case None => Future.failed(new Exception(s"No metadata found for DOI $doi") with NoStackTrace)
+				case Some(value) => Future.successful(value)
+			}
 		}
 
 end CitationClientImpl

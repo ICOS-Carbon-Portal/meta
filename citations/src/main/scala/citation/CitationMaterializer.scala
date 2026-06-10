@@ -39,12 +39,15 @@ class CitationMaterializer(
 	private val WriteBatchSize = 1000
 
 	def materializeAll()(using ExecutionContext): Future[Int] = Future:
+		val startNanos = System.nanoTime()
 		log.info(s"Citation materialization started (graph $derivedGraph)")
 		repo.transact(_.clear(graphIri))
+		log.info("Cleared derived citations graph, listing citable subjects...")
+		val listStartNanos = System.nanoTime()
 		val subjects = listCitableSubjects()
-		log.info(s"Materializing citations for ${subjects.size} subjects")
+		log.info(f"Found ${subjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s, materializing citations...")
 		val written = writeInBatches(subjects)
-		log.info(s"Citation materialization finished, wrote $written triples")
+		log.info(f"Citation materialization finished, wrote $written triples in ${(System.nanoTime() - startNanos) / 1e9}%.0f s")
 		written
 
 	private def listCitableSubjects(): IndexedSeq[IRI] =
@@ -67,12 +70,28 @@ class CitationMaterializer(
 		finally conn.close()
 
 	private def writeInBatches(subjects: IndexedSeq[IRI]): Int =
+		val total = subjects.size
+		val batchCount = (total + WriteBatchSize - 1) / WriteBatchSize
+		val startNanos = System.nanoTime()
 		var totalWritten = 0
-		subjects.grouped(WriteBatchSize).foreach: chunk =>
+		var processed = 0
+		subjects.grouped(WriteBatchSize).zipWithIndex.foreach: (chunk, batchIdx) =>
+			val batchStartNanos = System.nanoTime()
 			val triples = chunk.flatMap(triplesFor)
 			repo.transact: conn =>
 				for t <- triples do conn.add(t, graphIri)
 			totalWritten += triples.size
+			processed += chunk.size
+			val batchMs = (System.nanoTime() - batchStartNanos) / 1000000
+			val elapsedS = (System.nanoTime() - startNanos) / 1e9
+			val rate = if elapsedS > 0 then processed / elapsedS else 0.0
+			val etaS = if rate > 0 then (total - processed) / rate else 0.0
+			log.info(
+				f"Citation materialization progress: batch ${batchIdx + 1}/$batchCount in ${batchMs} ms, " +
+				f"$processed/$total subjects processed (${100.0 * processed / total}%.1f%%), " +
+				f"$totalWritten triples written so far, ${elapsedS}%.0f s elapsed, " +
+				f"${rate}%.1f subj/s, ETA ${etaS}%.0f s"
+			)
 		totalWritten
 
 	private def triplesFor(subj: IRI): IndexedSeq[Statement] =

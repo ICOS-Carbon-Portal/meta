@@ -271,6 +271,10 @@ lazy val citations = (project in file("citations"))
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
 
+		libraryDependencies ++= Seq(
+			"org.scalatest" %% "scalatest" % "3.2.11" % "test"
+		),
+
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),

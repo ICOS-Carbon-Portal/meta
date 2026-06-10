@@ -12,13 +12,18 @@ defmodule CitationPopulator.DataCite do
   the materialized `hasBiblioInfo` literal back with that format.
   """
 
-  alias CitationPopulator.Http
+  require Logger
+
+  alias CitationPopulator.{Http, Throttle}
   import CitationPopulator.Util, only: [put_opt: 3]
 
   @api "https://api.datacite.org"
   @style "elsevier-harvard"
   @retries 5
   @retry_delay_ms 2_000
+  # Cooldown after a 429 when DataCite sends no Retry-After header. Their
+  # rate-limit window is 5 minutes, so short retries just burn requests.
+  @rate_limit_cooldown_ms 30_000
 
   @doc "Parses a DOI like the Scala Doi.parse: 10.<digits>/<word chars>, suffix uppercased."
   def parse_doi(s) when is_binary(s) do
@@ -66,13 +71,21 @@ defmodule CitationPopulator.DataCite do
   end
 
   defp get_with_retry(url, headers, attempt \\ 1) do
-    CitationPopulator.Throttle.await()
+    Throttle.await()
 
     case Http.get(url, headers) do
       {:ok, status, _headers, body} when status in 200..299 ->
         {:ok, body}
 
-      {:ok, status, _headers, _body} when status in [429, 500, 502, 503] and attempt < @retries ->
+      # Rate limited: pause the global throttle and retry indefinitely —
+      # being over the rate limit must never drop a subject.
+      {:ok, 429, resp_headers, _body} ->
+        cooldown = retry_after_ms(resp_headers)
+        Logger.info("DataCite rate limit hit, backing off for #{div(cooldown, 1000)} s")
+        Throttle.backoff(cooldown)
+        get_with_retry(url, headers, attempt)
+
+      {:ok, status, _headers, _body} when status in [500, 502, 503] and attempt < @retries ->
         Process.sleep(@retry_delay_ms * attempt)
         get_with_retry(url, headers, attempt + 1)
 
@@ -85,6 +98,15 @@ defmodule CitationPopulator.DataCite do
 
       {:error, reason} ->
         {:error, "DataCite request failed: #{inspect(reason)}"}
+    end
+  end
+
+  defp retry_after_ms(resp_headers) do
+    with {_name, value} <- List.keyfind(resp_headers, "retry-after", 0),
+         {seconds, _rest} <- Integer.parse(value) do
+      seconds * 1000
+    else
+      _ -> @rate_limit_cooldown_ms
     end
   end
 

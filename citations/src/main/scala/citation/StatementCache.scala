@@ -35,12 +35,16 @@ import scala.collection.mutable.ArrayBuffer
  * so frequently shared resources (stations, specs, people, licences) stay cached
  * across batches while per-object satellites age out.
  *
- * Not thread-safe: meant to be used from the (sequential) materialization loop.
+ * Thread-safe via coarse synchronization: the materialization main pass and the
+ * DataCite queue worker share one instance. The lock is held across remote
+ * fetches (including [[prefetch]]'s bulk queries), so one side's miss can stall
+ * the other briefly; both sides mostly hit the cache, so contention is low.
  */
 class StatementCache(repo: Repository, log: LoggingAdapter):
 	import StatementCache.*
 
 	val factory: ValueFactory = repo.getValueFactory
+	private val lock = new Object
 
 	private val subjects = LruMap[IRI, IndexedSeq[Statement]](SubjectCacheSize)
 	private val incoming = LruMap[Value, IndexedSeq[Statement]](IncomingCacheSize)
@@ -54,10 +58,11 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 		override def toString = s"$queries queries ($rows rows), $hits cache hits, $misses misses"
 
 	private var queryCount, hitCount, missCount, rowCount = 0L
-	def stats: Snapshot = Snapshot(queryCount, hitCount, missCount, rowCount)
+	def stats: Snapshot = lock.synchronized:
+		Snapshot(queryCount, hitCount, missCount, rowCount)
 
 	/** All statements with the given subject, across all named graphs. */
-	def subjectStatements(subj: IRI): IndexedSeq[Statement] =
+	def subjectStatements(subj: IRI): IndexedSeq[Statement] = lock.synchronized:
 		val cached = subjects.get(subj)
 		if cached != null then
 			hitCount += 1
@@ -68,7 +73,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 			subjects.get(subj)
 
 	/** All statements with the given object (optionally restricted to a predicate), across all named graphs. */
-	def incomingStatements(pred: IRI | Null, obj: Value): IndexedSeq[Statement] =
+	def incomingStatements(pred: IRI | Null, obj: Value): IndexedSeq[Statement] = lock.synchronized:
 		val allIncoming = incoming.get(obj)
 		if allIncoming != null then
 			hitCount += 1
@@ -99,7 +104,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 		subj: IRI | Null, pred: IRI | Null, obj: Value | Null, contexts: Seq[IRI]
 	): CloseableIterator[Statement] =
 		log.warning(s"Uncached statement pattern (subj $subj, pred $pred, obj $obj), querying the remote repository")
-		queryCount += 1
+		lock.synchronized{ queryCount += 1 }
 		repo.access(conn => conn.getStatements(subj, pred, obj, false, contexts*))
 
 	/**
@@ -107,7 +112,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 	 * incoming statements, then iteratively the statements of (not yet cached)
 	 * resources reachable from them, up to [[StatementCache.ExpansionDepth]] hops.
 	 */
-	def prefetch(batch: Seq[IRI]): Unit =
+	def prefetch(batch: Seq[IRI]): Unit = lock.synchronized:
 		val before = stats
 		val startNanos = System.nanoTime()
 		val incomingStmts = prefetchIncoming(batch.distinct.filterNot(incoming.containsKey))

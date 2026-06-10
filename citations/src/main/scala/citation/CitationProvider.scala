@@ -54,13 +54,23 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
+	val citer = new LiveCitationMaker(doiCiter, vocab, metaVocab, conf.core)
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
 		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+
+	/** Freshly computes the static object behind a landing-page URI (used by the
+	 *  citations service's HTTP endpoint that serves meta's DOI-minting path). */
+	def fetchFreshObject(uri: java.net.URI): Option[StaticObject] = server.access: conn ?=>
+		given GlobConn = RdfLens.global(using conn)
+		getStaticObject(repo.getValueFactory.createIRI(uri.toString))
+
+	def fetchFreshCollection(uri: java.net.URI): Option[StaticCollection] = server.access: conn ?=>
+		given GlobConn = RdfLens.global(using conn)
+		getStaticColl(repo.getValueFactory.createIRI(uri.toString))
 
 	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)

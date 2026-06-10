@@ -2,23 +2,26 @@ package se.lu.nateko.cp.meta.citations
 
 import scala.language.unsafeNulls
 
-import akka.Done
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.Logging
+import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaterializer, CitationProvider}
+import se.lu.nateko.cp.meta.services.sparql.VirtuosoRepository
 
 import scala.concurrent.ExecutionContext
 
 /**
- * Entry point of the standalone citation-materialization service.
+ * Entry point of the standalone citations service.
  *
- * This is the home of the materialization logic that used to run inside the
- * meta service: it populates the Virtuoso triplestore with the derived
- * citation triples and keeps them refreshed on a schedule.
+ * It owns all citation computation that used to run inside the meta service:
+ *   - it materializes the derived citation triples into Virtuoso on a schedule, and
+ *   - it serves freshly-computed objects/collections over HTTP so meta's
+ *     DOI-minting path can mint against non-stale citation metadata.
  */
 object Main:
 
@@ -36,16 +39,24 @@ object Main:
 				citCache <- readCitCache()
 				doiCache <- readDoiCache()
 			yield
-				val service = new CitationMaterializationService(config, citCache, doiCache)
-				CoordinatedShutdown(system).addTask(
-					CoordinatedShutdown.PhaseServiceStop, "stop-citation-materializer"
-				){() =>
-					service.stop().map(_ => Done)
-				}
-				service.start()
+				val repo = new VirtuosoRepository(config.virtuoso)
+				val citer = CitationProvider(repo, citCache, doiCache, config)
+				val materializer = new CitationMaterializer(repo, citer, config.citations.derivedCitationsGraph)
+
+				val matService = CitationMaterializationService(materializer, config.citations)
+				matService.start()
+
+				val route = new CitationRouting(citer).route
+				val bindingFut = Http().newServerAt(config.httpBindInterface, config.citations.servicePort).bind(route)
+
+				CoordinatedShutdown(system).addJvmShutdownHook:
+					matService.stop()
+					repo.shutDown()
+
+				bindingFut.foreach(b => log.info(s"Citations service listening on ${b.localAddress}"))
 
 		startup.failed.foreach: err =>
-			log.error(err, "Could not start the citation materialization service")
+			log.error(err, "Could not start the citations service")
 			system.terminate()
 
 end Main

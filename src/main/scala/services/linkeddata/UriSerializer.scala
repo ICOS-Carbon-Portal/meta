@@ -33,9 +33,8 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
+import se.lu.nateko.cp.meta.services.citation.{AttributionProvider, MaterializedCitationInfoProvider}
+import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectFetcher, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -51,10 +50,8 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 
 
-trait UriSerializer {
+trait UriSerializer extends StaticObjectFetcher {
 	def marshaller: ToResponseMarshaller[Uri]
-	def fetchStaticObject(uri: Uri): Validated[StaticObject]
-	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
 }
 
 object UriSerializer{
@@ -90,7 +87,6 @@ class Rdf4jUriSerializer(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	doiCiter: PlainDoiCiter,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
@@ -103,7 +99,8 @@ class Rdf4jUriSerializer(
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
+	private val citer = new MaterializedCitationInfoProvider(vocab, metaVocab)
+	private val attrProvider = new AttributionProvider(vocab, metaVocab)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
@@ -160,19 +157,19 @@ class Rdf4jUriSerializer(
 		for
 			given DocConn <- lenses.documentLens
 			st <- objReader.getStation(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(st.org.self.uri)
+			membs <- attrProvider.getMemberships(st.org.self.uri)
 		yield OrganizationExtra(st, membs)
 
 	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
 		for
 			org <- objReader.getOrganization(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(org.self.uri)
+			membs <- attrProvider.getMemberships(org.self.uri)
 		yield OrganizationExtra(org, membs)
 
 	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
 		for
 			pers <- objReader.getPerson(uri.toRdf)
-			roles <- citer.attrProvider.getPersonRoles(pers.self.uri)
+			roles <- attrProvider.getPersonRoles(pers.self.uri)
 		yield PersonExtra(pers, roles)
 
 	private def access[T, C <: TriplestoreConnection](lensV: Validated[RdfLens[C]])(reader: C ?=> Validated[T]): Validated[T] =

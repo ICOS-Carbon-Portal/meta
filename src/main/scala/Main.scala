@@ -10,7 +10,6 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.routes.MainRoute
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -38,8 +37,7 @@ object Main extends CpmetaJsonProtocol{
 		val metaFactory = new MetaDbFactory
 
 		val startup = for(
-			(citCache, doiCache) <- readCitCache().zip(readDoiCache());
-			db <- metaFactory(citCache, doiCache, config);
+			db <- metaFactory(config);
 			metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 			route = MainRoute(db, metaflow, config);
 			binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)

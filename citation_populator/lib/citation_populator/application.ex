@@ -5,10 +5,6 @@ defmodule CitationPopulator.Application do
 
   @impl true
   def start(_type, _args) do
-    # httpc defaults to 2 keep-alive connections per host, which would
-    # bottleneck concurrent subject processing.
-    :httpc.set_options(max_sessions: 64)
-
     # Shared counter behind the every-N-lookups DataCite progress log.
     :persistent_term.put(
       {CitationPopulator.DataCite, :lookup_counter},

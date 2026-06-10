@@ -3,8 +3,9 @@
 A standalone Elixir replacement for the Scala `citations` service's
 materializer: it populates the derived citation triples in the Virtuoso
 triplestore, computing everything itself from raw SPARQL queries over HTTP
-and the DataCite REST API. No triplestore driver, no RDF library, no hex
-dependencies (Elixir >= 1.18 for the built-in `JSON` module).
+and the DataCite REST API. No triplestore driver, no RDF library; HTTP via
+[Req](https://hexdocs.pm/req) (the only dependency), JSON via the built-in
+`JSON` module (Elixir >= 1.18).
 
 Subjects are processed concurrently (`MAX_CONCURRENCY` workers, default 16),
 but each subject is still handled in the plainest possible way: a sequence

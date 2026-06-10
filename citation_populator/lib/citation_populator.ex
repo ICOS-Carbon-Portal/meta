@@ -49,8 +49,7 @@ defmodule CitationPopulator do
       |> Stream.with_index(1)
       |> Task.async_stream(
         fn {{uri, class}, idx} ->
-          tag = "#{idx}/#{total}"
-          count = if materialized?(uri, graph), do: 0, else: populate(tag, uri, class, graph)
+          count = populate("#{idx}/#{total}", uri, class, graph)
           log_progress(progress, count, total, started_ms)
           count
         end,
@@ -130,14 +129,20 @@ defmodule CitationPopulator do
   end
 
   defp populate(tag, uri, class, graph) do
+    # Reads may still fail after the SPARQL client's retries (e.g. a longer
+    # Virtuoso overload); that skips the subject (caught up on the next run)
+    # instead of crashing the whole run. Write failures stay fatal.
     result =
       try do
-        References.build(uri, class, graph)
+        if materialized?(uri, graph), do: :materialized, else: References.build(uri, class, graph)
       rescue
         e -> {:error, Exception.format(:error, e, __STACKTRACE__) |> String.slice(0, 500)}
       end
 
     case result do
+      :materialized ->
+        0
+
       {:ok, refs} ->
         count = Writer.write(graph, Writer.all_triples(uri, refs))
         Logger.debug("[#{tag}] Wrote #{count} triples for #{uri}")

@@ -10,24 +10,25 @@ defmodule CitationPopulator.Sparql do
   or Basic auth, whichever the server asks for.
   """
 
-  # Transport-level errors are retried: Virtuoso closes idle keep-alive
-  # connections, and a request racing such a close surfaces as "socket
-  # closed". That's safe for queries, and for our updates too (INSERT DATA
-  # is idempotent). HTTP-level failures are NOT retried — a failed update
-  # must fail the run. Bodies are decoded by us (SPARQL JSON results have
-  # their own media type), and the big subject-listing query needs a
-  # generous timeout.
+  # Transient failures are retried with exponential backoff: transport
+  # errors (Virtuoso closes idle keep-alive connections, and a request
+  # racing such a close surfaces as "socket closed") and 5xx responses
+  # (Virtuoso answers 503 when overloaded). That's safe for queries, and
+  # for our updates too — INSERT DATA is idempotent. Anything else fails
+  # immediately: a genuinely rejected update must fail the run. Bodies are
+  # decoded by us (SPARQL JSON results have their own media type), and the
+  # big paged queries need a generous timeout.
   @req_options [
-    retry: &__MODULE__.transport_error?/2,
-    max_retries: 3,
+    retry: &__MODULE__.transient?/2,
+    max_retries: 5,
     retry_log_level: :info,
     decode_body: false,
     receive_timeout: 600_000
   ]
 
   @doc false
-  def transport_error?(_req, %Req.Response{}), do: false
-  def transport_error?(_req, _exception), do: true
+  def transient?(_req, %Req.Response{status: status}), do: status in [500, 502, 503]
+  def transient?(_req, _exception), do: true
 
   @page_size 100_000
 

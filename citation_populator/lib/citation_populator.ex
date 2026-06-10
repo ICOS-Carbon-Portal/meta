@@ -18,10 +18,14 @@ defmodule CitationPopulator do
   lookups complete. A run finishes when both the main pass and the queue
   are done.
 
-  Only subjects with no triples in the derived graph are populated;
-  already-materialized subjects are left untouched (even if stale). Note
-  that this includes DOI subjects whose DataCite lookups failed in an
-  earlier run: their licence triple makes them count as materialized.
+  The subjects are streamed with a cursor-paged query (only their total
+  comes from an up-front COUNT), so nothing large is fetched ahead of time
+  and no server result-set cap can silently truncate the scan.
+
+  Only subjects with no triples in the derived graph are populated (checked
+  per subject); already-materialized subjects are left untouched (even if
+  stale). Note that this includes DOI subjects whose DataCite lookups failed
+  in an earlier run: their licence triple makes them count as materialized.
   """
 
   require Logger
@@ -31,27 +35,22 @@ defmodule CitationPopulator do
   def run do
     graph = Application.fetch_env!(:citation_populator, :derived_citations_graph)
 
-    Logger.info("Listing citable subjects...")
-    subjects = list_citable_subjects()
-    materialized = list_materialized_subjects(graph)
-    todo = Enum.reject(subjects, fn {uri, _class} -> MapSet.member?(materialized, uri) end)
-    total = length(todo)
-
-    Logger.info(
-      "Found #{length(subjects)} citable subjects " <>
-        "(#{MapSet.size(materialized)} already materialized, #{total} to populate)"
-    )
+    Logger.info("Counting citable subjects...")
+    total = count_citable_subjects()
+    materialized = count_materialized_subjects(graph)
+    Logger.info("Found #{total} citable subjects (#{materialized} already materialized)")
 
     # 1: subjects processed, 2: triples written — for the periodic progress log
     progress = :atomics.new(2, [])
     started_ms = System.monotonic_time(:millisecond)
 
     main_written =
-      todo
-      |> Enum.with_index(1)
+      citable_subjects()
+      |> Stream.with_index(1)
       |> Task.async_stream(
         fn {{uri, class}, idx} ->
-          count = populate("#{idx}/#{total}", uri, class, graph)
+          tag = "#{idx}/#{total}"
+          count = if materialized?(uri, graph), do: 0, else: populate(tag, uri, class, graph)
           log_progress(progress, count, total, started_ms)
           count
         end,
@@ -88,7 +87,7 @@ defmodule CitationPopulator do
     written
   end
 
-  defp list_citable_subjects do
+  defp citable_subjects_query do
     classes = [Vocab.data_object_class(), Vocab.doc_object_class(), Vocab.collection_class()]
     values = Enum.map_join(classes, " ", &"<#{&1}>")
 
@@ -98,18 +97,36 @@ defmodule CitationPopulator do
       ?s a ?class .
     }
     """
-    |> Sparql.select()
-    |> Enum.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
-  defp list_materialized_subjects(graph) do
-    """
-    SELECT DISTINCT ?s WHERE {
-      GRAPH <#{graph}> { ?s ?p ?o }
-    }
-    """
-    |> Sparql.select()
-    |> MapSet.new(fn row -> row["s"]["value"] end)
+  defp count_citable_subjects do
+    [row] = Sparql.select("SELECT (COUNT(*) AS ?count) WHERE { { #{citable_subjects_query()} } }")
+    String.to_integer(row["count"]["value"])
+  end
+
+  defp count_materialized_subjects(graph) do
+    [row] =
+      Sparql.select("""
+      SELECT (COUNT(DISTINCT ?s) AS ?count) WHERE {
+        GRAPH <#{graph}> { ?s ?p ?o }
+      }
+      """)
+
+    String.to_integer(row["count"]["value"])
+  end
+
+  # Lazy, cursor-paged stream over all citable subjects — nothing is
+  # fetched up front, and no server row cap can truncate the scan.
+  defp citable_subjects do
+    citable_subjects_query()
+    |> Sparql.select_stream("?s")
+    |> Stream.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
+  end
+
+  # Checked per subject (instead of one up-front listing) so the check
+  # cannot be truncated once the derived graph outgrows result-set caps.
+  defp materialized?(uri, graph) do
+    Sparql.select("SELECT ?p WHERE { GRAPH <#{graph}> { <#{uri}> ?p ?o } } LIMIT 1") != []
   end
 
   defp populate(tag, uri, class, graph) do

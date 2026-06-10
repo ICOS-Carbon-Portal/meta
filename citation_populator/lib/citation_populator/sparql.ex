@@ -10,6 +10,31 @@ defmodule CitationPopulator.Sparql do
 
   alias CitationPopulator.Http
 
+  @page_size 100_000
+
+  @doc """
+  Runs a SELECT query in pages and concatenates the results. Needed for large
+  result sets: SPARQL endpoints cap the rows of a single result set
+  (Virtuoso's ResultSetMaxRows and similar), silently truncating it.
+
+  Uses Virtuoso's "scrollable cursor" pattern — ORDER BY in a subselect with
+  OFFSET/LIMIT outside — since a plain sorted LIMIT/OFFSET is rejected beyond
+  MaxSortedTopRows (10k). The offset advances by the rows actually received
+  and the loop only stops on an empty page, so it stays correct under any
+  per-result row cap. The query must not itself use ORDER BY, LIMIT or OFFSET.
+  """
+  def select_paged(query, order_by), do: select_paged(query, order_by, 0, [])
+
+  defp select_paged(query, order_by, offset, acc) do
+    page =
+      "SELECT * WHERE { { #{query} ORDER BY #{order_by} } } LIMIT #{@page_size} OFFSET #{offset}"
+
+    case select(page) do
+      [] -> acc |> Enum.reverse() |> Enum.concat()
+      rows -> select_paged(query, order_by, offset + length(rows), [rows | acc])
+    end
+  end
+
   @doc "Runs a SELECT query and returns the list of binding maps from the JSON results."
   def select(query) do
     headers = [{"accept", "application/sparql-results+json"}]
@@ -20,35 +45,42 @@ defmodule CitationPopulator.Sparql do
     end
   end
 
-  @doc "Runs a SPARQL update against the authenticated endpoint. Raises on failure."
+  @doc """
+  Runs a SPARQL update against the authenticated endpoint. Raises on failure.
+
+  The first attempt carries no credentials: Virtuoso only offers its
+  WWW-Authenticate challenge to requests without an Authorization header
+  (a preemptively-authenticated request gets a bare 401). The challenge is
+  then answered with Digest or Basic auth, whichever the server asks for.
+  """
   def update(update) do
     params = %{"update" => update}
-    basic = "Basic " <> Base.encode64("#{username()}:#{password()}")
 
-    case Http.post_form(update_endpoint(), params, [{"authorization", basic}]) do
+    case Http.post_form(update_endpoint(), params, []) do
       {:ok, status, _headers, _body} when status in 200..299 -> :ok
-      {:ok, 401, headers, _body} -> update_with_digest(params, digest_challenge(headers))
+      {:ok, 401, headers, _body} -> update_authenticated(params, authorization(headers))
       other -> raise "SPARQL update failed: #{describe(other)}"
     end
   end
 
-  defp update_with_digest(params, challenge) do
-    auth = digest_authorization(challenge, "POST", URI.parse(update_endpoint()).path)
-
+  defp update_authenticated(params, auth) do
     case Http.post_form(update_endpoint(), params, [{"authorization", auth}]) do
       {:ok, status, _headers, _body} when status in 200..299 -> :ok
-      other -> raise "SPARQL update failed (digest auth): #{describe(other)}"
+      other -> raise "SPARQL update failed (authenticated): #{describe(other)}"
     end
   end
 
-  defp digest_challenge(headers) do
+  defp authorization(headers) do
     case List.keyfind(headers, "www-authenticate", 0) do
       {_, "Digest " <> params} ->
-        parse_challenge(params)
+        digest_authorization(parse_challenge(params), "POST", URI.parse(update_endpoint()).path)
+
+      {_, "Basic" <> _} ->
+        "Basic " <> Base.encode64("#{username()}:#{password()}")
 
       other ->
-        raise "SPARQL update was refused (HTTP 401, wrong credentials?) " <>
-                "and no Digest challenge was offered: #{inspect(other)}"
+        raise "SPARQL update was refused (HTTP 401) " <>
+                "and no supported auth challenge was offered: #{inspect(other)}"
     end
   end
 

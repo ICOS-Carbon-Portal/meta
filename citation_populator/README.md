@@ -15,9 +15,12 @@ or prefetching.
 
 ## What it does
 
-For every `cpmeta:DataObject`, `cpmeta:DocumentObject` and `cpmeta:Collection`
-that has no triples in the derived citations graph yet (already-materialized
-subjects are kept, even if stale), it computes and inserts:
+It streams all `cpmeta:DataObject`, `cpmeta:DocumentObject` and
+`cpmeta:Collection` subjects with a cursor-paged SPARQL query (counts come
+from COUNT queries, so server result-set caps cannot truncate anything),
+and for every subject that has no triples in the derived citations graph
+yet (already-materialized subjects are kept, even if stale; the check is
+per subject), it computes and inserts:
 
 * `cpmeta:hasBiblioInfo` — the `References` JSON, in the exact shape meta's
   spray-json formats parse back (`MaterializedCitationInfoProvider`),

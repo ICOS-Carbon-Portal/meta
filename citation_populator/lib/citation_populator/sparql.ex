@@ -29,6 +29,36 @@ defmodule CitationPopulator.Sparql do
   def transport_error?(_req, %Req.Response{}), do: false
   def transport_error?(_req, _exception), do: true
 
+  @page_size 100_000
+
+  @doc """
+  Lazily streams the binding maps of a SELECT query in pages, using
+  Virtuoso's "scrollable cursor" pattern — ORDER BY in a subselect with
+  OFFSET/LIMIT outside (a plain sorted LIMIT/OFFSET is rejected beyond
+  MaxSortedTopRows, and unpaged results are silently truncated at
+  ResultSetMaxRows). The offset advances by the rows actually received and
+  the stream only ends on an empty page, so it stays correct under any
+  per-result row cap. The query must not itself use ORDER BY/LIMIT/OFFSET.
+  """
+  def select_stream(query, order_by) do
+    Stream.resource(
+      fn -> 0 end,
+      fn offset ->
+        page =
+          select(
+            "SELECT * WHERE { { #{query} ORDER BY #{order_by} } } " <>
+              "LIMIT #{@page_size} OFFSET #{offset}"
+          )
+
+        case page do
+          [] -> {:halt, offset}
+          rows -> {rows, offset + length(rows)}
+        end
+      end,
+      fn _offset -> :ok end
+    )
+  end
+
   @doc "Runs a SELECT query and returns the list of binding maps from the JSON results."
   def select(query) do
     headers = [{"accept", "application/sparql-results+json"}]

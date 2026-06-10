@@ -22,7 +22,7 @@ defmodule CitationPopulator.DataCiteQueue do
   alias CitationPopulator.{References, Writer}
 
   @fetch_concurrency 8
-  @slot_interval_ms 150
+  @slot_interval_ms 200
   # Cooldown after a rate-limit hit when DataCite gives no header guidance:
   # starts at the base and doubles per consecutive incident (their window is
   # 5 minutes, so waking up after 30 s usually just hits the limit again),

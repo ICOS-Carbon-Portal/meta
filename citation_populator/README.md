@@ -1,31 +1,56 @@
 # citation_populator
 
-The simplest possible way of populating the derived citation triples in the
-Virtuoso triplestore, written in Elixir with no dependencies. It is the
-unoptimized counterpart of the `CitationMaterializer` in the Scala
-`citations` service: no batching, no caching, no prefetching, no
-concurrency — just one subject at a time, using raw SPARQL queries and
-updates over HTTP.
+A standalone Elixir replacement for the Scala `citations` service's
+materializer: it populates the derived citation triples in the Virtuoso
+triplestore, computing everything itself from raw SPARQL queries over HTTP
+and the DataCite REST API. No triplestore driver, no RDF library, no hex
+dependencies (Elixir >= 1.18 for the built-in `JSON` module).
+
+It is deliberately unoptimized: subjects are processed one at a time, each
+step is a plain SPARQL query/update or HTTP GET, and there is no caching,
+batching, prefetching or concurrency.
 
 ## What it does
 
-1. Lists all citable subjects (`cpmeta:DataObject`, `cpmeta:DocumentObject`,
-   `cpmeta:Collection`) with a SPARQL `SELECT` against `<virtuoso>/sparql`.
-2. Lists the subjects that already have triples in the derived citations
-   graph and skips them (they are kept, even if stale).
-3. For each remaining subject, fetches its freshly computed citation
-   metadata from the citations service HTTP API
-   (`GET /citations/staticobject?uri=…` or `/citations/staticcollection?uri=…`)
-   and writes up to three triples with a SPARQL `INSERT DATA` against
-   `<virtuoso>/sparql-auth`:
-   * `cpmeta:hasBiblioInfo` — the `References` JSON
-   * `cpmeta:hasCitationString` — the plain-text citation
-   * `dcterms:license` — the licence IRI
+For every `cpmeta:DataObject`, `cpmeta:DocumentObject` and `cpmeta:Collection`
+that has no triples in the derived citations graph yet (already-materialized
+subjects are kept, even if stale), it computes and inserts:
 
-Subjects whose DOI citation is still being fetched from DataCite (the
-citations service returns a `Fetching...` placeholder) are retried a few
-times and then skipped; failures on individual subjects are logged and
-skipped, so a run always processes the whole list.
+* `cpmeta:hasBiblioInfo` — the `References` JSON, in the exact shape meta's
+  spray-json formats parse back (`MaterializedCitationInfoProvider`),
+  including the full DataCite `DoiMeta` for DOI-minted subjects
+* `cpmeta:hasCitationString` — the plain-text citation
+* `dcterms:license` — the licence IRI
+
+The computation is a port of the Scala citation stack:
+
+| Scala | here |
+| --- | --- |
+| `CitationMaterializer` main loop | `CitationPopulator` |
+| `LiveCitationMaker` / `CitationMaker` | `Citation`, `References` |
+| `CitationClient` / doi-core `DoiClient` | `DataCite` |
+| `AttributionProvider` | `Attribution` |
+| `StructuredCitations` | `Structured` |
+| `StaticObjectReader` / `CollectionReader` (citation-relevant parts) | `Reader`, `Agent`, `Columns`, `Licence` |
+| `EnvriResolver` / envri + handle config | `Envri` |
+
+Behavior notes, mirroring the Scala service:
+
+* Subjects with a DOI get their citation strings (elsevier-harvard HTML,
+  BibTeX, RIS) and DOI metadata from DataCite's public REST API; if any
+  DataCite lookup fails the subject is skipped for this run (the Scala
+  materializer's DataCite-queue failure behavior) — never materialized
+  with placeholder text. Transient DataCite errors (429/5xx) are retried.
+* Subjects without a DOI get structural citations (ICOS / SITES / ICOS
+  Cities / document variants), attribution-based author lists, funding
+  acknowledgements and BibTeX/RIS assembled from triplestore data.
+* The licence chain is: own `dcterms:license` (ignoring the derived graph),
+  spec-implied, project-implied, ENVRI default.
+* Subjects outside the known object/collection URI prefixes get only the
+  DOI citation string, if any.
+* Where the Scala code hard-fails the whole subject on missing single-valued
+  data (e.g. a licence without a label), this port is lenient and falls back
+  to something sensible instead; such spots are commented in the code.
 
 ## Configuration
 
@@ -33,28 +58,36 @@ All via environment variables:
 
 | Variable | Default |
 | --- | --- |
-| `VIRTUOSO_HOST` | `http://localhost:8890` |
+| `VIRTUOSO_HOST` | `https://metalocal-virtuoso.icos-cp.eu` |
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
-| `CITATIONS_SERVICE_URL` | `http://127.0.0.1:9095` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/citations/` |
 
-Updates are sent with Basic auth and fall back to Digest auth if Virtuoso
-challenges with it.
+Queries go unauthenticated to `<host>/sparql`; updates go to
+`<host>/sparql-auth` with Basic auth, falling back to Digest auth when
+Virtuoso challenges with it.
 
 ## Running
-
-Requires Elixir >= 1.18 (uses the built-in `JSON` module) and a running
-citations service.
 
 ```sh
 cd citation_populator
 mix citations.populate
 ```
 
-or from IEx:
+or interactively:
 
 ```sh
 iex -S mix
 iex> CitationPopulator.run()
 ```
+
+`mix test` runs unit tests for the pure logic (temporal coverage display,
+DOI/ORCID parsing, BibTeX/RIS assembly, the DataCite→DoiMeta JSON mapping,
+ENVRI inference).
+
+## Not included
+
+The Scala citations service also serves freshly-computed
+`/citations/staticobject` & `/citations/staticcollection` JSON over HTTP for
+meta's DOI-minting path, and citation-cache dump/drop endpoints. This tool
+only replaces the materialization side.

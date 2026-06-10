@@ -6,9 +6,11 @@ triplestore, computing everything itself from raw SPARQL queries over HTTP
 and the DataCite REST API. No triplestore driver, no RDF library, no hex
 dependencies (Elixir >= 1.18 for the built-in `JSON` module).
 
-It is deliberately unoptimized: subjects are processed one at a time, each
-step is a plain SPARQL query/update or HTTP GET, and there is no caching,
-batching, prefetching or concurrency.
+Subjects are processed concurrently (`MAX_CONCURRENCY` workers, default 16),
+but each subject is still handled in the plainest possible way: a sequence
+of SPARQL queries, DataCite GETs (globally throttled to 10 requests/second,
+like the Scala service) and one SPARQL `INSERT DATA` — no caching, batching
+or prefetching.
 
 ## What it does
 
@@ -62,6 +64,7 @@ All via environment variables:
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/citations/` |
+| `MAX_CONCURRENCY` | `16` |
 
 Queries go unauthenticated to `<host>/sparql`; updates go to
 `<host>/sparql-auth` with Basic auth, falling back to Digest auth when

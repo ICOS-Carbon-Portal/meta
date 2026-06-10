@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.citation
+ package se.lu.nateko.cp.meta.services.citation
 
 import scala.language.unsafeNulls
 
@@ -91,13 +91,14 @@ class CitationMaterializer(
 		val startNanos = System.nanoTime()
 		var totalWritten = 0
 		var processed = 0
-		subjects.grouped(WriteBatchSize).zipWithIndex.foreach: (chunk, batchIdx) =>
+		subjects.zipWithIndex.grouped(WriteBatchSize).zipWithIndex.foreach: (indexedChunk, batchIdx) =>
 			val batchStartNanos = System.nanoTime()
-			val triples = chunk.flatMap(triplesFor)
+			val triples = indexedChunk.flatMap: (subj, idx) =>
+				triplesFor(subj, idx + 1, total)
 			repo.transact: conn =>
 				for t <- triples do conn.add(t, graphIri)
 			totalWritten += triples.size
-			processed += chunk.size
+			processed += indexedChunk.size
 			val batchMs = (System.nanoTime() - batchStartNanos) / 1000000
 			val elapsedS = (System.nanoTime() - startNanos) / 1e9
 			val rate = if elapsedS > 0 then processed / elapsedS else 0.0
@@ -110,12 +111,15 @@ class CitationMaterializer(
 			)
 		totalWritten
 
-	private def triplesFor(subj: IRI): IndexedSeq[Statement] =
+	private def triplesFor(subj: IRI, subjNo: Int, total: Int): IndexedSeq[Statement] =
+		val startNanos = System.nanoTime()
+		log.debug(s"[$subjNo/$total] Materializing citation for $subj ...")
 		val out = ArrayBuffer.empty[Statement]
 
 		val refs: Option[References] = citer.getReferences(subj)
-		biblioLiteral(refs).foreach: lit =>
+		val hasBiblio = biblioLiteral(refs).map: lit =>
 			out += factory.createStatement(subj, metaVocab.hasBiblioInfo, lit)
+		.isDefined
 
 		val citationOpt = refs.fold(citer.getCitation(subj))(_.citationString)
 		citationOpt.foreach: cit =>
@@ -125,6 +129,14 @@ class CitationMaterializer(
 		licenceOpt.foreach: lic =>
 			out += factory.createStatement(subj, metaVocab.dcterms.license, lic.url.toRdf)
 
+		val durMs = (System.nanoTime() - startNanos) / 1000000
+		if out.isEmpty then
+			log.info(s"[$subjNo/$total] No citation triples produced for $subj (${durMs} ms)")
+		else
+			log.info(
+				s"[$subjNo/$total] Materialized ${out.size} triples for $subj in ${durMs} ms " +
+				s"[biblio=$hasBiblio, citation=${citationOpt.isDefined}, licence=${licenceOpt.isDefined}]"
+			)
 		out.toIndexedSeq
 
 	private def biblioLiteral(refs: Option[References]): Option[Value] =

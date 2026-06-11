@@ -19,7 +19,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, select
 				addingInstance: false, //needed by the IndividualsList view to hide the IndividualAdder when refreshing
 				selectedIndividual: null
 			};
-			this.pendingIndividualName = initialIndividualName || null;
+			this.pendingIndividualName = initialIndividualName ?? null;
 			this.listenTo(selectTypeAction, this.fetchIndividuals);
 			this.listenTo(selectIndividAction, this.updateSelectedIndivid);
 			this.listenTo(selectIndividualByPathAction, this.selectIndividualByPath);

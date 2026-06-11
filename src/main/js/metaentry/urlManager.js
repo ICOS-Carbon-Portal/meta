@@ -25,13 +25,21 @@ function readPath() {
 	};
 }
 
-function updatePath(typeUri, individualUri) {
+function updatePath(typeUri, individualUri, replaceCurrent) {
 	var parts = window.location.pathname.split('/').filter(Boolean);
 	var ontId = parts[1];
 	var path = '/edit/' + ontId + '/';
 	if (typeUri) path += encodeURIComponent(pathName(typeUri));
 	if (typeUri && individualUri) path += '/' + encodeURIComponent(pathName(individualUri));
-	history.pushState(null, '', path);
+	if(path !== window.location.pathname) {
+		var updateHistory = replaceCurrent ? history.replaceState : history.pushState;
+		updateHistory.call(history, null, '', path);
+	}
 }
 
-module.exports = { readPath: readPath, updatePath: updatePath, pathName: pathName, pathNameFromLocalName: pathNameFromLocalName };
+function findByPathName(list, name) {
+	var normalized = pathNameFromLocalName(name);
+	return list.find(function(item){ return pathName(item.uri) === normalized; });
+}
+
+module.exports = { readPath: readPath, updatePath: updatePath, pathName: pathName, pathNameFromLocalName: pathNameFromLocalName, findByPathName: findByPathName };

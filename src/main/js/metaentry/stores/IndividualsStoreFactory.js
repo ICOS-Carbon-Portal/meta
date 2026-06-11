@@ -1,6 +1,6 @@
 var urlManager = require('../urlManager.js');
 
-module.exports = function(Backend, selectTypeAction, selectIndividAction, createIndividualAction, deleteIndividualAction, initialIndividualName){
+module.exports = function(Backend, selectTypeAction, selectIndividAction, selectIndividualByPathAction, createIndividualAction, deleteIndividualAction, initialIndividualName){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -22,8 +22,22 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			this.pendingIndividualName = initialIndividualName || null;
 			this.listenTo(selectTypeAction, this.fetchIndividuals);
 			this.listenTo(selectIndividAction, this.updateSelectedIndivid);
+			this.listenTo(selectIndividualByPathAction, this.selectIndividualByPath);
 			this.listenTo(createIndividualAction, this.createIndividual);
 			this.listenTo(deleteIndividualAction, this.deleteIndividual);
+		},
+
+		selectIndividualByPath: function(individualName){
+			this.pendingIndividualName = individualName || null;
+			if(!individualName) {
+				selectIndividAction(null);
+				return;
+			}
+			var match = urlManager.findByPathName(this.state.individuals, individualName);
+			if(match) {
+				this.pendingIndividualName = null;
+				selectIndividAction(match.uri);
+			}
 		},
 
 		fetchIndividuals: function(selectedType){
@@ -35,6 +49,8 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			selectIndividAction(null);
 			self.publishState();
 
+			if(!selectedType) return;
+
 			Backend.listIndividuals(selectedType).then(
 				function(individuals){
 
@@ -44,9 +60,8 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					self.state.individuals = individuals;
 
 					if(self.pendingIndividualName){
-						var name = urlManager.pathNameFromLocalName(self.pendingIndividualName);
+						var match = urlManager.findByPathName(individuals, self.pendingIndividualName);
 						self.pendingIndividualName = null;
-						var match = _.find(individuals, function(i){ return urlManager.pathName(i.uri) === name; });
 						if(match) selectIndividAction(match.uri);
 					}
 
@@ -101,7 +116,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					});
 					//TODO Revise the next lines and the related data flow
 					if(self.state.selectedIndividual === indUri) {
-						self.state.selectedIndividual == null;
+						self.state.selectedIndividual = null;
 						selectIndividAction(null);
 					} else self.publishState();
 					

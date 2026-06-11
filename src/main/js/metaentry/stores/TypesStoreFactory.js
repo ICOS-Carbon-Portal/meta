@@ -1,6 +1,6 @@
 var urlManager = require('../urlManager.js');
 
-export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initialTypeName){
+export default function(Backend, selectTypeAction, selectTypeByPathAction, checkUriOrSuffixAction, initialTypeName){
 
 	const uriCheck = _.debounce(
 		function(uri, onSuccess){
@@ -30,6 +30,7 @@ export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initi
 
 		init: function(){
 			this.listenTo(selectTypeAction, this.setSelectedType);
+			this.listenTo(selectTypeByPathAction, this.selectTypeByPath);
 			this.listenTo(checkUriOrSuffixAction, this.checkUriOrSuffix);
 			this.state = this.getInitialState();
 			var self = this;
@@ -38,14 +39,22 @@ export default function(Backend, selectTypeAction, checkUriOrSuffixAction, initi
 				function(types){
 					self.state.types = _.sortBy(types, 'displayName');
 					if(initialTypeName){
-						var requestedTypeName = urlManager.pathNameFromLocalName(initialTypeName);
-						var match = _.find(self.state.types, function(t){ return urlManager.pathName(t.uri) === requestedTypeName; });
+						var match = urlManager.findByPathName(self.state.types, initialTypeName);
 						if(match) selectTypeAction(match.uri);
 					}
 					self.publishState();
 				},
 				function(err){console.log(err);}
 			);
+		},
+
+		selectTypeByPath: function(typeName){
+			if(!typeName) {
+				selectTypeAction(null);
+				return;
+			}
+			var match = urlManager.findByPathName(this.state.types, typeName);
+			if(match && match.uri !== this.state.selected) selectTypeAction(match.uri);
 		},
 
 		setSelectedType: function(selectedType){

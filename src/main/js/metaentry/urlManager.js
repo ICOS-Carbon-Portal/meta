@@ -1,19 +1,5 @@
-function localName(uri) {
-	return uri.substring(uri.lastIndexOf('/') + 1);
-}
-
-function pathNameFromLocalName(name) {
-	return name
-		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
-		.replace(/[_\s]+/g, '-')
-		.replace(/-+/g, '-')
-		.replace(/^-|-$/g, '')
-		.toLowerCase();
-}
-
 function pathName(uri) {
-	return pathNameFromLocalName(localName(uri));
+	return uri.substring(uri.lastIndexOf('/') + 1);
 }
 
 function readPath() {
@@ -29,8 +15,8 @@ function updatePath(typeUri, individualUri, replaceCurrent) {
 	var parts = window.location.pathname.split('/').filter(Boolean);
 	var ontId = parts[1];
 	var path = '/edit/' + ontId + '/';
-	if (typeUri) path += encodeURIComponent(pathName(typeUri));
-	if (typeUri && individualUri) path += '/' + encodeURIComponent(pathName(individualUri));
+	if(typeUri) path += encodeURIComponent(pathName(typeUri));
+	if(typeUri && individualUri) path += '/' + encodeURIComponent(pathName(individualUri));
 	if(path !== window.location.pathname) {
 		var updateHistory = replaceCurrent ? history.replaceState : history.pushState;
 		updateHistory.call(history, null, '', path);
@@ -38,8 +24,7 @@ function updatePath(typeUri, individualUri, replaceCurrent) {
 }
 
 function findByPathName(list, name) {
-	var normalized = pathNameFromLocalName(name);
-	return list.find(function(item){ return pathName(item.uri) === normalized; });
+	return list.find(function(item){ return pathName(item.uri) === name; });
 }
 
-module.exports = { readPath: readPath, updatePath: updatePath, pathName: pathName, pathNameFromLocalName: pathNameFromLocalName, findByPathName: findByPathName };
+module.exports = { readPath: readPath, updatePath: updatePath, pathName: pathName, findByPathName: findByPathName };

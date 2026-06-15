@@ -86,12 +86,14 @@ object SchemaOrg:
 
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix prov: <http://www.w3.org/ns/prov#>
+		|prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 		|select ?dobj where {
 		|	VALUES ?spec {${specs.mkString("<", "> <", ">")}}
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 		|	${countryFilter}
+		|	FILTER NOT EXISTS {?dobj rdfs:seeAlso []}
 		|}
 		|order by desc(?submTime)""".stripMargin
 

@@ -9,6 +9,7 @@ import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.Sail
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
@@ -17,7 +18,18 @@ import java.net.URI as JavaUri
 import java.time.Instant
 import scala.collection.AbstractIterator
 import scala.util.{Try, Using}
+import scala.util.control.NonFatal
 
+
+private val rdf4jLog = LoggerFactory.getLogger("se.lu.nateko.cp.meta.utils.rdf4j")
+
+private def logIfRepositoryProblem(context: String, err: Throwable): Unit =
+	val msg = Option(err.getMessage).getOrElse("")
+	val isLmdbProblem = msg.contains("MDB_") || msg.contains("Permission denied") || err.getStackTrace.exists(_.getClassName.contains("sail.lmdb"))
+	if isLmdbProblem then
+		rdf4jLog.error(s"Repository/LMDB problem during $context; service restart may be required after MDB_BAD_TXN. error=${err.getClass.getName}: $msg", err)
+	else
+		rdf4jLog.warn(s"Repository problem during $context: ${err.getClass.getName}: $msg", err)
 
 
 extension(factory: ValueFactory){
@@ -53,9 +65,17 @@ extension (uri: Uri)
 
 extension [T](res: CloseableIteration[T])
 	def asPlainScalaIterator: Iterator[T] = new AbstractIterator[T]{
-		override def hasNext: Boolean = try res.hasNext() catch case _ => false
+		override def hasNext: Boolean =
+			try res.hasNext()
+			catch case NonFatal(err) =>
+				logIfRepositoryProblem("iteration.hasNext", err)
+				throw err
 
-		override def next(): T = res.next()
+		override def next(): T =
+			try res.next()
+			catch case NonFatal(err) =>
+				logIfRepositoryProblem("iteration.next", err)
+				throw err
 	}
 
 	def asCloseableIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res)
@@ -72,7 +92,11 @@ extension (repo: Repository)
 				conn.commit()
 			catch
 				case err: Throwable =>
-					conn.rollback()
+					logIfRepositoryProblem("transaction", err)
+					try conn.rollback()
+					catch case NonFatal(rollbackErr) =>
+						logIfRepositoryProblem("transaction.rollback", rollbackErr)
+						err.addSuppressed(rollbackErr)
 					throw err
 		}
 
@@ -92,6 +116,7 @@ extension (repo: Repository)
 		}
 		catch{
 			case err: Throwable =>
+				logIfRepositoryProblem("repository access", err)
 				finalCleanup()
 				throw err
 		}
@@ -99,7 +124,11 @@ extension (repo: Repository)
 
 	def accessEagerly[T](accessor: RepositoryConnection => T): T =
 		val conn = repo.getConnection()
-		try accessor(conn) finally conn.close()
+		try accessor(conn)
+		catch case NonFatal(err) =>
+			logIfRepositoryProblem("eager repository access", err)
+			throw err
+		finally conn.close()
 
 end extension
 

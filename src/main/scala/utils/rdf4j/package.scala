@@ -25,7 +25,9 @@ private val rdf4jLog = LoggerFactory.getLogger("se.lu.nateko.cp.meta.utils.rdf4j
 
 private def logIfRepositoryProblem(context: String, err: Throwable): Unit =
 	val msg = Option(err.getMessage).getOrElse("")
-	val isLmdbProblem = msg.contains("MDB_") || msg.contains("Permission denied") || err.getStackTrace.exists(_.getClassName.contains("sail.lmdb"))
+	val isLmdbProblem = msg.contains("MDB_") || msg.contains("Permission denied") ||
+		err.getClass.getName.contains("lmdb") ||
+		err.getStackTrace.exists(_.getClassName.contains("sail.lmdb"))
 	if isLmdbProblem then
 		rdf4jLog.error(s"Repository/LMDB problem during $context; service restart may be required after MDB_BAD_TXN. error=${err.getClass.getName}: $msg", err)
 	else

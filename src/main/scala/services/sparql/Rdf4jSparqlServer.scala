@@ -110,7 +110,6 @@ class Rdf4jSparqlServer(
 			val queryHash = shortHash(queryStr.query)
 			val errPromise = Promise[ByteString]()
 			val finalizer = new QueryRunFinalizer(qquoter)
-			val permittedLongRunning = new AtomicBoolean(false)
 			log.info(s"SPARQL query started qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash responseType=${protocolOption.responseType}")
 
 			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(streamTimeout).mapMaterializedValue{ outStr =>
@@ -119,8 +118,7 @@ class Rdf4jSparqlServer(
 				val connCloser = new LoggedCloseOnce(s"SPARQL repository connection qid=${qquoter.qid}", conn, log.debug)
 				val streamCloser = new LoggedCloseOnce(s"SPARQL output stream qid=${qquoter.qid}", new AutoCloseable:
 					def close(): Unit =
-						outStr.flush()
-						outStr.close()
+						try outStr.flush() finally outStr.close()
 				, log.debug)
 
 				val (resultCloser, sparqlFut) = Try:
@@ -142,15 +140,15 @@ class Rdf4jSparqlServer(
 							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
 								if !doneFut.isCompleted then
 									if qquoter.keepRunningIndefinitely then
-										permittedLongRunning.set(true)
 										log.info(s"SPARQL query permitted to keep running qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash")
 									else
 										log.warning(s"SPARQL query exceeded runtime qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash maxRuntimeSec=${config.maxQueryRuntimeSec} action=waiting-for-rdf4j-timeout")
-							system.scheduler.scheduleOnce((config.maxQueryRuntimeSec + 10).seconds):
-								if !doneFut.isCompleted && !permittedLongRunning.get() then
-									log.error(s"SPARQL query still running after grace period qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash action=force-closing-result")
-									errPromise.tryFailure(CancellationException(s"SPARQL query ${qquoter.qid} timed out"))
-									loggedCloser.close()
+										system.scheduler.scheduleOnce(10.seconds):
+											if !doneFut.isCompleted then
+												log.error(s"SPARQL query still running after grace period qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash action=force-closing-result")
+												errPromise.tryFailure(CancellationException(s"SPARQL query ${qquoter.qid} timed out"))
+												loggedCloser.close()
+												connCloser.close()
 							loggedCloser -> doneFut
 					)
 
@@ -162,8 +160,8 @@ class Rdf4jSparqlServer(
 							log.warning(s"SPARQL query failed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash error=${err.getClass.getName}: ${err.getMessage}")
 					errPromise.tryComplete(tryDone.map(_ => ByteString.empty))
 					streamCloser.close()
-					finalizer.finish()
 					connCloser.close()
+					finalizer.finish()
 
 				resultCloser
 			}.wireTap:

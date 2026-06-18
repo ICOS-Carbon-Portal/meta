@@ -21,6 +21,7 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -41,6 +42,7 @@ class Rdf4jSparqlServer(
 	import Rdf4jSparqlServer.*
 
 	private val log = Logging.getLogger(system, this)
+	private val sparqlQueryLog = LoggerFactory.getLogger("se.lu.nateko.cp.meta.sparql.queries")
 	private val sparqlExe = Executors.newCachedThreadPool() //.newFixedThreadPool(3)
 	private val quoter = new QuotaManager(config, sparqlExe)(Instant.now _)
 	private given ExecutionContext = system.dispatcher
@@ -87,6 +89,13 @@ class Rdf4jSparqlServer(
 		val md = MessageDigest.getInstance("SHA-256").digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8))
 		md.take(8).map("%02x".format(_)).mkString
 
+	private def logSafeQueryText(query: String): String = query
+		.replace("\\", "\\\\")
+		.replace("\r", "\\r")
+		.replace("\n", "\\n")
+		.replace("\t", "\\t")
+		.replace("\"", "\\\"")
+
 	private final class LoggedCloseOnce(name: String, closeable: AutoCloseable, logFailure: String => Unit) extends AutoCloseable:
 		private val closed = new AtomicBoolean(false)
 		override def close(): Unit =
@@ -108,9 +117,11 @@ class Rdf4jSparqlServer(
 			val streamTimeout = (config.maxQueryRuntimeSec + 1).seconds
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
 			val queryHash = shortHash(queryStr.query)
+			val startedAtNanos = System.nanoTime()
+			def elapsedMs: Long = (System.nanoTime() - startedAtNanos) / 1000000
 			val errPromise = Promise[ByteString]()
 			val finalizer = new QueryRunFinalizer(qquoter)
-			log.info(s"SPARQL query started qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash responseType=${protocolOption.responseType}")
+			sparqlQueryLog.info(s"SPARQL query started qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash responseType=${protocolOption.responseType} queryLength=${queryStr.query.length} query=\"${logSafeQueryText(queryStr.query)}\"")
 
 			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(streamTimeout).mapMaterializedValue{ outStr =>
 
@@ -140,12 +151,13 @@ class Rdf4jSparqlServer(
 							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
 								if !doneFut.isCompleted then
 									if qquoter.keepRunningIndefinitely then
-										log.info(s"SPARQL query permitted to keep running qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash")
+										log.info(s"SPARQL query permitted to keep running qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash elapsedMs=$elapsedMs")
+										sparqlQueryLog.info(s"SPARQL query permitted to keep running qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash elapsedMs=$elapsedMs")
 									else
-										log.warning(s"SPARQL query exceeded runtime qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash maxRuntimeSec=${config.maxQueryRuntimeSec} action=waiting-for-rdf4j-timeout")
+										log.warning(s"SPARQL query exceeded runtime qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash maxRuntimeSec=${config.maxQueryRuntimeSec} elapsedMs=$elapsedMs action=waiting-for-rdf4j-timeout")
 										system.scheduler.scheduleOnce(10.seconds):
 											if !doneFut.isCompleted then
-												log.error(s"SPARQL query still running after grace period qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash action=force-closing-result")
+												log.error(s"SPARQL query still running after grace period qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash elapsedMs=$elapsedMs action=force-closing-result")
 												errPromise.tryFailure(CancellationException(s"SPARQL query ${qquoter.qid} timed out"))
 												loggedCloser.close()
 												connCloser.close()
@@ -155,9 +167,9 @@ class Rdf4jSparqlServer(
 				sparqlFut.onComplete: tryDone =>
 					tryDone match
 						case Success(_) =>
-							log.info(s"SPARQL query completed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash")
+							sparqlQueryLog.info(s"SPARQL query completed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash durationMs=$elapsedMs")
 						case Failure(err) =>
-							log.warning(s"SPARQL query failed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash error=${err.getClass.getName}: ${err.getMessage}")
+							log.warning(s"SPARQL query failed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash durationMs=$elapsedMs error=${err.getClass.getName}: ${err.getMessage}")
 					errPromise.tryComplete(tryDone.map(_ => ByteString.empty))
 					streamCloser.close()
 					connCloser.close()
@@ -167,14 +179,14 @@ class Rdf4jSparqlServer(
 			}.wireTap:
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ =>
-						log.info(s"SPARQL query streaming started qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash")
+						sparqlQueryLog.info(s"SPARQL query streaming started qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash elapsedMs=$elapsedMs")
 						qquoter.logQueryStreamingStart()
 					)
 				)
 			.watchTermination(): (closer, doneFut) =>
 				doneFut.onComplete: doneTry =>
 					if !doneTry.isSuccess then
-						log.debug(s"SPARQL response stream terminated qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash result=$doneTry")
+						log.debug(s"SPARQL response stream terminated qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash elapsedMs=$elapsedMs result=$doneTry")
 					closer.close()
 					finalizer.finish()
 				NotUsed

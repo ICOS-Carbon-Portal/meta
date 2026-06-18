@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
+import org.eclipse.rdf4j.query.QueryInterruptedException
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
@@ -70,13 +71,15 @@ extension [T](res: CloseableIteration[T])
 		override def hasNext: Boolean =
 			try res.hasNext()
 			catch case NonFatal(err) =>
-				logIfRepositoryProblem("iteration.hasNext", err)
+				if !err.isInstanceOf[QueryInterruptedException] then
+					logIfRepositoryProblem("iteration.hasNext", err)
 				throw err
 
 		override def next(): T =
 			try res.next()
 			catch case NonFatal(err) =>
-				logIfRepositoryProblem("iteration.next", err)
+				if !err.isInstanceOf[QueryInterruptedException] then
+					logIfRepositoryProblem("iteration.next", err)
 				throw err
 	}
 

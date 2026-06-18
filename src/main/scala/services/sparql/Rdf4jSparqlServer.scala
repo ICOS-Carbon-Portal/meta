@@ -89,12 +89,14 @@ class Rdf4jSparqlServer(
 		val md = MessageDigest.getInstance("SHA-256").digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8))
 		md.take(8).map("%02x".format(_)).mkString
 
-	private def logSafeQueryText(query: String): String = query
-		.replace("\\", "\\\\")
-		.replace("\r", "\\r")
-		.replace("\n", "\\n")
-		.replace("\t", "\\t")
-		.replace("\"", "\\\"")
+	private def logSafeQueryText(query: String): String =
+		val truncated = if query.length > 10000 then query.take(10000) + "...[truncated]" else query
+		truncated
+			.replace("\\", "\\\\")
+			.replace("\r", "\\r")
+			.replace("\n", "\\n")
+			.replace("\t", "\\t")
+			.replace("\"", "\\\"")
 
 	private final class LoggedCloseOnce(name: String, closeable: AutoCloseable, logFailure: String => Unit) extends AutoCloseable:
 		private val closed = new AtomicBoolean(false)
@@ -170,12 +172,16 @@ class Rdf4jSparqlServer(
 							sparqlQueryLog.info(s"SPARQL query completed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash durationMs=$elapsedMs")
 						case Failure(err) =>
 							log.warning(s"SPARQL query failed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash durationMs=$elapsedMs error=${err.getClass.getName}: ${err.getMessage}")
+							sparqlQueryLog.info(s"SPARQL query failed qid=${qquoter.qid} client=${qquoter.cid} hash=$queryHash durationMs=$elapsedMs error=${err.getClass.getName}: ${err.getMessage}")
 					errPromise.tryComplete(tryDone.map(_ => ByteString.empty))
 					streamCloser.close()
 					connCloser.close()
 					finalizer.finish()
 
-				resultCloser
+				new AutoCloseable:
+					def close(): Unit =
+						resultCloser.close()
+						connCloser.close()
 			}.wireTap:
 				Sink.head[ByteString].mapMaterializedValue(
 					_.foreach(_ =>

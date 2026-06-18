@@ -40,6 +40,7 @@ object TriplestorePopulator {
 			case None     => allConfs
 			case Some(id) => Map(id -> allConfs.get(id).get)
 
+		var totalWritten = 0L
 		for
 			(_id, conf) <- selectedConfs
 			logName <- conf.logName
@@ -62,10 +63,11 @@ object TriplestorePopulator {
 				}
 			}
 			memRepo.shutDown()
+			totalWritten += written
 			log.info(s"Ingesting from RDF log $logName done!")
 
 		graphStore.close()
-		log.info("All graphs ingested!")
+		log.info(s"All graphs ingested! Total triples: $totalWritten")
 	}
 
 	private def replayRdfLog(rdfLogConfig: RdflogConfig, factory: ValueFactory, logName: String): SailRepository = {

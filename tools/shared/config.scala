@@ -9,6 +9,19 @@ def rdfStoragePath = {
 	path
 }
 
+case class VirtuosoConfig(host: String, username: String, password: String)
+
+def virtuosoConfig = {
+	val conf = readConfig().getConfig("tools.virtuoso").nn
+	val vc = VirtuosoConfig(
+		host = conf.getString("host").nn,
+		username = conf.getString("username").nn,
+		password = conf.getString("password").nn
+	)
+	log.info(s"Using Virtuoso host: ${vc.host}")
+	vc
+}
+
 private def readConfig(): Config = {
 	val path = new java.io.File("application.conf").getAbsoluteFile
 	ConfigFactory.parseFile(path).nn.resolve.nn

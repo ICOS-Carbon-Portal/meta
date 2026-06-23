@@ -70,7 +70,7 @@
 				}
 			}
 			@property("File name", dobj.fileName)
-			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium && dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)) {
+			@if(dobj.fileName.toLowerCase.endsWith(".zip") && uploadComplete && !underMoratorium) {
 				@htmlProperty{Zip contents}{@zipContents(dobj)}
 			}
 			@for(size <- dobj.size){
@@ -219,17 +219,19 @@
 			}
 			</div>
 
-			<div class="row gy-2">
-				<h2 class="fs-3 mt-5">Statistics</h2>
-				@htmlProperty{Downloads}{
-					@extras.downloadStats.getOrElse("Not available")
-				}
-				@if(dobj.isPreviewable){
-					@htmlProperty{Previews}{
-						@extras.previewStats.getOrElse("Not available")
+			@if(dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)){
+				<div class="row gy-2">
+					<h2 class="fs-3 mt-5">Statistics</h2>
+					@htmlProperty{Downloads}{
+						@extras.downloadStats.getOrElse("Not available")
 					}
-				}
-			</div>
+					@if(dobj.isPreviewable){
+						@htmlProperty{Previews}{
+							@extras.previewStats.getOrElse("Not available")
+						}
+					}
+				</div>
+			}
 
 			<div class="row gy-2">
 				<h2 class="fs-3 mt-5">Submission</h2>

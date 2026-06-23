@@ -12,7 +12,9 @@
 	@dobj.accessUrl.filter(_.getHost != envriConf.dataHost).fold{
 		<a class="btn btn-warning" href="@{getDownloadURL(dobj)}">Download</a>
 	}{ externalUrl =>
-		<a class="btn btn-warning" href="@{externalUrl}" target="_blank" rel="noopener noreferrer">View data on @{externalUrl.getHost}</a>
+		@defining(if(externalUrl.getHost == "meta.icos-cp.eu") "icos.eu" else externalUrl.getHost){ hostLabel =>
+			<a class="btn btn-warning" href="@{externalUrl}" target="_blank" rel="noopener noreferrer">View on @{hostLabel}</a>
+		}
 	}
 </div>
 

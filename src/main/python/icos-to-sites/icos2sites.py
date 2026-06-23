@@ -66,7 +66,7 @@ STATION_MAP = {
 
 # Fixed SITES fields
 OBJECT_SPEC = 'https://meta.fieldsites.se/resources/objspecs/project'
-LICENCE     = 'https://meta.fieldsites.se/ontologies/sites/sitesLicence'
+LICENCE     = 'http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence'
 SUBMITTER   = 'SITES'
 KEYWORDS    = ['ICOS']
 

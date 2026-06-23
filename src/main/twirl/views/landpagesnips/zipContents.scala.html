@@ -14,7 +14,7 @@
 						<tr>
 							<th>File</th>
 							<th class="text-end">Size</th>
-							@if(dobj.accessUrl.isEmpty){
+							@if(dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)){
 								<th></th>
 							}
 						</tr>
@@ -31,7 +31,7 @@
 			const expander = document.getElementById("zipcontentsexpander")
 			const dataHost = "@conf.dataHost"
 			const hash = "@dobj.hash.id"
-			const showDownload = @{dobj.accessUrl.isEmpty}
+			const showDownload = @{dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)}
 			let firstRender = true
 
 			function formatBytes(bytes, decimals = 2){

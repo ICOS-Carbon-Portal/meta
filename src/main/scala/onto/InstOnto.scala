@@ -39,6 +39,11 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		DataRangeDto(XSD.ANYURI.toJava, Nil)
 	)
 
+	private val rdfTypeInfo = ObjectPropertyDto(
+		ResourceDto("type", RDF.TYPE.toJava, None),
+		CardinalityDto(None, None)
+	)
+
 	def getWriteContext: URI = instServer.writeContext.toJava
 
 	def getIndividuals(classUri: URI): Seq[ResourceDto] = instServer.access:
@@ -220,6 +225,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 
 	private def getPropInfo(propUri: URI, classUri: URI): PropertyDto =
 		propUri.toRdf match {
+			case RDF.TYPE => rdfTypeInfo
 			case RDFS.LABEL => rdfsLabelInfo
 			case RDFS.COMMENT => rdfsCommentInfo
 			//rdfs:seeAlso is special: anyURI literal on the front end, Resource on the back end

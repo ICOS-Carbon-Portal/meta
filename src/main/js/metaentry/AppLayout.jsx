@@ -28,20 +28,34 @@ module.exports = React.createClass({
 	mixins: [Reflux.ListenerMixin],
 
 	getInitialState: function(){
+		this.restoringPath = initialPath.typeName || initialPath.individualName ? initialPath : null;
 		return {selectedType: null, selectedIndividual: null};
+	},
+
+	isRestoredPath: function(storeState){
+		if(!this.restoringPath) return false;
+
+		var selectedTypeName = storeState.selectedType ? urlManager.pathName(storeState.selectedType) : null;
+		if(selectedTypeName !== this.restoringPath.typeName) return false;
+
+		if(!this.restoringPath.individualName) return storeState.selectedIndividual == null;
+
+		if(storeState.selectedIndividual && urlManager.pathName(storeState.selectedIndividual) === this.restoringPath.individualName) return true;
+
+		return storeState.loadingIndividuals === false && !urlManager.findByPathName(storeState.individuals, this.restoringPath.individualName);
 	},
 
 	componentDidMount: function(){
 		this.handlePopState = function(){
 			var path = urlManager.readPath();
-			this.isRestoringFromPopstate = true;
+			this.restoringPath = path;
 			actions.selectIndividualByPath(path.individualName);
 			actions.selectMetaTypeByPath(path.typeName);
-			this.isRestoringFromPopstate = false;
 		}.bind(this);
 		window.addEventListener('popstate', this.handlePopState);
 
 		this.listenTo(actions.userSelectMetaType, function(typeUri){
+			this.restoringPath = null;
 			actions.selectMetaType(typeUri);
 			urlManager.updatePath(typeUri, null);
 		}.bind(this));
@@ -52,7 +66,16 @@ module.exports = React.createClass({
 		this.listenTo(IndividualsStore, function(s){
 			var replaceTypeOnlyPath = this.state.selectedIndividual == null && s.selectedIndividual != null;
 			this.setState({selectedIndividual: s.selectedIndividual});
-			if(!this.isRestoringFromPopstate) urlManager.updatePath(s.selectedType, s.selectedIndividual, replaceTypeOnlyPath);
+			if(this.restoringPath) {
+				if(this.isRestoredPath(s)) {
+					var hadIndividualTarget = !!this.restoringPath.individualName;
+					this.restoringPath = null;
+					if(hadIndividualTarget && !s.selectedIndividual)
+						urlManager.updatePath(s.selectedType, null, true);
+				}
+				return;
+			}
+			urlManager.updatePath(s.selectedType, s.selectedIndividual, replaceTypeOnlyPath);
 		}.bind(this));
 	},
 

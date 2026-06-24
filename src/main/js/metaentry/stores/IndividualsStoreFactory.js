@@ -17,9 +17,10 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, select
 				individualsSparql: null,
 				selectedType: null,
 				addingInstance: false, //needed by the IndividualsList view to hide the IndividualAdder when refreshing
-				selectedIndividual: null
+				selectedIndividual: null,
+				loadingIndividuals: false
 			};
-			this.pendingIndividualName = initialIndividualName ?? null;
+			this.pendingIndividualName = initialIndividualName || null;
 			this.listenTo(selectTypeAction, this.fetchIndividuals);
 			this.listenTo(selectIndividAction, this.updateSelectedIndivid);
 			this.listenTo(selectIndividualByPathAction, this.selectIndividualByPath);
@@ -46,6 +47,9 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, select
 			self.selectedType = selectedType;
 			self.state.selectedType = selectedType;
 			self.state.selectedIndividual = null;
+			self.state.individuals = [];
+			self.state.individualsSparql = null;
+			self.state.loadingIndividuals = !!selectedType;
 			selectIndividAction(null);
 			self.publishState();
 
@@ -58,6 +62,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, select
 					if(selectedType !== self.selectedType) return;
 
 					self.state.individuals = individuals;
+					self.state.loadingIndividuals = false;
 
 					if(self.pendingIndividualName){
 						var match = urlManager.findByPathName(individuals, self.pendingIndividualName);
@@ -68,7 +73,11 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, select
 					self.publishState();
 				},
 				function(err){
-					self.selectedType = undefined;
+					if(selectedType === self.selectedType) {
+						self.selectedType = undefined;
+						self.state.loadingIndividuals = false;
+						self.publishState();
+					}
 					console.log(err);
 				}
 			);

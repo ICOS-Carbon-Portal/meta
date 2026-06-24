@@ -45,13 +45,21 @@ class KeywordMaterializer(
 
 	def materializeAll()(using ExecutionContext): Future[Int] = Future:
 		log.info(s"Keyword materialization started (graph $derivedGraph)")
+		log.info(s"Clearing derived graph $derivedGraph")
 		repo.transact(_.clear(graphIri)).get
+		log.info("Derived graph cleared; collecting keywords")
 		val written = writeDerivedKeywords()
 		log.info(s"Keyword materialization finished, wrote $written triples")
 		written
 
 	private def writeDerivedKeywords(): Int =
-		writeInBatches(collectObjectKeywords())
+		val keywordsByObj = collectObjectKeywords()
+		val totalKeywords = keywordsByObj.valuesIterator.map(_.size).sum
+		log.info(
+			s"Collected keywords for ${keywordsByObj.size} objects " +
+			s"($totalKeywords keyword triples to write)"
+		)
+		writeInBatches(keywordsByObj)
 
 	/**
 	 * For every data/document object, the union of its own keywords, its spec's
@@ -77,12 +85,17 @@ class KeywordMaterializer(
 
 		val keywordsByObj = mutable.Map.empty[IRI, mutable.Set[String]]
 
+		log.info("Querying triplestore for object/spec/project keywords")
 		val conn = repo.getConnection()
 		try
 			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
 			try
+				var rows = 0
 				while result.hasNext() do
 					val bindings = result.next()
+					rows += 1
+					if rows % 10000 == 0 then
+						log.info(s"Processed $rows result rows, ${keywordsByObj.size} objects so far")
 					bindings.getValue("obj") match
 						case obj: IRI =>
 							val keywordsStr = Option(bindings.getValue("keywords")).fold("")(_.stringValue)
@@ -90,6 +103,7 @@ class KeywordMaterializer(
 							if kws.nonEmpty then
 								keywordsByObj.getOrElseUpdate(obj, mutable.Set.empty) ++= kws
 						case _ => ()
+				log.info(s"Query finished: $rows result rows across ${keywordsByObj.size} objects")
 			finally result.close()
 		finally conn.close()
 
@@ -107,12 +121,14 @@ class KeywordMaterializer(
 				}.get
 				total += toWrite.size
 				batch.clear()
+				log.info(s"Wrote batch of ${toWrite.size} triples (total $total written)")
 
 		for (obj, kws) <- keywordsByObj; kw <- kws do
 			batch += factory.createStatement(obj, metaVocab.hasKeyword, factory.createStringLiteral(kw))
 			if batch.size >= WriteBatchSize then flush()
 
 		flush()
+		log.info(s"Finished writing $total triples to $derivedGraph")
 		total
 
 end KeywordMaterializer

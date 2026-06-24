@@ -1,4 +1,6 @@
-module.exports = function(Backend, selectTypeAction, selectIndividAction, createIndividualAction, deleteIndividualAction){
+var urlManager = require('../urlManager.js');
+
+module.exports = function(Backend, selectTypeAction, selectIndividAction, selectIndividualByPathAction, createIndividualAction, deleteIndividualAction, initialIndividualName){
 	return Reflux.createStore({
 
 		publishState: function(){
@@ -15,12 +17,28 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 				individualsSparql: null,
 				selectedType: null,
 				addingInstance: false, //needed by the IndividualsList view to hide the IndividualAdder when refreshing
-				selectedIndividual: null
+				selectedIndividual: null,
+				loadingIndividuals: false
 			};
+			this.pendingIndividualName = initialIndividualName || null;
 			this.listenTo(selectTypeAction, this.fetchIndividuals);
 			this.listenTo(selectIndividAction, this.updateSelectedIndivid);
+			this.listenTo(selectIndividualByPathAction, this.selectIndividualByPath);
 			this.listenTo(createIndividualAction, this.createIndividual);
 			this.listenTo(deleteIndividualAction, this.deleteIndividual);
+		},
+
+		selectIndividualByPath: function(individualName){
+			this.pendingIndividualName = individualName || null;
+			if(!individualName) {
+				selectIndividAction(null);
+				return;
+			}
+			var match = urlManager.findByPathName(this.state.individuals, individualName);
+			if(match) {
+				this.pendingIndividualName = null;
+				selectIndividAction(match.uri);
+			}
 		},
 
 		fetchIndividuals: function(selectedType){
@@ -28,7 +46,14 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 			var self = this;
 			self.selectedType = selectedType;
 			self.state.selectedType = selectedType;
+			self.state.selectedIndividual = null;
+			self.state.individuals = [];
+			self.state.individualsSparql = null;
+			self.state.loadingIndividuals = !!selectedType;
+			selectIndividAction(null);
 			self.publishState();
+
+			if(!selectedType) return;
 
 			Backend.listIndividuals(selectedType).then(
 				function(individuals){
@@ -37,10 +62,22 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					if(selectedType !== self.selectedType) return;
 
 					self.state.individuals = individuals;
+					self.state.loadingIndividuals = false;
+
+					if(self.pendingIndividualName){
+						var match = urlManager.findByPathName(individuals, self.pendingIndividualName);
+						self.pendingIndividualName = null;
+						if(match) selectIndividAction(match.uri);
+					}
+
 					self.publishState();
 				},
 				function(err){
-					self.selectedType = undefined;
+					if(selectedType === self.selectedType) {
+						self.selectedType = undefined;
+						self.state.loadingIndividuals = false;
+						self.publishState();
+					}
 					console.log(err);
 				}
 			);
@@ -88,7 +125,7 @@ module.exports = function(Backend, selectTypeAction, selectIndividAction, create
 					});
 					//TODO Revise the next lines and the related data flow
 					if(self.state.selectedIndividual === indUri) {
-						self.state.selectedIndividual == null;
+						self.state.selectedIndividual = null;
 						selectIndividAction(null);
 					} else self.publishState();
 					

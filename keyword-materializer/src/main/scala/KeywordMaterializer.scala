@@ -48,7 +48,13 @@ class KeywordMaterializer(
 	// time out heavy queries, in both cases returning a partial result with no error. We
 	// therefore keep every individual query's result well under any such cap, in two
 	// phases: enumerate object IRIs page by page, then fetch keywords for bounded batches
-	// of those objects. Both sizes must stay below the configured cap.
+	// of those objects.
+	//
+	// Enumeration uses keyset (seek) pagination rather than LIMIT/OFFSET: Virtuoso refuses
+	// an ORDER BY whose sorted window (OFFSET + LIMIT) exceeds MaxSortedTopRows (10000 by
+	// default, error SR353), so deep OFFSETs fail outright. Carrying a `?obj > cursor`
+	// filter instead keeps every page's sort to just ObjectPageSize rows. Both page sizes
+	// must stay below the configured caps.
 	private val ObjectPageSize = 5000   // object IRIs fetched per enumeration page
 	private val KeywordBatchSize = 1000 // objects whose keywords are fetched per query
 
@@ -94,24 +100,27 @@ class KeywordMaterializer(
 		keywordsByObj
 
 	/**
-	 * All data/document object IRIs, read page by page with ORDER BY + LIMIT/OFFSET so the
-	 * enumeration itself is never silently capped. ORDER BY makes the offset windows stable
-	 * across the separate page queries.
+	 * All data/document object IRIs, read page by page with keyset (seek) pagination: each
+	 * page asks for the next ObjectPageSize objects ordered after the previous page's last
+	 * IRI. Unlike LIMIT/OFFSET this keeps every page's sorted window small (avoiding
+	 * Virtuoso's MaxSortedTopRows limit) and never silently caps the enumeration.
 	 */
 	private def listObjects(): IndexedSeq[IRI] =
 		val objects = ArrayBuffer.empty[IRI]
-		var offset = 0
+		var cursor = "" // STR of the last object IRI returned; "" sorts before every IRI
 		var more = true
 
 		log.info("Enumerating data/document objects")
 		while more do
+			val cursorLiteral = "\"" + cursor.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 			val q = s"""
 				|SELECT DISTINCT ?obj WHERE {
 				|  ?obj a ?t .
 				|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>))
+				|  FILTER(STR(?obj) > $cursorLiteral)
 				|}
-				|ORDER BY ?obj
-				|LIMIT $ObjectPageSize OFFSET $offset""".stripMargin
+				|ORDER BY STR(?obj)
+				|LIMIT $ObjectPageSize""".stripMargin
 
 			var pageRows = 0
 			val conn = repo.getConnection()
@@ -121,12 +130,13 @@ class KeywordMaterializer(
 					while result.hasNext() do
 						pageRows += 1
 						result.next().getValue("obj") match
-							case obj: IRI => objects += obj
+							case obj: IRI =>
+								objects += obj
+								cursor = obj.stringValue
 							case _ => ()
 				finally result.close()
 			finally conn.close()
 
-			offset += ObjectPageSize
 			more = pageRows == ObjectPageSize
 			log.info(s"Enumerated ${objects.size} objects so far")
 

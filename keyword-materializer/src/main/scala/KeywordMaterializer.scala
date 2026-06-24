@@ -43,6 +43,15 @@ class KeywordMaterializer(
 
 	private val WriteBatchSize = 1000
 
+	// Pagination guards against the triplestore silently truncating large result sets:
+	// Virtuoso's /sparql endpoint caps rows at ResultSetMaxRows (commonly 10000) and can
+	// time out heavy queries, in both cases returning a partial result with no error. We
+	// therefore keep every individual query's result well under any such cap, in two
+	// phases: enumerate object IRIs page by page, then fetch keywords for bounded batches
+	// of those objects. Both sizes must stay below the configured cap.
+	private val ObjectPageSize = 5000   // object IRIs fetched per enumeration page
+	private val KeywordBatchSize = 1000 // objects whose keywords are fetched per query
+
 	def materializeAll()(using ExecutionContext): Future[Int] = Future:
 		log.info(s"Keyword materialization started (graph $derivedGraph)")
 		log.info(s"Clearing derived graph $derivedGraph")
@@ -65,12 +74,73 @@ class KeywordMaterializer(
 	 * For every data/document object, the union of its own keywords, its spec's
 	 * keywords and the spec's project's keywords (the same three sources the magic
 	 * index unioned). Comma-separated lists are parsed and de-duplicated per object.
+	 *
+	 * Done in two paginated phases so that no single SPARQL result set can exceed the
+	 * triplestore's row cap (or time out) and be silently truncated: first enumerate the
+	 * object IRIs page by page, then fetch keywords for bounded batches of those objects.
 	 */
 	private def collectObjectKeywords(): mutable.Map[IRI, mutable.Set[String]] =
+		val objects = listObjects()
+		log.info(s"Enumerated ${objects.size} data/document objects; fetching keywords in batches of $KeywordBatchSize")
+
+		val keywordsByObj = mutable.Map.empty[IRI, mutable.Set[String]]
+		var done = 0
+		for batch <- objects.grouped(KeywordBatchSize) do
+			fetchKeywordsForBatch(batch, keywordsByObj)
+			done += batch.size
+			log.info(s"Fetched keywords for $done/${objects.size} objects (${keywordsByObj.size} have keywords so far)")
+
+		log.info(s"Keyword collection finished: ${keywordsByObj.size} of ${objects.size} objects carry keywords")
+		keywordsByObj
+
+	/**
+	 * All data/document object IRIs, read page by page with ORDER BY + LIMIT/OFFSET so the
+	 * enumeration itself is never silently capped. ORDER BY makes the offset windows stable
+	 * across the separate page queries.
+	 */
+	private def listObjects(): IndexedSeq[IRI] =
+		val objects = ArrayBuffer.empty[IRI]
+		var offset = 0
+		var more = true
+
+		log.info("Enumerating data/document objects")
+		while more do
+			val q = s"""
+				|SELECT DISTINCT ?obj WHERE {
+				|  ?obj a ?t .
+				|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>))
+				|}
+				|ORDER BY ?obj
+				|LIMIT $ObjectPageSize OFFSET $offset""".stripMargin
+
+			var pageRows = 0
+			val conn = repo.getConnection()
+			try
+				val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
+				try
+					while result.hasNext() do
+						pageRows += 1
+						result.next().getValue("obj") match
+							case obj: IRI => objects += obj
+							case _ => ()
+				finally result.close()
+			finally conn.close()
+
+			offset += ObjectPageSize
+			more = pageRows == ObjectPageSize
+			log.info(s"Enumerated ${objects.size} objects so far")
+
+		objects.toIndexedSeq
+
+	/** Fetches own/spec/project keywords for a bounded batch of objects in one query. */
+	private def fetchKeywordsForBatch(
+		batch: collection.Seq[IRI],
+		acc: mutable.Map[IRI, mutable.Set[String]]
+	): Unit =
+		val values = batch.map(obj => s"<$obj>").mkString(" ")
 		val q = s"""
 			|SELECT ?obj ?keywords WHERE {
-			|  ?obj a ?t .
-			|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>))
+			|  VALUES ?obj { $values }
 			|  {
 			|    ?obj <${metaVocab.hasKeywords}> ?keywords .
 			|  } UNION {
@@ -83,31 +153,21 @@ class KeywordMaterializer(
 			|  }
 			|}""".stripMargin
 
-		val keywordsByObj = mutable.Map.empty[IRI, mutable.Set[String]]
-
-		log.info("Querying triplestore for object/spec/project keywords")
 		val conn = repo.getConnection()
 		try
 			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
 			try
-				var rows = 0
 				while result.hasNext() do
 					val bindings = result.next()
-					rows += 1
-					if rows % 10000 == 0 then
-						log.info(s"Processed $rows result rows, ${keywordsByObj.size} objects so far")
 					bindings.getValue("obj") match
 						case obj: IRI =>
 							val keywordsStr = Option(bindings.getValue("keywords")).fold("")(_.stringValue)
 							val kws = parseCommaSepList(keywordsStr)
 							if kws.nonEmpty then
-								keywordsByObj.getOrElseUpdate(obj, mutable.Set.empty) ++= kws
+								acc.getOrElseUpdate(obj, mutable.Set.empty) ++= kws
 						case _ => ()
-				log.info(s"Query finished: $rows result rows across ${keywordsByObj.size} objects")
 			finally result.close()
 		finally conn.close()
-
-		keywordsByObj
 
 	private def writeInBatches(keywordsByObj: mutable.Map[IRI, mutable.Set[String]]): Int =
 		var total = 0

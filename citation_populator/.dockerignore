@@ -1,0 +1,12 @@
+_build
+deps
+.elixir_ls
+*.dump
+erl_crash.dump
+.git
+.gitignore
+test
+README.md
+Dockerfile
+.dockerignore
+dist

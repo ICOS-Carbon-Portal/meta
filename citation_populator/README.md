@@ -107,6 +107,23 @@ iex> CitationPopulator.run()
 DOI/ORCID parsing, BibTeX/RIS assembly, the DataCite→DoiMeta JSON mapping,
 ENVRI inference).
 
+## Docker
+
+The `Dockerfile` builds a self-contained mix release on Ubuntu 24.04 (both the
+build and runtime stages). The container runs one population pass on start and
+exits with the run's status, so it is a one-shot job, not a long-lived service:
+
+```sh
+docker build -t citation_populator .
+docker run --rm \
+  -e VIRTUOSO_HOST=http://virtuoso:8890 \
+  -e VIRTUOSO_USERNAME=dba -e VIRTUOSO_PASSWORD=secret \
+  citation_populator
+```
+
+(`localhost` inside the container is the container itself, so point
+`VIRTUOSO_HOST` at the reachable Virtuoso address.)
+
 ## Not included
 
 The Scala citations service also serves freshly-computed

@@ -61,7 +61,8 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
+	val extCitFetcher = new StaticObjCitationFetcher
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, Some(extCitFetcher))
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 

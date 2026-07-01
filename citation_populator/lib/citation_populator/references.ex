@@ -17,6 +17,7 @@ defmodule CitationPopulator.References do
 
   alias CitationPopulator.{
     Agent,
+    Cache,
     Citation,
     Columns,
     DataCite,
@@ -238,9 +239,25 @@ defmodule CitationPopulator.References do
     if obj.spec.dataset_type == :station_time_series and obj.acq.station_uri do
       interval = if obj.acq.start && obj.acq.stop, do: {obj.acq.start, obj.acq.stop}
 
+      station_fundings(obj.acq.station_uri)
+      |> Enum.filter(&funding_overlaps?(&1, interval))
+      |> Enum.sort_by(fn f ->
+        {date_iso(f.stop, "9999-12-31"), date_iso(f.start, "0000-01-01"), f.funder_name}
+      end)
+      |> Enum.map(&acknowledgement/1)
+    else
+      []
+    end
+  end
+
+  # A station's fundings are shared by every object acquired there, so read
+  # and shape them once per station per run; only the per-object interval
+  # overlap filtering above stays live.
+  defp station_fundings(station_uri) do
+    Cache.fetch({:funding, station_uri}, fn ->
       Rdf.select("""
       SELECT * WHERE {
-        <#{obj.acq.station_uri}> cpmeta:hasFunding ?funding .
+        <#{station_uri}> cpmeta:hasFunding ?funding .
         ?funding cpmeta:hasFunder ?funder .
         ?funder cpmeta:hasName ?funderName .
         OPTIONAL { ?funding cpmeta:awardTitle ?awardTitle }
@@ -259,14 +276,7 @@ defmodule CitationPopulator.References do
           stop: Rdf.parse_date(Rdf.val(r, "stop"))
         }
       end)
-      |> Enum.filter(&funding_overlaps?(&1, interval))
-      |> Enum.sort_by(fn f ->
-        {date_iso(f.stop, "9999-12-31"), date_iso(f.start, "0000-01-01"), f.funder_name}
-      end)
-      |> Enum.map(&acknowledgement/1)
-    else
-      []
-    end
+    end)
   end
 
   defp funding_overlaps?(_funding, nil), do: true

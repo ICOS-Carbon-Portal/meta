@@ -5,7 +5,7 @@ defmodule CitationPopulator.Licence do
   else by the spec's project, else the ENVRI default.
   """
 
-  alias CitationPopulator.{Envri, Rdf}
+  alias CitationPopulator.{Cache, Envri, Rdf}
   import CitationPopulator.Util, only: [put_opt: 3]
 
   def resolve(obj_uri, spec_uri, project_uri, envri, derived_graph) do
@@ -31,16 +31,24 @@ defmodule CitationPopulator.Licence do
 
   defp implied(nil), do: nil
 
+  # The implied licence of a spec or project is shared reference data.
   defp implied(uri) do
-    row =
-      Rdf.select_one("""
-      SELECT ?lic WHERE { <#{uri}> cpmeta:impliesDefaultLicence ?lic } LIMIT 1
-      """)
+    Cache.fetch({:implied, uri}, fn ->
+      row =
+        Rdf.select_one("""
+        SELECT ?lic WHERE { <#{uri}> cpmeta:impliesDefaultLicence ?lic } LIMIT 1
+        """)
 
-    Rdf.val(row, "lic")
+      Rdf.val(row, "lic")
+    end)
   end
 
+  # There are only a handful of licences; read each one once per run.
   defp read(lic_uri) do
+    Cache.fetch({:licence, lic_uri}, fn -> read_uncached(lic_uri) end)
+  end
+
+  defp read_uncached(lic_uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {

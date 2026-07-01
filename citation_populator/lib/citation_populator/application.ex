@@ -14,6 +14,7 @@ defmodule CitationPopulator.Application do
 
     children =
       [
+        CitationPopulator.Cache,
         {Task.Supervisor, name: CitationPopulator.TaskSupervisor},
         CitationPopulator.DataCiteQueue
       ] ++ run_children()

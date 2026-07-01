@@ -6,10 +6,14 @@ defmodule CitationPopulator.Agent do
   discriminates on the presence of "firstName" when reading).
   """
 
-  alias CitationPopulator.{Rdf, Vocab}
+  alias CitationPopulator.{Cache, Rdf, Vocab}
   import CitationPopulator.Util, only: [put_opt: 3, last_segment: 1]
 
-  def read(uri) do
+  # People and organizations are referenced by many objects; render each
+  # agent once per run.
+  def read(uri), do: Cache.fetch({:agent, uri}, fn -> read_uncached(uri) end)
+
+  defp read_uncached(uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {

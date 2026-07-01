@@ -5,7 +5,7 @@ defmodule CitationPopulator.Reader do
   counterpart of StaticObjectReader/CollectionReader.
   """
 
-  alias CitationPopulator.Rdf
+  alias CitationPopulator.{Cache, Rdf}
   import CitationPopulator.Util, only: [last_segment: 1]
 
   @empty_spec %{
@@ -95,7 +95,13 @@ defmodule CitationPopulator.Reader do
     %{uri: uri, title: Rdf.val(core, "title"), doi_raw: Rdf.val(core, "doi")}
   end
 
+  # Object specs are shared across all objects that use them, so read each
+  # one from Virtuoso only once per run.
   defp read_spec(spec_uri) do
+    Cache.fetch({:spec, spec_uri}, fn -> read_spec_uncached(spec_uri) end)
+  end
+
+  defp read_spec_uncached(spec_uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -155,12 +161,19 @@ defmodule CitationPopulator.Reader do
       stop: Rdf.parse_datetime(Rdf.val(row, "stop")),
       station_uri: station,
       station_name: Rdf.val(row, "stationName"),
-      station_types:
-        if(station, do: Rdf.values("SELECT ?t WHERE { <#{station}> a ?t }", "t"), else: []),
+      station_types: if(station, do: station_types(station), else: []),
       sampling_height: Rdf.parse_float(Rdf.val(row, "samplingHeight")),
       site_location_label: Rdf.val(row, "siteLocationLabel"),
       sampling_point_label: Rdf.val(row, "samplingPointLabel")
     }
+  end
+
+  # The same station backs every object acquired there; its rdf:types don't
+  # change within a run.
+  defp station_types(station) do
+    Cache.fetch({:station_types, station}, fn ->
+      Rdf.values("SELECT ?t WHERE { <#{station}> a ?t }", "t")
+    end)
   end
 
   defp read_production(uri) do

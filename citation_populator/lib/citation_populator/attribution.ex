@@ -5,7 +5,7 @@ defmodule CitationPopulator.Attribution do
   ordered by attribution weight (descending, unweighted last) then name.
   """
 
-  alias CitationPopulator.{Agent, Rdf, Vocab}
+  alias CitationPopulator.{Agent, Cache, Rdf, Vocab}
 
   def authors(obj) do
     case obj.acq.station_uri do
@@ -33,7 +33,14 @@ defmodule CitationPopulator.Attribution do
     end
   end
 
+  # Every object acquired at a station shares that station's membership set
+  # (the candidate authors), so read and shape it once per station per run;
+  # the per-object theme/time filtering above stays live.
   defp memberships(station_uri) do
+    Cache.fetch({:memberships, station_uri}, fn -> memberships_uncached(station_uri) end)
+  end
+
+  defp memberships_uncached(station_uri) do
     Rdf.select("""
     SELECT * WHERE {
       ?memb cpmeta:atOrganization <#{station_uri}> .

@@ -22,9 +22,12 @@ defmodule CitationPopulator do
   comes from an up-front COUNT), so nothing large is fetched ahead of time
   and no server result-set cap can silently truncate the scan.
 
-  Only subjects with no triples in the derived graph are populated (checked
-  per subject); already-materialized subjects are left untouched (even if
-  stale). Note that this includes DOI subjects whose DataCite lookups failed
+  Only subjects with no triples in the derived graph are populated; the set
+  of already-materialized subjects is loaded once up front (with the same
+  cursor-paged stream as the citable subjects, so no result-set cap can
+  truncate it) and checked in memory. Already-materialized subjects are left
+  untouched (even if stale). Note that this includes DOI subjects whose
+  DataCite lookups failed
   in an earlier run: their licence triple makes them count as materialized.
   """
 
@@ -37,8 +40,13 @@ defmodule CitationPopulator do
 
     Logger.info("Counting citable subjects...")
     total = count_citable_subjects()
-    materialized = count_materialized_subjects(graph)
-    Logger.info("Found #{total} citable subjects (#{materialized} already materialized)")
+
+    Logger.info("Loading already-materialized subjects...")
+    materialized = materialized_subjects(graph)
+
+    Logger.info(
+      "Found #{total} citable subjects (#{MapSet.size(materialized)} already materialized)"
+    )
 
     # 1: subjects processed, 2: triples written — for the periodic progress log
     progress = :atomics.new(2, [])
@@ -49,7 +57,7 @@ defmodule CitationPopulator do
       |> Stream.with_index(1)
       |> Task.async_stream(
         fn {{uri, class}, idx} ->
-          count = populate("#{idx}/#{total}", uri, class, graph)
+          count = populate("#{idx}/#{total}", uri, class, graph, materialized)
           log_progress(progress, count, total, started_ms)
           count
         end,
@@ -103,15 +111,16 @@ defmodule CitationPopulator do
     String.to_integer(row["count"]["value"])
   end
 
-  defp count_materialized_subjects(graph) do
-    [row] =
-      Sparql.select("""
-      SELECT (COUNT(DISTINCT ?s) AS ?count) WHERE {
-        GRAPH <#{graph}> { ?s ?p ?o }
-      }
-      """)
-
-    String.to_integer(row["count"]["value"])
+  # The set of subjects already present in the derived graph, loaded once with
+  # the same cursor-paged stream as the citable subjects (so no server
+  # result-set cap can truncate it) and checked in memory per subject —
+  # instead of a SPARQL round-trip per subject, which dominated runs where
+  # most subjects are already materialized.
+  defp materialized_subjects(graph) do
+    "SELECT DISTINCT ?s WHERE { GRAPH <#{graph}> { ?s ?p ?o } }"
+    |> Sparql.select_stream("?s")
+    |> Stream.map(fn row -> row["s"]["value"] end)
+    |> MapSet.new()
   end
 
   # Lazy, cursor-paged stream over all citable subjects — nothing is
@@ -122,19 +131,15 @@ defmodule CitationPopulator do
     |> Stream.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
-  # Checked per subject (instead of one up-front listing) so the check
-  # cannot be truncated once the derived graph outgrows result-set caps.
-  defp materialized?(uri, graph) do
-    Sparql.select("SELECT ?p WHERE { GRAPH <#{graph}> { <#{uri}> ?p ?o } } LIMIT 1") != []
-  end
-
-  defp populate(tag, uri, class, graph) do
+  defp populate(tag, uri, class, graph, materialized) do
     # Reads may still fail after the SPARQL client's retries (e.g. a longer
     # Virtuoso overload); that skips the subject (caught up on the next run)
     # instead of crashing the whole run. Write failures stay fatal.
     result =
       try do
-        if materialized?(uri, graph), do: :materialized, else: References.build(uri, class, graph)
+        if MapSet.member?(materialized, uri),
+          do: :materialized,
+          else: References.build(uri, class, graph)
       rescue
         e -> {:error, Exception.format(:error, e, __STACKTRACE__) |> String.slice(0, 500)}
       end

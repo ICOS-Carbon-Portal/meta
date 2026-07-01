@@ -58,8 +58,17 @@ defmodule CitationPopulator.Agent do
   end
 
   def self_resource(uri, label) do
-    comments = Rdf.values("SELECT ?c WHERE { <#{uri}> rdfs:comment ?c }", "c")
-    put_opt(%{"uri" => uri, "comments" => comments}, "label", label)
+    put_opt(%{"uri" => uri, "comments" => comments(uri)}, "label", label)
+  end
+
+  # The station-attribution author path (Attribution.authors -> person_json)
+  # renders each person directly, bypassing the cached read/1 above, so its
+  # comment lookup would otherwise fire once per author per object. An agent's
+  # rdfs:comments are shared reference data, so read them once per URI per run.
+  defp comments(uri) do
+    Cache.fetch({:comments, uri}, fn ->
+      Rdf.values("SELECT ?c WHERE { <#{uri}> rdfs:comment ?c }", "c")
+    end)
   end
 
   defp webpage_details(uri) do

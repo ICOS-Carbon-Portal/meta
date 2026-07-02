@@ -1,4 +1,5 @@
 import scala.language.unsafeNulls
+import scala.collection.mutable
 import scala.util.Using
 
 import java.io.ByteArrayOutputStream
@@ -11,7 +12,7 @@ import org.apache.http.client.methods.{HttpDelete, HttpPost, HttpUriRequest}
 import org.apache.http.entity.{ByteArrayEntity, ContentType}
 import org.apache.http.impl.client.{BasicCredentialsProvider, HttpClients}
 import org.apache.http.util.EntityUtils
-import org.eclipse.rdf4j.model.Statement
+import org.eclipse.rdf4j.model.{Resource, Statement}
 import org.eclipse.rdf4j.repository.sail.{SailRepository, SailRepositoryConnection}
 import org.eclipse.rdf4j.rio.{Rio, RDFFormat}
 import org.eclipse.rdf4j.sail.lmdb.LmdbStore
@@ -42,39 +43,111 @@ Virtuoso connection details are read from application.conf under tools.virtuoso:
  */
 
 private val ChunkSize = 100000
+// Statements stored without a named graph (rdf4j's default/null context) are not
+// enumerated by getContextIDs(); they are re-homed into this named graph in Virtuoso.
+private val DefaultContextGraph = "fromdefault"
 private val log = LoggerFactory.getLogger("devtools.populateVirtuoso")
 
 @main def populateVirtuoso(): Unit = {
 	val virtuosoConf = virtuosoConfig
 	val graphUpdateEndpoint = s"${virtuosoConf.host}/sparql-graph-crud-auth"
+	val sparqlEndpoint = s"${virtuosoConf.host}/sparql-auth"
 
 	var totalWritten = 0L
+	var totalVerified = 0L
+	var anyMismatch = false
 	withRepoConn { conn =>
-		Using.resource(new HttpGraphStore(graphUpdateEndpoint, virtuosoConf)) { graphStore =>
-			val graphs = Using.resource(conn.getContextIDs()) { _.asPlainScalaIterator.toVector }
-			log.info(s"Found ${graphs.size} named graphs in the local RDF storage")
+		Using.resource(new HttpGraphStore(graphUpdateEndpoint, sparqlEndpoint, virtuosoConf)) { graphStore =>
+			// Enumerate the source contexts. getContextIDs() is NOT reliable on the LMDB
+			// store: it can omit contexts that actually hold statements (observed here: 3
+			// graphs / 1531 statements missing). Relying on it would silently skip whole
+			// graphs, so derive the authoritative context set from a full scan instead.
+			val declared = Using.resource(conn.getContextIDs()) { _.asPlainScalaIterator.toVector }
+			val contexts = mutable.LinkedHashSet.from(declared)
+			var nullContextSeen = false
+			log.info("Scanning all statements to enumerate contexts (getContextIDs is unreliable)...")
+			Using.resource(conn.getStatements(null, null, null, false)) { statements =>
+				statements.asPlainScalaIterator.foreach { st =>
+					val ctx = st.getContext
+					if ctx == null then nullContextSeen = true else contexts.add(ctx)
+				}
+			}
+			val undeclared = contexts.filterNot(declared.contains).toVector
+			log.info(s"getContextIDs() reported ${declared.size} contexts; full scan found ${contexts.size} non-null contexts")
+			if undeclared.nonEmpty then {
+				log.warn(
+					s"${undeclared.size} context(s) are missing from getContextIDs() and would have been " +
+					s"silently skipped: ${undeclared.map(_.stringValue).mkString(", ")}"
+				)
+			}
 
-			for graph <- graphs do {
-				val graphUri = graph.stringValue
+			// Uploads the statements in the given source contexts into the given Virtuoso
+			// graph, then verifies (check #2) that Virtuoso ends up holding exactly the
+			// source count. Fewer => statements were silently dropped; more => blank nodes
+			// were split across chunks (or the graph was not cleared).
+			def ingestGraph(targetGraphUri: String, sourceContexts: Array[Resource]): Unit = {
+				log.info(s"$targetGraphUri: clearing")
+				graphStore.clear(targetGraphUri)
 
-				log.info(s"$graphUri: clearing")
-				graphStore.clear(graphUri)
-
-				log.info(s"$graphUri: uploading statements")
+				log.info(s"$targetGraphUri: uploading statements")
 				var written = 0
-				Using.resource(conn.getStatements(null, null, null, false, graph)) { statements =>
+				Using.resource(conn.getStatements(null, null, null, false, sourceContexts*)) { statements =>
 					statements.asPlainScalaIterator.grouped(ChunkSize).foreach { chunk =>
-						graphStore.upload(graphUri, chunk)
+						graphStore.upload(targetGraphUri, chunk)
 						written += chunk.size
-						log.info(s"$graphUri: ${written / 1000}k statements written")
+						log.info(s"$targetGraphUri: ${written / 1000}k statements written")
 					}
 				}
 				totalWritten += written
-				log.info(s"$graphUri: done ($written statements)")
+
+				val sourceCount = conn.size(sourceContexts*)
+				val virtuosoCount = graphStore.count(targetGraphUri)
+				totalVerified += virtuosoCount
+				if virtuosoCount != sourceCount then {
+					anyMismatch = true
+					log.error(
+						s"$targetGraphUri: COUNT MISMATCH — source has $sourceCount, Virtuoso has $virtuosoCount " +
+						s"(delta ${virtuosoCount - sourceCount})"
+					)
+				} else {
+					log.info(s"$targetGraphUri: verified $virtuosoCount statements in Virtuoso")
+				}
+				log.info(s"$targetGraphUri: done ($written statements)")
+			}
+
+			val sourceTotalAll = conn.size()
+
+			for ctx <- contexts do ingestGraph(ctx.stringValue, Array[Resource](ctx))
+
+			// Check #1: any genuine default/null-context statements (a single null in the
+			// contexts array selects the default context specifically) are re-homed into an
+			// explicit named graph rather than dropped. Currently this is empty, but keep
+			// the guard so such statements can never be silently lost.
+			if nullContextSeen then {
+				log.info(s"Uploading default/null-context statements to the '$DefaultContextGraph' graph")
+				ingestGraph(DefaultContextGraph, Array[Resource](null))
+			}
+
+			// Check #5: what Virtuoso holds across all uploaded graphs must equal the full
+			// source total (named graphs plus the re-homed default context).
+			log.info(
+				s"All graphs ingested! Sent: $totalWritten; verified in Virtuoso: $totalVerified; " +
+				s"source total: $sourceTotalAll"
+			)
+			if totalVerified != sourceTotalAll then {
+				anyMismatch = true
+				log.error(
+					s"TOTAL MISMATCH — source holds $sourceTotalAll statements " +
+					s"but Virtuoso holds $totalVerified (delta ${totalVerified - sourceTotalAll})"
+				)
+			}
+			if anyMismatch then {
+				throw new RuntimeException("Verification failed: Virtuoso does not match the local RDF storage (see errors above)")
+			} else {
+				log.info("Verification passed: Virtuoso matches the local RDF storage")
 			}
 		}
 	}
-	log.info(s"All graphs ingested! Total triples: $totalWritten")
 }
 
 private def withRepo(callback: SailRepository => Any): Unit = {
@@ -91,7 +164,7 @@ private def withRepoConn(callback: SailRepositoryConnection => Any): Unit = {
 	}
 }
 
-private final class HttpGraphStore(baseEndpoint: String, conf: VirtuosoConfig) extends AutoCloseable {
+private final class HttpGraphStore(baseEndpoint: String, sparqlEndpoint: String, conf: VirtuosoConfig) extends AutoCloseable {
 
 	private val httpClient = {
 		val credsProvider = new BasicCredentialsProvider()
@@ -137,6 +210,35 @@ private final class HttpGraphStore(baseEndpoint: String, conf: VirtuosoConfig) e
 					true
 				}
 			}
+		}
+	}
+
+	/** Number of triples Virtuoso currently holds in the given named graph. */
+	def count(graphUri: String): Long = {
+		val query = s"SELECT (COUNT(*) AS ?c) FROM <$graphUri> WHERE { ?s ?p ?o }"
+		val post = new HttpPost(sparqlEndpoint)
+		post.setEntity(new ByteArrayEntity(
+			s"query=${URLEncoder.encode(query, "UTF-8")}".getBytes("UTF-8"),
+			ContentType.create("application/x-www-form-urlencoded")
+		))
+		post.setHeader("Accept", "text/csv")
+
+		execute(post) { response =>
+			val status = response.getStatusLine.getStatusCode
+			val body = Option(response.getEntity).fold("")(EntityUtils.toString)
+			if status >= 400 then {
+				throw new RuntimeException(s"Count query for $graphUri failed ($status): $body")
+			}
+			parseCsvCount(graphUri, body)
+		}
+	}
+
+	// A COUNT SPARQL result in CSV is a header line ("c") followed by the value line.
+	private def parseCsvCount(graphUri: String, csv: String): Long = {
+		val lines = csv.split("\\R").iterator.map(_.trim).filter(_.nonEmpty).toVector
+		lines.lift(1) match {
+			case Some(value) => value.stripPrefix("\"").stripSuffix("\"").toLong
+			case None => throw new RuntimeException(s"Unexpected count response for $graphUri: '$csv'")
 		}
 	}
 

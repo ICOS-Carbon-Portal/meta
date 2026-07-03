@@ -29,10 +29,47 @@ Exit status: 0 if all predicate counts match, 1 if any differ, 2 on error.
 
 import argparse
 import json
+import re
 import sys
 
 import compare_predicate_counts as counts_mod
 import compare_predicate_triples as triples_mod
+
+
+# Matches the fractional-seconds part of an ISO-8601-ish timestamp, e.g. the
+# ".123456" in "2020-01-01T12:00:00.123456Z", so it can be stripped.
+_FRACTIONAL_SECONDS_RE = re.compile(r"(T\d{2}:\d{2}:\d{2})\.\d+")
+
+
+def _looks_like_timestamp(datatype, value):
+    """Heuristically decide whether a literal is a date/time value."""
+    return datatype and ("dateTime" in datatype or "dateTimeStamp" in datatype)
+
+
+def _cmp_term_key(binding):
+    """Comparison key for a term, truncating timestamps to whole seconds.
+
+    Extends ``compare_predicate_triples.term_key`` so that timestamps that
+    differ only in sub-second precision compare equal.
+    """
+    key = triples_mod.term_key(binding)
+    if key is None:
+        return None
+    type_, value, datatype, lang = key
+    if value and _looks_like_timestamp(datatype, value):
+        value = _FRACTIONAL_SECONDS_RE.sub(r"\1", value)
+    return (type_, value, datatype, lang)
+
+
+def _normalize_pairs(pairs):
+    """Re-key pairs with timestamp-truncated object keys (collapsing sub-second dupes).
+
+    Only object values are truncated; subject keys are left as-is.
+    """
+    kept = {}
+    for (sk, ok), (s, o) in pairs.items():
+        kept[(sk, _cmp_term_key(o))] = (s, o)
+    return kept
 
 
 # Triple subject prefixes ignored by default in the per-predicate triple diff.
@@ -88,6 +125,9 @@ def differing_triples(endpoint_a, endpoint_b, predicate, timeout, max_triples,
 
     pairs_a = _drop_ignored_subjects(pairs_a, ignore_triple_prefixes)
     pairs_b = _drop_ignored_subjects(pairs_b, ignore_triple_prefixes)
+
+    pairs_a = _normalize_pairs(pairs_a)
+    pairs_b = _normalize_pairs(pairs_b)
 
     def collect(pairs, keys):
         rows = sorted(

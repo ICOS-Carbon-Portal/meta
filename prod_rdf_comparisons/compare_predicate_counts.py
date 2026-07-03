@@ -25,12 +25,12 @@ import urllib.request
 
 # Predicate prefixes ignored by default. Override/extend with --ignore-prefix.
 DEFAULT_IGNORE_PREFIXES = [
-        "http://www.openlinksw.com/schemas/virtrdf",
+        "http://www.openlinksw.com/",
         "http://www.w3.org/1999/02/22-rdf-syntax-ns",
         "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
         "http://www.w3.org/2000/01/rdf-schema#subClassOf",
         "http://www.w3.org/2000/01/rdf-schema#sameAs",
-        "http://www.w3.org/ns/sparql-service-description"
+        "http://www.w3.org/ns/sparql-service-description",
 ]
 
 

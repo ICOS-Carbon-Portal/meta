@@ -14,12 +14,15 @@ Usage:
     ./compare_batch.py <endpoint_a> <endpoint_b> --output result.json
 
 Options:
-    --timeout <secs>        Per-request timeout (default: very large).
-    --ignore-prefix <iri>   Ignore predicates whose IRI starts with this prefix
-                            (repeatable).
-    --output <path>         JSON output file (default: compare_result.json).
-    --max-triples <n>       Cap the differing triples stored/printed per side
-                            for each predicate (default: no cap).
+    --timeout <secs>            Per-request timeout (default: very large).
+    --ignore-prefix <iri>       Ignore predicates whose IRI starts with this
+                                prefix (repeatable).
+    --ignore-triple-prefix <iri>
+                                Ignore triples whose subject IRI starts with
+                                this prefix (repeatable).
+    --output <path>             JSON output file (default: compare_result.json).
+    --max-triples <n>           Cap the differing triples stored/printed per side
+                                for each predicate (default: no cap).
 
 Exit status: 0 if all predicate counts match, 1 if any differ, 2 on error.
 """
@@ -30,6 +33,15 @@ import sys
 
 import compare_predicate_counts as counts_mod
 import compare_predicate_triples as triples_mod
+
+
+# Triple subject prefixes ignored by default in the per-predicate triple diff.
+# Override/extend with --ignore-triple-prefix.
+DEFAULT_IGNORE_TRIPLE_PREFIXES = [
+    "http://www.w3.org/2002/07/owl",
+    "http://localhost:8890/DAV",
+    "https://www.w3.org/ns/activitystreams"
+]
 
 
 def fetch_predicate_diffs(endpoint_a, endpoint_b, timeout, ignore_prefixes):
@@ -55,10 +67,27 @@ def fetch_predicate_diffs(endpoint_a, endpoint_b, timeout, ignore_prefixes):
     return totals, diffs
 
 
-def differing_triples(endpoint_a, endpoint_b, predicate, timeout, max_triples):
+def _drop_ignored_subjects(pairs, ignore_triple_prefixes):
+    """Drop pairs whose subject IRI starts with an ignored prefix."""
+    if not ignore_triple_prefixes:
+        return pairs
+    kept = {}
+    for key, (s, o) in pairs.items():
+        subject = s.get("value", "")
+        if any(subject.startswith(prefix) for prefix in ignore_triple_prefixes):
+            continue
+        kept[key] = (s, o)
+    return kept
+
+
+def differing_triples(endpoint_a, endpoint_b, predicate, timeout, max_triples,
+                      ignore_triple_prefixes=()):
     """Return a dict describing the triples that differ for one predicate."""
     pairs_a = triples_mod.fetch_pairs(endpoint_a, predicate, timeout)
     pairs_b = triples_mod.fetch_pairs(endpoint_b, predicate, timeout)
+
+    pairs_a = _drop_ignored_subjects(pairs_a, ignore_triple_prefixes)
+    pairs_b = _drop_ignored_subjects(pairs_b, ignore_triple_prefixes)
 
     def collect(pairs, keys):
         rows = sorted(
@@ -98,6 +127,14 @@ def main():
         help="Ignore predicates whose IRI starts with this prefix (repeatable)",
     )
     parser.add_argument(
+        "--ignore-triple-prefix",
+        action="append",
+        default=[],
+        metavar="IRI",
+        help="Ignore triples whose subject IRI starts with this prefix "
+             "(repeatable). Default: " + ", ".join(DEFAULT_IGNORE_TRIPLE_PREFIXES),
+    )
+    parser.add_argument(
         "--output",
         default="compare_result.json",
         metavar="PATH",
@@ -113,6 +150,7 @@ def main():
     args = parser.parse_args()
 
     ignore_prefixes = counts_mod.DEFAULT_IGNORE_PREFIXES + args.ignore_prefix
+    ignore_triple_prefixes = DEFAULT_IGNORE_TRIPLE_PREFIXES + args.ignore_triple_prefix
 
     # -- Step 1: per-predicate counts --------------------------------------
     print("Fetching predicate counts (this may take a while)...", file=sys.stderr)
@@ -167,17 +205,25 @@ def main():
         }
         try:
             entry["triples"] = differing_triples(
-                args.endpoint_a, args.endpoint_b, p, args.timeout, args.max_triples
+                args.endpoint_a, args.endpoint_b, p, args.timeout, args.max_triples,
+                ignore_triple_prefixes,
             )
         except Exception as exc:
             entry["error"] = str(exc)
             print(f"  error: {exc}", file=sys.stderr)
+
+        # Skip predicates whose only differences were ignored triples.
+        tr = entry.get("triples")
+        if tr and tr["only_in_a_total"] == 0 and tr["only_in_b_total"] == 0:
+            print(f"    (no differing triples after ignored prefixes; skipped)",
+                  file=sys.stderr)
+            continue
+
         result["predicates"].append(entry)
 
         print(f"=== {p} ===")
         print(f"    A:{a}  B:{b}  delta(B-A):"
               + ("missing" if a is None or b is None else f"{b - a:+d}"))
-        tr = entry.get("triples")
         if tr:
             print(f"    Only in A (missing from B): {tr['only_in_a_total']} triple(s)"
                   + (f" (showing {len(tr['only_in_a'])})"

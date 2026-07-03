@@ -216,8 +216,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
 			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			/*
 			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
 				"readonly mode; restart the server for proper operation")
+			*/
+			log.info("Entering readonly mode")
+			sail.makeReadonly("Running in readonly mode")
 			db
 		end for
 	end apply

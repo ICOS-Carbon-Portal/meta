@@ -83,13 +83,14 @@ function syntaxHighlight(json) {
 }
 
 function selectText(containerid) {
-	if (document.selection) {
+	if (document.body.createTextRange) {
 		var range = document.body.createTextRange();
 		range.moveToElementText(document.getElementById(containerid));
 		range.select();
 	} else if (window.getSelection) {
 		var range = document.createRange();
-		range.selectNode(document.getElementById(containerid));
+		range.selectNodeContents(document.getElementById(containerid));
+		window.getSelection().removeAllRanges();
 		window.getSelection().addRange(range);
 	}
 }

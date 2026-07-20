@@ -130,6 +130,26 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 				assertCORS()
 				assert(responseAs[String].trim == "dobj,cit")
 
+		it("Citation properties are computed for a valid object") {
+			val objUri = "https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"
+			val query = s"""
+				prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+
+				select ?citation ?biblio where {
+					VALUES ?dobj { <$objUri> }
+					?dobj cpmeta:hasCitationString ?citation ;
+						cpmeta:hasBiblioInfo ?biblio .
+				}
+				"""
+
+			testRoute(query) {
+				assert(status === StatusCodes.OK)
+				val result = responseAs[String]
+				assert(result.contains("ICOS ATC CO2 Release"))
+				assert(result.contains("citationString"))
+			}
+		}
+
 		it("Broken object is excluded from a 'biblioinfo' query on multiple objects"):
 			val objUri = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
 			val query = s"""

@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, Doi
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.{Rdf4jSparqlServer, VirtuosoRepository}
+import se.lu.nateko.cp.meta.services.sparql.enrichment.EnrichingRepository
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -141,7 +142,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val repo = remoteRepo
+		val repo = EnrichingRepository(remoteRepo, citer)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")

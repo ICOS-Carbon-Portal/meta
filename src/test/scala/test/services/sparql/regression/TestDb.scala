@@ -16,7 +16,8 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.sparql.enrichment.EnrichingRepository
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import scala.concurrent.duration.Duration
@@ -42,6 +43,8 @@ private val graphIriToFile = Seq(
 	("http://meta.icos-cp.eu/ontologies/stationentry/" -> "stationEntry.owl") +
 	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
+
+private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
 
 class TestDb {
 	TestRepo.checkout()
@@ -74,10 +77,11 @@ private object TestRepo {
 		val start = System.currentTimeMillis()
 		val repo = SailRepository(MemoryStore())
 		repo.init()
-		ingestTriplestore(repo).map(Done =>
+		ingestTriplestore(repo).map { Done =>
 			log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
-			repo
-		)
+			val citer = new CitationProvider(repo, _ => CitationClientDummy, metaConf)
+			EnrichingRepository(repo, citer)
+		}
 	}
 
 	def checkout() = {

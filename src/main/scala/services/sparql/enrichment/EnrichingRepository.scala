@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.{IRI, Resource, Value, ValueFactory}
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.{DefaultEvaluationStrategy, EvaluationStatistics}
 import org.eclipse.rdf4j.query.algebra.evaluation.{QueryEvaluationStep, TripleSource}
+import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor
 import org.eclipse.rdf4j.query.algebra.{QueryRoot, StatementPattern, TupleExpr}
 import org.eclipse.rdf4j.query.parser.QueryParserUtil
 import org.eclipse.rdf4j.query.{BindingSet, Dataset, GraphQuery, Query, QueryLanguage, TupleQuery}
@@ -24,41 +25,41 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
  * stored statement from the external repository; it does not maintain an RDF store.
  */
 final class EnrichingRepository(base: Repository, citer: CitationProvider)
-	extends RepositoryWrapper(base) {
+	 extends RepositoryWrapper(base) {
 
 	private val computedPredicates = Set(
 		citer.metaVocab.hasBiblioInfo,
 		citer.metaVocab.hasCitationString,
 		citer.metaVocab.dcterms.license
 	)
-	private val localRepo = SailRepository(RepositoryBackedSail(base, StatementsEnricher(citer)))
-	localRepo.init()
+	private val enrichmentRepo = SailRepository(RepositoryBackedSail(base, StatementsEnricher(citer)))
+	enrichmentRepo.init()
 
 	override def getConnection(): RepositoryConnection = {
-		EnrichingRepositoryConnection(this, base.getConnection(), localRepo.getConnection(), computedPredicates)
+		EnrichingRepositoryConnection(this, base.getConnection(), enrichmentRepo.getConnection(), computedPredicates)
 	}
 
 	override def shutDown(): Unit = {
-		try { localRepo.shutDown() }
-		finally { base.shutDown() }
+		try enrichmentRepo.shutDown()
+		finally base.shutDown()
 	}
 }
-
 
 private final class EnrichingRepositoryConnection(
 	repository: Repository,
 	base: RepositoryConnection,
-	local: RepositoryConnection,
+	enriched: RepositoryConnection,
 	computedPredicates: Set[IRI]
 ) extends RepositoryConnectionWrapper(repository, base) {
 
 	private def needsEnrichment(ql: QueryLanguage, query: String, baseUri: String): Boolean = {
 		val parsed = QueryParserUtil.parseQuery(ql, query, baseUri)
 		var result = false
-		parsed.getTupleExpr.visitChildren(new org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor[RuntimeException] {
+		parsed.getTupleExpr.visitChildren(new AbstractQueryModelVisitor[RuntimeException] {
 			override def meet(pattern: StatementPattern): Unit = {
 				val predicate = pattern.getPredicateVar
-				if (!predicate.hasValue || predicate.getValue.isInstanceOf[IRI] &&
+				if (
+					!predicate.hasValue || predicate.getValue.isInstanceOf[IRI] &&
 					computedPredicates.contains(predicate.getValue.asInstanceOf[IRI])
 				) result = true
 			}
@@ -67,7 +68,7 @@ private final class EnrichingRepositoryConnection(
 	}
 
 	private def target(ql: QueryLanguage, query: String, baseUri: String): RepositoryConnection = {
-		if (needsEnrichment(ql, query, baseUri)) local else base
+		if (needsEnrichment(ql, query, baseUri)) enriched else base
 	}
 
 	override def prepareQuery(ql: QueryLanguage, query: String, baseUri: String): Query = {
@@ -83,17 +84,20 @@ private final class EnrichingRepositoryConnection(
 	}
 
 	override def getStatements(
-		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
+		subj: Resource,
+		pred: IRI,
+		obj: Value,
+		includeInferred: Boolean,
+		contexts: Resource*
 	) = {
-		local.getStatements(subj, pred, obj, includeInferred, contexts*)
+		enriched.getStatements(subj, pred, obj, includeInferred, contexts*)
 	}
 
 	override def close(): Unit = {
-		try { local.close() }
-		finally { super.close() }
+		try enriched.close()
+		finally super.close()
 	}
 }
-
 
 private final class RepositoryBackedSail(base: Repository, enricher: StatementsEnricher) extends AbstractSail {
 	private val serviceResolver = SPARQLServiceResolver()
@@ -105,7 +109,6 @@ private final class RepositoryBackedSail(base: Repository, enricher: StatementsE
 	}
 	override protected def shutDownInternal(): Unit = serviceResolver.shutDown()
 }
-
 
 private final class RepositoryBackedSailConnection(
 	sail: RepositoryBackedSail,
@@ -122,7 +125,10 @@ private final class RepositoryBackedSailConnection(
 	}
 
 	override protected def evaluateInternal(
-		tupleExpr: TupleExpr, dataset: Dataset, bindings: BindingSet, includeInferred: Boolean
+		tupleExpr: TupleExpr,
+		dataset: Dataset,
+		bindings: BindingSet,
+		includeInferred: Boolean
 	): CloseableIteration[? <: BindingSet] = {
 		try {
 			val root = tupleExpr.clone() match {
@@ -140,7 +146,11 @@ private final class RepositoryBackedSailConnection(
 	}
 
 	override protected def getStatementsInternal(
-		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
+		subj: Resource,
+		pred: IRI,
+		obj: Value,
+		includeInferred: Boolean,
+		contexts: Resource*
 	) = {
 		enricher.enrich(base.getStatements(subj, pred, obj, includeInferred, contexts*), subj, pred, obj)
 	}
@@ -156,8 +166,8 @@ private final class RepositoryBackedSailConnection(
 	override protected def rollbackInternal(): Unit = ()
 
 	private def readonly(): Nothing = throw SailException("The enriching repository is read-only")
-	override protected def addStatementInternal(subj: Resource, pred: IRI, obj: Value, contexts: Resource*): Unit = readonly()
-	override protected def removeStatementsInternal(subj: Resource, pred: IRI, obj: Value, contexts: Resource*): Unit = readonly()
+	override protected def addStatementInternal(subj: Resource, pred: IRI, obj: Value, ctxs: Resource*) = readonly()
+	override protected def removeStatementsInternal(subj: Resource, pred: IRI, obj: Value, ctxs: Resource*) = readonly()
 	override protected def clearInternal(contexts: Resource*): Unit = readonly()
 	override protected def setNamespaceInternal(prefix: String, name: String): Unit = readonly()
 	override protected def removeNamespaceInternal(prefix: String): Unit = readonly()

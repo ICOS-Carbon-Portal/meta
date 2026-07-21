@@ -1,6 +1,8 @@
 package se.lu.nateko.cp.meta.services.sparql.enrichment
 
 import scala.language.unsafeNulls
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.model.{IRI, Resource, Value, ValueFactory}
@@ -53,18 +55,19 @@ private final class EnrichingRepositoryConnection(
 ) extends RepositoryConnectionWrapper(repository, base) {
 
 	private def needsEnrichment(ql: QueryLanguage, query: String, baseUri: String): Boolean = {
-		val parsed = QueryParserUtil.parseQuery(ql, query, baseUri)
-		var result = false
-		parsed.getTupleExpr.visitChildren(new AbstractQueryModelVisitor[RuntimeException] {
-			override def meet(pattern: StatementPattern): Unit = {
-				val predicate = pattern.getPredicateVar
-				if (
-					!predicate.hasValue || predicate.getValue.isInstanceOf[IRI] &&
-					computedPredicates.contains(predicate.getValue.asInstanceOf[IRI])
-				) result = true
-			}
-		})
-		result
+		boundary {
+			val parsed = QueryParserUtil.parseQuery(ql, query, baseUri)
+			parsed.getTupleExpr.visitChildren(new AbstractQueryModelVisitor[RuntimeException] {
+				override def meet(pattern: StatementPattern): Unit = {
+					val predicate = pattern.getPredicateVar
+					if (
+						!predicate.hasValue || predicate.getValue.isInstanceOf[IRI] &&
+						computedPredicates.contains(predicate.getValue.asInstanceOf[IRI])
+					) break(true)
+				}
+			})
+			false
+		}
 	}
 
 	private def target(ql: QueryLanguage, query: String, baseUri: String): RepositoryConnection = {

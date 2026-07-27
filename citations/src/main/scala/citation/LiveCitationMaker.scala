@@ -216,10 +216,11 @@ class LiveCitationMaker(
 					val station = acq.station.org.name
 					val height = acq.samplingHeight.fold("")(sh => s" ($sh m)")
 					val vars =
-						if dobj.specification.self.uri === vocab.atmGhgProdSpec then
+						if (dobj.specification.self.uri === vocab.atmGhgProdSpec) {
 							stationTs.columns.fold("")(_.collect{
 								case v if v.valueType.unit.isDefined => v.label
 							}.mkString(" (", ", ", ")"))
+						}
 						else ""
 
 					s"$spec$vars from $station$height"
@@ -229,32 +230,33 @@ class LiveCitationMaker(
 		val authorsV: Validated[Seq[Agent]] = {
 
 			lazy val productionAgents = dobj.production.toSeq.flatMap { prod =>
-				if prod.contributors.contains(prod.creator) then prod.contributors
+				if (prod.contributors.contains(prod.creator)) prod.contributors
 				else prod.creator +: prod.contributors
 			}
 
-			if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
+			if (isIcosLikeStationMeas && dobj.specification.dataLevel < 3) {
 				attrProvider.getAuthors(dobj).map { attrAuthors =>
-					if isIcosProject then attrAuthors
+					if (isIcosProject) attrAuthors
 					else {
 						val hasProdPerson = productionAgents.exists {
 							case _: Person => true
 							case _ => false
 						}
-						if hasProdPerson then productionAgents else attrAuthors
+						if (hasProdPerson) productionAgents else attrAuthors
 					}
 				}
+			}
 			else Validated.ok(productionAgents)
 		}
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val projectOpt =
-			if isIcosProject then Some("ICOS RI")
-			else if isMiscProject then None
+			if (isIcosProject) Some("ICOS RI")
+			else if (isMiscProject) None
 			else dobj.specification.project.self.label
 		val yearOpt = productionTime(dobj).map(getYear(zoneId))
 
-		val project = if projectOpt.nonEmpty then projectOpt.mkString("", "", ",") else ""
+		val project = if (projectOpt.nonEmpty) projectOpt.mkString("", "", ",") else ""
 
 		authorsV.map { authors =>
 			val citText = for(

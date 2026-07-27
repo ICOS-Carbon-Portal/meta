@@ -37,12 +37,12 @@ class DataCiteQueueTest extends AnyFunSpec with BeforeAndAfterAll {
 			doiPromises.getOrElseUpdate(doi, Promise()).future
 
 		def complete(doi: Doi, ok: Boolean): Unit = {
-			for style <- DataCiteQueue.NeededStyles do {
+			for (style <- DataCiteQueue.NeededStyles) {
 				val p = citPromises.getOrElseUpdate((doi, style), Promise())
-				if ok then p.trySuccess("the citation") else p.tryFailure(new Exception("DataCite says no"))
+				if (ok) p.trySuccess("the citation") else p.tryFailure(new Exception("DataCite says no"))
 			}
 			val p = doiPromises.getOrElseUpdate(doi, Promise())
-			if ok then p.trySuccess(DoiMeta(doi)) else p.tryFailure(new Exception("DataCite says no"))
+			if (ok) p.trySuccess(DoiMeta(doi)) else p.tryFailure(new Exception("DataCite says no"))
 		}
 
 		def htmlStarted(doi: Doi): Boolean = citPromises.contains(doi -> CitationStyle.HTML)
@@ -61,11 +61,11 @@ class DataCiteQueueTest extends AnyFunSpec with BeforeAndAfterAll {
 	}
 
 	private def entry(name: String, doi: Doi, full: Boolean = true) =
-		DataCiteQueue.Entry(iri(name), doi, Option.when(full)(References.empty))
+		DataCiteQueue.Entry(iri(name), doi, Option.when(full)(References.empty), None)
 
 	private def eventually(test: => Boolean): Unit = {
 		val deadline = System.nanoTime() + 3.seconds.toNanos
-		while !test && System.nanoTime() < deadline do Thread.sleep(10)
+		while (!test && System.nanoTime() < deadline) Thread.sleep(10)
 		assert(test)
 	}
 

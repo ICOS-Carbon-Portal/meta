@@ -10,11 +10,12 @@ import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.meta.core.data.References
+import se.lu.nateko.cp.meta.core.data.{Licence, References}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -27,10 +28,9 @@ import scala.util.{Failure, Success, Try}
  * StatementsEnricher: with a remote SPARQL backend we cannot inject values at
  * query-evaluation time, so we materialize them ahead of time instead.
  *
- * `materializeAll` is incremental: it leaves the derived graph in place and only
- * materializes citations for citable subjects that do not already have a completed
- * bibliographic or citation triple in the derived graph. A licence-only subject is
- * retried, because it means an earlier DataCite completion failed.
+ * The default `materializeAll` run is incremental. Explicit reconciliation modes
+ * can also recompute existing subjects, remove stale subjects, and refresh cached
+ * DataCite fields.
  *
  * The main pass is a pipeline over batches of subjects: while one batch's
  * citations are being computed (in parallel slices, against a [[StatementCache]]
@@ -55,50 +55,68 @@ class CitationMaterializer(
 	private val graphIri: IRI = factory.createIRI(derivedGraph.toString)
 	private val blockingEc: ExecutionContext = system.dispatchers.lookup(BlockingDispatcher)
 	import citer.metaVocab
+	private val reconciler = CitationReconciler(
+		repo, graphIri, metaVocab.hasBiblioInfo, metaVocab.hasCitationString, WriteBatchSize
+	)
 
-	def materializeAll()(using ExecutionContext): Future[Int] = {
+	def materializeAll()(using ExecutionContext): Future[Int] =
+		materializeAll(ReconcileMode.MissingOnly)
+
+	def materializeAll(mode: ReconcileMode)(using ExecutionContext): Future[Int] = {
 		val startNanos = System.nanoTime()
 		val cache = new StatementCache(repo, log)
 		val cacheConn = new CachingConnection(cache)
 		val dcQueue = new DataCiteQueue(citer.doiCiter, writeDataCiteBatch)
+		val refreshedDois = ConcurrentHashMap.newKeySet[Doi]()
 
-		log.info(s"Citation materialization started (graph $derivedGraph)")
+		log.info(s"Citation materialization started in $mode mode (graph $derivedGraph)")
 		log.info("Listing citable subjects...")
 		val listStartNanos = System.nanoTime()
 		val allSubjectsFut = Future(listCitableSubjects())(using blockingEc)
 		val materializedFut = Future(listMaterializedSubjects())(using blockingEc)
+		val derivedSubjectsFut =
+			if (mode.removesStale) Future(listDerivedSubjects())(using blockingEc)
+			else Future.successful(Set.empty[IRI])
 
 		val mainPass =
 			for {
 				allSubjects <- allSubjectsFut
 				alreadyMaterialized <- materializedFut
-				subjects = allSubjects.filterNot(alreadyMaterialized.contains)
+				derivedSubjects <- derivedSubjectsFut
+				subjects =
+					if (mode.reconcilesExisting) allSubjects
+					else allSubjects.filterNot(alreadyMaterialized.contains)
+				stale = if (mode.removesStale) derivedSubjects -- allSubjects.toSet else Set.empty[IRI]
 				_ = log.info(
 					f"Found ${allSubjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
-					f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to materialize), materializing citations..."
+					f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to reconcile, ${stale.size} stale), materializing citations..."
 				)
-				written <- materializeInBatches(subjects, cache, cacheConn, dcQueue)
+				written <- materializeInBatches(subjects, cache, cacheConn, dcQueue, mode, refreshedDois)
 			}
-			yield written
+			yield written -> stale
 
 		mainPass.transformWith {
 			case scala.util.Failure(err) =>
 				// always shut the queue down, so no stream outlives the run
 				dcQueue.drain().transform(_ => scala.util.Failure(err))
-			case Success(mainWritten) =>
-				if dcQueue.pending > 0 then log.info(
+			case Success((mainWritten, stale)) =>
+				if (dcQueue.pending > 0) log.info(
 					s"Main pass done, wrote $mainWritten triples; waiting for the DataCite queue (${dcQueue.pending} subjects pending)"
 				)
-				dcQueue.drain().map { queueWritten =>
-					val written = mainWritten + queueWritten
-					val skipped =
-						if dcQueue.failed + dcQueue.dropped == 0 then ""
-						else s" (${dcQueue.failed} subjects skipped on DataCite failures, ${dcQueue.dropped} dropped from the queue)"
-					log.info(
-						f"Citation materialization finished, wrote $written triples " +
-						f"($queueWritten via the DataCite queue)$skipped in ${(System.nanoTime() - startNanos) / 1e9}%.0f s"
-					)
-					written
+				dcQueue.drain().flatMap { queueWritten =>
+					Future {
+						val pruned = reconciler.remove(stale.toSeq)
+						val written = mainWritten + queueWritten + pruned.mutatedTriples
+						val skipped =
+							if (dcQueue.failed + dcQueue.dropped == 0) ""
+							else s" (${dcQueue.failed} subjects skipped on DataCite failures, ${dcQueue.dropped} dropped from the queue)"
+						log.info(
+							f"Citation materialization finished in $mode mode, changed $written triples " +
+							f"($queueWritten via the DataCite queue, ${pruned.removed} stale subjects removed)$skipped " +
+							f"in ${(System.nanoTime() - startNanos) / 1e9}%.0f s"
+						)
+						written
+					}(using blockingEc)
 				}
 		}
 	}
@@ -125,13 +143,21 @@ class CitationMaterializer(
 		querySubjectsPaged(q).toSet
 	}
 
+	private def listDerivedSubjects(): Set[IRI] = {
+		val q = s"""
+			|SELECT DISTINCT ?s WHERE {
+			|  GRAPH <$derivedGraph> { ?s ?p ?o }
+			|}""".stripMargin
+		querySubjectsPaged(q).toSet
+	}
+
 	/** Virtuoso may cap an otherwise successful result. The ordered subquery is its
 	 *  scrollable-cursor pattern and keeps OFFSET outside MaxSortedTopRows. */
 	private def querySubjectsPaged(query: String): IndexedSeq[IRI] = {
 		val all = ArrayBuffer.empty[IRI]
 		var offset = 0
 		var more = true
-		while more do {
+		while (more) {
 			val paged = s"SELECT ?s WHERE { { $query ORDER BY ?s } } LIMIT $SubjectPageSize OFFSET $offset"
 			val page = querySubjects(paged)
 			all ++= page
@@ -146,12 +172,14 @@ class CitationMaterializer(
 		try {
 			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
 			val buf = ArrayBuffer.empty[IRI]
-			try
-				while result.hasNext() do
+			try {
+				while (result.hasNext()) {
 					result.next().getValue("s") match {
 						case iri: IRI => buf += iri
 						case _ => ()
 					}
+				}
+			}
 			finally result.close()
 			buf.toIndexedSeq
 		}
@@ -166,10 +194,10 @@ class CitationMaterializer(
 		prefetchMs: Long = 0,
 		computeMs: Long = 0,
 		deferred: Int = 0,
-		triples: IndexedSeq[Statement] = IndexedSeq.empty
+		desired: IndexedSeq[DesiredCitation] = IndexedSeq.empty
 	)
 	private case class PreparedSubject(
-		readyTriples: IndexedSeq[Statement],
+		desired: Option[DesiredCitation],
 		deferred: Option[DataCiteQueue.Entry]
 	)
 
@@ -180,7 +208,12 @@ class CitationMaterializer(
 	 * computation of subsequent batches).
 	 */
 	private def materializeInBatches(
-		subjects: IndexedSeq[IRI], cache: StatementCache, cacheConn: CachingConnection, dcQueue: DataCiteQueue
+		subjects: IndexedSeq[IRI],
+		cache: StatementCache,
+		cacheConn: CachingConnection,
+		dcQueue: DataCiteQueue,
+		mode: ReconcileMode,
+		refreshedDois: java.util.Set[Doi]
 	)(using ExecutionContext): Future[Int] = {
 		val total = subjects.size
 		val progress = new Progress(total, batchCount = (total + WriteBatchSize - 1) / WriteBatchSize)
@@ -195,15 +228,13 @@ class CitationMaterializer(
 					Batch(chunk, batchIdx, statsBefore, prefetchMs = (System.nanoTime() - t0) / 1000000)
 				}(using blockingEc)
 			}
-			.mapAsync(1)(batch => computeBatch(batch, total, cacheConn, dcQueue))
+			.mapAsync(1)(batch => computeBatch(batch, total, cacheConn, dcQueue, mode, refreshedDois))
 			.mapAsync(WriteAhead) { batch =>
 				Future {
 					val t0 = System.nanoTime()
-					repo.transact { conn =>
-						for t <- batch.triples do conn.add(t, graphIri)
-					}.get
+					val stats = reconciler.reconcile(batch.desired)
 					progress.logBatch(batch, writeMs = (System.nanoTime() - t0) / 1000000, sparql = cache.stats.minus(batch.statsBefore))
-					batch.triples.size
+					stats.mutatedTriples
 				}(using blockingEc)
 			}
 			.runWith(Sink.fold(0)(_ + _))
@@ -212,25 +243,36 @@ class CitationMaterializer(
 	/** Computes a batch's citation triples in parallel slices; deferred (DataCite-pending)
 	 *  subjects are pushed to the queue in subject order after the slices join. */
 	private def computeBatch(
-		batch: Batch, total: Int, cacheConn: CachingConnection, dcQueue: DataCiteQueue
+		batch: Batch,
+		total: Int,
+		cacheConn: CachingConnection,
+		dcQueue: DataCiteQueue,
+		mode: ReconcileMode,
+		refreshedDois: java.util.Set[Doi]
 	)(using ExecutionContext): Future[Batch] = {
 		val t0 = System.nanoTime()
 		val sliceSize = math.max(1, (batch.chunk.size + ComputeParallelism - 1) / ComputeParallelism)
 		val slices = batch.chunk.grouped(sliceSize).toIndexedSeq
+		val existing =
+			if (mode.reconcilesExisting) reconciler.loadExisting(batch.chunk.map(_._1))
+			else Map.empty[IRI, ExistingCitation]
 
 		Future
 			.traverse(slices) { slice =>
 				Future {
-					val triples = ArrayBuffer.empty[Statement]
+					val desired = ArrayBuffer.empty[DesiredCitation]
 					val deferred = ArrayBuffer.empty[(DataCiteQueue.Entry, Int)]
 					for ((subj, idx) <- slice)
-						prepareSubject(subj, s"${idx + 1}/$total", cacheConn) match {
+						prepareSubject(
+							subj, s"${idx + 1}/$total", cacheConn, mode,
+							existing.get(subj), refreshedDois
+						) match {
 							case Some(prepared) =>
-								triples ++= prepared.readyTriples
+								prepared.desired.foreach(desired += _)
 								prepared.deferred.foreach(entry => deferred += ((entry, idx)))
 							case None => ()
 						}
-					(triples, deferred)
+					(desired, deferred)
 				}(using blockingEc)
 			}
 			.flatMap { results =>
@@ -239,7 +281,7 @@ class CitationMaterializer(
 					batch.copy(
 						computeMs = (System.nanoTime() - t0) / 1000000,
 						deferred = results.map(_._2.size).sum,
-						triples = results.flatMap(_._1).toIndexedSeq
+						desired = results.flatMap(_._1).toIndexedSeq
 					)
 				}
 			}
@@ -248,19 +290,29 @@ class CitationMaterializer(
 	/** Computes all triplestore-dependent data once. DOI-dependent fields are
 	 *  completed later by DataCiteQueue without rereading the subject. */
 	private def prepareSubject(
-		subj: IRI, tag: String, conn: CachingConnection
+		subj: IRI,
+		tag: String,
+		conn: CachingConnection,
+		mode: ReconcileMode,
+		existing: Option[ExistingCitation],
+		refreshedDois: java.util.Set[Doi]
 	): Option[PreparedSubject] =
 		Try {
 			subjectDoi(subj, conn) match {
-				case None => PreparedSubject(triplesFor(subj, tag, conn), None)
+				case None => PreparedSubject(Some(DesiredCitation(subj, triplesFor(subj, tag, conn))), None)
 				case Some(doi) =>
 					val refsBase = citer.getStructuralReferences(subj, conn).map(stripDataCite)
 					val licence = refsBase.flatMap(_.licence).orElse(citer.getLicence(subj, conn))
-					val ready = licence.toIndexedSeq.map(lic =>
-						factory.createStatement(subj, metaVocab.dcterms.license, lic.url.toRdf)
-					)
-					log.debug(s"[$tag] Deferred $subj to the DataCite queue (DOI $doi)")
-					PreparedSubject(ready, Some(DataCiteQueue.Entry(subj, doi, refsBase)))
+					reuseDataCite(subj, doi, refsBase, licence, existing, mode) match {
+						case Some(triples) =>
+							PreparedSubject(Some(DesiredCitation(subj, triples)), None)
+						case None =>
+							if (mode.refreshesDataCite && refreshedDois.add(doi)) {
+								citer.doiCiter.dropCache(doi)
+							}
+							log.debug(s"[$tag] Deferred $subj to the DataCite queue (DOI $doi)")
+							PreparedSubject(None, Some(DataCiteQueue.Entry(subj, doi, refsBase, licence)))
+					}
 			}
 		}
 		match {
@@ -270,14 +322,47 @@ class CitationMaterializer(
 				None
 		}
 
+	private def reuseDataCite(
+		subj: IRI,
+		doi: Doi,
+		refsBase: Option[References],
+		licence: Option[Licence],
+		existing: Option[ExistingCitation],
+		mode: ReconcileMode
+	): Option[IndexedSeq[Statement]] =
+		if (!mode.reconcilesExisting || mode.refreshesDataCite) None
+		else
+			refsBase match {
+				case Some(base) =>
+					existing.flatMap(_.references)
+						.filter(refs =>
+							refs.citationString.nonEmpty &&
+							refs.citationBibTex.nonEmpty &&
+							refs.citationRis.nonEmpty &&
+							refs.doi.exists(_.doi == doi)
+						)
+						.map { stored =>
+							triplesFromReferences(subj, base.copy(
+								citationString = stored.citationString,
+								citationBibTex = stored.citationBibTex,
+								citationRis = stored.citationRis,
+								doi = stored.doi
+							))
+						}
+				case None =>
+					existing.flatMap(_.citationString).map(citation =>
+						citationAndLicence(subj, citation, licence)
+					)
+			}
+
 	private def stripDataCite(refs: References): References = refs.copy(
 		citationString = None, citationBibTex = None, citationRis = None, doi = None
 	)
 
 	private def writeDataCiteBatch(completed: Seq[DataCiteQueue.Completed]): Int = {
-		val triples = completed.flatMap { item =>
+		val desired = completed.map { item =>
 			import item.{bundle, entry}
-			entry.refsBase match {
+			val triples = entry.refsBase match {
 				case Some(base) =>
 					val refs = base.copy(
 						citationString = Some(bundle.html),
@@ -285,18 +370,15 @@ class CitationMaterializer(
 						citationRis = bundle.ris,
 						doi = bundle.meta
 					)
-					biblioAndCitation(entry.subj, refs)
+					triplesFromReferences(entry.subj, refs)
 				case None =>
-					IndexedSeq(factory.createStatement(
-						entry.subj, metaVocab.hasCitationString, factory.createStringLiteral(bundle.html)
-					))
+					citationAndLicence(entry.subj, bundle.html, entry.licence)
 			}
+			DesiredCitation(entry.subj, triples)
 		}
-		repo.transact { conn =>
-			for t <- triples do conn.add(t, graphIri)
-		}.get
-		log.info(s"DataCite queue: materialized ${completed.size} subjects (${triples.size} triples)")
-		triples.size
+		val stats = reconciler.reconcile(desired)
+		log.info(s"DataCite queue: reconciled ${completed.size} subjects (${stats.mutatedTriples} changed triples)")
+		stats.mutatedTriples
 	}
 
 	/** The first valid DOI of the subject, if any. */
@@ -326,17 +408,19 @@ class CitationMaterializer(
 		}
 
 		val durMs = (System.nanoTime() - startNanos) / 1000000
-		if out.isEmpty then
+		if (out.isEmpty) {
 			log.info(s"[$tag] No citation triples produced for $subj (${durMs} ms)")
-		else
+		}
+		else {
 			log.info(
 				s"[$tag] Materialized ${out.size} triples for $subj in ${durMs} ms " +
 				s"[biblio=$hasBiblio, citation=${citationOpt.isDefined}, licence=${licenceOpt.isDefined}]"
 			)
+		}
 		out.toIndexedSeq
 	}
 
-	private def biblioAndCitation(subj: IRI, refs: References): IndexedSeq[Statement] = {
+	private def triplesFromReferences(subj: IRI, refs: References): IndexedSeq[Statement] = {
 		val out = ArrayBuffer.empty[Statement]
 		biblioLiteral(Some(refs)).foreach(lit =>
 			out += factory.createStatement(subj, metaVocab.hasBiblioInfo, lit)
@@ -344,8 +428,20 @@ class CitationMaterializer(
 		refs.citationString.foreach(cit =>
 			out += factory.createStatement(subj, metaVocab.hasCitationString, factory.createStringLiteral(cit))
 		)
+		refs.licence.foreach(lic =>
+			out += factory.createStatement(subj, metaVocab.dcterms.license, lic.url.toRdf)
+		)
 		out.toIndexedSeq
 	}
+
+	private def citationAndLicence(
+		subj: IRI, citation: String, licence: Option[Licence]
+	): IndexedSeq[Statement] =
+		IndexedSeq(factory.createStatement(
+			subj, metaVocab.hasCitationString, factory.createStringLiteral(citation)
+		)) ++ licence.map(lic =>
+			factory.createStatement(subj, metaVocab.dcterms.license, lic.url.toRdf)
+		)
 
 	private def biblioLiteral(refs: Option[References]): Option[Value] = {
 		import spray.json.*
@@ -360,11 +456,11 @@ class CitationMaterializer(
 
 		def logBatch(batch: Batch, writeMs: Long, sparql: StatementCache.Snapshot): Unit = synchronized {
 			processed += batch.chunk.size
-			written += batch.triples.size
+			written += batch.desired.iterator.map(_.triples.size).sum
 			deferred += batch.deferred
 			val elapsedS = (System.nanoTime() - startNanos) / 1e9
-			val rate = if elapsedS > 0 then processed / elapsedS else 0.0
-			val etaS = if rate > 0 then (total - processed) / rate else 0.0
+			val rate = if (elapsedS > 0) processed / elapsedS else 0.0
+			val etaS = if (rate > 0) (total - processed) / rate else 0.0
 			log.info(
 				f"Citation materialization progress: batch ${batch.idx + 1}/$batchCount " +
 				f"(prefetch ${batch.prefetchMs} ms, compute ${batch.computeMs} ms, write ${writeMs} ms), " +
@@ -375,7 +471,7 @@ class CitationMaterializer(
 		}
 	}
 
-} // end CitationMaterializer
+}
 
 object CitationMaterializer {
 	val WriteBatchSize = 1000
@@ -398,4 +494,4 @@ object CitationMaterializer {
 	 *  self-starve. */
 	val BlockingDispatcher = "akka.actor.default-blocking-io-dispatcher"
 
-} // end CitationMaterializer
+}

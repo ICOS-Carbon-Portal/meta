@@ -36,8 +36,9 @@ class CitationMaterializationService(
 	}
 
 	private def scheduleNext(delay: FiniteDuration): Unit = synchronized {
-		if !stopped then
+		if (!stopped) {
 			scheduled = Some(system.scheduler.scheduleOnce(delay)(runOnce()))
+		}
 	}
 
 	private def runOnce(): Unit =

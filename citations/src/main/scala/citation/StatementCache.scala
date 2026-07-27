@@ -67,7 +67,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 	/** All statements with the given subject, across all named graphs. */
 	def subjectStatements(subj: IRI): IndexedSeq[Statement] = {
 		val cached = lock.synchronized(subjects.get(subj))
-		if cached != null then {
+		if (cached != null) {
 			hitCount.incrementAndGet()
 			cached
 		}
@@ -81,15 +81,15 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 	/** All statements with the given object (optionally restricted to a predicate), across all named graphs. */
 	def incomingStatements(pred: IRI | Null, obj: Value): IndexedSeq[Statement] = {
 		val allIncoming = lock.synchronized(incoming.get(obj))
-		if allIncoming != null then {
+		if (allIncoming != null) {
 			hitCount.incrementAndGet()
-			if pred == null then allIncoming
+			if (pred == null) allIncoming
 			else allIncoming.filter(_.getPredicate == pred)
 		}
-		else if pred != null then {
+		else if (pred != null) {
 			val key = (pred, obj)
 			val cached = lock.synchronized(reverse.get(key))
-			if cached != null then {
+			if (cached != null) {
 				hitCount.incrementAndGet()
 				cached
 			}
@@ -136,11 +136,11 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 		val referrers = incomingStmts.iterator.map(_.getSubject).collect{ case iri: IRI => iri }
 		var toFetch: Seq[IRI] = (batch.iterator ++ referrers).distinct.filterNot(isCachedSubject).toIndexedSeq
 		var depth = 0
-		while toFetch.nonEmpty && depth <= ExpansionDepth do {
+		while (toFetch.nonEmpty && depth <= ExpansionDepth) {
 			val fetched = fetchSubjects(toFetch)
 			depth += 1
 			toFetch =
-				if depth > ExpansionDepth then Nil
+				if (depth > ExpansionDepth) Nil
 				else fetched.iterator
 					.map(_.getObject)
 					.collect{ case iri: IRI => iri }
@@ -242,9 +242,11 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 		queryCount.incrementAndGet()
 		repo.accessEagerly { conn =>
 			val res = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
-			try while res.hasNext() do {
-				rowCount.incrementAndGet()
-				handler(res.next())
+			try {
+				while (res.hasNext()) {
+					rowCount.incrementAndGet()
+					handler(res.next())
+				}
 			}
 			finally res.close()
 		}
@@ -259,9 +261,11 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 			for ((name, value) <- bindings) tq.setBinding(name, value)
 			val res = tq.evaluate()
 			val buf = ArrayBuffer.empty[Statement]
-			try while res.hasNext() do {
-				rowCount.incrementAndGet()
-				buf ++= parser(res.next())
+			try {
+				while (res.hasNext()) {
+					rowCount.incrementAndGet()
+					buf ++= parser(res.next())
+				}
 			}
 			finally res.close()
 			buf.toIndexedSeq
@@ -275,7 +279,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter) {
 		interned.putIfAbsent(v, v) match {
 			case Some(existing) => existing.asInstanceOf[V]
 			case None =>
-				if internedCount.incrementAndGet() > InternCap then {
+				if (internedCount.incrementAndGet() > InternCap) {
 					interned.clear()
 					internedCount.set(0)
 				}
@@ -346,13 +350,17 @@ class CachingConnection(
 
 	override def factory: ValueFactory = cache.factory
 
-	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
-		if subject != null then
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
+		if (subject != null) {
 			wrap(cache.subjectStatements(subject).iterator.filter(matches(predicate, obj)))
-		else if obj != null then
+		}
+		else if (obj != null) {
 			wrap(cache.incomingStatements(predicate, obj).iterator.filter(matches(predicate, obj)))
-		else
+		}
+		else {
 			cache.uncachedStatements(subject, predicate, obj, readContexts)
+		}
+	}
 
 	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = {
 		val iter = getStatements(subject, predicate, obj)
@@ -369,11 +377,13 @@ class CachingConnection(
 
 	private def wrap(stmts: Iterator[Statement]): CloseableIterator[Statement] = {
 		val scoped =
-			if readContexts.isEmpty then
+			if (readContexts.isEmpty) {
 				// no graph scoping: union over all graphs, deduplicated like a triple-level read
 				stmts.distinctBy(st => (st.getSubject, st.getPredicate, st.getObject))
-			else
+			}
+			else {
 				stmts.filter(st => readContexts.contains(st.getContext))
+			}
 		CloseableIterator.Wrap(scoped, () => ())
 	}
 

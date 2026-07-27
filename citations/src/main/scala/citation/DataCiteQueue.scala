@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.core.data.References
+import se.lu.nateko.cp.meta.core.data.{Licence, References}
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Future
@@ -53,7 +53,7 @@ class DataCiteQueue(
 						s"DataCite lookups failed for DOI ${entry.doi}, skipping ${entry.subj} (will be retried on the next run)"
 					)
 				val completed = ok.flatMap((entry, bundle) => bundle.map(Completed(entry, _)))
-				val written = if completed.isEmpty then 0 else writeBatch(completed)
+				val written = if (completed.isEmpty) 0 else writeBatch(completed)
 				processedCount.addAndGet(batch.size)
 				written
 			}(using blockingEc)
@@ -89,14 +89,13 @@ class DataCiteQueue(
 	private def dataCiteLookups(entry: Entry): Future[Option[Bundle]] = {
 		val html = doiCiter.getCitation(entry.doi, CitationStyle.HTML)
 		val bundle =
-			if entry.refsBase.isEmpty then html.map(cit => Bundle(cit, None, None, None))
+			if (entry.refsBase.isEmpty) html.map(cit => Bundle(cit, None, None, None))
 			else for {
 				cit <- html
 				bibtex <- doiCiter.getCitation(entry.doi, CitationStyle.bibtex)
 				ris <- doiCiter.getCitation(entry.doi, CitationStyle.ris)
 				meta <- doiCiter.getDoiMeta(entry.doi)
-			}
-			yield Bundle(cit, Some(bibtex), Some(ris), Some(meta))
+			} yield Bundle(cit, Some(bibtex), Some(ris), Some(meta))
 		bundle.map(Some(_)).recover {
 			case _ => None
 		}
@@ -114,7 +113,7 @@ object DataCiteQueue {
 	 *  HTML, BibTeX and RIS citation strings plus the DOI metadata. */
 	val NeededStyles = Seq(CitationStyle.HTML, CitationStyle.bibtex, CitationStyle.ris)
 
-	final case class Entry(subj: IRI, doi: Doi, refsBase: Option[References])
+	final case class Entry(subj: IRI, doi: Doi, refsBase: Option[References], licence: Option[Licence])
 	final case class Bundle(html: String, bibtex: Option[String], ris: Option[String], meta: Option[DoiMeta])
 	final case class Completed(entry: Entry, bundle: Bundle)
 

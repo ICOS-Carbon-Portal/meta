@@ -4,16 +4,18 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
+import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.utils.parseCommaSepList
-import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 /**
  * Replaces every `hasKeywords` (plural, comma-separated) literal in the triplestore with
@@ -38,6 +40,10 @@ import scala.concurrent.{ExecutionContext, Future}
  * exactly what is left. Re-adding an already-present `hasKeyword` triple is a no-op in RDF,
  * which makes the whole pass idempotent.
  *
+ * Both the writing and the deleting are done with SPARQL updates we build ourselves rather
+ * than through `RepositoryConnection.add`/`remove`, because rdf4j's literals are not
+ * interchangeable with Virtuoso's: see [[plainLiteral]].
+ *
  * A `hasKeywords` literal that parses to no keywords at all (empty, or only separators) has
  * no singular counterpart to confirm, so it is reported and left untouched rather than
  * deleted without replacement.
@@ -49,7 +55,7 @@ class KeywordSplitter(
 	import KeywordSplitter.{SplitSummary, SubjectKeywords}
 
 	private val log = Logging.getLogger(system, this)
-	private given factory: ValueFactory = repo.getValueFactory
+	private val sparql = new Rdf4jSparqlRunner(repo)
 
 	// Pagination guards against the triplestore silently truncating large result sets:
 	// Virtuoso's /sparql endpoint caps rows at ResultSetMaxRows (commonly 10000) and can
@@ -108,8 +114,8 @@ class KeywordSplitter(
 		while more do
 			val q = s"""
 				|SELECT DISTINCT ?subj WHERE {
-				|  GRAPH ?g { ?subj <${metaVocab.hasKeywords}> ?keywords . }
-				|  FILTER(STR(?subj) > ${asSparqlString(cursor)})
+				|  GRAPH ?g { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }
+				|  FILTER(STR(?subj) > ${plainLiteral(cursor)})
 				|}
 				|ORDER BY STR(?subj)
 				|LIMIT $SubjectPageSize""".stripMargin
@@ -152,8 +158,8 @@ class KeywordSplitter(
 	private def fetchKeywords(batch: collection.Seq[IRI]): (IndexedSeq[SubjectKeywords], IndexedSeq[IRI]) =
 		val q = s"""
 			|SELECT ?subj ?g ?keywords WHERE {
-			|  VALUES ?subj { ${batch.map(subj => s"<$subj>").mkString(" ")} }
-			|  GRAPH ?g { ?subj <${metaVocab.hasKeywords}> ?keywords . }
+			|  VALUES ?subj { ${batch.map(iriRef).mkString(" ")} }
+			|  GRAPH ?g { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }
 			|}""".stripMargin
 
 		// several hasKeywords literals may sit on the same subject in the same graph, and
@@ -180,14 +186,22 @@ class KeywordSplitter(
 
 		groups.toIndexedSeq -> empties.toIndexedSeq.distinct
 
-	/** Adds the singular triples to the graph their `hasKeywords` source lives in. */
+	/**
+	 * Adds the singular triples to the graph their `hasKeywords` source lives in, one
+	 * `INSERT DATA` per graph, with the keywords as plain literals (see [[plainLiteral]]).
+	 */
 	private def writeKeywords(groups: IndexedSeq[SubjectKeywords]): Int =
 		var written = 0
-		repo.transact { conn =>
-			for group <- groups; kw <- group.keywords do
-				conn.add(group.subj, metaVocab.hasKeyword, factory.createStringLiteral(kw), group.graph)
-				written += 1
-		}.get
+		for (graph, inGraph) <- groups.groupBy(_.graph) do
+			val triples = for group <- inGraph; kw <- group.keywords
+				yield s"${iriRef(group.subj)} ${iriRef(metaVocab.hasKeyword)} ${plainLiteral(kw)} ."
+
+			update(s"""
+				|INSERT DATA { GRAPH ${iriRef(graph)} {
+				|${triples.mkString("\n")}
+				|} }""".stripMargin)
+			written += triples.size
+
 		log.debug(s"Wrote $written hasKeyword triples for ${groups.size} subject/graph pairs")
 		written
 
@@ -206,8 +220,8 @@ class KeywordSplitter(
 		for (graph, inGraph) <- groups.groupBy(_.graph) do
 			val q = s"""
 				|SELECT ?subj ?kw WHERE {
-				|  VALUES ?subj { ${inGraph.map(g => s"<${g.subj}>").mkString(" ")} }
-				|  GRAPH <$graph> { ?subj <${metaVocab.hasKeyword}> ?kw . }
+				|  VALUES ?subj { ${inGraph.map(g => iriRef(g.subj)).mkString(" ")} }
+				|  GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeyword)} ?kw . }
 				|}""".stripMargin
 
 			select(q): bindings =>
@@ -228,27 +242,76 @@ class KeywordSplitter(
 				)
 				false
 
-	/** Deletes the exact `hasKeywords` statements the confirmed keywords came from. */
+	/**
+	 * Deletes the `hasKeywords` statements the confirmed keywords came from, one
+	 * `DELETE ... WHERE` per graph. The statements are matched by subject and predicate, with
+	 * the literal left as a variable, rather than by their exact term: Virtuoso would not
+	 * match a term we send back to it (see [[plainLiteral]]), and every `hasKeywords` literal
+	 * of a confirmed subject in that graph was read and split by [[fetchKeywords]] anyway.
+	 *
+	 * The count returned is what the store actually lost, established by counting the
+	 * remaining `hasKeywords` of the same subjects afterwards, so that a delete which matches
+	 * nothing cannot be reported as a success.
+	 */
 	private def deleteSources(confirmed: IndexedSeq[SubjectKeywords]): Int =
 		var deleted = 0
-		repo.transact { conn =>
-			for group <- confirmed; source <- group.sources do
-				conn.remove(group.subj, metaVocab.hasKeywords, source, group.graph)
-				deleted += 1
-		}.get
+		for (graph, inGraph) <- confirmed.groupBy(_.graph) do
+			val subjFilter = s"FILTER(?subj IN (${inGraph.map(g => iriRef(g.subj)).mkString(", ")}))"
+			val pattern = s"GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }"
+
+			update(s"""
+				|DELETE { $pattern }
+				|WHERE { $pattern $subjFilter }""".stripMargin)
+
+			var remaining = 0
+			select(s"""
+				|SELECT ?subj ?keywords WHERE {
+				|  $pattern
+				|  $subjFilter
+				|}""".stripMargin)(_ => remaining += 1)
+
+			val expected = inGraph.map(_.sources.size).sum
+			deleted += expected - remaining
+			if remaining > 0 then log.warning(
+				s"$remaining of $expected hasKeywords statements in graph <$graph> survived " +
+				s"their deletion; re-running will retry them"
+			)
+
 		log.debug(s"Deleted $deleted hasKeywords triples")
 		deleted
 
 	private def select(query: String)(handleRow: BindingSet => Unit): Unit =
-		val conn = repo.getConnection()
-		try
-			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
-			try while result.hasNext() do handleRow(result.next())
-			finally result.close()
-		finally conn.close()
+		Using.resource(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.foreach(handleRow))
 
-	private def asSparqlString(value: String): String =
-		"\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+	/**
+	 * Runs a SPARQL update. Note that we write the updates ourselves instead of using
+	 * `RepositoryConnection.add`/`remove`, whose statements rdf4j would serialize for us: see
+	 * [[plainLiteral]] for why their literals cannot be matched by Virtuoso.
+	 */
+	private def update(query: String): Unit = Using.resource(repo.getConnection()):
+		_.prepareUpdate(QueryLanguage.SPARQL, query).execute()
+
+	/**
+	 * A string as a SPARQL plain literal, that is, without the `^^xsd:string` datatype.
+	 *
+	 * The two are the same term in RDF 1.1, and rdf4j treats them as such, but Virtuoso does
+	 * not: a plain literal in the store is matched neither by `"kw"^^xsd:string` in a DELETE
+	 * nor in a query, and vice versa, silently and without error. rdf4j, on the other hand,
+	 * serializes string literals *with* the datatype: its
+	 * `BasicWriterSettings.XSD_STRING_TO_PLAIN_LITERAL` defaults to false, so going through
+	 * `RepositoryConnection.add`/`remove` would both write `hasKeyword` triples that the
+	 * plain-literal queries of the portal cannot find, and delete nothing at all — the
+	 * `hasKeywords` literals in the store are plain.
+	 *
+	 * The escaping of the label itself is rdf4j's, in the variant that escapes non-ASCII and
+	 * non-printable characters as `\\uXXXX`, so that not even the control characters our data
+	 * is known to contain can break the query.
+	 */
+	private def plainLiteral(value: String): String =
+		"\"" + NTriplesUtil.escapeString(value) + "\""
+
+	/** An IRI in the `<...>` form, escaped by rdf4j. */
+	private def iriRef(iri: IRI): String = NTriplesUtil.toNTriplesString(iri)
 
 end KeywordSplitter
 

@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
 
-class StatementCacheTest extends AnyFunSpec:
+class StatementCacheTest extends AnyFunSpec {
 
 	private val factory = org.eclipse.rdf4j.model.impl.SimpleValueFactory.getInstance()
 
@@ -19,10 +19,10 @@ class StatementCacheTest extends AnyFunSpec:
 	private val (objA, objB, refB) = (iri("objA"), iri("objB"), iri("refB"))
 	private val (name, links, label, isNextVersionOf) = (iri("hasName"), iri("links"), iri("label"), iri("isNextVersionOf"))
 
-	private def makeRepo: Repository =
+	private def makeRepo: Repository = {
 		val repo = new SailRepository(new MemoryStore)
 		val conn = repo.getConnection()
-		try
+		try {
 			conn.add(objA, name, factory.createLiteral("a.csv"), g1)
 			conn.add(objA, links, refB, g1)
 			// same triple in both graphs, to test deduplication of union reads
@@ -30,12 +30,15 @@ class StatementCacheTest extends AnyFunSpec:
 			conn.add(objA, label, factory.createLiteral("A"), g2)
 			conn.add(refB, label, factory.createLiteral("B"), g2)
 			conn.add(objB, isNextVersionOf, objA, g2)
+		}
 		finally conn.close()
 		repo
+	}
 
-	private def makeConn: (StatementCache, CachingConnection) =
+	private def makeConn: (StatementCache, CachingConnection) = {
 		val cache = new StatementCache(makeRepo, NoLogging)
 		(cache, new CachingConnection(cache))
+	}
 
 	describe("CachingConnection"){
 
@@ -81,13 +84,16 @@ class StatementCacheTest extends AnyFunSpec:
 			import scala.concurrent.duration.DurationInt
 			import scala.concurrent.ExecutionContext.Implicits.global
 			val (cache, conn) = makeConn
-			val readers = (1 to 16).map: _ =>
-				Future:
-					(1 to 200).foreach: _ =>
+			val readers = (1 to 16).map { _ =>
+				Future {
+					(1 to 200).foreach { _ =>
 						assert(conn.getStatements(objA, null, null).toIndexedSeq.size === 3)
 						assert(conn.getStatements(null, isNextVersionOf, objA).toIndexedSeq.map(_.getSubject) === Seq(objB))
 						assert(conn.hasStatement(objA, name, null))
 						cache.prefetch(Seq(objA, objB))
+					}
+				}
+			}
 			Await.result(Future.sequence(readers), 30.seconds)
 		}
 
@@ -105,4 +111,4 @@ class StatementCacheTest extends AnyFunSpec:
 		}
 	}
 
-end StatementCacheTest
+} // end StatementCacheTest

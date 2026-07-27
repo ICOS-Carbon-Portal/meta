@@ -20,9 +20,10 @@ class StructuredCitations(
 		case _ => None
 	}
 
-	private val titleWithTempCov = for
+	private val titleWithTempCov = for {
 			title <- citInfo.title;
 			tempCovDisplay <- citInfo.tempCovDisplay
+	}
 		yield
 			s"${title}, ${tempCovDisplay}"
 

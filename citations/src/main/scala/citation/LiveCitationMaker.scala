@@ -42,7 +42,7 @@ class LiveCitationMaker(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	coreConf: MetaCoreConfig
-) extends CitationInfoProvider:
+) extends CitationInfoProvider {
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
 	import Validated.getOrElseV
@@ -62,78 +62,109 @@ class LiveCitationMaker(
 	)
 
 	def getCitationInfo(sobj: StaticObject)(using Envri, DocConn | DobjConn): Validated[References] =
-		for
-			citInfo <- sobj match
+		getCitationInfo(sobj, includeDataCite = true)
+
+	/** The same canonical citation construction without touching DataCite. Used by
+	 *  bulk materialization to prepare a queue job exactly once. */
+	val structural: CitationInfoProvider = new CitationInfoProvider {
+		def getCitationInfo(sobj: StaticObject)(using Envri, DocConn | DobjConn): Validated[References] =
+			LiveCitationMaker.this.getCitationInfo(sobj, includeDataCite = false)
+
+		def getItemCitationInfo(item: CitableItem, itemIri: IRI)(using GlobConn): References =
+			item.references.copy(citationString = None, citationBibTex = None, citationRis = None, doi = None)
+	}
+
+	private def getCitationInfo(
+		sobj: StaticObject, includeDataCite: Boolean
+	)(using Envri, DocConn | DobjConn): Validated[References] =
+		for {
+			citInfo <- sobj match {
 				case doc:  DocObject  => Validated(getDocCitation(doc))
-				case dobj: DataObject => summon[Envri] match
+				case dobj: DataObject => summon[Envri] match {
 					case Envri.SITES => Validated(getSitesCitation(dobj))
 					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
+				}
+			}
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
 			theLicence <- getLicence(dobj)
-		yield
+		}
+		yield {
 			val keywords = keywordsS.map(s => parseCommaSepList(s).toIndexedSeq)
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
+			val dataCiteCitation = Option.when(includeDataCite)(getDoiCitation(sobj, CitationStyle.HTML)).flatten
+			val dataCiteBibTex = Option.when(includeDataCite)(getDoiCitation(sobj, CitationStyle.bibtex)).flatten
+			val dataCiteRis = Option.when(includeDataCite)(getDoiCitation(sobj, CitationStyle.ris)).flatten
+			val doiMeta = Option.when(includeDataCite)(getDoiMeta(sobj)).flatten
 			val coreRefs = sobj.references.copy(
-				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
-				doi = getDoiMeta(sobj),
+				citationString = dataCiteCitation.orElse(citInfo.citText),
+				citationBibTex = dataCiteBibTex.orElse(Some(structuredCitations.toBibTex)),
+				citationRis = dataCiteRis.orElse(Some(structuredCitations.toRis)),
+				doi = doiMeta,
 				authors = citInfo.authors,
 				title = citInfo.title,
 				licence = Some(theLicence),
 				keywords = keywords
 			)
 
-			sobj match
+			sobj match {
 				case data: DataObject => coreRefs.copy(
 					temporalCoverageDisplay = citInfo.tempCovDisplay,
 					acknowledgements = Option(getFundingAcknowledgements(data)).filter(_.nonEmpty),
 				)
 				case _: DocObject => coreRefs
+			}
+		}
 
-	end getCitationInfo
+	def getLicence(dobj: IRI)(using Envri, DobjConn | DocConn): Validated[Licence] = {
 
-
-	def getLicence(dobj: IRI)(using Envri, DobjConn | DocConn): Validated[Licence] =
-
-		def getLic(licUri: IRI): Validated[Licence] = for
+		def getLic(licUri: IRI): Validated[Licence] = for {
 			name <- getSingleString(licUri, RDFS.LABEL)
 			webpageOpt <- getOptionalUri(licUri, RDFS.SEEALSO)
 			baseLicence <- getOptionalUri(licUri, SKOS.EXACT_MATCH)
-		yield
+		}
+		yield {
 			val webpage = webpageOpt.getOrElse(licUri).toJava
 			Licence(licUri.toJava, name, webpage, baseLicence.map(_.toJava))
+		}
 
 		def getOptLic(res: IRI, licPred: IRI): Validated[Option[Licence]] =
-			for
+			for {
 				optLicUri <- getOptionalUri(res, licPred)
 				optLic <- Validated.sinkOption(optLicUri.map(getLic))
+			}
 			yield optLic
 
 		inline def getImpliedLic(term: IRI) = getOptLic(term, metaVocab.impliesDefaultLicence)
 
-		for
+		for {
 			ownLicOpt <- getOptLic(dobj, metaVocab.dcterms.license)
-			lic <- ownLicOpt.getOrElseV:
-				for
+			lic <- ownLicOpt.getOrElseV {
+				for {
 					specIriOpt <- getOptionalUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
-					lic <- specIriOpt match
+					lic <- specIriOpt match {
 						case None => Validated.ok(defaultLicence) //not a data object
 						case Some(specIri) =>
-							for
+							for {
 								specLicOpt <- getImpliedLic(specIri)
-								lic <- specLicOpt.getOrElseV:
-									for
+								lic <- specLicOpt.getOrElseV {
+									for {
 										projIri <- getSingleUri(specIri, metaVocab.hasAssociatedProject)
 										projLicOpt <- getImpliedLic(projIri)
+									}
 									yield
 										projLicOpt.getOrElse(defaultLicence)
+								}
+							}
 							yield lic
+					}
+				}
 				yield lic
+			}
+		}
 		yield lic
-	end getLicence
+	} // end getLicence
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
 		case None => "Fetching... try refreshing the page in a few seconds"
@@ -150,27 +181,30 @@ class LiveCitationMaker(
 		item.doi.collect{ extractDoiCitation(style) }
 
 	private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
-		for
+		for {
 			doiStr <- item.doi;
 			doi <- Doi.parse(doiStr).toOption;
-			doiMeta <- doiCiter.getDoiEager(doi) match
+			doiMeta <- doiCiter.getDoiEager(doi) match {
 				case None => Some(DoiMeta(doi))
 				case Some(Success(doiMeta)) => Some(doiMeta)
 				case Some(Failure(err)) =>
 					log.error("Error fetching DOI citation", err)
 					None
+			}
+		}
 		yield doiMeta
 
-	private def getIcosCitation(dobj: DataObject)(using Envri, MetaConn): Validated[CitationInfo] =
+	private def getIcosCitation(dobj: DataObject)(using Envri, MetaConn): Validated[CitationInfo] = {
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val isIcosProject = dobj.specification.project.self.uri === vocab.icosProject
 		val isMiscProject = dobj.specification.project.self.uri === vocab.miscProject
 		val isIcosLikeStationMeas = dobj.specificInfo.fold(
 			_ => false,
-			_.acquisition.station.specificInfo match
+			_.acquisition.station.specificInfo match {
 				case _:IcosStationSpecifics => true
 				case _ => false
+			}
 		)
 
 		def titleOpt = dobj.specificInfo.fold(
@@ -192,21 +226,26 @@ class LiveCitationMaker(
 				}
 		)
 
-		val authorsV: Validated[Seq[Agent]] =
+		val authorsV: Validated[Seq[Agent]] = {
 
-			lazy val productionAgents = dobj.production.toSeq.flatMap: prod =>
+			lazy val productionAgents = dobj.production.toSeq.flatMap { prod =>
 				if prod.contributors.contains(prod.creator) then prod.contributors
 				else prod.creator +: prod.contributors
+			}
 
 			if isIcosLikeStationMeas && dobj.specification.dataLevel < 3 then
-				attrProvider.getAuthors(dobj).map: attrAuthors =>
+				attrProvider.getAuthors(dobj).map { attrAuthors =>
 					if isIcosProject then attrAuthors
-					else
-						val hasProdPerson = productionAgents.exists:
+					else {
+						val hasProdPerson = productionAgents.exists {
 							case _: Person => true
 							case _ => false
+						}
 						if hasProdPerson then productionAgents else attrAuthors
+					}
+				}
 			else Validated.ok(productionAgents)
+		}
 
 		val pidUrlOpt = getPidUrl(dobj)
 		val projectOpt =
@@ -217,7 +256,7 @@ class LiveCitationMaker(
 
 		val project = if projectOpt.nonEmpty then projectOpt.mkString("", "", ",") else ""
 
-		authorsV.map: authors =>
+		authorsV.map { authors =>
 			val citText = for(
 				title <- titleOpt;
 				pidUrl <- pidUrlOpt;
@@ -232,9 +271,10 @@ class LiveCitationMaker(
 			}
 
 			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
-	end getIcosCitation
+		}
+	} // end getIcosCitation
 
-	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo =
+	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo = {
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
@@ -266,7 +306,7 @@ class LiveCitationMaker(
 
 		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 
-	end getSitesCitation
+	} // end getSitesCitation
 
 	private def getPidUrl(dobj: StaticObject): Option[String] = for(
 		pid <- dobj.doi.orElse(dobj.pid);
@@ -283,7 +323,7 @@ class LiveCitationMaker(
 			s"Work was funded by grant$grantTitle from ${funding.funder.org.name}"
 		}
 
-	private def getDocCitation(doc: DocObject)(using envri: Envri): CitationInfo =
+	private def getDocCitation(doc: DocObject)(using envri: Envri): CitationInfo = {
 		import doc.{references => refs}
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val yearOpt = doc.submission.stop.map(getYear(zoneId))
@@ -295,16 +335,19 @@ class LiveCitationMaker(
 		val authorString = if (authors.nonEmpty) Some(authors.mkString(", ")) else None
 
 		val pidUrlOpt = getPidUrl(doc)
-		val citString = for
+		val citString = for {
 			year <- yearOpt
 			title <- refs.title.orElse(Some(doc.fileName))
 			pidUrl <- pidUrlOpt
-		yield envri match
+		}
+		yield envri match {
 			case Envri.SITES =>
 				s"${authorString.getOrElse(envri.shortName)} ($year). $title. ${envri.longName} (${envri.shortName}). $pidUrl"
 			case Envri.ICOS | Envri.ICOSCities =>
 				s"${authorString.getOrElse("ICOS RI")}, $year. $title, $pidUrl"
+		}
 
 		CitationInfo(pidUrlOpt, refs.authors, refs.title, yearOpt, None, citString)
+	}
 
-end LiveCitationMaker
+} // end LiveCitationMaker

@@ -47,7 +47,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
  * same key may duplicate a fetch; the results are identical, so this is only a
  * small waste, not a correctness issue.
  */
-class StatementCache(repo: Repository, log: LoggingAdapter):
+class StatementCache(repo: Repository, log: LoggingAdapter) {
 	import StatementCache.*
 
 	val factory: ValueFactory = repo.getValueFactory
@@ -65,30 +65,35 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 	def stats: Snapshot = Snapshot(queryCount.get, hitCount.get, missCount.get, rowCount.get)
 
 	/** All statements with the given subject, across all named graphs. */
-	def subjectStatements(subj: IRI): IndexedSeq[Statement] =
+	def subjectStatements(subj: IRI): IndexedSeq[Statement] = {
 		val cached = lock.synchronized(subjects.get(subj))
-		if cached != null then
+		if cached != null then {
 			hitCount.incrementAndGet()
 			cached
-		else
+		}
+		else {
 			missCount.incrementAndGet()
 			// single-subject fetch: all returned statements belong to subj
 			fetchSubjects(IndexedSeq(subj))
+		}
+	}
 
 	/** All statements with the given object (optionally restricted to a predicate), across all named graphs. */
-	def incomingStatements(pred: IRI | Null, obj: Value): IndexedSeq[Statement] =
+	def incomingStatements(pred: IRI | Null, obj: Value): IndexedSeq[Statement] = {
 		val allIncoming = lock.synchronized(incoming.get(obj))
-		if allIncoming != null then
+		if allIncoming != null then {
 			hitCount.incrementAndGet()
 			if pred == null then allIncoming
 			else allIncoming.filter(_.getPredicate == pred)
-		else if pred != null then
+		}
+		else if pred != null then {
 			val key = (pred, obj)
 			val cached = lock.synchronized(reverse.get(key))
-			if cached != null then
+			if cached != null then {
 				hitCount.incrementAndGet()
 				cached
-			else
+			}
+			else {
 				missCount.incrementAndGet()
 				val fetched = fetchReverse(pred, obj)
 				lock.synchronized(reverse.put(key, fetched))
@@ -96,19 +101,24 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 				// found subjects (e.g. memberships at a station), so bulk-fetch them now
 				fetchSubjects(fetched.map(_.getSubject).collect{ case iri: IRI => iri }.filterNot(isCachedSubject))
 				fetched
-		else
+			}
+		}
+		else {
 			missCount.incrementAndGet()
 			val fetched = fetchIncoming(obj)
 			lock.synchronized(incoming.put(obj, fetched))
 			fetched
+		}
+	}
 
 	/** Fallback for patterns the cache cannot serve (full scans); goes straight to the repository. */
 	def uncachedStatements(
 		subj: IRI | Null, pred: IRI | Null, obj: Value | Null, contexts: Seq[IRI]
-	): CloseableIterator[Statement] =
+	): CloseableIterator[Statement] = {
 		log.warning(s"Uncached statement pattern (subj $subj, pred $pred, obj $obj), querying the remote repository")
 		queryCount.incrementAndGet()
 		repo.access(conn => conn.getStatements(subj, pred, obj, false, contexts*))
+	}
 
 	/**
 	 * Warms the cache for a batch of subjects: bulk-fetches their statements and
@@ -116,7 +126,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 	 * resources reachable from them, up to [[StatementCache.ExpansionDepth]] hops.
 	 * Blocking; safe to run concurrently with reads and with other prefetches.
 	 */
-	def prefetch(batch: Seq[IRI]): Unit =
+	def prefetch(batch: Seq[IRI]): Unit = {
 		val before = stats
 		val startNanos = System.nanoTime()
 		val incomingStmts = prefetchIncoming(
@@ -126,7 +136,7 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 		val referrers = incomingStmts.iterator.map(_.getSubject).collect{ case iri: IRI => iri }
 		var toFetch: Seq[IRI] = (batch.iterator ++ referrers).distinct.filterNot(isCachedSubject).toIndexedSeq
 		var depth = 0
-		while toFetch.nonEmpty && depth <= ExpansionDepth do
+		while toFetch.nonEmpty && depth <= ExpansionDepth do {
 			val fetched = fetchSubjects(toFetch)
 			depth += 1
 			toFetch =
@@ -138,121 +148,148 @@ class StatementCache(repo: Repository, log: LoggingAdapter):
 					.distinct
 					.take(FrontierCap)
 					.toIndexedSeq
+		}
 		val delta = stats.minus(before)
 		log.debug(
 			f"Prefetched ${batch.size} subjects in ${(System.nanoTime() - startNanos) / 1e9}%.1f s: $delta"
 		)
+	}
 
 	private def isCachedSubject(subj: IRI): Boolean = lock.synchronized(subjects.containsKey(subj))
 
 	/** Bulk-fetches and caches the complete statement sets of the given subjects
 	 *  (empty sets included); returns the fetched statements. */
 	private def fetchSubjects(subjs: Seq[IRI]): IndexedSeq[Statement] =
-		runChunked(subjs): chunk =>
+		runChunked(subjs) { chunk =>
 			val values = chunk.iterator.map(iri => s"<${iri.stringValue}>").mkString(" ")
 			val query = s"SELECT ?s ?p ?o ?g WHERE { VALUES ?s { $values } GRAPH ?g { ?s ?p ?o } }"
 			val bySubj = mutable.HashMap.empty[IRI, ArrayBuffer[Statement]]
-			select(query): bs =>
-				(bs.getValue("s"), bs.getValue("p"), bs.getValue("o"), bs.getValue("g")) match
+			select(query) { bs =>
+				(bs.getValue("s"), bs.getValue("p"), bs.getValue("o"), bs.getValue("g")) match {
 					case (s: IRI, p: IRI, o: Value, g: Resource) =>
 						val subj = intern(s)
 						val st = factory.createStatement(subj, intern(p), internIfIri(o), intern(g))
 						bySubj.getOrElseUpdate(subj, ArrayBuffer.empty) += st
 					case _ => ()
-			val entries = chunk.map: subj =>
+				}
+			}
+			val entries = chunk.map { subj =>
 				intern(subj) -> bySubj.get(subj).fold(NoStatements)(_.toIndexedSeq)
-			lock.synchronized:
-				for (subj, stmts) <- entries do subjects.put(subj, stmts)
+			}
+			lock.synchronized {
+				for ((subj, stmts) <- entries) subjects.put(subj, stmts)
+			}
 			entries.iterator.flatMap(_._2).toIndexedSeq
+		}
 
 	/** Bulk-fetches and caches the complete incoming statement sets of the given objects
 	 *  (empty sets included); returns the fetched statements. */
 	private def prefetchIncoming(objs: Seq[IRI]): IndexedSeq[Statement] =
-		runChunked(objs): chunk =>
+		runChunked(objs) { chunk =>
 			val values = chunk.iterator.map(iri => s"<${iri.stringValue}>").mkString(" ")
 			val query = s"SELECT ?s ?p ?o ?g WHERE { VALUES ?o { $values } GRAPH ?g { ?s ?p ?o } }"
 			val byObj = mutable.HashMap.empty[Value, ArrayBuffer[Statement]]
-			select(query): bs =>
-				(bs.getValue("s"), bs.getValue("p"), bs.getValue("o"), bs.getValue("g")) match
+			select(query) { bs =>
+				(bs.getValue("s"), bs.getValue("p"), bs.getValue("o"), bs.getValue("g")) match {
 					case (s: IRI, p: IRI, o: Value, g: Resource) =>
 						val obj = internIfIri(o)
 						byObj.getOrElseUpdate(obj, ArrayBuffer.empty) +=
 							factory.createStatement(intern(s), intern(p), obj, intern(g))
 					case _ => ()
-			val entries = chunk.map: obj =>
+				}
+			}
+			val entries = chunk.map { obj =>
 				intern(obj) -> byObj.get(obj).fold(NoStatements)(_.toIndexedSeq)
-			lock.synchronized:
-				for (obj, stmts) <- entries do incoming.put(obj, stmts)
+			}
+			lock.synchronized {
+				for ((obj, stmts) <- entries) incoming.put(obj, stmts)
+			}
 			entries.iterator.flatMap(_._2).toIndexedSeq
+		}
 
 	/** Runs the chunk queries of a bulk fetch, concurrently when there are several chunks. */
-	private def runChunked(items: Seq[IRI])(fetchChunk: Seq[IRI] => IndexedSeq[Statement]): IndexedSeq[Statement] =
+	private def runChunked(items: Seq[IRI])(fetchChunk: Seq[IRI] => IndexedSeq[Statement]): IndexedSeq[Statement] = {
 		val chunks = items.grouped(ValuesChunkSize).toIndexedSeq
-		chunks match
+		chunks match {
 			case IndexedSeq() => IndexedSeq.empty
 			case IndexedSeq(single) => fetchChunk(single)
 			case _ =>
 				given ExecutionContext = chunkQueryEc
 				val fut = Future.traverse(chunks)(chunk => Future(fetchChunk(chunk)))
 				Await.result(fut, ChunkQueryTimeout).flatten
+		}
+	}
 
 	private def fetchIncoming(obj: Value): IndexedSeq[Statement] =
-		boundSelect("SELECT ?s ?p ?g WHERE { GRAPH ?g { ?s ?p ?theObj } }", "theObj" -> obj): bs =>
-			(bs.getValue("s"), bs.getValue("p"), bs.getValue("g")) match
+		boundSelect("SELECT ?s ?p ?g WHERE { GRAPH ?g { ?s ?p ?theObj } }", "theObj" -> obj) { bs =>
+			(bs.getValue("s"), bs.getValue("p"), bs.getValue("g")) match {
 				case (s: IRI, p: IRI, g: Resource) =>
 					Some(factory.createStatement(intern(s), intern(p), obj, intern(g)))
 				case _ => None
+			}
+		}
 
 	private def fetchReverse(pred: IRI, obj: Value): IndexedSeq[Statement] =
-		boundSelect("SELECT ?s ?g WHERE { GRAPH ?g { ?s ?thePred ?theObj } }", "thePred" -> pred, "theObj" -> obj): bs =>
-			(bs.getValue("s"), bs.getValue("g")) match
+		boundSelect("SELECT ?s ?g WHERE { GRAPH ?g { ?s ?thePred ?theObj } }", "thePred" -> pred, "theObj" -> obj) { bs =>
+			(bs.getValue("s"), bs.getValue("g")) match {
 				case (s: IRI, g: Resource) =>
 					Some(factory.createStatement(intern(s), pred, obj, intern(g)))
 				case _ => None
+			}
+		}
 
-	private def select(query: String)(handler: BindingSet => Unit): Unit =
+	private def select(query: String)(handler: BindingSet => Unit): Unit = {
 		queryCount.incrementAndGet()
-		repo.accessEagerly: conn =>
+		repo.accessEagerly { conn =>
 			val res = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
-			try while res.hasNext() do
+			try while res.hasNext() do {
 				rowCount.incrementAndGet()
 				handler(res.next())
+			}
 			finally res.close()
+		}
+	}
 
 	private def boundSelect(
 		query: String, bindings: (String, Value)*
-	)(parser: BindingSet => Option[Statement]): IndexedSeq[Statement] =
+	)(parser: BindingSet => Option[Statement]): IndexedSeq[Statement] = {
 		queryCount.incrementAndGet()
-		repo.accessEagerly: conn =>
+		repo.accessEagerly { conn =>
 			val tq = conn.prepareTupleQuery(QueryLanguage.SPARQL, query)
-			for (name, value) <- bindings do tq.setBinding(name, value)
+			for ((name, value) <- bindings) tq.setBinding(name, value)
 			val res = tq.evaluate()
 			val buf = ArrayBuffer.empty[Statement]
-			try while res.hasNext() do
+			try while res.hasNext() do {
 				rowCount.incrementAndGet()
 				buf ++= parser(res.next())
+			}
 			finally res.close()
 			buf.toIndexedSeq
+		}
+	}
 
 	/** The remote tuple results allocate fresh Value instances per row; interning the
 	 *  heavily repeated ones (IRIs of predicates, graphs, common resources) keeps the
 	 *  cache's memory footprint down. */
 	private def intern[V <: Value](v: V): V =
-		interned.putIfAbsent(v, v) match
+		interned.putIfAbsent(v, v) match {
 			case Some(existing) => existing.asInstanceOf[V]
 			case None =>
-				if internedCount.incrementAndGet() > InternCap then
+				if internedCount.incrementAndGet() > InternCap then {
 					interned.clear()
 					internedCount.set(0)
+				}
 				v
+		}
 
-	private def internIfIri(v: Value): Value = v match
+	private def internIfIri(v: Value): Value = v match {
 		case iri: IRI => intern(iri)
 		case other => other
+	}
 
-end StatementCache
+} // end StatementCache
 
-object StatementCache:
+object StatementCache {
 	val ValuesChunkSize = 1000
 	val ExpansionDepth = 3
 	val FrontierCap = 20_000
@@ -264,29 +301,33 @@ object StatementCache:
 	val MaxConcurrentChunkQueries = 6
 	val ChunkQueryTimeout = 10.minutes
 
-	final case class Snapshot(queries: Long, hits: Long, misses: Long, rows: Long):
+	final case class Snapshot(queries: Long, hits: Long, misses: Long, rows: Long) {
 		def minus(other: Snapshot) = Snapshot(
 			queries - other.queries, hits - other.hits, misses - other.misses, rows - other.rows
 		)
 		override def toString = s"$queries queries ($rows rows), $hits cache hits, $misses misses"
+	}
 
 	private val NoStatements = IndexedSeq.empty[Statement]
 
 	/** Dedicated bounded pool for the bulk chunk queries: keeps the global SPARQL query
 	 *  concurrency capped and independent of the dispatchers the callers run on (so a
 	 *  caller awaiting its chunks can never starve the chunks themselves). */
-	private lazy val chunkQueryEc: ExecutionContext =
+	private lazy val chunkQueryEc: ExecutionContext = {
 		val threadCount = AtomicInteger(0)
-		val tf: ThreadFactory = runnable =>
+		val tf: ThreadFactory = runnable => {
 			val t = new Thread(runnable, s"citation-sparql-chunk-${threadCount.incrementAndGet()}")
 			t.setDaemon(true)
 			t
+		}
 		ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(MaxConcurrentChunkQueries, tf))
+	}
 
-	private final class LruMap[K, V](maxEntries: Int) extends java.util.LinkedHashMap[K, V](256, 0.75f, true):
+	private final class LruMap[K, V](maxEntries: Int) extends java.util.LinkedHashMap[K, V](256, 0.75f, true) {
 		override def removeEldestEntry(eldest: java.util.Map.Entry[K, V]): Boolean = size() > maxEntries
+	}
 
-end StatementCache
+} // end StatementCache
 
 
 /**
@@ -299,7 +340,7 @@ class CachingConnection(
 	cache: StatementCache,
 	val primaryContext: IRI,
 	val readContexts: Seq[IRI]
-) extends TriplestoreConnection:
+) extends TriplestoreConnection {
 
 	def this(cache: StatementCache) = this(cache, null, Nil)
 
@@ -313,9 +354,10 @@ class CachingConnection(
 		else
 			cache.uncachedStatements(subject, predicate, obj, readContexts)
 
-	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean = {
 		val iter = getStatements(subject, predicate, obj)
 		try iter.hasNext finally iter.close()
+	}
 
 	override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection =
 		CachingConnection(cache, primary, read)
@@ -325,7 +367,7 @@ class CachingConnection(
 	private def matches(pred: IRI | Null, obj: Value | Null)(st: Statement): Boolean =
 		(pred == null || st.getPredicate == pred) && (obj == null || st.getObject == obj)
 
-	private def wrap(stmts: Iterator[Statement]): CloseableIterator[Statement] =
+	private def wrap(stmts: Iterator[Statement]): CloseableIterator[Statement] = {
 		val scoped =
 			if readContexts.isEmpty then
 				// no graph scoping: union over all graphs, deduplicated like a triple-level read
@@ -333,5 +375,6 @@ class CachingConnection(
 			else
 				stmts.filter(st => readContexts.contains(st.getContext))
 		CloseableIterator.Wrap(scoped, () => ())
+	}
 
-end CachingConnection
+} // end CachingConnection

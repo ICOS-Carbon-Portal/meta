@@ -3,13 +3,11 @@ package se.lu.nateko.cp.meta.services.citation
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
@@ -23,21 +21,22 @@ import CitationClient.CitationCache
 import CitationClient.DoiCache
 
 
-object CitationProvider:
+object CitationProvider {
 	def apply(
 		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
-	)(using ActorSystem, Materializer): CitationProvider =
-		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
+	)(using ActorSystem, Materializer): CitationProvider = {
+		val citClientFactory: () => CitationClient =
+			() => CitationClientImpl(conf.citations, citCache, doiCache)
 		new CitationProvider(repo, citClientFactory, conf)
+	}
+}
 
 
 class CitationProvider(
 	val repo: Repository,
-	citClientFactory: List[Doi] => CitationClient,
+	citClientFactory: () => CitationClient,
 	conf: CpmetaConfig,
-)(using system: ActorSystem):
-	private val log = Logging.getLogger(system, this)
+)(using system: ActorSystem) {
 	import StatementSource.*
 	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
 
@@ -45,56 +44,60 @@ class CitationProvider(
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)
 
-	val doiCiter: CitationClient =
-		val dois: List[Doi] = server.access:
-			getStatements(null, metaVocab.hasDoi, null)
-				.map(_.getObject.stringValue)
-				.toList.distinct.flatMap:
-					Doi.parse(_).toOption
-
-		citClientFactory(dois)
+	val doiCiter: CitationClient = citClientFactory()
 
 	val citer = new LiveCitationMaker(doiCiter, vocab, metaVocab, conf.core)
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 
-	val metaReader =
-		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
-		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val structuralReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer.structural)
 
 	/** Freshly computes the static object behind a landing-page URI (used by the
 	 *  citations service's HTTP endpoint that serves meta's DOI-minting path). */
-	def fetchFreshObject(uri: java.net.URI): Option[StaticObject] = server.access: conn ?=>
+	def fetchFreshObject(uri: java.net.URI): Option[StaticObject] = server.access { conn ?=>
 		given GlobConn = RdfLens.global(using conn)
 		getStaticObject(repo.getValueFactory.createIRI(uri.toString))
+	}
 
-	def fetchFreshCollection(uri: java.net.URI): Option[StaticCollection] = server.access: conn ?=>
+	def fetchFreshCollection(uri: java.net.URI): Option[StaticCollection] = server.access { conn ?=>
 		given GlobConn = RdfLens.global(using conn)
 		getStaticColl(repo.getValueFactory.createIRI(uri.toString))
+	}
 
-	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
+	def getCitation(res: Resource): Option[String] = server.access { conn ?=>
 		getCitation(res, conn)
+	}
 
-	def getReferences(res: Resource): Option[References] = server.access: conn ?=>
+	def getReferences(res: Resource): Option[References] = server.access { conn ?=>
 		getReferences(res, conn)
+	}
 
-	def getLicence(res: Resource): Option[Licence] = server.access: conn ?=>
+	def getLicence(res: Resource): Option[Licence] = server.access { conn ?=>
 		getLicence(res, conn)
+	}
 
-	def getCitation(res: Resource, conn: TriplestoreConnection): Option[String] =
+	def getCitation(res: Resource, conn: TriplestoreConnection): Option[String] = {
 		given GlobConn = RdfLens.global(using conn)
-		getDoiCitation(res).orElse:
+		getDoiCitation(res).orElse {
 			getCitableItem(res).flatMap(_.references.citationString)
+		}
+	}
 
 	def getReferences(res: Resource, conn: TriplestoreConnection): Option[References] =
-		getCitableItem(res)(using RdfLens.global(using conn)).map(_.references)
+		getCitableItem(res, metaReader)(using RdfLens.global(using conn)).map(_.references)
+
+	def getStructuralReferences(res: Resource, conn: TriplestoreConnection): Option[References] =
+		getCitableItem(res, structuralReader)(using RdfLens.global(using conn)).map(_.references)
 
 	def getLicence(res: Resource, conn: TriplestoreConnection): Option[Licence] =
-		for
+		for {
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
 			given GlobConn = RdfLens.global(using conn)
 			lic <- citer.getLicence(iri).result
+		}
 		yield lic
 
 	private def getDoiCitation(res: Resource)(using GlobConn): Option[String] = toIRI(res).flatMap{iri =>
@@ -102,26 +105,38 @@ class CitationProvider(
 			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
 	}
 
-	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
-		if
+	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] =
+		getCitableItem(res, metaReader)
+
+	private def getCitableItem(
+		res: Resource, reader: StaticObjectReader
+	)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap { iri =>
+		if (
 			hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 			hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
-		then getStaticObject(iri)
-		else if
-			hasStatement(iri, RDF.TYPE, metaVocab.collectionClass)
-		then getStaticColl(iri)
+		) getStaticObject(iri, reader)
+		else if (hasStatement(iri, RDF.TYPE, metaVocab.collectionClass)) getStaticColl(iri, reader)
 		else None
+	}
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
+	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] =
+		getStaticObject(maybeDobj, metaReader)
+
+	private def getStaticObject(maybeDobj: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticObject] = for {
 		given Envri <- inferObjectEnvri(maybeDobj)
-		obj <- metaReader.fetchStaticObject(maybeDobj).result
+		obj <- reader.fetchStaticObject(maybeDobj).result
+	}
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] = for
+	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] =
+		getStaticColl(maybeColl, metaReader)
+
+	private def getStaticColl(maybeColl: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticCollection] = for {
 		given Envri <- inferCollEnvri(maybeColl)
-		coll <- metaReader.fetchStaticColl(maybeColl, None).result
+		coll <- reader.fetchStaticColl(maybeColl, None).result
+	}
 	yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{
@@ -132,4 +147,4 @@ class CitationProvider(
 		envri => obj.stringValue.startsWith(collectionPrefix(using envriConfs(envri)))
 	}
 
-end CitationProvider
+} // end CitationProvider

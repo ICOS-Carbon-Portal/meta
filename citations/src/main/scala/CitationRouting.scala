@@ -26,33 +26,37 @@ import scala.util.{Failure, Success}
  * The two GET endpoints are what the meta service's DOI-minting path calls to
  * obtain non-stale citation metadata (see `RemoteCitationFetcher` in meta).
  */
-class CitationRouting(citer: CitationProvider)(using ExecutionContext):
+class CitationRouting(citer: CitationProvider)(using ExecutionContext) {
 
 	private def asJson(body: String): HttpEntity.Strict =
 		HttpEntity(ContentTypes.`application/json`, body)
 
 	val route: Route = pathPrefix("citations"){
 		(get & path("staticobject") & parameter("uri")){ uriStr =>
-			citer.fetchFreshObject(new URI(uriStr)) match
+			citer.fetchFreshObject(new URI(uriStr)) match {
 				case Some(obj) => complete(asJson(obj.toJson.compactPrint))
 				case None => complete(StatusCodes.NotFound -> s"No static object found for $uriStr")
+			}
 		} ~
 		(get & path("staticcollection") & parameter("uri")){ uriStr =>
-			citer.fetchFreshCollection(new URI(uriStr)) match
+			citer.fetchFreshCollection(new URI(uriStr)) match {
 				case Some(coll) => complete(asJson(coll.toJson.compactPrint))
 				case None => complete(StatusCodes.NotFound -> s"No collection found for $uriStr")
+			}
 		} ~
 		(post & path("dropCache" / Remaining)){ maybeDoi =>
-			Doi.parse(maybeDoi) match
+			Doi.parse(maybeDoi) match {
 				case Success(doi) =>
 					citer.doiCiter.dropCache(doi)
 					complete(StatusCodes.OK)
 				case Failure(err) => complete(StatusCodes.BadRequest -> err.getMessage)
+			}
 		} ~
 		(post & path("dumpCaches")){
-			val dump = for
+			val dump = for {
 				_ <- CitationClient.writeCitCache(citer.doiCiter)
 				_ <- CitationClient.writeDoiCache(citer.doiCiter)
+			}
 			yield "Citation caches dumped to disk"
 			onComplete(dump){
 				case Success(msg) => complete(StatusCodes.OK -> msg)
@@ -61,4 +65,4 @@ class CitationRouting(citer: CitationProvider)(using ExecutionContext):
 		}
 	}
 
-end CitationRouting
+} // end CitationRouting

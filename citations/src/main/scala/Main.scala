@@ -23,9 +23,9 @@ import scala.concurrent.ExecutionContext
  *   - it serves freshly-computed objects/collections over HTTP so meta's
  *     DOI-minting path can mint against non-stale citation metadata.
  */
-object Main:
+object Main {
 
-	def main(args: Array[String]): Unit =
+	def main(args: Array[String]): Unit = {
 		given system: ActorSystem = ActorSystem("cpmetaCitations", config = appConfig)
 		given ExecutionContext = system.dispatcher
 		given Materializer = Materializer.matFromSystem(using system)
@@ -35,10 +35,11 @@ object Main:
 		given EnvriConfigs = config.core.envriConfigs
 
 		val startup =
-			for
+			for {
 				citCache <- readCitCache()
 				doiCache <- readDoiCache()
-			yield
+			}
+			yield {
 				val repo = new VirtuosoRepository(config.virtuoso)
 				val citer = CitationProvider(repo, citCache, doiCache, config)
 				val materializer = new CitationMaterializer(repo, citer, config.citations.derivedCitationsGraph)
@@ -49,14 +50,18 @@ object Main:
 				val route = new CitationRouting(citer).route
 				val bindingFut = Http().newServerAt(config.httpBindInterface, config.citations.servicePort).bind(route)
 
-				CoordinatedShutdown(system).addJvmShutdownHook:
+				CoordinatedShutdown(system).addJvmShutdownHook {
 					matService.stop()
 					repo.shutDown()
+				}
 
 				bindingFut.foreach(b => log.info(s"Citations service listening on ${b.localAddress}"))
+			}
 
-		startup.failed.foreach: err =>
+		startup.failed.foreach { err =>
 			log.error(err, "Could not start the citations service")
 			system.terminate()
+		}
+	}
 
-end Main
+} // end Main

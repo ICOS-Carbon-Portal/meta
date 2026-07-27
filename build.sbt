@@ -273,6 +273,29 @@ lazy val keywordMaterializer = (project in file("keyword-materializer"))
 		assembly / assemblyRepeatableBuild := false
 	)
 
+lazy val keywordSplitter = (project in file("keyword-splitter"))
+	.dependsOn(meta)
+	.settings(
+		name := "meta-keyword-splitter",
+		version := "0.1.0",
+		scalacOptions ++= commonScalacOptions,
+		excludeDependencies ++= Seq(
+			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
+			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
+		),
+		Compile / mainClass := Some("se.lu.nateko.cp.meta.keyword.KeywordSplittingApp"),
+		assembly / assemblyMergeStrategy := {
+			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
+			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
+			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
+			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
+			case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
+			case "application.conf" => MergeStrategy.concat
+			case x => ((assembly / assemblyMergeStrategy).value)(x)
+		},
+		assembly / assemblyRepeatableBuild := false
+	)
+
 lazy val tools = (project in file("tools"))
 	.dependsOn(meta)
 	.settings(

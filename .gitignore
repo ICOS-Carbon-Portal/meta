@@ -9,6 +9,7 @@ npm-debug.log
 /uploadgui/target/
 /citations/target/
 /keyword-materializer/target/
+/keyword-splitter/target/
 /lib/
 /project/project/
 /project/target/

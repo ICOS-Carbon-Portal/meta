@@ -2,11 +2,12 @@ package se.lu.nateko.cp.meta.services.citation
 
 import scala.language.unsafeNulls
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.doi.Doi
@@ -70,30 +71,44 @@ class CitationMaterializer(
 		val refreshedDois = ConcurrentHashMap.newKeySet[Doi]()
 
 		log.info(s"Citation materialization started in $mode mode (graph $derivedGraph)")
-		log.info("Listing citable subjects...")
+		log.info("Preparing citable subjects...")
 		val listStartNanos = System.nanoTime()
-		val allSubjectsFut = Future(listCitableSubjects())(using blockingEc)
-		val materializedFut = Future(listMaterializedSubjects())(using blockingEc)
-		val derivedSubjectsFut =
-			if (mode.removesStale) Future(listDerivedSubjects())(using blockingEc)
-			else Future.successful(Set.empty[IRI])
+		val mainPass = if (mode == ReconcileMode.MissingOnly) {
+			val totalFut = Future(countCitableSubjects())(using blockingEc)
+			val materializedFut = Future(listMaterializedSubjects())(using blockingEc)
+			for {
+				total <- totalFut
+				alreadyMaterialized <- materializedFut
+				toReconcile = math.max(0, total - alreadyMaterialized.size)
+				_ = log.info(
+					f"Found $total citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
+						f"(${alreadyMaterialized.size} already materialized, $toReconcile to reconcile), materializing citations..."
+				)
+				written <- materializeInBatches(
+					citableSubjects().filterNot(alreadyMaterialized.contains), toReconcile,
+					cache, cacheConn, dcQueue, mode, refreshedDois
+				)
+			} yield written -> Set.empty[IRI]
+		} else {
+			val allSubjectsFut = Future(listCitableSubjects())(using blockingEc)
+			val materializedFut = Future(listMaterializedSubjects())(using blockingEc)
+			val derivedSubjectsFut =
+				if (mode.removesStale) Future(listDerivedSubjects())(using blockingEc)
+				else Future.successful(Set.empty[IRI])
 
-		val mainPass =
 			for {
 				allSubjects <- allSubjectsFut
 				alreadyMaterialized <- materializedFut
 				derivedSubjects <- derivedSubjectsFut
-				subjects =
-					if (mode.reconcilesExisting) allSubjects
-					else allSubjects.filterNot(alreadyMaterialized.contains)
+				subjects = if (mode.reconcilesExisting) allSubjects else allSubjects.filterNot(alreadyMaterialized.contains)
 				stale = if (mode.removesStale) derivedSubjects -- allSubjects.toSet else Set.empty[IRI]
 				_ = log.info(
 					f"Found ${allSubjects.size} citable subjects in ${(System.nanoTime() - listStartNanos) / 1e9}%.1f s " +
-					f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to reconcile, ${stale.size} stale), materializing citations..."
+						f"(${alreadyMaterialized.size} already materialized, ${subjects.size} to reconcile, ${stale.size} stale), materializing citations..."
 				)
-				written <- materializeInBatches(subjects, cache, cacheConn, dcQueue, mode, refreshedDois)
-			}
-			yield written -> stale
+				written <- materializeInBatches(Source.fromIterator(() => subjects.iterator), subjects.size, cache, cacheConn, dcQueue, mode, refreshedDois)
+			} yield written -> stale
+		}
 
 		mainPass.transformWith {
 			case scala.util.Failure(err) =>
@@ -122,12 +137,39 @@ class CitationMaterializer(
 	}
 
 	private def listCitableSubjects(): IndexedSeq[IRI] = {
-		val q = s"""
-			|SELECT DISTINCT ?s WHERE {
-			|  ?s a ?t .
-			|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>, <${metaVocab.collectionClass}>))
-			|}""".stripMargin
-		querySubjectsPaged(q)
+		querySubjectsPaged(citableSubjectsQuery)
+	}
+
+	private def citableSubjectsQuery: String = s"""
+		|SELECT DISTINCT ?s WHERE {
+		|  VALUES ?class { <${metaVocab.dataObjectClass}> <${metaVocab.docObjectClass}> <${metaVocab.collectionClass}> }
+		|  ?s a ?class .
+		|}""".stripMargin
+
+	private def countCitableSubjects(): Int = {
+		val q = s"SELECT (COUNT(*) AS ?count) WHERE { { $citableSubjectsQuery } }"
+		val conn = repo.getConnection()
+		try {
+			val result = conn.prepareTupleQuery(QueryLanguage.SPARQL, q).evaluate()
+			try {
+				if (!result.hasNext()) 0
+				else result.next().getValue("count") match {
+					case literal: Literal => literal.intValue()
+					case _ => 0
+				}
+			} finally { result.close() }
+		} finally { conn.close() }
+	}
+
+	/** A lazy, cursor-paged source. It lets the first materialization batch start
+	 *  as soon as its page arrives instead of waiting for the entire subject set. */
+	private def citableSubjects(): Source[IRI, NotUsed] = {
+		Source.unfoldAsync(0) { offset =>
+			Future {
+				val page = querySubjectsPage(citableSubjectsQuery, offset)
+				if (page.isEmpty) None else Some((offset + page.size, page))
+			}(using blockingEc)
+		}.mapConcat(_.toList)
 	}
 
 	/** Subjects with a completed biblio or citation triple. Licence-only DOI
@@ -158,13 +200,17 @@ class CitationMaterializer(
 		var offset = 0
 		var more = true
 		while (more) {
-			val paged = s"SELECT ?s WHERE { { $query ORDER BY ?s } } LIMIT $SubjectPageSize OFFSET $offset"
-			val page = querySubjects(paged)
+			val page = querySubjectsPage(query, offset)
 			all ++= page
 			offset += page.size
 			more = page.nonEmpty
 		}
 		all.toIndexedSeq
+	}
+
+	private def querySubjectsPage(query: String, offset: Int): IndexedSeq[IRI] = {
+		val paged = s"SELECT ?s WHERE { { $query ORDER BY ?s } } LIMIT $SubjectPageSize OFFSET $offset"
+		querySubjects(paged)
 	}
 
 	private def querySubjects(query: String): IndexedSeq[IRI] = {
@@ -208,24 +254,27 @@ class CitationMaterializer(
 	 * computation of subsequent batches).
 	 */
 	private def materializeInBatches(
-		subjects: IndexedSeq[IRI],
+		subjects: Source[IRI, ?],
+		total: Int,
 		cache: StatementCache,
 		cacheConn: CachingConnection,
 		dcQueue: DataCiteQueue,
 		mode: ReconcileMode,
 		refreshedDois: java.util.Set[Doi]
 	)(using ExecutionContext): Future[Int] = {
-		val total = subjects.size
 		val progress = new Progress(total, batchCount = (total + WriteBatchSize - 1) / WriteBatchSize)
 
-		Source
-			.fromIterator(() => subjects.zipWithIndex.grouped(WriteBatchSize).zipWithIndex)
+		subjects
+			.zipWithIndex
+			.map { case (subject, idx) => subject -> idx.toInt }
+			.grouped(WriteBatchSize)
+			.zipWithIndex
 			.mapAsync(PrefetchAhead) { (chunk, batchIdx) =>
 				Future {
 					val t0 = System.nanoTime()
 					val statsBefore = cache.stats
 					cache.prefetch(chunk.map(_._1))
-					Batch(chunk, batchIdx, statsBefore, prefetchMs = (System.nanoTime() - t0) / 1000000)
+					Batch(chunk, batchIdx.toInt, statsBefore, prefetchMs = (System.nanoTime() - t0) / 1000000)
 				}(using blockingEc)
 			}
 			.mapAsync(1)(batch => computeBatch(batch, total, cacheConn, dcQueue, mode, refreshedDois))

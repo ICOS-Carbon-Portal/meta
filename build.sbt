@@ -284,6 +284,8 @@ lazy val keywordSplitter = (project in file("keyword-splitter"))
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
 		),
 		Compile / mainClass := Some("se.lu.nateko.cp.meta.keyword.KeywordSplittingApp"),
+		Compile / run / baseDirectory := (LocalRootProject / baseDirectory).value,
+		reStart / baseDirectory := (LocalRootProject / baseDirectory).value,
 		assembly / assemblyMergeStrategy := {
 			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
 			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first

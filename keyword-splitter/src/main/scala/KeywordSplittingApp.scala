@@ -39,6 +39,7 @@ object KeywordSplittingApp:
 		val log = Logging.getLogger(system, this)
 
 		val repo = new VirtuosoRepository(config.virtuoso)
+		println(s": ${config.virtuoso}")
 		val vocab = new CpmetaVocab(repo.getValueFactory)
 
 		val splitter = new KeywordSplitter(repo, vocab)

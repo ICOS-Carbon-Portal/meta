@@ -194,10 +194,9 @@ defmodule CitationPopulator.Citation do
           do: "#{start_year}",
           else: "#{start_year}–#{stop_year - 1}"
 
-      # The Scala version also has a "both ends at midnight" branch, but its
-      # check compares ISO_LOCAL_TIME output (which renders midnight as
-      # "00:00") with the string "00:00:00", so it can never fire; it is
-      # deliberately not ported.
+      is_midnight?(start, offset) and is_midnight?(stop, offset) ->
+        to = DateTime.add(stop, -86_400, :second)
+        "#{format_date(start, offset)}–#{format_date(to, offset)}"
 
       true ->
         "#{format_date(start, offset)}–#{format_date(stop, offset)}"
@@ -211,6 +210,9 @@ defmodule CitationPopulator.Citation do
   defp local_date(dt, offset), do: dt |> DateTime.add(offset, :second) |> DateTime.to_date()
 
   defp day_of_year(dt, offset), do: dt |> local_date(offset) |> Date.day_of_year()
+
+  defp is_midnight?(dt, offset),
+    do: dt |> DateTime.add(offset, :second) |> DateTime.to_time() == ~T[00:00:00]
 
   # Mirrors Scala's Float rendering for sampling heights (150.0 -> "150.0").
   defp format_float(f), do: :erlang.float_to_binary(f, [:short])

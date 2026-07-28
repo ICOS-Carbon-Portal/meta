@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
 /**
@@ -51,7 +50,7 @@ import scala.util.Using
 class KeywordSplitter(
 	repo: Repository,
 	metaVocab: CpmetaVocab
-)(using system: ActorSystem):
+)(using system: ActorSystem) {
 	import KeywordSplitter.{SplitSummary, SubjectKeywords}
 
 	private val log = Logging.getLogger(system, this)
@@ -69,93 +68,91 @@ class KeywordSplitter(
 	// default, error SR353), so deep OFFSETs fail outright. Carrying a `?subj > cursor`
 	// filter instead keeps every page's sort to just SubjectPageSize rows. Both sizes must
 	// stay below the configured caps.
-	private val SubjectPageSize = 5000  // subject IRIs fetched per enumeration page
-	private val SubjectBatchSize = 500  // subjects written, verified and deleted per batch
+	private val SubjectPageSize = 5000 // subject IRIs fetched per enumeration page
+	private val SubjectBatchSize = 500 // subjects written, verified and deleted per batch
 
-	def splitAll()(using ExecutionContext): Future[SplitSummary] = Future:
+	def splitAll(): SplitSummary = {
 		log.info("Keyword splitting started")
-		val subjects = listSubjects()
-		log.info(s"Enumerated ${subjects.size} subjects with hasKeywords; processing in batches of $SubjectBatchSize")
-
 		var summary = SplitSummary.empty
 		var done = 0
-		for batch <- subjects.grouped(SubjectBatchSize) do
-			summary = summary + processBatch(batch)
-			done += batch.size
-			log.info(s"Processed $done/${subjects.size} subjects: $summary")
+		var cursor = ""
+		var more = true
+		while (more) {
+			val page = listSubjectPage(cursor)
+			for (batch <- page.grouped(SubjectBatchSize)) {
+				summary = summary + processBatch(batch)
+				done += batch.size
+				log.info(s"Processed $done subjects: $summary")
+			}
+			more = page.size == SubjectPageSize
+			if (page.nonEmpty) { cursor = page.last.stringValue }
+		}
 
 		log.info(s"Keyword splitting finished: $summary")
-		if summary.unconfirmed.nonEmpty then
+		if (summary.unconfirmed.nonEmpty) {
 			log.warning(
 				s"${summary.unconfirmed.size} subjects kept their hasKeywords because the " +
-				s"written hasKeyword triples could not be confirmed: " +
-				summary.unconfirmed.take(20).mkString(", ")
+					s"written hasKeyword triples could not be confirmed: " +
+					summary.unconfirmed.take(20).mkString(", ")
 			)
-		if summary.empties.nonEmpty then
+		}
+		if (summary.empties.nonEmpty) {
 			log.warning(
 				s"${summary.empties.size} subjects have a hasKeywords literal with no parseable " +
-				s"keyword and were left untouched: " + summary.empties.take(20).mkString(", ")
+					s"keyword and were left untouched: " + summary.empties.take(20).mkString(", ")
 			)
+		}
 		summary
+	}
 
 	/**
-	 * All subject IRIs carrying a `hasKeywords` property, read page by page with keyset
-	 * (seek) pagination: each page asks for the next SubjectPageSize subjects ordered after
-	 * the previous page's last IRI. Unlike LIMIT/OFFSET this keeps every page's sorted
-	 * window small (avoiding Virtuoso's MaxSortedTopRows limit) and never silently caps the
-	 * enumeration.
+	 * One page of subject IRIs carrying `hasKeywords`, read with keyset pagination.
 	 */
-	private def listSubjects(): IndexedSeq[IRI] =
+	private def listSubjectPage(cursor: String): IndexedSeq[IRI] = {
 		val subjects = ArrayBuffer.empty[IRI]
-		var cursor = "" // STR of the last subject IRI returned; "" sorts before every IRI
-		var more = true
-
-		log.info("Enumerating subjects with hasKeywords")
-		while more do
-			val q = s"""
+		val q = s"""
 				|SELECT DISTINCT ?subj WHERE {
 				|  GRAPH ?g { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }
-				|  FILTER(STR(?subj) > ${plainLiteral(cursor)})
+				|  FILTER(isIRI(?subj) && STR(?subj) > ${plainLiteral(cursor)})
 				|}
 				|ORDER BY STR(?subj)
 				|LIMIT $SubjectPageSize""".stripMargin
 
-			var pageRows = 0
-			select(q): bindings =>
-				pageRows += 1
-				bindings.getValue("subj") match
-					case subj: IRI =>
-						subjects += subj
-						cursor = subj.stringValue
-					case _ => ()
-
-			more = pageRows == SubjectPageSize
-			log.info(s"Enumerated ${subjects.size} subjects so far")
+		select(q) { bindings =>
+			bindings.getValue("subj") match {
+				case subj: IRI => subjects += subj
+				case _ => ()
+			}
+		}
 
 		subjects.toIndexedSeq
+	}
 
 	/** Write, verify, then delete, for one bounded batch of subjects. */
-	private def processBatch(batch: collection.Seq[IRI]): SplitSummary =
+	private def processBatch(batch: collection.Seq[IRI]): SplitSummary = {
 		val (groups, empties) = fetchKeywords(batch)
 		val emptySummary = SplitSummary.empty.copy(empties = empties)
-		if groups.isEmpty then emptySummary
-		else
+		if (groups.isEmpty) emptySummary
+		else {
 			val written = writeKeywords(groups)
 			val (confirmed, unconfirmed) = verifyKeywords(groups)
-			val deleted = deleteSources(confirmed)
+			val (deleted, deletionFailures) = deleteSources(confirmed)
 			emptySummary.copy(
 				subjects = confirmed.map(_.subj).distinct.size,
 				written = written,
 				deleted = deleted,
-				unconfirmed = unconfirmed.map(_.subj).distinct
+				unconfirmed = unconfirmed.map(_.subj).distinct,
+				deletionFailures = deletionFailures
 			)
+		}
+	}
 
 	/**
 	 * The `hasKeywords` literals of a bounded batch of subjects, per source graph, together
 	 * with the distinct keywords parsed out of them. The second element lists the subjects
 	 * whose literals hold no parseable keyword at all.
 	 */
-	private def fetchKeywords(batch: collection.Seq[IRI]): (IndexedSeq[SubjectKeywords], IndexedSeq[IRI]) =
+	private def fetchKeywords(batch: collection.Seq[IRI]): (IndexedSeq[SubjectKeywords], IndexedSeq[IRI]) = {
 		val q = s"""
 			|SELECT ?subj ?g ?keywords WHERE {
 			|  VALUES ?subj { ${batch.map(iriRef).mkString(" ")} }
@@ -165,35 +162,39 @@ class KeywordSplitter(
 		// several hasKeywords literals may sit on the same subject in the same graph, and
 		// the same subject may occur in more than one graph; each (subject, graph) pair is
 		// migrated on its own, within that graph
-		val acc = mutable.LinkedHashMap.empty[(IRI, IRI), (ArrayBuffer[Literal], mutable.LinkedHashSet[String])]
+		val acc = mutable.LinkedHashMap.empty[(IRI, IRI), (Int, mutable.LinkedHashSet[String])]
 
-		select(q): bindings =>
-			(bindings.getValue("subj"), bindings.getValue("g"), bindings.getValue("keywords")) match
+		select(q) { bindings =>
+			(bindings.getValue("subj"), bindings.getValue("g"), bindings.getValue("keywords")) match {
 				case (subj: IRI, graph: IRI, keywords: Literal) =>
-					val (sources, kws) = acc.getOrElseUpdate(
+					val (sourceCount, kws) = acc.getOrElseUpdate(
 						subj -> graph,
-						ArrayBuffer.empty[Literal] -> mutable.LinkedHashSet.empty[String]
+						0 -> mutable.LinkedHashSet.empty[String]
 					)
-					sources += keywords
+					acc.update(subj -> graph, sourceCount + 1 -> kws)
 					kws ++= parseCommaSepList(keywords.stringValue)
 				case _ => ()
+			}
+		}
 
 		val groups = ArrayBuffer.empty[SubjectKeywords]
 		val empties = ArrayBuffer.empty[IRI]
-		for ((subj, graph), (sources, kws)) <- acc do
-			if kws.isEmpty then empties += subj
-			else groups += SubjectKeywords(subj, graph, sources.toIndexedSeq, kws.toIndexedSeq)
+		for (((subj, graph), (sourceCount, kws)) <- acc) {
+			if (kws.isEmpty) { empties += subj }
+			else { groups += SubjectKeywords(subj, graph, sourceCount, kws.toIndexedSeq) }
+		}
 
 		groups.toIndexedSeq -> empties.toIndexedSeq.distinct
+	}
 
 	/**
 	 * Adds the singular triples to the graph their `hasKeywords` source lives in, one
 	 * `INSERT DATA` per graph, with the keywords as plain literals (see [[plainLiteral]]).
 	 */
-	private def writeKeywords(groups: IndexedSeq[SubjectKeywords]): Int =
+	private def writeKeywords(groups: IndexedSeq[SubjectKeywords]): Int = {
 		var written = 0
-		for (graph, inGraph) <- groups.groupBy(_.graph) do
-			val triples = for group <- inGraph; kw <- group.keywords
+		for ((graph, inGraph) <- groups.groupBy(_.graph)) {
+			val triples = for (group <- inGraph; kw <- group.keywords)
 				yield s"${iriRef(group.subj)} ${iriRef(metaVocab.hasKeyword)} ${plainLiteral(kw)} ."
 
 			update(s"""
@@ -201,9 +202,11 @@ class KeywordSplitter(
 				|${triples.mkString("\n")}
 				|} }""".stripMargin)
 			written += triples.size
+		}
 
 		log.debug(s"Wrote $written hasKeyword triples for ${groups.size} subject/graph pairs")
 		written
+	}
 
 	/**
 	 * Reads the singular triples back and partitions the groups into those whose every
@@ -212,35 +215,41 @@ class KeywordSplitter(
 	 */
 	private def verifyKeywords(
 		groups: IndexedSeq[SubjectKeywords]
-	): (IndexedSeq[SubjectKeywords], IndexedSeq[SubjectKeywords]) =
+	): (IndexedSeq[SubjectKeywords], IndexedSeq[SubjectKeywords]) = {
 		val found = mutable.Map.empty[(IRI, IRI), mutable.Set[String]]
 
 		// one query per source graph, with the graph IRI concrete, so that read-back is a
 		// plain lookup in the same graph the triples were just written to
-		for (graph, inGraph) <- groups.groupBy(_.graph) do
+		for ((graph, inGraph) <- groups.groupBy(_.graph)) {
 			val q = s"""
 				|SELECT ?subj ?kw WHERE {
 				|  VALUES ?subj { ${inGraph.map(g => iriRef(g.subj)).mkString(" ")} }
 				|  GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeyword)} ?kw . }
 				|}""".stripMargin
 
-			select(q): bindings =>
-				(bindings.getValue("subj"), bindings.getValue("kw")) match
+			select(q) { bindings =>
+				(bindings.getValue("subj"), bindings.getValue("kw")) match {
 					case (subj: IRI, kw: Literal) =>
 						found.getOrElseUpdate(subj -> graph, mutable.Set.empty) += kw.stringValue
 					case _ => ()
+				}
+			}
+		}
 
-		groups.partition: group =>
+		groups.partition { group =>
 			val present = found.getOrElse(group.subj -> group.graph, mutable.Set.empty)
 			val missing = group.keywords.filterNot(present.contains)
-			if missing.isEmpty then true
-			else
+			if (missing.isEmpty) true
+			else {
 				log.warning(
 					s"Not deleting hasKeywords of <${group.subj}> in graph <${group.graph}>: " +
-					s"${missing.size} of ${group.keywords.size} keywords absent after write " +
-					s"(${missing.take(5).mkString(", ")})"
+						s"${missing.size} of ${group.keywords.size} keywords absent after write " +
+						s"(${missing.take(5).mkString(", ")})"
 				)
 				false
+			}
+		}
+	}
 
 	/**
 	 * Deletes the `hasKeywords` statements the confirmed keywords came from, one
@@ -253,9 +262,10 @@ class KeywordSplitter(
 	 * remaining `hasKeywords` of the same subjects afterwards, so that a delete which matches
 	 * nothing cannot be reported as a success.
 	 */
-	private def deleteSources(confirmed: IndexedSeq[SubjectKeywords]): Int =
+	private def deleteSources(confirmed: IndexedSeq[SubjectKeywords]): (Int, IndexedSeq[IRI]) = {
 		var deleted = 0
-		for (graph, inGraph) <- confirmed.groupBy(_.graph) do
+		val failures = ArrayBuffer.empty[IRI]
+		for ((graph, inGraph) <- confirmed.groupBy(_.graph)) {
 			val subjFilter = s"FILTER(?subj IN (${inGraph.map(g => iriRef(g.subj)).mkString(", ")}))"
 			val pattern = s"GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }"
 
@@ -263,33 +273,48 @@ class KeywordSplitter(
 				|DELETE { $pattern }
 				|WHERE { $pattern $subjFilter }""".stripMargin)
 
-			var remaining = 0
+			val remainingSubjects = ArrayBuffer.empty[IRI]
 			select(s"""
 				|SELECT ?subj ?keywords WHERE {
 				|  $pattern
 				|  $subjFilter
-				|}""".stripMargin)(_ => remaining += 1)
+				|}""".stripMargin) { bindings =>
+				bindings.getValue("subj") match {
+					case subj: IRI => remainingSubjects += subj
+					case _ => ()
+				}
+			}
 
-			val expected = inGraph.map(_.sources.size).sum
+			val remaining = remainingSubjects.size
+			val expected = inGraph.map(_.sourceCount).sum
 			deleted += expected - remaining
-			if remaining > 0 then log.warning(
-				s"$remaining of $expected hasKeywords statements in graph <$graph> survived " +
-				s"their deletion; re-running will retry them"
-			)
+			if (remaining > 0) {
+				log.warning(
+					s"$remaining of $expected hasKeywords statements in graph <$graph> survived " +
+						s"their deletion; re-running will retry them"
+				)
+			}
+			failures ++= remainingSubjects
+		}
 
 		log.debug(s"Deleted $deleted hasKeywords triples")
-		deleted
+		deleted -> failures.toIndexedSeq.distinct
+	}
 
-	private def select(query: String)(handleRow: BindingSet => Unit): Unit =
+	private def select(query: String)(handleRow: BindingSet => Unit): Unit = {
 		Using.resource(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.foreach(handleRow))
+	}
 
 	/**
 	 * Runs a SPARQL update. Note that we write the updates ourselves instead of using
 	 * `RepositoryConnection.add`/`remove`, whose statements rdf4j would serialize for us: see
 	 * [[plainLiteral]] for why their literals cannot be matched by Virtuoso.
 	 */
-	private def update(query: String): Unit = Using.resource(repo.getConnection()):
-		_.prepareUpdate(QueryLanguage.SPARQL, query).execute()
+	private def update(query: String): Unit = {
+		Using.resource(repo.getConnection()) {
+			_.prepareUpdate(QueryLanguage.SPARQL, query).execute()
+		}
+	}
 
 	/**
 	 * A string as a SPARQL plain literal, that is, without the `^^xsd:string` datatype.
@@ -307,21 +332,22 @@ class KeywordSplitter(
 	 * non-printable characters as `\\uXXXX`, so that not even the control characters our data
 	 * is known to contain can break the query.
 	 */
-	private def plainLiteral(value: String): String =
+	private def plainLiteral(value: String): String = {
 		"\"" + NTriplesUtil.escapeString(value) + "\""
+	}
 
 	/** An IRI in the `<...>` form, escaped by rdf4j. */
 	private def iriRef(iri: IRI): String = NTriplesUtil.toNTriplesString(iri)
 
-end KeywordSplitter
+}
 
-object KeywordSplitter:
+object KeywordSplitter {
 
-	/** The `hasKeywords` literals of one subject in one graph, and the keywords in them. */
+	/** One subject/graph source group, its source count, and the parsed keywords. */
 	private case class SubjectKeywords(
 		subj: IRI,
 		graph: IRI,
-		sources: IndexedSeq[Literal],
+		sourceCount: Int,
 		keywords: IndexedSeq[String]
 	)
 
@@ -330,21 +356,27 @@ object KeywordSplitter:
 		written: Int,
 		deleted: Int,
 		unconfirmed: IndexedSeq[IRI],
-		empties: IndexedSeq[IRI]
-	):
-		def +(other: SplitSummary) = SplitSummary(
+		empties: IndexedSeq[IRI],
+		deletionFailures: IndexedSeq[IRI]
+	) {
+		def +(other: SplitSummary): SplitSummary = SplitSummary(
 			subjects = subjects + other.subjects,
 			written = written + other.written,
 			deleted = deleted + other.deleted,
 			unconfirmed = unconfirmed ++ other.unconfirmed,
-			empties = empties ++ other.empties
+			empties = empties ++ other.empties,
+			deletionFailures = deletionFailures ++ other.deletionFailures
 		)
 
-		override def toString =
+		override def toString = {
 			s"$subjects subjects split, $written hasKeyword written, $deleted hasKeywords deleted, " +
-			s"${unconfirmed.size} unconfirmed, ${empties.size} without parseable keyword"
+				s"${unconfirmed.size} unconfirmed, ${deletionFailures.size} deletion failures, " +
+				s"${empties.size} without parseable keyword"
+		}
+	}
 
-	object SplitSummary:
-		val empty = SplitSummary(0, 0, 0, Vector.empty, Vector.empty)
+	object SplitSummary {
+		val empty = SplitSummary(0, 0, 0, Vector.empty, Vector.empty, Vector.empty)
+	}
 
-end KeywordSplitter
+}

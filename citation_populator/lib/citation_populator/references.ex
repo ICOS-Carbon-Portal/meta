@@ -42,7 +42,7 @@ defmodule CitationPopulator.References do
   """
   def build(uri, class, derived_graph, context) do
     cond do
-      class == Vocab.collection_class() -> build_collection(uri, context)
+      class == Vocab.collection_class() -> build_collection(uri, derived_graph, context)
       class == Vocab.doc_object_class() -> build_object(uri, :doc, derived_graph, context)
       true -> build_object(uri, :data, derived_graph, context)
     end
@@ -110,12 +110,12 @@ defmodule CitationPopulator.References do
     finish(refs, doi)
   end
 
-  defp build_collection(uri, context) do
+  defp build_collection(uri, graph, context) do
     case Envri.collection_envri(uri) do
       nil ->
         doi_citation_only(uri)
 
-      _envri ->
+      envri ->
         coll = Reader.collection(uri, context.cache)
         doi = DataCite.parse_doi(coll.doi_raw)
 
@@ -124,7 +124,11 @@ defmodule CitationPopulator.References do
           # DOI citation when the collection cannot be read.
           doi_citation_only(uri)
         else
-          finish(%{"title" => coll.title}, doi)
+          # Collections have no spec/project, so the licence chain falls
+          # straight to the ENVRI default, mirroring LiveCitationMaker's
+          # getLicence for subjects with no hasObjectSpec.
+          licence = Licence.resolve(context.cache, uri, nil, nil, envri, graph)
+          finish(%{"title" => coll.title, "licence" => licence}, doi)
         end
     end
   end

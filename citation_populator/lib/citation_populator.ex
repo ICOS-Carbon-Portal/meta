@@ -33,11 +33,21 @@ defmodule CitationPopulator do
 
   require Logger
 
-  alias CitationPopulator.{DataCiteQueue, References, Sparql, Vocab, Writer}
+  alias CitationPopulator.{DataCiteQueue, References, Run, Sparql, Vocab, Writer}
 
   def run do
     graph = Application.fetch_env!(:citation_populator, :derived_citations_graph)
+    {:ok, run} = Run.start_link([])
+    context = Run.context(run)
 
+    try do
+      run_pass(graph, context)
+    after
+      Supervisor.stop(run)
+    end
+  end
+
+  defp run_pass(graph, context) do
     Logger.info("Counting citable subjects...")
     total = count_citable_subjects()
 
@@ -57,8 +67,8 @@ defmodule CitationPopulator do
       |> Stream.with_index(1)
       |> Task.async_stream(
         fn {{uri, class}, idx} ->
-          count = populate("#{idx}/#{total}", uri, class, graph, materialized)
-          log_progress(progress, count, total, started_ms)
+          count = populate("#{idx}/#{total}", uri, class, graph, materialized, context)
+          log_progress(progress, count, total, started_ms, context.queue)
           count
         end,
         max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
@@ -67,7 +77,7 @@ defmodule CitationPopulator do
       )
       |> Enum.reduce(0, fn {:ok, count}, acc -> acc + count end)
 
-    case DataCiteQueue.pending() do
+    case DataCiteQueue.pending(context.queue) do
       0 ->
         :ok
 
@@ -78,7 +88,7 @@ defmodule CitationPopulator do
         )
     end
 
-    {queue_written, queue_failed} = DataCiteQueue.drain()
+    {queue_written, queue_failed} = DataCiteQueue.drain(context.queue)
     written = main_written + queue_written
 
     skipped =
@@ -131,7 +141,7 @@ defmodule CitationPopulator do
     |> Stream.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
-  defp populate(tag, uri, class, graph, materialized) do
+  defp populate(tag, uri, class, graph, materialized, context) do
     # Reads may still fail after the SPARQL client's retries (e.g. a longer
     # Virtuoso overload); that skips the subject (caught up on the next run)
     # instead of crashing the whole run. Write failures stay fatal.
@@ -139,7 +149,7 @@ defmodule CitationPopulator do
       try do
         if MapSet.member?(materialized, uri),
           do: :materialized,
-          else: References.build(uri, class, graph)
+          else: References.build(uri, class, graph, context)
       rescue
         e -> {:error, Exception.format(:error, e, __STACKTRACE__) |> String.slice(0, 500)}
       end
@@ -155,7 +165,7 @@ defmodule CitationPopulator do
 
       {:deferred, job} ->
         count = Writer.write(graph, Writer.licence_triple(uri, job.refs_base))
-        DataCiteQueue.push(Map.merge(job, %{uri: uri, tag: tag, graph: graph}))
+        DataCiteQueue.push(context.queue, Map.merge(job, %{uri: uri, tag: tag, graph: graph}))
         Logger.debug("[#{tag}] Deferred #{uri} to the DataCite queue")
         count
 
@@ -171,7 +181,7 @@ defmodule CitationPopulator do
 
   @log_every 500
 
-  defp log_progress(progress, written_now, total, started_ms) do
+  defp log_progress(progress, written_now, total, started_ms, queue) do
     :atomics.add(progress, 2, written_now)
     processed = :atomics.add_get(progress, 1, 1)
 
@@ -185,7 +195,7 @@ defmodule CitationPopulator do
         "Progress: #{processed}/#{total} subjects " <>
           "(#{Float.round(100.0 * processed / total, 1)}%), #{written} triples written, " <>
           "#{Float.round(rate, 1)} subj/s, ETA #{eta_s} s, " <>
-          "#{DataCiteQueue.pending()} pending in the DataCite queue"
+          "#{DataCiteQueue.pending(queue)} pending in the DataCite queue"
       )
     end
   end

@@ -6,18 +6,7 @@ defmodule CitationPopulator.Application do
 
   @impl true
   def start(_type, _args) do
-    # Shared counter behind the every-N-lookups DataCite progress log.
-    :persistent_term.put(
-      {CitationPopulator.DataCite, :lookup_counter},
-      :atomics.new(1, [])
-    )
-
-    children =
-      [
-        CitationPopulator.Cache,
-        {Task.Supervisor, name: CitationPopulator.TaskSupervisor},
-        CitationPopulator.DataCiteQueue
-      ] ++ run_children()
+    children = run_children()
 
     Supervisor.start_link(children, strategy: :one_for_one, name: CitationPopulator.Supervisor)
   end
@@ -39,6 +28,10 @@ defmodule CitationPopulator.Application do
       try do
         CitationPopulator.run()
         0
+      rescue
+        exception ->
+          Logger.error(Exception.format(:error, exception, __STACKTRACE__))
+          1
       catch
         kind, reason ->
           Logger.error(Exception.format(kind, reason, __STACKTRACE__))

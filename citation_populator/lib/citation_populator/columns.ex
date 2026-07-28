@@ -9,10 +9,10 @@ defmodule CitationPopulator.Columns do
   alias CitationPopulator.{Cache, Rdf}
 
   @doc "nil when nothing can be resolved (matching `columns = None` in Scala)."
-  def for_object(nil = _dataset_uri, _actual_names_json), do: nil
+  def for_object(_cache, nil = _dataset_uri, _actual_names_json), do: nil
 
-  def for_object(dataset_uri, actual_names_json) do
-    defs = column_defs(dataset_uri)
+  def for_object(cache, dataset_uri, actual_names_json) do
+    defs = column_defs(cache, dataset_uri)
 
     columns =
       case parse_actual(actual_names_json) do
@@ -57,8 +57,8 @@ defmodule CitationPopulator.Columns do
   # A dataset's column/variable definitions are shared by every object of
   # that spec, so resolve them once per dataset per run. Only the per-object
   # `actual_names` filtering above stays live.
-  defp column_defs(dataset_uri) do
-    Cache.fetch({:columns, dataset_uri}, fn -> column_defs_uncached(dataset_uri) end)
+  defp column_defs(cache, dataset_uri) do
+    Cache.fetch(cache, {:columns, dataset_uri}, fn -> column_defs_uncached(dataset_uri) end)
   end
 
   defp column_defs_uncached(dataset_uri) do

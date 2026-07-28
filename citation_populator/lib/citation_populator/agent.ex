@@ -11,9 +11,9 @@ defmodule CitationPopulator.Agent do
 
   # People and organizations are referenced by many objects; render each
   # agent once per run.
-  def read(uri), do: Cache.fetch({:agent, uri}, fn -> read_uncached(uri) end)
+  def read(cache, uri), do: Cache.fetch(cache, {:agent, uri}, fn -> read_uncached(cache, uri) end)
 
-  defp read_uncached(uri) do
+  defp read_uncached(cache, uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -29,6 +29,7 @@ defmodule CitationPopulator.Agent do
 
     if Rdf.val(row, "firstName") do
       person_json(
+        cache,
         uri,
         Rdf.val(row, "label"),
         Rdf.val(row, "firstName"),
@@ -38,18 +39,18 @@ defmodule CitationPopulator.Agent do
       )
     else
       %{
-        "self" => self_resource(uri, Rdf.val(row, "label")),
+        "self" => self_resource(cache, uri, Rdf.val(row, "label")),
         "name" => Rdf.val(row, "name") || Rdf.val(row, "label") || last_segment(uri)
       }
       |> put_opt("email", Rdf.val(row, "email"))
       |> put_opt("website", Rdf.val(row, "website"))
-      |> put_opt("webpageDetails", webpage_details(uri))
+      |> put_opt("webpageDetails", webpage_details(cache, uri))
     end
   end
 
-  def person_json(uri, label, first_name, last_name, email, orcid) do
+  def person_json(cache, uri, label, first_name, last_name, email, orcid) do
     %{
-      "self" => self_resource(uri, label),
+      "self" => self_resource(cache, uri, label),
       "firstName" => first_name,
       "lastName" => last_name
     }
@@ -57,21 +58,21 @@ defmodule CitationPopulator.Agent do
     |> put_opt("orcid", normalize_orcid(orcid))
   end
 
-  def self_resource(uri, label) do
-    put_opt(%{"uri" => uri, "comments" => comments(uri)}, "label", label)
+  def self_resource(cache, uri, label) do
+    put_opt(%{"uri" => uri, "comments" => comments(cache, uri)}, "label", label)
   end
 
   # The station-attribution author path (Attribution.authors -> person_json)
   # renders each person directly, bypassing the cached read/1 above, so its
   # comment lookup would otherwise fire once per author per object. An agent's
   # rdfs:comments are shared reference data, so read them once per URI per run.
-  defp comments(uri) do
-    Cache.fetch({:comments, uri}, fn ->
+  defp comments(cache, uri) do
+    Cache.fetch(cache, {:comments, uri}, fn ->
       Rdf.values("SELECT ?c WHERE { <#{uri}> rdfs:comment ?c }", "c")
     end)
   end
 
-  defp webpage_details(uri) do
+  defp webpage_details(cache, uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -104,7 +105,7 @@ defmodule CitationPopulator.Agent do
           end)
           |> Enum.sort_by(fn lb -> {lb["orderWeight"] == nil, lb["orderWeight"]} end)
 
-        %{"self" => self_resource(el, Rdf.val(row, "label"))}
+        %{"self" => self_resource(cache, el, Rdf.val(row, "label"))}
         |> put_opt("coverImage", Rdf.val(row, "cover"))
         |> put_opt("linkBoxes", if(link_boxes == [], do: nil, else: link_boxes))
     end
@@ -116,7 +117,7 @@ defmodule CitationPopulator.Agent do
   every value is an agent, sorted Persons-first by (LASTNAME, firstName),
   Organizations by name — meta's agentOrdering.
   """
-  def read_contributors(uris) do
+  def read_contributors(cache, uris) do
     case uris do
       [single] ->
         types = Rdf.values("SELECT ?t WHERE { <#{single}> a ?t }", "t")
@@ -137,17 +138,18 @@ defmodule CitationPopulator.Agent do
             end
           end)
           |> Enum.sort()
-          |> Enum.map(fn {_idx, member} -> read(member) end)
+          |> Enum.map(fn {_idx, member} -> read(cache, member) end)
         else
-          read_sorted(uris)
+          read_sorted(cache, uris)
         end
 
       _ ->
-        read_sorted(uris)
+        read_sorted(cache, uris)
     end
   end
 
-  defp read_sorted(uris), do: uris |> Enum.map(&read/1) |> Enum.sort_by(&sort_key/1)
+  defp read_sorted(cache, uris),
+    do: uris |> Enum.map(&read(cache, &1)) |> Enum.sort_by(&sort_key/1)
 
   @doc "Sort key implementing meta's agentOrdering: Persons before Organizations."
   def sort_key(agent) do

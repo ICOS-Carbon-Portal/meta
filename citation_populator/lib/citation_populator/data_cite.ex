@@ -12,14 +12,10 @@ defmodule CitationPopulator.DataCite do
   the materialized `hasBiblioInfo` literal back with that format.
   """
 
-  require Logger
-
-  alias CitationPopulator.DataCiteQueue
   import CitationPopulator.Util, only: [put_opt: 3]
 
   @api "https://api.datacite.org"
   @style "elsevier-harvard"
-  @log_lookups_every 100
 
   @doc "Parses a DOI like the Scala Doi.parse: 10.<digits>/<word chars>, suffix uppercased."
   def parse_doi(s) when is_binary(s) do
@@ -34,8 +30,8 @@ defmodule CitationPopulator.DataCite do
   def doi_to_string({prefix, suffix}), do: "#{prefix}/#{suffix}"
 
   @doc "Fetches a formatted citation string (style :html | :bibtex | :ris)."
-  def fetch_citation(doi, style) do
-    with {:ok, body} <- count_lookup(get_with_retry(citation_url(doi, style), [])) do
+  def fetch_citation(doi, style, queue) do
+    with {:ok, body} <- get_with_retry(citation_url(doi, style), [], queue) do
       case String.trim(body) do
         "" -> {:error, "got empty citation text"}
         cit -> {:ok, cit}
@@ -52,11 +48,11 @@ defmodule CitationPopulator.DataCite do
   end
 
   @doc "Fetches DOI metadata and returns it as a DoiMeta-shaped JSON map."
-  def fetch_doi_meta({prefix, suffix} = doi) do
+  def fetch_doi_meta({prefix, suffix} = doi, queue) do
     url = "#{@api}/dois/#{prefix}/#{suffix}"
 
     with {:ok, body} <-
-           count_lookup(get_with_retry(url, [{"accept", "application/vnd.api+json"}])) do
+           get_with_retry(url, [{"accept", "application/vnd.api+json"}], queue) do
       case JSON.decode(body) do
         {:ok, %{"data" => %{"attributes" => attrs}}} when is_map(attrs) ->
           {:ok, map_attributes(attrs, doi)}
@@ -77,16 +73,16 @@ defmodule CitationPopulator.DataCite do
     retry_log_level: :info
   ]
 
-  defp get_with_retry(url, headers) do
-    DataCiteQueue.await_slot()
+  defp get_with_retry(url, headers, queue) do
+    CitationPopulator.DataCiteQueue.await_slot(queue)
 
     case Req.get(url, [headers: headers, retry: &transient?/2] ++ @req_options) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
       {:ok, %Req.Response{status: 429} = resp} ->
-        DataCiteQueue.backoff(rate_limit_cooldown(resp))
-        get_with_retry(url, headers)
+        CitationPopulator.DataCiteQueue.backoff(queue, rate_limit_cooldown(resp))
+        get_with_retry(url, headers, queue)
 
       {:ok, %Req.Response{status: status, body: body}} ->
         {:error, "DataCite responded with HTTP #{status}: #{String.slice(body, 0, 200)}"}
@@ -122,22 +118,6 @@ defmodule CitationPopulator.DataCite do
     else
       _ -> nil
     end
-  end
-
-  # Counts a completed lookup (success or failure, retries not counted
-  # separately) and logs progress with the current queue size every N.
-  defp count_lookup(result) do
-    counter = :persistent_term.get({__MODULE__, :lookup_counter})
-    n = :atomics.add_get(counter, 1, 1)
-
-    if rem(n, @log_lookups_every) == 0 do
-      Logger.info(
-        "DataCite progress: #{n} lookups completed, " <>
-          "#{DataCiteQueue.pending()} subjects in the queue"
-      )
-    end
-
-    result
   end
 
   @doc false

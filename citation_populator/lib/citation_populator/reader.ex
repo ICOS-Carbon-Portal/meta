@@ -20,7 +20,7 @@ defmodule CitationPopulator.Reader do
     dataset: nil
   }
 
-  def data_object(uri) do
+  def data_object(uri, cache) do
     core =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -53,14 +53,14 @@ defmodule CitationPopulator.Reader do
         start: Rdf.parse_datetime(Rdf.val(core, "startTime")),
         stop: Rdf.parse_datetime(Rdf.val(core, "endTime"))
       },
-      spec: if(spec_uri, do: read_spec(spec_uri), else: @empty_spec),
-      acq: read_acquisition(uri),
+      spec: if(spec_uri, do: read_spec(cache, spec_uri), else: @empty_spec),
+      acq: read_acquisition(cache, uri),
       prod: read_production(uri),
       subm: read_submission(uri)
     }
   end
 
-  def doc_object(uri) do
+  def doc_object(uri, _cache) do
     core =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -83,7 +83,7 @@ defmodule CitationPopulator.Reader do
     }
   end
 
-  def collection(uri) do
+  def collection(uri, _cache) do
     core =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -97,8 +97,8 @@ defmodule CitationPopulator.Reader do
 
   # Object specs are shared across all objects that use them, so read each
   # one from Virtuoso only once per run.
-  defp read_spec(spec_uri) do
-    Cache.fetch({:spec, spec_uri}, fn -> read_spec_uncached(spec_uri) end)
+  defp read_spec(cache, spec_uri) do
+    Cache.fetch(cache, {:spec, spec_uri}, fn -> read_spec_uncached(spec_uri) end)
   end
 
   defp read_spec_uncached(spec_uri) do
@@ -137,7 +137,7 @@ defmodule CitationPopulator.Reader do
     end
   end
 
-  defp read_acquisition(uri) do
+  defp read_acquisition(cache, uri) do
     row =
       Rdf.select_one("""
       SELECT * WHERE {
@@ -161,7 +161,7 @@ defmodule CitationPopulator.Reader do
       stop: Rdf.parse_datetime(Rdf.val(row, "stop")),
       station_uri: station,
       station_name: Rdf.val(row, "stationName"),
-      station_types: if(station, do: station_types(station), else: []),
+      station_types: if(station, do: station_types(cache, station), else: []),
       sampling_height: Rdf.parse_float(Rdf.val(row, "samplingHeight")),
       site_location_label: Rdf.val(row, "siteLocationLabel"),
       sampling_point_label: Rdf.val(row, "samplingPointLabel")
@@ -170,8 +170,8 @@ defmodule CitationPopulator.Reader do
 
   # The same station backs every object acquired there; its rdf:types don't
   # change within a run.
-  defp station_types(station) do
-    Cache.fetch({:station_types, station}, fn ->
+  defp station_types(cache, station) do
+    Cache.fetch(cache, {:station_types, station}, fn ->
       Rdf.values("SELECT ?t WHERE { <#{station}> a ?t }", "t")
     end)
   end

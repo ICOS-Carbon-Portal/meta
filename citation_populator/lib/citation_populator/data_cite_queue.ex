@@ -32,20 +32,20 @@ defmodule CitationPopulator.DataCiteQueue do
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
-  def push(job), do: GenServer.cast(__MODULE__, {:push, job})
+  def push(queue, job), do: GenServer.call(queue, {:push, job}, :infinity)
 
   @doc "Subjects currently queued or being fetched."
-  def pending, do: GenServer.call(__MODULE__, :pending)
+  def pending(queue), do: GenServer.call(queue, :pending)
 
   @doc """
   Blocks until the queue is empty and all fetches are done; returns
   {triples_written, subjects_failed} and resets the counters.
   """
-  def drain, do: GenServer.call(__MODULE__, :drain, :infinity)
+  def drain(queue), do: GenServer.call(queue, :drain, :infinity)
 
   @doc "Blocks the caller until its DataCite rate-limit slot is due."
-  def await_slot do
-    delay = GenServer.call(__MODULE__, :slot, :infinity)
+  def await_slot(queue) do
+    delay = GenServer.call(queue, :slot, :infinity)
     if delay > 0, do: Process.sleep(delay)
     :ok
   end
@@ -58,14 +58,17 @@ defmodule CitationPopulator.DataCiteQueue do
   already in flight when the pause begins all report the same incident;
   only the first extends the pause (and logs).
   """
-  def backoff(suggested_ms), do: GenServer.cast(__MODULE__, {:backoff, suggested_ms})
+  def backoff(queue, suggested_ms), do: GenServer.cast(queue, {:backoff, suggested_ms})
 
   @log_every 500
 
   @impl true
   def init(nil) do
+    {:ok, task_supervisor} = Task.Supervisor.start_link([])
+
     {:ok,
      %{
+       task_supervisor: task_supervisor,
        pending: :queue.new(),
        running: 0,
        done: 0,
@@ -78,28 +81,8 @@ defmodule CitationPopulator.DataCiteQueue do
   end
 
   @impl true
-  def handle_cast({:push, job}, state) do
-    {:noreply, start_jobs(%{state | pending: :queue.in(job, state.pending)})}
-  end
-
-  def handle_cast({:backoff, suggested_ms}, state) do
-    now = System.monotonic_time(:millisecond)
-
-    # When a pause is already far in the future, this 429 came from a request
-    # that was in flight when the pause began — same incident, ignore it.
-    if state.next_slot_at <= now + @slot_interval_ms * @fetch_concurrency * 2 do
-      ms = suggested_ms || state.backoff_ms
-      Logger.info("DataCite rate limit hit, backing off for #{div(ms, 1000)} s")
-
-      # Escalate the headerless default for the next consecutive incident.
-      backoff_ms =
-        if suggested_ms, do: state.backoff_ms, else: min(state.backoff_ms * 2, @max_backoff_ms)
-
-      {:noreply,
-       %{state | next_slot_at: max(state.next_slot_at, now + ms), backoff_ms: backoff_ms}}
-    else
-      {:noreply, state}
-    end
+  def handle_call({:push, job}, _from, state) do
+    {:reply, :ok, start_jobs(%{state | pending: :queue.in(job, state.pending)})}
   end
 
   @impl true
@@ -120,6 +103,27 @@ defmodule CitationPopulator.DataCiteQueue do
     now = System.monotonic_time(:millisecond)
     slot = max(now, state.next_slot_at)
     {:reply, slot - now, %{state | next_slot_at: slot + @slot_interval_ms}}
+  end
+
+  @impl true
+  def handle_cast({:backoff, suggested_ms}, state) do
+    now = System.monotonic_time(:millisecond)
+
+    # When a pause is already far in the future, this 429 came from a request
+    # that was in flight when the pause began — same incident, ignore it.
+    if state.next_slot_at <= now + @slot_interval_ms * @fetch_concurrency * 2 do
+      ms = suggested_ms || state.backoff_ms
+      Logger.info("DataCite rate limit hit, backing off for #{div(ms, 1000)} s")
+
+      # Escalate the headerless default for the next consecutive incident.
+      backoff_ms =
+        if suggested_ms, do: state.backoff_ms, else: min(state.backoff_ms * 2, @max_backoff_ms)
+
+      {:noreply,
+       %{state | next_slot_at: max(state.next_slot_at, now + ms), backoff_ms: backoff_ms}}
+    else
+      {:noreply, state}
+    end
   end
 
   @impl true
@@ -170,7 +174,8 @@ defmodule CitationPopulator.DataCiteQueue do
         state
 
       {{:value, job}, rest} ->
-        Task.Supervisor.async_nolink(CitationPopulator.TaskSupervisor, fn -> process(job) end)
+        queue = self()
+        Task.Supervisor.async_nolink(state.task_supervisor, fn -> process(queue, job) end)
         start_jobs(%{state | pending: rest, running: state.running + 1})
     end
   end
@@ -180,8 +185,8 @@ defmodule CitationPopulator.DataCiteQueue do
   defp take_stats(state),
     do: {{state.written, state.failed}, %{state | done: 0, written: 0, failed: 0}}
 
-  defp process(job) do
-    case References.complete_deferred(job.mode, job.doi, job.refs_base) do
+  defp process(queue, job) do
+    case References.complete_deferred(job.mode, job.doi, job.refs_base, queue) do
       {:ok, refs} ->
         triples =
           case job.mode do

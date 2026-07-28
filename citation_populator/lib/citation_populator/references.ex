@@ -13,8 +13,6 @@ defmodule CitationPopulator.References do
   materializing placeholder text.
   """
 
-  require Logger
-
   alias CitationPopulator.{
     Agent,
     Cache,
@@ -42,33 +40,33 @@ defmodule CitationPopulator.References do
     :none              — nothing computable for this subject
     {:error, reason}   — skip the subject
   """
-  def build(uri, class, derived_graph) do
+  def build(uri, class, derived_graph, context) do
     cond do
-      class == Vocab.collection_class() -> build_collection(uri)
-      class == Vocab.doc_object_class() -> build_object(uri, :doc, derived_graph)
-      true -> build_object(uri, :data, derived_graph)
+      class == Vocab.collection_class() -> build_collection(uri, context)
+      class == Vocab.doc_object_class() -> build_object(uri, :doc, derived_graph, context)
+      true -> build_object(uri, :data, derived_graph, context)
     end
   end
 
-  defp build_object(uri, kind, graph) do
+  defp build_object(uri, kind, graph, context) do
     case Envri.object_envri(uri) do
       # Mirrors Scala: when the subject is not under a known object prefix the
       # CitableItem lookup yields nothing and only a DOI citation is written.
       nil -> doi_citation_only(uri)
-      envri when kind == :doc -> build_doc(uri, envri, graph)
-      envri -> build_data(uri, envri, graph)
+      envri when kind == :doc -> build_doc(uri, envri, graph, context)
+      envri -> build_data(uri, envri, graph, context)
     end
   end
 
-  defp build_data(uri, envri, graph) do
-    obj = Reader.data_object(uri)
+  defp build_data(uri, envri, graph, context) do
+    obj = Reader.data_object(uri, context.cache)
     doi = DataCite.parse_doi(obj.doi_raw)
 
     columns =
       if obj.spec.dataset_type == :station_time_series,
-        do: Columns.for_object(obj.spec.dataset, obj.actual_columns_json)
+        do: Columns.for_object(context.cache, obj.spec.dataset, obj.actual_columns_json)
 
-    obj = Map.put(obj, :columns, columns)
+    obj = obj |> Map.put(:columns, columns) |> Map.put(:cache, context.cache)
     pid = data_object_pid(obj, envri)
     pid_url = Envri.pid_url(obj.doi_raw, pid)
 
@@ -78,7 +76,9 @@ defmodule CitationPopulator.References do
         _ -> Citation.icos_citation(obj, envri, pid_url)
       end
 
-    licence = Licence.resolve(uri, obj.spec.uri, obj.spec.project_uri, envri, graph)
+    licence =
+      Licence.resolve(context.cache, uri, obj.spec.uri, obj.spec.project_uri, envri, graph)
+
     keywords = parse_comma_sep(obj.keywords_raw)
 
     structured = %{
@@ -111,15 +111,15 @@ defmodule CitationPopulator.References do
     finish(refs, doi)
   end
 
-  defp build_doc(uri, envri, graph) do
-    obj = Reader.doc_object(uri)
+  defp build_doc(uri, envri, graph, context) do
+    obj = Reader.doc_object(uri, context.cache) |> Map.put(:cache, context.cache)
     doi = DataCite.parse_doi(obj.doi_raw)
 
-    authors = Agent.read_contributors(obj.creator_uris)
+    authors = Agent.read_contributors(context.cache, obj.creator_uris)
     pid = doc_object_pid(obj, envri)
     pid_url = Envri.pid_url(obj.doi_raw, pid)
     cit_info = Citation.doc_citation(obj, envri, authors, pid_url)
-    licence = Licence.resolve(uri, nil, nil, envri, graph)
+    licence = Licence.resolve(context.cache, uri, nil, nil, envri, graph)
     keywords = parse_comma_sep(obj.keywords_raw)
 
     structured = %{
@@ -152,13 +152,13 @@ defmodule CitationPopulator.References do
     finish(refs, doi)
   end
 
-  defp build_collection(uri) do
+  defp build_collection(uri, context) do
     case Envri.collection_envri(uri) do
       nil ->
         doi_citation_only(uri)
 
       _envri ->
-        coll = Reader.collection(uri)
+        coll = Reader.collection(uri, context.cache)
         doi = DataCite.parse_doi(coll.doi_raw)
 
         if coll.title == nil do
@@ -179,8 +179,8 @@ defmodule CitationPopulator.References do
   returns the final References map (:full) or just the citation string
   (:citation_only). All lookups must succeed (the Scala dataCiteReady gate).
   """
-  def complete_deferred(:citation_only, doi, _refs_base) do
-    with {:ok, citation} <- DataCite.fetch_citation(doi, :html) do
+  def complete_deferred(:citation_only, doi, _refs_base, queue) do
+    with {:ok, citation} <- DataCite.fetch_citation(doi, :html, queue) do
       {:ok, %{"citationString" => citation}}
     else
       {:error, reason} ->
@@ -188,8 +188,8 @@ defmodule CitationPopulator.References do
     end
   end
 
-  def complete_deferred(:full, doi, refs_base) do
-    with {:ok, bundle} <- fetch_doi_bundle(doi) do
+  def complete_deferred(:full, doi, refs_base, queue) do
+    with {:ok, bundle} <- fetch_doi_bundle(doi, queue) do
       {:ok,
        refs_base
        |> Map.put("citationString", bundle.html)
@@ -199,11 +199,11 @@ defmodule CitationPopulator.References do
     end
   end
 
-  defp fetch_doi_bundle(doi) do
-    with {:ok, html} <- DataCite.fetch_citation(doi, :html),
-         {:ok, bibtex} <- DataCite.fetch_citation(doi, :bibtex),
-         {:ok, ris} <- DataCite.fetch_citation(doi, :ris),
-         {:ok, meta} <- DataCite.fetch_doi_meta(doi) do
+  defp fetch_doi_bundle(doi, queue) do
+    with {:ok, html} <- DataCite.fetch_citation(doi, :html, queue),
+         {:ok, bibtex} <- DataCite.fetch_citation(doi, :bibtex, queue),
+         {:ok, ris} <- DataCite.fetch_citation(doi, :ris, queue),
+         {:ok, meta} <- DataCite.fetch_doi_meta(doi, queue) do
       {:ok, %{html: html, bibtex: bibtex, ris: ris, meta: meta}}
     else
       {:error, reason} ->
@@ -239,7 +239,7 @@ defmodule CitationPopulator.References do
     if obj.spec.dataset_type == :station_time_series and obj.acq.station_uri do
       interval = if obj.acq.start && obj.acq.stop, do: {obj.acq.start, obj.acq.stop}
 
-      station_fundings(obj.acq.station_uri)
+      station_fundings(obj.cache, obj.acq.station_uri)
       |> Enum.filter(&funding_overlaps?(&1, interval))
       |> Enum.sort_by(fn f ->
         {date_iso(f.stop, "9999-12-31"), date_iso(f.start, "0000-01-01"), f.funder_name}
@@ -253,8 +253,8 @@ defmodule CitationPopulator.References do
   # A station's fundings are shared by every object acquired there, so read
   # and shape them once per station per run; only the per-object interval
   # overlap filtering above stays live.
-  defp station_fundings(station_uri) do
-    Cache.fetch({:funding, station_uri}, fn ->
+  defp station_fundings(cache, station_uri) do
+    Cache.fetch(cache, {:funding, station_uri}, fn ->
       Rdf.select("""
       SELECT * WHERE {
         <#{station_uri}> cpmeta:hasFunding ?funding .

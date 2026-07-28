@@ -32,28 +32,33 @@ defmodule CitationPopulator.Cache do
   harmless — the cached reads are pure and idempotent, so every computation
   yields the same value and the last write simply wins.
   """
-  def fetch(key, fun) do
-    case :ets.lookup(@table, key) do
+  def table(cache), do: GenServer.call(cache, :table)
+
+  def fetch(table, key, fun) do
+    case :ets.lookup(table, key) do
       [{^key, value}] ->
         value
 
       [] ->
         value = fun.()
-        :ets.insert(@table, {key, value})
+        :ets.insert(table, {key, value})
         value
     end
   end
 
   @impl true
   def init(nil) do
-    :ets.new(@table, [
-      :set,
-      :public,
-      :named_table,
-      read_concurrency: true,
-      write_concurrency: true
-    ])
+    table =
+      :ets.new(@table, [
+        :set,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
 
-    {:ok, nil}
+    {:ok, table}
   end
+
+  @impl true
+  def handle_call(:table, _from, table), do: {:reply, table, table}
 end

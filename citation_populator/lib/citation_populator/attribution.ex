@@ -13,7 +13,7 @@ defmodule CitationPopulator.Attribution do
         []
 
       station ->
-        memberships(station)
+        memberships(obj.cache, station)
         |> Enum.filter(&tc_filter(&1, obj))
         |> Enum.filter(&relevant?(&1, obj.acq.start, obj.acq.stop))
         |> Enum.sort_by(fn m ->
@@ -22,6 +22,7 @@ defmodule CitationPopulator.Attribution do
         |> Enum.uniq_by(& &1.person_uri)
         |> Enum.map(fn m ->
           Agent.person_json(
+            obj.cache,
             m.person_uri,
             m.person_label,
             m.first_name,
@@ -36,8 +37,8 @@ defmodule CitationPopulator.Attribution do
   # Every object acquired at a station shares that station's membership set
   # (the candidate authors), so read and shape it once per station per run;
   # the per-object theme/time filtering above stays live.
-  defp memberships(station_uri) do
-    Cache.fetch({:memberships, station_uri}, fn -> memberships_uncached(station_uri) end)
+  defp memberships(cache, station_uri) do
+    Cache.fetch(cache, {:memberships, station_uri}, fn -> memberships_uncached(station_uri) end)
   end
 
   defp memberships_uncached(station_uri) do

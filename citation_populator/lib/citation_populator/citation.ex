@@ -143,8 +143,8 @@ defmodule CitationPopulator.Citation do
 
   defp production_agents(obj) do
     if obj.prod.exists do
-      creator = obj.prod.creator_uri && Agent.read(obj.prod.creator_uri)
-      contributors = Agent.read_contributors(obj.prod.contributor_uris)
+      creator = obj.prod.creator_uri && Agent.read(obj.cache, obj.prod.creator_uri)
+      contributors = Agent.read_contributors(obj.cache, obj.prod.contributor_uris)
 
       cond do
         creator == nil -> contributors

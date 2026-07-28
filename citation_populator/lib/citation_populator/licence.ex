@@ -8,11 +8,12 @@ defmodule CitationPopulator.Licence do
   alias CitationPopulator.{Cache, Envri, Rdf}
   import CitationPopulator.Util, only: [put_opt: 3]
 
-  def resolve(obj_uri, spec_uri, project_uri, envri, derived_graph) do
+  def resolve(cache, obj_uri, spec_uri, project_uri, envri, derived_graph) do
     lic_uri =
-      own_licence_uri(obj_uri, derived_graph) || implied(spec_uri) || implied(project_uri)
+      own_licence_uri(obj_uri, derived_graph) || implied(cache, spec_uri) ||
+        implied(cache, project_uri)
 
-    if lic_uri, do: read(lic_uri), else: Envri.default_licence(envri)
+    if lic_uri, do: read(cache, lic_uri), else: Envri.default_licence(envri)
   end
 
   # The populator itself writes dcterms:license triples into the derived
@@ -29,11 +30,11 @@ defmodule CitationPopulator.Licence do
     Rdf.val(row, "lic")
   end
 
-  defp implied(nil), do: nil
+  defp implied(_cache, nil), do: nil
 
   # The implied licence of a spec or project is shared reference data.
-  defp implied(uri) do
-    Cache.fetch({:implied, uri}, fn ->
+  defp implied(cache, uri) do
+    Cache.fetch(cache, {:implied, uri}, fn ->
       row =
         Rdf.select_one("""
         SELECT ?lic WHERE { <#{uri}> cpmeta:impliesDefaultLicence ?lic } LIMIT 1
@@ -44,8 +45,8 @@ defmodule CitationPopulator.Licence do
   end
 
   # There are only a handful of licences; read each one once per run.
-  defp read(lic_uri) do
-    Cache.fetch({:licence, lic_uri}, fn -> read_uncached(lic_uri) end)
+  defp read(cache, lic_uri) do
+    Cache.fetch(cache, {:licence, lic_uri}, fn -> read_uncached(lic_uri) end)
   end
 
   defp read_uncached(lic_uri) do

@@ -7,8 +7,7 @@ config :citation_populator,
   # when it finishes. On by default outside `mix test` (which only exercises
   # pure logic); set RUN_ON_START=false to boot without running, e.g. to call
   # CitationPopulator.run/0 by hand from IEx.
-  run_on_start:
-    System.get_env("RUN_ON_START", to_string(config_env() != :test)) in ["true", "1"],
+  run_on_start: System.get_env("RUN_ON_START", to_string(config_env() != :test)) in ["true", "1"],
   # Virtuoso itself (the Scala service's default too) — NOT the meta-service
   # host, whose /sparql route is read-only and caps result sets.
   virtuoso_host: System.get_env("VIRTUOSO_HOST", "http://localhost:8890"),

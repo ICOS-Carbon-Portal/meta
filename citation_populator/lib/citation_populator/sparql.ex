@@ -41,14 +41,15 @@ defmodule CitationPopulator.Sparql do
   the stream only ends on an empty page, so it stays correct under any
   per-result row cap. The query must not itself use ORDER BY/LIMIT/OFFSET.
   """
-  def select_stream(query, order_by) do
+  def select_stream(query, order_by, endpoint \\ query_endpoint()) do
     Stream.resource(
       fn -> 0 end,
       fn offset ->
         page =
           select(
             "SELECT * WHERE { { #{query} ORDER BY #{order_by} } } " <>
-              "LIMIT #{@page_size} OFFSET #{offset}"
+              "LIMIT #{@page_size} OFFSET #{offset}",
+            endpoint
           )
 
         case page do
@@ -60,11 +61,14 @@ defmodule CitationPopulator.Sparql do
     )
   end
 
-  @doc "Runs a SELECT query and returns the list of binding maps from the JSON results."
-  def select(query) do
+  @doc """
+  Runs a SELECT query against `endpoint` (the local Virtuoso by default) and
+  returns the list of binding maps from the JSON results.
+  """
+  def select(query, endpoint \\ query_endpoint()) do
     headers = [{"accept", "application/sparql-results+json"}]
 
-    case post_form(query_endpoint(), %{"query" => query}, headers) do
+    case post_form(endpoint, %{"query" => query}, headers) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         JSON.decode!(body)["results"]["bindings"]
 

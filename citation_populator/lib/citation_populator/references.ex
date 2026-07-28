@@ -81,30 +81,10 @@ defmodule CitationPopulator.References do
 
     keywords = parse_comma_sep(obj.keywords_raw)
 
-    structured = %{
-      pid_url: pid_url,
-      file_name: obj.file_name,
-      hash_id: obj.hash_id,
-      authors: non_empty(cit_info.authors),
-      title: cit_info.title,
-      temp_cov: cit_info.temp_cov,
-      year: cit_info.year,
-      note: if(obj.spec.dataset_type == :spatio_temporal, do: obj.l3.description),
-      keywords: keywords,
-      publisher: obj.subm.submitter_name,
-      licence_url: licence["url"],
-      doi_raw: obj.doi_raw,
-      pid: pid
-    }
+    structured = structured_input(obj, cit_info, licence, keywords, pid, obj.l3.description)
 
     refs =
-      %{"licence" => licence}
-      |> put_opt("citationString", cit_info.cit_text)
-      |> Map.put("citationBibTex", Structured.to_bibtex(structured))
-      |> Map.put("citationRis", Structured.to_ris(structured))
-      |> put_opt("keywords", keywords)
-      |> put_opt("authors", non_empty(cit_info.authors))
-      |> put_opt("title", cit_info.title)
+      base_refs(cit_info, structured, licence, keywords)
       |> put_opt("temporalCoverageDisplay", cit_info.temp_cov)
       |> put_opt("acknowledgements", non_empty(acknowledgements(obj)))
 
@@ -122,32 +102,10 @@ defmodule CitationPopulator.References do
     licence = Licence.resolve(context.cache, uri, nil, nil, envri, graph)
     keywords = parse_comma_sep(obj.keywords_raw)
 
-    structured = %{
-      pid_url: pid_url,
-      file_name: obj.file_name,
-      hash_id: obj.hash_id,
-      authors: non_empty(authors),
-      # documents have no temporal coverage, so the BibTeX/RIS title tag
-      # (title + coverage) is absent — same as in Scala
-      title: cit_info.title,
-      temp_cov: nil,
-      year: cit_info.year,
-      note: nil,
-      keywords: keywords,
-      publisher: obj.subm.submitter_name,
-      licence_url: licence["url"],
-      doi_raw: obj.doi_raw,
-      pid: pid
-    }
-
-    refs =
-      %{"licence" => licence}
-      |> put_opt("citationString", cit_info.cit_text)
-      |> Map.put("citationBibTex", Structured.to_bibtex(structured))
-      |> Map.put("citationRis", Structured.to_ris(structured))
-      |> put_opt("keywords", keywords)
-      |> put_opt("authors", non_empty(authors))
-      |> put_opt("title", cit_info.title)
+    # Documents have no temporal coverage, so the BibTeX/RIS title tag
+    # (title + coverage) is absent — same as in Scala.
+    structured = structured_input(obj, cit_info, licence, keywords, pid, nil, authors)
+    refs = base_refs(cit_info, structured, licence, keywords, authors)
 
     finish(refs, doi)
   end
@@ -173,6 +131,34 @@ defmodule CitationPopulator.References do
 
   defp finish(refs, nil), do: {:ok, refs}
   defp finish(refs, doi), do: {:deferred, %{mode: :full, doi: doi, refs_base: refs}}
+
+  defp structured_input(obj, cit_info, licence, keywords, pid, note, authors \\ nil) do
+    %{
+      pid_url: obj |> Map.get(:doi_raw) |> Envri.pid_url(pid),
+      file_name: obj.file_name,
+      hash_id: obj.hash_id,
+      authors: non_empty(authors || cit_info.authors),
+      title: cit_info.title,
+      temp_cov: cit_info.temp_cov,
+      year: cit_info.year,
+      note: if(note && obj.spec.dataset_type == :spatio_temporal, do: note),
+      keywords: keywords,
+      publisher: obj.subm.submitter_name,
+      licence_url: licence["url"],
+      doi_raw: obj.doi_raw,
+      pid: pid
+    }
+  end
+
+  defp base_refs(cit_info, structured, licence, keywords, authors \\ nil) do
+    %{"licence" => licence}
+    |> put_opt("citationString", cit_info.cit_text)
+    |> Map.put("citationBibTex", Structured.to_bibtex(structured))
+    |> Map.put("citationRis", Structured.to_ris(structured))
+    |> put_opt("keywords", keywords)
+    |> put_opt("authors", non_empty(authors || cit_info.authors))
+    |> put_opt("title", cit_info.title)
+  end
 
   @doc """
   Completes a deferred DataCiteQueue job: fetches the DataCite data and

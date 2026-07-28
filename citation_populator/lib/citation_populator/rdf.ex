@@ -52,20 +52,15 @@ defmodule CitationPopulator.Rdf do
     end
   end
 
-  def parse_float(nil), do: nil
+  def parse_float(s), do: parse_number(s, &Float.parse/1)
 
-  def parse_float(s) do
-    case Float.parse(s) do
-      {f, _rest} -> f
-      :error -> nil
-    end
-  end
+  def parse_int(s), do: parse_number(s, &Integer.parse/1)
 
-  def parse_int(nil), do: nil
+  defp parse_number(nil, _parser), do: nil
 
-  def parse_int(s) do
-    case Integer.parse(s) do
-      {i, _rest} -> i
+  defp parse_number(value, parser) do
+    case parser.(value) do
+      {number, _rest} -> number
       :error -> nil
     end
   end

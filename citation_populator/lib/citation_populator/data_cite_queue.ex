@@ -81,6 +81,11 @@ defmodule CitationPopulator.DataCiteQueue do
   end
 
   @impl true
+  def terminate(_reason, %{task_supervisor: task_supervisor}) do
+    Supervisor.stop(task_supervisor)
+  end
+
+  @impl true
   def handle_call({:push, job}, _from, state) do
     {:reply, :ok, start_jobs(%{state | pending: :queue.in(job, state.pending)})}
   end

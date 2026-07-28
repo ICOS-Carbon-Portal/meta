@@ -1,7 +1,7 @@
 defmodule CitationPopulator.LifecycleTest do
   use ExUnit.Case, async: true
 
-  alias CitationPopulator.{Cache, Run}
+  alias CitationPopulator.{Cache, DataCiteQueue, Run}
 
   test "a newly started cache does not reuse a previous cache's values" do
     {:ok, first} = Cache.start_link([])
@@ -25,5 +25,15 @@ defmodule CitationPopulator.LifecycleTest do
     Supervisor.stop(run)
 
     refute Process.alive?(queue)
+  end
+
+  test "an empty run queue drains cleanly" do
+    {:ok, run} = Run.start_link([])
+    %{queue: queue} = Run.context(run)
+
+    assert DataCiteQueue.pending(queue) == 0
+    assert DataCiteQueue.drain(queue) == {0, 0}
+
+    Supervisor.stop(run)
   end
 end

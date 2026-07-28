@@ -36,4 +36,32 @@ defmodule CitationPopulator.LifecycleTest do
 
     Supervisor.stop(run)
   end
+
+  test "drain waits for every queued job, including failed jobs" do
+    {:ok, run} = Run.start_link([])
+    %{queue: queue} = Run.context(run)
+
+    assert :ok =
+             DataCiteQueue.push(queue, %{
+               mode: :unsupported,
+               doi: {"10.1234", "TEST"},
+               refs_base: %{},
+               uri: "https://example.test/object",
+               tag: "1/1",
+               graph: "https://example.test/graph"
+             })
+
+    assert DataCiteQueue.drain(queue) == {0, 1}
+    Supervisor.stop(run)
+  end
+
+  test "run children are cleaned up on an abnormal supervisor stop" do
+    {:ok, run} = Run.start_link([])
+    %{queue: queue} = Run.context(run)
+    Process.unlink(run)
+
+    assert :ok = Supervisor.stop(run, :abnormal)
+
+    refute Process.alive?(queue)
+  end
 end

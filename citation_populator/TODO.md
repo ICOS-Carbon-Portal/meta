@@ -39,4 +39,4 @@
 - [x] Add tests proving queued jobs are drained before the queue returns.
 - [x] Add tests for run cleanup after normal and abnormal shutdown.
 - [x] Run `mix test` after the refactor.
-- [ ] Run `mix format --check-formatted` once the repository's existing formatter drift is resolved.
+- [x] Run `mix format --check-formatted` once the repository's existing formatter drift is resolved.

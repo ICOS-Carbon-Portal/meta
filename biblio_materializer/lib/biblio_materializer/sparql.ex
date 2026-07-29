@@ -42,16 +42,22 @@ defmodule BiblioMaterializer.Sparql do
   the stream only ends on an empty page, so it stays correct under any
   per-result row cap. The query must not itself use ORDER BY/LIMIT/OFFSET.
   """
-  def select_stream(query, order_by, endpoint \\ query_endpoint()) do
+  def select_stream(query, order_by, endpoint \\ query_endpoint(), opts \\ []) do
+    endpoint = endpoint || query_endpoint()
+    page_size = Keyword.get(opts, :page_size, @page_size)
+    on_page = Keyword.get(opts, :on_page, fn _offset, _count -> :ok end)
+
     Stream.resource(
       fn -> 0 end,
       fn offset ->
         page =
           select(
             "SELECT * WHERE { { #{query} ORDER BY #{order_by} } } " <>
-              "LIMIT #{@page_size} OFFSET #{offset}",
+              "LIMIT #{page_size} OFFSET #{offset}",
             endpoint
           )
+
+        on_page.(offset, length(page))
 
         case page do
           [] -> {:halt, offset}

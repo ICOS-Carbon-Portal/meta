@@ -4,12 +4,11 @@ defmodule Mix.Tasks.CompareCitations do
   instance (`VIRTUOSO_HOST`) and another SPARQL endpoint — e.g. to check the
   Elixir populator's output against production.
 
-  Streams `cpmeta:hasCitationString`, `cpmeta:hasBiblioInfo` and
-  `dcterms:license` triples (the ones `BiblioMaterializer.Writer` produces)
-  out of a local named graph with the same cursor-paged SELECT the populator
-  itself uses, then looks the same three predicates up on the other endpoint
-  for exactly those subjects and compares the two sides — printing every
-  mismatch with both sides' values.
+  Streams the distinct subjects having `cpmeta:hasCitationString`,
+  `cpmeta:hasBiblioInfo` or `dcterms:license` (the predicates
+  `BiblioMaterializer.Writer` produces) out of a local named graph, then
+  looks up all values on both endpoints for exactly those subjects and
+  compares the two sides — printing every mismatch with both sides' values.
 
   The remote lookup binds `?s` (in batches, via `VALUES`) rather than
   streaming `?s ?p ?o` unbound: on production, `hasCitationString` and
@@ -37,6 +36,7 @@ defmodule Mix.Tasks.CompareCitations do
   alias BiblioMaterializer.{Sparql, Vocab}
 
   @default_batch_size 200
+  @local_page_size 5_000
 
   @impl Mix.Task
   def run(argv) do
@@ -87,22 +87,54 @@ defmodule Mix.Tasks.CompareCitations do
 
   defp values(uris), do: Enum.map_join(uris, " ", &"<#{&1}>")
 
-  # Local: the derived graph holds these as ordinary triples, so one unbound
-  # cursor-paged stream (the same pattern the populator streams subjects
-  # with) covers all of them — no server result-set cap can truncate it.
+  # Page only the distinct subject URIs. Sorting citation strings and biblio
+  # JSON is extremely expensive in Virtuoso, and ordering by subject alone is
+  # only deterministic if each subject occurs once. DISTINCT gives us exactly
+  # that. Once a subject batch is known, VALUES lookups fetch every value
+  # without any ordering or result-set truncation risk.
   defp collect_local_subjects(graph) do
-    query = """
-    SELECT ?s ?p ?o WHERE {
+    alternatives =
+      predicates()
+      |> Enum.map_join(" UNION ", &"{ ?s <#{&1}> ?o }")
+
+    subject_query = """
+    SELECT DISTINCT ?s WHERE {
       GRAPH <#{graph}> {
-        ?s ?p ?o .
-        VALUES ?p { #{values(predicates())} }
+        #{alternatives}
       }
     }
     """
 
-    query
-    |> Sparql.select_stream("?s ?p")
-    |> Enum.reduce(%{}, &add_triple/2)
+    subject_query
+    |> Sparql.select_stream("?s", nil,
+      page_size: @local_page_size,
+      on_page: &print_local_page/2
+    )
+    |> Stream.map(& &1["s"]["value"])
+    |> Stream.chunk_every(@default_batch_size)
+    |> Enum.reduce(%{}, fn subjects, acc ->
+      query = """
+      SELECT ?s ?p ?o WHERE {
+        GRAPH <#{graph}> {
+          VALUES ?s { #{values(subjects)} }
+          VALUES ?p { #{values(predicates())} }
+          ?s ?p ?o .
+        }
+      }
+      """
+
+      query
+      |> Sparql.select()
+      |> Enum.reduce(acc, &add_triple/2)
+    end)
+  end
+
+  defp print_local_page(offset, 0) do
+    Mix.shell().info("  Finished local subject scan (#{offset} subjects)")
+  end
+
+  defp print_local_page(offset, count) do
+    Mix.shell().info("  Received subjects #{offset + 1}-#{offset + count}")
   end
 
   # Remote: hasCitationString/hasBiblioInfo are computed per subject rather
@@ -131,7 +163,13 @@ defmodule Mix.Tasks.CompareCitations do
     s = row["s"]["value"]
     p = row["p"]["value"]
     o = row["o"]["value"]
-    Map.update(acc, s, %{p => o}, &Map.put(&1, p, o))
+    add_value(acc, s, p, o)
+  end
+
+  defp add_value(acc, subject, predicate, object) do
+    Map.update(acc, subject, %{predicate => MapSet.new([object])}, fn predicates ->
+      Map.update(predicates, predicate, MapSet.new([object]), &MapSet.put(&1, object))
+    end)
   end
 
   defp report(local, remote) do
@@ -181,5 +219,10 @@ defmodule Mix.Tasks.CompareCitations do
   end
 
   defp format_value(nil), do: "(missing)"
-  defp format_value(v), do: inspect(v)
+
+  defp format_value(%MapSet{} = values) do
+    values
+    |> Enum.sort()
+    |> Enum.map_join(", ", &inspect/1)
+  end
 end

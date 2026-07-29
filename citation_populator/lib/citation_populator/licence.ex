@@ -4,18 +4,16 @@ defmodule CitationPopulator.Licence do
   the object's own dcterms:license, else the licence implied by its spec,
   else by the spec's project, else the ENVRI default.
 
-  The object's own licence is a per-subject read (see
-  [`Subject`](`CitationPopulator.Subject`)); the rest is shared reference data,
-  memoized for the run.
+  The object's own licence comes from its prefetched core metadata; the rest
+  is shared reference data, memoized for the run.
   """
 
-  alias CitationPopulator.{Cache, Envri, Rdf, Subject}
+  alias CitationPopulator.{Cache, Envri, Rdf}
   import CitationPopulator.Util, only: [put_opt: 3]
 
-  def resolve(cache, obj_uri, spec_uri, project_uri, envri, derived_graph) do
+  def resolve(cache, own_licence_uri, spec_uri, project_uri, envri) do
     lic_uri =
-      Subject.fetch(cache, :own_licence, obj_uri, derived_graph) || implied(cache, spec_uri) ||
-        implied(cache, project_uri)
+      own_licence_uri || implied(cache, spec_uri) || implied(cache, project_uri)
 
     if lic_uri, do: read(cache, lic_uri), else: Envri.default_licence(envri)
   end

@@ -5,12 +5,9 @@ defmodule CitationPopulator.Subject do
 
   Everything a subject's References needs that is *its own* — rather than
   shared reference data like specs, stations or agents — is read here, one
-  SPARQL round-trip per field group. Read a subject at a time, as `fetch/3`
-  does on a cache miss, and that is six round-trips per subject, which at a
-  few million subjects is what a population pass spends nearly all its time
-  on. So `load/3` reads a whole batch of subjects up front instead, binding
-  them with `VALUES ?s`: six round-trips for five hundred subjects rather
-  than for one.
+  SPARQL round-trip per field group. `load/3` reads a whole batch of subjects
+  up front, binding them with `VALUES ?s`, rather than repeating those reads
+  for every subject.
 
   The results are seeded into the shared [`Cache`](`CitationPopulator.Cache`)
   under `{group, subject_uri}` keys, which is where `CitationPopulator.Reader`
@@ -42,7 +39,6 @@ defmodule CitationPopulator.Subject do
     data = Map.get(by_kind, :data, [])
     docs = Map.get(by_kind, :doc, [])
     colls = Map.get(by_kind, :collection, [])
-    all = data ++ docs ++ colls
 
     [
       {:data_core, data},
@@ -52,9 +48,7 @@ defmodule CitationPopulator.Subject do
       {:subm, data ++ docs},
       {:doc_core, docs},
       {:creators, docs},
-      {:coll_core, colls},
-      {:has_doi, all},
-      {:own_licence, all}
+      {:coll_core, colls}
     ]
     |> Enum.each(fn {name, uris} -> seed(cache, name, group(name, derived_graph), uris) end)
   end
@@ -67,9 +61,7 @@ defmodule CitationPopulator.Subject do
     :prod,
     :contributors,
     :subm,
-    :creators,
-    :has_doi,
-    :own_licence
+    :creators
   ]
 
   @doc "Drops a batch's prefetched entries once its subjects are done."
@@ -83,9 +75,8 @@ defmodule CitationPopulator.Subject do
   A subject's field group: the prefetched value, or a read of just this
   subject when it was not part of a batch.
 
-  `:own_licence` needs `derived_graph`, since its query has to exclude that
-  graph — the populator writes licence triples there itself, so an
-  unrestricted read would find its own output.
+  `derived_graph` is passed through to the core-field query so its own-licence
+  binding excludes the graph the populator writes itself.
   """
   def fetch(cache, name, uri, derived_graph \\ nil) do
     case Cache.get(cache, {name, uri}) do
@@ -174,7 +165,7 @@ defmodule CitationPopulator.Subject do
   defp empty(:values), do: []
   defp empty(_row_or_value), do: nil
 
-  defp group(:data_core, _graph) do
+  defp group(:data_core, derived_graph) do
     {:row,
      """
        OPTIONAL { ?s cpmeta:hasName ?fileName }
@@ -187,24 +178,27 @@ defmodule CitationPopulator.Subject do
        OPTIONAL { ?s dcterms:description ?description }
        OPTIONAL { ?s cpmeta:hasStartTime ?startTime }
        OPTIONAL { ?s cpmeta:hasEndTime ?endTime }
+       #{own_licence_pattern(derived_graph)}
      """}
   end
 
-  defp group(:doc_core, _graph) do
+  defp group(:doc_core, derived_graph) do
     {:row,
      """
        OPTIONAL { ?s cpmeta:hasName ?fileName }
        OPTIONAL { ?s cpmeta:hasDoi ?doi }
        OPTIONAL { ?s cpmeta:hasKeywords ?keywords }
        OPTIONAL { ?s dcterms:title ?title }
+       #{own_licence_pattern(derived_graph)}
      """}
   end
 
-  defp group(:coll_core, _graph) do
+  defp group(:coll_core, derived_graph) do
     {:row,
      """
        OPTIONAL { ?s dcterms:title ?title }
        OPTIONAL { ?s cpmeta:hasDoi ?doi }
+       #{own_licence_pattern(derived_graph)}
      """}
   end
 
@@ -261,18 +255,12 @@ defmodule CitationPopulator.Subject do
      """}
   end
 
-  defp group(:has_doi, _graph) do
-    {:values,
-     """
-       ?s cpmeta:hasDoi ?v
-     """}
-  end
-
-  defp group(:own_licence, derived_graph) do
-    {:value,
-     """
-       GRAPH ?g { ?s dcterms:license ?v }
-       FILTER(?g != <#{derived_graph}>)
-     """}
+  defp own_licence_pattern(derived_graph) do
+    """
+      OPTIONAL {
+        GRAPH ?licenceGraph { ?s dcterms:license ?ownLicence }
+        FILTER(?licenceGraph != <#{derived_graph}>)
+      }
+    """
   end
 end

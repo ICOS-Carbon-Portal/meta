@@ -79,14 +79,12 @@ defmodule CitationPopulator.SubjectTest do
     test "forget/2 drops a batch's entries and leaves reference data alone", %{cache: cache} do
       Cache.put(cache, {:data_core, @a}, row(s: @a, title: "a"))
       Cache.put(cache, {:contributors, @a}, ["someone"])
-      Cache.put(cache, {:own_licence, @a}, "https://licence.test")
       Cache.put(cache, {:spec, "https://meta.icos-cp.eu/spec"}, :reference_data)
 
       Subject.forget(cache, [{@a, "https://meta.icos-cp.eu/ontologies/cpmeta/DataObject"}])
 
       assert Cache.get(cache, {:data_core, @a}) == :miss
       assert Cache.get(cache, {:contributors, @a}) == :miss
-      assert Cache.get(cache, {:own_licence, @a}) == :miss
       assert Cache.get(cache, {:spec, "https://meta.icos-cp.eu/spec"}) == {:ok, :reference_data}
     end
   end

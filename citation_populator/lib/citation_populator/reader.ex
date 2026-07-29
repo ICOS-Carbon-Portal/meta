@@ -34,6 +34,7 @@ defmodule CitationPopulator.Reader do
       file_name: Rdf.val(core, "fileName"),
       has_size: Rdf.val(core, "size") != nil,
       doi_raw: Rdf.val(core, "doi"),
+      own_licence_uri: Rdf.val(core, "ownLicence"),
       keywords_raw: Rdf.val(core, "keywords"),
       actual_columns_json: Rdf.val(core, "actualColumns"),
       l3: %{
@@ -57,6 +58,7 @@ defmodule CitationPopulator.Reader do
       hash_id: last_segment(uri),
       file_name: Rdf.val(core, "fileName"),
       doi_raw: Rdf.val(core, "doi"),
+      own_licence_uri: Rdf.val(core, "ownLicence"),
       keywords_raw: Rdf.val(core, "keywords"),
       doc_title: Rdf.val(core, "title"),
       creator_uris: Subject.fetch(cache, :creators, uri),
@@ -67,7 +69,12 @@ defmodule CitationPopulator.Reader do
   def collection(uri, cache) do
     core = Subject.fetch(cache, :coll_core, uri)
 
-    %{uri: uri, title: Rdf.val(core, "title"), doi_raw: Rdf.val(core, "doi")}
+    %{
+      uri: uri,
+      title: Rdf.val(core, "title"),
+      doi_raw: Rdf.val(core, "doi"),
+      own_licence_uri: Rdf.val(core, "ownLicence")
+    }
   end
 
   # Object specs are shared across all objects that use them, so read each

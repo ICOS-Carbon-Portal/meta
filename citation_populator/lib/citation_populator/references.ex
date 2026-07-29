@@ -53,13 +53,13 @@ defmodule CitationPopulator.References do
     case Envri.object_envri(uri) do
       # Mirrors Scala: when the subject is not under a known object prefix the
       # CitableItem lookup yields nothing and only a DOI citation is written.
-      nil -> doi_citation_only(uri, context.cache)
+      nil -> doi_citation_only(uri, context.cache, core_group(kind))
       envri when kind == :doc -> build_doc(uri, envri, graph, context)
       envri -> build_data(uri, envri, graph, context)
     end
   end
 
-  defp build_data(uri, envri, graph, context) do
+  defp build_data(uri, envri, _graph, context) do
     obj = Reader.data_object(uri, context.cache)
     doi = DataCite.parse_doi(obj.doi_raw)
 
@@ -78,7 +78,13 @@ defmodule CitationPopulator.References do
       end
 
     licence =
-      Licence.resolve(context.cache, uri, obj.spec.uri, obj.spec.project_uri, envri, graph)
+      Licence.resolve(
+        context.cache,
+        obj.own_licence_uri,
+        obj.spec.uri,
+        obj.spec.project_uri,
+        envri
+      )
 
     keywords = parse_comma_sep(obj.keywords_raw)
 
@@ -92,7 +98,7 @@ defmodule CitationPopulator.References do
     finish(refs, doi)
   end
 
-  defp build_doc(uri, envri, graph, context) do
+  defp build_doc(uri, envri, _graph, context) do
     obj = Reader.doc_object(uri, context.cache) |> Map.put(:cache, context.cache)
     doi = DataCite.parse_doi(obj.doi_raw)
 
@@ -100,7 +106,7 @@ defmodule CitationPopulator.References do
     pid = doc_object_pid(obj, envri)
     pid_url = Envri.pid_url(obj.doi_raw, pid)
     cit_info = Citation.doc_citation(obj, envri, authors, pid_url)
-    licence = Licence.resolve(context.cache, uri, nil, nil, envri, graph)
+    licence = Licence.resolve(context.cache, obj.own_licence_uri, nil, nil, envri)
     keywords = parse_comma_sep(obj.keywords_raw)
 
     # Documents have no temporal coverage, so the BibTeX/RIS title tag
@@ -111,10 +117,10 @@ defmodule CitationPopulator.References do
     finish(refs, doi)
   end
 
-  defp build_collection(uri, graph, context) do
+  defp build_collection(uri, _graph, context) do
     case Envri.collection_envri(uri) do
       nil ->
-        doi_citation_only(uri, context.cache)
+        doi_citation_only(uri, context.cache, :coll_core)
 
       envri ->
         coll = Reader.collection(uri, context.cache)
@@ -123,12 +129,12 @@ defmodule CitationPopulator.References do
         if coll.title == nil do
           # Scala requires the collection title and falls back to the bare
           # DOI citation when the collection cannot be read.
-          doi_citation_only(uri, context.cache)
+          doi_citation_only(uri, context.cache, :coll_core)
         else
           # Collections have no spec/project, so the licence chain falls
           # straight to the ENVRI default, mirroring LiveCitationMaker's
           # getLicence for subjects with no hasObjectSpec.
-          licence = Licence.resolve(context.cache, uri, nil, nil, envri, graph)
+          licence = Licence.resolve(context.cache, coll.own_licence_uri, nil, nil, envri)
           finish(%{"title" => coll.title, "licence" => licence}, doi)
         end
     end
@@ -202,14 +208,17 @@ defmodule CitationPopulator.References do
     end
   end
 
-  defp doi_citation_only(uri, cache) do
-    raw = Subject.fetch(cache, :has_doi, uri) |> List.first()
+  defp doi_citation_only(uri, cache, core_group) do
+    raw = cache |> Subject.fetch(core_group, uri) |> Rdf.val("doi")
 
     case DataCite.parse_doi(raw) do
       nil -> :none
       doi -> {:deferred, %{mode: :citation_only, doi: doi, refs_base: %{}}}
     end
   end
+
+  defp core_group(:data), do: :data_core
+  defp core_group(:doc), do: :doc_core
 
   defp data_object_pid(obj, envri) do
     prefix = Envri.handle_prefix(envri)

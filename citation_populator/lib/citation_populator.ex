@@ -210,11 +210,13 @@ defmodule CitationPopulator do
       elapsed_s = (System.monotonic_time(:millisecond) - started_ms) / 1000
       rate = if elapsed_s > 0, do: processed / elapsed_s, else: 0.0
       eta_s = if rate > 0, do: round((total - processed) / rate), else: 0
+      eta_min = div(eta_s, 60)
+      eta_remaining_s = rem(eta_s, 60)
 
       Logger.info(
         "Progress: #{processed}/#{total} subjects " <>
           "(#{Float.round(100.0 * processed / total, 1)}%), #{written} triples written, " <>
-          "#{Float.round(rate, 1)} subj/s, ETA #{eta_s} s, " <>
+          "#{Float.round(rate, 1)} subj/s, ETA #{eta_min} min #{eta_remaining_s} s, " <>
           "#{DataCiteQueue.pending(queue)} pending in the DataCite queue"
       )
     end

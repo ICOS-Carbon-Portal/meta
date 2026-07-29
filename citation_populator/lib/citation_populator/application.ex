@@ -19,11 +19,7 @@ defmodule CitationPopulator.Application do
   # the last child so the queue is already running; its child spec defaults to
   # restart: :temporary, so it is not restarted after the (one) run completes.
   defp run_children do
-    if Application.get_env(:citation_populator, :run_on_start, false) do
-      [{Task, &run_and_stop/0}]
-    else
-      []
-    end
+    [{Task, &run_and_stop/0}]
   end
 
   defp run_and_stop do

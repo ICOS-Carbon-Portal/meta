@@ -10,13 +10,15 @@ defmodule CitationPopulator do
     * `cpmeta:hasCitationString` — the plain-text citation
     * `dcterms:license` — the licence IRI
 
-  Subjects are processed concurrently (MAX_CONCURRENCY, default 16). DOI
-  subjects are not handled inline: the worker writes their DataCite-
-  independent triples (the licence), hands the rest to the [`DataCiteQueue`]
-  GenServer and moves on; the queue fetches from DataCite (rate-limited by
-  the queue itself) and writes the DataCite-dependent triples as the
-  lookups complete. A run finishes when both the main pass and the queue
-  are done.
+  Subjects are processed concurrently (MAX_CONCURRENCY, default 16), and
+  their triples are written in batches rather than one INSERT DATA per
+  subject — so a subject's triples land shortly after it is processed
+  rather than immediately. DOI subjects are not handled inline: the worker
+  emits their DataCite-independent triples (the licence), hands the rest to
+  the [`DataCiteQueue`] GenServer and moves on; the queue fetches from
+  DataCite (rate-limited by the queue itself) and writes the DataCite-
+  dependent triples as the lookups complete. A run finishes when both the
+  main pass and the queue are done.
 
   The subjects are streamed with a cursor-paged query (only their total
   comes from an up-front COUNT), so nothing large is fetched ahead of time
@@ -34,6 +36,11 @@ defmodule CitationPopulator do
   require Logger
 
   alias CitationPopulator.{DataCiteQueue, References, Run, Sparql, Vocab, Writer}
+
+  # A handful of concurrent writers keeps the batched updates from serializing
+  # behind one another without piling many transactions onto the single target
+  # graph at once.
+  @write_concurrency 4
 
   def run do
     graph = Application.fetch_env!(:citation_populator, :derived_citations_graph)
@@ -58,24 +65,32 @@ defmodule CitationPopulator do
       "Found #{total} citable subjects (#{MapSet.size(materialized)} already materialized)"
     )
 
-    # 1: subjects processed, 2: triples written — for the periodic progress log
-    progress = :atomics.new(2, [])
     started_ms = System.monotonic_time(:millisecond)
 
-    main_written =
+    {_processed, main_written} =
       citable_subjects()
       |> Stream.with_index(1)
       |> Task.async_stream(
         fn {{uri, class}, idx} ->
-          count = populate("#{idx}/#{total}", uri, class, graph, materialized, context)
-          log_progress(progress, count, total, started_ms, context.queue)
-          count
+          populate("#{idx}/#{total}", uri, class, graph, materialized, context)
         end,
         max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
         ordered: false,
         timeout: :infinity
       )
-      |> Enum.reduce(0, fn {:ok, count}, acc -> acc + count end)
+      |> Stream.map(fn {:ok, statements} -> statements end)
+      |> Writer.batches()
+      |> Task.async_stream(
+        fn batch -> {length(batch), Writer.write_statements(graph, Enum.concat(batch))} end,
+        max_concurrency: @write_concurrency,
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.reduce({0, 0}, fn {:ok, {subjects, written}}, {processed, total_written} ->
+        acc = {processed + subjects, total_written + written}
+        log_progress(processed, acc, total, started_ms, context.queue)
+        acc
+      end)
 
     case DataCiteQueue.pending(context.queue) do
       0 ->
@@ -141,6 +156,8 @@ defmodule CitationPopulator do
     |> Stream.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
+  # Returns the subject's triples as INSERT DATA statements for the batching
+  # writer, rather than writing them itself.
   defp populate(tag, uri, class, graph, materialized, context) do
     # Reads may still fail after the SPARQL client's retries (e.g. a longer
     # Virtuoso overload); that skips the subject (caught up on the next run)
@@ -156,37 +173,32 @@ defmodule CitationPopulator do
 
     case result do
       :materialized ->
-        0
+        []
 
       {:ok, refs} ->
-        count = Writer.write(graph, Writer.all_triples(uri, refs))
-        Logger.debug("[#{tag}] Wrote #{count} triples for #{uri}")
-        count
+        statements(Writer.all_triples(uri, refs))
 
       {:deferred, job} ->
-        count = Writer.write(graph, Writer.licence_triple(uri, job.refs_base))
         DataCiteQueue.push(context.queue, Map.merge(job, %{uri: uri, tag: tag, graph: graph}))
         Logger.debug("[#{tag}] Deferred #{uri} to the DataCite queue")
-        count
+        statements(Writer.licence_triple(uri, job.refs_base))
 
       :none ->
         Logger.debug("[#{tag}] No citation triples produced for #{uri}")
-        0
+        []
 
       {:error, reason} ->
         Logger.warning("[#{tag}] Skipping #{uri}: #{reason}")
-        0
+        []
     end
   end
 
+  defp statements(triples), do: Enum.map(triples, &Writer.statement/1)
+
   @log_every 500
 
-  defp log_progress(progress, written_now, total, started_ms, queue) do
-    :atomics.add(progress, 2, written_now)
-    processed = :atomics.add_get(progress, 1, 1)
-
-    if rem(processed, @log_every) == 0 or processed == total do
-      written = :atomics.get(progress, 2)
+  defp log_progress(before, {processed, written}, total, started_ms, queue) do
+    if div(processed, @log_every) > div(before, @log_every) or processed == total do
       elapsed_s = (System.monotonic_time(:millisecond) - started_ms) / 1000
       rate = if elapsed_s > 0, do: processed / elapsed_s, else: 0.0
       eta_s = if rate > 0, do: round((total - processed) / rate), else: 0

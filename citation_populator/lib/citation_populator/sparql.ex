@@ -4,11 +4,12 @@ defmodule CitationPopulator.Sparql do
   no triplestore driver.
 
   Queries go unauthenticated to `<virtuoso>/sparql`. Updates go to
-  `<virtuoso>/sparql-auth`: the first attempt carries no credentials —
-  Virtuoso only offers its WWW-Authenticate challenge to requests without
-  an Authorization header — and the challenge is then answered with Digest
-  or Basic auth, whichever the server asks for.
+  `<virtuoso>/sparql-auth`, authenticated with Digest or Basic auth,
+  whichever the server asks for; the challenge exchange and the reuse of its
+  answer across updates live in [`Sparql.Auth`](`CitationPopulator.Sparql.Auth`).
   """
+
+  alias CitationPopulator.Sparql.Auth
 
   # Transient failures are retried with exponential backoff: transport
   # errors (Virtuoso closes idle keep-alive connections, and a request
@@ -80,13 +81,19 @@ defmodule CitationPopulator.Sparql do
   @doc "Runs a SPARQL update against the authenticated endpoint. Raises on failure."
   def update(update) do
     params = %{"update" => update}
+    uri_path = URI.parse(update_endpoint()).path
+    {gen, auth} = Auth.authorization(uri_path)
 
-    case post_form(update_endpoint(), params) do
+    case post_form(update_endpoint(), params, authorization_header(auth)) do
       {:ok, %Req.Response{status: status}} when status in 200..299 ->
         :ok
 
+      # Either the challenge-fetching probe of the run's first update (auth is
+      # nil then) or a cached challenge gone stale. Both are answered with the
+      # challenge this response carries.
       {:ok, %Req.Response{status: 401} = resp} ->
-        update_authenticated(params, authorization(resp))
+        challenge = Auth.challenge!(Req.Response.get_header(resp, "www-authenticate"))
+        update_authenticated(params, Auth.refresh(gen, challenge, auth != nil, uri_path))
 
       other ->
         raise "SPARQL update failed: #{describe(other)}"
@@ -100,65 +107,12 @@ defmodule CitationPopulator.Sparql do
     end
   end
 
-  defp post_form(url, params, headers \\ []) do
+  defp authorization_header(nil), do: []
+  defp authorization_header(auth), do: [{"authorization", auth}]
+
+  defp post_form(url, params, headers) do
     Req.post(url, [form: params, headers: headers] ++ @req_options)
   end
-
-  defp authorization(resp) do
-    case Req.Response.get_header(resp, "www-authenticate") do
-      ["Digest " <> params | _] ->
-        digest_authorization(parse_challenge(params), "POST", URI.parse(update_endpoint()).path)
-
-      ["Basic" <> _ | _] ->
-        "Basic " <> Base.encode64("#{username()}:#{password()}")
-
-      other ->
-        raise "SPARQL update was refused (HTTP 401) " <>
-                "and no supported auth challenge was offered: #{inspect(other)}"
-    end
-  end
-
-  defp parse_challenge(params) do
-    ~r/(\w+)=(?:"([^"]*)"|([^,\s]+))/
-    |> Regex.scan(params)
-    |> Map.new(fn [_full, key | values] ->
-      {key, values |> Enum.reject(&(&1 == "")) |> List.first("")}
-    end)
-  end
-
-  defp digest_authorization(challenge, method, uri_path) do
-    user = username()
-    realm = Map.fetch!(challenge, "realm")
-    nonce = Map.fetch!(challenge, "nonce")
-
-    ha1 = md5_hex("#{user}:#{realm}:#{password()}")
-    ha2 = md5_hex("#{method}:#{uri_path}")
-
-    {response, qop_fields} =
-      if challenge["qop"] && "auth" in String.split(challenge["qop"], ",") do
-        cnonce = Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
-        nc = "00000001"
-
-        {md5_hex("#{ha1}:#{nonce}:#{nc}:#{cnonce}:auth:#{ha2}"),
-         ["qop=auth", "nc=#{nc}", ~s(cnonce="#{cnonce}")]}
-      else
-        {md5_hex("#{ha1}:#{nonce}:#{ha2}"), []}
-      end
-
-    opaque_fields =
-      case challenge["opaque"] do
-        nil -> []
-        opaque -> [~s(opaque="#{opaque}")]
-      end
-
-    fields =
-      [~s(username="#{user}"), ~s(realm="#{realm}"), ~s(nonce="#{nonce}"), ~s(uri="#{uri_path}")] ++
-        qop_fields ++ [~s(response="#{response}")] ++ opaque_fields
-
-    "Digest " <> Enum.join(fields, ", ")
-  end
-
-  defp md5_hex(string), do: :crypto.hash(:md5, string) |> Base.encode16(case: :lower)
 
   defp describe({:ok, %Req.Response{status: status, body: body}}),
     do: "HTTP #{status}: #{String.slice(body, 0, 500)}"
@@ -168,6 +122,4 @@ defmodule CitationPopulator.Sparql do
   defp query_endpoint, do: virtuoso_host() <> "/sparql"
   defp update_endpoint, do: virtuoso_host() <> "/sparql-auth"
   defp virtuoso_host, do: Application.fetch_env!(:citation_populator, :virtuoso_host)
-  defp username, do: Application.fetch_env!(:citation_populator, :virtuoso_username)
-  defp password, do: Application.fetch_env!(:citation_populator, :virtuoso_password)
 end

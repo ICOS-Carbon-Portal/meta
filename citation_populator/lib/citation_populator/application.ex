@@ -6,7 +6,10 @@ defmodule CitationPopulator.Application do
 
   @impl true
   def start(_type, _args) do
-    children = run_children()
+    # Sparql.Auth outlives a single run (it holds the update endpoint's auth
+    # challenge, which every writer shares) so it lives here rather than in
+    # the per-run supervisor, and it must be up before the first update.
+    children = [CitationPopulator.Sparql.Auth | run_children()]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: CitationPopulator.Supervisor)
   end

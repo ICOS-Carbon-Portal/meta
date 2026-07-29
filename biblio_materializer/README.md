@@ -73,7 +73,7 @@ All via environment variables:
 | `VIRTUOSO_HOST` | `http://localhost:8890` |
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
-| `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/citations/` |
+| `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/biblio/` |
 | `MAX_CONCURRENCY` | `16` |
 
 Queries go unauthenticated to `<host>/sparql`; updates go to

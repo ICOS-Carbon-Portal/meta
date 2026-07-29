@@ -27,13 +27,11 @@ defmodule CitationPopulator do
   comes from an up-front COUNT), so nothing large is fetched ahead of time
   and no server result-set cap can silently truncate the scan.
 
-  Only subjects with no triples in the derived graph are populated; the set
-  of already-materialized subjects is loaded once up front (with the same
-  cursor-paged stream as the citable subjects, so no result-set cap can
-  truncate it) and checked in memory. Already-materialized subjects are left
-  untouched (even if stale). Note that this includes DOI subjects whose
-  DataCite lookups failed
-  in an earlier run: their licence triple makes them count as materialized.
+  Only subjects with no triples in the derived graph are populated; each
+  batch asks the derived graph which of its own subjects are already there.
+  Already-materialized subjects are left untouched (even if stale). Note that
+  this includes DOI subjects whose DataCite lookups failed in an earlier run:
+  their licence triple makes them count as materialized.
   """
 
   require Logger
@@ -61,12 +59,7 @@ defmodule CitationPopulator do
     Logger.info("Counting citable subjects...")
     total = count_citable_subjects()
 
-    Logger.info("Loading already-materialized subjects...")
-    materialized = materialized_subjects(graph)
-
-    Logger.info(
-      "Found #{total} citable subjects (#{MapSet.size(materialized)} already materialized)"
-    )
+    Logger.info("Found #{total} citable subjects")
 
     started_ms = System.monotonic_time(:millisecond)
 
@@ -74,7 +67,7 @@ defmodule CitationPopulator do
       citable_subjects()
       |> Stream.with_index(1)
       |> Stream.chunk_every(Application.fetch_env!(:citation_populator, :read_batch_size))
-      |> Stream.flat_map(&populate_batch(&1, total, graph, materialized, context))
+      |> Stream.flat_map(&populate_batch(&1, total, graph, context))
       |> Writer.batches()
       |> Task.async_stream(
         fn batch -> {length(batch), Writer.write_statements(graph, Enum.concat(batch))} end,
@@ -132,18 +125,6 @@ defmodule CitationPopulator do
     String.to_integer(row["count"]["value"])
   end
 
-  # The set of subjects already present in the derived graph, loaded once with
-  # the same cursor-paged stream as the citable subjects (so no server
-  # result-set cap can truncate it) and checked in memory per subject —
-  # instead of a SPARQL round-trip per subject, which dominated runs where
-  # most subjects are already materialized.
-  defp materialized_subjects(graph) do
-    "SELECT DISTINCT ?s WHERE { GRAPH <#{graph}> { ?s ?p ?o } }"
-    |> Sparql.select_stream("?s")
-    |> Stream.map(fn row -> row["s"]["value"] end)
-    |> MapSet.new()
-  end
-
   # Lazy, cursor-paged stream over all citable subjects — nothing is
   # fetched up front, and no server row cap can truncate the scan.
   defp citable_subjects do
@@ -161,7 +142,10 @@ defmodule CitationPopulator do
   # Already-materialized subjects are dropped before the prefetch: on a
   # resumed run they are the bulk of the batch, and reading fields the run
   # will not use would defeat the point.
-  defp populate_batch(batch, total, graph, materialized, context) do
+  defp populate_batch(batch, total, graph, context) do
+    materialized =
+      batch |> Enum.map(fn {{uri, _class}, _idx} -> uri end) |> Subject.materialized(graph)
+
     {done, todo} =
       Enum.split_with(batch, fn {{uri, _class}, _idx} -> MapSet.member?(materialized, uri) end)
 

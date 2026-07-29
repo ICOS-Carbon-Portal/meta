@@ -95,6 +95,28 @@ defmodule CitationPopulator.Subject do
   end
 
   @doc """
+  Which of `uris` the derived graph already holds triples for.
+
+  Asked per batch rather than by loading every materialized subject up front:
+  that read was a `DISTINCT` over the whole derived graph, which the cursor
+  paging re-scanned and re-sorted once per page, so it grew with the graph
+  until it dominated a resumed run's startup — and it held every subject URI
+  in memory besides. Bound to a batch it is a few hundred index lookups.
+  """
+  def materialized([], _derived_graph), do: MapSet.new()
+
+  def materialized(uris, derived_graph) do
+    """
+    SELECT DISTINCT ?s WHERE {
+      VALUES ?s { #{Enum.map_join(uris, " ", &"<#{&1}>")} }
+      GRAPH <#{derived_graph}> { ?s ?p ?o }
+    }
+    """
+    |> Rdf.select()
+    |> MapSet.new(&Rdf.val(&1, "s"))
+  end
+
+  @doc """
   Indexes a group's result rows by their `?s` binding, one entry per URI in
   `uris` — including the ones the query returned nothing for, which get the
   shape's empty value. The counterpart of `Rdf.select_one/1`'s `LIMIT 1` and

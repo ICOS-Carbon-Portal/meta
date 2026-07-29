@@ -9,7 +9,7 @@ defmodule BiblioMaterializer.Sparql do
   answer across updates live in [`Sparql.Auth`](`BiblioMaterializer.Sparql.Auth`).
   """
 
-  alias BiblioMaterializer.Sparql.Auth
+  alias BiblioMaterializer.Sparql.{Auth, DecodeError}
 
   # Transient failures are retried with exponential backoff: transport
   # errors (Virtuoso closes idle keep-alive connections, and a request
@@ -77,10 +77,24 @@ defmodule BiblioMaterializer.Sparql do
 
     case post_form(endpoint, %{"query" => query}, headers) do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        JSON.decode!(body)["results"]["bindings"]
+        decode_bindings!(body, endpoint)
 
       other ->
         raise "SPARQL query failed: #{describe(other)}"
+    end
+  end
+
+  # An endpoint can answer 200 with a body that is not valid JSON — a service
+  # computing its values while streaming the results has already sent the
+  # opening of the document by the time one of them fails, and what it appends
+  # then is not JSON. Decoding blind turns that into a bare JSON.DecodeError
+  # pointing at a byte offset hundreds of kilobytes into a body nobody kept,
+  # so raise something that says which endpoint, how far in, and what the
+  # bytes there look like.
+  defp decode_bindings!(body, endpoint) do
+    case JSON.decode(body) do
+      {:ok, decoded} -> decoded["results"]["bindings"]
+      {:error, reason} -> raise DecodeError, endpoint: endpoint, reason: reason, body: body
     end
   end
 

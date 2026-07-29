@@ -58,11 +58,9 @@ defmodule Mix.Tasks.CompareCitations do
     |> Config.Reader.read!(env: Mix.env(), target: Mix.target())
     |> Application.put_all_env()
 
-    # Loading the app config would otherwise kick off a full population pass
-    # on start (CitationPopulator.Application's default behavior) — this task
-    # only ever reads.
-    Application.put_env(:citation_populator, :run_on_start, false)
-    {:ok, _} = Application.ensure_all_started(:citation_populator)
+    # This task only reads, so start the HTTP client and its dependencies
+    # without starting the populator application.
+    {:ok, _} = Application.ensure_all_started(:req)
 
     local_graph =
       opts[:graph] || Application.fetch_env!(:citation_populator, :derived_citations_graph)

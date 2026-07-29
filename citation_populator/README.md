@@ -75,7 +75,6 @@ All via environment variables:
 | `VIRTUOSO_PASSWORD` | `dba` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/citations/` |
 | `MAX_CONCURRENCY` | `16` |
-| `RUN_ON_START` | `true` (run a pass on start and stop the VM; `false` to boot idle) |
 
 Queries go unauthenticated to `<host>/sparql`; updates go to
 `<host>/sparql-auth` with Basic auth, falling back to Digest auth when
@@ -83,24 +82,21 @@ Virtuoso challenges with it.
 
 ## Running
 
-Starting the application runs a single population pass and then stops the VM,
-so a plain run is all that is needed:
+Starting the application runs a population pass immediately and repeats it
+every hour:
 
 ```sh
 cd citation_populator
 mix run --no-halt
 ```
 
-(`--no-halt` keeps the node alive until the pass finishes and stops it itself;
-the exit status is non-zero if the run aborts.) The same happens for a release
-(`bin/citation_populator start`).
+The same happens for a release (`bin/citation_populator start`).
 
-To run the pass by hand instead — e.g. for debugging — set `RUN_ON_START=false`
-to boot without the automatic pass and call `run/0` yourself:
+Pass `--single` to run one population pass and stop the VM, preserving the old
+one-shot behavior (including a non-zero exit status if the pass aborts):
 
 ```sh
-RUN_ON_START=false iex -S mix
-iex> CitationPopulator.run()
+mix run --no-halt -- --single
 ```
 
 `mix test` runs unit tests for the pure logic (temporal coverage display,
@@ -110,8 +106,8 @@ ENVRI inference).
 ## Docker
 
 The `Dockerfile` builds a self-contained mix release on Ubuntu 24.04 (both the
-build and runtime stages). The container runs one population pass on start and
-exits with the run's status, so it is a one-shot job, not a long-lived service:
+build and runtime stages). The container runs continuously, with one population
+pass per hour:
 
 ```sh
 docker build -t citation_populator .

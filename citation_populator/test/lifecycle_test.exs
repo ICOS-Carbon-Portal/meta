@@ -1,7 +1,14 @@
 defmodule CitationPopulator.LifecycleTest do
   use ExUnit.Case, async: true
 
-  alias CitationPopulator.{Cache, DataCiteQueue, Run}
+  alias CitationPopulator.{Application, Cache, DataCiteQueue, Run}
+
+  test "--single selects one-shot mode" do
+    assert Application.single?(["--single"])
+    assert Application.single?(["other", "--single"])
+    refute Application.single?([])
+    refute Application.single?(["single"])
+  end
 
   test "a newly started cache does not reuse a previous cache's values" do
     {:ok, first} = Cache.start_link([])

@@ -74,8 +74,7 @@ WORKDIR /home/app
 
 COPY --from=builder --chown=app:app /app/_build/prod/rel/citation_populator ./
 
-# Boots in the foreground, runs a single population pass (RUN_ON_START is on
-# outside `mix test`) and stops the VM when done — so the container exits with
-# the run's status. Configure via the env vars in the README, e.g.
+# Boots in the foreground and runs a population pass every hour. Configure via
+# the env vars in the README, e.g.
 #   docker run --rm -e VIRTUOSO_HOST=http://virtuoso:8890 <image>
 CMD ["bin/citation_populator", "start"]

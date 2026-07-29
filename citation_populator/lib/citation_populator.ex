@@ -10,10 +10,13 @@ defmodule CitationPopulator do
     * `cpmeta:hasCitationString` — the plain-text citation
     * `dcterms:license` — the licence IRI
 
-  Subjects are processed concurrently (MAX_CONCURRENCY, default 16), and
-  their triples are written in batches rather than one INSERT DATA per
-  subject — so a subject's triples land shortly after it is processed
-  rather than immediately. DOI subjects are not handled inline: the worker
+  Subjects are processed in batches (READ_BATCH_SIZE, default 500) whose
+  per-subject fields are read up front with one query per field group (see
+  [`Subject`](`CitationPopulator.Subject`)) rather than a query per subject,
+  concurrently within a batch (MAX_CONCURRENCY, default 16). Their triples
+  are written in batches too, rather than one INSERT DATA per subject — so a
+  subject's triples land shortly after it is processed rather than
+  immediately. DOI subjects are not handled inline: the worker
   emits their DataCite-independent triples (the licence), hands the rest to
   the [`DataCiteQueue`] GenServer and moves on; the queue fetches from
   DataCite (rate-limited by the queue itself) and writes the DataCite-
@@ -35,7 +38,7 @@ defmodule CitationPopulator do
 
   require Logger
 
-  alias CitationPopulator.{DataCiteQueue, References, Run, Sparql, Vocab, Writer}
+  alias CitationPopulator.{DataCiteQueue, References, Run, Sparql, Subject, Vocab, Writer}
 
   # A handful of concurrent writers keeps the batched updates from serializing
   # behind one another without piling many transactions onto the single target
@@ -70,15 +73,8 @@ defmodule CitationPopulator do
     {_processed, main_written} =
       citable_subjects()
       |> Stream.with_index(1)
-      |> Task.async_stream(
-        fn {{uri, class}, idx} ->
-          populate("#{idx}/#{total}", uri, class, graph, materialized, context)
-        end,
-        max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
-        ordered: false,
-        timeout: :infinity
-      )
-      |> Stream.map(fn {:ok, statements} -> statements end)
+      |> Stream.chunk_every(Application.fetch_env!(:citation_populator, :read_batch_size))
+      |> Stream.flat_map(&populate_batch(&1, total, graph, materialized, context))
       |> Writer.batches()
       |> Task.async_stream(
         fn batch -> {length(batch), Writer.write_statements(graph, Enum.concat(batch))} end,
@@ -156,25 +152,53 @@ defmodule CitationPopulator do
     |> Stream.map(fn row -> {row["s"]["value"], row["class"]["value"]} end)
   end
 
+  # Processes one batch of subjects: their per-subject fields are read up
+  # front, in one query per field group for the whole batch, instead of once
+  # per subject. Returns a statement list per subject of the batch — empty for
+  # the ones that yielded nothing — so that the batch stays accounted for
+  # downstream.
+  #
+  # Already-materialized subjects are dropped before the prefetch: on a
+  # resumed run they are the bulk of the batch, and reading fields the run
+  # will not use would defeat the point.
+  defp populate_batch(batch, total, graph, materialized, context) do
+    {done, todo} =
+      Enum.split_with(batch, fn {{uri, _class}, _idx} -> MapSet.member?(materialized, uri) end)
+
+    subjects = Enum.map(todo, fn {subject, _idx} -> subject end)
+    Subject.load(context.cache, subjects, graph)
+
+    try do
+      populated =
+        todo
+        |> Task.async_stream(
+          fn {{uri, class}, idx} -> populate("#{idx}/#{total}", uri, class, graph, context) end,
+          max_concurrency: Application.fetch_env!(:citation_populator, :max_concurrency),
+          ordered: false,
+          timeout: :infinity
+        )
+        |> Enum.map(fn {:ok, statements} -> statements end)
+
+      Enum.map(done, fn _subject -> [] end) ++ populated
+    after
+      Subject.forget(context.cache, subjects)
+    end
+  end
+
   # Returns the subject's triples as INSERT DATA statements for the batching
   # writer, rather than writing them itself.
-  defp populate(tag, uri, class, graph, materialized, context) do
+  defp populate(tag, uri, class, graph, context) do
     # Reads may still fail after the SPARQL client's retries (e.g. a longer
     # Virtuoso overload); that skips the subject (caught up on the next run)
     # instead of crashing the whole run. Write failures stay fatal.
     result =
       try do
-        if MapSet.member?(materialized, uri),
-          do: :materialized,
-          else: References.build(uri, class, graph, context)
+        References.build(uri, class, graph, context)
       rescue
         e -> {:error, Exception.format(:error, e, __STACKTRACE__) |> String.slice(0, 500)}
       end
 
     case result do
-      :materialized ->
-        []
-
       {:ok, refs} ->
         statements(Writer.all_triples(uri, refs))
 

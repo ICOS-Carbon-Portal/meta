@@ -11,17 +11,25 @@ defmodule CitationPopulator.Cache do
   URI-keyed cache collapses that: each distinct reference entity is read from
   Virtuoso once per run instead of once per object.
 
-  Entries never expire. A single population pass is a point-in-time snapshot
-  of the triplestore, so within one run the reference data is treated as
-  immutable — exactly the assumption the un-cached code already relied on by
-  reading each object independently.
+  Reference entries never expire. A single population pass is a point-in-time
+  snapshot of the triplestore, so within one run the reference data is treated
+  as immutable — exactly the assumption the un-cached code already relied on
+  by reading each object independently.
+
+  The table also carries the per-subject fields
+  [`Subject`](`CitationPopulator.Subject`) prefetches a batch at a time. Those
+  serve one subject each rather than being shared, so they are put and deleted
+  explicitly (`put/3`, `get/2`, `delete/2`) with the batch's lifetime rather
+  than memoized for the run.
   """
 
   use GenServer
 
   @table __MODULE__
 
-  def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, nil, name: Keyword.get(opts, :name, __MODULE__))
+  end
 
   @doc """
   Returns the cached value for `key`, computing it with `fun` (and storing
@@ -45,6 +53,20 @@ defmodule CitationPopulator.Cache do
         value
     end
   end
+
+  @doc "The stored value for `key` as `{:ok, value}`, or `:miss`."
+  def get(table, key) do
+    case :ets.lookup(table, key) do
+      [{^key, value}] -> {:ok, value}
+      [] -> :miss
+    end
+  end
+
+  @doc "Stores `value` under `key`, replacing any previous one."
+  def put(table, key, value), do: :ets.insert(table, {key, value})
+
+  @doc "Drops `key`, whether or not it was stored."
+  def delete(table, key), do: :ets.delete(table, key)
 
   @impl true
   def init(nil) do

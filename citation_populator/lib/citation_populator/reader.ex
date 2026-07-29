@@ -1,11 +1,15 @@
 defmodule CitationPopulator.Reader do
   @moduledoc """
-  Reads the citation-relevant fields of data objects, document objects and
-  collections from the triplestore with raw SPARQL — the (much smaller)
-  counterpart of StaticObjectReader/CollectionReader.
+  Shapes the citation-relevant fields of data objects, document objects and
+  collections — the (much smaller) counterpart of
+  StaticObjectReader/CollectionReader.
+
+  The subject's own fields come from [`Subject`](`CitationPopulator.Subject`),
+  which reads them a batch of subjects at a time; the reference data they
+  point at (specs, stations) is read here and memoized for the run.
   """
 
-  alias CitationPopulator.{Cache, Rdf}
+  alias CitationPopulator.{Cache, Rdf, Subject}
   import CitationPopulator.Util, only: [last_segment: 1]
 
   @empty_spec %{
@@ -21,22 +25,7 @@ defmodule CitationPopulator.Reader do
   }
 
   def data_object(uri, cache) do
-    core =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        OPTIONAL { <#{uri}> cpmeta:hasName ?fileName }
-        OPTIONAL { <#{uri}> cpmeta:hasSizeInBytes ?size }
-        OPTIONAL { <#{uri}> cpmeta:hasDoi ?doi }
-        OPTIONAL { <#{uri}> cpmeta:hasKeywords ?keywords }
-        OPTIONAL { <#{uri}> cpmeta:hasObjectSpec ?spec }
-        OPTIONAL { <#{uri}> cpmeta:hasActualColumnNames ?actualColumns }
-        OPTIONAL { <#{uri}> dcterms:title ?title }
-        OPTIONAL { <#{uri}> dcterms:description ?description }
-        OPTIONAL { <#{uri}> cpmeta:hasStartTime ?startTime }
-        OPTIONAL { <#{uri}> cpmeta:hasEndTime ?endTime }
-      } LIMIT 1
-      """)
-
+    core = Subject.fetch(cache, :data_core, uri)
     spec_uri = Rdf.val(core, "spec")
 
     %{
@@ -55,21 +44,13 @@ defmodule CitationPopulator.Reader do
       },
       spec: if(spec_uri, do: read_spec(cache, spec_uri), else: @empty_spec),
       acq: read_acquisition(cache, uri),
-      prod: read_production(uri),
-      subm: read_submission(uri)
+      prod: read_production(cache, uri),
+      subm: read_submission(cache, uri)
     }
   end
 
-  def doc_object(uri, _cache) do
-    core =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        OPTIONAL { <#{uri}> cpmeta:hasName ?fileName }
-        OPTIONAL { <#{uri}> cpmeta:hasDoi ?doi }
-        OPTIONAL { <#{uri}> cpmeta:hasKeywords ?keywords }
-        OPTIONAL { <#{uri}> dcterms:title ?title }
-      } LIMIT 1
-      """)
+  def doc_object(uri, cache) do
+    core = Subject.fetch(cache, :doc_core, uri)
 
     %{
       uri: uri,
@@ -78,19 +59,13 @@ defmodule CitationPopulator.Reader do
       doi_raw: Rdf.val(core, "doi"),
       keywords_raw: Rdf.val(core, "keywords"),
       doc_title: Rdf.val(core, "title"),
-      creator_uris: Rdf.values("SELECT ?c WHERE { <#{uri}> dcterms:creator ?c }", "c"),
-      subm: read_submission(uri)
+      creator_uris: Subject.fetch(cache, :creators, uri),
+      subm: read_submission(cache, uri)
     }
   end
 
-  def collection(uri, _cache) do
-    core =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        OPTIONAL { <#{uri}> dcterms:title ?title }
-        OPTIONAL { <#{uri}> cpmeta:hasDoi ?doi }
-      } LIMIT 1
-      """)
+  def collection(uri, cache) do
+    core = Subject.fetch(cache, :coll_core, uri)
 
     %{uri: uri, title: Rdf.val(core, "title"), doi_raw: Rdf.val(core, "doi")}
   end
@@ -138,22 +113,7 @@ defmodule CitationPopulator.Reader do
   end
 
   defp read_acquisition(cache, uri) do
-    row =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        <#{uri}> cpmeta:wasAcquiredBy ?acq .
-        OPTIONAL { ?acq prov:startedAtTime ?start }
-        OPTIONAL { ?acq prov:endedAtTime ?stop }
-        OPTIONAL { ?acq prov:wasAssociatedWith ?station .
-                   OPTIONAL { ?station cpmeta:hasName ?stationName } }
-        OPTIONAL { ?acq cpmeta:hasSamplingHeight ?samplingHeight }
-        OPTIONAL { ?acq cpmeta:wasPerformedAt ?site .
-                   OPTIONAL { ?site cpmeta:hasSpatialCoverage ?siteCov .
-                              OPTIONAL { ?siteCov rdfs:label ?siteLocationLabel } } }
-        OPTIONAL { ?acq cpmeta:hasSamplingPoint ?sp . OPTIONAL { ?sp rdfs:label ?samplingPointLabel } }
-      } LIMIT 1
-      """)
-
+    row = Subject.fetch(cache, :acq, uri)
     station = Rdf.val(row, "station")
 
     %{
@@ -176,40 +136,25 @@ defmodule CitationPopulator.Reader do
     end)
   end
 
-  defp read_production(uri) do
-    row =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        <#{uri}> cpmeta:wasProducedBy ?prod .
-        OPTIONAL { ?prod cpmeta:wasPerformedBy ?creator }
-        OPTIONAL { ?prod cpmeta:hasEndTime ?dateTime }
-      } LIMIT 1
-      """)
+  defp read_production(cache, uri) do
+    row = Subject.fetch(cache, :prod, uri)
 
     case Rdf.val(row, "prod") do
       nil ->
         %{exists: false, creator_uri: nil, contributor_uris: [], date_time: nil}
 
-      prod ->
+      _prod ->
         %{
           exists: true,
           creator_uri: Rdf.val(row, "creator"),
-          contributor_uris:
-            Rdf.values("SELECT ?c WHERE { <#{prod}> cpmeta:wasParticipatedInBy ?c }", "c"),
+          contributor_uris: Subject.fetch(cache, :contributors, uri),
           date_time: Rdf.parse_datetime(Rdf.val(row, "dateTime"))
         }
     end
   end
 
-  defp read_submission(uri) do
-    row =
-      Rdf.select_one("""
-      SELECT * WHERE {
-        <#{uri}> cpmeta:wasSubmittedBy ?subm .
-        OPTIONAL { ?subm prov:endedAtTime ?stop }
-        OPTIONAL { ?subm prov:wasAssociatedWith ?org . OPTIONAL { ?org cpmeta:hasName ?submitterName } }
-      } LIMIT 1
-      """)
+  defp read_submission(cache, uri) do
+    row = Subject.fetch(cache, :subm, uri)
 
     %{
       stop: Rdf.parse_datetime(Rdf.val(row, "stop")),

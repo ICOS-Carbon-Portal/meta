@@ -3,31 +3,21 @@ defmodule CitationPopulator.Licence do
   Licence resolution chain, port of LiveCitationMaker.getLicence:
   the object's own dcterms:license, else the licence implied by its spec,
   else by the spec's project, else the ENVRI default.
+
+  The object's own licence is a per-subject read (see
+  [`Subject`](`CitationPopulator.Subject`)); the rest is shared reference data,
+  memoized for the run.
   """
 
-  alias CitationPopulator.{Cache, Envri, Rdf}
+  alias CitationPopulator.{Cache, Envri, Rdf, Subject}
   import CitationPopulator.Util, only: [put_opt: 3]
 
   def resolve(cache, obj_uri, spec_uri, project_uri, envri, derived_graph) do
     lic_uri =
-      own_licence_uri(obj_uri, derived_graph) || implied(cache, spec_uri) ||
+      Subject.fetch(cache, :own_licence, obj_uri, derived_graph) || implied(cache, spec_uri) ||
         implied(cache, project_uri)
 
     if lic_uri, do: read(cache, lic_uri), else: Envri.default_licence(envri)
-  end
-
-  # The populator itself writes dcterms:license triples into the derived
-  # graph, so that graph must be excluded or it would read its own output.
-  defp own_licence_uri(uri, derived_graph) do
-    row =
-      Rdf.select_one("""
-      SELECT ?lic WHERE {
-        GRAPH ?g { <#{uri}> dcterms:license ?lic }
-        FILTER(?g != <#{derived_graph}>)
-      } LIMIT 1
-      """)
-
-    Rdf.val(row, "lic")
   end
 
   defp implied(_cache, nil), do: nil

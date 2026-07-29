@@ -24,6 +24,7 @@ defmodule CitationPopulator.References do
     Rdf,
     Reader,
     Structured,
+    Subject,
     Vocab
   }
 
@@ -52,7 +53,7 @@ defmodule CitationPopulator.References do
     case Envri.object_envri(uri) do
       # Mirrors Scala: when the subject is not under a known object prefix the
       # CitableItem lookup yields nothing and only a DOI citation is written.
-      nil -> doi_citation_only(uri)
+      nil -> doi_citation_only(uri, context.cache)
       envri when kind == :doc -> build_doc(uri, envri, graph, context)
       envri -> build_data(uri, envri, graph, context)
     end
@@ -113,7 +114,7 @@ defmodule CitationPopulator.References do
   defp build_collection(uri, graph, context) do
     case Envri.collection_envri(uri) do
       nil ->
-        doi_citation_only(uri)
+        doi_citation_only(uri, context.cache)
 
       envri ->
         coll = Reader.collection(uri, context.cache)
@@ -122,7 +123,7 @@ defmodule CitationPopulator.References do
         if coll.title == nil do
           # Scala requires the collection title and falls back to the bare
           # DOI citation when the collection cannot be read.
-          doi_citation_only(uri)
+          doi_citation_only(uri, context.cache)
         else
           # Collections have no spec/project, so the licence chain falls
           # straight to the ENVRI default, mirroring LiveCitationMaker's
@@ -201,8 +202,8 @@ defmodule CitationPopulator.References do
     end
   end
 
-  defp doi_citation_only(uri) do
-    raw = Rdf.values("SELECT ?doi WHERE { <#{uri}> cpmeta:hasDoi ?doi }", "doi") |> List.first()
+  defp doi_citation_only(uri, cache) do
+    raw = Subject.fetch(cache, :has_doi, uri) |> List.first()
 
     case DataCite.parse_doi(raw) do
       nil -> :none

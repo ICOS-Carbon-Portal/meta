@@ -166,8 +166,8 @@ lazy val meta = (project in file("."))
 			fetchGCMDKeywords
 		).value,
 		cpDeployPlaybook := "core.yml",
-		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-		cpDeployInfraBranch := "master",
+		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities", "test-fs4")),
+		cpDeployInfraBranch := "valter/test/virtuoso",
 
 		assembly / fullClasspath := {
 			val cp = (assembly / fullClasspath).value

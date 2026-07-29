@@ -157,7 +157,6 @@ case class CitationConfig(
 	style: String,
 	timeoutSec: Int,
 	doi: DoiConfig,
-	derivedCitationsGraph: URI,
 	materializeIntervalMinutes: Int,
 	serviceUrl: URI,
 	servicePort: Int,
@@ -239,7 +238,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[VirtuosoConfig] = jsonFormat3(VirtuosoConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat8(CitationConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat7(CitationConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)

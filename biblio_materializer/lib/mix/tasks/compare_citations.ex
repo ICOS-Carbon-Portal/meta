@@ -1,21 +1,21 @@
 defmodule Mix.Tasks.CompareCitations do
   @moduledoc """
-  Compares the materialized citation triples between the local Virtuoso
+  Compares the materialized `cpmeta:hasBiblioInfo` values between the local Virtuoso
   instance (`VIRTUOSO_HOST`) and another SPARQL endpoint — e.g. to check the
   Elixir populator's output against production.
 
-  Streams the distinct subjects having `cpmeta:hasCitationString`,
-  `cpmeta:hasBiblioInfo` or `dcterms:license` (the predicates
-  `BiblioMaterializer.Writer` produces) out of a local named graph, then
-  looks up all values on both endpoints for exactly those subjects and
-  compares the two sides — printing every mismatch with both sides' values.
+  Streams the distinct subjects having `cpmeta:hasBiblioInfo` out of a local
+  named graph, then looks up that value on both endpoints for exactly those
+  subjects and compares the decoded JSON — printing every mismatch with both
+  sides' values. Other materialized citation triples are not compared because
+  `hasBiblioInfo` is built from them.
 
   The remote lookup binds `?s` (in batches, via `VALUES`) rather than
-  streaming `?s ?p ?o` unbound: on production, `hasCitationString` and
-  `hasBiblioInfo` are computed on the fly per subject rather than stored as
-  ordinary triples, so an unbound query matches nothing there — the subject
-  has to be bound for the computation to run, but batching many subjects
-  into one `VALUES` list still works and keeps the request count down.
+  streaming `?s ?p ?o` unbound: on production, `hasBiblioInfo` is computed on
+  the fly per subject rather than stored as an ordinary triple, so an unbound
+  query matches nothing there — the subject has to be bound for the computation
+  to run, but batching many subjects into one `VALUES` list still works and
+  keeps the request count down.
 
   The comparison is chunked and concurrent: each chunk of subjects coming out
   of the scan is looked up on both sides at once and compared right away, so
@@ -50,7 +50,7 @@ defmodule Mix.Tasks.CompareCitations do
       complete; defaults to `compare_citations_mismatches.log`. The file is
       replaced at the start of each run.
   """
-  @shortdoc "Diffs materialized citation triples against another SPARQL endpoint"
+  @shortdoc "Diffs materialized hasBiblioInfo JSON against another SPARQL endpoint"
 
   use Mix.Task
 
@@ -127,14 +127,13 @@ defmodule Mix.Tasks.CompareCitations do
           &accumulate_chunk(&1, &2, log)
         )
 
-      {matches, _mismatch_count, mismatches, _error_count, errors} = result
+      {matches, mismatch_count, _mismatches, _error_count, errors} = result
       write_log_summary(log, result)
-      report(matches, mismatches, errors)
+      report(matches, mismatch_count, errors)
     end)
   end
 
-  defp predicates,
-    do: [Vocab.has_citation_string(), Vocab.has_biblio_info(), Vocab.dcterms_license()]
+  defp predicates, do: [Vocab.has_biblio_info()]
 
   defp positive_option!(opts, key, default) do
     case Keyword.get(opts, key, default) do
@@ -149,11 +148,11 @@ defmodule Mix.Tasks.CompareCitations do
 
   defp values(uris), do: Enum.map_join(uris, " ", &"<#{&1}>")
 
-  # Page only the distinct subject URIs. Sorting citation strings and biblio
-  # JSON is extremely expensive in Virtuoso, and ordering by subject alone is
-  # only deterministic if each subject occurs once. DISTINCT gives us exactly
-  # that. Once a subject chunk is known, VALUES lookups fetch every value
-  # without any ordering or result-set truncation risk.
+  # Page only the distinct subject URIs. Sorting biblio JSON is extremely
+  # expensive in Virtuoso, and ordering by subject alone is only deterministic
+  # if each subject occurs once. DISTINCT gives us exactly that. Once a subject
+  # chunk is known, VALUES lookups fetch every value without any ordering or
+  # result-set truncation risk.
   #
   # The scan itself stays sequential — cursor offsets are inherently so — but
   # it is a page per few thousand subjects, and it runs while the chunks it
@@ -217,12 +216,12 @@ defmodule Mix.Tasks.CompareCitations do
     |> Enum.reduce(%{}, &add_triple/2)
   end
 
-  # Remote: hasCitationString/hasBiblioInfo are computed per subject rather
-  # than stored, so an unbound query matches nothing there — ?s has to be
-  # bound for the computation to fire. Subjects are batched into one VALUES
-  # list per request to keep the request count down. The batches of one chunk
-  # run one after the other; concurrency comes from the chunks themselves, so
-  # that the endpoint sees a bounded number of these expensive queries.
+  # Remote: hasBiblioInfo is computed per subject rather than stored, so an
+  # unbound query matches nothing there — ?s has to be bound for the computation
+  # to fire. Subjects are batched into one VALUES list per request to keep the
+  # request count down. The batches of one chunk run one after the other;
+  # concurrency comes from the chunks themselves, so that the endpoint sees a
+  # bounded number of these expensive queries.
   #
   # Returns the values found and the subjects the endpoint could not answer
   # for (see `remote_batch/2`); those are left out of the comparison, since
@@ -359,21 +358,12 @@ defmodule Mix.Tasks.CompareCitations do
 
   @doc false
   def equivalent?(local, remote) do
-    Enum.all?(predicates(), fn predicate ->
-      predicate_values_equal?(
-        predicate,
-        Map.get(local, predicate),
-        Map.get(remote, predicate)
-      )
-    end)
+    predicate = Vocab.has_biblio_info()
+    json_values_equal?(Map.get(local, predicate), Map.get(remote, predicate))
   end
 
-  defp predicate_values_equal?(predicate, local, remote) do
-    if predicate == Vocab.has_biblio_info() do
-      decode_json_values(local) == decode_json_values(remote)
-    else
-      local == remote
-    end
+  defp json_values_equal?(local, remote) do
+    json_value_sets_equal?(decode_json_values(local), decode_json_values(remote))
   end
 
   defp decode_json_values(nil), do: nil
@@ -381,7 +371,18 @@ defmodule Mix.Tasks.CompareCitations do
   defp decode_json_values(%MapSet{} = values) do
     values
     |> Enum.map(&Jason.decode!/1)
-    |> MapSet.new()
+    |> Enum.uniq()
+  end
+
+  defp json_value_sets_equal?(nil, nil), do: true
+  defp json_value_sets_equal?(nil, _remote), do: false
+  defp json_value_sets_equal?(_local, nil), do: false
+
+  defp json_value_sets_equal?(local, remote) do
+    length(local) == length(remote) and
+      Enum.all?(local, fn local_value ->
+        Enum.any?(remote, &(&1 == local_value))
+      end)
   end
 
   defp accumulate_chunk(
@@ -390,6 +391,7 @@ defmodule Mix.Tasks.CompareCitations do
          log
        ) do
     write_mismatches(log, chunk_mismatches)
+    print_mismatches(chunk_mismatches)
 
     acc = {
       matches + chunk_matches,
@@ -421,12 +423,8 @@ defmodule Mix.Tasks.CompareCitations do
     )
   end
 
-  defp report(matches, mismatches, errors) do
+  defp report(matches, mismatch_count, errors) do
     Mix.shell().info("")
-
-    mismatches
-    |> Enum.sort_by(fn {uri, _l, _r} -> uri end)
-    |> Enum.each(&print_mismatch/1)
 
     errors
     |> Enum.sort_by(fn {uri, _message} -> uri end)
@@ -438,9 +436,7 @@ defmodule Mix.Tasks.CompareCitations do
         n -> ", #{n} unanswered by the remote"
       end
 
-    Mix.shell().info(
-      "#{matches} matching subjects, #{length(mismatches)} mismatching#{unanswered}"
-    )
+    Mix.shell().info("#{matches} matching subjects, #{mismatch_count} mismatching#{unanswered}")
   end
 
   defp print_error({uri, message}) do
@@ -455,6 +451,12 @@ defmodule Mix.Tasks.CompareCitations do
     |> IO.iodata_to_binary()
     |> String.trim_trailing()
     |> Mix.shell().info()
+  end
+
+  defp print_mismatches(mismatches) do
+    mismatches
+    |> Enum.sort_by(fn {uri, _local, _remote} -> uri end)
+    |> Enum.each(&print_mismatch/1)
   end
 
   defp write_log_header(log, local_host, local_graph, endpoint) do
@@ -484,47 +486,193 @@ defmodule Mix.Tasks.CompareCitations do
     )
   end
 
-  defp mismatch_text({uri, local, remote}, destination) do
-    differences =
-      predicates()
-      |> Enum.flat_map(fn predicate ->
-        local_value = Map.get(local, predicate)
-        remote_value = Map.get(remote, predicate)
+  @doc false
+  def mismatch_text({uri, local, remote}, destination) do
+    predicate = Vocab.has_biblio_info()
 
-        if predicate_values_equal?(predicate, local_value, remote_value) do
-          []
-        else
-          [
-            "  #{predicate_label(predicate)}\n",
-            "    local:  #{format_value(local_value, destination)}\n",
-            "    remote: #{format_value(remote_value, destination)}\n"
-          ]
-        end
+    differences =
+      json_key_differences(
+        Map.get(local, predicate),
+        Map.get(remote, predicate),
+        destination
+      )
+
+    [
+      format_heading("MISMATCH #{uri}\n", :yellow, destination),
+      format_heading("  hasBiblioInfo\n", :cyan, destination),
+      differences,
+      "\n"
+    ]
+  end
+
+  defp json_key_differences(local, remote, destination) do
+    {local, remote} = json_objects_for_diff(local, remote)
+
+    keys =
+      local
+      |> Map.keys()
+      |> Kernel.++(Map.keys(remote))
+      |> Enum.uniq()
+      |> Enum.sort()
+      |> Enum.reject(fn key ->
+        Map.get(local, key, {:missing}) == Map.get(remote, key, {:missing})
       end)
 
-    ["MISMATCH #{uri}\n", differences, "\n"]
+    local_diff = ordered_subset(local, keys)
+    remote_diff = ordered_subset(remote, keys)
+
+    json_diff(local_diff, remote_diff, destination)
   end
 
-  defp predicate_label(p) do
-    cond do
-      p == Vocab.has_citation_string() -> "hasCitationString"
-      p == Vocab.has_biblio_info() -> "hasBiblioInfo"
-      p == Vocab.dcterms_license() -> "license"
-      true -> p
-    end
-  end
-
-  defp format_value(nil, _destination), do: "(missing)"
-
-  defp format_value(%MapSet{} = values, destination) do
-    inspect_opts =
-      case destination do
-        :console -> []
-        :log -> [limit: :infinity, printable_limit: :infinity]
+  defp ordered_subset(values, keys) do
+    keys
+    |> Enum.flat_map(fn key ->
+      case Map.fetch(values, key) do
+        {:ok, value} -> [{key, value}]
+        :error -> []
       end
+    end)
+    |> Jason.OrderedObject.new()
+  end
 
-    values
-    |> Enum.sort()
-    |> Enum.map_join(", ", &inspect(&1, inspect_opts))
+  defp json_diff(local, remote, destination) do
+    local_lines = local |> Jason.encode!(pretty: true) |> String.split("\n")
+    remote_lines = remote |> Jason.encode!(pretty: true) |> String.split("\n")
+
+    lines =
+      local_lines
+      |> List.myers_difference(remote_lines)
+      |> refine_line_differences()
+
+    [
+      format_heading("    --- local\n", :red, destination),
+      format_heading("    +++ remote\n", :green, destination),
+      format_diff_lines(lines, destination)
+    ]
+  end
+
+  defp refine_line_differences([{:del, deleted}, {:ins, inserted} | rest]) do
+    pair_count = min(length(deleted), length(inserted))
+    {paired_deleted, remaining_deleted} = Enum.split(deleted, pair_count)
+    {paired_inserted, remaining_inserted} = Enum.split(inserted, pair_count)
+
+    changes =
+      Enum.zip_with(paired_deleted, paired_inserted, fn deleted, inserted ->
+        {:change, deleted, inserted,
+         List.myers_difference(String.graphemes(deleted), String.graphemes(inserted))}
+      end)
+
+    changes ++
+      Enum.map(remaining_deleted, &{:del, &1}) ++
+      Enum.map(remaining_inserted, &{:ins, &1}) ++ refine_line_differences(rest)
+  end
+
+  defp refine_line_differences([{kind, lines} | rest]) do
+    Enum.map(lines, &{kind, &1}) ++ refine_line_differences(rest)
+  end
+
+  defp refine_line_differences([]), do: []
+
+  defp format_diff_lines(lines, :log) do
+    Enum.map(lines, fn
+      {:change, deleted, inserted, character_diff} ->
+        [
+          "    -",
+          deleted,
+          "\n",
+          "    ?",
+          character_marker(character_diff, :del),
+          "\n",
+          "    +",
+          inserted,
+          "\n",
+          "    ?",
+          character_marker(character_diff, :ins),
+          "\n"
+        ]
+
+      {kind, line} ->
+        ["    ", diff_prefix(kind), line, "\n"]
+    end)
+  end
+
+  defp format_diff_lines(lines, :console) do
+    Enum.map(lines, fn
+      {:change, _deleted, _inserted, character_diff} ->
+        [
+          format_character_diff(character_diff, :del),
+          format_character_diff(character_diff, :ins)
+        ]
+
+      {:del, line} ->
+        format_heading(["    -", line, "\n"], :red, :console)
+
+      {:ins, line} ->
+        format_heading(["    +", line, "\n"], :green, :console)
+
+      {:eq, line} ->
+        ["     ", line, "\n"]
+    end)
+  end
+
+  defp diff_prefix(:eq), do: " "
+  defp diff_prefix(:del), do: "-"
+  defp diff_prefix(:ins), do: "+"
+
+  defp character_marker(character_diff, side) do
+    character_diff
+    |> Enum.map(fn
+      {:eq, graphemes} -> String.duplicate(" ", length(graphemes))
+      {^side, graphemes} -> String.duplicate("^", length(graphemes))
+      {_other_side, _graphemes} -> ""
+    end)
+    |> IO.iodata_to_binary()
+    |> String.trim_trailing()
+  end
+
+  defp format_character_diff(character_diff, side) do
+    {prefix, color} = if side == :del, do: {"-", :red}, else: {"+", :green}
+
+    content =
+      Enum.flat_map(character_diff, fn
+        {:eq, graphemes} ->
+          graphemes
+
+        {^side, graphemes} ->
+          [
+            IO.ANSI.underline(),
+            graphemes,
+            IO.ANSI.no_underline(),
+            apply(IO.ANSI, color, []),
+            IO.ANSI.bright()
+          ]
+
+        {_other_side, _graphemes} ->
+          []
+      end)
+
+    format_heading(["    ", prefix, content, "\n"], color, :console)
+  end
+
+  defp format_heading(content, _color, :log), do: content
+
+  defp format_heading(content, color, :console) do
+    [apply(IO.ANSI, color, []), IO.ANSI.bright(), content, IO.ANSI.reset()]
+  end
+
+  defp json_objects_for_diff(local, remote) do
+    case {decode_json_values(local), decode_json_values(remote)} do
+      {[local], [remote]} when is_map(local) and is_map(remote) ->
+        {local, remote}
+
+      {[local], nil} when is_map(local) ->
+        {local, %{}}
+
+      {nil, [remote]} when is_map(remote) ->
+        {%{}, remote}
+
+      {local, remote} ->
+        {%{"$values" => local || {:missing}}, %{"$values" => remote || {:missing}}}
+    end
   end
 end

@@ -9,14 +9,12 @@ import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import scala.concurrent.duration.Duration
@@ -74,10 +72,13 @@ private object TestRepo {
 		val start = System.currentTimeMillis()
 		val repo = SailRepository(MemoryStore())
 		repo.init()
-		ingestTriplestore(repo).map(Done =>
+		// NB: citation triples are materialized by the standalone citations service,
+		// not here; the citation-dependent regression queries are correspondingly ignored.
+		for
+			_ <- ingestTriplestore(repo)
+		yield
 			log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 			repo
-		)
 	}
 
 	def checkout() = {
@@ -104,9 +105,4 @@ private def ingestTriplestore(repo: Repository)(using ActorSystem, ExecutionCont
 			val server = Rdf4jInstanceServer(repo, graphIri)
 			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
 			Ingestion.ingest(server, ingester, factory).map(_ => Done)
-}
-
-object CitationClientDummy extends CitationClient {
-	override def getCitation(doi: Doi, citationStyle: CitationStyle) = Future.successful("dummy citation string")
-	override def getDoiMeta(doi: Doi) = Future.successful(DoiMeta(Doi("dummy", "doi")))
 }

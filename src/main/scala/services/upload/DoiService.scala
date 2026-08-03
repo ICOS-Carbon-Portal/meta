@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.utils.Validated
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
-class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionContext) {
+class DoiService(doiConf: DoiConfig, fetcher: StaticObjectFetcher)(using ExecutionContext) {
 
 	private val doiClientFactory = DoiClientFactory(doiConf)
 

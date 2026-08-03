@@ -8,21 +8,20 @@ import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.*
 
 
 class DataObjectInstanceServers(
 	val vanillaGlobal: InstanceServer,
-	citationProvider: CitationProvider,
+	readers: MetaReaders,
 	metaServers: Map[Envri, InstanceServer],
 	collectionServers: Map[Envri, InstanceServer],
 	docServers: Map[Envri, InstanceServer],
 	perFormat: Map[Envri, Map[IRI, InstanceServer]]
 )(using envriConfs: EnvriConfigs, factory: ValueFactory):
 
-	export citationProvider.{vocab, metaVocab, metaReader, lenses}
+	export readers.{vocab, metaVocab, metaReader, lenses}
 	import RdfLens.GlobConn
 
 	def getInstServerForFormat(format: IRI)(using envri: Envri): Validated[InstanceServer] =

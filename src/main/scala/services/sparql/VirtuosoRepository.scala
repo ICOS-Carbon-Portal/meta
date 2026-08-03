@@ -49,5 +49,9 @@ private def makeHttpClient(conf: VirtuosoConfig): CloseableHttpClient = {
 
 	HttpClients.custom()
 		.setDefaultCredentialsProvider(credsProvider)
+		// the Apache defaults (2 connections per route) would serialize all
+		// concurrent repository access, e.g. the citation materialization pipeline
+		.setMaxConnPerRoute(32)
+		.setMaxConnTotal(64)
 		.build()
 }

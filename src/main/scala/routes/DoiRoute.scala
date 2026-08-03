@@ -8,7 +8,6 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
@@ -18,7 +17,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
-		doiCitClient: CitationClient,
+		citationClient: CitationServiceClient,
 		coreConf: MetaCoreConfig
 	)(using logBus : LoggingBus): Route = {
 
@@ -49,7 +48,8 @@ object DoiRoute extends CpmetaJsonProtocol{
 		pathPrefix("dois" / "dropCache"){
 			post{
 				path(Remaining){maybeDoi =>
-					doiCitClient.dropCache(Doi.parse(maybeDoi).get)
+					// The citation cache lives in the citations service now; forward the request there.
+					citationClient.dropCache(Doi.parse(maybeDoi).get)
 					complete(StatusCodes.OK)
 				}
 			} ~

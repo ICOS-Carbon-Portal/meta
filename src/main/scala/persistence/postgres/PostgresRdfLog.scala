@@ -153,4 +153,8 @@ object PostgresRdfLog{
 			factory = factory
 		)
 
+	def checkConnection(conf: RdflogConfig): Unit =
+		val conn = Postgres.getConnection(conf.server, conf.credentials).get
+		conn.close()
+
 }

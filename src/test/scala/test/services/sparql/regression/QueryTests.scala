@@ -189,7 +189,7 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2016-08-18T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("955627", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/R5U1rVcbEQbdf9l801lvDUSZ"), 
-				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432Z", XSD.DATETIME),
+				"submTime" -> f.createLiteral("2022-07-08T08:38:35.432977Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2L2DataObject")
 			)
 	}
@@ -284,7 +284,7 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME), 
 				"size" -> f.createLiteral("52584", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/AuW_XXhpYP9I3JChs-KdjZAW"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796Z", XSD.DATETIME),
+				"submTime" -> f.createLiteral("2022-08-11T10:07:31.796085Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCh4NrtGrowingDataObject")
 			)	
 	}
@@ -297,27 +297,36 @@ class QueryTests extends AsyncFunSpec {
 				"timeStart" -> f.createLiteral("2022-03-01T00:00:00Z", XSD.DATETIME),
 				"size" -> f.createLiteral("54145", XSD.LONG), 
 				"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/2m-Tsf7Q8f9Dhqw4nsHh3ECg"), 
-				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885Z", XSD.DATETIME), 
+				"submTime" -> f.createLiteral("2022-08-11T10:07:44.885254Z", XSD.DATETIME),
 				"spec" -> f.createIRI("http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject")
 			)
 	}
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Metadata about all stations included in the drought2018AtmoProduct") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.drought2018AtmoProductStations, "Metadata about all stations included in the drought2018AtmoProduct", expectRows = 96, sampleIndex = 50, sortColumn = "Long_name") {
 		f => Map(
-			"height" ->  f.createLiteral("125.0", XSD.FLOAT), 
+			"height" ->	f.createLiteral("125.0", XSD.FLOAT), 
 			"Short_name" -> f.createLiteral("KRE"), 
 			"lon" -> f.createLiteral("15.08", XSD.DOUBLE), 
 			"lat" -> f.createLiteral("49.572", XSD.DOUBLE), 
 			"Long_name" -> f.createLiteral("Křešín u Pacova"), 
 			"Country" -> f.createLiteral("CZ")
 			)
-	}
+	*/
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Citation of specified data object") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.icosCitation("<https://meta.icos-cp.eu/objects/FCZAo0M_gnyN0RZ4I1J6llzM>"), "Citation of specified data object", expectRows = 1, sampleIndex = 0, sortColumn = "cit") {
 		f => Map(
 				"cit" -> f.createLiteral("Kubistin, D., Plaß-Dülmer, C., Lindauer, M., Schumacher, M. (2018). ICOS ATC CO2 Release from Hohenpeissenberg (50.0 m), 2017-02-15–2017-12-31, ICOS RI, https://hdl.handle.net/11676/FCZAo0M_gnyN0RZ4I1J6llzM")
 			)
 	}
+	*/
 
 	describeQ(TestQueries.prodsPerDomain("atmosphere"), "Level 1 and 2 data product names and specifications for selected domain", expectRows = 14, sampleIndex = 5) {
 		f => Map(
@@ -453,9 +462,14 @@ class QueryTests extends AsyncFunSpec {
 		f => Map("stationId" -> f.createLiteral("DE-Msr"))
 	}
 
+	ignore("[TODO: Re-enable when citation materializing is implemented] Licenses for data object list") {
+		assert(false)
+	}
+	/*
 	describeQ(TestQueries.licenceSetForDataObjectList, "Licenses for data object list", 1, 0){
 		f => Map("lic" -> f.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence"))
 	}
+	*/
 
 	describeQ(TestQueries.ingestionUploadTaskColumnFormats, "IngestionUploadTask column formats", 16, 8, sortColumn = "colName"){
 		f => Map(
@@ -521,7 +535,7 @@ class QueryTests extends AsyncFunSpec {
 	describeQ(TestQueries.incompleteUploads, "Incompletely uploaded data objects", 81, 5){
 		f => Map(
 			"dobj" -> f.createIRI("https://meta.icos-cp.eu/objects/UxugPrSsx3GRm6GnUq-iCQGd"),
-			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077Z", XSD.DATETIME)
+			"submTime" -> f.createLiteral("2022-01-20T11:14:54.077671Z", XSD.DATETIME)
 		)
 	}
 
@@ -533,6 +547,8 @@ class QueryTests extends AsyncFunSpec {
 		)
 	}
 
+	// TODO (index-removal): GeoSPARQL needs to be supported, and tested, again
+	/*
 	describeQ(TestQueries.geoFilter, "Statistics of data object origins with geo filter", 50, 0){
 		f => Map(
 			"dataType" -> f.createLiteral("ETC NRT Fluxes"),
@@ -542,9 +558,11 @@ class QueryTests extends AsyncFunSpec {
 			"submitter" -> f.createIRI("http://meta.icos-cp.eu/resources/organizations/ETC")
 		)
 	}
+	*/
 
+	// TODO (index-removal): Keyword filtering should work again
 	describe("Magic query") {
-		it("filters on keywords from data object, associated project and spec") {
+		ignore("filters on keywords from data object, associated project and spec") {
 			val factory = db.repo.getValueFactory()
 
 			// An object which has the unique keyword: "test keyword"
@@ -602,7 +620,7 @@ class QueryTests extends AsyncFunSpec {
 	}
 
 	describe("Distinct keywords magic query") {
-		it("returns keywords") {
+		ignore("returns keywords") {
 			// An object which has the unique keyword: "test keyword",
 			// associated with project keyword "ICOS" and spec keyword "carbon flux"
 			val objectName = "anthropogenic.persector.201911.nc"

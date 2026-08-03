@@ -7,9 +7,10 @@ import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollec
 import org.locationtech.jts.index.strtree.STRtree
 import se.lu.nateko.cp.meta.core.data.{Circle, FeatureCollection, FeatureWithGeoJson, GeoFeature, GeoTrack, LatLonBox, Pin, Polygon, Position}
 import se.lu.nateko.cp.meta.core.etcupload.StationId
-import se.lu.nateko.cp.meta.services.sparql.magic.{ConcaveHullLengthRatio, JtsGeoFactory}
 
 
+val JtsGeoFactory = new org.locationtech.jts.geom.GeometryFactory()
+private val ConcaveHullLengthRatio = 0.8
 
 object GeoCovMerger:
 

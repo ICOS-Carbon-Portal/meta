@@ -8,79 +8,69 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
-import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object Main extends App with CpmetaJsonProtocol{
-
-	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
-	private val log = Logging.getLogger(system, this)
-	private given ExecutionContext = system.dispatcher
+object Main extends CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
-	initSentry(config)
-	given EnvriConfigs = config.core.envriConfigs
-	val metaFactory = new MetaDbFactory
 
-	val optIndexDataFut: Future[Option[IndexData]] =
-		import config.{rdfStorage => conf}
-		val recreateIndex: Boolean = conf.recreateAtStartup || conf.recreateCpIndexAtStartup
-		if(recreateIndex) IndexHandler.dropStorage()
-		if(recreateIndex || conf.disableCpIndex) Future.successful(None)
-		else {
-			log.info("Trying to restore SPARQL magic index...")
-			val indexDataFut = IndexHandler.restore()
-			indexDataFut.foreach{idx =>
-				log.info(s"SPARQL magic index restored successfully (${idx.objs.length} objects)")
-				IndexHandler.dropStorage()
-			}
-			indexDataFut.map(Option(_)).recover{
-				case err =>
-					log.warning(s"Failed to restore SPARQL index (${err.getMessage})")
-					None
-			}
-		}
+	def main(args: Array[String]): Unit = args.headOption match {
+		case Some("populateTriplestore") =>
+			cli.TriplestorePopulator.run(config, None)
 
-	val startup = for(
-		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
-		db <- metaFactory(citCache, doiCache, config);
-		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
-		idxOpt <- optIndexDataFut;
-		_ = db.initSparqlMagicIndex(idxOpt);
-		route = MainRoute(db, metaflow, config);
-		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
-		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
-	) yield {
-		sys.addShutdownHook {
-			metaflow.cancel()
-			try {
-				Await.result(binding.unbind(), 10.seconds)
-			} finally {
-				db.close()
-				Sentry.close()
-				println("Metadata db has been shut down")
-			}
-
-			println("meta service shutdown successful")
-		}
-		log.info(binding.toString)
+		case _ =>
+			startServer()
 	}
 
-	startup.failed.foreach{err =>
-		Sentry.captureException(err)
-		Sentry.flush(5000)
-		log.error(err, "Could not start meta service")
-		system.terminate()
+	private def startServer(): Unit = {
+		given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
+		val log = Logging.getLogger(system, this)
+		given ExecutionContext = system.dispatcher
+
+		initSentry(config)
+		PostgresRdfLog.checkConnection(config.rdfLog)
+		given EnvriConfigs = config.core.envriConfigs
+		val metaFactory = new MetaDbFactory
+
+		val startup = for(
+			(citCache, doiCache) <- readCitCache().zip(readDoiCache());
+			db <- metaFactory(citCache, doiCache, config);
+			metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
+			route = MainRoute(db, metaflow, config);
+			binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
+		) yield {
+			sys.addShutdownHook {
+				metaflow.cancel()
+				try {
+					Await.result(binding.unbind(), 10.seconds)
+				} finally {
+					db.close()
+					Sentry.close()
+					println("Metadata db has been shut down")
+				}
+
+				println("meta service shutdown successful")
+			}
+			log.info(binding.toString)
+		}
+
+		startup.failed.foreach{err =>
+			Sentry.captureException(err)
+			Sentry.flush(5000)
+			log.error(err, "Could not start meta service")
+			system.terminate()
+		}
+	}
+
+	private def initSentry(config: CpmetaConfig): Unit =
+		config.sentry match {
+			case Some(conf) => Sentry.init(conf.dsn)
+			case None => ()
 	}
 }
 
-private def initSentry(config: CpmetaConfig): Unit =
-	config.sentry match {
-		case Some(conf) => Sentry.init(conf.dsn)
-		case None => ()
-	}

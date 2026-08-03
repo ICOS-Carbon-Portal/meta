@@ -23,25 +23,26 @@ class AdminRouting(
 	repo: Repository,
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
-	makeMetaReadonly: String => Future[String],
+	writeCaches: String => Future[String],
 	conf: SparqlServerConfig
 ) {
 	import AuthenticationRouting.optEnsureLocalRequest
 	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _
 	private val sparqler = new Rdf4jSparqlRunner(repo)
 
-	private val readonlyModeRoute = (post & withoutRequestTimeout){
+	private val writeCachesRoute = (post & withoutRequestTimeout){
 		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
-		onComplete(makeMetaReadonly(msg)){
+		onComplete(writeCaches(msg)){
 			case Success(successMsg) => complete(StatusCodes.OK -> successMsg)
 			case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
 		}
 	}
 
 	val route = pathPrefix("admin"){
+		// TODO: switchToReadonlyMode kept for compatibility. Rename when associated change is made in infrastructure repo.
 		path("switchToReadonlyMode"){
-			optEnsureLocalRequest{readonlyModeRoute} ~
-			permitAdmins{readonlyModeRoute}
+			optEnsureLocalRequest{writeCachesRoute} ~
+			permitAdmins{writeCachesRoute}
 		} ~
 		permitAdmins{
 			pathPrefix("insert")(operationRoute(true)) ~

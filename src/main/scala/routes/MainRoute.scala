@@ -37,7 +37,7 @@ object MainRoute {
 		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sparqler = new Rdf4jSparqlRunner(db.magicRepo)
+		val sparqler = new Rdf4jSparqlRunner(db.repo)
 		val sparqlRoute = SparqlRoute(config.sparql)
 
 		val staticRoute = StaticRoute(sparqler, config.onto)
@@ -59,7 +59,7 @@ object MainRoute {
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(
-			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql
+			db.repo, db.instanceServers, authRouting, db.dumpIndexAndCaches, config.sparql
 		).route
 
 		handleExceptions(exceptionHandler){

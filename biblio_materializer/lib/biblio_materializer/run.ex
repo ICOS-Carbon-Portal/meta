@@ -5,7 +5,7 @@ defmodule BiblioMaterializer.Run do
 
   alias BiblioMaterializer.Cache
 
-  def start_link(_opts), do: Supervisor.start_link(__MODULE__, [])
+  def start_link(opts), do: Supervisor.start_link(__MODULE__, opts)
 
   def context(supervisor) do
     cache = child_pid(supervisor, Cache)
@@ -15,10 +15,15 @@ defmodule BiblioMaterializer.Run do
   end
 
   @impl true
-  def init([]) do
+  def init(opts) do
+    concurrency =
+      Keyword.get_lazy(opts, :concurrency, fn ->
+        Application.fetch_env!(:biblio_materializer, :max_concurrency)
+      end)
+
     children = [
       Cache,
-      BiblioMaterializer.DataCiteQueue
+      {BiblioMaterializer.DataCiteQueue, concurrency: concurrency}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

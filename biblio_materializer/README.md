@@ -7,8 +7,9 @@ and the DataCite REST API. No triplestore driver, no RDF library; HTTP via
 [Req](https://hexdocs.pm/req) (the only dependency), JSON via the built-in
 `JSON` module (Elixir >= 1.18).
 
-Subjects are processed concurrently (`MAX_CONCURRENCY` workers, default 16),
-but each subject is still handled in the plainest possible way: a sequence
+In one-shot mode, subjects are processed concurrently (`MAX_CONCURRENCY`
+workers, default 16). Continuous mode uses one worker. Each subject is still
+handled in the plainest possible way: a sequence
 of SPARQL queries, DataCite GETs (rate-limited by the DataCite queue, one
 request per 150 ms) and one SPARQL `INSERT DATA` — no caching, batching
 or prefetching.
@@ -74,7 +75,7 @@ All via environment variables:
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/biblio/` |
-| `MAX_CONCURRENCY` | `16` |
+| `MAX_CONCURRENCY` (one-shot mode) | `16` |
 
 Queries go unauthenticated to `<host>/sparql`; updates go to
 `<host>/sparql-auth` with Basic auth, falling back to Digest auth when
@@ -82,8 +83,8 @@ Virtuoso challenges with it.
 
 ## Running
 
-Starting the application runs a population pass immediately and repeats it
-every hour:
+Starting the application runs population passes continuously. Continuous mode
+uses concurrency 1 to avoid overloading the RDF server:
 
 ```sh
 cd biblio_materializer
@@ -92,8 +93,8 @@ mix run --no-halt
 
 The same happens for a release (`bin/biblio_materializer start`).
 
-Pass `--single` to run one population pass and stop the VM, preserving the old
-one-shot behavior (including a non-zero exit status if the pass aborts):
+Pass `--single` to run one population pass and stop the VM. One-shot mode uses
+`MAX_CONCURRENCY` and preserves a non-zero exit status if the pass aborts:
 
 ```sh
 mix run --no-halt -- --single
@@ -106,8 +107,8 @@ ENVRI inference).
 ## Docker
 
 The `Dockerfile` builds a self-contained mix release on Ubuntu 24.04 (both the
-build and runtime stages). The container runs continuously, with one population
-pass per hour:
+build and runtime stages). The container runs population passes continuously
+with concurrency 1:
 
 ```sh
 docker build -t biblio_materializer .

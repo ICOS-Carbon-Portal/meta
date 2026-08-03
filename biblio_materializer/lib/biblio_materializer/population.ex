@@ -4,8 +4,6 @@ defmodule BiblioMaterializer.Population do
   use GenServer
   require Logger
 
-  @cycle_ms :timer.hours(1)
-
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -21,22 +19,26 @@ defmodule BiblioMaterializer.Population do
   @impl true
   def handle_info(:populate, state), do: populate(state)
 
+  @doc false
+  def run_options(true), do: []
+  def run_options(false), do: [concurrency: 1]
+
   defp populate(%{single: true} = state) do
-    status = if run_once() == :ok, do: 0, else: 1
+    status = if run_once(run_options(true)) == :ok, do: 0, else: 1
     System.stop(status)
     {:noreply, state}
   end
 
   defp populate(state) do
-    run_once()
-    Logger.info("Population pass complete; next pass in one hour")
-    Process.send_after(self(), :populate, @cycle_ms)
+    run_once(run_options(false))
+    Logger.info("Population pass complete; starting next pass")
+    send(self(), :populate)
     {:noreply, state}
   end
 
-  defp run_once do
+  defp run_once(opts) do
     try do
-      BiblioMaterializer.run()
+      BiblioMaterializer.run(opts)
       :ok
     rescue
       exception ->

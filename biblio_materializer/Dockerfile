@@ -74,7 +74,7 @@ WORKDIR /home/app
 
 COPY --from=builder --chown=app:app /app/_build/prod/rel/biblio_materializer ./
 
-# Boots in the foreground and runs a population pass every hour. Configure via
+# Boots in the foreground and runs population passes continuously. Configure via
 # the env vars in the README, e.g.
 #   docker run --rm -e VIRTUOSO_HOST=http://virtuoso:8890 <image>
 CMD ["bin/biblio_materializer", "start"]

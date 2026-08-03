@@ -1,13 +1,18 @@
 defmodule BiblioMaterializer.LifecycleTest do
   use ExUnit.Case, async: true
 
-  alias BiblioMaterializer.{Application, Cache, DataCiteQueue, Run}
+  alias BiblioMaterializer.{Application, Cache, DataCiteQueue, Population, Run}
 
   test "--single selects one-shot mode" do
     assert Application.single?(["--single"])
     assert Application.single?(["other", "--single"])
     refute Application.single?([])
     refute Application.single?(["single"])
+  end
+
+  test "continuous mode limits population passes to concurrency one" do
+    assert Population.run_options(false) == [concurrency: 1]
+    assert Population.run_options(true) == []
   end
 
   test "a newly started cache does not reuse a previous cache's values" do

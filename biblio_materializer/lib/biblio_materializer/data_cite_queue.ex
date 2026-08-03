@@ -30,7 +30,7 @@ defmodule BiblioMaterializer.DataCiteQueue do
   @base_backoff_ms 30_000
   @max_backoff_ms 300_000
 
-  def start_link(_opts), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
   def push(queue, job), do: GenServer.call(queue, {:push, job}, :infinity)
 
@@ -54,8 +54,8 @@ defmodule BiblioMaterializer.DataCiteQueue do
   Pauses slot handout after a 429: the whole client is over the rate limit,
   so every fetch task backs off, not just the one that hit it. `suggested_ms`
   is the server's own guidance (Retry-After / rate-limit-reset headers), or
-  nil to apply the adaptive default. The up-to-@fetch_concurrency requests
-  already in flight when the pause begins all report the same incident;
+  nil to apply the adaptive default. Requests already in flight when the pause
+  begins all report the same incident;
   only the first extends the pause (and logs).
   """
   def backoff(queue, suggested_ms), do: GenServer.cast(queue, {:backoff, suggested_ms})
@@ -63,12 +63,13 @@ defmodule BiblioMaterializer.DataCiteQueue do
   @log_every 500
 
   @impl true
-  def init(nil) do
+  def init(opts) do
     {:ok, task_supervisor} = Task.Supervisor.start_link([])
 
     {:ok,
      %{
        task_supervisor: task_supervisor,
+       concurrency: min(Keyword.fetch!(opts, :concurrency), @fetch_concurrency),
        pending: :queue.new(),
        running: 0,
        done: 0,
@@ -116,7 +117,7 @@ defmodule BiblioMaterializer.DataCiteQueue do
 
     # When a pause is already far in the future, this 429 came from a request
     # that was in flight when the pause began — same incident, ignore it.
-    if state.next_slot_at <= now + @slot_interval_ms * @fetch_concurrency * 2 do
+    if state.next_slot_at <= now + @slot_interval_ms * state.concurrency * 2 do
       ms = suggested_ms || state.backoff_ms
       Logger.info("DataCite rate limit hit, backing off for #{div(ms, 1000)} s")
 
@@ -171,17 +172,19 @@ defmodule BiblioMaterializer.DataCiteQueue do
     end
   end
 
-  defp start_jobs(%{running: running} = state) when running >= @fetch_concurrency, do: state
-
   defp start_jobs(state) do
-    case :queue.out(state.pending) do
-      {:empty, _queue} ->
-        state
+    if state.running >= state.concurrency do
+      state
+    else
+      case :queue.out(state.pending) do
+        {:empty, _queue} ->
+          state
 
-      {{:value, job}, rest} ->
-        queue = self()
-        Task.Supervisor.async_nolink(state.task_supervisor, fn -> process(queue, job) end)
-        start_jobs(%{state | pending: rest, running: state.running + 1})
+        {{:value, job}, rest} ->
+          queue = self()
+          Task.Supervisor.async_nolink(state.task_supervisor, fn -> process(queue, job) end)
+          start_jobs(%{state | pending: rest, running: state.running + 1})
+      end
     end
   end
 

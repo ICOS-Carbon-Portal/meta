@@ -38,24 +38,27 @@ defmodule BiblioMaterializer do
 
   alias BiblioMaterializer.{DataCiteQueue, References, Run, Sparql, Subject, Vocab, Writer}
 
-  # A handful of concurrent writers keeps the batched updates from serializing
-  # behind one another without piling many transactions onto the single target
-  # graph at once.
   @write_concurrency 4
 
-  def run do
+  def run(opts \\ []) do
     graph = Application.fetch_env!(:biblio_materializer, :derived_citations_graph)
-    {:ok, run} = Run.start_link([])
+
+    concurrency =
+      Keyword.get_lazy(opts, :concurrency, fn ->
+        Application.fetch_env!(:biblio_materializer, :max_concurrency)
+      end)
+
+    {:ok, run} = Run.start_link(concurrency: concurrency)
     context = Run.context(run)
 
     try do
-      run_pass(graph, context)
+      run_pass(graph, context, concurrency)
     after
       Supervisor.stop(run)
     end
   end
 
-  defp run_pass(graph, context) do
+  defp run_pass(graph, context, concurrency) do
     Logger.info("Counting citable subjects...")
     total = count_citable_subjects()
 
@@ -67,11 +70,11 @@ defmodule BiblioMaterializer do
       citable_subjects()
       |> Stream.with_index(1)
       |> Stream.chunk_every(Application.fetch_env!(:biblio_materializer, :read_batch_size))
-      |> Stream.flat_map(&populate_batch(&1, total, graph, context))
+      |> Stream.flat_map(&populate_batch(&1, total, graph, context, concurrency))
       |> Writer.batches()
       |> Task.async_stream(
         fn batch -> {length(batch), Writer.write_statements(graph, Enum.concat(batch))} end,
-        max_concurrency: @write_concurrency,
+        max_concurrency: min(concurrency, @write_concurrency),
         ordered: false,
         timeout: :infinity
       )
@@ -142,7 +145,7 @@ defmodule BiblioMaterializer do
   # Already-materialized subjects are dropped before the prefetch: on a
   # resumed run they are the bulk of the batch, and reading fields the run
   # will not use would defeat the point.
-  defp populate_batch(batch, total, graph, context) do
+  defp populate_batch(batch, total, graph, context, concurrency) do
     materialized =
       batch |> Enum.map(fn {{uri, _class}, _idx} -> uri end) |> Subject.materialized(graph)
 
@@ -157,7 +160,7 @@ defmodule BiblioMaterializer do
         todo
         |> Task.async_stream(
           fn {{uri, class}, idx} -> populate("#{idx}/#{total}", uri, class, graph, context) end,
-          max_concurrency: Application.fetch_env!(:biblio_materializer, :max_concurrency),
+          max_concurrency: concurrency,
           ordered: false,
           timeout: :infinity
         )

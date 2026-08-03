@@ -3,16 +3,26 @@ defmodule BiblioMaterializer.LifecycleTest do
 
   alias BiblioMaterializer.{Application, Cache, DataCiteQueue, Population, Run}
 
-  test "--single selects one-shot mode" do
-    assert Application.single?(["--single"])
-    assert Application.single?(["other", "--single"])
-    refute Application.single?([])
-    refute Application.single?(["single"])
+  test "single-pass mode and concurrency 16 are the defaults" do
+    assert Application.options([]) == [continuous: false, concurrency: 16]
   end
 
-  test "continuous mode limits population passes to concurrency one" do
-    assert Population.run_options(false) == [concurrency: 1]
-    assert Population.run_options(true) == []
+  test "continuous mode and concurrency are independent flags" do
+    assert Application.options(["--continuous"]) == [continuous: true, concurrency: 16]
+
+    assert Application.options(["--continuous", "--concurrency", "7"]) ==
+             [continuous: true, concurrency: 7]
+
+    assert Application.options(["--concurrency", "3"]) ==
+             [continuous: false, concurrency: 3]
+
+    assert Population.run_options(7) == [concurrency: 7]
+  end
+
+  test "concurrency must be positive" do
+    assert_raise ArgumentError, ~r/--concurrency must be a positive integer/, fn ->
+      Application.options(["--concurrency", "0"])
+    end
   end
 
   test "a newly started cache does not reuse a previous cache's values" do

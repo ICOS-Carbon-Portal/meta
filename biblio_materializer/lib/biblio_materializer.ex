@@ -13,7 +13,7 @@ defmodule BiblioMaterializer do
   Subjects are processed in batches (READ_BATCH_SIZE, default 500) whose
   per-subject fields are read up front with one query per field group (see
   [`Subject`](`BiblioMaterializer.Subject`)) rather than a query per subject,
-  concurrently within a batch (MAX_CONCURRENCY, default 16). Their triples
+  concurrently within a batch (`--concurrency`, default 16). Their triples
   are written in batches too, rather than one INSERT DATA per subject — so a
   subject's triples land shortly after it is processed rather than
   immediately. DOI subjects are not handled inline: the worker
@@ -38,15 +38,15 @@ defmodule BiblioMaterializer do
 
   alias BiblioMaterializer.{DataCiteQueue, References, Run, Sparql, Subject, Vocab, Writer}
 
+  @default_concurrency 16
   @write_concurrency 4
+
+  @doc false
+  def default_concurrency, do: @default_concurrency
 
   def run(opts \\ []) do
     graph = Application.fetch_env!(:biblio_materializer, :derived_citations_graph)
-
-    concurrency =
-      Keyword.get_lazy(opts, :concurrency, fn ->
-        Application.fetch_env!(:biblio_materializer, :max_concurrency)
-      end)
+    concurrency = Keyword.get(opts, :concurrency, @default_concurrency)
 
     {:ok, run} = Run.start_link(concurrency: concurrency)
     context = Run.context(run)

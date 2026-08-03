@@ -10,7 +10,6 @@ config :biblio_materializer,
   virtuoso_password: System.get_env("VIRTUOSO_PASSWORD", "dba"),
   derived_citations_graph:
     System.get_env("DERIVED_CITATIONS_GRAPH", "http://meta.icos-cp.eu/derived/citations/"),
-  max_concurrency: String.to_integer(System.get_env("MAX_CONCURRENCY", "16")),
   # How many subjects share one round of per-subject field reads (see
   # BiblioMaterializer.Subject). Larger batches mean fewer, bigger queries;
   # lower it if Virtuoso starts planning the wide VALUES joins badly.

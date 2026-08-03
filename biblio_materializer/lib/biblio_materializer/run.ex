@@ -16,10 +16,7 @@ defmodule BiblioMaterializer.Run do
 
   @impl true
   def init(opts) do
-    concurrency =
-      Keyword.get_lazy(opts, :concurrency, fn ->
-        Application.fetch_env!(:biblio_materializer, :max_concurrency)
-      end)
+    concurrency = Keyword.get(opts, :concurrency, BiblioMaterializer.default_concurrency())
 
     children = [
       Cache,

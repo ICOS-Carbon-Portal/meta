@@ -7,8 +7,9 @@ and the DataCite REST API. No triplestore driver, no RDF library; HTTP via
 [Req](https://hexdocs.pm/req) (the only dependency), JSON via the built-in
 `JSON` module (Elixir >= 1.18).
 
-In one-shot mode, subjects are processed concurrently (`MAX_CONCURRENCY`
-workers, default 16). Continuous mode uses one worker. Each subject is still
+By default, one population pass runs and the VM stops. Subjects are processed
+concurrently (`--concurrency`, default 16); `--continuous` repeats population
+passes without changing that concurrency. Each subject is still
 handled in the plainest possible way: a sequence
 of SPARQL queries, DataCite GETs (rate-limited by the DataCite queue, one
 request per 150 ms) and one SPARQL `INSERT DATA` — no caching, batching
@@ -75,7 +76,6 @@ All via environment variables:
 | `VIRTUOSO_USERNAME` | `dba` |
 | `VIRTUOSO_PASSWORD` | `dba` |
 | `DERIVED_CITATIONS_GRAPH` | `http://meta.icos-cp.eu/derived/biblio/` |
-| `MAX_CONCURRENCY` (one-shot mode) | `16` |
 
 Queries go unauthenticated to `<host>/sparql`; updates go to
 `<host>/sparql-auth` with Basic auth, falling back to Digest auth when
@@ -83,8 +83,8 @@ Virtuoso challenges with it.
 
 ## Running
 
-Starting the application runs population passes continuously. Continuous mode
-uses concurrency 1 to avoid overloading the RDF server:
+Starting the application runs one population pass with concurrency 16 and then
+stops the VM:
 
 ```sh
 cd biblio_materializer
@@ -93,11 +93,13 @@ mix run --no-halt
 
 The same happens for a release (`bin/biblio_materializer start`).
 
-Pass `--single` to run one population pass and stop the VM. One-shot mode uses
-`MAX_CONCURRENCY` and preserves a non-zero exit status if the pass aborts:
+Pass `--continuous` to keep running population passes. Use `--concurrency` to
+set the worker count in either mode; it defaults to 16 and does not change based
+on the mode. Single-pass mode preserves a non-zero exit status if the pass
+aborts:
 
 ```sh
-mix run --no-halt -- --single
+mix run --no-halt -- --continuous --concurrency 16
 ```
 
 `mix test` runs unit tests for the pure logic (temporal coverage display,
@@ -107,8 +109,8 @@ ENVRI inference).
 ## Docker
 
 The `Dockerfile` builds a self-contained mix release on Ubuntu 24.04 (both the
-build and runtime stages). The container runs population passes continuously
-with concurrency 1:
+build and runtime stages). The container runs one population pass with
+concurrency 16 by default:
 
 ```sh
 docker build -t biblio_materializer .

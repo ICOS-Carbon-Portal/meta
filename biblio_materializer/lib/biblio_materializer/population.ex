@@ -10,7 +10,12 @@ defmodule BiblioMaterializer.Population do
 
   @impl true
   def init(opts) do
-    {:ok, %{single: Keyword.fetch!(opts, :single)}, {:continue, :populate}}
+    state = %{
+      continuous: Keyword.fetch!(opts, :continuous),
+      concurrency: Keyword.fetch!(opts, :concurrency)
+    }
+
+    {:ok, state, {:continue, :populate}}
   end
 
   @impl true
@@ -20,17 +25,16 @@ defmodule BiblioMaterializer.Population do
   def handle_info(:populate, state), do: populate(state)
 
   @doc false
-  def run_options(true), do: []
-  def run_options(false), do: [concurrency: 1]
+  def run_options(concurrency), do: [concurrency: concurrency]
 
-  defp populate(%{single: true} = state) do
-    status = if run_once(run_options(true)) == :ok, do: 0, else: 1
+  defp populate(%{continuous: false, concurrency: concurrency} = state) do
+    status = if run_once(run_options(concurrency)) == :ok, do: 0, else: 1
     System.stop(status)
     {:noreply, state}
   end
 
-  defp populate(state) do
-    run_once(run_options(false))
+  defp populate(%{concurrency: concurrency} = state) do
+    run_once(run_options(concurrency))
     Logger.info("Population pass complete; starting next pass")
     send(self(), :populate)
     {:noreply, state}

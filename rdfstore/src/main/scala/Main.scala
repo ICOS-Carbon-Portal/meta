@@ -5,9 +5,8 @@ import scala.language.unsafeNulls
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import com.typesafe.config.ConfigFactory
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.{AppConfig, ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
@@ -25,7 +24,7 @@ import scala.util.{Failure, Success}
  */
 object Main extends App:
 
-	private val appConfig = ConfigFactory.load()
+	private val appConfig = AppConfig.get
 	private val metaConfig = ConfigLoader.default
 	private val storeConfig = RdfStoreConfigLoader.default
 	private val host = storeConfig.httpBindInterface

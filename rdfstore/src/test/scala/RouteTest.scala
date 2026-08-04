@@ -65,12 +65,16 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		"configure meta to use the standalone endpoint by default" in:
 			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
 				Some("http://127.0.0.1:9095/sparql")
+			ConfigLoader.default.remoteRdfRepository.map(_.updateEndpoint.toString) shouldBe
+				Some("http://127.0.0.1:9095/admin-unlogged-update")
+			ConfigLoader.default.remoteRdfRepository.map(_.mutationEndpoint.toString) shouldBe
+				Some("http://127.0.0.1:9095/logged-update")
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 
-		"apply an update and expose it to a query" in:
+		"apply an unlogged admin update and expose it to a query" in:
 			val update = "INSERT DATA { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> \"value\" } }"
-			Post("/update", HttpEntity(ContentTypes.`text/plain(UTF-8)`, update)) ~> route ~> check:
+			Post("/admin-unlogged-update", HttpEntity(ContentTypes.`text/plain(UTF-8)`, update)) ~> route ~> check:
 				status shouldBe StatusCodes.NoContent
 
 			val query = "SELECT ?o WHERE { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> ?o } }"
@@ -94,14 +98,14 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			val graph = repo.getValueFactory.createIRI("urn:history:graph")
 			Await.result(client.history(Seq(graph)), 5.seconds) shouldBe Seq(historyTimestamp -> historyUpdate)
 
-		"serve logical InstanceServer mutation batches" in:
+		"serve logged logical InstanceServer mutation batches" in:
 			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
 			val graph = repo.getValueFactory.createIRI("urn:mutation:graph")
 			val server = RemoteRdf4jInstanceServer(
 				repo,
 				Seq(graph),
 				graph,
-				URI.create(s"$baseUrl/instance-updates")
+				URI.create(s"$baseUrl/logged-update")
 			)
 			val statement = repo.getValueFactory.createStatement(
 				repo.getValueFactory.createIRI("urn:mutation:s"),
@@ -124,7 +128,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 
 		"serve RDF4J's remote Repository API, including named-graph writes" in:
 			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
-			val remote = new SPARQLRepository(s"$baseUrl/sparql", s"$baseUrl/update")
+			val remote = new SPARQLRepository(s"$baseUrl/sparql", s"$baseUrl/admin-unlogged-update")
 			remote.enableQuadMode(true)
 			remote.init()
 			try

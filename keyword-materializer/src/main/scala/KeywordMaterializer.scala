@@ -4,11 +4,10 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import org.eclipse.rdf4j.model.{IRI, Statement, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, Statement, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.parseCommaSepList
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
@@ -22,11 +21,15 @@ import scala.concurrent.{ExecutionContext, Future}
  *
  * This replaces the lookup support that the deleted "magic index" used to provide.
  * The index treated an object as carrying a keyword if it appeared in any of three
- * sources, unioned together: the object's own `hasKeywords`, its spec's `hasKeywords`
- * (`hasObjectSpec`), and the spec's project's `hasKeywords` (`hasAssociatedProject`).
- * With a remote SPARQL backend we cannot expand that comma-separated, inherited list
- * at query-evaluation time, so we materialize one `hasKeyword` triple per distinct
- * inherited keyword onto each object ahead of time instead.
+ * sources, unioned together: the object's own keywords, its spec's (`hasObjectSpec`),
+ * and the spec's project's (`hasAssociatedProject`). With a remote SPARQL backend we
+ * cannot expand that inherited union at query-evaluation time, so we materialize one
+ * `hasKeyword` triple per distinct inherited keyword onto each object ahead of time
+ * instead.
+ *
+ * The keywords are read from the singular `hasOwnKeyword` triples that
+ * [[KeywordSplitter]] produced out of the legacy comma-separated `hasKeywords`
+ * literals; nothing is parsed or split here.
  *
  * The derived graph is treated as a cache: `materializeAll` clears and rebuilds it,
  * making each run idempotent.
@@ -77,9 +80,9 @@ class KeywordMaterializer(
 		writeInBatches(keywordsByObj)
 
 	/**
-	 * For every data/document object, the union of its own keywords, its spec's
-	 * keywords and the spec's project's keywords (the same three sources the magic
-	 * index unioned). Comma-separated lists are parsed and de-duplicated per object.
+	 * For every data/document object, the union of its own `hasOwnKeyword` keywords, its
+	 * spec's and the spec's project's (the same three sources the magic index unioned),
+	 * de-duplicated per object.
 	 *
 	 * Done in two paginated phases so that no single SPARQL result set can exceed the
 	 * triplestore's row cap (or time out) and be silently truncated: first enumerate the
@@ -142,24 +145,24 @@ class KeywordMaterializer(
 
 		objects.toIndexedSeq
 
-	/** Fetches own/spec/project keywords for a bounded batch of objects in one query. */
+	/** Fetches own/spec/project `hasOwnKeyword` keywords for a bounded batch of objects in one query. */
 	private def fetchKeywordsForBatch(
 		batch: collection.Seq[IRI],
 		acc: mutable.Map[IRI, mutable.Set[String]]
 	): Unit =
 		val values = batch.map(obj => s"<$obj>").mkString(" ")
 		val q = s"""
-			|SELECT ?obj ?keywords WHERE {
+			|SELECT ?obj ?keyword WHERE {
 			|  VALUES ?obj { $values }
 			|  {
-			|    ?obj <${metaVocab.hasKeywords}> ?keywords .
+			|    ?obj <${metaVocab.hasOwnKeyword}> ?keyword .
 			|  } UNION {
 			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
-			|    ?spec <${metaVocab.hasKeywords}> ?keywords .
+			|    ?spec <${metaVocab.hasOwnKeyword}> ?keyword .
 			|  } UNION {
 			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
 			|    ?spec <${metaVocab.hasAssociatedProject}> ?proj .
-			|    ?proj <${metaVocab.hasKeywords}> ?keywords .
+			|    ?proj <${metaVocab.hasOwnKeyword}> ?keyword .
 			|  }
 			|}""".stripMargin
 
@@ -169,12 +172,11 @@ class KeywordMaterializer(
 			try
 				while result.hasNext() do
 					val bindings = result.next()
-					bindings.getValue("obj") match
-						case obj: IRI =>
-							val keywordsStr = Option(bindings.getValue("keywords")).fold("")(_.stringValue)
-							val kws = parseCommaSepList(keywordsStr)
-							if kws.nonEmpty then
-								acc.getOrElseUpdate(obj, mutable.Set.empty) ++= kws
+					(bindings.getValue("obj"), bindings.getValue("keyword")) match
+						case (obj: IRI, keyword: Literal) =>
+							val kw = keyword.stringValue.trim
+							if kw.nonEmpty then
+								acc.getOrElseUpdate(obj, mutable.Set.empty) += kw
 						case _ => ()
 			finally result.close()
 		finally conn.close()

@@ -2,14 +2,14 @@ package se.lu.nateko.cp.meta
 
 import scala.language.unsafeNulls
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
@@ -24,16 +24,13 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
-import se.lu.nateko.cp.meta.utils.async.ok
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
-import java.util.concurrent.Executors
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -46,13 +43,14 @@ class MetaDb (
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
 	val magicRepo: Repository,
-	private val localSail: Option[CpNotifyingSail],
+	private val rdfAdminEndpoint: URI,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
 	export uploadService.servers.{vocab, metaVocab, lenses}
 	private val log = Logging.getLogger(system, this)
+	private given ExecutionContext = system.dispatcher
 	def metaReader: StaticObjectReader = citer.metaReader
 	def vanillaRepo: Repository = citer.repo
 	def vanillaGlob: InstanceServer = citer.server
@@ -61,17 +59,17 @@ class MetaDb (
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		localSail.fold(Future.successful(
-			"The RDF repository is remote; switch its writer endpoint to read-only mode at the rdfStore service"
-		)):
-			_.makeReadonlyDumpIndexAndCaches(msg)(using summon[ActorSystem].dispatcher)
-
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
-		localSail match
-			case Some(cp) => cp.initSparqlMagicIndex(idxData)
-			case None =>
-				log.info("Magic SPARQL index is disabled, skipping its initialization")
-				ok
+		Http().singleRequest(HttpRequest(
+			method = HttpMethods.POST,
+			uri = rdfAdminEndpoint.toString,
+			entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, msg)
+		)).flatMap: response =>
+			response.entity.toStrict(30.seconds).flatMap: entity =>
+				val body = entity.data.utf8String
+				if response.status.isSuccess then Future.successful(body)
+				else Future.failed(RuntimeException(
+					s"rdfStore administration failed with ${response.status}: $body"
+				))
 
 
 	override def close(): Unit =
@@ -145,61 +143,28 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
-	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
+	def apply(citCache: CitationCache, metaCache: DoiCache, config: CpmetaConfig): Future[MetaDb] =
 
-		validateConfig(config0)
-		given EnvriConfigs = config0.core.envriConfigs
+		validateConfig(config)
+		given EnvriConfigs = config.core.envriConfigs
 
-		val (isFreshInit, repo, citer, localSail) = config0.remoteRdfRepository match
-			case Some(remote) =>
-				val remoteRepo = new SPARQLRepository(
-					remote.queryEndpoint.toString,
-					remote.updateEndpoint.toString
-				)
-				remoteRepo.enableQuadMode(true)
-				remoteRepo.init()
-				(false, remoteRepo: Repository, CitationProvider(remoteRepo, citCache, metaCache, config0), None)
-			case None =>
-				val (fresh, baseSail) = StorageSail.apply(config0.rdfStorage)
-				val localCiter = CitationProvider(baseSail, citCache, metaCache, config0)
-				val noMagic = fresh || config0.rdfStorage.disableCpIndex
-				val idxFactories = if noMagic then None else
-					val indexHandler = IndexHandler(system.scheduler)
-					val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
-					Some(indexHandler -> geoProvider)
-				val cpSail = CpNotifyingSail(baseSail, idxFactories, localCiter)
-				val localRepo = new SailRepository(cpSail)
-				localRepo.init()
-				(fresh, localRepo: Repository, localCiter, Some(cpSail))
-
-		val config: CpmetaConfig = if isFreshInit
-			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
-			else config0
+		val remote = config.remoteRdfRepository.getOrElse:
+			throw IllegalArgumentException(
+				"cpmeta.remoteRdfRepository is required; meta no longer owns an embedded RDF store"
+			)
+		val remoteRepo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
+		remoteRepo.enableQuadMode(true)
+		remoteRepo.init()
+		val repo: Repository = remoteRepo
+		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
 
 		val serversFut =
-			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
-				val ctxt = Executors.newSingleThreadExecutor()
-				Some(ExecutionContext.fromExecutorService(ctxt))
-			else None
-
-			/*
-			 LMDB seems to work fine under fully parallel write conditions,
-			 with the exception of full re-building of the triplestore database from rdflog.
-			 Note that in the typical meta service restart scenario RDF storage is not re-built,
-			 but multi-threaded initialization can be beneficial for startup time, because some
-			 of RDF-graph-init jobs are expensive and are best run as background even after the
-			 server starts up (see `enum IngestionMode` in CpmetaConfig.scala)
-			*/
-			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
-
+			given ExecutionContext = ExecutionContext.global
 			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
-				case _ =>
-					log.info("instance servers created")
-					singleThreadExe.foreach(_.shutdown())
+				case _ => log.info("instance servers created")
 
 
 		for instanceServers <- serversFut; ontos <- ontosFut yield
@@ -223,11 +188,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, localSail, citer, config)
-			if isFreshInit then localSail.foreach(_.makeReadonly("This was a fresh RDF store initialization, running in " +
-				"readonly mode; restart the server for proper operation")
+			new MetaDb(
+				instanceServers, instOntos, uploadService, labelingService, fileService,
+				sparqlServer, repo, remote.adminEndpoint, citer, config
 			)
-			db
 		end for
 	end apply
 

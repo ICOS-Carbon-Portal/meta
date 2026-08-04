@@ -15,10 +15,9 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
-import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
@@ -85,9 +84,6 @@ object MetaDb:
 			dataObjServers.definitions.map{ servDef =>
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
-					logName = Some(servDef.label),
-					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
-					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 					writeContext = writeCtxt,
 					ingestion = None
@@ -183,7 +179,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
 				val metaVocab = citer.metaVocab
-				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf)
+				val historyClient = RdfHistoryClient(remote.historyEndpoint, repo.getValueFactory)
+				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, historyClient)
 			}
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
@@ -227,32 +224,14 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer =
+	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig): InstanceServer =
 
 		given factory: ValueFactory = initRepo.getValueFactory
 
 		val writeContext = conf.writeContext.toRdf
 		val readContexts = conf.readContexts.fold(Seq(writeContext))(_.map(_.toRdf))
 
-		conf.logName match
-			case Some(logName) =>
-				val rdfLog = PostgresRdfLog(logName, globConf.rdfLog, factory)
-
-				if !conf.skipLogIngestionAtStart.getOrElse(!globConf.rdfStorage.recreateAtStartup)
-				then
-					val cleanFirst = if(conf.logIngestionFromId.isDefined) false else true
-					val msgDetail = conf.logIngestionFromId.fold("")(id => s"starting from id $id ")
-					log.info(s"Ingesting from RDF log $logName $msgDetail...")
-					val updates = conf.logIngestionFromId.fold(rdfLog.updates)(rdfLog.updatesFromId)
-					RdfUpdateLogIngester.ingest(updates, initRepo, cleanFirst, writeContext)
-					log.info(s"Ingesting from RDF log $logName done!")
-
-				val rdf4jServer = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
-				new LoggingInstanceServer(rdf4jServer, rdfLog)
-
-			case None =>
-				new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
-		end match
+		new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 
 	end makeInstanceServer
 
@@ -303,7 +282,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	/**
 	 * Includes support for dependencies when initializing InstanceServers.
 	 * Namely, ingestion can now wait until certain other InstanceServers have
-	 * been completely initialized from their RDF logs and other ingesters.
+	 * been completely initialized by their configured ingesters.
 	 */
 	private def makeInstanceServers(
 		repo: Repository,
@@ -323,7 +302,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			import IngestionMode.{EAGER, BACKGROUND}
 
 			val basicInit: Future[InstanceServer] =
-				val init = Future(makeInstanceServer(repo, servConf, config))
+				val init = Future(makeInstanceServer(repo, servConf))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{

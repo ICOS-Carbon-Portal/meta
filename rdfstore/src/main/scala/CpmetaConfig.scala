@@ -31,14 +31,11 @@ case class IngestionConfig(
 
 case class InstanceServerConfig(
 	writeContext: URI,
-	logName: Option[String],
-	skipLogIngestionAtStart: Option[Boolean],
-	logIngestionFromId: Option[Int],
 	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
 )
 
-case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
+case class DataObjectInstServerDefinition(label: String, format: URI)
 
 case class DataObjectInstServersConfig(
 	commonReadContexts: Seq[URI],
@@ -163,7 +160,21 @@ case class RdfStorageConfig(
  * Sail store. The query and update endpoints may be different so that writes
  * can be kept on a private listener/reverse-proxy route.
  */
-case class RemoteRdfRepositoryConfig(queryEndpoint: URI, updateEndpoint: URI, adminEndpoint: URI)
+case class RemoteRdfRepositoryConfig(
+	queryEndpoint: URI,
+	updateEndpoint: URI,
+	adminEndpoint: URI,
+	historyEndpoint: URI
+)
+
+case class RdfStoreConfig(
+	httpBindInterface: String,
+	port: Int,
+	rdfStorage: RdfStorageConfig,
+	rdfLog: RdflogConfig,
+	rdfLogs: Map[String, URI],
+	rdfLogRestoreFromId: Map[String, Int]
+)
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
@@ -184,9 +195,7 @@ case class CpmetaConfig(
 	dataUploadService: UploadServiceConfig,
 	stationLabelingService: Option[LabelingServiceConfig],
 	instanceServers: InstanceServersConfig,
-	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	rdfStorage: RdfStorageConfig,
 	remoteRdfRepository: Option[RemoteRdfRepositoryConfig],
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
@@ -207,8 +216,8 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
-	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
-	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[InstanceServerConfig] = jsonFormat3(InstanceServerConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat2(DataObjectInstServerDefinition.apply)
 	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
@@ -244,7 +253,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
@@ -252,7 +261,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat14(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 
@@ -270,3 +279,16 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
 
 end ConfigLoader
+
+object RdfStoreConfigLoader:
+	import se.lu.nateko.cp.meta.core.CommonJsonSupport.given
+	import DefaultJsonProtocol.*
+
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
+	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)
+
+	lazy val default: RdfStoreConfig = appConfig.getValue("rdfStore").parseAs[RdfStoreConfig]

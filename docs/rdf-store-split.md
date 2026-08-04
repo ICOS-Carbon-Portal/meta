@@ -5,7 +5,7 @@
 The target is two independently deployable JVM applications:
 
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol.
-2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client.
+2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client. It has no RDF-log configuration or implementation awareness.
 
 The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql`, `/update`, and `/health`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
@@ -87,7 +87,7 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 | SPARQL parsing, execution quotas, cancellation, result formats | `rdfStore` |
 | Carbon Portal custom query indexes | `rdfStore` |
 | Store backups, compaction, read-only maintenance | `rdfStore` |
-| RDF graph bootstrap/replay | one designated initializer, ultimately `rdfStore` |
+| RDF-log storage, graph replay, and change history | `rdfStore` |
 | Upload validation and RDF statement production | `meta` |
 | Ontology-driven editors and labeling workflow | `meta` |
 | DOI, citation, landing-page composition | `meta` |
@@ -95,17 +95,9 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 
 ## Transactions and RDF update logs
 
-The existing `LoggingInstanceServer` appends PostgreSQL RDF-log records inside the callback used by a local repository transaction. That is not a distributed atomic transaction after the split. Pretending it remains atomic would create an undetectable split-brain failure mode.
+`rdfStore` wraps the Sail connection and records asserted/retracted statements by named graph. It appends each transaction's changes to the graph's PostgreSQL RDF log immediately before committing the RDF4J transaction, preserving the former local ordering while removing all logging behavior from `meta`. Rollbacks are not logged, and logging stays disabled during startup replay so restored rows are not appended again.
 
-The target write design is an **idempotent mutation batch**:
-
-1. `meta` calculates a batch of asserted/retracted statements and assigns a mutation UUID.
-2. `meta` submits the batch to a private `rdfStore` mutation endpoint.
-3. `rdfStore`, as the write authority, records the mutation ID and RDF-log/outbox record, then commits RDF changes.
-4. Repeating a completed mutation ID returns its prior result without applying it twice.
-5. A background publisher may copy the authoritative outbox to PostgreSQL if PostgreSQL remains the long-term audit/rebuild store.
-
-Until that endpoint is implemented, `meta` uses standard SPARQL Update. This preserves ordinary metadata behavior but does **not** claim atomicity between remote RDF and the legacy PostgreSQL log. Run a single `meta` writer and monitor both stores during this phase.
+The two persistence systems still cannot provide a distributed atomic commit: an RDF4J commit failure after a successful PostgreSQL append can leave a log entry ahead of the store. An idempotent mutation/outbox design remains a possible hardening step, but it is no longer part of `meta`.
 
 ## Custom index migration
 
@@ -124,12 +116,13 @@ Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and
 
 `rdfStore` startup order:
 
-1. acquire an exclusive process/volume lock;
-2. open and initialize the Sail repository;
+1. open and initialize the Sail repository;
+2. on a fresh store, restore each configured RDF log sequentially;
 3. restore or build custom indexes;
-4. optionally run graph bootstrap/replay under an explicit initializer flag;
-5. expose the update listener;
-6. report ready only after query and update self-checks pass.
+4. enable transaction logging and leave the freshly built store read-only;
+5. expose the routes so operators can verify the restore, then restart `rdfStore` for normal indexed operation.
+
+The replay is deliberately sequential. This retains the old protection against NativeStore crashes under unrestrained parallel writes, but limits serialization to initial RDF-log restoration; normal store traffic uses RDF4J's transaction concurrency.
 
 `meta` startup order:
 
@@ -150,10 +143,11 @@ cpmeta.remoteRdfRepository {
   queryEndpoint = "http://127.0.0.1:9095/sparql"
   updateEndpoint = "http://127.0.0.1:9095/update"
   adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
+  historyEndpoint = "http://127.0.0.1:9095/history"
 }
 ```
 
-The standalone application currently reuses `cpmeta.rdfStorage` and `cpmeta.sparql` settings and adds:
+The standalone application owns `rdfStore.rdfStorage`, `rdfStore.rdfLog`, the graph-to-log mappings, and RDF-log replay offsets. It currently reuses only the general `cpmeta.sparql` query limits and adds:
 
 ```hocon
 rdfStore {
@@ -191,7 +185,6 @@ Rollback before new remote writes means redeploying the prior embedded release. 
 ## Remaining implementation slices
 
 1. Add service authentication to the private update and administration routes before exposing them across hosts.
-2. Implement idempotent mutation batches and move RDF-log/outbox ownership to `rdfStore`.
-3. Move graph bootstrap/replay and RDF-log ownership to `rdfStore`.
-4. Add remote integration tests using LMDB in addition to the current MemoryStore protocol test.
-5. Split the shared configuration/domain support currently compiled in `rdfStore` into a smaller neutral library if independent publication is needed; this must preserve the current one-way dependency graph.
+2. Consider idempotent mutation batches/outbox handling if cross-store atomicity needs stronger guarantees.
+3. Add remote integration tests using LMDB in addition to the current MemoryStore protocol test.
+4. Split the shared configuration/domain support currently compiled in `rdfStore` into a smaller neutral library if independent publication is needed; this must preserve the current one-way dependency graph.

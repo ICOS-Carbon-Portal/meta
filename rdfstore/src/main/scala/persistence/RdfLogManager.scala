@@ -1,0 +1,73 @@
+package se.lu.nateko.cp.meta.persistence
+
+import scala.language.unsafeNulls
+
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.meta.RdfStoreConfig
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+
+import java.time.Instant
+import scala.collection.mutable
+import scala.util.Using
+
+final class RdfLogManager private (
+	private val bindings: Seq[RdfLogManager.Binding],
+	private val restoreFromId: Map[String, Int]
+) extends AutoCloseable:
+	import RdfLogManager.Binding
+
+	private val byContext: Map[String, Binding] = bindings.map(binding => binding.context.stringValue -> binding).toMap
+
+	def binding(context: IRI): Option[Binding] = byContext.get(context.stringValue)
+
+	/**
+	 * Replays logs one at a time. This is deliberately serialized: NativeStore
+	 * has previously crashed under the parallel write load produced by initial
+	 * RDF-log restoration.
+	 */
+	def restore(repo: Repository, isFreshStore: Boolean): Unit =
+		bindings.foreach: binding =>
+			val fromId = restoreFromId.get(binding.name)
+			if isFreshStore || fromId.isDefined then
+				val updates = fromId.fold(binding.log.updates)(binding.log.updatesFromId)
+				RdfUpdateLogIngester.ingest(
+					updates,
+					repo,
+					cleanFirst = fromId.isEmpty,
+					binding.context
+				).get
+
+	def history(contexts: Seq[IRI]): Seq[(Instant, RdfUpdate)] =
+		val seen = mutable.HashSet.empty[String]
+		contexts.flatMap(binding).filter(binding => seen.add(binding.name)).flatMap: binding =>
+			Using.resource(binding.log.timedUpdates)(_.toIndexedSeq)
+
+	override def close(): Unit = bindings.map(_.log).distinct.foreach(_.close())
+
+end RdfLogManager
+
+object RdfLogManager:
+	final case class Binding(name: String, context: IRI, log: RdfUpdateLog)
+
+	private[persistence] def fromBindings(bindings: Seq[Binding]): RdfLogManager =
+		new RdfLogManager(bindings, Map.empty)
+
+	def apply(storeConfig: RdfStoreConfig, factory: ValueFactory): RdfLogManager =
+		val configured = storeConfig.rdfLogs.toSeq
+		require(
+			configured.map(_._2).distinct.size == configured.size,
+			"rdfStore.rdfLogs must map each named graph to exactly one RDF log"
+		)
+
+		val bindings = configured.map: (name, context) =>
+			Binding(
+				name,
+				factory.createIRI(context.toString),
+				PostgresRdfLog(name, storeConfig.rdfLog, factory)
+			)
+
+		new RdfLogManager(bindings, storeConfig.rdfLogRestoreFromId)
+
+end RdfLogManager

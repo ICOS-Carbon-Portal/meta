@@ -14,14 +14,18 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import java.net.URI
+import java.time.Instant
 
 class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll:
 
@@ -40,13 +44,25 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	))
 
 	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
-	private val route = Route(repo, message => Future.successful(s"read-only: $message"))
+	private val historyTimestamp = Instant.parse("2026-08-04T12:00:00Z")
+	private val historyUpdate = RdfUpdate(repo.getValueFactory.createStatement(
+		repo.getValueFactory.createIRI("urn:history:s"),
+		repo.getValueFactory.createIRI("urn:history:p"),
+		repo.getValueFactory.createLiteral("history value")
+	), true)
+	private val route = Route(
+		repo,
+		message => Future.successful(s"read-only: $message"),
+		_ => Seq(historyTimestamp -> historyUpdate)
+	)
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
 		"configure meta to use the standalone endpoint by default" in:
 			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
 				Some("http://127.0.0.1:9095/sparql")
+			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
+				"http://meta.icos-cp.eu/resources/cpmeta/"
 
 		"apply an update and expose it to a query" in:
 			val update = "INSERT DATA { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> \"value\" } }"
@@ -67,6 +83,12 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			Post("/admin/read-only", HttpEntity(ContentTypes.`text/plain(UTF-8)`, "maintenance")) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] shouldBe "read-only: maintenance"
+
+		"serve RDF change history to meta without exposing RDF logs" in:
+			val endpoint = URI.create(s"http://127.0.0.1:${binding.localAddress.getPort}/history")
+			val client = RdfHistoryClient(endpoint, repo.getValueFactory)
+			val graph = repo.getValueFactory.createIRI("urn:history:graph")
+			Await.result(client.history(Seq(graph)), 5.seconds) shouldBe Seq(historyTimestamp -> historyUpdate)
 
 		"serialize ASK results as standard SPARQL JSON and XML" in:
 			val ask = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "ASK WHERE { }")

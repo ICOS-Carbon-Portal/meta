@@ -7,7 +7,7 @@ The target is two independently deployable JVM applications:
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol.
 2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client. It has no RDF-log configuration or implementation awareness.
 
-The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql`, `/update`, and `/health`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
+The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql`, `/admin-unlogged-update`, `/logged-update`, and `/health`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
 ## Existing coupling
 
@@ -42,7 +42,9 @@ public clients
               query| SPARQL 1.1 |update
                    v
 +-------------- rdfStore --------------+
-| /sparql (read), /update (write)       |
+| /sparql (read)                        |
+| /admin-unlogged-update (SPARQL write) |
+| /logged-update (logical write batch)  |
 | quota, timeout, serialization         |
 | custom indexes and change listeners  |
 | RDF4J SailRepository                  |
@@ -71,7 +73,7 @@ The query endpoint supports:
 
 ### Writes
 
-RDF4J `SPARQLRepository` sends `RepositoryConnection.add/remove` and prepared updates to the configured update endpoint. The private `/update` endpoint executes SPARQL Update in a repository transaction. Named contexts remain authoritative: each logical `InstanceServer` has its configured read contexts and exactly one normal write context.
+RDF4J `SPARQLRepository` sends `RepositoryConnection.add/remove` and prepared updates to the configured update endpoint. The private `/admin-unlogged-update` endpoint executes SPARQL Update in a repository transaction without appending it to an RDF log. Named contexts remain authoritative: each logical `InstanceServer` has its configured read contexts and exactly one normal write context.
 
 The update endpoint must never be public. Production should use service identity (mTLS or a short-lived workload token) in addition to network policy. The initial implementation binds to loopback and relies on network isolation; authentication is a required hardening item before cross-host deployment.
 
@@ -95,7 +97,7 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 
 ## Transactions and RDF update logs
 
-The current implementation preserves the original `LoggingInstanceServer` behavior. `meta` sends each logical `InstanceServer.applyAll` batch and its target graph to the private `/instance-updates` endpoint. Inside `rdfStore`, the graph selects either a plain `Rdf4jInstanceServer` or a `LoggingInstanceServer`; for logged graphs, the PostgreSQL append runs in the callback immediately before the local RDF4J transaction commits. RDF-log replay bypasses this endpoint, so restored rows are not appended again.
+The current implementation preserves the original `LoggingInstanceServer` behavior. `meta` sends each logical `InstanceServer.applyAll` batch and its target graph to the private `/logged-update` endpoint. Inside `rdfStore`, the graph selects either a plain `Rdf4jInstanceServer` or a `LoggingInstanceServer`; for logged graphs, the PostgreSQL append runs in the callback immediately before the local RDF4J transaction commits. RDF-log replay bypasses this endpoint, so restored rows are not appended again.
 
 Capturing every write at the Sail level—including arbitrary SPARQL Update requests—would broaden the original behavior. This is intentionally deferred as a future improvement rather than included in the split.
 
@@ -143,9 +145,10 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 ```hocon
 cpmeta.remoteRdfRepository {
   queryEndpoint = "http://127.0.0.1:9095/sparql"
-  updateEndpoint = "http://127.0.0.1:9095/update"
+  updateEndpoint = "http://127.0.0.1:9095/admin-unlogged-update"
   adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
   historyEndpoint = "http://127.0.0.1:9095/history"
+  mutationEndpoint = "http://127.0.0.1:9095/logged-update"
 }
 ```
 

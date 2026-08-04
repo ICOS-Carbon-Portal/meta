@@ -51,7 +51,7 @@ object Route:
 				entity(as[String]) { query => complete(SparqlQuery(query)) }
 			}
 
-		def executeUpdate(update: String): Route =
+		def executeUnloggedUpdate(update: String): Route =
 			repo.transact(conn =>
 				conn.prepareUpdate(QueryLanguage.SPARQL, update).execute()
 			) match
@@ -59,10 +59,10 @@ object Route:
 				case Failure(err: MalformedQueryException) => complete(StatusCodes.BadRequest -> err.getMessage)
 				case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
 
-		val updateRoute: Route = post:
-			formField("update")(executeUpdate) ~ entity(as[String])(executeUpdate)
+		val adminUnloggedUpdateRoute: Route = post:
+			formField("update")(executeUnloggedUpdate) ~ entity(as[String])(executeUnloggedUpdate)
 
-		val instanceUpdateRoute: Route = post:
+		val loggedUpdateRoute: Route = post:
 			entity(as[String]): json =>
 				import RdfMutation.given
 				val mutation = json.parseJson.convertTo[RdfMutation]
@@ -73,10 +73,10 @@ object Route:
 
 		path("sparql"):
 			queryRoute
-		~ path("update"):
-			updateRoute
-		~ path("instance-updates"):
-			instanceUpdateRoute
+		~ path("admin-unlogged-update"):
+			adminUnloggedUpdateRoute
+		~ path("logged-update"):
+			loggedUpdateRoute
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")

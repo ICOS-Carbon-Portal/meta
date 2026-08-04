@@ -17,27 +17,30 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Using
 
 /**
- * Replaces every `hasKeywords` (plural, comma-separated) literal in the triplestore with
- * one `hasKeyword` (singular) triple per distinct keyword on the very same subject, in the
+ * Splits every `hasKeywords` (plural, comma-separated) literal in the triplestore into one
+ * `hasOwnKeyword` (singular) triple per distinct keyword on the very same subject, in the
  * very same named graph.
  *
  * Unlike [[KeywordMaterializer]] this does no inheritance: it neither restricts subjects to
  * data/document objects nor unions in a spec's or project's keywords. It simply expands
- * whatever `?s hasKeywords "a, b"` triples exist anywhere in the store into `?s hasKeyword
- * "a"`, `?s hasKeyword "b"` on the same `?s`, and then removes the `hasKeywords` triple.
+ * whatever `?s hasKeywords "a, b"` triples exist anywhere in the store into `?s
+ * hasOwnKeyword "a"`, `?s hasOwnKeyword "b"` on the same `?s`.
  *
- * The replacement is a migration, not a cache: nothing is written to a derived graph and no
- * graph is ever cleared. Each subject is handled write-verify-delete, one bounded batch at a
+ * The split is a migration, not a cache: nothing is written to a derived graph and no graph
+ * is ever cleared. Each subject is handled write-verify(-delete), one bounded batch at a
  * time:
  *
  *   1. write the singular triples into the source graph,
  *   2. read them back from the store and confirm every expected keyword is present,
- *   3. only then delete the `hasKeywords` triple(s) they came from.
+ *   3. if `deleteSourceTriples` is on, only then delete the `hasKeywords` triple(s) they
+ *      came from.
  *
- * A batch whose read-back does not confirm keeps its `hasKeywords` triples, so an
- * interrupted or partially failing run never loses keywords, and re-running picks up
- * exactly what is left. Re-adding an already-present `hasKeyword` triple is a no-op in RDF,
- * which makes the whole pass idempotent.
+ * The deletion is off by default, which makes the pass purely additive: the `hasKeywords`
+ * literals stay in place alongside their singular counterparts. With it on, a batch whose
+ * read-back does not confirm keeps its `hasKeywords` triples anyway, so an interrupted or
+ * partially failing run never loses keywords, and re-running picks up exactly what is left.
+ * Re-adding an already-present `hasOwnKeyword` triple is a no-op in RDF, which makes the
+ * whole pass idempotent either way.
  *
  * Both the writing and the deleting are done with SPARQL updates we build ourselves rather
  * than through `RepositoryConnection.add`/`remove`, because rdf4j's literals are not
@@ -49,7 +52,8 @@ import scala.util.Using
  */
 class KeywordSplitter(
 	repo: Repository,
-	metaVocab: CpmetaVocab
+	metaVocab: CpmetaVocab,
+	deleteSourceTriples: Boolean
 )(using system: ActorSystem) {
 	import KeywordSplitter.{SplitSummary, SubjectKeywords}
 
@@ -72,7 +76,10 @@ class KeywordSplitter(
 	private val SubjectBatchSize = 500 // subjects written, verified and deleted per batch
 
 	def splitAll(): SplitSummary = {
-		log.info("Keyword splitting started")
+		log.info(
+			if (deleteSourceTriples) "Keyword splitting started, deleting hasKeywords triples"
+			else "Keyword splitting started, keeping hasKeywords triples"
+		)
 		var summary = SplitSummary.empty
 		var done = 0
 		var cursor = ""
@@ -91,9 +98,8 @@ class KeywordSplitter(
 		log.info(s"Keyword splitting finished: $summary")
 		if (summary.unconfirmed.nonEmpty) {
 			log.warning(
-				s"${summary.unconfirmed.size} subjects kept their hasKeywords because the " +
-					s"written hasKeyword triples could not be confirmed: " +
-					summary.unconfirmed.take(20).mkString(", ")
+				s"${summary.unconfirmed.size} subjects had hasOwnKeyword triples that could not be " +
+					s"confirmed after the write: " + summary.unconfirmed.take(20).mkString(", ")
 			)
 		}
 		if (summary.empties.nonEmpty) {
@@ -136,7 +142,8 @@ class KeywordSplitter(
 		else {
 			val written = writeKeywords(groups)
 			val (confirmed, unconfirmed) = verifyKeywords(groups)
-			val (deleted, deletionFailures) = deleteSources(confirmed)
+			val (deleted, deletionFailures) =
+				if (deleteSourceTriples) deleteSources(confirmed) else 0 -> Vector.empty
 			emptySummary.copy(
 				subjects = confirmed.map(_.subj).distinct.size,
 				written = written,
@@ -195,7 +202,7 @@ class KeywordSplitter(
 		var written = 0
 		for ((graph, inGraph) <- groups.groupBy(_.graph)) {
 			val triples = for (group <- inGraph; kw <- group.keywords)
-				yield s"${iriRef(group.subj)} ${iriRef(metaVocab.hasKeyword)} ${plainLiteral(kw)} ."
+				yield s"${iriRef(group.subj)} ${iriRef(metaVocab.hasOwnKeyword)} ${plainLiteral(kw)} ."
 
 			update(s"""
 				|INSERT DATA { GRAPH ${iriRef(graph)} {
@@ -204,14 +211,14 @@ class KeywordSplitter(
 			written += triples.size
 		}
 
-		log.debug(s"Wrote $written hasKeyword triples for ${groups.size} subject/graph pairs")
+		log.debug(s"Wrote $written hasOwnKeyword triples for ${groups.size} subject/graph pairs")
 		written
 	}
 
 	/**
 	 * Reads the singular triples back and partitions the groups into those whose every
 	 * expected keyword is now present in the store, and those where something is missing.
-	 * Only the former may have their `hasKeywords` source deleted.
+	 * Only the former may have their `hasKeywords` source deleted, when deletion is on.
 	 */
 	private def verifyKeywords(
 		groups: IndexedSeq[SubjectKeywords]
@@ -224,7 +231,7 @@ class KeywordSplitter(
 			val q = s"""
 				|SELECT ?subj ?kw WHERE {
 				|  VALUES ?subj { ${inGraph.map(g => iriRef(g.subj)).mkString(" ")} }
-				|  GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeyword)} ?kw . }
+				|  GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasOwnKeyword)} ?kw . }
 				|}""".stripMargin
 
 			select(q) { bindings =>
@@ -242,9 +249,10 @@ class KeywordSplitter(
 			if (missing.isEmpty) true
 			else {
 				log.warning(
-					s"Not deleting hasKeywords of <${group.subj}> in graph <${group.graph}>: " +
+					s"Unconfirmed keywords of <${group.subj}> in graph <${group.graph}>: " +
 						s"${missing.size} of ${group.keywords.size} keywords absent after write " +
-						s"(${missing.take(5).mkString(", ")})"
+						s"(${missing.take(5).mkString(", ")})" +
+						(if (deleteSourceTriples) "; keeping its hasKeywords" else "")
 				)
 				false
 			}
@@ -369,7 +377,7 @@ object KeywordSplitter {
 		)
 
 		override def toString = {
-			s"$subjects subjects split, $written hasKeyword written, $deleted hasKeywords deleted, " +
+			s"$subjects subjects split, $written hasOwnKeyword written, $deleted hasKeywords deleted, " +
 				s"${unconfirmed.size} unconfirmed, ${deletionFailures.size} deletion failures, " +
 				s"${empties.size} without parseable keyword"
 		}

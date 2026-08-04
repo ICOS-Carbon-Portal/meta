@@ -119,6 +119,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val isQualityFlagFor = getRelativeRaw("isQualityFlagFor")
 	val hasKeywords = getRelativeRaw("hasKeywords")
 	val hasKeyword = getRelativeRaw("hasKeyword")
+	val hasOwnKeyword = getRelativeRaw("hasOwnKeyword")
 	val hasSizeInBytes = getRelativeRaw("hasSizeInBytes")
 	val hasTemporalResolution = getRelativeRaw("hasTemporalResolution")
 	val hasSpatialCoverage = getRelativeRaw("hasSpatialCoverage")

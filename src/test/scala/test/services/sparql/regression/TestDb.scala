@@ -26,6 +26,7 @@ import java.nio.file.{Files, Path}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
+
 private val graphIriToFile = Seq(
 	"atmprodcsv",
 	"cpmeta",
@@ -146,7 +147,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
 		recreateAtStartup = false,
-		indices = se.lu.nateko.cp.meta.RdfStoreConfigLoader.default.rdfStorage.indices,
+		indices = "spoc,posc,opsc",
 		disableCpIndex = false,
 		recreateCpIndexAtStartup = true
 	)

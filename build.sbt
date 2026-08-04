@@ -107,7 +107,7 @@ fetchGCMDKeywords := {
 }
 
 lazy val meta = (project in file("."))
-	.dependsOn(metaCore, metaCore % "test->test")
+		.dependsOn(metaCore, rdfStore, metaCore % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -249,7 +249,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 				"core/src/main/scala/data/Envri.scala",
 				"core/src/main/scala/data/GeoFeatures.scala",
 				"core/src/main/scala/data/package.scala",
-				"src/main/scala/OntoConstants.scala",
+				"rdfstore/src/main/scala/OntoConstants.scala",
 				"src/main/scala/UploadDtos.scala",
 			).map(path => new java.io.File(path).getAbsoluteFile)
 		}
@@ -268,15 +268,30 @@ lazy val tools = (project in file("tools"))
 	)
 
 lazy val rdfStore = (project in file("rdfstore"))
-	.dependsOn(meta)
+		.dependsOn(metaCore)
 	.settings(
 		name := "meta-rdf-store",
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
+			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion excludeAll("io.spray") cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
+			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
+			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
+			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
+			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
 			"com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test cross CrossVersion.for3Use2_13,
 			"org.scalatest" %% "scalatest" % "3.2.11" % Test
 		),
-		Compile / mainClass := Some("se.lu.nateko.cp.rdfstore.RdfStoreMain")
-	)
+			Compile / mainClass := Some("se.lu.nateko.cp.rdfstore.Main")
+		)

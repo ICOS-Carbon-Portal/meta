@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll:
@@ -39,12 +40,13 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	))
 
 	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
-	private val route = Route(repo)
+	private val route = Route(repo, message => Future.successful(s"read-only: $message"))
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
-		"leave meta in embedded compatibility mode by default" in:
-			ConfigLoader.default.remoteRdfRepository shouldBe None
+		"configure meta to use the standalone endpoint by default" in:
+			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
+				Some("http://127.0.0.1:9095/sparql")
 
 		"apply an update and expose it to a query" in:
 			val update = "INSERT DATA { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> \"value\" } }"
@@ -60,6 +62,11 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			Get("/health") ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] shouldBe "ok"
+
+		"delegate read-only and index-dump administration" in:
+			Post("/admin/read-only", HttpEntity(ContentTypes.`text/plain(UTF-8)`, "maintenance")) ~> route ~> check:
+				status shouldBe StatusCodes.OK
+				responseAs[String] shouldBe "read-only: maintenance"
 
 		"serialize ASK results as standard SPARQL JSON and XML" in:
 			val ask = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "ASK WHERE { }")

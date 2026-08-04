@@ -7,11 +7,11 @@ The target is two independently deployable JVM applications:
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol.
 2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client.
 
-The first migration slice is implemented in this repository. Embedded mode remains the default for a safe rollout; setting `cpmeta.remoteRdfRepository` switches `meta` to RDF4J `SPARQLRepository`. The new `rdfStore` sbt project provides `/sparql`, `/update`, and `/health`.
+The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql`, `/update`, and `/health`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
 ## Existing coupling
 
-`MetaDbFactory` currently performs four distinct jobs:
+Before the split, `MetaDbFactory` performed four distinct jobs:
 
 - opens `LmdbStore` or `NativeStore` and controls its filesystem;
 - wraps the Sail with Carbon Portal change notifications and custom indexes;
@@ -52,7 +52,7 @@ public clients
              persistent volume
 ```
 
-Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume in remote mode. The public `/sparql` URL can initially remain on `meta`; it executes against `SPARQLRepository`, preserving the public address while the private service topology changes. It may later become a reverse-proxy route directly to `rdfStore`.
+Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL can remain on `meta`; it executes against `SPARQLRepository`, preserving the public address while the private service topology changes. It may later become a reverse-proxy route directly to `rdfStore`.
 
 ## Protocol and repository choice
 
@@ -105,19 +105,18 @@ The target write design is an **idempotent mutation batch**:
 4. Repeating a completed mutation ID returns its prior result without applying it twice.
 5. A background publisher may copy the authoritative outbox to PostgreSQL if PostgreSQL remains the long-term audit/rebuild store.
 
-Until that endpoint is implemented, remote mode uses standard SPARQL Update. This preserves ordinary metadata behavior but does **not** claim atomicity between remote RDF and the legacy PostgreSQL log. Run a single `meta` writer, monitor both stores, and retain embedded mode as the rollback path during this phase.
+Until that endpoint is implemented, `meta` uses standard SPARQL Update. This preserves ordinary metadata behavior but does **not** claim atomicity between remote RDF and the legacy PostgreSQL log. Run a single `meta` writer and monitor both stores during this phase.
 
 ## Custom index migration
 
-`CpNotifyingSail`, `IndexHandler`, `GeoIndexProvider`, read-only switching, and index snapshots execute in-process with the Sail and therefore belong to `rdfStore`, not behind calls from `meta`. The standalone application now owns their runtime lifecycle, although their source code still comes from the `meta` artifact until the module extraction below is completed.
+`CpNotifyingSail`, `IndexHandler`, `GeoIndexProvider`, storage selection, query evaluation, citation-backed statement enrichment, read-only switching, and index snapshots now live in and execute inside `rdfStore`. The module depends on `metaCore` for shared data types and algorithms, never on `meta`.
 
 Migration sequence:
 
-1. Move the storage/index packages into a neutral `rdf-store-core` project.
-2. Move any citation-derived index enrichment behind an interface whose inputs are repository data and statement-change events.
-3. Initialize and restore indexes in `rdfStore` before its HTTP listener is bound (implemented).
-4. Put index dump/read-only controls on a private authenticated administration route.
-5. Delete the embedded index lifecycle from `meta` after parity tests pass.
+1. Storage, indexes, SPARQL execution, RDF access helpers, vocabularies, and enrichment code are compiled by `rdfStore` (implemented).
+2. Indexes are restored or rebuilt in `rdfStore` before its HTTP listener is bound (implemented).
+3. The embedded Sail/index lifecycle has been deleted from `meta` (implemented).
+4. Index dump/read-only control is exposed on the loopback-bound administration route (implemented); add service authentication before exposing it across hosts.
 
 Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and custom indexes in `rdfStore`. Performance and Carbon Portal-specific query rewrites must still be regression-tested across the new HTTP hop before production cutover.
 
@@ -132,7 +131,7 @@ Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and
 5. expose the update listener;
 6. report ready only after query and update self-checks pass.
 
-`meta` startup order in remote mode:
+`meta` startup order:
 
 1. create `SPARQLRepository` from query/update URLs;
 2. execute a bounded readiness query;
@@ -144,18 +143,13 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 
 ## Configuration
 
-Embedded compatibility mode:
-
-```hocon
-cpmeta.remoteRdfRepository = null
-```
-
-Remote mode:
+`meta` requires the remote repository configuration:
 
 ```hocon
 cpmeta.remoteRdfRepository {
   queryEndpoint = "http://127.0.0.1:9095/sparql"
   updateEndpoint = "http://127.0.0.1:9095/update"
+  adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
 }
 ```
 
@@ -168,20 +162,20 @@ rdfStore {
 }
 ```
 
-Before final separation, move those shared settings to an `rdf-store-core` reference configuration so `rdfStore` no longer needs the complete `meta` configuration.
+The application configuration resource is owned by `rdfStore` and is inherited by `meta` through the build dependency. Deployment-specific overrides continue to use the same HOCON keys.
 
 ## Data migration and cutover
 
-1. **Baseline:** deploy the code in embedded mode and run existing SPARQL/upload/landing-page suites.
-2. **Snapshot:** stop metadata writers or switch embedded `meta` to read-only; take both an RDF store snapshot and PostgreSQL log checkpoint.
+1. **Baseline:** run the existing SPARQL/upload/landing-page suites against the last embedded release.
+2. **Snapshot:** stop metadata writers in the embedded deployment; take both an RDF store snapshot and PostgreSQL log checkpoint.
 3. **Seed:** restore the snapshot onto the volume owned by `rdfStore`. Never copy a live LMDB directory without the store's supported snapshot procedure.
 4. **Shadow reads:** start `rdfStore` read-only and compare a corpus of SELECT/CONSTRUCT queries, named-graph counts, object pages, citations, and geospatial queries.
-5. **Canary:** configure one non-public `meta` instance with `remoteRdfRepository`; keep all writes on the embedded deployment.
+5. **Canary:** start one non-public `meta` instance against `rdfStore`; keep production writes stopped or on the old deployment.
 6. **Write cutover:** stop writers, apply the final log delta, start one remote `meta` writer, then enable other stateless `meta` replicas.
 7. **Observe:** compare update-log high-water marks, graph counts, query latency/error rates, and upload completion behavior.
-8. **Retire embedded ownership:** remove the RDF volume from `meta` only after the rollback window expires.
+8. **Retire embedded deployment:** remove the RDF volume from the old `meta` deployment only after the rollback window expires.
 
-Rollback before new remote writes is a configuration reversal. After remote writes begin, first stop writers and replay/export the remote delta back to the embedded store; never start the old store from a stale snapshot.
+Rollback before new remote writes means redeploying the prior embedded release. After remote writes begin, first stop writers and replay/export the remote delta back to the embedded store; never start the old store from a stale snapshot.
 
 ## Verification gates
 
@@ -196,9 +190,8 @@ Rollback before new remote writes is a configuration reversal. After remote writ
 
 ## Remaining implementation slices
 
-1. Extract storage/SPARQL/index code so `rdfStore` depends only on `meta-core` plus the extracted module, rather than on the complete `meta` artifact.
-2. Add authenticated private update/admin routes.
-3. Implement idempotent mutation batches and move RDF-log/outbox ownership to `rdfStore`.
-4. Move graph bootstrap/replay and RDF-log ownership to `rdfStore`.
-5. Add remote integration tests using both MemoryStore and LMDB.
-6. Remove embedded mode, `rdfStorage` configuration, and storage dependencies from `meta` after production parity is established.
+1. Add service authentication to the private update and administration routes before exposing them across hosts.
+2. Implement idempotent mutation batches and move RDF-log/outbox ownership to `rdfStore`.
+3. Move graph bootstrap/replay and RDF-log ownership to `rdfStore`.
+4. Add remote integration tests using LMDB in addition to the current MemoryStore protocol test.
+5. Split the shared configuration/domain support currently compiled in `rdfStore` into a smaller neutral library if independent publication is needed; this must preserve the current one-way dependency graph.

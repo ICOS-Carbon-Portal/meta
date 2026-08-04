@@ -51,7 +51,10 @@ object Main extends App:
 		)
 		queryServer = Rdf4jSparqlServer(repo, metaConfig.sparql)
 		given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
-		binding <- Http().newServerAt(host, port).bind(Route(repo))
+		binding <- Http().newServerAt(host, port).bind(Route(
+			repo,
+			message => sail.makeReadonlyDumpIndexAndCaches(message)
+		))
 	yield (binding, queryServer, repo)
 
 	startup.onComplete:

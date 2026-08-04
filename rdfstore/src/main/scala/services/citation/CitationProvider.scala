@@ -14,12 +14,12 @@ import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
-import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
+import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, flattenToSeq, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
+import se.lu.nateko.cp.meta.{CpmetaConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, InstanceServersConfig, UploadServiceConfig}
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
@@ -76,7 +76,7 @@ class CitationProvider(
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
 
-	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
+	val lenses = getLenses(conf.instanceServers, conf.dataUploadService)
 
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
@@ -134,3 +134,33 @@ class CitationProvider(
 	}
 
 end CitationProvider
+
+private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
+	new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
+
+private def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): se.lu.nateko.cp.meta.api.RdfLenses =
+	def confsToLenses[L](confs: Map[Envri, String], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] = confs.flatMap:
+		(envri, instServId) => servConf.specific.get(instServId).map: conf =>
+			envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
+
+	val perFormat = servConf.forDataObjects.map: (envri, config) =>
+		val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
+			val writeContext = getInstServerContext(config, definition)
+			definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
+		envri -> lenses.toMap
+
+	val cpOwn = servConf.metaFlow.flattenToSeq.flatMap: flow =>
+		servConf.specific.get(flow.cpMetaInstanceServerId).map[(String, RdfLens.CpLens)]: config =>
+			flow.cpMetaInstanceServerId -> RdfLens.cpLens(
+				config.writeContext,
+				config.readContexts.getOrElse(Seq(config.writeContext))
+			)
+	.toMap
+
+	se.lu.nateko.cp.meta.api.RdfLenses(
+		metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
+		cpMetaInstances = cpOwn,
+		collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
+		documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
+		dobjPerFormat = perFormat
+	)

@@ -13,11 +13,12 @@ import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
 
 import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 /** SPARQL 1.1 query and update protocol surface owned by the RDF-store process. */
 object Route:
 
-	def apply(repo: Repository)(using
+	def apply(repo: Repository, makeReadonly: String => Future[String])(using
 		ActorSystem,
 		ToResponseMarshaller[SparqlQuery]
 	): Route =
@@ -47,5 +48,8 @@ object Route:
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")
+		~ path("admin" / "read-only"):
+			post:
+				entity(as[String]) { message => complete(makeReadonly(message)) }
 		~ pathEndOrSingleSlash:
 			complete(StatusCodes.NotFound)

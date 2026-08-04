@@ -204,7 +204,8 @@ object Rdf4jSparqlServer:
 		ProtocolOption(tsvSparql, ContentTypes.`text/plain(UTF-8)`, tsvSparqlWriterFactory) ::
 		Nil
 
-	import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer.{ turtleContType, xmlContType }
+	private val turtleContType = getSparqlContentType("text/turtle", ".ttl")
+	private val xmlContType = getSparqlContentType("application/rdf+xml", ".rdf")
 
 	val graphQueryProtocolOptions: List[ProtocolOption[GraphQuery]] =
 		ProtocolOption(xmlContType, xml, xmlRdfWriterFactory) ::

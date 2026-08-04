@@ -6,14 +6,13 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement, ValueFactory}
 import org.eclipse.rdf4j.query.QueryLanguage
-import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.utils.rdf4j.*
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 
 import java.net.URI
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using
 
 /**
  * Materializes `hasKeyword` (singular) triples onto data and document objects and
@@ -36,13 +35,20 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class KeywordMaterializer(
 	repo: Repository,
-	metaVocab: CpmetaVocab,
 	derivedGraph: URI
 )(using system: ActorSystem):
 
 	private val log = Logging.getLogger(system, this)
 	private given factory: ValueFactory = repo.getValueFactory
 	private val graphIri: IRI = factory.createIRI(derivedGraph.toString)
+	private val hasKeyword = factory.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/hasKeyword")
+	private val stringDatatype = factory.createIRI("http://www.w3.org/2001/XMLSchema#string")
+
+	private val DataObjectClass = "http://meta.icos-cp.eu/ontologies/cpmeta/DataObject"
+	private val DocumentObjectClass = "http://meta.icos-cp.eu/ontologies/cpmeta/DocumentObject"
+	private val HasOwnKeyword = "http://meta.icos-cp.eu/ontologies/cpmeta/hasOwnKeyword"
+	private val HasObjectSpec = "http://meta.icos-cp.eu/ontologies/cpmeta/hasObjectSpec"
+	private val HasAssociatedProject = "http://meta.icos-cp.eu/ontologies/cpmeta/hasAssociatedProject"
 
 	private val WriteBatchSize = 1000
 
@@ -64,7 +70,7 @@ class KeywordMaterializer(
 	def materializeAll()(using ExecutionContext): Future[Int] = Future:
 		log.info(s"Keyword materialization started (graph $derivedGraph)")
 		log.info(s"Clearing derived graph $derivedGraph")
-		repo.transact(_.clear(graphIri)).get
+		transact(_.clear(graphIri))
 		log.info("Derived graph cleared; collecting keywords")
 		val written = writeDerivedKeywords()
 		log.info(s"Keyword materialization finished, wrote $written triples")
@@ -119,7 +125,7 @@ class KeywordMaterializer(
 			val q = s"""
 				|SELECT DISTINCT ?obj WHERE {
 				|  ?obj a ?t .
-				|  FILTER(?t IN (<${metaVocab.dataObjectClass}>, <${metaVocab.docObjectClass}>))
+				|  FILTER(?t IN (<$DataObjectClass>, <$DocumentObjectClass>))
 				|  FILTER(STR(?obj) > $cursorLiteral)
 				|}
 				|ORDER BY STR(?obj)
@@ -155,14 +161,14 @@ class KeywordMaterializer(
 			|SELECT ?obj ?keyword WHERE {
 			|  VALUES ?obj { $values }
 			|  {
-			|    ?obj <${metaVocab.hasOwnKeyword}> ?keyword .
+			|    ?obj <$HasOwnKeyword> ?keyword .
 			|  } UNION {
-			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
-			|    ?spec <${metaVocab.hasOwnKeyword}> ?keyword .
+			|    ?obj <$HasObjectSpec> ?spec .
+			|    ?spec <$HasOwnKeyword> ?keyword .
 			|  } UNION {
-			|    ?obj <${metaVocab.hasObjectSpec}> ?spec .
-			|    ?spec <${metaVocab.hasAssociatedProject}> ?proj .
-			|    ?proj <${metaVocab.hasOwnKeyword}> ?keyword .
+			|    ?obj <$HasObjectSpec> ?spec .
+			|    ?spec <$HasAssociatedProject> ?proj .
+			|    ?proj <$HasOwnKeyword> ?keyword .
 			|  }
 			|}""".stripMargin
 
@@ -188,19 +194,30 @@ class KeywordMaterializer(
 		def flush(): Unit =
 			if batch.nonEmpty then
 				val toWrite = batch.toIndexedSeq
-				repo.transact { conn =>
+				transact { conn =>
 					for st <- toWrite do conn.add(st, graphIri)
-				}.get
+				}
 				total += toWrite.size
 				batch.clear()
 				log.info(s"Wrote batch of ${toWrite.size} triples (total $total written)")
 
 		for (obj, kws) <- keywordsByObj; kw <- kws do
-			batch += factory.createStatement(obj, metaVocab.hasKeyword, factory.createStringLiteral(kw))
+			batch += factory.createStatement(obj, hasKeyword, factory.createLiteral(kw, stringDatatype))
 			if batch.size >= WriteBatchSize then flush()
 
 		flush()
 		log.info(s"Finished writing $total triples to $derivedGraph")
 		total
+
+	private def transact(action: RepositoryConnection => Unit): Unit =
+		Using.resource(repo.getConnection()): conn =>
+			conn.begin()
+			try
+				action(conn)
+				conn.commit()
+			catch
+				case error: Throwable =>
+					conn.rollback()
+					throw error
 
 end KeywordMaterializer

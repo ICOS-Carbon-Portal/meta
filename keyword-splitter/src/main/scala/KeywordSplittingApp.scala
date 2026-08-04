@@ -4,10 +4,11 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
-import se.lu.nateko.cp.meta.{ConfigLoader, CpmetaConfig}
-import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.VirtuosoRepository
+import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
+import org.apache.http.impl.client.{BasicCredentialsProvider, CloseableHttpClient, HttpClients}
+import org.eclipse.rdf4j.http.client.SPARQLProtocolSession
+import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat
+import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 
 
 /**
@@ -45,18 +46,19 @@ object KeywordSplittingApp {
 				return
 		}
 
-		val config: CpmetaConfig = ConfigLoader.default
+		val host = sys.props.getOrElse("virtuoso.host", sys.env.getOrElse("VIRTUOSO_HOST", "http://localhost:8890"))
+		val username = sys.props.getOrElse("virtuoso.username", sys.env.getOrElse("VIRTUOSO_USERNAME", "dummy"))
+		val password = sys.props.getOrElse("virtuoso.password", sys.env.getOrElse("VIRTUOSO_PASSWORD", "dummy"))
 
-		given system: ActorSystem = ActorSystem("keywordSplitter", config = appConfig)
+		given system: ActorSystem = ActorSystem("keywordSplitter")
 		val log = Logging.getLogger(system, this)
 
-		val repo = new VirtuosoRepository(config.virtuoso)
-		val vocab = new CpmetaVocab(repo.getValueFactory)
+		val repo = new StandaloneVirtuosoRepository(host, username, password)
 
-		val splitter = new KeywordSplitter(repo, vocab, deleteSourceTriples)
+		val splitter = new KeywordSplitter(repo, deleteSourceTriples)
 
 		log.info(
-			s"Keyword splitting run started against ${config.virtuoso.host}, " +
+			s"Keyword splitting run started against $host, " +
 				s"hasKeywords deletion ${if (deleteSourceTriples) "on" else "off"}"
 		)
 		val exitCode = try {
@@ -75,3 +77,23 @@ object KeywordSplittingApp {
 		System.exit(exitCode)
 		}
 }
+
+private final class StandaloneVirtuosoRepository(host: String, username: String, password: String)
+		extends SPARQLRepository(s"$host/sparql", s"$host/sparql-auth"):
+
+	private val httpClient: CloseableHttpClient =
+		val credentials = new BasicCredentialsProvider()
+		credentials.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password))
+		HttpClients.custom().setDefaultCredentialsProvider(credentials).setMaxConnPerRoute(32).setMaxConnTotal(64).build()
+
+	setHttpClient(httpClient)
+	super.init()
+
+	override def createSPARQLProtocolSession(): SPARQLProtocolSession =
+		val session = super.createSPARQLProtocolSession()
+		session.setPreferredTupleQueryResultFormat(TupleQueryResultFormat.JSON)
+		session
+
+	override protected def shutDownInternal(): Unit =
+		try super.shutDownInternal()
+		finally httpClient.close()

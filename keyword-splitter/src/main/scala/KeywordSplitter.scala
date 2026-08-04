@@ -8,9 +8,6 @@ import org.eclipse.rdf4j.model.{IRI, Literal}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
-import se.lu.nateko.cp.meta.utils.parseCommaSepList
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -52,13 +49,13 @@ import scala.util.Using
  */
 class KeywordSplitter(
 	repo: Repository,
-	metaVocab: CpmetaVocab,
 	deleteSourceTriples: Boolean
 )(using system: ActorSystem) {
 	import KeywordSplitter.{SplitSummary, SubjectKeywords}
 
 	private val log = Logging.getLogger(system, this)
-	private val sparql = new Rdf4jSparqlRunner(repo)
+	private val HasKeywords = "<http://meta.icos-cp.eu/ontologies/cpmeta/hasKeywords>"
+	private val HasOwnKeyword = "<http://meta.icos-cp.eu/ontologies/cpmeta/hasOwnKeyword>"
 
 	// Pagination guards against the triplestore silently truncating large result sets:
 	// Virtuoso's /sparql endpoint caps rows at ResultSetMaxRows (commonly 10000) and can
@@ -118,7 +115,7 @@ class KeywordSplitter(
 		val subjects = ArrayBuffer.empty[IRI]
 		val q = s"""
 				|SELECT DISTINCT ?subj WHERE {
-				|  GRAPH ?g { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }
+				|  GRAPH ?g { ?subj $HasKeywords ?keywords . }
 				|  FILTER(isIRI(?subj) && STR(?subj) > ${plainLiteral(cursor)})
 				|}
 				|ORDER BY STR(?subj)
@@ -163,7 +160,7 @@ class KeywordSplitter(
 		val q = s"""
 			|SELECT ?subj ?g ?keywords WHERE {
 			|  VALUES ?subj { ${batch.map(iriRef).mkString(" ")} }
-			|  GRAPH ?g { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }
+			|  GRAPH ?g { ?subj $HasKeywords ?keywords . }
 			|}""".stripMargin
 
 		// several hasKeywords literals may sit on the same subject in the same graph, and
@@ -202,7 +199,7 @@ class KeywordSplitter(
 		var written = 0
 		for ((graph, inGraph) <- groups.groupBy(_.graph)) {
 			val triples = for (group <- inGraph; kw <- group.keywords)
-				yield s"${iriRef(group.subj)} ${iriRef(metaVocab.hasOwnKeyword)} ${plainLiteral(kw)} ."
+				yield s"${iriRef(group.subj)} $HasOwnKeyword ${plainLiteral(kw)} ."
 
 			update(s"""
 				|INSERT DATA { GRAPH ${iriRef(graph)} {
@@ -231,7 +228,7 @@ class KeywordSplitter(
 			val q = s"""
 				|SELECT ?subj ?kw WHERE {
 				|  VALUES ?subj { ${inGraph.map(g => iriRef(g.subj)).mkString(" ")} }
-				|  GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasOwnKeyword)} ?kw . }
+				|  GRAPH ${iriRef(graph)} { ?subj $HasOwnKeyword ?kw . }
 				|}""".stripMargin
 
 			select(q) { bindings =>
@@ -275,7 +272,7 @@ class KeywordSplitter(
 		val failures = ArrayBuffer.empty[IRI]
 		for ((graph, inGraph) <- confirmed.groupBy(_.graph)) {
 			val subjFilter = s"FILTER(?subj IN (${inGraph.map(g => iriRef(g.subj)).mkString(", ")}))"
-			val pattern = s"GRAPH ${iriRef(graph)} { ?subj ${iriRef(metaVocab.hasKeywords)} ?keywords . }"
+			val pattern = s"GRAPH ${iriRef(graph)} { ?subj $HasKeywords ?keywords . }"
 
 			update(s"""
 				|DELETE { $pattern }
@@ -310,8 +307,15 @@ class KeywordSplitter(
 	}
 
 	private def select(query: String)(handleRow: BindingSet => Unit): Unit = {
-		Using.resource(sparql.evaluateTupleQuery(SparqlQuery(query)))(_.foreach(handleRow))
+		Using.resource(repo.getConnection()) { conn =>
+			Using.resource(conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()) { result =>
+				while (result.hasNext) { handleRow(result.next()) }
+			}
+		}
 	}
+
+	private def parseCommaSepList(value: String): Array[String] =
+		value.split(",").map(_.trim).filter(_.nonEmpty)
 
 	/**
 	 * Runs a SPARQL update. Note that we write the updates ourselves instead of using

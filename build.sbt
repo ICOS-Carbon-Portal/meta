@@ -251,11 +251,17 @@ lazy val uploadgui = (project in file("uploadgui"))
 		}
 	)
 lazy val keywordMaterializer = (project in file("keyword-materializer"))
-	.dependsOn(meta)
 	.settings(
 		name := "meta-keyword-materializer",
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
+		libraryDependencies ++= Seq(
+			"com.typesafe.akka" %% "akka-actor" % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka" %% "akka-slf4j" % akkaVersion cross CrossVersion.for3Use2_13,
+			"org.eclipse.rdf4j" % "rdf4j-repository-sparql" % rdf4jVersion,
+			"org.eclipse.rdf4j" % "rdf4j-queryresultio-sparqljson" % rdf4jVersion,
+			"org.apache.httpcomponents" % "httpclient" % "4.5.14"
+		),
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
@@ -274,11 +280,17 @@ lazy val keywordMaterializer = (project in file("keyword-materializer"))
 	)
 
 lazy val keywordSplitter = (project in file("keyword-splitter"))
-	.dependsOn(meta)
 	.settings(
 		name := "meta-keyword-splitter",
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
+		libraryDependencies ++= Seq(
+			"com.typesafe.akka" %% "akka-actor" % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka" %% "akka-slf4j" % akkaVersion cross CrossVersion.for3Use2_13,
+			"org.eclipse.rdf4j" % "rdf4j-repository-sparql" % rdf4jVersion,
+			"org.eclipse.rdf4j" % "rdf4j-queryresultio-sparqljson" % rdf4jVersion,
+			"org.apache.httpcomponents" % "httpclient" % "4.5.14"
+		),
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),

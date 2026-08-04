@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStoreConfig
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
@@ -18,6 +19,7 @@ final class RdfLogManager private (
 ) extends AutoCloseable:
 	import RdfLogManager.Binding
 
+	private val logger = LoggerFactory.getLogger(getClass)
 	private val byContext: Map[String, Binding] = bindings.map(binding => binding.context.stringValue -> binding).toMap
 
 	def binding(context: IRI): Option[Binding] = byContext.get(context.stringValue)
@@ -31,6 +33,10 @@ final class RdfLogManager private (
 		bindings.foreach: binding =>
 			val fromId = restoreFromId.get(binding.name)
 			if isFreshStore || fromId.isDefined then
+				val offsetDescription = fromId.fold("")(id => s" from row id $id")
+				logger.info(
+					s"Restoring RDF log '${binding.name}'$offsetDescription into graph <${binding.context}>"
+				)
 				val updates = fromId.fold(binding.log.updates)(binding.log.updatesFromId)
 				RdfUpdateLogIngester.ingest(
 					updates,
@@ -38,6 +44,9 @@ final class RdfLogManager private (
 					cleanFirst = fromId.isEmpty,
 					binding.context
 				).get
+				logger.info(
+					s"Restored RDF log '${binding.name}' into graph <${binding.context}>"
+				)
 
 	def history(contexts: Seq[IRI]): Seq[(Instant, RdfUpdate)] =
 		val seen = mutable.HashSet.empty[String]
@@ -55,7 +64,7 @@ object RdfLogManager:
 		new RdfLogManager(bindings, Map.empty)
 
 	def apply(storeConfig: RdfStoreConfig, factory: ValueFactory): RdfLogManager =
-		val configured = storeConfig.rdfLogs.toSeq
+		val configured = storeConfig.rdfLogs.toSeq.sortBy(_._1)
 		require(
 			configured.map(_._2).distinct.size == configured.size,
 			"rdfStore.rdfLogs must map each named graph to exactly one RDF log"

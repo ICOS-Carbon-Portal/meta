@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Route
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.query.{MalformedQueryException, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.instanceserver.{RdfMutation, RdfUpdate}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryEntry
@@ -22,20 +23,10 @@ import scala.concurrent.Future
 
 /** SPARQL 1.1 query and update protocol surface owned by the RDF-store process. */
 object Route:
-	def apply(repo: Repository, makeReadonly: String => Future[String])(using
-		ActorSystem,
-		ToResponseMarshaller[SparqlQuery]
-	): Route = apply(repo, makeReadonly, _ => Seq.empty, (_, _) => Success(()))
 
 	def apply(
 		repo: Repository,
-		makeReadonly: String => Future[String],
-		history: Seq[IRI] => Seq[(Instant, RdfUpdate)]
-	)(using ActorSystem, ToResponseMarshaller[SparqlQuery]): Route =
-		apply(repo, makeReadonly, history, (_, _) => Success(()))
-
-	def apply(
-		repo: Repository,
+		sparqlConf: SparqlServerConfig,
 		makeReadonly: String => Future[String],
 		history: Seq[IRI] => Seq[(Instant, RdfUpdate)],
 		applyMutation: (IRI, Seq[RdfUpdate]) => scala.util.Try[Unit]
@@ -43,7 +34,8 @@ object Route:
 		ActorSystem,
 		ToResponseMarshaller[SparqlQuery]
 	): Route =
-		val queryRoute: Route =
+		/** Unthrottled and uncached, for the trusted local clients (`meta`) only */
+		val internalQueryRoute: Route =
 			get {
 				parameter("query") { query => complete(SparqlQuery(query)) }
 			} ~ post {
@@ -71,8 +63,9 @@ object Route:
 					case Success(_) => complete(StatusCodes.NoContent)
 					case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
 
-		path("sparql"):
-			queryRoute
+		SparqlRoute(sparqlConf)
+		~ path("internal" / "sparql"):
+			internalQueryRoute
 		~ path("admin-unlogged-update"):
 			adminUnloggedUpdateRoute
 		~ path("logged-update"):

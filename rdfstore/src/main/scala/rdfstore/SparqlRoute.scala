@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.routes
+package se.lu.nateko.cp.meta.rdfstore
 
 import scala.language.unsafeNulls
 
@@ -12,14 +12,13 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.directives.CachingDirectives.*
-import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHandler, RequestContext, Route, RouteResult}
+import akka.http.scaladsl.server.{Directive, Directive0, Directive1, ExceptionHandler, RejectionHandler, RequestContext, Route, RouteResult}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
 import java.nio.charset.StandardCharsets
@@ -29,6 +28,10 @@ import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
+/**
+ * The public SPARQL query endpoint, with per-client query quotas, response
+ * caching and query-timeout handling. Owned by the RDF-store process.
+ */
 object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
@@ -42,10 +45,16 @@ object SparqlRoute:
 		case Tuple1(None) => respondWithHeaders(`Access-Control-Allow-Origin`.*)
 	}
 
-	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route =
+	val exceptionHandler = ExceptionHandler{
+		case err => complete(
+			StatusCodes.InternalServerError -> (err.getMessage + "\n" + getStackTrace(err))
+		)
+	}
+
+	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], system: ActorSystem): Route =
 
 		val makeResponse: String => Route = query =>
-			handleExceptions(MainRoute.exceptionHandler):
+			handleExceptions(exceptionHandler):
 				handleRejections(RejectionHandler.default):
 					getClientIp: ip =>
 						ensureNoEmptyOkResponseDueToTimeout:

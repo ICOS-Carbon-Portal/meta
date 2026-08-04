@@ -56,6 +56,7 @@ object Main extends App:
 		given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
 		binding <- Http().newServerAt(host, port).bind(Route(
 			repo,
+			metaConfig.sparql,
 			message => sail.makeReadonlyDumpIndexAndCaches(message),
 			logManager.history,
 			(context, updates) => logManager.applyAll(repo, context, updates)

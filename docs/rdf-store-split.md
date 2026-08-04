@@ -4,10 +4,10 @@
 
 The target is two independently deployable JVM applications:
 
-1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol.
+1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol, including the public `/sparql` endpoint with its query quotas, timeouts and response cache.
 2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client. It has no RDF-log configuration or implementation awareness.
 
-The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql`, `/admin-unlogged-update`, `/logged-update`, and `/health`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
+The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (unthrottled, uncached, for `meta`), `/admin-unlogged-update`, `/logged-update`, `/history`, `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
 ## Existing coupling
 
@@ -33,7 +33,6 @@ public clients
      |
      v
 +---------------- meta ----------------+
-| public /sparql compatibility proxy   |
 | upload, editors, labeling, landing   |
 | metadata flows, DOI/citation         |
 | RDF4J SPARQLRepository client        |
@@ -42,7 +41,8 @@ public clients
               query| SPARQL 1.1 |update
                    v
 +-------------- rdfStore --------------+
-| /sparql (read)                        |
+| /sparql (public read: quota, cache)   |
+| /internal/sparql (read, for meta)     |
 | /admin-unlogged-update (SPARQL write) |
 | /logged-update (logical write batch)  |
 | quota, timeout, serialization         |
@@ -54,7 +54,7 @@ public clients
              persistent volume
 ```
 
-Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL can remain on `meta`; it executes against `SPARQLRepository`, preserving the public address while the private service topology changes. It may later become a reverse-proxy route directly to `rdfStore`.
+Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL is served by `rdfStore` directly, so a reverse proxy must route `<meta host>/sparql` there and forward `X-Forwarded-For`, which is what the per-client query quotas key on. `meta`'s own reads use `/internal/sparql`, which applies neither quotas nor response caching, so internal metadata reads are never served from a stale cache.
 
 ## Protocol and repository choice
 
@@ -87,6 +87,7 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 |---|---|
 | LMDB/NativeStore files and lifecycle | `rdfStore` |
 | SPARQL parsing, execution quotas, cancellation, result formats | `rdfStore` |
+| Public SPARQL endpoint: CORS, response caching, client throttling | `rdfStore` |
 | Carbon Portal custom query indexes | `rdfStore` |
 | Store backups, compaction, read-only maintenance | `rdfStore` |
 | RDF-log storage, graph replay, and change history | `rdfStore` |
@@ -144,7 +145,7 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 
 ```hocon
 cpmeta.remoteRdfRepository {
-  queryEndpoint = "http://127.0.0.1:9095/sparql"
+  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
   updateEndpoint = "http://127.0.0.1:9095/admin-unlogged-update"
   adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
   historyEndpoint = "http://127.0.0.1:9095/history"

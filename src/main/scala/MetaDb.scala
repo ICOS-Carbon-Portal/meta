@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
+import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RemoteRdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
@@ -22,7 +22,6 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, Doi
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
@@ -40,7 +39,6 @@ class MetaDb (
 	val uploadService: UploadService,
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
-	val sparql: SparqlServer,
 	val magicRepo: Repository,
 	private val rdfAdminEndpoint: URI,
 	val citer: CitationProvider,
@@ -72,7 +70,6 @@ class MetaDb (
 
 
 	override def close(): Unit =
-		sparql.shutdown()
 		for((_, server) <- instanceServers) server.shutDown()
 		magicRepo.shutDown()
 
@@ -186,11 +183,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, historyClient)
 			}
 
-			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
-
 			new MetaDb(
 				instanceServers, instOntos, uploadService, labelingService, fileService,
-				sparqlServer, repo, remote.adminEndpoint, citer, config
+				repo, remote.adminEndpoint, citer, config
 			)
 		end for
 	end apply

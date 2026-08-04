@@ -84,6 +84,9 @@ object MetaDb:
 			dataObjServers.definitions.map{ servDef =>
 				val writeCtxt = getInstServerContext(dataObjServers, servDef)
 				servDef.label -> InstanceServerConfig(
+					logName = Some(servDef.label),
+					skipLogIngestionAtStart = servDef.replayLogFrom.map(_ => false),
+					logIngestionFromId = servDef.replayLogFrom,
 					readContexts = Some(dataObjServers.commonReadContexts :+ writeCtxt),
 					writeContext = writeCtxt,
 					ingestion = None

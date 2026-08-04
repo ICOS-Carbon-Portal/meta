@@ -152,7 +152,9 @@ cpmeta.remoteRdfRepository {
 }
 ```
 
-The standalone application owns `rdfStore.rdfStorage`, `rdfStore.rdfLog`, the graph-to-log mappings, and RDF-log replay offsets. It currently reuses only the general `cpmeta.sparql` query limits and adds:
+The standalone application owns the storage and RDF-log implementation, but keeps the pre-split configuration contract for deployment compatibility. Existing overrides continue to use `cpmeta.rdfStorage`, `cpmeta.rdfLog`, per-instance `logName`, `skipLogIngestionAtStart`, `logIngestionFromId`, and per-data-format `replayLogFrom`. The `rdfStore.rdfStorage`, `rdfStore.rdfLog`, `rdfStore.rdfLogs`, and `rdfStore.rdfLogRestoreFromId` settings remain available as defaults and for new store-only logs.
+
+Only the standalone listener settings are new:
 
 ```hocon
 rdfStore {

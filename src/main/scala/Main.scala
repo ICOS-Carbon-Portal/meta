@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import io.sentry.Sentry
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
+import se.lu.nateko.cp.meta.rdfstore.AppConfig
 import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
@@ -15,7 +16,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 
-	given system: ActorSystem = ActorSystem("cpmeta", config = AppConfig.get)
+	given system: ActorSystem = ActorSystem("cpmeta", config = AppConfig.rootConfWithWorkingDirOverrides)
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 

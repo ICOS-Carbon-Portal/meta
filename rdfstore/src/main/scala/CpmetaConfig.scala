@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
 import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
+import se.lu.nateko.cp.meta.rdfstore.AppConfig
 import spray.json.*
 
 import java.net.URI
@@ -269,7 +270,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
 
-	lazy val default: CpmetaConfig = AppConfig.get.getValue("cpmeta").parseAs[CpmetaConfig]
+	lazy val default: CpmetaConfig = AppConfig.rootConfWithWorkingDirOverrides.getValue("cpmeta").parseAs[CpmetaConfig]
 
 	private val submConfCache = WeakHashMap.empty[FileTime, SubmittersConfig]
 
@@ -297,4 +298,4 @@ object RdfStoreConfigLoader:
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)
 
-	lazy val default: RdfStoreConfig = AppConfig.get.getValue("rdfStore").parseAs[RdfStoreConfig]
+	lazy val default: RdfStoreConfig = AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore").parseAs[RdfStoreConfig]

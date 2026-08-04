@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta
+package se.lu.nateko.cp.meta.rdfstore
 
 import scala.language.unsafeNulls
 
@@ -6,8 +6,11 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 /**
  * Assembles the application configuration for both `meta` and the standalone
- * `rdfStore` service. Owned here rather than inherited from cpauth-core so that
- * the layering is explicit and documented, highest priority first:
+ * `rdfStore` service. Owned by this package (rather than inherited from
+ * cpauth-core) because the classpath defaults are shipped with the rdfStore
+ * service
+ *
+ * The layering is explicit and documented, highest priority first:
  *
  *   1. JVM system properties (`-Dcpmeta.port=…`)
  *   2. `application.conf` in the JVM's *working directory*, if present.
@@ -26,7 +29,12 @@ object AppConfig:
 
 	private val explicitConfigProps = Seq("config.file", "config.resource", "config.url")
 
-	lazy val get: Config =
+	/**
+	 * The complete root config of the running JVM (all sections: `cpmeta`,
+	 * `rdfStore`, `akka`, …), obtained by overlaying the working directory's
+	 * `application.conf` on the classpath defaults as described above.
+	 */
+	lazy val rootConfWithWorkingDirOverrides: Config =
 		val cwdConf = new java.io.File("application.conf").getAbsoluteFile
 		if explicitConfigProps.exists(sys.props.contains) || !cwdConf.exists then
 			ConfigFactory.load()

@@ -293,7 +293,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test cross CrossVersion.for3Use2_13,
 			"org.scalatest" %% "scalatest" % "3.2.11" % Test
 		),
-			Compile / mainClass := Some("se.lu.nateko.cp.rdfstore.Main"),
+			Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
 			// config is read from the JVM's working directory (cpauth ConfigLoader.appConfig),
 			// so point the forked reStart process at the root application.conf
 			reStart / baseDirectory := (ThisBuild / baseDirectory).value

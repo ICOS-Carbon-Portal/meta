@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.util.UUID
 import scala.util.Try
 
-class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
+class Rdf4jInstanceServer(protected val repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
 
 	def this(repo: Repository) = this(repo, Nil, null)
 	def this(repo: Repository, context: IRI) = this(repo, Seq(context), context)

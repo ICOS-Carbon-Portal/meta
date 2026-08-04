@@ -11,6 +11,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.query.{MalformedQueryException, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.instanceserver.{RdfMutation, RdfUpdate}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
 import spray.json.*
@@ -24,12 +25,20 @@ object Route:
 	def apply(repo: Repository, makeReadonly: String => Future[String])(using
 		ActorSystem,
 		ToResponseMarshaller[SparqlQuery]
-	): Route = apply(repo, makeReadonly, _ => Seq.empty)
+	): Route = apply(repo, makeReadonly, _ => Seq.empty, (_, _) => Success(()))
 
 	def apply(
 		repo: Repository,
 		makeReadonly: String => Future[String],
-		history: Seq[IRI] => Seq[(Instant, se.lu.nateko.cp.meta.instanceserver.RdfUpdate)]
+		history: Seq[IRI] => Seq[(Instant, RdfUpdate)]
+	)(using ActorSystem, ToResponseMarshaller[SparqlQuery]): Route =
+		apply(repo, makeReadonly, history, (_, _) => Success(()))
+
+	def apply(
+		repo: Repository,
+		makeReadonly: String => Future[String],
+		history: Seq[IRI] => Seq[(Instant, RdfUpdate)],
+		applyMutation: (IRI, Seq[RdfUpdate]) => scala.util.Try[Unit]
 	)(using
 		ActorSystem,
 		ToResponseMarshaller[SparqlQuery]
@@ -53,10 +62,21 @@ object Route:
 		val updateRoute: Route = post:
 			formField("update")(executeUpdate) ~ entity(as[String])(executeUpdate)
 
+		val instanceUpdateRoute: Route = post:
+			entity(as[String]): json =>
+				import RdfMutation.given
+				val mutation = json.parseJson.convertTo[RdfMutation]
+				val (context, updates) = RdfMutation.toUpdates(mutation, repo.getValueFactory)
+				applyMutation(context, updates) match
+					case Success(_) => complete(StatusCodes.NoContent)
+					case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
+
 		path("sparql"):
 			queryRoute
 		~ path("update"):
 			updateRoute
+		~ path("instance-updates"):
+			instanceUpdateRoute
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")

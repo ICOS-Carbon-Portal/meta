@@ -16,7 +16,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RemoteRdf4jInstanceServer}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
@@ -53,7 +53,11 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val route = Route(
 		repo,
 		message => Future.successful(s"read-only: $message"),
-		_ => Seq(historyTimestamp -> historyUpdate)
+		_ => Seq(historyTimestamp -> historyUpdate),
+		(context, updates) => repo.transact: connection =>
+			updates.foreach: update =>
+				if update.isAssertion then connection.add(update.statement, context)
+				else connection.remove(update.statement, context)
 	)
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
@@ -89,6 +93,23 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			val client = RdfHistoryClient(endpoint, repo.getValueFactory)
 			val graph = repo.getValueFactory.createIRI("urn:history:graph")
 			Await.result(client.history(Seq(graph)), 5.seconds) shouldBe Seq(historyTimestamp -> historyUpdate)
+
+		"serve logical InstanceServer mutation batches" in:
+			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
+			val graph = repo.getValueFactory.createIRI("urn:mutation:graph")
+			val server = RemoteRdf4jInstanceServer(
+				repo,
+				Seq(graph),
+				graph,
+				URI.create(s"$baseUrl/instance-updates")
+			)
+			val statement = repo.getValueFactory.createStatement(
+				repo.getValueFactory.createIRI("urn:mutation:s"),
+				repo.getValueFactory.createIRI("urn:mutation:p"),
+				repo.getValueFactory.createLiteral("mutation value")
+			)
+			server.add(statement).isSuccess shouldBe true
+			repo.accessEagerly(_.hasStatement(statement, false, graph)) shouldBe true
 
 		"serialize ASK results as standard SPARQL JSON and XML" in:
 			val ask = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "ASK WHERE { }")

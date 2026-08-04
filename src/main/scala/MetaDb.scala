@@ -15,7 +15,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RemoteRdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
@@ -224,14 +224,18 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig): InstanceServer =
+	private def makeInstanceServer(
+		initRepo: Repository,
+		conf: InstanceServerConfig,
+		mutationEndpoint: URI
+	): InstanceServer =
 
 		given factory: ValueFactory = initRepo.getValueFactory
 
 		val writeContext = conf.writeContext.toRdf
 		val readContexts = conf.readContexts.fold(Seq(writeContext))(_.map(_.toRdf))
 
-		new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
+		new RemoteRdf4jInstanceServer(initRepo, readContexts, writeContext, mutationEndpoint)
 
 	end makeInstanceServer
 
@@ -302,7 +306,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			import IngestionMode.{EAGER, BACKGROUND}
 
 			val basicInit: Future[InstanceServer] =
-				val init = Future(makeInstanceServer(repo, servConf))
+				val mutationEndpoint = config.remoteRdfRepository.get.mutationEndpoint
+				val init = Future(makeInstanceServer(repo, servConf, mutationEndpoint))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{

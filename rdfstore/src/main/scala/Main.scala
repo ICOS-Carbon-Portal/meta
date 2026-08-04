@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, read
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
-import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, RdfLoggingSail, StorageSail}
+import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -45,13 +45,11 @@ object Main extends App:
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		sail = CpNotifyingSail(baseSail, indexFactories, citer)
 		logManager = RdfLogManager(storeConfig, baseSail.getValueFactory)
-		loggingSail = RdfLoggingSail(sail, logManager)
-		repo = SailRepository(loggingSail)
+		repo = SailRepository(sail)
 		_ = repo.init()
 		_ = logManager.restore(repo, isFreshInit)
 		indexData <- restoreIndex()
 		_ <- sail.initSparqlMagicIndex(indexData)
-		_ = loggingSail.enableRecording()
 		_ = if isFreshInit then sail.makeReadonly(
 			"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
 		)
@@ -60,7 +58,8 @@ object Main extends App:
 		binding <- Http().newServerAt(host, port).bind(Route(
 			repo,
 			message => sail.makeReadonlyDumpIndexAndCaches(message),
-			logManager.history
+			logManager.history,
+			(context, updates) => logManager.applyAll(repo, context, updates)
 		))
 	yield (binding, queryServer, repo, logManager)
 

@@ -1,7 +1,11 @@
 package se.lu.nateko.cp.meta.services.labeling
 
 import org.eclipse.rdf4j.model.Statement
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, TriplestoreConnection}
+import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
+
+import java.time.Instant
+import scala.concurrent.Future
 
 object LabelingDb:
 
@@ -16,21 +20,13 @@ object LabelingDb:
 class LabelingDb(
 	provServer: InstanceServer,
 	lblServer: InstanceServer,
-	icosServer: InstanceServer
+	icosServer: InstanceServer,
+	historyClient: RdfHistoryClient
 ):
 	import LabelingDb.*
 
-	val provRdfLog = provServer match
-		case logging: LoggingInstanceServer => logging.log
-		case _ => throw Exception(
-			"Configuration error! Provisional stations metadata InstanceServer is expected to be a LoggingInstanceServer"
-		)
-
-	val labelingRdfLog = lblServer match
-		case logging: LoggingInstanceServer => logging.log
-		case _ => throw Exception(
-			"Configuration error! Labeling metadata InstanceServer is expected to be a LoggingInstanceServer"
-		)
+	def history: Future[Seq[(Instant, RdfUpdate)]] =
+		historyClient.history(Seq(provServer.writeContext, lblServer.writeContext))
 
 	def accessProv[T](reader: ProvConn ?=> T): T = provServer.access: conn ?=>
 		reader(using asProv(conn))

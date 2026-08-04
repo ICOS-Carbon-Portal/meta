@@ -146,7 +146,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
 		recreateAtStartup = false,
-		indices = metaConf.rdfStorage.indices,
+		indices = se.lu.nateko.cp.meta.RdfStoreConfigLoader.default.rdfStorage.indices,
 		disableCpIndex = false,
 		recreateCpIndexAtStartup = true
 	)

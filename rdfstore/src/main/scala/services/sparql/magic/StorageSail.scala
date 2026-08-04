@@ -31,7 +31,7 @@ object StorageSail:
 		val isFreshInit = didNotExist || conf.recreateAtStartup || !storageFiles.findAny.isPresent
 
 		if(isFreshInit) log.warn(
-			"ATTENTION: THIS IS A FRESH INIT OF META SERVICE. RESTART ON COMPLETION WITH cpmeta.rdfStorage.recreateAtStartup = false"
+			"ATTENTION: THIS IS A FRESH INIT OF RDFSTORE. RESTART ON COMPLETION WITH rdfStore.rdfStorage.recreateAtStartup = false"
 		)
 
 		val forceSync = !isFreshInit

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.sparql
+package se.lu.nateko.cp.meta.rdfstore
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -8,7 +8,6 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
-import se.lu.nateko.cp.meta.routes.SparqlRoute
 
 import java.util.concurrent.CancellationException
 import scala.concurrent.Future

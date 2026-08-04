@@ -2,13 +2,12 @@ package se.lu.nateko.cp.meta.routes
 
 import akka.actor.ActorSystem
 import akka.event.LoggingBus
-import akka.http.scaladsl.marshalling.{ToEntityMarshaller, ToResponseMarshaller}
+import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.Materializer
 import io.sentry.Sentry
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
@@ -34,11 +33,9 @@ object MainRoute {
 	def apply(db: MetaDb, metaFlow: MetaFlow, config: CpmetaConfig)(using sys: ActorSystem, ctxt: ExecutionContext): Route =
 
 		given LoggingBus = sys.eventStream
-		given ToResponseMarshaller[SparqlQuery] = db.sparql.marshaller
 		given EnvriConfigs = config.core.envriConfigs
 
 		val sparqler = new Rdf4jSparqlRunner(db.magicRepo)
-		val sparqlRoute = SparqlRoute(config.sparql)
 
 		val staticRoute = StaticRoute(sparqler, config.onto)
 		val authRouting = new AuthenticationRouting(config.auth)
@@ -63,7 +60,6 @@ object MainRoute {
 		).route
 
 		handleExceptions(exceptionHandler){
-			sparqlRoute ~
 			metaEntryRoute ~
 			uploadRoute ~
 			doiRoute ~

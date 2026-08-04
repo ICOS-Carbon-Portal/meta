@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
@@ -32,7 +32,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val repo = new SailRepository(new MemoryStore)
 	repo.init()
 
-	private val sparqlServer = new Rdf4jSparqlServer(repo, SparqlServerConfig(
+	private val sparqlConf = SparqlServerConfig(
 		maxQueryRuntimeSec = 5,
 		quotaPerMinute = 60,
 		quotaPerHour = 600,
@@ -41,7 +41,8 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		banLength = 1,
 		maxCacheableQuerySize = 1024 * 1024,
 		adminUsers = Nil
-	))
+	)
+	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
 
 	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
 	private val historyTimestamp = Instant.parse("2026-08-04T12:00:00Z")
@@ -52,6 +53,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	), true)
 	private val route = Route(
 		repo,
+		sparqlConf,
 		message => Future.successful(s"read-only: $message"),
 		_ => Seq(historyTimestamp -> historyUpdate),
 		(context, updates) => repo.transact: connection =>
@@ -64,7 +66,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	"the standalone RDF store" should:
 		"configure meta to use the standalone endpoint by default" in:
 			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
-				Some("http://127.0.0.1:9095/sparql")
+				Some("http://127.0.0.1:9095/internal/sparql")
 			ConfigLoader.default.remoteRdfRepository.map(_.updateEndpoint.toString) shouldBe
 				Some("http://127.0.0.1:9095/admin-unlogged-update")
 			ConfigLoader.default.remoteRdfRepository.map(_.mutationEndpoint.toString) shouldBe
@@ -81,7 +83,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				status shouldBe StatusCodes.NoContent
 
 			val query = "SELECT ?o WHERE { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> ?o } }"
-			Post("/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, query)) ~> route ~> check:
+			Post("/internal/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, query)) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] should include("value")
 
@@ -118,6 +120,25 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			server.add(statement).isSuccess shouldBe true
 			repo.accessEagerly(_.hasStatement(statement, false, graph)) shouldBe true
 
+		"cache and CORS-enable the public SPARQL endpoint" in:
+			val query = "SELECT ?o WHERE { GRAPH <urn:cache:graph> { ?s ?p ?o } }"
+			def request = Post("/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, query))
+				.withHeaders(Origin(HttpOrigin("https://example.icos-cp.eu")))
+
+			request ~> route ~> check:
+				status shouldBe StatusCodes.OK
+				responseAs[String]
+				header(`Access-Control-Allow-Origin`.name).map(_.value) shouldBe
+					Some("https://example.icos-cp.eu")
+				header(SparqlRoute.X_Cache_Status).map(_.value) shouldBe Some("MISS")
+
+			Thread.sleep(100) // the cache is populated asynchronously, as the response streams out
+
+			request ~> route ~> check:
+				status shouldBe StatusCodes.OK
+				responseAs[String]
+				header(SparqlRoute.X_Cache_Status).map(_.value) shouldBe Some("HIT")
+
 		"serialize ASK results as standard SPARQL JSON and XML" in:
 			val ask = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "ASK WHERE { }")
 
@@ -131,7 +152,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 
 		"serve RDF4J's remote Repository API, including named-graph writes" in:
 			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
-			val remote = new SPARQLRepository(s"$baseUrl/sparql", s"$baseUrl/admin-unlogged-update")
+			val remote = new SPARQLRepository(s"$baseUrl/internal/sparql", s"$baseUrl/admin-unlogged-update")
 			remote.enableQuadMode(true)
 			remote.init()
 			try

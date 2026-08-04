@@ -10,17 +10,14 @@ import akka.http.scaladsl.model.headers.CacheDirectives.*
 import akka.http.scaladsl.model.{HttpHeader, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import eu.icoscp.envri.Envri
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
-import se.lu.nateko.cp.meta.routes.SparqlRoute
+import se.lu.nateko.cp.meta.rdfstore.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 
-import java.net.URI
 import scala.concurrent.Future
 
 import concurrent.duration.DurationInt
@@ -50,9 +47,6 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 		Future.apply {
 			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
-			given EnvriConfigs = Map(
-				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
-			)
 
 			SparqlRoute.apply(sparqlConfig)
 		}

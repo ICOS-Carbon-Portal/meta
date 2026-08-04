@@ -69,6 +69,9 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				Some("http://127.0.0.1:9095/admin-unlogged-update")
 			ConfigLoader.default.remoteRdfRepository.map(_.mutationEndpoint.toString) shouldBe
 				Some("http://127.0.0.1:9095/logged-update")
+			ConfigLoader.default.instanceServers.specific("instances").logName shouldBe Some("instances")
+			ConfigLoader.default.rdfLog shouldBe RdfStoreConfigLoader.default.rdfLog
+			ConfigLoader.default.rdfStorage shouldBe RdfStoreConfigLoader.default.rdfStorage
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 

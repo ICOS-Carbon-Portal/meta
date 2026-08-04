@@ -158,6 +158,13 @@ case class RdfStorageConfig(
 	recreateCpIndexAtStartup: Boolean
 )
 
+/**
+ * When present, meta uses an RDF4J SPARQLRepository instead of owning a local
+ * Sail store. The query and update endpoints may be different so that writes
+ * can be kept on a private listener/reverse-proxy route.
+ */
+case class RemoteRdfRepositoryConfig(queryEndpoint: URI, updateEndpoint: URI)
+
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
@@ -180,6 +187,7 @@ case class CpmetaConfig(
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
 	rdfStorage: RdfStorageConfig,
+	remoteRdfRepository: Option[RemoteRdfRepositoryConfig],
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -236,6 +244,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat2(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
@@ -243,7 +252,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

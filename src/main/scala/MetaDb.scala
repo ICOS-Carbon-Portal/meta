@@ -10,6 +10,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
@@ -44,7 +45,8 @@ class MetaDb (
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
 	val sparql: SparqlServer,
-	val magicRepo: SailRepository,
+	val magicRepo: Repository,
+	private val localSail: Option[CpNotifyingSail],
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -59,16 +61,15 @@ class MetaDb (
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail =>
-				val exe = summon[ActorSystem].dispatcher
-				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
+		localSail.fold(Future.successful(
+			"The RDF repository is remote; switch its writer endpoint to read-only mode at the rdfStore service"
+		)):
+			_.makeReadonlyDumpIndexAndCaches(msg)(using summon[ActorSystem].dispatcher)
 
 	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail => cp.initSparqlMagicIndex(idxData)
-			case _ =>
+		localSail match
+			case Some(cp) => cp.initSparqlMagicIndex(idxData)
+			case None =>
 				log.info("Magic SPARQL index is disabled, skipping its initialization")
 				ok
 
@@ -147,26 +148,33 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	def apply(citCache: CitationCache, metaCache: DoiCache, config0: CpmetaConfig): Future[MetaDb] =
 
 		validateConfig(config0)
+		given EnvriConfigs = config0.core.envriConfigs
 
-		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
-
-		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
-
-		val idxFactories = if noMagic then None else
-			val indexHandler = IndexHandler(system.scheduler)
-			val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
-			Some(indexHandler -> geoProvider)
+		val (isFreshInit, repo, citer, localSail) = config0.remoteRdfRepository match
+			case Some(remote) =>
+				val remoteRepo = new SPARQLRepository(
+					remote.queryEndpoint.toString,
+					remote.updateEndpoint.toString
+				)
+				remoteRepo.enableQuadMode(true)
+				remoteRepo.init()
+				(false, remoteRepo: Repository, CitationProvider(remoteRepo, citCache, metaCache, config0), None)
+			case None =>
+				val (fresh, baseSail) = StorageSail.apply(config0.rdfStorage)
+				val localCiter = CitationProvider(baseSail, citCache, metaCache, config0)
+				val noMagic = fresh || config0.rdfStorage.disableCpIndex
+				val idxFactories = if noMagic then None else
+					val indexHandler = IndexHandler(system.scheduler)
+					val geoProvider = new GeoIndexProvider(using ExecutionContext.global)
+					Some(indexHandler -> geoProvider)
+				val cpSail = CpNotifyingSail(baseSail, idxFactories, localCiter)
+				val localRepo = new SailRepository(cpSail)
+				localRepo.init()
+				(fresh, localRepo: Repository, localCiter, Some(cpSail))
 
 		val config: CpmetaConfig = if isFreshInit
 			then config0.copy(rdfStorage = config0.rdfStorage.copy(recreateAtStartup = true))
 			else config0
-
-		given EnvriConfigs = config.core.envriConfigs
-
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
-		val repo = new SailRepository(sail)
-		repo.init()
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
@@ -215,9 +223,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
-			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
+			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, localSail, citer, config)
+			if isFreshInit then localSail.foreach(_.makeReadonly("This was a fresh RDF store initialization, running in " +
 				"readonly mode; restart the server for proper operation")
+			)
 			db
 		end for
 	end apply

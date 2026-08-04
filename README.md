@@ -1,6 +1,8 @@
 # ICOS Carbon Portal metadata service
 
 Metadata service for hosting, mantaining and querying information about things like ICOS stations, people, instruments, archived data objects, etc.
+
+The RDF store can run either embedded in `meta` (the compatibility default) or in the standalone `rdfStore` application. The split architecture, configuration, migration sequence, and remaining production-hardening work are documented in [docs/rdf-store-split.md](docs/rdf-store-split.md).
 It is deployed to **https://meta.icos-cp.eu/** with different services accessible via different paths:
 
 - [/uploadgui/](https://meta.icos-cp.eu/uploadgui/): web application for data/document object upload and collection creation (see instructions for manual upload below). 

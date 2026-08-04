@@ -128,6 +128,7 @@ lazy val meta = (project in file("."))
 			"io.sentry"              % "sentry"                             % "8.37.1",
 			"io.sentry"              % "sentry-logback"                     % "8.37.1",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
@@ -264,4 +265,18 @@ lazy val tools = (project in file("tools"))
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
 		)
+	)
+
+lazy val rdfStore = (project in file("rdfstore"))
+	.dependsOn(meta)
+	.settings(
+		name := "meta-rdf-store",
+		version := "0.1.0",
+		scalacOptions ++= commonScalacOptions,
+		libraryDependencies ++= Seq(
+			"com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test cross CrossVersion.for3Use2_13,
+			"org.scalatest" %% "scalatest" % "3.2.11" % Test
+		),
+		Compile / mainClass := Some("se.lu.nateko.cp.rdfstore.RdfStoreMain")
 	)

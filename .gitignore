@@ -10,6 +10,7 @@ npm-debug.log
 /lib/
 /project/project/
 /project/target/
+/rdfstore/target/
 /views/target
 /jobAd/target
 /jobAd/src/main/js

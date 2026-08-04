@@ -164,7 +164,8 @@ case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
 	updateEndpoint: URI,
 	adminEndpoint: URI,
-	historyEndpoint: URI
+	historyEndpoint: URI,
+	mutationEndpoint: URI
 )
 
 case class RdfStoreConfig(
@@ -253,7 +254,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat5(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

@@ -95,7 +95,9 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 
 ## Transactions and RDF update logs
 
-`rdfStore` wraps the Sail connection and records asserted/retracted statements by named graph. It appends each transaction's changes to the graph's PostgreSQL RDF log immediately before committing the RDF4J transaction, preserving the former local ordering while removing all logging behavior from `meta`. Rollbacks are not logged, and logging stays disabled during startup replay so restored rows are not appended again.
+The current implementation preserves the original `LoggingInstanceServer` behavior. `meta` sends each logical `InstanceServer.applyAll` batch and its target graph to the private `/instance-updates` endpoint. Inside `rdfStore`, the graph selects either a plain `Rdf4jInstanceServer` or a `LoggingInstanceServer`; for logged graphs, the PostgreSQL append runs in the callback immediately before the local RDF4J transaction commits. RDF-log replay bypasses this endpoint, so restored rows are not appended again.
+
+Capturing every write at the Sail level—including arbitrary SPARQL Update requests—would broaden the original behavior. This is intentionally deferred as a future improvement rather than included in the split.
 
 The two persistence systems still cannot provide a distributed atomic commit: an RDF4J commit failure after a successful PostgreSQL append can leave a log entry ahead of the store. An idempotent mutation/outbox design remains a possible hardening step, but it is no longer part of `meta`.
 
@@ -119,7 +121,7 @@ Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and
 1. open and initialize the Sail repository;
 2. on a fresh store, restore each configured RDF log sequentially;
 3. restore or build custom indexes;
-4. enable transaction logging and leave the freshly built store read-only;
+4. leave the freshly built store read-only;
 5. expose the routes so operators can verify the restore, then restart `rdfStore` for normal indexed operation.
 
 The replay is deliberately sequential. This retains the old protection against NativeStore crashes under unrestrained parallel writes, but limits serialization to initial RDF-log restoration; normal store traffic uses RDF4J's transaction concurrency.

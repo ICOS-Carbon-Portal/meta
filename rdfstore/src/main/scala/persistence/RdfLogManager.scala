@@ -6,11 +6,13 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStoreConfig
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 
 import java.time.Instant
 import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
+import scala.util.Try
 import scala.util.Using
 
 final class RdfLogManager private (
@@ -21,8 +23,13 @@ final class RdfLogManager private (
 
 	private val logger = LoggerFactory.getLogger(getClass)
 	private val byContext: Map[String, Binding] = bindings.map(binding => binding.context.stringValue -> binding).toMap
+	private val instanceServers = TrieMap.empty[String, InstanceServer]
 
 	def binding(context: IRI): Option[Binding] = byContext.get(context.stringValue)
+
+	def applyAll(repo: Repository, context: IRI, updates: Seq[RdfUpdate]): Try[Unit] =
+		val server = instanceServers.getOrElseUpdate(context.stringValue, createServer(repo, context))
+		server.applyAll(updates)()
 
 	/**
 	 * Replays logs one at a time. This is deliberately serialized: NativeStore
@@ -54,6 +61,11 @@ final class RdfLogManager private (
 			Using.resource(binding.log.timedUpdates)(_.toIndexedSeq)
 
 	override def close(): Unit = bindings.map(_.log).distinct.foreach(_.close())
+
+	private def createServer(repo: Repository, context: IRI): InstanceServer =
+		val inner = Rdf4jInstanceServer(repo, context)
+		binding(context).fold[InstanceServer](inner): binding =>
+			LoggingInstanceServer(inner, binding.log)
 
 end RdfLogManager
 

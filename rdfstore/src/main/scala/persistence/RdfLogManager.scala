@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.RdfStoreConfig
+import se.lu.nateko.cp.meta.{CpmetaConfig, RdfStoreConfig}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 
@@ -16,8 +16,7 @@ import scala.util.Try
 import scala.util.Using
 
 final class RdfLogManager private (
-	private val bindings: Seq[RdfLogManager.Binding],
-	private val restoreFromId: Map[String, Int]
+	private val bindings: Seq[RdfLogManager.Binding]
 ) extends AutoCloseable:
 	import RdfLogManager.Binding
 
@@ -38,8 +37,9 @@ final class RdfLogManager private (
 	 */
 	def restore(repo: Repository, isFreshStore: Boolean): Unit =
 		bindings.foreach: binding =>
-			val fromId = restoreFromId.get(binding.name)
-			if isFreshStore || fromId.isDefined then
+			val replay = binding.replay
+			if replay.shouldRestore(isFreshStore) then
+				val fromId = replay.fromId
 				val offsetDescription = fromId.fold("")(id => s" from row id $id")
 				logger.info(
 					s"Restoring RDF log '${binding.name}'$offsetDescription into graph <${binding.context}>"
@@ -70,25 +70,87 @@ final class RdfLogManager private (
 end RdfLogManager
 
 object RdfLogManager:
-	final case class Binding(name: String, context: IRI, log: RdfUpdateLog)
+	final case class ReplayPolicy(
+		restoreOnFresh: Boolean = true,
+		restoreOnRegularStart: Boolean = false,
+		fromId: Option[Int] = None
+	):
+		def shouldRestore(isFreshStore: Boolean): Boolean =
+			if isFreshStore then restoreOnFresh else restoreOnRegularStart
+
+	final case class Binding(
+		name: String,
+		context: IRI,
+		log: RdfUpdateLog,
+		replay: ReplayPolicy = ReplayPolicy()
+	)
+
+	private final case class BindingConfig(name: String, context: java.net.URI, replay: ReplayPolicy)
 
 	private[persistence] def fromBindings(bindings: Seq[Binding]): RdfLogManager =
-		new RdfLogManager(bindings, Map.empty)
+		new RdfLogManager(bindings)
 
-	def apply(storeConfig: RdfStoreConfig, factory: ValueFactory): RdfLogManager =
-		val configured = storeConfig.rdfLogs.toSeq.sortBy(_._1)
-		require(
-			configured.map(_._2).distinct.size == configured.size,
-			"rdfStore.rdfLogs must map each named graph to exactly one RDF log"
-		)
+	def apply(storeConfig: RdfStoreConfig, metaConfig: CpmetaConfig, factory: ValueFactory): RdfLogManager =
+		val oldSpecificBindings = metaConfig.instanceServers.specific.values.toSeq.flatMap: conf =>
+			conf.logName.map: name =>
+				val skip = conf.skipLogIngestionAtStart
+				BindingConfig(
+					name,
+					conf.writeContext,
+					ReplayPolicy(
+						restoreOnFresh = !skip.contains(true),
+						restoreOnRegularStart = skip.contains(false),
+						fromId = conf.logIngestionFromId
+					)
+				)
 
-		val bindings = configured.map: (name, context) =>
-			Binding(
-				name,
-				factory.createIRI(context.toString),
-				PostgresRdfLog(name, storeConfig.rdfLog, factory)
-			)
+		val oldDataObjectBindings = metaConfig.instanceServers.forDataObjects.values.toSeq.flatMap: conf =>
+			conf.definitions.map: definition =>
+				val context = java.net.URI.create(conf.uriPrefix.toString + definition.label + "/")
+				BindingConfig(
+					definition.label,
+					context,
+					ReplayPolicy(
+						restoreOnFresh = true,
+						restoreOnRegularStart = definition.replayLogFrom.isDefined,
+						fromId = definition.replayLogFrom
+					)
+				)
 
-		new RdfLogManager(bindings, storeConfig.rdfLogRestoreFromId)
+		val oldBindings = (oldSpecificBindings ++ oldDataObjectBindings).map: binding =>
+			storeConfig.rdfLogRestoreFromId.get(binding.name).fold(binding): newOffset =>
+				if binding.replay.fromId.isDefined then binding
+				else binding.copy(replay = binding.replay.copy(
+					restoreOnRegularStart = true,
+					fromId = Some(newOffset)
+				))
+		val oldLogNames = oldBindings.iterator.map(_.name).toSet
+		val newOnlyBindings = storeConfig.rdfLogs.toSeq.collect:
+			case (name, context) if !oldLogNames.contains(name) =>
+				val fromId = storeConfig.rdfLogRestoreFromId.get(name)
+				BindingConfig(name, context, ReplayPolicy(true, fromId.isDefined, fromId))
+
+		val configured = (oldBindings ++ newOnlyBindings)
+			.groupBy(binding => binding.name -> binding.context)
+			.toSeq
+			.sortBy((key, _) => (key._1, key._2.toString))
+			.map: (_, sameBindingConfigs) =>
+				val policies = sameBindingConfigs.map(_.replay)
+				val offsets = policies.flatMap(_.fromId).distinct
+				require(offsets.size <= 1, s"Conflicting RDF-log replay offsets: ${offsets.mkString(", ")}")
+				val first = sameBindingConfigs.head
+				first.copy(replay = ReplayPolicy(
+					restoreOnFresh = policies.exists(_.restoreOnFresh),
+					restoreOnRegularStart = policies.exists(_.restoreOnRegularStart),
+					fromId = offsets.headOption
+				))
+
+		val logs = configured.map(_.name).distinct
+			.map(name => name -> PostgresRdfLog(name, metaConfig.rdfLog, factory))
+			.toMap
+		val bindings = configured.map: conf =>
+			Binding(conf.name, factory.createIRI(conf.context.toString), logs(conf.name), conf.replay)
+
+		new RdfLogManager(bindings)
 
 end RdfLogManager

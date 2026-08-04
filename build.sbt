@@ -250,38 +250,10 @@ lazy val uploadgui = (project in file("uploadgui"))
 			).map(path => new java.io.File(path).getAbsoluteFile)
 		}
 	)
-lazy val keywordMaterializer = (project in file("keyword-materializer"))
-	.settings(
-		name := "meta-keyword-materializer",
-		version := "0.1.0",
-		scalacOptions ++= commonScalacOptions,
-		libraryDependencies ++= Seq(
-			"com.typesafe.akka" %% "akka-actor" % akkaVersion cross CrossVersion.for3Use2_13,
-			"com.typesafe.akka" %% "akka-slf4j" % akkaVersion cross CrossVersion.for3Use2_13,
-			"org.eclipse.rdf4j" % "rdf4j-repository-sparql" % rdf4jVersion,
-			"org.eclipse.rdf4j" % "rdf4j-queryresultio-sparqljson" % rdf4jVersion,
-			"org.apache.httpcomponents" % "httpclient" % "4.5.14"
-		),
-		excludeDependencies ++= Seq(
-			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
-			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
-		),
-		Compile / mainClass := Some("se.lu.nateko.cp.meta.keyword.KeywordMaterializationApp"),
-		assembly / assemblyMergeStrategy := {
-			case PathList("META-INF", "axiom.xml") => MergeStrategy.first
-			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
-			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
-			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
-			case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
-			case "application.conf" => MergeStrategy.concat
-			case x => ((assembly / assemblyMergeStrategy).value)(x)
-		},
-		assembly / assemblyRepeatableBuild := false
-	)
 
-lazy val keywordSplitter = (project in file("keyword-splitter"))
+lazy val keywords = (project in file("keywords"))
 	.settings(
-		name := "meta-keyword-splitter",
+		name := "meta-keywords",
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
@@ -295,7 +267,7 @@ lazy val keywordSplitter = (project in file("keyword-splitter"))
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
 		),
-		Compile / mainClass := Some("se.lu.nateko.cp.meta.keyword.KeywordSplittingApp"),
+		Compile / mainClass := Some("se.lu.nateko.cp.meta.keyword.KeywordsApp"),
 		Compile / run / baseDirectory := (LocalRootProject / baseDirectory).value,
 		reStart / baseDirectory := (LocalRootProject / baseDirectory).value,
 		assembly / assemblyMergeStrategy := {

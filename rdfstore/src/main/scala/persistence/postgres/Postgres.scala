@@ -5,9 +5,6 @@ import scala.language.unsafeNulls
 import java.sql.{Connection, DriverManager}
 import scala.util.Try
 
-case class DbCredentials(db: String, user: String, password: String)
-case class DbServer(host: String, port: Int)
-
 object Postgres {
 
 	private lazy val driverClass = Class.forName("org.postgresql.Driver")

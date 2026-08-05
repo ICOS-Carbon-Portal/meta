@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
 import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
-import se.lu.nateko.cp.meta.rdfstore.AppConfig
 import spray.json.*
 
 import java.net.URI

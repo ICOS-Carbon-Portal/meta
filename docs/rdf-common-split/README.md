@@ -48,58 +48,49 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
+Progress: **0 / 23 complete.** Tick a box when the task's own verification section passes, and
+update the count above.
+
 ### Phase 1 — stand up `rdfCommon` (mechanical)
 
-| # | Task |
-|---|---|
-| [01](01-create-rdfcommon-module.md) | Create the `rdfCommon` sbt module |
-| [02](02-move-leaf-utilities.md) | Move leaf utilities |
-| [03](03-move-domain-exceptions.md) | Move domain exceptions |
-| [04](04-move-rdf-access-api.md) | Move the RDF access API |
-| [05](05-move-handlenetclient.md) | Move `HandleNetClient` |
-| [06](06-unleak-geo-helpers.md) | Un-leak the JTS geo helpers |
+- [ ] [01](01-create-rdfcommon-module.md) — Create the `rdfCommon` sbt module
+- [ ] [02](02-move-leaf-utilities.md) — Move leaf utilities
+- [ ] [03](03-move-domain-exceptions.md) — Move domain exceptions
+- [ ] [04](04-move-rdf-access-api.md) — Move the RDF access API
+- [ ] [05](05-move-handlenetclient.md) — Move `HandleNetClient`
+- [ ] [06](06-unleak-geo-helpers.md) — Un-leak the JTS geo helpers
 
 ### Phase 2 — break the metaflow/vocabulary knot
 
-| # | Task |
-|---|---|
-| [07](07-extract-tcmetasource-constants.md) | Extract `TcMetaSource`'s two shared constants |
-| [08](08-extract-tc-vocab.md) | Extract TC-scoped URI minting out of `CpVocab` |
-| [09](09-move-metaflow-model.md) | Move the metaflow model to `meta` |
-| [10](10-move-vocabularies.md) | Move the vocabularies to `rdfCommon` |
+- [ ] [07](07-extract-tcmetasource-constants.md) — Extract `TcMetaSource`'s two shared constants
+- [ ] [08](08-extract-tc-vocab.md) — Extract TC-scoped URI minting out of `CpVocab`
+- [ ] [09](09-move-metaflow-model.md) — Move the metaflow model to `meta`
+- [ ] [10](10-move-vocabularies.md) — Move the vocabularies to `rdfCommon`
 
 ### Phase 3 — citation and object readers
 
-| # | Task |
-|---|---|
-| [11](11-move-citation-stack.md) | Move the citation stack to `rdfCommon` |
-| [12](12-move-object-fetchers.md) | Move the read-side object fetchers to `rdfCommon` |
-| [13](13-move-metadataupdater.md) | Move `MetadataUpdater` to `meta` |
+- [ ] [11](11-move-citation-stack.md) — Move the citation stack to `rdfCommon`
+- [ ] [12](12-move-object-fetchers.md) — Move the read-side object fetchers to `rdfCommon`
+- [ ] [13](13-move-metadataupdater.md) — Move `MetadataUpdater` to `meta`
 
 ### Phase 4 — configuration
 
-| # | Task |
-|---|---|
-| [14](14-move-config-verbatim.md) | Move `CpmetaConfig.scala` to `rdfCommon` unchanged |
-| [15](15-split-config.md) | Split the configuration three ways |
-| [16](16-meta-appconfig.md) | Give `meta` its own `AppConfig` |
+- [ ] [14](14-move-config-verbatim.md) — Move `CpmetaConfig.scala` to `rdfCommon` unchanged
+- [ ] [15](15-split-config.md) — Split the configuration three ways *(optional for task 21)*
+- [ ] [16](16-meta-appconfig.md) — Give `meta` its own `AppConfig`
 
 ### Phase 5 — tests
 
-| # | Task |
-|---|---|
-| [17](17-move-store-tests.md) | Move store-owned tests out of `src/test` |
-| [18](18-move-shared-tests.md) | Move shared-code tests to `rdfCommon` |
-| [19](19-remote-integration-test.md) | Add a remote integration test on LMDB |
+- [ ] [17](17-move-store-tests.md) — Move store-owned tests out of `src/test`
+- [ ] [18](18-move-shared-tests.md) — Move shared-code tests to `rdfCommon`
+- [ ] [19](19-remote-integration-test.md) — Add a remote integration test on LMDB
 
 ### Phase 6 — cut the edge and ship two applications
 
-| # | Task |
-|---|---|
-| [20](20-rdfstore-assembly-deploy.md) | Give `rdfStore` assembly and deploy configuration |
-| [21](21-remove-dependson.md) | Delete `dependsOn(rdfStore)` from `meta` |
-| [22](22-ci-guard.md) | Add a CI guard against the dependency returning |
-| [23](23-update-split-doc.md) | Update `rdf-store-split.md` |
+- [ ] [20](20-rdfstore-assembly-deploy.md) — Give `rdfStore` assembly and deploy configuration
+- [ ] [21](21-remove-dependson.md) — Delete `dependsOn(rdfStore)` from `meta`
+- [ ] [22](22-ci-guard.md) — Add a CI guard against the dependency returning
+- [ ] [23](23-update-split-doc.md) — Update `rdf-store-split.md`
 
 ## Out of scope
 

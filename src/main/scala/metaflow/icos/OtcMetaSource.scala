@@ -7,7 +7,7 @@ import akka.event.LoggingAdapter
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
-import se.lu.nateko.cp.meta.api.{CustomVocab, SparqlQuery, SparqlRunner, UriId}
+import se.lu.nateko.cp.meta.api.{CustomVocab, Quota, SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
@@ -199,7 +199,7 @@ class OtcMetaSource(
 	}
 
 	private def getLookupV[T](query: String, entVar: String)(maker: (BindingSet, TcId[O]) => Validated[T]): Validated[IndexedSeq[(IRI, T)]] = {
-		Validated(sparql.evaluateTupleQuery(SparqlQuery(query))).flatMap{iter =>
+		Validated(sparql.evaluateTupleQuery(SparqlQuery(query, Quota.Unlimited))).flatMap{iter =>
 			val entValids = iter.toIndexedSeq.map{b =>
 				for(
 					entIri <- qresValueReq(b, entVar)

@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin}
+import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
@@ -43,6 +43,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		adminUsers = Nil
 	)
 	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
+	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
 
 	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
 	private val historyTimestamp = Instant.parse("2026-08-04T12:00:00Z")
@@ -120,10 +121,15 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			server.add(statement).isSuccess shouldBe true
 			repo.accessEagerly(_.hasStatement(statement, false, graph)) shouldBe true
 
+		"reject public SPARQL requests that did not pass through the trusted proxy" in:
+			Post("/sparql", "ASK WHERE { }") ~> route ~> check:
+				status shouldBe StatusCodes.BadRequest
+				responseAs[String] should include("trusted reverse proxy")
+
 		"cache and CORS-enable the public SPARQL endpoint" in:
 			val query = "SELECT ?o WHERE { GRAPH <urn:cache:graph> { ?s ?p ?o } }"
 			def request = Post("/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, query))
-				.withHeaders(Origin(HttpOrigin("https://example.icos-cp.eu")))
+				.withHeaders(Origin(HttpOrigin("https://example.icos-cp.eu")), forwardedFor)
 
 			request ~> route ~> check:
 				status shouldBe StatusCodes.OK
@@ -142,11 +148,11 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		"serialize ASK results as standard SPARQL JSON and XML" in:
 			val ask = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "ASK WHERE { }")
 
-			Post("/sparql", ask).withHeaders(Accept(Rdf4jSparqlServer.jsonSparql.mediaType)) ~> route ~> check:
+			Post("/sparql", ask).withHeaders(Accept(Rdf4jSparqlServer.jsonSparql.mediaType), forwardedFor) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] should include regex "\"boolean\"\\s*:\\s*true"
 
-			Post("/sparql", ask).withHeaders(Accept(Rdf4jSparqlServer.xmlSparql.mediaType)) ~> route ~> check:
+			Post("/sparql", ask).withHeaders(Accept(Rdf4jSparqlServer.xmlSparql.mediaType), forwardedFor) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] should include regex "<boolean>\\s*true\\s*</boolean>"
 

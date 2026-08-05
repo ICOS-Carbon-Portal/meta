@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner, UriId}
+import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, EtcUploadMetadata, StationId}
@@ -116,7 +116,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			|}
 			|order by desc(?submEnd)
 			|limit 2""".stripMargin //limit 2 is to include potentially itself and the latest other upload of this filename
-		sparqler.evaluateTupleQuery(SparqlQuery(query))
+			sparqler.evaluateTupleQuery(SparqlQuery(query, Quota.Unlimited))
 			.map{bs =>
 				val hashSegm = bs.getValue("dobj").stringValue.split("/").last
 				Sha256Sum.fromBase64Url(hashSegm).toOption

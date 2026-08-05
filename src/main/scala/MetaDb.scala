@@ -148,11 +148,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			throw IllegalArgumentException(
 				"cpmeta.remoteRdfRepository is required; meta no longer owns an embedded RDF store"
 			)
-		val remoteRepo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
-		remoteRepo.enableQuadMode(true)
-		remoteRepo.init()
-		val repo: Repository = remoteRepo
-		val citer = CitationProvider(remoteRepo, citCache, metaCache, config)
+		val repo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
+		repo.enableQuadMode(true)
+		repo.init()
+		val citer = CitationProvider(repo, citCache, metaCache, config)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")

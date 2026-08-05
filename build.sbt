@@ -146,7 +146,7 @@ lazy val rdfCommon = (project in file("rdf-common"))
 	)
 
 lazy val meta = (project in file("."))
-		.dependsOn(metaCore, rdfCommon, rdfStore, metaCore % "test->test", rdfCommon % "test->test")
+		.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -167,21 +167,16 @@ lazy val meta = (project in file("."))
 			"io.sentry"              % "sentry-logback"                     % "8.37.1",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion, // used by meta's own tests (GcpUploadMetaGenerator, MetadataUpdaterTests), not the LMDB production backend
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
-			"org.lwjgl"              % "lwjgl"                              % "3.3.4",
-			"org.lwjgl"              % "lwjgl-lmdb"                         % "3.3.4",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
-			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.8.5",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
@@ -203,6 +198,19 @@ lazy val meta = (project in file("."))
 		// also suppress `testOnly`/`remoteIntegrationTest`'s own explicit `-n` tag inclusion.
 		Test / test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-l", "tags.RemoteIntegration"),
 
+		// Since task 21 cut meta.dependsOn(rdfStore), rdfStore's classes are no longer reachable
+		// by walking meta's own test classloader chain, which is what
+		// RemoteRdfStoreHarness.currentClasspath() used to rely on to build the classpath for the
+		// forked rdfStore process. Export rdfStore's own Compile classpath as a generated test
+		// resource instead, so the harness can fork rdfStore's Main with a correct classpath
+		// despite the two modules no longer sharing one.
+		Test / resourceGenerators += Def.task {
+			val outFile = (Test / resourceManaged).value / "rdfstore-test-classpath.txt"
+			val cp = (rdfStore / Compile / fullClasspath).value.map(_.data.getAbsolutePath)
+			IO.write(outFile, cp.mkString(java.io.File.pathSeparator))
+			Seq(outFile)
+		}.taskValue,
+
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(
@@ -210,8 +218,11 @@ lazy val meta = (project in file("."))
 			uploadgui / clean,
 			clean,
 			metaCore / Test / test,
+			rdfCommon / Test / test,
+			rdfStore / Test / test,
 			Test / test,
 			remoteIntegrationTest,
+			checkModuleBoundaries,
 			frontendBuild,
 			fetchGCMDKeywords
 		).value,
@@ -315,6 +326,7 @@ lazy val tools = (project in file("tools"))
 
 lazy val rdfStore = (project in file("rdfstore"))
 		.dependsOn(metaCore, rdfCommon, rdfCommon % "test->test")
+		.enablePlugins(IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta-rdf-store",
 		version := "0.1.0",
@@ -345,5 +357,79 @@ lazy val rdfStore = (project in file("rdfstore"))
 			Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
 			// config is read from the JVM's working directory (cpauth ConfigLoader.appConfig),
 			// so point the forked reStart process at the root application.conf
-			reStart / baseDirectory := (ThisBuild / baseDirectory).value
+			reStart / baseDirectory := (ThisBuild / baseDirectory).value,
+
+			assembly / assemblyMergeStrategy := {
+				case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
+				case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
+				case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
+				case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
+				case "application.conf" => MergeStrategy.concat
+				case x => ((assembly / assemblyMergeStrategy).value)(x)
+			},
+
+			assembly / assemblyRepeatableBuild := false,
+
+			// Distinct from meta's "cpmeta" - deploying under the wrong target would overwrite
+			// the wrong service. Confirm with whoever owns the Ansible inventories before this
+			// name is ever used for a real deploy.
+			cpDeployTarget := "cpmetardfstore",
+			cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta.rdfstore",
+			cpDeployPreAssembly := Def.sequential(
+				metaCore / clean,
+				clean,
+				metaCore / Test / test,
+				rdfCommon / Test / test,
+				Test / test,
+				checkModuleBoundaries
+			).value,
+			// A separate playbook from meta's "core.yml": this one must mount the RDF storage
+			// volume (rdf-store-split.md - "Only rdfStore may mount the RDF storage directory"),
+			// and meta's playbook must not. rdfStore must be started before meta, since meta's
+			// startup runs a bounded readiness query against the remote SPARQL repository
+			// (rdf-store-split.md). The reverse proxy must route "<meta host>/sparql" to
+			// rdfStore, overwriting X-Forwarded-For with the trusted client address.
+			cpDeployPlaybook := "rdfstore.yml",
+			cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
+			cpDeployInfraBranch := "master"
 		)
+
+// Task 22 (docs/rdf-common-split/22-ci-guard.md): the dependency direction meta -> rdfCommon <-
+// rdfStore, with neither application depending on the other, is the entire architectural claim
+// of the module split (task 21). It is a one-line build.sbt change to break it, and that breakage
+// is invisible in a code review that's reading Scala rather than build.sbt.
+//
+// Matching is done by comparing each project's own `Compile / classDirectory` against the other
+// project's `Compile / dependencyClasspath` entries, rather than matching on classpath entry file
+// names: internal (same-build) project dependencies show up on the classpath as their
+// `target/scala-.../classes` directory, and every module's class directory is literally named
+// "classes" (indistinguishable by name alone) - and this repository's own path happens to contain
+// a directory literally called "meta" (.../bulk/meta/rdf-separate-service), so a naive substring
+// match on "meta" in the classpath would false-positive on every single entry. Comparing full,
+// canonical class-directory paths avoids both problems and directly reflects the actual mechanism
+// (classpath reachability) a stray `.dependsOn` would introduce.
+val checkModuleBoundaries = taskKey[Unit]("Fails if the module dependency graph is violated")
+
+checkModuleBoundaries := {
+	val log = streams.value.log
+	val metaClasses = (meta / Compile / classDirectory).value.getCanonicalPath
+	val storeClasses = (rdfStore / Compile / classDirectory).value.getCanonicalPath
+
+	val metaCp = (meta / Compile / dependencyClasspath).value.map(_.data.getCanonicalPath)
+	val storeCp = (rdfStore / Compile / dependencyClasspath).value.map(_.data.getCanonicalPath)
+
+	val metaViolations = metaCp.filter(_ == storeClasses)
+	val storeViolations = storeCp.filter(_ == metaClasses)
+
+	if (metaViolations.nonEmpty)
+		sys.error(
+			"meta must not depend on rdfStore, but rdfStore's class directory is on meta's " +
+			s"Compile classpath: ${metaViolations.mkString(", ")}"
+		)
+	if (storeViolations.nonEmpty)
+		sys.error(
+			"rdfStore must not depend on meta, but meta's class directory is on rdfStore's " +
+			s"Compile classpath: ${storeViolations.mkString(", ")}"
+		)
+	log.info("checkModuleBoundaries: meta and rdfStore do not depend on each other.")
+}

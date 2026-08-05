@@ -48,7 +48,9 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **18 / 23 complete.** Tick a box when the task's own verification section passes, and
+Progress: **22 / 23 complete.** Task 15 is the only one left unchecked (deliberately deferred; see
+its note below), so 22/23 is the maximum achievable without doing it. Tick a box when the task's
+own verification section passes, and
 update the count above. (Task 15 is intentionally left unchecked and undone; see its row below.)
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
@@ -143,10 +145,65 @@ skipped before a production build.
 
 ### Phase 6 — cut the edge and ship two applications
 
-- [ ] [20](20-rdfstore-assembly-deploy.md) — Give `rdfStore` assembly and deploy configuration
-- [ ] [21](21-remove-dependson.md) — Delete `dependsOn(rdfStore)` from `meta`
-- [ ] [22](22-ci-guard.md) — Add a CI guard against the dependency returning
-- [ ] [23](23-update-split-doc.md) — Update `rdf-store-split.md`
+- [x] [20](20-rdfstore-assembly-deploy.md) — Give `rdfStore` assembly and deploy configuration
+- [x] [21](21-remove-dependson.md) — Delete `dependsOn(rdfStore)` from `meta`
+- [x] [22](22-ci-guard.md) — Add a CI guard against the dependency returning
+- [x] [23](23-update-split-doc.md) — Update `rdf-store-split.md`
+
+**Note on task 20:** `cpDeployTarget := "cpmetardfstore"` is a proposed name, chosen only to be
+distinct from `meta`'s `"cpmeta"` as the task file requires. It has not been confirmed against the
+real Ansible inventories/playbooks (not visible from this repository), and `cpDeployPlaybook :=
+"rdfstore.yml"` is a new playbook name that does not exist yet — whoever owns the deploy
+infrastructure should confirm both, and write the actual playbook (with the RDF volume mount),
+before this is ever used for a real deploy. Verified locally: `rdfStore/assembly` produces a fat
+jar, and `java -jar` on it boots against a throwaway Postgres and temp LMDB dir, serving `/health`
+with 200.
+
+**Note on task 21:** compiled clean on the first try after moving exactly one file —
+`CitationProviderFactory.scala` (config → `CitationProvider` glue depending only on already-shared
+`CpmetaConfig`/`RdfLenses`/`CitationProvider`, no storage internals) — from `rdfstore/` to
+`rdf-common/`, confirming the rest of tasks 02–19 had already drawn the line correctly. Cutting
+the dependency surfaced one further issue, invisible at compile time: `rdf-common`'s own
+`reference.conf` had `cpmeta.rdfLog = ${rdfStore.rdfLog}` (and `rdfStorage`), a substitution whose
+source keys lived only in `rdfstore`'s `reference.conf` — fine while `meta` still carried that file
+transitively, broken the moment it didn't, since Typesafe Config requires every `reference.conf`
+to resolve on its own. Fixed by duplicating literal fallback defaults for `rdfStore.rdfLog`/
+`rdfStore.rdfStorage` into `rdf-common`'s own `reference.conf` (see the comments there and in
+`rdfstore`'s copy) rather than by touching `CpmetaConfig`'s shape — a real fix, not a workaround,
+and one that would have surfaced the first time anyone tried to boot `meta` standalone post-cut.
+Also required a second real fix: the task-19 remote-integration harness
+(`RemoteRdfStoreHarness.currentClasspath()`) used to recover `rdfStore`'s runtime classpath by
+walking the current (meta test) JVM's classloader chain, which only worked because `meta`
+transitively carried `rdfStore` on its classpath; post-cut that's gone, so `meta`'s `build.sbt` now
+generates a `rdfstore-test-classpath.txt` test resource from `rdfStore`'s own
+`Compile / fullClasspath`, which the harness reads first. Verified: `sbt clean compile
+Test/compile` and `sbt test` green across every module (`metaCore`, `rdfCommon`, `rdfStore`,
+`meta`, `tools`, `uploadgui/fullOptJS`); `sbt "show meta/Compile/dependencyClasspath"` has no
+`meta-rdf-store` entry; the task-19 remote integration test passes (10/10) with the classpath fix;
+both `rdfStore` and `meta` were started together as separate forked JVMs against a real, restart-
+cycled LMDB store and a throwaway Postgres, and `meta` served `/buildInfo` (200) while reading
+real triples through `rdfStore` over HTTP — all temp dirs/Postgres clusters/processes cleaned up
+afterward. `sbt assembly` (which `IcosCpSbtDeployPlugin` binds to run the whole
+`cpDeployPreAssembly` sequence, including `remoteIntegrationTest`) passes through that entire
+sequence and only then fails at the pre-existing `frontendBuild` step, because this sandbox has no
+`npm`/`node` installed — an environment gap unrelated to the module split, not a regression from
+this change.
+
+**Note on task 22:** `checkModuleBoundaries` compares each project's own `Compile / classDirectory`
+against the other's `Compile / dependencyClasspath`, rather than matching classpath entry file
+names as the task file's sketch does: same-build project dependencies show up on the classpath as
+a `target/scala-.../classes` directory, and every module's is literally named `classes`
+(indistinguishable by name alone); worse, this repository's own path contains a directory
+literally called `meta` (`.../bulk/meta/rdf-separate-service`), so a substring match on `"meta"`
+would false-positive on every single classpath entry. Comparing canonical class-directory paths
+avoids both traps. Verified: passes on the current tree; temporarily re-adding `rdfStore` to
+`meta`'s `dependsOn` makes it fail with `"meta must not depend on rdfStore, but rdfStore's class
+directory is on meta's Compile classpath: .../rdfstore/target/scala-3.3.4/classes"`; reverted.
+Wired into the GitHub Actions workflow and both projects' `cpDeployPreAssembly`. The optional
+grep-based source guard is also added (CI-only, `.github/workflows/scala.yml`), scoped to actual
+`import` statements rather than any string occurrence — `RemoteRdfStoreHarness.scala` legitimately
+references `"se.lu.nateko.cp.meta.rdfstore.Main"` as a class-name string (to fork it as a separate
+process) without importing the package, which a naive grep would have flagged.
 
 ## Out of scope
 

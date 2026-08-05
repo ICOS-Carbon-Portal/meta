@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -151,7 +152,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val repo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
 		repo.enableQuadMode(true)
 		repo.init()
-		val citer = CitationProvider(repo, citCache, metaCache, config)
+		val citer = CitationProviderFactory(repo, citCache, metaCache, config)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")

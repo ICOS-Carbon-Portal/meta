@@ -48,7 +48,7 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **10 / 23 complete.** Tick a box when the task's own verification section passes, and
+Progress: **13 / 23 complete.** Tick a box when the task's own verification section passes, and
 update the count above.
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
@@ -69,9 +69,9 @@ update the count above.
 
 ### Phase 3 — citation and object readers
 
-- [ ] [11](11-move-citation-stack.md) — Move the citation stack to `rdfCommon`
-- [ ] [12](12-move-object-fetchers.md) — Move the read-side object fetchers to `rdfCommon`
-- [ ] [13](13-move-metadataupdater.md) — Move `MetadataUpdater` to `meta`
+- [x] [11](11-move-citation-stack.md) — Move the citation stack to `rdfCommon`
+- [x] [12](12-move-object-fetchers.md) — Move the read-side object fetchers to `rdfCommon`
+- [x] [13](13-move-metadataupdater.md) — Move `MetadataUpdater` to `meta`
 
 ### Phase 4 — configuration
 

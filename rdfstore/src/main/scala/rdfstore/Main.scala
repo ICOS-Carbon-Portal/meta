@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
@@ -37,7 +37,7 @@ object Main extends App:
 
 	private val startup = for
 		(citCache, doiCache) <- readCitCache().zip(readDoiCache())
-		citer = CitationProvider(baseSail, citCache, doiCache, metaConfig)
+		citer = CitationProviderFactory(baseSail, citCache, doiCache, metaConfig)
 		indexFactories =
 			if isFreshInit || metaConfig.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))

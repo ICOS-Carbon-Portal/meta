@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.{AppConfig, ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory

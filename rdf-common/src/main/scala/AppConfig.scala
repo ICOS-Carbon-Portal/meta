@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.rdfstore
+package se.lu.nateko.cp.meta
 
 import scala.language.unsafeNulls
 

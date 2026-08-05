@@ -48,8 +48,8 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **13 / 23 complete.** Tick a box when the task's own verification section passes, and
-update the count above.
+Progress: **15 / 23 complete.** Tick a box when the task's own verification section passes, and
+update the count above. (Task 15 is intentionally left unchecked and undone; see its row below.)
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
 
@@ -75,9 +75,25 @@ update the count above.
 
 ### Phase 4 — configuration
 
-- [ ] [14](14-move-config-verbatim.md) — Move `CpmetaConfig.scala` to `rdfCommon` unchanged
-- [ ] [15](15-split-config.md) — Split the configuration three ways *(optional for task 21)*
-- [ ] [16](16-meta-appconfig.md) — Give `meta` its own `AppConfig`
+- [x] [14](14-move-config-verbatim.md) — Move `CpmetaConfig.scala` to `rdfCommon` unchanged
+- [ ] [15](15-split-config.md) — Split the configuration three ways *(optional for task 21;
+      attempted and deliberately deferred — see note below)*
+- [x] [16](16-meta-appconfig.md) — Give `meta` its own `AppConfig`
+
+**Note on task 15:** deliberately not done in this pass. `CpmetaConfig` stayed a single 16-field
+case class in `rdfCommon`; `rdfstore/Main.scala` and `src/main/scala/Main.scala` both still call
+the same `ConfigLoader.default`, unnarrowed. This has a real consequence for task 16's
+`reference.conf` split: because `rdfStore`'s own boot path parses the *whole* `cpmeta` object
+(not a narrower store-only view), every `cpmeta.*` default — including fields only `meta` ever
+reads, like `onto` and `fileStoragePath` — has to stay reachable from `rdfStore`'s own module
+classpath. They live in `rdf-common/src/main/resources/reference.conf` (see the comment there)
+rather than being split by conceptual ownership as task 15's classification table would suggest;
+`src/main/resources/reference.conf` in `meta` is consequently an empty placeholder for now. Once
+task 15 narrows the config type `rdfStore` actually parses, the meta-only `cpmeta.*` keys can
+move there. Task 15 was skipped rather than half-done because splitting `CitationProviderFactory`,
+`RdfLogManager`, and both `Main`s onto narrower config types, then verifying independent
+config-validation (task 15's "corrupt a meta-only key, confirm rdfStore still starts") is a
+large, separately-reviewable change in its own right — not required for task 16 or task 21.
 
 ### Phase 5 — tests
 

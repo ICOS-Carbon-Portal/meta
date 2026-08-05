@@ -7,9 +7,6 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
-import se.lu.nateko.cp.meta.core.etcupload.StationId as EtcStationId
-import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
-import se.lu.nateko.cp.meta.metaflow.{Role, TC, TcConf, TcId}
 import se.lu.nateko.cp.meta.utils.rdf4j.===
 
 import java.net.URI
@@ -30,7 +27,6 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 	private val icosBup: BaseUriProvider = baseResourceUriProviders(Envri.ICOS)
 
 	def getStation(stationId: UriId)(using Envri) = getRelative(s"stations/", stationId)
-	def getEcosystemStation(id: EtcStationId) = getStation(etcStationUriId(id))(using Envri.ICOS)
 
 	def getPerson(firstName: String, lastName: String)(using Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(using Envri): IRI = getRelativeRaw("people/" + cpId)
@@ -41,21 +37,19 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 
 	def getInstrDeployment(deplId: UriId)(using Envri): IRI = getRelative("deployments/", deplId)
 	def getMembership(membId: UriId)(using Envri): IRI = getRelative("memberships/", membId)
-	def getMembership(orgId: UriId, role: Role, lastName: String)(using Envri): IRI =
-		getMembership(UriId(s"${orgId}_${role.name}_${UriId.escaped(lastName)}"))
 
 	def getFunding(fundId: UriId)(using Envri): IRI = getRelative("fundings/", fundId)
 
-	def getRole(role: Role)(using Envri) = getRelative(RolesPrefix, UriId(role.name))
+	/** Generic per-Envri resource URI minting, exposed so that TC-scoped vocabulary extensions
+	  * (e.g. `TcVocab` in `meta`) can mint URIs under the same resource namespace without
+	  * reaching into this class's private `BaseUriProvider` state. */
+	def resourceUri(prefix: String, id: UriId)(using Envri): IRI = getRelative(prefix, id)
 
 	def getOrganization(orgId: UriId)(using Envri) = getRelative("organizations/", orgId)
 
 	def getNetwork(networkType: String, id: UriId)(using Envri) = getRelative(Seq("networks", networkType).mkString("/") + "/", id)
 
 	def getInstrument(id: UriId)(using Envri) = getRelative("instruments/", id)
-	def getEtcInstrument(station: Int, id: Int) = getInstrument{
-		instrCpId(getEtcInstrTcId(station, id))(EtcConf)
-	}(using Envri.ICOS)
 
 	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(using Envri.ICOS))
 
@@ -133,15 +127,6 @@ object CpVocab{
 			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))
 	}
 
-	object IcosRole{
-		def unapply(iri: IRI): Option[Role] = {
-			val segms = iri.stringValue.split('/')
-			if(segms.length < 2 || !RolesPrefix.startsWith(segms(segms.length - 2))) None else{
-				Role.forName(segms.last)
-			}
-		}
-	}
-
 	object NextVersColl:
 		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, NextVersionCollPrefix)
 
@@ -156,10 +141,6 @@ object CpVocab{
 			}
 		}
 	}
-
-	def etcStationUriId(station: EtcStationId) = TcConf.stationId[ETC.type](UriId.escaped(station.id))
-	def getEtcInstrTcId(station: Int, id: Int): TcId[ETC.type] = EtcConf.makeId(s"${station}_$id")
-	def instrCpId[T <: TC : TcConf](tcId: TcId[T]): UriId = TcConf.tcScopedId(UriId.escaped(tcId.id))
 
 	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
 		val uriSegm = iri.getLocalName

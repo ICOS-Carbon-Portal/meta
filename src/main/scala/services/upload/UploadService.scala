@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{UploadCompletionInfo, FeatureCollection, GeoFeature, DataObject, DocObject}
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
+import se.lu.nateko.cp.meta.metaflow.TcVocab
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.completion.{Report, UploadCompleter}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -42,6 +43,7 @@ class UploadService(
 	private val uploadLock = new UploadLock
 
 	private given vf: ValueFactory = vocab.factory
+	private val tcVocab = new TcVocab(vocab)
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
 	private val completer = new UploadCompleter(servers, handles)
@@ -66,7 +68,7 @@ class UploadService(
 		given Envri = Envri.ICOS
 		for
 			meta <- etcHelper.transform(etcMeta)
-			accessUri <- registerDataObjUpload(meta, vocab.getEcosystemStation(etcMeta.station).toJava)
+			accessUri <- registerDataObjUpload(meta, tcVocab.getEcosystemStation(etcMeta.station).toJava)
 		yield accessUri
 
 	def registerStaticCollection(coll: StaticCollectionDto, uploader: UserId)(using envri: Envri): Try[AccessUri] =

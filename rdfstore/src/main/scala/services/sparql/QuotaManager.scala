@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql
 import scala.language.unsafeNulls
 
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.Quota
+import se.lu.nateko.cp.meta.rdfstore.Quota
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

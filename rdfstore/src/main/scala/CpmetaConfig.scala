@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
+import se.lu.nateko.cp.meta.api.HandleNetClientConfig
 import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
@@ -128,15 +129,6 @@ case class LabelingServiceConfig(
 	mailSendingActive: Boolean,
 	mailing: EmailConfig,
 	ontoId: String
-)
-
-case class HandleNetClientConfig(
-	prefix: Map[Envri, String],
-	baseUrl: String,
-	serverCertPemFilePath: Option[String],
-	clientCertPemFilePath: String,
-	clientPrivKeyPKCS8FilePath: String,
-	dryRun: Boolean
 )
 
 case class SparqlServerConfig(

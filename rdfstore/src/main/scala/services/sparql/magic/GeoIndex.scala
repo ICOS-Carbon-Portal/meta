@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic
 import scala.language.unsafeNulls
 
 import org.locationtech.jts.algorithm.hull.ConcaveHull
-import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection, GeometryFactory}
+import org.locationtech.jts.geom.{Envelope, Geometry, GeometryCollection}
 import org.roaringbitmap.buffer.{ImmutableRoaringBitmap, MutableRoaringBitmap}
 
 import scala.collection.mutable
@@ -11,9 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 import se.lu.nateko.cp.meta.core.algo.BitmapExtension.forEach
-
-val JtsGeoFactory = new GeometryFactory()
-val ConcaveHullLengthRatio = 0.8
+import se.lu.nateko.cp.meta.utils.geo.{JtsGeoFactory, ConcaveHullLengthRatio}
 
 trait Cluster:
 	def area: Geometry

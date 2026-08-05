@@ -10,6 +10,7 @@ import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getSingleUri, getSingleDouble, getHashsum, getSingleString}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.geo.JtsGeoFactory
 
 class GeoEventProducer(cpIndex: CpIndex, metaVocab: CpmetaVocab, geoLookup: GeoLookup):
 	private val geoJsonReader = GeoJsonReader()

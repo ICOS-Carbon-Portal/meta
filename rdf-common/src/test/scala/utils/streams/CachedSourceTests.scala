@@ -1,0 +1,38 @@
+package se.lu.nateko.cp.meta.utils.streams
+
+import akka.actor.ActorSystem
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+
+import scala.util.Success
+
+class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{
+
+	// ActorSystem() resolves every reference.conf on the classpath, including rdf-common's own
+	// (which cross-references rdfStore's `rdfLog`/`rdfStorage` keys - see task 15's note in
+	// docs/rdf-common-split). rdf-common/src/test/resources/reference.conf stubs those keys so
+	// this resolves without pulling in rdfStore's or meta's full configuration.
+	private given system: ActorSystem = ActorSystem("CachedSourceTests")
+	import system.dispatcher
+
+	override def afterAll(): Unit = {
+		system.terminate()
+	}
+
+	test("SinkQueue behaviour test"){
+		val sink = Sink.queue[Int]()
+		val src = Source.queue[Int](2, OverflowStrategy.backpressure)
+		val (qIn, qOut) = src.toMat(sink)(Keep.both).run()
+		val f = for(o1 <- qOut.pull(); o2 <- qOut.pull()) yield o1 -> o2
+		qIn.offer(1)
+		qIn.offer(2)
+		qIn.complete()
+		f.onComplete{t =>
+			assert(t === Success((Some(1),Some(2))))
+			qOut.cancel()
+			qOut.cancel()
+		}
+	}
+}

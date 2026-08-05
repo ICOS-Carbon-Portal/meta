@@ -86,6 +86,15 @@ frontendBuild := {
 	else sys.error("Front end build error")
 }
 
+val remoteIntegrationTest = taskKey[Unit](
+	"Runs the meta<->rdfStore remote LMDB integration suite (task 19, docs/rdf-common-split). " +
+	"Excluded from the default Test/test run (see Test/testOptions below) because it forks a " +
+	"real rdfStore process and a throwaway PostgreSQL instance, needing initdb/pg_ctl on PATH."
+)
+remoteIntegrationTest := (Test / testOnly).toTask(
+	" se.lu.nateko.cp.meta.test.remote.RemoteLmdbIntegrationTest -- -n tags.RemoteIntegration"
+).value
+
 val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
 fetchGCMDKeywords := {
 	import scala.sys.process._
@@ -127,11 +136,17 @@ lazy val rdfCommon = (project in file("rdf-common"))
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"com.typesafe"           % "config"                             % "1.4.2",
+			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
+			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test",
+			// rdf-common's own reference.conf configures akka.loggers to use Slf4jLogger (needed
+			// by meta/rdfStore, both of which have this on their Compile classpath already); tests
+			// that spin up an ActorSystem in isolation (e.g. CachedSourceTests) need it too.
+			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion % "test" cross CrossVersion.for3Use2_13,
 		)
 	)
 
 lazy val meta = (project in file("."))
-		.dependsOn(metaCore, rdfCommon, rdfStore, metaCore % "test->test")
+		.dependsOn(metaCore, rdfCommon, rdfStore, metaCore % "test->test", rdfCommon % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -180,6 +195,14 @@ lazy val meta = (project in file("."))
 			"org.commonmark"        % "commonmark-ext-autolink"             % "0.24.0"
 		),
 
+		// The remote LMDB integration suite (task 19) forks real processes and is slow and has
+		// an external prerequisite (initdb/pg_ctl on PATH), so it's excluded from the default
+		// fast Test/test run and instead always runs via the remoteIntegrationTest task below,
+		// wired into cpDeployPreAssembly so it can never be skipped before a production build.
+		// Scoped to the `test` task specifically (not the whole Test config axis), so it doesn't
+		// also suppress `testOnly`/`remoteIntegrationTest`'s own explicit `-n` tag inclusion.
+		Test / test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-l", "tags.RemoteIntegration"),
+
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(
@@ -188,6 +211,7 @@ lazy val meta = (project in file("."))
 			clean,
 			metaCore / Test / test,
 			Test / test,
+			remoteIntegrationTest,
 			frontendBuild,
 			fetchGCMDKeywords
 		).value,
@@ -290,7 +314,7 @@ lazy val tools = (project in file("tools"))
 	)
 
 lazy val rdfStore = (project in file("rdfstore"))
-		.dependsOn(metaCore, rdfCommon)
+		.dependsOn(metaCore, rdfCommon, rdfCommon % "test->test")
 	.settings(
 		name := "meta-rdf-store",
 		version := "0.1.0",
@@ -315,7 +339,8 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
 			"com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test cross CrossVersion.for3Use2_13,
-			"org.scalatest" %% "scalatest" % "3.2.11" % Test
+			"org.scalatest" %% "scalatest" % "3.2.11" % Test,
+			"commons-io"      % "commons-io"                        % "2.15.1" % Test
 		),
 			Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
 			// config is read from the JVM's working directory (cpauth ConfigLoader.appConfig),

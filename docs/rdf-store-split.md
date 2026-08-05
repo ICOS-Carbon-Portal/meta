@@ -7,11 +7,16 @@ The target is two independently deployable JVM applications:
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol, including the public `/sparql` endpoint with its query quotas, timeouts and response cache.
 2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client. It has no RDF-log configuration or implementation awareness.
 
-The process and build split is implemented. `rdfStore` depends only on `metaCore`, owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (unthrottled, uncached, for `meta`), `/admin-unlogged-update`, `/logged-update`, `/history`, `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. The dependency direction is `meta -> rdfStore -> metaCore`; `rdfStore` does not depend on the `meta` application. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
+The process split is implemented. `rdfStore` owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (unthrottled, uncached, for `meta`), `/admin-unlogged-update`, `/logged-update`, `/history`, `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
-## Existing coupling
+The build split is also implemented (`docs/rdf-common-split/`, tasks 01-23): the two applications no longer depend on each other at all. The dependency direction is `meta -> rdfCommon -> metaCore` and `rdfStore -> rdfCommon -> metaCore`; neither `meta` nor `rdfStore` depends on the other, and `rdfCommon` must never depend on either application. `rdfCommon` is the shared library for everything both applications need at the RDF4J level: configuration (`CpmetaConfig`), vocabularies, the `InstanceServer` API, generic RDF4J utilities, domain exceptions, the citation/DOI stack, and the read-side object fetchers. It deliberately excludes the storage-implementation dependencies (`rdf4j-sail-lmdb`, `rdf4j-sail-nativerdf`, `lwjgl`, `postgresql`, `kryo`), so that accidentally reintroducing a storage dependency into shared code fails at the classpath level rather than in review. A CI task, `checkModuleBoundaries`, additionally fails the build if either application's compiled classpath ever contains the other's class directory (`docs/rdf-common-split/22-ci-guard.md`). See `docs/rdf-common-split/README.md` for the full task-by-task record of how the build split was done, including two corrections to this document: the citation/DOI stack is `rdfCommon`-owned rather than `meta`-owned (§ Ownership rules), and the configuration resource is layered across `rdfCommon` and each application rather than owned solely by `rdfStore` (§ Configuration).
 
-Before the split, `MetaDbFactory` performed four distinct jobs:
+## Existing coupling (historical: pre-process-split state)
+
+This section describes `meta` before the process split, when a single JVM owned both the
+metadata domain and the embedded RDF store. It predates everything else in this document and
+does not describe the current codebase; kept for context on why the boundary was drawn where it
+was. Before the split, `MetaDbFactory` performed four distinct jobs:
 
 - opens `LmdbStore` or `NativeStore` and controls its filesystem;
 - wraps the Sail with Carbon Portal change notifications and custom indexes;
@@ -27,6 +32,15 @@ Most domain code is already on a useful abstraction boundary. `Rdf4jInstanceServ
 - the assumption that an RDF transaction and PostgreSQL RDF-log append happen in one process.
 
 ## Target component boundary
+
+The *process* boundary (what talks to what over the network at runtime) and the *build* graph
+(what depends on what at compile time) are different shapes, now that the build split
+(`docs/rdf-common-split/`) is done: at runtime there are exactly two processes, `meta` and
+`rdfStore`, talking over HTTP; at build time there are four modules, with `rdfCommon` and
+`metaCore` as a shared base underneath both applications and never talking to anything at
+runtime themselves (they are libraries, not processes).
+
+Process boundary (runtime):
 
 ```text
 public clients
@@ -53,6 +67,20 @@ public clients
                    |
              persistent volume
 ```
+
+Build graph (compile time - no network edges, just `.dependsOn`):
+
+```text
+              metaCore          (no RDF4J; published to Nexus, drives TS/Py codegen)
+                  ^
+              rdfCommon         (RDF4J-level shared code: config, vocab, InstanceServer API,
+                  ^  ^            citation/DOI stack, object fetchers)
+      rdfStore ---'  '--- meta
+```
+
+`rdfStore` and `meta` both depend on `rdfCommon` and, transitively, `metaCore`; neither depends
+on the other, and `rdfCommon` depends on neither application. A CI task
+(`checkModuleBoundaries`) fails the build if this ever stops being true.
 
 Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL is served by `rdfStore` directly, so a reverse proxy must route `<meta host>/sparql` there and overwrite `X-Forwarded-For` with the trusted client address, which is what the per-client query quotas key on. Public requests without that header are rejected. `meta`'s own reads use `/internal/sparql`, which applies neither quotas nor response caching, so internal metadata reads are never served from a stale cache.
 
@@ -93,8 +121,20 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 | RDF-log storage, graph replay, and change history | `rdfStore` |
 | Upload validation and RDF statement production | `meta` |
 | Ontology-driven editors and labeling workflow | `meta` |
-| DOI, citation, landing-page composition | `meta` |
+| Landing-page composition | `meta` |
 | Public authentication/authorization | `meta` |
+| Citation and DOI metadata resolution (`CitationProvider`/`CitationProviderFactory`) | `rdfCommon` (both applications) |
+| Configuration model (`CpmetaConfig` and friends) | `rdfCommon` (both applications) |
+| RDF vocabularies (`CpVocab`, `CpmetaVocab`, TC vocab constants) | `rdfCommon` (both applications) |
+| `InstanceServer` API and generic RDF4J utilities | `rdfCommon` (both applications) |
+| Read-side object fetchers (static object/collection readers) | `rdfCommon` (both applications) |
+
+`rdfStore`'s custom Sail enriches statements with citations during query evaluation
+(`magic/StatementsEnricher.scala`, `magic/CpNotifyingSail.scala`), so the citation/DOI stack has
+to be reachable from inside `rdfStore` itself, in-process - calling back into `meta` over HTTP
+from inside query evaluation would create a runtime cycle in the hot path. This is why it is
+`rdfCommon`-owned rather than `meta`-owned, unlike the superficially similar landing-page
+composition, which stays in `meta` because nothing in `rdfStore`'s query path needs it.
 
 ## Transactions and RDF update logs
 
@@ -164,7 +204,43 @@ rdfStore {
 }
 ```
 
-The application configuration resource is owned by `rdfStore` and is inherited by `meta` through the build dependency. Deployment-specific overrides continue to use the same HOCON keys.
+### Configuration resource layering (as of `docs/rdf-common-split/` tasks 14-16)
+
+The application configuration resource is no longer owned solely by `rdfStore` and inherited by
+`meta` through a build dependency - that dependency is gone (§ Status and objective). The
+layering, from most to least specific, is:
+
+1. JVM system properties (`-Dcpmeta.port=...`), or an explicitly named `-Dconfig.file`/
+   `-Dconfig.resource`/`-Dconfig.url`.
+2. `application.conf` in the JVM's working directory, if present and no explicit config property
+   was given - the environment-specific file, kept out of version control.
+3. Each application's own classpath `application.conf`, if it ships one (currently neither does;
+   both rely on `reference.conf` defaults).
+4. `reference.conf`, split across modules:
+   - `rdf-common/src/main/resources/reference.conf` carries the shared `akka` defaults and, for
+     now, *all* of `cpmeta.*` - including fields only `meta` ever reads, like `onto` and
+     `fileStoragePath`. This is not the conceptually clean split described by
+     `docs/rdf-common-split/15-split-config.md`'s classification table; it is a consequence of
+     that task being left undone (see below), which pins `CpmetaConfig` as one unified,
+     non-optional-fielded case class that both `rdfStore`'s and `meta`'s `ConfigLoader.default`
+     parse the entirety of. It also carries fallback defaults for `rdfStore.rdfLog` and
+     `rdfStore.rdfStorage` specifically (not the rest of the `rdfStore { ... }` block), needed so
+     that `cpmeta.rdfLog = ${rdfStore.rdfLog}`/`cpmeta.rdfStorage = ${rdfStore.rdfStorage}`
+     resolve on their own - Typesafe Config requires every `reference.conf` to be independently
+     resolvable, and `meta`'s classpath no longer carries `rdfStore`'s `reference.conf` to resolve
+     those substitutions from.
+   - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
+     `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph), `rdfLogRestoreFromId`, and
+     (duplicated, intentionally identical to rdf-common's copy) `rdfLog`/`rdfStorage`.
+   - `meta`'s own `src/main/resources/reference.conf` is currently an empty placeholder: task 15
+     (below) would be the trigger to move the meta-only `cpmeta.*` keys there.
+
+**Task 15 (splitting `CpmetaConfig` into shared/store-only/meta-only types) was not done.** The
+HOCON key paths were not touched, but the type itself remains a single flat case class. This
+document does not describe a three-way split of the configuration model - only the
+`reference.conf` *resource* layering above, which was completed independently of that type split.
+Operators should keep overriding `rdfStore.*` (not `cpmeta.rdfLog`/`cpmeta.rdfStorage` directly);
+the substitution propagates it.
 
 ## Data migration and cutover
 
@@ -192,7 +268,7 @@ Rollback before new remote writes means redeploying the prior embedded release. 
 
 ## Remaining implementation slices
 
-1. Add service authentication to the private update and administration routes before exposing them across hosts.
-2. Consider idempotent mutation batches/outbox handling if cross-store atomicity needs stronger guarantees.
-3. Add remote integration tests using LMDB in addition to the current MemoryStore protocol test.
-4. Split the shared configuration/domain support currently compiled in `rdfStore` into a smaller neutral library if independent publication is needed; this must preserve the current one-way dependency graph.
+1. Add service authentication to the private update and administration routes before exposing them across hosts. **Open.**
+2. Consider idempotent mutation batches/outbox handling if cross-store atomicity needs stronger guarantees. **Open.**
+3. Add remote integration tests using LMDB in addition to the current MemoryStore protocol test. **Partially implemented** (`docs/rdf-common-split/19-remote-integration-test.md`): a genuine cross-process suite forks a real `rdfStore` process against a temporary LMDB directory and a throwaway PostgreSQL cluster, driven with the same RDF4J `SPARQLRepository` class `meta` uses in production. It covers reads (tuple/graph/boolean queries and content negotiation across all supported formats), unlogged writes, and read-after-write. It does **not** yet cover logged writes (`/logged-update` double-append protection), custom-index/geospatial parity against an embedded baseline, or failure-mode chaos testing beyond a basic health-check timeout - those remain follow-up work, tracked in the task file's scope notes.
+4. Split the shared configuration/domain support currently compiled in `rdfStore` into a smaller neutral library if independent publication is needed; this must preserve the current one-way dependency graph. **Implemented**, as the `rdfCommon` module (`docs/rdf-common-split/`, tasks 01-23): leaf utilities, domain exceptions, the RDF access API, vocabularies, the citation/DOI stack, and the read-side object fetchers moved there, and `meta`'s build-time dependency on `rdfStore` was removed (task 21) and CI-guarded against returning (task 22). See `docs/rdf-common-split/README.md` for the full task-by-task record.

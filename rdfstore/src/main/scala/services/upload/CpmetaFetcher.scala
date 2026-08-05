@@ -7,7 +7,6 @@ import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.metaflow.TcMetaSource
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
@@ -348,8 +347,8 @@ trait CpmetaReader:
 		)
 
 	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
-		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
-		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
+		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != CpmetaVocab.defaultInstrModel))
+		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != CpmetaVocab.defaultSerialNum))
 
 		for
 			model <- modelValid

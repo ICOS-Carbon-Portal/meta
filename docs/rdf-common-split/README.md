@@ -48,7 +48,7 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **6 / 23 complete.** Tick a box when the task's own verification section passes, and
+Progress: **10 / 23 complete.** Tick a box when the task's own verification section passes, and
 update the count above.
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
@@ -62,10 +62,10 @@ update the count above.
 
 ### Phase 2 — break the metaflow/vocabulary knot
 
-- [ ] [07](07-extract-tcmetasource-constants.md) — Extract `TcMetaSource`'s two shared constants
-- [ ] [08](08-extract-tc-vocab.md) — Extract TC-scoped URI minting out of `CpVocab`
-- [ ] [09](09-move-metaflow-model.md) — Move the metaflow model to `meta`
-- [ ] [10](10-move-vocabularies.md) — Move the vocabularies to `rdfCommon`
+- [x] [07](07-extract-tcmetasource-constants.md) — Extract `TcMetaSource`'s two shared constants
+- [x] [08](08-extract-tc-vocab.md) — Extract TC-scoped URI minting out of `CpVocab`
+- [x] [09](09-move-metaflow-model.md) — Move the metaflow model to `meta`
+- [x] [10](10-move-vocabularies.md) — Move the vocabularies to `rdfCommon`
 
 ### Phase 3 — citation and object readers
 

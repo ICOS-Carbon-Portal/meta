@@ -4,7 +4,7 @@ import akka.stream.scaladsl.Source
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.{Funder, Funding, Orcid, Organization, Position, Station}
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 import java.time.Instant
 import se.lu.nateko.cp.meta.core.data.Network
@@ -137,7 +137,7 @@ case class TcInstrument[+T <: TC : TcConf](
 	deployments: Seq[InstrumentDeployment[T]]
 ) extends TcEntity[T]{
 	//cpId for instruments is strictly related to tcId, and is expected to be stable
-	def cpId = CpVocab.instrCpId(tcId)
+	def cpId = TcVocab.instrCpId(tcId)
 }
 
 case class InstrumentDeployment[+T <: TC](
@@ -181,7 +181,3 @@ trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]
 	def state: Source[State, () => Unit]
 	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
-
-object TcMetaSource:
-	val defaultInstrModel = "N/A"
-	val defaultSerialNum = "N/A"

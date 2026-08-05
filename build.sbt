@@ -267,7 +267,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 				"core/src/main/scala/data/Envri.scala",
 				"core/src/main/scala/data/GeoFeatures.scala",
 				"core/src/main/scala/data/package.scala",
-				"rdfstore/src/main/scala/OntoConstants.scala",
+				"rdf-common/src/main/scala/OntoConstants.scala",
 				"src/main/scala/UploadDtos.scala",
 			).map(path => new java.io.File(path).getAbsoluteFile)
 		}

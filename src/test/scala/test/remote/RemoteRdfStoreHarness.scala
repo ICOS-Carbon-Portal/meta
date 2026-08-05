@@ -5,6 +5,7 @@ import scala.language.unsafeNulls
 import java.io.File
 import java.net.{InetSocketAddress, ServerSocket, URI}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.*
 import scala.util.{Try, Using}
@@ -66,20 +67,33 @@ object RemoteRdfStoreHarness:
 			s.getLocalPort
 		}
 
-	/** The full runtime classpath of the current test JVM, so the forked rdfStore process sees
-	  * exactly the same classes (including test-scope deps like the postgres driver, which
-	  * rdfStore's own Compile scope already needs anyway). sbt runs tests with layered/cached
-	  * classloaders rather than `Test / fork := true`, so `java.class.path` alone is not enough;
-	  * walk the classloader chain collecting every `URLClassLoader`'s entries instead. */
+	/** The classpath the forked rdfStore process needs to run `Main`. Since task 21 cut
+	  * `meta.dependsOn(rdfStore)` (docs/rdf-common-split/21-remove-dependson.md), `meta`'s own
+	  * test classloader no longer has rdfStore's classes on it, so this can no longer be recovered
+	  * by walking the current JVM's classloader chain. Instead, `meta`'s build.sbt generates a
+	  * `rdfstore-test-classpath.txt` test resource containing rdfStore's own
+	  * `Compile / fullClasspath` (see the `Test / resourceGenerators` entry in the `meta` project's
+	  * settings) - read that first. Fall back to the old classloader-walking trick (and finally to
+	  * `java.class.path`) so this still degrades gracefully outside of sbt's normal resource
+	  * pipeline. */
 	private def currentClasspath(): String =
+		def fromGeneratedResource(): Option[String] =
+			Option(getClass.getResourceAsStream("/rdfstore-test-classpath.txt")).map: in =>
+				try new String(in.readAllBytes(), StandardCharsets.UTF_8).trim
+				finally in.close()
+
 		def urls(cl: ClassLoader): List[java.net.URL] =
 			if cl == null then Nil
 			else cl match
 				case u: java.net.URLClassLoader => u.getURLs.toList ++ urls(u.getParent)
 				case other => urls(other.getParent)
-		val entries = urls(getClass.getClassLoader).map(_.getFile).distinct
-		if entries.isEmpty then sys.props("java.class.path")
-		else entries.mkString(File.pathSeparator)
+		def fromClassloaderWalk(): Option[String] =
+			val entries = urls(getClass.getClassLoader).map(_.getFile).distinct
+			if entries.isEmpty then None else Some(entries.mkString(File.pathSeparator))
+
+		fromGeneratedResource()
+			.orElse(fromClassloaderWalk())
+			.getOrElse(sys.props("java.class.path"))
 
 	private def waitFor(what: String, timeout: FiniteDuration)(check: => Boolean): Unit =
 		val deadline = System.nanoTime() + timeout.toNanos

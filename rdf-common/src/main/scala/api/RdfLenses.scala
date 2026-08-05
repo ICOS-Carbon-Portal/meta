@@ -2,7 +2,6 @@ package se.lu.nateko.cp.meta.api
 
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.MetaFlowConfig
 import se.lu.nateko.cp.meta.instanceserver.TriplestoreConnection
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.getOrElseV
@@ -34,8 +33,7 @@ class RdfLenses(
 			new Validated(form2Lens.get(dobjFormat)).require:
 				s"No RDF graphs were configured for data objects of format $dobjFormat for ENVRI $envri"
 
-	def cpLens(metaFlow: MetaFlowConfig): Validated[CpLens] =
-		val servId = metaFlow.cpMetaInstanceServerId
+	def cpLens(servId: String): Validated[CpLens] =
 		cpMetaInstances.get(servId).getOrElseV:
 			Validated.error(
 				s"Server configuration error. No InstanceServer for " +

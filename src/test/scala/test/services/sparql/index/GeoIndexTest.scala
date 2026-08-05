@@ -9,7 +9,8 @@ import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.crypto.Md5Sum
-import se.lu.nateko.cp.meta.services.sparql.magic.{DataObjCov, DenseCluster, GeoEvent, GeoIndex, GeoLookup, JtsGeoFactory, SparseCluster}
+import se.lu.nateko.cp.meta.services.sparql.magic.{DataObjCov, DenseCluster, GeoEvent, GeoIndex, GeoLookup, SparseCluster}
+import se.lu.nateko.cp.meta.utils.geo.JtsGeoFactory
 
 import java.io.FileReader
 import scala.jdk.CollectionConverters.IterableHasAsScala

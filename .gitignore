@@ -11,6 +11,7 @@ npm-debug.log
 /project/project/
 /project/target/
 /rdfstore/target/
+/rdf-common/target
 /views/target
 /jobAd/target
 /jobAd/src/main/js

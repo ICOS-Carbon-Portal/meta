@@ -5,7 +5,6 @@ import scala.language.unsafeNulls
 import org.eclipse.rdf4j.model.*
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
-import se.lu.nateko.cp.meta.services.upload.MetadataUpdater
 import scala.util.Try
 
 trait InstanceServer extends AutoCloseable:
@@ -52,7 +51,7 @@ trait InstanceServer extends AutoCloseable:
 		remove(factory.createStatement(instUri, propUri, value))
 
 	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
-		val updates = MetadataUpdater.diff(from, to, factory)
+		val updates = RdfUpdate.diff(from, to, factory)
 		applyAll(updates)()
 
 end InstanceServer

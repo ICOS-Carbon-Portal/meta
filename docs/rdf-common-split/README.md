@@ -48,17 +48,17 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **0 / 23 complete.** Tick a box when the task's own verification section passes, and
+Progress: **6 / 23 complete.** Tick a box when the task's own verification section passes, and
 update the count above.
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
 
-- [ ] [01](01-create-rdfcommon-module.md) — Create the `rdfCommon` sbt module
-- [ ] [02](02-move-leaf-utilities.md) — Move leaf utilities
-- [ ] [03](03-move-domain-exceptions.md) — Move domain exceptions
-- [ ] [04](04-move-rdf-access-api.md) — Move the RDF access API
-- [ ] [05](05-move-handlenetclient.md) — Move `HandleNetClient`
-- [ ] [06](06-unleak-geo-helpers.md) — Un-leak the JTS geo helpers
+- [x] [01](01-create-rdfcommon-module.md) — Create the `rdfCommon` sbt module
+- [x] [02](02-move-leaf-utilities.md) — Move leaf utilities
+- [x] [03](03-move-domain-exceptions.md) — Move domain exceptions
+- [x] [04](04-move-rdf-access-api.md) — Move the RDF access API
+- [x] [05](05-move-handlenetclient.md) — Move `HandleNetClient`
+- [x] [06](06-unleak-geo-helpers.md) — Un-leak the JTS geo helpers
 
 ### Phase 2 — break the metaflow/vocabulary knot
 

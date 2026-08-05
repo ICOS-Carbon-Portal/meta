@@ -147,13 +147,8 @@ object MetadataUpdater{
 
 	type SubjPred = (Resource, IRI)
 
-	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
-
-		val olds = dirtyOlds.map(s => factory.createStatement(s.getSubject, s.getPredicate, s.getObject))
-
-		olds.diff(news).map(RdfUpdate(_, false)) ++
-		news.diff(olds).map(RdfUpdate(_, true))
-	}
+	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] =
+		RdfUpdate.diff(dirtyOlds, news, factory)
 
 	private class BySubjPred(stats: Seq[Statement]){
 

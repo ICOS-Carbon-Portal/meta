@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,7 +18,7 @@ class LocalSparqlConstructExtractor(queryRes: String, extras: String*)(using Exe
 			val src = Source.fromInputStream(getClass.getResourceAsStream(queryRes), "UTF-8")
 			val queryStr = try{src.mkString} finally{src.close()}
 
-			val query = SparqlQuery(queryStr)
+				val query = SparqlQuery(queryStr, Quota.Unlimited)
 			new Rdf4jSparqlRunner(repo).evaluateGraphQuery(query)
 
 		def concatIterators(qRes: String, extras: Seq[String]): CloseableIterator[Statement] =

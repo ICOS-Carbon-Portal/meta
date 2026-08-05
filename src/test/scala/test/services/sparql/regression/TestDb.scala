@@ -10,7 +10,7 @@ import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
@@ -75,7 +75,7 @@ private object TestRepo {
 	private given log: LoggingAdapter = Logging.getLogger(system, this)
 
 	def runSparql(query: String): Future[CloseableIterator[BindingSet]] =
-		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query)))
+		Future.apply(new Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(query, Quota.Unlimited)))
 
 	private def initRepo(): Future[Repository] = {
 

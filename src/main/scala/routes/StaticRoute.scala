@@ -9,7 +9,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, Literal}
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.OntoConfig
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
@@ -100,7 +100,8 @@ object StaticRoute {
 
 	private def getLicences(sparql: SparqlRunner): Seq[(URI, String)] = {
 		val q = SparqlQuery(
-			"select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>;rdfs:label ?name}"
+			"select * where{?licence a <http://purl.org/dc/terms/LicenseDocument>;rdfs:label ?name}",
+			Quota.Unlimited
 		)
 		Using(sparql.evaluateTupleQuery(q))(
 		_.flatMap{bs =>

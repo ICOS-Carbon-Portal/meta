@@ -4,7 +4,11 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.query.BindingSet
 
-case class SparqlQuery(query: String, clientId: Option[String] = None)
+enum Quota:
+	case Unlimited
+	case PerClient(clientId: String)
+
+case class SparqlQuery(query: String, quota: Quota)
 
 trait SparqlServer:
 	/**

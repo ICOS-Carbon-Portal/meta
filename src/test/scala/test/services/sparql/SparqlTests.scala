@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -40,7 +40,7 @@ class SparqlTests extends AnyFunSpec{
 				|	{?book1 dc11:relation ?book2}
 				|	{{ ?book1 dc11:title  ?title } UNION { ?book2 dc11:title  ?title }}
 				|}""".stripMargin
-			val res = Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(q)).toIndexedSeq
+			val res = Rdf4jSparqlRunner(repo).evaluateTupleQuery(SparqlQuery(q, Quota.Unlimited)).toIndexedSeq
 			val titles = res.map(_.getBinding("title").getValue.stringValue).toSet
 			assert(titles === Set("SPARQL", "SPARQL (updated)"))
 		}

@@ -10,7 +10,7 @@ import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}
@@ -68,7 +68,7 @@ class AdminRouting(
 			complete(StatusCodes.NotFound -> s"Instance server $server not found")
 		)(
 			instServ => entity(as[String]){query =>
-				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query))
+				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query, Quota.Unlimited))
 				applicationRoute(instServ.writeContextsView, updates, insert)
 			}
 		)

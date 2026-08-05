@@ -17,7 +17,7 @@ import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWit
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
@@ -36,7 +36,9 @@ object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
 
-	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
+	val getClientIp: Directive1[String] = optionalHeaderValueByName(`X-Forwarded-For`.name).flatMap:
+		case Some(ip) if ip.trim.nonEmpty => provide(ip)
+		case _ => complete(StatusCodes.BadRequest -> "Public SPARQL requests must pass through the trusted reverse proxy.")
 
 	val withPermissiveCorsHeader: Directive0 = optionalHeaderValueByType(Origin).tflatMap{
 		case Tuple1(Some(orHeader)) =>
@@ -58,7 +60,7 @@ object SparqlRoute:
 				handleRejections(RejectionHandler.default):
 					getClientIp: ip =>
 						ensureNoEmptyOkResponseDueToTimeout:
-							complete(SparqlQuery(query, ip))
+							complete(SparqlQuery(query, Quota.PerClient(ip)))
 
 		val badRequestResponse: Route =
 			complete(StatusCodes.BadRequest -> (

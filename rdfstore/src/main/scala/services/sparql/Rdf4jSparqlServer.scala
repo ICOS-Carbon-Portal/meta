@@ -52,7 +52,7 @@ class Rdf4jSparqlServer(
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
 		exeCtxt => query => Future{
-			quoter.quotaExcess(query.clientId).fold{
+				quoter.quotaExcess(query.quota).fold{
 				getSparqlingMarshallings(query)
 			}{
 				plainResponse(StatusCodes.ServiceUnavailable, _)
@@ -88,7 +88,7 @@ class Rdf4jSparqlServer(
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
-			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
+				val qquoter = quoter.getQueryQuotaManager(queryStr.quota)
 			val errPromise = Promise[ByteString]()
 			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 

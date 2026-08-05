@@ -85,6 +85,44 @@ class QueryTests extends AsyncFunSpec {
 			else _.toIndexedSeq.sortBy(_.getValue(sortColumn).stringValue)
 		}(sampleMaker)
 
+	it("returns no biblio information for a broken object") {
+		val broken = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
+		val query = s"""
+			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			select ?dobj ?cit where {
+				VALUES ?dobj { <$broken> }
+				?dobj cpmeta:hasBiblioInfo ?cit .
+			}
+		"""
+		db.runSparql(query).map: rows =>
+			assert(rows.toList.isEmpty)
+	}
+
+	it("excludes a broken object from multi-object biblio queries") {
+		val broken = "https://meta.icos-cp.eu/objects/a31A8q-hCILq74TM9GoIW9Yg"
+		val query = s"""
+			prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+			select ?dobj ?cit where {
+				{
+					select ?dobj ?cit where {
+						?dobj cpmeta:hasObjectSpec ?specUri .
+						?dobj cpmeta:hasBiblioInfo ?cit .
+					}
+					limit 5
+				}
+				UNION
+				{
+					select ?dobj ?cit where {
+						VALUES ?dobj { <$broken> }
+						?dobj cpmeta:hasBiblioInfo ?cit .
+					}
+				}
+			}
+		"""
+		db.runSparql(query).map: rows =>
+			assert(rows.toList.forall(_.getValue("dobj").stringValue != broken))
+	}
+
 	describeQ(TestQueries.dataTypeBasics, "Data type basics", expectRows = 76, sampleIndex = 0, sortColumn = "spec") {
 		f => Map( 
 				"level" -> f.createLiteral("3", XSD.INTEGER),

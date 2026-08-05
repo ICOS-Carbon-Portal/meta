@@ -7,7 +7,6 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
@@ -53,7 +52,7 @@ object Main extends App:
 			"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
 		)
 		queryServer = Rdf4jSparqlServer(repo, metaConfig.sparql)
-		given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
+		given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
 		binding <- Http().newServerAt(host, port).bind(Route(
 			repo,
 			metaConfig.sparql,

@@ -15,7 +15,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RemoteRdf4jInstanceServer}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -45,7 +44,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
 
-	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
+	private given ToResponseMarshaller[SparqlRequest] = sparqlServer.marshaller
 	private val historyTimestamp = Instant.parse("2026-08-04T12:00:00Z")
 	private val historyUpdate = RdfUpdate(repo.getValueFactory.createStatement(
 		repo.getValueFactory.createIRI("urn:history:s"),

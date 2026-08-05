@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.sparql
 import scala.language.unsafeNulls
 
 import se.lu.nateko.cp.meta.SparqlServerConfig
+import se.lu.nateko.cp.meta.api.Quota
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -17,15 +18,20 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 	private val q = TrieMap.empty[ClientId, ClientHistory]
 	private val longRunning = new AtomicLong(-1) //only one long-running non-localhost query at a time
 
-	def getQueryQuotaManager(clientIdOpt: Option[ClientId]): QueryQuotaManager =
+	def getQueryQuotaManager(quota: Quota): QueryQuotaManager =
 		val id = idGen.incrementAndGet()
-		clientIdOpt.fold[QueryQuotaManager](new NoQuota(NoClient, id, executor)): clientId =>
-			val history: ClientHistory = q.getOrElseUpdate(clientId, new ClientHistory)
-			new ProperQueryQuotaManager(clientId, id)
+		quota match
+			case Quota.Unlimited =>
+				new NoQuota(NoClient, id, executor)
+			case Quota.PerClient(clientId) =>
+				val history: ClientHistory = q.getOrElseUpdate(clientId, new ClientHistory)
+				new ProperQueryQuotaManager(clientId, id)
 
-	def quotaExcess(clientIdOpt: Option[ClientId]): Option[String] = clientIdOpt.flatMap(q.get).flatMap(hist => hist.synchronized:
-		hist.banTo.collect:
-			case to if now().compareTo(to) < 0 => s"You are banned for service overuse until $to"
+	def quotaExcess(quota: Quota): Option[String] = quota match
+		case Quota.Unlimited => None
+		case Quota.PerClient(clientId) => q.get(clientId).flatMap(hist => hist.synchronized:
+			hist.banTo.collect:
+				case to if now().compareTo(to) < 0 => s"You are banned for service overuse until $to"
 		.orElse:
 
 			var minuteCost: Float = 0
@@ -44,7 +50,7 @@ class QuotaManager(config: SparqlServerConfig, executor: Executor)(implicit val 
 			else if(minuteCost >= config.quotaPerMinute)
 				Some("You have exceeded your per-minute query quota. Please wait 1 minute to run more queries.")
 			else None
-	)
+		)
 
 	def cleanup(): Unit = for((cid, hist) <- q)
 		for((qid, run) <- hist.runs)
@@ -138,4 +144,3 @@ object QuotaManager:
 		def logQueryFinish(): Unit = {}
 		def logQueryStreamingStart(): Unit = {}
 		def execute(r: Runnable): Unit = inner.execute(r)
-

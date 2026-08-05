@@ -54,7 +54,7 @@ public clients
              persistent volume
 ```
 
-Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL is served by `rdfStore` directly, so a reverse proxy must route `<meta host>/sparql` there and forward `X-Forwarded-For`, which is what the per-client query quotas key on. `meta`'s own reads use `/internal/sparql`, which applies neither quotas nor response caching, so internal metadata reads are never served from a stale cache.
+Only `rdfStore` may mount the RDF storage directory. `meta` must not have access to that volume. The public `/sparql` URL is served by `rdfStore` directly, so a reverse proxy must route `<meta host>/sparql` there and overwrite `X-Forwarded-For` with the trusted client address, which is what the per-client query quotas key on. Public requests without that header are rejected. `meta`'s own reads use `/internal/sparql`, which applies neither quotas nor response caching, so internal metadata reads are never served from a stale cache.
 
 ## Protocol and repository choice
 

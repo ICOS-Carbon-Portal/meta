@@ -8,6 +8,7 @@ import se.lu.nateko.cp.meta.api.{SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.core.etcupload.{DataType, EtcUploadMetadata, StationId}
+import se.lu.nateko.cp.meta.metaflow.TcVocab
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -19,6 +20,7 @@ import scala.util.{Success, Try}
 class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpVocab)(using ActorSystem) {
 
 	val etcMeta: EtcFileMetadataStore = new EtcFileMetadataProvider(config, vocab)
+	private val tcVocab = new TcVocab(vocab)
 	private given Envri = Envri.ICOS
 
 	def transform(meta: EtcUploadMetadata): Try[DataObjectDto] = {
@@ -41,9 +43,9 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			fileName = meta.fileName,
 			specificInfo = Right(
 				StationTimeSeriesDto(
-					station = vocab.getEcosystemStation(meta.station).toJava,
+					station = tcVocab.getEcosystemStation(meta.station).toJava,
 					site = None,
-					instrument = Some(Left(vocab.getEtcInstrument(tcIntId, meta.logger).toJava)),
+					instrument = Some(Left(tcVocab.getEtcInstrument(tcIntId, meta.logger).toJava)),
 					samplingPoint = None,
 					samplingHeight = None,
 					acquisitionInterval = Some(getAcquisitionInterval(utcOffset)),

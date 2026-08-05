@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.api.{CustomVocab, SparqlRunner, UriId}
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, MetadataException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -265,8 +265,8 @@ class OtcMetaSource(
 		|""".stripMargin
 		getLookupV(q, "instr"){(b, tcId) =>
 			for(
-				model <- qresValue(b, "model").flatMap(parseString).orElse(TcMetaSource.defaultInstrModel);
-				sn <- qresValue(b, "serNum").flatMap(parseString).orElse(TcMetaSource.defaultSerialNum);
+				model <- qresValue(b, "model").flatMap(parseString).orElse(CpmetaVocab.defaultInstrModel);
+				sn <- qresValue(b, "serNum").flatMap(parseString).orElse(CpmetaVocab.defaultSerialNum);
 				nameOpt <- qresValue(b, "name").flatMap(parseString).optional;
 				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
 			) yield

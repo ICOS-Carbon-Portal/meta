@@ -11,7 +11,6 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.query.{MalformedQueryException, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.instanceserver.{RdfMutation, RdfUpdate}
 import se.lu.nateko.cp.meta.persistence.RdfHistoryEntry
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
@@ -32,15 +31,15 @@ object Route:
 		applyMutation: (IRI, Seq[RdfUpdate]) => scala.util.Try[Unit]
 	)(using
 		ActorSystem,
-		ToResponseMarshaller[SparqlQuery]
+		ToResponseMarshaller[SparqlRequest]
 	): Route =
 		/** Unthrottled and uncached, for the trusted local clients (`meta`) only */
 		val internalQueryRoute: Route =
 			get {
-				parameter("query") { query => complete(SparqlQuery(query, Quota.Unlimited)) }
+				parameter("query") { query => complete(SparqlRequest(query, Quota.Unlimited)) }
 			} ~ post {
-				formField("query") { query => complete(SparqlQuery(query, Quota.Unlimited)) } ~
-				entity(as[String]) { query => complete(SparqlQuery(query, Quota.Unlimited)) }
+				formField("query") { query => complete(SparqlRequest(query, Quota.Unlimited)) } ~
+				entity(as[String]) { query => complete(SparqlRequest(query, Quota.Unlimited)) }
 			}
 
 		def executeUnloggedUpdate(update: String): Route =

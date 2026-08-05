@@ -17,7 +17,6 @@ import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWit
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.{Quota, SparqlQuery}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
@@ -53,14 +52,14 @@ object SparqlRoute:
 		)
 	}
 
-	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], system: ActorSystem): Route =
+	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlRequest], system: ActorSystem): Route =
 
 		val makeResponse: String => Route = query =>
 			handleExceptions(exceptionHandler):
 				handleRejections(RejectionHandler.default):
 					getClientIp: ip =>
 						ensureNoEmptyOkResponseDueToTimeout:
-							complete(SparqlQuery(query, Quota.PerClient(ip)))
+							complete(SparqlRequest(query, Quota.PerClient(ip)))
 
 		val badRequestResponse: Route =
 			complete(StatusCodes.BadRequest -> (

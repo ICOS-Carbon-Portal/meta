@@ -13,8 +13,7 @@ import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
-import se.lu.nateko.cp.meta.rdfstore.SparqlRoute
+import se.lu.nateko.cp.meta.rdfstore.{SparqlRequest, SparqlRoute}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 
@@ -46,7 +45,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 	lazy val sparqlRoute: Future[Route] =
 		Future.apply {
 			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
-			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
+			given ToResponseMarshaller[SparqlRequest] = rdf4jServer.marshaller
 
 			SparqlRoute.apply(sparqlConfig)
 		}

@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderFactory, CitationStyle}
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
@@ -159,7 +159,11 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	else
 		Some(indexUpdaterFactory -> geoFactory)
 
-	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
+	val citer = new CitationProvider(
+		base, _ => CitationClientDummy, metaConf.core,
+		CitationProviderFactory.getLenses(metaConf.instanceServers, metaConf.dataUploadService),
+		CitationProviderFactory.pidFactory(metaConf)
+	)
 	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer)
 }

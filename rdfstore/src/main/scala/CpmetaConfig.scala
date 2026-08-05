@@ -7,7 +7,6 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
 import se.lu.nateko.cp.meta.api.HandleNetClientConfig
-import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
@@ -175,8 +174,8 @@ case class RdfStoreConfig(
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
+// CitationConfig and DoiConfig moved to rdf-common/src/main/scala/CitationConfig.scala
+// (ahead of task 14, see the comment there for why).
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -253,9 +252,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat5(RemoteRdfRepositoryConfig.apply)
-	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
-	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
+	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)

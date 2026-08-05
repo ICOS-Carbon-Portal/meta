@@ -13,13 +13,14 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
-import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, flattenToSeq, objectPrefix}
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CpmetaConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, InstanceServersConfig, UploadServiceConfig}
+import se.lu.nateko.cp.meta.CitationConfig
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
@@ -27,34 +28,48 @@ import CitationClient.DoiCache
 
 object CitationProvider:
 	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
+		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: HandleNetClient.PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		new CitationProvider(sail, citClientFactory, conf)
+			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+		new CitationProvider(sail, citClientFactory, core, lenses, pidFactory)
 
 	def apply(
-		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache,
+		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: HandleNetClient.PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		new CitationProvider(repo, citClientFactory, conf)
+			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
 
+/**
+ * Note: this takes already-resolved `MetaCoreConfig`/`RdfLenses`/`PidFactory` instead of the
+ * whole `CpmetaConfig`, because `CpmetaConfig` (and the instance-server/upload-service
+ * configuration it embeds) still lives in `rdfStore` until task 14 moves it to `rdfCommon`.
+ * `CitationProvider` itself lives in `rdfCommon` now (task 11), so it cannot depend on a type
+ * that is one layer further down the dependency graph; callers (in `meta`/`rdfStore`, which do
+ * have `CpmetaConfig`) compute these values and pass them in. See docs/rdf-common-split/11-move-citation-stack.md.
+ */
 class CitationProvider(
 	val repo: Repository,
 	citClientFactory: List[Doi] => CitationClient,
-	conf: CpmetaConfig,
+	core: MetaCoreConfig,
+	val lenses: RdfLenses,
+	pidFactory: HandleNetClient.PidFactory,
 )(using system: ActorSystem):
 	def this(
 		sail: Sail,
 		citClientFactory: List[Doi] => CitationClient,
-		conf: CpmetaConfig,
-	)(using ActorSystem) = this(new SailRepository(sail), citClientFactory, conf)
+		core: MetaCoreConfig,
+		lenses: RdfLenses,
+		pidFactory: HandleNetClient.PidFactory,
+	)(using ActorSystem) = this(new SailRepository(sail), citClientFactory, core, lenses, pidFactory)
 
 	private val log = Logging.getLogger(system, this)
 	import StatementSource.*
-	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
+	private given envriConfs: EnvriConfigs = core.envriConfigs
 
 	private val repositoryName = repo.getClass.getSimpleName
 	log.info(s"Initializing $repositoryName...")
@@ -74,13 +89,9 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core)
 
-	val lenses = getLenses(conf.instanceServers, conf.dataUploadService)
-
-	val metaReader =
-		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
-		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 
 	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
@@ -134,33 +145,3 @@ class CitationProvider(
 	}
 
 end CitationProvider
-
-private def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
-	new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
-
-private def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): se.lu.nateko.cp.meta.api.RdfLenses =
-	def confsToLenses[L](confs: Map[Envri, String], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] = confs.flatMap:
-		(envri, instServId) => servConf.specific.get(instServId).map: conf =>
-			envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
-
-	val perFormat = servConf.forDataObjects.map: (envri, config) =>
-		val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
-			val writeContext = getInstServerContext(config, definition)
-			definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
-		envri -> lenses.toMap
-
-	val cpOwn = servConf.metaFlow.flattenToSeq.flatMap: flow =>
-		servConf.specific.get(flow.cpMetaInstanceServerId).map[(String, RdfLens.CpLens)]: config =>
-			flow.cpMetaInstanceServerId -> RdfLens.cpLens(
-				config.writeContext,
-				config.readContexts.getOrElse(Seq(config.writeContext))
-			)
-	.toMap
-
-	se.lu.nateko.cp.meta.api.RdfLenses(
-		metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
-		cpMetaInstances = cpOwn,
-		collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
-		documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
-		dobjPerFormat = perFormat
-	)

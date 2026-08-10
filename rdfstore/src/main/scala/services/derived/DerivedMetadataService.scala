@@ -49,3 +49,13 @@ object DerivedMetadataService:
 			DerivedMetadataResult(new URI(resource.stringValue), "unavailable", None)
 		, _ => false
 		)
+
+	/** Deterministic store-local implementation for route and virtual-triple regression tests. */
+	def fixed(factory: ValueFactory, values: Map[URI, DerivedMetadata]): DerivedMetadataService =
+		new DerivedMetadataService(factory, resource =>
+			val uri = new URI(resource.stringValue)
+			values.get(uri) match
+				case Some(metadata) => DerivedMetadataResult(uri, "ready", Some(metadata))
+				case None => DerivedMetadataResult(uri, "notFound", None)
+		, _ => false
+		)

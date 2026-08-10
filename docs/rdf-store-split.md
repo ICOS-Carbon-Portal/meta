@@ -5,11 +5,11 @@
 The target is two independently deployable JVM applications:
 
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol, including the public `/sparql` endpoint with its query quotas, timeouts and response cache.
-2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, and metadata flows) and accesses RDF through an RDF4J `Repository` client. It has no RDF-log configuration or implementation awareness.
+2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, metadata flows, and normal RDF-log writes) and accesses RDF through an RDF4J `Repository` client.
 
-The process split is implemented. `rdfStore` owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (unthrottled, uncached, for `meta`), `/admin-unlogged-update`, `/logged-update`, `/history`, `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
+The process split is implemented. `rdfStore` owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (private SPARQL query/update), `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
-The build split is also implemented (`docs/rdf-common-split/`, tasks 01-23): the two applications no longer depend on each other at all. The dependency direction is `meta -> rdfCommon -> metaCore` and `rdfStore -> rdfCommon -> metaCore`; neither `meta` nor `rdfStore` depends on the other, and `rdfCommon` must never depend on either application. `rdfCommon` is the shared library for everything both applications need at the RDF4J level: configuration (`CpmetaConfig`), vocabularies, the `InstanceServer` API, generic RDF4J utilities, domain exceptions, the citation/DOI stack, and the read-side object fetchers. It deliberately excludes the storage-implementation dependencies (`rdf4j-sail-lmdb`, `rdf4j-sail-nativerdf`, `lwjgl`, `postgresql`, `kryo`), so that accidentally reintroducing a storage dependency into shared code fails at the classpath level rather than in review. A CI task, `checkModuleBoundaries`, additionally fails the build if either application's compiled classpath ever contains the other's class directory (`docs/rdf-common-split/22-ci-guard.md`). See `docs/rdf-common-split/README.md` for the full task-by-task record of how the build split was done, including two corrections to this document: the citation/DOI stack is `rdfCommon`-owned rather than `meta`-owned (§ Ownership rules), and the configuration resource is layered across `rdfCommon` and each application rather than owned solely by `rdfStore` (§ Configuration).
+The build split is also implemented (`docs/rdf-common-split/`, tasks 01-23): the two applications no longer depend on each other at all. The dependency direction is `meta -> rdfCommon -> metaCore` and `rdfStore -> rdfCommon -> metaCore`; neither `meta` nor `rdfStore` depends on the other, and `rdfCommon` must never depend on either application. `rdfCommon` is the shared library for configuration (`CpmetaConfig`), vocabularies, the `InstanceServer` API, generic RDF4J utilities, domain exceptions, the citation/DOI stack, read-side object fetchers, and the neutral PostgreSQL RDF-log reader/writer. It excludes the RDF storage-implementation dependencies (`rdf4j-sail-lmdb`, `rdf4j-sail-nativerdf`, `lwjgl`, `kryo`). A CI task, `checkModuleBoundaries`, fails the build if either application's compiled classpath contains the other's class directory (`docs/rdf-common-split/22-ci-guard.md`).
 
 ## Existing coupling (historical: pre-process-split state)
 
@@ -56,9 +56,7 @@ public clients
                    v
 +-------------- rdfStore --------------+
 | /sparql (public read: quota, cache)   |
-| /internal/sparql (read, for meta)     |
-| /admin-unlogged-update (SPARQL write) |
-| /logged-update (logical write batch)  |
+| /internal/sparql (query and update)   |
 | quota, timeout, serialization         |
 | custom indexes and change listeners  |
 | RDF4J SailRepository                  |
@@ -101,7 +99,7 @@ The query endpoint supports:
 
 ### Writes
 
-RDF4J `SPARQLRepository` sends `RepositoryConnection.add/remove` and prepared updates to the configured update endpoint. The private `/admin-unlogged-update` endpoint executes SPARQL Update in a repository transaction without appending it to an RDF log. Named contexts remain authoritative: each logical `InstanceServer` has its configured read contexts and exactly one normal write context.
+RDF4J `SPARQLRepository` sends `RepositoryConnection.add/remove` and prepared updates to the private `/internal/sparql` endpoint. Meta wraps each logged `InstanceServer` in `LoggingInstanceServer`, so it appends the original `RdfUpdate` batch to PostgreSQL in the same pre-commit callback used before the process split. Named contexts remain authoritative: each logical `InstanceServer` has its configured read contexts and exactly one normal write context.
 
 The update endpoint must never be public. Production should use service identity (mTLS or a short-lived workload token) in addition to network policy. The initial implementation binds to loopback and relies on network isolation; authentication is a required hardening item before cross-host deployment.
 
@@ -118,7 +116,8 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 | Public SPARQL endpoint: CORS, response caching, client throttling | `rdfStore` |
 | Carbon Portal custom query indexes | `rdfStore` |
 | Store backups, compaction, read-only maintenance | `rdfStore` |
-| RDF-log storage, graph replay, and change history | `rdfStore` |
+| RDF-log writes and change history | `meta` |
+| RDF-log replay during store initialization | `rdfStore` |
 | Upload validation and RDF statement production | `meta` |
 | Ontology-driven editors and labeling workflow | `meta` |
 | Landing-page composition | `meta` |
@@ -138,11 +137,11 @@ composition, which stays in `meta` because nothing in `rdfStore`'s query path ne
 
 ## Transactions and RDF update logs
 
-The current implementation preserves the original `LoggingInstanceServer` behavior. `meta` sends each logical `InstanceServer.applyAll` batch and its target graph to the private `/logged-update` endpoint. Inside `rdfStore`, the graph selects either a plain `Rdf4jInstanceServer` or a `LoggingInstanceServer`; for logged graphs, the PostgreSQL append runs in the callback immediately before the local RDF4J transaction commits. RDF-log replay bypasses this endpoint, so restored rows are not appended again.
+The current implementation preserves the original `LoggingInstanceServer` behavior. Meta wraps each logged remote `Rdf4jInstanceServer`; its PostgreSQL append runs in the callback immediately before the remote RDF4J client commits the SPARQL Update. rdfStore consumes those logs only when it initializes or performs a configured replay, so replay never appends to the log again.
 
 Capturing every write at the Sail level—including arbitrary SPARQL Update requests—would broaden the original behavior. This is intentionally deferred as a future improvement rather than included in the split.
 
-The two persistence systems still cannot provide a distributed atomic commit: an RDF4J commit failure after a successful PostgreSQL append can leave a log entry ahead of the store. An idempotent mutation/outbox design remains a possible hardening step, but it is no longer part of `meta`.
+The two persistence systems still cannot provide a distributed atomic commit: an RDF4J commit failure after a successful PostgreSQL append can leave a log entry ahead of the store. An idempotent mutation/outbox design remains a possible hardening step.
 
 ## Custom index migration
 
@@ -184,13 +183,11 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 `meta` requires the remote repository configuration:
 
 ```hocon
-cpmeta.remoteRdfRepository {
-  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
-  updateEndpoint = "http://127.0.0.1:9095/admin-unlogged-update"
-  adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
-  historyEndpoint = "http://127.0.0.1:9095/history"
-  mutationEndpoint = "http://127.0.0.1:9095/logged-update"
-}
+	cpmeta.remoteRdfRepository {
+	  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
+	  updateEndpoint = "http://127.0.0.1:9095/internal/sparql"
+	  adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
+	}
 ```
 
 The standalone application owns the storage and RDF-log implementation, but keeps the pre-split configuration contract for deployment compatibility. Existing overrides continue to use `cpmeta.rdfStorage`, `cpmeta.rdfLog`, per-instance `logName`, `skipLogIngestionAtStart`, `logIngestionFromId`, and per-data-format `replayLogFrom`. The `rdfStore.rdfStorage`, `rdfStore.rdfLog`, `rdfStore.rdfLogs`, and `rdfStore.rdfLogRestoreFromId` settings remain available as defaults and for new store-only logs.

@@ -15,9 +15,9 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RemoteRdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
+import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
@@ -179,8 +179,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
 				val metaVocab = citer.metaVocab
-				val historyClient = RdfHistoryClient(remote.historyEndpoint, repo.getValueFactory)
-				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf, historyClient)
+				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf)
 			}
 
 			new MetaDb(
@@ -225,7 +224,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private def makeInstanceServer(
 		initRepo: Repository,
 		conf: InstanceServerConfig,
-		mutationEndpoint: URI
+		globalConfig: CpmetaConfig
 	): InstanceServer =
 
 		given factory: ValueFactory = initRepo.getValueFactory
@@ -233,7 +232,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val writeContext = conf.writeContext.toRdf
 		val readContexts = conf.readContexts.fold(Seq(writeContext))(_.map(_.toRdf))
 
-		new RemoteRdf4jInstanceServer(initRepo, readContexts, writeContext, mutationEndpoint)
+		val server = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
+		conf.logName.fold[InstanceServer](server): logName =>
+			new LoggingInstanceServer(server, PostgresRdfLog(logName, globalConfig.rdfLog, server.factory))
 
 	end makeInstanceServer
 
@@ -304,8 +305,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			import IngestionMode.{EAGER, BACKGROUND}
 
 			val basicInit: Future[InstanceServer] =
-				val mutationEndpoint = config.remoteRdfRepository.get.mutationEndpoint
-				val init = Future(makeInstanceServer(repo, servConf, mutationEndpoint))
+				val init = Future(makeInstanceServer(repo, servConf, config))
 
 				if
 					config.instanceServers.metaFlow.flattenToSeq.collect{

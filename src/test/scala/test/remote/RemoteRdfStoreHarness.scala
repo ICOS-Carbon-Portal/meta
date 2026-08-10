@@ -12,9 +12,8 @@ import scala.util.{Try, Using}
 
 /**
  * Boots a real `rdfStore` process (forked JVM, not an in-process simulation) against a
- * temporary LMDB directory, plus a throwaway PostgreSQL instance for the RDF-update log that
- * `RdfLogManager` always requires at startup (every configured named log gets a `PostgresRdfLog`
- * eagerly, even if this suite never exercises `/logged-update`).
+ * temporary LMDB directory, plus a throwaway PostgreSQL instance for the RDF-update logs that
+ * rdfStore reads during fresh-store initialization.
  *
  * This is the harness for task 19 in docs/rdf-common-split ("Add a remote integration test on
  * LMDB") - the only test in the plan that actually exercises `meta -> HTTP -> rdfStore -> LMDB`
@@ -31,10 +30,8 @@ final class RemoteRdfStoreHarness private (
 	val storePort: Int = storeProcess.port
 	val baseUri: String = s"http://127.0.0.1:$storePort"
 	val queryEndpoint: String = s"$baseUri/internal/sparql"
-	val unloggedUpdateEndpoint: String = s"$baseUri/admin-unlogged-update"
-	val loggedUpdateEndpoint: String = s"$baseUri/logged-update"
+	val updateEndpoint: String = s"$baseUri/internal/sparql"
 	val adminReadOnlyEndpoint: String = s"$baseUri/admin/read-only"
-	val historyEndpoint: String = s"$baseUri/history"
 
 	/** Kills the rdfStore process and the throwaway Postgres, and removes all temp directories. */
 	def stop(): Unit =

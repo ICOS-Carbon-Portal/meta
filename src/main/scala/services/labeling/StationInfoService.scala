@@ -11,7 +11,6 @@ import spray.json.{JsObject, JsString}
 
 import java.net.URI
 import java.time.Instant
-import scala.concurrent.Future
 
 trait StationInfoService:
 	self: StationLabelingService =>
@@ -64,11 +63,11 @@ trait StationInfoService:
 	end saveStationInfo
 
 
-	def labelingHistory: Future[Seq[StationLabelingHistory]] =
+	def labelingHistory: Seq[StationLabelingHistory] =
 		import vocab.{hasShortName, hasApplicationStatus}
 
-		db.history.map: updates =>
-			val histLookup = updates.foldLeft(Map.empty[IRI, LabelingHistory]){case (map, (ts, upd)) =>
+		val histLookup = (db.provRdfLog.timedUpdates ++ db.labelingRdfLog.timedUpdates)
+			.foldLeft(Map.empty[IRI, LabelingHistory]){case (map, (ts, upd)) =>
 				if(!upd.isAssertion) map else upd.statement match{
 					case Rdf4jStatement(stationIri, `hasShortName`, _) =>
 						map.updatedWith(stationIri)(_.orElse(Some(StationLabelingHistory.empty(ts))))
@@ -79,14 +78,14 @@ trait StationInfoService:
 					case _ => map
 				}
 			}
-			val histIter = db.accessIcos: icosConn ?=>
-				db.accessProv:
-					for
-						(iri, hist) <- histLookup
-						stInfo <- getStationBasicInfo(iri, icosConn)
-					yield
-						new StationLabelingHistory(stInfo, hist)
-			histIter.toSeq.sorted(using StationLabelingHistory.histOrder)
+		val histIter = db.accessIcos: icosConn ?=>
+			db.accessProv:
+				for
+					(iri, hist) <- histLookup
+					stInfo <- getStationBasicInfo(iri, icosConn)
+				yield
+					new StationLabelingHistory(stInfo, hist)
+		histIter.toSeq.sorted(using StationLabelingHistory.histOrder)
 
 
 	private def updateHistory(hist: LabelingHistory, statusLit: Literal, ts: Instant): LabelingHistory =

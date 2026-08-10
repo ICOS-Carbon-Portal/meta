@@ -11,7 +11,7 @@ import play.twirl.api.Html
 import se.lu.nateko.cp.meta.OntoConfig
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -38,7 +38,7 @@ object StaticRoute {
 			extractEnvri{envri =>
 				pathSingleSlash {
 					val toExclude: Set[URI] = Envri.values.filter(_ != envri)
-						.map(e => CitationMaker.defaultLicence(using e).url).toSet
+						.map(e => StaticMetadata.defaultLicence(using e).url).toSet
 
 					val licences = getLicences(sparql).filterNot{case (licUri, _) =>
 						//exclude other ENVRIES' default licences from the list

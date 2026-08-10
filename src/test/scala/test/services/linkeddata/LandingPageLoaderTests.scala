@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.PidFactory
 import se.lu.nateko.cp.meta.core.data.{
 	AtcStationSpecifics,
 	DataObject,
@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	TimeInterval,
 	UriResource
 }
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -50,7 +50,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val vocab = CpVocab(repo.getValueFactory)
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+	private val pidFactory = PidFactory(config.dataUploadService.handle)
 	private val attribution = AttributionProvider(vocab, metaVocab)
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {

@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.Uri
 import org.eclipse.rdf4j.common.iteration.CloseableIteration
 import org.eclipse.rdf4j.common.transaction.IsolationLevel
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
@@ -14,7 +14,6 @@ import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jSailConnection
 
 import java.net.URI as JavaUri
-import java.time.Instant
 import scala.collection.AbstractIterator
 import scala.util.{Try, Using}
 
@@ -25,11 +24,7 @@ extension(factory: ValueFactory){
 	def createIRI(base: JavaUri, fragment: String): IRI = factory.createIRI(base.toString, fragment)
 	def createIRI(base: IRI, fragment: String): IRI = factory.createIRI(base.stringValue, fragment)
 	def createLiteral(label: String, dtype: JavaUri): Literal = factory.createLiteral(label, createIRI(dtype))
-	def createDateTimeLiteral(dt: Instant): Literal = factory.createLiteral(dt.toString, XSD.DATETIME)
 	def createStringLiteral(label: String): Literal = factory.createLiteral(label, XSD.STRING)
-
-	def tripleToStatement(triple: (IRI, IRI, Value)): Statement =
-		factory.createStatement(triple._1, triple._2, triple._3)
 }
 
 extension (label: String)(using factory: ValueFactory){
@@ -57,8 +52,6 @@ extension [T](res: CloseableIteration[T])
 
 		override def next(): T = res.next()
 	}
-
-	def asCloseableIterator: CloseableIterator[T] = new Rdf4jIterationIterator(res)
 
 
 extension (repo: Repository)
@@ -110,13 +103,3 @@ extension (sail: Sail)
 		val tsc = Rdf4jSailConnection(null, Nil, conn, sail.getValueFactory)
 		val globCon = RdfLens.global(using tsc)
 		try accessor(using globCon) finally conn.close()
-
-
-def asString(lit: Literal): Option[String] = if(lit.getDatatype === XSD.STRING) Some(lit.stringValue) else None
-
-def asLong(lit: Literal): Option[Long] = if(lit.getDatatype === XSD.LONG) Try(lit.longValue).toOption else None
-def asFloat(lit: Literal): Option[Float] = if(lit.getDatatype === XSD.FLOAT) Try(lit.floatValue).toOption else None
-
-def asTsEpochMillis(lit: Literal): Option[Long] = if(lit.getDatatype === XSD.DATETIME)
-	Try(Instant.parse(lit.stringValue).toEpochMilli).toOption
-else None

@@ -23,8 +23,8 @@ class StaticObjectReader(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	pidFactory: HandleNetClient.PidFactory,
-	citer: CitationMaker
-) extends CollectionReader(metaVocab, citer.getItemCitationInfo) with DobjMetaReader(vocab):
+	citer: Option[CitationMaker]
+) extends CollectionReader(metaVocab, item => citer.fold(item.references)(_.getItemCitationInfo(item))) with DobjMetaReader(vocab):
 	import StatementSource.{
 		resourceHasType,
 		getSingleUri,
@@ -96,7 +96,7 @@ class StaticObjectReader(
 				parentCollections = parendColls,
 				references = References.empty
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.fold(Validated.ok(init.references))(_.getCitationInfo(init))
 		yield
 			init.copy(references = refs)
 	end getExistingDataObject
@@ -132,7 +132,7 @@ class StaticObjectReader(
 					authors = Option(authors.toSeq)
 				)
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.fold(Validated.ok(init.references))(_.getCitationInfo(init))
 		yield
 			init.copy(references = refs)
 

@@ -16,6 +16,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
@@ -44,6 +45,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val route = Route(
 		repo,
 		sparqlConf,
+		DerivedMetadataService.unavailable(repo.getValueFactory),
 		message => Future.successful(s"read-only: $message")
 	)
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
@@ -69,6 +71,15 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			Post("/admin/read-only", HttpEntity(ContentTypes.`text/plain(UTF-8)`, "maintenance")) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] shouldBe "read-only: maintenance"
+
+		"serve a versioned derived-metadata batch response" in:
+			Post(
+				"/internal/derived/v1/resolve",
+				HttpEntity(ContentTypes.`application/json`, """{"resources":["urn:test:missing"]}""")
+			) ~> route ~> check:
+				status shouldBe StatusCodes.OK
+				responseAs[String] should include("\"version\":1")
+				responseAs[String] should include("\"status\":\"unavailable\"")
 
 		"reject public SPARQL requests that did not pass through the trusted proxy" in:
 			Post("/sparql", "ASK WHERE { }") ~> route ~> check:

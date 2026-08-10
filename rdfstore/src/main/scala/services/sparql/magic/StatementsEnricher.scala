@@ -7,15 +7,15 @@ import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.repository.sparql.federation.CollectionIteration
 import org.eclipse.rdf4j.sail.SailException
 import se.lu.nateko.cp.meta.core.data.References
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataService}
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.{createStringLiteral, toRdf}
 
 import java.util.Arrays
 import scala.collection.immutable.SeqMap
 
-class StatementsEnricher(val citer: CitationProvider) {
+class StatementsEnricher(derived: DerivedMetadataService, metaVocab: CpmetaVocab) {
 	import StatementsEnricher.StatIter
-	import citer.metaVocab
 	private given factory: ValueFactory = metaVocab.factory
 
 	private def empty: StatIter = new EmptyIteration
@@ -47,20 +47,25 @@ class StatementsEnricher(val citer: CitationProvider) {
 	}
 
 	private def magicPredValueFactories(subj: Resource): Map[IRI, () => Option[Value]] = {
-		var refsCache: Option[Option[References]] = None
+		var derivedCache: Option[Option[DerivedMetadata]] = None
+		def resolved: Option[DerivedMetadata] = derivedCache.getOrElse:
+			val value = subj match
+				case iri: IRI => derived.resolve(iri).metadata
+				case _ => None
+			derivedCache = Some(value)
+			value
 		SeqMap(
 			metaVocab.hasBiblioInfo -> (() => {
 				import spray.json.*
 				import se.lu.nateko.cp.meta.core.data.JsonSupport.{given RootJsonFormat[References]}
-				val refs = citer.getReferences(subj)
-				refsCache = Some(refs)
+				val refs = resolved.map(_.references)
 				refs.map(js => factory.createStringLiteral(js.toJson.compactPrint))
 			}),
 			metaVocab.hasCitationString -> (
-				() => refsCache.fold(citer.getCitation(subj))(_.flatMap(_.citationString)).map(factory.createStringLiteral)
+				() => resolved.flatMap(_.citationString).map(factory.createStringLiteral)
 			),
 			metaVocab.dcterms.license -> (
-				() => refsCache.fold(citer.getLicence(subj))(_.flatMap(_.licence)).map(_.url.toRdf)
+				() => resolved.flatMap(_.licence).map(_.url.toRdf)
 			)
 		)
 	}

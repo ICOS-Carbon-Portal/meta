@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -42,6 +43,7 @@ class MetaDb (
 	val fileService: FileStorageService,
 	val magicRepo: Repository,
 	private val rdfAdminEndpoint: URI,
+	val derivedMetadata: DerivedMetadataClient,
 	val citer: CitationProvider,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -184,7 +186,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			new MetaDb(
 				instanceServers, instOntos, uploadService, labelingService, fileService,
-				repo, remote.adminEndpoint, citer, config
+				repo, remote.adminEndpoint, DerivedMetadataClient(remote.derivedMetadataEndpoint), citer, config
 			)
 		end for
 	end apply

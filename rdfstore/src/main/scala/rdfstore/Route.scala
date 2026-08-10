@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.rdfstore
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
@@ -10,6 +11,8 @@ import akka.http.scaladsl.server.Route
 import org.eclipse.rdf4j.query.{MalformedQueryException, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.SparqlServerConfig
+import se.lu.nateko.cp.meta.services.derived.{DerivedMetadataRequest, DerivedMetadataService}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
 
 import scala.util.{Failure, Success}
@@ -21,6 +24,7 @@ object Route:
 	def apply(
 		repo: Repository,
 		sparqlConf: SparqlServerConfig,
+		derivedMetadata: DerivedMetadataService,
 		makeReadonly: String => Future[String]
 	)(using
 		ActorSystem,
@@ -49,6 +53,14 @@ object Route:
 		SparqlRoute(sparqlConf)
 		~ path("internal" / "sparql"):
 			internalSparqlRoute
+		~ path("internal" / "derived" / "v1" / "resolve"):
+			post:
+				entity(as[DerivedMetadataRequest]): request =>
+					complete(derivedMetadata.resolve(request.resources))
+		~ path("internal" / "derived" / "v1" / "drop-cache" / Remaining): doi =>
+			post:
+				if derivedMetadata.dropDoiCache(doi) then complete(StatusCodes.NoContent)
+				else complete(StatusCodes.BadRequest -> s"Invalid DOI: $doi")
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")

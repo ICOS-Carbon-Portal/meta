@@ -8,7 +8,6 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -25,8 +24,7 @@ object Main extends App with CpmetaJsonProtocol{
 	val metaFactory = new MetaDbFactory
 
 	val startup = for(
-		(citCache, doiCache) <- readCitCache().zip(readDoiCache());
-		db <- metaFactory(citCache, doiCache, config);
+		db <- metaFactory(config);
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		route = MainRoute(db, metaflow, config);
 		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");

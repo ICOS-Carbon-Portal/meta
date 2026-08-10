@@ -19,10 +19,9 @@ second citation provider and maintaining a second DOI cache.
 - [x] Route linked-data object and collection landing pages through rdfstore-derived references
   without blocking the HTTP dispatcher.
 - [x] Route DTO download and INSPIRE XML generation through the same asynchronous metadata path.
-- [ ] Replace the remaining synchronous meta-side `CitationProvider` construction with the
-  client-backed reader adapter. This is deliberately a follow-up: the old reader API returns
-  `Validated` synchronously, whereas the process boundary is asynchronous. Converting the
-  landing-page/DOI call chain to `Future` is required to do this without blocking Akka dispatchers.
+- [x] Remove meta-side `CitationProvider` construction and citation/DOI-cache startup. Meta's
+  raw reader remains synchronous for upload and validation, while all derived-field consumers use
+  the asynchronous client boundary.
 - [ ] Once the async reader migration is complete, physically move the citation implementation
   from `rdf-common` to `rdfstore` and remove meta's cache bootstrapping.
 

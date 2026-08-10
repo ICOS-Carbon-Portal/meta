@@ -16,6 +16,7 @@ import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -682,6 +683,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
 			doiCiter,
+			DerivedMetadataClient(config.remoteRdfRepository.get.derivedMetadataEndpoint),
 			config
 		)
 

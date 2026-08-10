@@ -15,6 +15,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderFactory, CitationStyle}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
@@ -163,7 +164,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		CitationProviderFactory.pidFactory(metaConf)
 	)
 	import TestRepo.given
-	CpNotifyingSail(base, idxFactories, citer)
+	CpNotifyingSail(base, idxFactories, citer, DerivedMetadataService(citer))
 }
 
 object CitationClientDummy extends CitationClient {

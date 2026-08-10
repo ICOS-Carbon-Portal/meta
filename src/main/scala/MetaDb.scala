@@ -56,7 +56,7 @@ class MetaDb (
 	def vanillaGlob: InstanceServer = citer.server
 
 	val uriSerializer: UriSerializer =
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, derivedMetadata, config)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		Http().singleRequest(HttpRequest(

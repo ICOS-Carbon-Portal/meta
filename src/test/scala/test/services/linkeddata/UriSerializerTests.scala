@@ -12,10 +12,9 @@ import eu.icoscp.envri.Envri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -24,7 +23,6 @@ import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
 
 import scala.jdk.CollectionConverters.*
-import scala.util.Try
 
 /**
  * Characterizes the HTTP behavior of the URI serializer: content negotiation, status codes and the
@@ -148,7 +146,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
 			assert(counts === QueryCounts(connections = 1, statements = 54, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
-			assert(heading(page) === "Test time series from Test station (50.0 m)")
+			//the citation-derived title now comes from rdfStore, which is not running in this test
+			assert(heading(page) === "test_data.csv")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
 			assert(propertyText(page, "Number of data rows") === "100")
@@ -669,10 +668,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val doiCiter = new PlainDoiCiter {
-		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
@@ -682,7 +677,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpVocab(countingRepo.getValueFactory),
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
-			doiCiter,
 			DerivedMetadataClient(config.remoteRdfRepository.get.derivedMetadataEndpoint),
 			config
 		)
@@ -697,8 +691,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
 		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
+		val attribution = AttributionProvider(vocab, metaVocab)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution)
 		loader -> countingRepo
 	}
 

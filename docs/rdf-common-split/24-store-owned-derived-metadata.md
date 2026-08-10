@@ -14,6 +14,8 @@ second citation provider and maintaining a second DOI cache.
 - [x] Add `POST /internal/derived/v1/resolve`, accepting a batch of resource URIs.
 - [x] Add a meta-side HTTP client for that route.
 - [x] Wire the route into the standalone rdfStore process.
+- [x] Route DOI minting through rdfstore-derived references, including recursively contained
+  collection members.
 - [ ] Replace the remaining synchronous meta-side `CitationProvider` construction with the
   client-backed reader adapter. This is deliberately a follow-up: the old reader API returns
   `Validated` synchronously, whereas the process boundary is asynchronous. Converting the

@@ -22,8 +22,9 @@ second citation provider and maintaining a second DOI cache.
 - [x] Remove meta-side `CitationProvider` construction and citation/DOI-cache startup. Meta's
   raw reader remains synchronous for upload and validation, while all derived-field consumers use
   the asynchronous client boundary.
-- [ ] Once the async reader migration is complete, physically move the citation implementation
-  from `rdf-common` to `rdfstore` and remove meta's cache bootstrapping.
+- [x] Move DOI citation retrieval, bibliography rendering, citation derivation and cache handling
+  from `rdf-common` to `rdfstore`; remove meta's cache bootstrapping. `rdf-common` retains only
+  the optional reader extension point, ordinary attribution reads, and non-I/O metadata helpers.
 
 ## Contract
 

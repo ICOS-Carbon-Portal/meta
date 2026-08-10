@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	TimeInterval,
 	UriResource
 }
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -51,17 +51,11 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
 	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = {
-		val doiCiter = new PlainDoiCiter {
-			def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None
-			def getDoiEager(doi: se.lu.nateko.cp.doi.Doi) = None
-		}
-		CitationMaker(doiCiter, vocab, metaVocab, config.core)
-	}
+	private val attribution = AttributionProvider(vocab, metaVocab)
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citer)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution)
 		val result = read(loader)
 		result -> countingRepo.counts
 	}

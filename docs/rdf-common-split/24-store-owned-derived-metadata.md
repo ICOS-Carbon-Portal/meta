@@ -36,6 +36,6 @@ The store's SPARQL magic predicates and this endpoint must be backed by the same
 ## Verification
 
 - A route test covers ready, unknown and batch responses.
-- A parity test must compare the three magic predicates with the HTTP representation for a
-  seeded object before the old meta-side provider is removed.
+- [x] A parity test compares the three magic predicates with the HTTP representation for a
+  seeded object.
 - The endpoint must stay private to the service network/reverse proxy; it is not a public API.

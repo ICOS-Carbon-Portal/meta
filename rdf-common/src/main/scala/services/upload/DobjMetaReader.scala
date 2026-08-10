@@ -343,7 +343,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			)
 
 	def getContributors(objIri: IRI, contribPredicate: IRI)(using conn: DobjConn | DocConn): Validated[IndexedSeq[Agent]] = 
-		import se.lu.nateko.cp.meta.services.citation.AttributionProvider.agentOrdering
+		import se.lu.nateko.cp.meta.services.attribution.AttributionProvider.agentOrdering
 		getUriValues(objIri, contribPredicate) match
 			case IndexedSeq(contribSeq) if getTypes(contribSeq).contains(RDF.SEQ) =>
 				Validated.sequence:

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.citation
+package se.lu.nateko.cp.meta.services.attribution
 
 import scala.language.unsafeNulls
 

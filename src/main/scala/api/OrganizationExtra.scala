@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.core.data.Person
 import se.lu.nateko.cp.meta.metaflow.Role
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
 import spray.json.*
 
 import java.time.Instant

@@ -2,16 +2,13 @@ package se.lu.nateko.cp.meta.upload
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.StaticCollectionDto
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
-import se.lu.nateko.cp.meta.upload.drought.{DroughtDoiMaker, DroughtDoiMaker2, FluxdataUpload}
+import se.lu.nateko.cp.meta.upload.drought.{DoiCitationLookup, DroughtDoiMaker, DroughtDoiMaker2, FluxdataUpload}
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
 import java.net.URI
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
@@ -32,7 +29,7 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
+	val citer = DoiCitationLookup.unavailable
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
 	private def atmoUpload = FluxdataUpload.atmoUpload(citer)
@@ -119,4 +116,3 @@ Measurements have been collected using the following instructions:
 		coverage = None
 	)
 }
-

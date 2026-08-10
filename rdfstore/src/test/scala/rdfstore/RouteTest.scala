@@ -15,16 +15,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RemoteRdf4jInstanceServer}
-import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import java.net.URI
-import java.time.Instant
 
 class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll:
 
@@ -45,21 +41,10 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
 
 	private given ToResponseMarshaller[SparqlRequest] = sparqlServer.marshaller
-	private val historyTimestamp = Instant.parse("2026-08-04T12:00:00Z")
-	private val historyUpdate = RdfUpdate(repo.getValueFactory.createStatement(
-		repo.getValueFactory.createIRI("urn:history:s"),
-		repo.getValueFactory.createIRI("urn:history:p"),
-		repo.getValueFactory.createLiteral("history value")
-	), true)
 	private val route = Route(
 		repo,
 		sparqlConf,
-		message => Future.successful(s"read-only: $message"),
-		_ => Seq(historyTimestamp -> historyUpdate),
-		(context, updates) => repo.transact: connection =>
-			updates.foreach: update =>
-				if update.isAssertion then connection.add(update.statement, context)
-				else connection.remove(update.statement, context)
+		message => Future.successful(s"read-only: $message")
 	)
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
@@ -68,24 +53,12 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
 				Some("http://127.0.0.1:9095/internal/sparql")
 			ConfigLoader.default.remoteRdfRepository.map(_.updateEndpoint.toString) shouldBe
-				Some("http://127.0.0.1:9095/admin-unlogged-update")
-			ConfigLoader.default.remoteRdfRepository.map(_.mutationEndpoint.toString) shouldBe
-				Some("http://127.0.0.1:9095/logged-update")
+				Some("http://127.0.0.1:9095/internal/sparql")
 			ConfigLoader.default.instanceServers.specific("instances").logName shouldBe Some("instances")
 			ConfigLoader.default.rdfLog shouldBe RdfStoreConfigLoader.default.rdfLog
 			ConfigLoader.default.rdfStorage shouldBe RdfStoreConfigLoader.default.rdfStorage
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
-
-		"apply an unlogged admin update and expose it to a query" in:
-			val update = "INSERT DATA { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> \"value\" } }"
-			Post("/admin-unlogged-update", HttpEntity(ContentTypes.`text/plain(UTF-8)`, update)) ~> route ~> check:
-				status shouldBe StatusCodes.NoContent
-
-			val query = "SELECT ?o WHERE { GRAPH <urn:test:graph> { <urn:test:s> <urn:test:p> ?o } }"
-			Post("/internal/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, query)) ~> route ~> check:
-				status shouldBe StatusCodes.OK
-				responseAs[String] should include("value")
 
 		"report health" in:
 			Get("/health") ~> route ~> check:
@@ -96,29 +69,6 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			Post("/admin/read-only", HttpEntity(ContentTypes.`text/plain(UTF-8)`, "maintenance")) ~> route ~> check:
 				status shouldBe StatusCodes.OK
 				responseAs[String] shouldBe "read-only: maintenance"
-
-		"serve RDF change history to meta without exposing RDF logs" in:
-			val endpoint = URI.create(s"http://127.0.0.1:${binding.localAddress.getPort}/history")
-			val client = RdfHistoryClient(endpoint, repo.getValueFactory)
-			val graph = repo.getValueFactory.createIRI("urn:history:graph")
-			Await.result(client.history(Seq(graph)), 5.seconds) shouldBe Seq(historyTimestamp -> historyUpdate)
-
-		"serve logged logical InstanceServer mutation batches" in:
-			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
-			val graph = repo.getValueFactory.createIRI("urn:mutation:graph")
-			val server = RemoteRdf4jInstanceServer(
-				repo,
-				Seq(graph),
-				graph,
-				URI.create(s"$baseUrl/logged-update")
-			)
-			val statement = repo.getValueFactory.createStatement(
-				repo.getValueFactory.createIRI("urn:mutation:s"),
-				repo.getValueFactory.createIRI("urn:mutation:p"),
-				repo.getValueFactory.createLiteral("mutation value")
-			)
-			server.add(statement).isSuccess shouldBe true
-			repo.accessEagerly(_.hasStatement(statement, false, graph)) shouldBe true
 
 		"reject public SPARQL requests that did not pass through the trusted proxy" in:
 			Post("/sparql", "ASK WHERE { }") ~> route ~> check:
@@ -157,7 +107,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 
 		"serve RDF4J's remote Repository API, including named-graph writes" in:
 			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
-			val remote = new SPARQLRepository(s"$baseUrl/internal/sparql", s"$baseUrl/admin-unlogged-update")
+			val remote = new SPARQLRepository(s"$baseUrl/internal/sparql", s"$baseUrl/internal/sparql")
 			remote.enableQuadMode(true)
 			remote.init()
 			try

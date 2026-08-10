@@ -33,16 +33,16 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = metaConfig.core.envriConfigs
 
-	private val (isFreshInit, baseSail) = StorageSail(metaConfig.rdfStorage)
+	private val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
 
 	private val startup = for
 		(citCache, doiCache) <- readCitCache().zip(readDoiCache())
 		citer = CitationProviderFactory(baseSail, citCache, doiCache, metaConfig)
 		indexFactories =
-			if isFreshInit || metaConfig.rdfStorage.disableCpIndex then None
+			if isFreshInit || storeConfig.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		sail = CpNotifyingSail(baseSail, indexFactories, citer)
-		logManager = RdfLogManager(storeConfig, metaConfig, baseSail.getValueFactory)
+		logManager = RdfLogManager(storeConfig, baseSail.getValueFactory)
 		repo = SailRepository(sail)
 		_ = repo.init()
 		_ = logManager.restore(repo, isFreshInit)
@@ -56,9 +56,7 @@ object Main extends App:
 		binding <- Http().newServerAt(host, port).bind(Route(
 			repo,
 			metaConfig.sparql,
-			message => sail.makeReadonlyDumpIndexAndCaches(message),
-			logManager.history,
-			(context, updates) => logManager.applyAll(repo, context, updates)
+			message => sail.makeReadonlyDumpIndexAndCaches(message)
 		))
 	yield (binding, queryServer, repo, logManager)
 
@@ -76,7 +74,7 @@ object Main extends App:
 			system.terminate()
 
 	private def restoreIndex() =
-		val conf = metaConfig.rdfStorage
+		val conf = storeConfig.rdfStorage
 		val recreate = isFreshInit || conf.recreateCpIndexAtStartup
 		if recreate then IndexHandler.dropStorage()
 		if recreate || conf.disableCpIndex then Future.successful(None)

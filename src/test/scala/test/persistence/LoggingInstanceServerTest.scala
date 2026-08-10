@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
+import se.lu.nateko.cp.meta.instanceserver.{LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.utils.rdf4j.accessEagerly
 
 class LoggingInstanceServerTest extends AnyFunSpec:
@@ -18,14 +18,14 @@ class LoggingInstanceServerTest extends AnyFunSpec:
 		factory.createLiteral("value")
 	)
 
-	describe("RdfLogManager instance updates"):
+	describe("LoggingInstanceServer"):
 		it("uses the original LoggingInstanceServer behavior for configured graphs"):
 			val repo = SailRepository(MemoryStore())
 			repo.init()
 			val log = InMemoryRdfLog()
-			val manager = RdfLogManager.fromBindings(Seq(RdfLogManager.Binding("test", context, log)))
+			val server = LoggingInstanceServer(Rdf4jInstanceServer(repo, context), log)
 
-			manager.applyAll(repo, context, Seq(RdfUpdate(statement, true))).get
+			server.applyAll(Seq(RdfUpdate(statement, true)))().get
 
 			assert(log.updates.toSeq == Seq(RdfUpdate(statement, true)))
 			assert(repo.accessEagerly(_.hasStatement(statement, false, context)))

@@ -7,7 +7,6 @@ import se.lu.nateko.cp.cpauth.core.UserId
 import se.lu.nateko.cp.meta.LabelingServiceConfig
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
-import se.lu.nateko.cp.meta.persistence.RdfHistoryClient
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, FileStorageService, MetadataException, UnauthorizedStationUpdateException}
 
 import scala.concurrent.ExecutionContext
@@ -19,7 +18,6 @@ class StationLabelingService(
 	protected val fileStorage: FileStorageService,
 	protected val metaVocab: CpmetaVocab,
 	protected val config: LabelingServiceConfig,
-	historyClient: RdfHistoryClient
 )(using protected val executionContext: ExecutionContext)
 	extends UserInfoService with StationInfoService with FileService with LifecycleService:
 	import LabelingDb.{LblAppConn, ProvConn}
@@ -29,7 +27,6 @@ class StationLabelingService(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),
 		lblServer = instanceServers(config.instanceServerId),
 		icosServer = instanceServers(config.icosMetaInstanceServerId),
-		historyClient = historyClient
 	)
 	protected given factory: ValueFactory = metaVocab.factory
 	protected val vocab = new StationsVocab(factory)

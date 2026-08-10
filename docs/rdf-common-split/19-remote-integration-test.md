@@ -30,11 +30,12 @@ Cover the verification gates listed in `rdf-store-split.md:184-191`:
 1. **Reads** — `SPARQLRepository` in quad mode: `prepareTupleQuery`, `prepareGraphQuery`,
    `getStatements`, `hasStatement` against `/internal/sparql`; tuple results as SPARQL
    JSON/XML/CSV/TSV, `ASK` as JSON/XML, graph results as RDF/XML and Turtle.
-2. **Unlogged writes** — `RepositoryConnection.add`/`remove` and prepared updates via
-   `/admin-unlogged-update`, verifying named-context targeting: each logical `InstanceServer`
+2. **SPARQL writes** — `RepositoryConnection.add`/`remove` and prepared updates via
+   `/internal/sparql`, verifying named-context targeting: each logical `InstanceServer`
    has its configured read contexts and exactly one write context.
-3. **Logged writes** — an `InstanceServer.applyAll` batch through `/logged-update`, verifying
-   the PostgreSQL append happens before the RDF4J commit and that replay does not double-append.
+3. **Meta-owned logged writes** — an `InstanceServer.applyAll` batch through the same SPARQL
+   endpoint, verifying Meta's PostgreSQL append happens before the RDF4J commit and that
+   rdfStore replay does not append again.
 4. **Read-after-write** — labeling and the ontology editor depend on it
    (`rdf-store-split.md:188`); the HTTP hop is where this can regress.
 5. **Custom-index correctness across the hop** — a `DataObjectFetch`-shaped query and a

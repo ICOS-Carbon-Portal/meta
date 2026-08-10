@@ -105,7 +105,7 @@ class Rdf4jUriSerializer(
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
+	private val pidFactory = new api.PidFactory(config.dataUploadService.handle)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
 	private val pageContentMarshalling =

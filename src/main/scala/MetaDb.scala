@@ -156,7 +156,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val vocab = new CpVocab(repo.getValueFactory)
 		val metaVocab = new CpmetaVocab(repo.getValueFactory)
 		val lenses = getLenses(config.instanceServers, config.dataUploadService)
-		val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val pidFactory = new api.PidFactory(config.dataUploadService.handle)
 		val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:

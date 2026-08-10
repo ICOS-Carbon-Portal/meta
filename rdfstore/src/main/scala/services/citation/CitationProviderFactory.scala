@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.sail.Sail
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
 import se.lu.nateko.cp.meta.{CpmetaConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, InstanceServersConfig, UploadServiceConfig}
 
@@ -34,8 +34,8 @@ object CitationProviderFactory:
 			repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf)
 		)
 
-	def pidFactory(conf: CpmetaConfig): HandleNetClient.PidFactory =
-		new HandleNetClient.PidFactory(conf.dataUploadService.handle)
+	def pidFactory(conf: CpmetaConfig): PidFactory =
+		new PidFactory(conf.dataUploadService.handle)
 
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")

@@ -4,18 +4,15 @@ import scala.language.unsafeNulls
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.EmailSender
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.sparql.BoundUri
 import se.lu.nateko.cp.meta.ingestion.badm.BadmEntry
-import se.lu.nateko.cp.meta.services.citation.CitationClientImpl
 import se.lu.nateko.cp.meta.test.utils.SparqlClient
 
 import java.net.URI
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -33,7 +30,6 @@ object Playground {
 	)
 
 	val sparql = new SparqlClient(new URI("https://meta.icos-cp.eu/sparql"))
-	val citer = CitationClientImpl(Nil, metaConf.citations, TrieMap.empty, TrieMap.empty)
 
 	def stop() = system.terminate()
 

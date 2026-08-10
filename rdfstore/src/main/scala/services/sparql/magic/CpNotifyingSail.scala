@@ -12,6 +12,7 @@ import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, Notifying
 import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.utils.async.ok
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -29,11 +30,12 @@ type MainSail = FederatedServiceResolverClient & NotifyingSail:
 class CpNotifyingSail(
 	inner: MainSail,
 	indexFactories: Option[(IndexHandler, GeoIndexProvider)],
-	citer: CitationProvider
+	citer: CitationProvider,
+	derivedMetadata: DerivedMetadataService
 )(using EnvriConfigs) extends NotifyingSailWrapper(inner):
 
 	private val log = LoggerFactory.getLogger(getClass())
-	private val enricher = StatementsEnricher(citer)
+	private val enricher = StatementsEnricher(derivedMetadata, citer.metaVocab)
 	private var cpIndex: Option[CpIndex] = None
 	private var listener: Option[SailConnectionListener] = None
 	private var readonlyErrMessage: Option[String] = None

@@ -88,7 +88,7 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	private given ExecutionContext = system.dispatcher
 
-	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
+	private val pidFactory = new api.PidFactory(config.dataUploadService.handle)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, attribution)
 	private val pageContentMarshalling =

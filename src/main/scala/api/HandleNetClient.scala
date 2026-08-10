@@ -18,7 +18,6 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 
@@ -152,16 +151,6 @@ class HandleNetClient(conf: HandleNetClientConfig)(using system: ActorSystem, ma
 
 object HandleNetClient{
 
-	class PidFactory(conf: HandleNetClientConfig){
-		def prefix(using envri: Envri): String = conf.prefix.getOrElse(
-			envri,
-			throw new Exception(s"No PID prefix for ENVRI $envri in the config")
-		)
-		def getPid(suffix: String)(using Envri) = s"${prefix}/$suffix"
-		def getSuffix(hash: Sha256Sum): String = hash.id
-		def getPid(hash: Sha256Sum)(using Envri): String = getPid(getSuffix(hash))
-		def pidUrlStr(suffix: String)(using Envri) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
-	}
 //	implicit val system = ActorSystem()
 //	implicit val mat = ActorMaterializer()
 //	import system.dispatcher

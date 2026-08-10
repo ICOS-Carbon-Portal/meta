@@ -12,9 +12,9 @@ import eu.icoscp.envri.Envri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.PidFactory
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -690,7 +690,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val pidFactory = PidFactory(config.dataUploadService.handle)
 		val attribution = AttributionProvider(vocab, metaVocab)
 		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution)
 		loader -> countingRepo

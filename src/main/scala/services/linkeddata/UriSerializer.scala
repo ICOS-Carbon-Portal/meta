@@ -35,6 +35,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -55,6 +56,8 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]]
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]]
 }
 
 object UriSerializer{
@@ -91,6 +94,7 @@ class Rdf4jUriSerializer(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	doiCiter: PlainDoiCiter,
+	derivedMetadata: DerivedMetadataClient,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
@@ -99,6 +103,7 @@ class Rdf4jUriSerializer(
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
 	import RdfLens.{MetaConn, GlobConn, DocConn}
+	private given ExecutionContext = system.dispatcher
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
@@ -138,6 +143,20 @@ class Rdf4jUriSerializer(
 			given Envri = inferEnvri(uri)
 			fetchStaticColl(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
+
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
+		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
+			fetch(item)
+				.map(enriched => new Validated(Some(enriched), parsed.errors))
+				.recover { case err =>
+					parsed.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")
+				}
+
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]] =
+		enrich(fetchStaticObject(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
+
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]] =
+		enrich(fetchStaticCollection(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
@@ -245,10 +264,10 @@ class Rdf4jUriSerializer(
 		uri.path match
 			case Hash.Object(hash) =>
 				given CpVocab = vocab
-				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
+				pageContentMarshalling.staticObjectAsyncMarshaller(() => fetchStaticObjectWithDerived(uri))
 
 			case Hash.Collection(hash) =>
-				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticColl(hash))
+				pageContentMarshalling.staticCollectionAsyncMarshaller(() => fetchStaticCollectionWithDerived(uri))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,

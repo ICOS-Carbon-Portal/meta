@@ -16,6 +16,8 @@ second citation provider and maintaining a second DOI cache.
 - [x] Wire the route into the standalone rdfStore process.
 - [x] Route DOI minting through rdfstore-derived references, including recursively contained
   collection members.
+- [x] Route linked-data object and collection landing pages through rdfstore-derived references
+  without blocking the HTTP dispatcher.
 - [ ] Replace the remaining synchronous meta-side `CitationProvider` construction with the
   client-backed reader adapter. This is deliberately a follow-up: the old reader API returns
   `Validated` synchronously, whereas the process boundary is asynchronous. Converting the

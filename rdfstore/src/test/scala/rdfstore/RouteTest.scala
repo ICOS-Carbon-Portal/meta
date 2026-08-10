@@ -7,6 +7,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.eclipse.rdf4j.common.iteration.EmptyIteration
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
@@ -15,13 +16,18 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.core.data.{Licence, References}
+import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
-import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
+import se.lu.nateko.cp.meta.services.sparql.magic.StatementsEnricher
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import java.net.URI
+import spray.json.*
 
 class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll:
 
@@ -80,6 +86,35 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				status shouldBe StatusCodes.OK
 				responseAs[String] should include("\"version\":1")
 				responseAs[String] should include("\"status\":\"unavailable\"")
+
+		"keep derived route values in parity with SPARQL magic triples" in:
+			import DerivedMetadataJsonProtocol.given
+			val vf = repo.getValueFactory
+			val resource = new URI("urn:test:derived:parity")
+			val licence = Licence(new URI("https://example.org/licence"), "Example licence", new URI("https://example.org/licence-info"), None)
+			val references = References.empty.copy(title = Some("Parity item"), citationString = Some("Citation from references"), licence = Some(licence))
+			val metadata = DerivedMetadata(resource, references, Some("Canonical citation"), Some(licence))
+			val derived = DerivedMetadataService.fixed(vf, scala.collection.immutable.Map(resource -> metadata))
+			val parityRoute = Route(repo, sparqlConf, derived, _ => Future.successful("unused"))
+
+			Post(
+				"/internal/derived/v1/resolve",
+				HttpEntity(ContentTypes.`application/json`, DerivedMetadataRequest(Seq(resource)).toJson.compactPrint)
+			) ~> parityRoute ~> check:
+				val result = responseAs[String].parseJson.convertTo[DerivedMetadataResponse].results.head
+				result.metadata shouldBe Some(metadata)
+
+			val vocab = new CpmetaVocab(vf)
+			val iteration = StatementsEnricher(derived, vocab).enrich(new EmptyIteration, vf.createIRI(resource.toString), null, null)
+			val values = scala.collection.mutable.Map.empty[org.eclipse.rdf4j.model.IRI, String]
+			try while iteration.hasNext do
+				val statement = iteration.next()
+				values(statement.getPredicate) = statement.getObject.stringValue
+			finally iteration.close()
+
+			values(vocab.hasCitationString) shouldBe "Canonical citation"
+			values(vocab.dcterms.license) shouldBe licence.url.toString
+			values(vocab.hasBiblioInfo).parseJson.asJsObject.fields("title") shouldBe JsString("Parity item")
 
 		"reject public SPARQL requests that did not pass through the trusted proxy" in:
 			Post("/sparql", "ASK WHERE { }") ~> route ~> check:

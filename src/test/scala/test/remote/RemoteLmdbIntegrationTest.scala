@@ -28,17 +28,15 @@ import java.nio.charset.StandardCharsets
  *   1. Reads: `prepareTupleQuery`/`prepareGraphQuery`/`getStatements`/`hasStatement` against
  *      `/internal/sparql`, and raw content negotiation for tuple (JSON/XML/CSV/TSV), boolean
  *      (JSON/XML) and graph (RDF/XML, Turtle) results.
- *   2. Unlogged writes: `RepositoryConnection.add`/`remove` via `/admin-unlogged-update`,
+ *   2. SPARQL writes: `RepositoryConnection.add`/`remove` via `/internal/sparql`,
  *      including that a write to one named context is not visible in another.
  *   4. Read-after-write: a write is visible to the very next read over the HTTP hop.
  *
  * Deliberately NOT covered here (left as follow-up work - see the task 19 status note in
  * docs/rdf-common-split/README.md):
- *   3. Logged writes via `/logged-update`, i.e. that the PostgreSQL append happens before the
- *      RDF4J commit and that replay does not double-append. The harness already boots a real
- *      throwaway Postgres (rdfStore needs one to boot at all - see RemoteRdfStoreHarness), so
- *      the infrastructure for this exists, but driving `RdfMutation`/`LoggingInstanceServer`
- *      and inspecting the Postgres log table is a second, separately-verifiable suite.
+ *   3. Meta-owned logged writes: that `LoggingInstanceServer` appends before the remote RDF4J
+ *      commit and that rdfStore replay does not append again. This needs a Meta + rdfStore
+ *      cross-process fixture and remains a separately-verifiable follow-up.
  *   5. Custom-index correctness across the hop (`DataObjectFetch`-shaped and geospatial queries
  *      matching an embedded baseline) - needs a seeded, indexed corpus like `TestDb`'s.
  *   6. Failure-mode chaos testing (timeout, partial response, duplicate mutation, restart
@@ -54,7 +52,7 @@ class RemoteLmdbIntegrationTest extends AnyWordSpec with Matchers with BeforeAnd
 	private var harness: RemoteRdfStoreHarness = scala.compiletime.uninitialized
 
 	private lazy val repo: SPARQLRepository =
-		val r = new SPARQLRepository(harness.queryEndpoint, harness.unloggedUpdateEndpoint)
+		val r = new SPARQLRepository(harness.queryEndpoint, harness.updateEndpoint)
 		r.enableQuadMode(true)
 		r.init()
 		r
@@ -119,7 +117,7 @@ class RemoteLmdbIntegrationTest extends AnyWordSpec with Matchers with BeforeAnd
 				withClue(s"iteration $i: "):
 					askInGraph(ctxA, s, p, o) shouldBe true
 
-		"remove statements via the same unlogged-update path" taggedAs RemoteIntegration in:
+		"remove statements via the same SPARQL Update path" taggedAs RemoteIntegration in:
 			val s = vf.createIRI("http://test.icos-cp.eu/it/subjectRemoval")
 			val p = vf.createIRI("http://test.icos-cp.eu/it/pred")
 			val o = vf.createLiteral("to be removed")

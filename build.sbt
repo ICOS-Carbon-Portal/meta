@@ -86,15 +86,6 @@ frontendBuild := {
 	else sys.error("Front end build error")
 }
 
-val remoteIntegrationTest = taskKey[Unit](
-	"Runs the meta<->rdfStore remote LMDB integration suite (task 19, docs/rdf-common-split). " +
-	"Excluded from the default Test/test run (see Test/testOptions below) because it forks a " +
-	"real rdfStore process and a throwaway PostgreSQL instance, needing initdb/pg_ctl on PATH."
-)
-remoteIntegrationTest := (Test / testOnly).toTask(
-	" se.lu.nateko.cp.meta.test.remote.RemoteLmdbIntegrationTest -- -n tags.RemoteIntegration"
-).value
-
 val fetchGCMDKeywords = taskKey[Unit]("Fetches GCMD keywords from NASA")
 fetchGCMDKeywords := {
 	import scala.sys.process._
@@ -191,27 +182,6 @@ lazy val meta = (project in file("."))
 			"org.commonmark"        % "commonmark-ext-autolink"             % "0.24.0"
 		),
 
-		// The remote LMDB integration suite (task 19) forks real processes and is slow and has
-		// an external prerequisite (initdb/pg_ctl on PATH), so it's excluded from the default
-		// fast Test/test run and instead always runs via the remoteIntegrationTest task below,
-		// wired into cpDeployPreAssembly so it can never be skipped before a production build.
-		// Scoped to the `test` task specifically (not the whole Test config axis), so it doesn't
-		// also suppress `testOnly`/`remoteIntegrationTest`'s own explicit `-n` tag inclusion.
-		Test / test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-l", "tags.RemoteIntegration"),
-
-		// Since task 21 cut meta.dependsOn(rdfStore), rdfStore's classes are no longer reachable
-		// by walking meta's own test classloader chain, which is what
-		// RemoteRdfStoreHarness.currentClasspath() used to rely on to build the classpath for the
-		// forked rdfStore process. Export rdfStore's own Compile classpath as a generated test
-		// resource instead, so the harness can fork rdfStore's Main with a correct classpath
-		// despite the two modules no longer sharing one.
-		Test / resourceGenerators += Def.task {
-			val outFile = (Test / resourceManaged).value / "rdfstore-test-classpath.txt"
-			val cp = (rdfStore / Compile / fullClasspath).value.map(_.data.getAbsolutePath)
-			IO.write(outFile, cp.mkString(java.io.File.pathSeparator))
-			Seq(outFile)
-		}.taskValue,
-
 		cpDeployTarget := "cpmeta",
 		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta",
 		cpDeployPreAssembly := Def.sequential(
@@ -222,7 +192,6 @@ lazy val meta = (project in file("."))
 			rdfCommon / Test / test,
 			rdfStore / Test / test,
 			Test / test,
-			remoteIntegrationTest,
 			checkModuleBoundaries,
 			frontendBuild,
 			fetchGCMDKeywords

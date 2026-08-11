@@ -101,10 +101,8 @@ large, separately-reviewable change in its own right — not required for task 1
 
 - [x] [17](17-move-store-tests.md) — Move store-owned tests out of `src/test`
 - [x] [18](18-move-shared-tests.md) — Move shared-code tests to `rdfCommon`
-- [x] [19](19-remote-integration-test.md) — Add a remote integration test on LMDB *(scope note
-      below: reads, unlogged writes and read-after-write are covered by a genuine, CI-worthy
-      suite; logged writes, custom-index parity and failure-mode chaos testing are left as
-      follow-up work)*
+- [x] [19](19-remote-integration-test.md) — Add a remote integration test on LMDB *(superseded —
+      see the revision note below: this coverage was removed as low-value)*
 
 **Note on task 17:** `TestDb.scala`'s seeding was rewired to plain RDF4J
 (`RepositoryConnection`/`Loading.loadResource`, option 1 in the task file) rather than kept on
@@ -142,6 +140,30 @@ scenarios respectively. The suite is tagged `tags.RemoteIntegration` (see
 run (needs `initdb`/`pg_ctl` on `PATH` and takes several seconds), and always run via the new
 `remoteIntegrationTest` sbt task, which is wired into `cpDeployPreAssembly` so it can never be
 skipped before a production build.
+
+**Revision of task 19 (post-completion):** the cross-process harness above was removed outright,
+with nothing put back in its place. `meta` forking a real `rdfStore` process plus a throwaway
+PostgreSQL cluster made `meta`'s test suite responsible for standing up another application's
+storage backend — the wrong side of the module boundary this whole split is trying to draw — and
+it meant the suite never actually ran in CI (it was only reachable via the `remoteIntegrationTest`
+task inside `cpDeployPreAssembly`, which CI never invokes).
+
+A first replacement attempt built `InProcessSparqlEndpoint`: a hand-rolled SPARQL 1.1 Protocol
+HTTP server in the test JVM, backed by an RDF4J in-memory `Sail`, driven by the same
+`SPARQLRepository` client `MetaDb` uses in production. On reflection this didn't earn its keep:
+the "server" on the other end was also RDF4J, executing queries/updates and serializing results
+via RDF4J's own machinery — so the suite was mostly RDF4J testing RDF4J through a thin HTTP shim,
+unable to catch a regression in RDF4J itself (not meta's problem) and not exercising `MetaDb.scala`
+either (so it couldn't catch a regression there). It was deleted along with the harness.
+
+What's actually left to verify is different from either attempt: `rdf-common`'s own
+`transact`/`accessEagerly` helpers (`utils/rdf4j/package.scala`) work against any RDF4J
+`Repository` and don't need HTTP or a real endpoint to test — an embedded `SailRepository` would
+do, if that coverage is ever judged worth adding. `remoteIntegrationTest`, the
+`rdfstore-test-classpath.txt` resource generator, and the `tags.RemoteIntegration` tag were all
+removed as dead weight along with the harness. LMDB-specific behavior (the fresh-store read-only
+restart, Postgres-backed log replay) is `rdfStore`'s own implementation detail and was never
+`meta`'s to test in the first place; it belongs in a test living in `rdfStore`'s own suite.
 
 ### Phase 6 — cut the edge and ship two applications
 

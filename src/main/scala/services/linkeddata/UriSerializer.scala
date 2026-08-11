@@ -25,7 +25,6 @@ import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
@@ -105,7 +104,10 @@ class Rdf4jUriSerializer(
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val pidFactory = new api.PidFactory(config.dataUploadService.handle)
+	private val pidFactory = {
+		val handleConf = config.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+	}
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
 	private val pageContentMarshalling =

@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, PidFactory}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
@@ -156,7 +156,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		val vocab = new CpVocab(repo.getValueFactory)
 		val metaVocab = new CpmetaVocab(repo.getValueFactory)
 		val lenses = getLenses(config.instanceServers, config.dataUploadService)
-		val pidFactory = new api.PidFactory(config.dataUploadService.handle)
+		val pidFactory = {
+			val handleConf = config.dataUploadService.handle
+			new PidFactory(handleConf.baseUrl, handleConf.prefix)
+		}
 		val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:

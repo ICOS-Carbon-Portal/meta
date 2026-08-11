@@ -1,9 +1,7 @@
 package se.lu.nateko.cp.meta.services
 
 import org.eclipse.rdf4j.model.ValueFactory
-import se.lu.nateko.cp.meta.OntoConstants.*
 import se.lu.nateko.cp.meta.api.CustomVocab
-
 import java.net.URI
 
 class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
@@ -191,9 +189,9 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 	val wdcggFormat = getRelativeRaw("asciiWdcggTimeSer")
 	val atcProductFormat = getRelativeRaw("asciiAtcProductTimeSer")
 	val asciiAtcFlaskTimeSer = getRelativeRaw("asciiAtcFlaskTimeSer")
-	val netCDFTimeSeriesFormat = getRelativeRaw(netCdfTsFormatSuff)
-	val netCDFSpatialFormat = getRelativeRaw(netCdfFormatSuff)
-	val microsoftExcelFormat = getRelativeRaw(excelFormatSuff)
+	val netCDFTimeSeriesFormat = getRelativeRaw("netcdfTimeSeries")
+	val netCDFSpatialFormat = getRelativeRaw("netcdf")
+	val microsoftExcelFormat = getRelativeRaw("excel")
 
 
 	object prov extends CustomVocab {
@@ -238,7 +236,7 @@ class CpmetaVocab (val factory: ValueFactory) extends CustomVocab { top =>
 }
 
 object CpmetaVocab{
-	val MetaPrefix = CpmetaPrefix
+	val MetaPrefix = "http://meta.icos-cp.eu/ontologies/cpmeta/"
 	val SitesPrefix = "https://meta.fieldsites.se/ontologies/sites/"
 	val ProvPrefix = "http://www.w3.org/ns/prov#"
 	val DctermsPrefix = "http://purl.org/dc/terms/"

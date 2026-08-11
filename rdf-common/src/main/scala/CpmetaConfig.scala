@@ -10,13 +10,19 @@ import se.lu.nateko.cp.meta.api.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
-import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
 import spray.json.*
 
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
+
+// DbServer/DbCredentials used to live in rdf-common/src/main/scala/persistence/postgres/DbConnectionConfig.scala
+// as plain config value carriers for the JDBC connection logic, which has since moved out of
+// rdfCommon entirely (meta and rdfStore each own their own RDF-log read/write implementation).
+// They stay here, next to RdflogConfig, because both CpmetaConfig and RdfStoreConfig need this type.
+case class DbCredentials(db: String, user: String, password: String)
+case class DbServer(host: String, port: Int)
 
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
 

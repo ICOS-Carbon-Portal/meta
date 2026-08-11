@@ -5,8 +5,8 @@ import scala.language.unsafeNulls
 import org.locationtech.jts.geom.{Coordinate, Geometry}
 import org.locationtech.jts.io.WKTReader
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.utils.geo.JtsGeoFactory
+import se.lu.nateko.cp.meta.services.upload.geocov.GeoCovMerger.*
 import se.lu.nateko.cp.meta.services.upload.geocov.LabeledJtsGeo
 
 import TestGeometries.*
@@ -160,4 +160,5 @@ end GeoCovMergerTests
 private def convertStringsToJTS(geomStrings: String*): Seq[Geometry] =
 	val wktReader = new WKTReader(JtsGeoFactory)
 	geomStrings.map(wktReader.read)
+
 

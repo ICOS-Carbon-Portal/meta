@@ -24,3 +24,4 @@ class HandleNetClientTests extends AnyFunSpec{
 		}
 	}
 }
+

@@ -17,6 +17,8 @@ class InMemoryRdfLog extends RdfUpdateLog{
 		log.addAll(updates.iterator.map(Instant.now -> _).toIndexedSeq.asJava)
 	}
 
+	// Not part of RdfUpdateLog any more (that's rdfStore's read-side concern now), but
+	// LoggingInstanceServerTest still asserts against it directly on this test double.
 	def updates: CloseableIterator[RdfUpdate] =
 		new CloseableIterator.Wrap(log.iterator.asScala.map(_._2), () => ())
 	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] =

@@ -132,7 +132,6 @@ lazy val rdfCommon = (project in file("rdf-common"))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
-			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"io.spray"              %% "spray-json"                         % "1.3.6",
@@ -187,6 +186,7 @@ lazy val meta = (project in file("."))
 			"org.scalacheck"        %% "scalacheck"                         % "1.18.0"        % "test",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
+			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"org.commonmark"        % "commonmark"                          % "0.24.0",
 			"org.commonmark"        % "commonmark-ext-autolink"             % "0.24.0"
 		),

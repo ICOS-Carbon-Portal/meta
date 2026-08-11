@@ -18,7 +18,6 @@ import org.eclipse.rdf4j.model.Statement
 import play.twirl.api.Html
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
@@ -88,7 +87,9 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	private given ExecutionContext = system.dispatcher
 
-	private val pidFactory = new api.PidFactory(config.dataUploadService.handle)
+	private val pidFactory =
+		val handleConf = config.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, attribution)
 	private val pageContentMarshalling =

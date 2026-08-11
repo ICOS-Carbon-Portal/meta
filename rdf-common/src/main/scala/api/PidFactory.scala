@@ -15,13 +15,13 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
  * Splitting this out is what lets the client itself (with its akka-http and client-certificate
  * TLS machinery) live in `meta` alone.
  */
-class PidFactory(conf: HandleNetClientConfig){
-	def prefix(using envri: Envri): String = conf.prefix.getOrElse(
+class PidFactory(baseUrl: String, prefix: Map[Envri, String]){
+	def prefix(using envri: Envri): String = prefix.getOrElse(
 		envri,
 		throw new Exception(s"No PID prefix for ENVRI $envri in the config")
 	)
 	def getPid(suffix: String)(using Envri) = s"${prefix}/$suffix"
 	def getSuffix(hash: Sha256Sum): String = hash.id
 	def getPid(hash: Sha256Sum)(using Envri): String = getPid(getSuffix(hash))
-	def pidUrlStr(suffix: String)(using Envri) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
+	def pidUrlStr(suffix: String)(using Envri) = s"${baseUrl}api/handles/${getPid(suffix)}"
 }

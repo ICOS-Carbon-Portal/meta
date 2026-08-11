@@ -690,7 +690,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val pidFactory = PidFactory(config.dataUploadService.handle)
+		val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
 		val attribution = AttributionProvider(vocab, metaVocab)
 		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution)
 		loader -> countingRepo

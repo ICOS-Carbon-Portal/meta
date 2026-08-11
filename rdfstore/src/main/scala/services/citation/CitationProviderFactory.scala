@@ -34,8 +34,10 @@ object CitationProviderFactory:
 			repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf)
 		)
 
-	def pidFactory(conf: CpmetaConfig): PidFactory =
-		new PidFactory(conf.dataUploadService.handle)
+	def pidFactory(conf: CpmetaConfig): PidFactory = {
+		val handleConf = conf.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+	}
 
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")

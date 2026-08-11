@@ -50,7 +50,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val vocab = CpVocab(repo.getValueFactory)
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val pidFactory = PidFactory(config.dataUploadService.handle)
+	private val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
 	private val attribution = AttributionProvider(vocab, metaVocab)
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {

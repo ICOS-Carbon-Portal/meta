@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.UpdateExecutionException
 import org.semanticweb.owlapi.model.IRI as OwlIri
 import se.lu.nateko.cp.meta.*
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, StatementSource}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -70,7 +71,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 			.map(prefix => s"""\tFILTER(STRSTARTS(STR(?s), "${prefix.toString}"))""")
 			.getOrElse("")
 
-		s"""PREFIX cpmeta: <${OntoConstants.CpmetaPrefix}>
+		s"""PREFIX cpmeta: <${CpmetaVocab.MetaPrefix}>
 		|PREFIX rdf: <${RDF.NAMESPACE}>
 		|PREFIX rdfs: <${RDFS.NAMESPACE}>
 		|
@@ -85,7 +86,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	private def sparqlPredicate(uri: URI): String =
 		val str = uri.toString
 		val prefixes: Map[String, String] = Map(
-			"cpmeta" -> OntoConstants.CpmetaPrefix,
+			"cpmeta" -> CpmetaVocab.MetaPrefix,
 			"rdfs" -> RDFS.NAMESPACE
 		)
 		prefixes.collectFirst{

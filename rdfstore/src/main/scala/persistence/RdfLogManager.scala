@@ -6,7 +6,8 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.RdfStoreConfig
-import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
+import se.lu.nateko.cp.meta.rdfstore.persistence.postgres.PostgresRdfLogReader
 
 /**
  * Read-side owner of RDF-log restoration.
@@ -50,7 +51,7 @@ object RdfLogManager:
 		def shouldRestore(isFreshStore: Boolean): Boolean =
 			if isFreshStore then restoreOnFresh else restoreOnRegularStart
 
-	final case class Binding(name: String, context: IRI, log: RdfUpdateLog, replay: ReplayPolicy)
+	final case class Binding(name: String, context: IRI, log: RdfLogReader, replay: ReplayPolicy)
 
 	def apply(storeConfig: RdfStoreConfig, factory: ValueFactory): RdfLogManager =
 		val bindings = storeConfig.rdfLogs.toSeq.map: (name, context) =>
@@ -58,7 +59,7 @@ object RdfLogManager:
 			Binding(
 				name,
 				factory.createIRI(context.toString),
-				PostgresRdfLog(name, storeConfig.rdfLog, factory),
+				PostgresRdfLogReader(name, storeConfig.rdfLog, factory),
 				ReplayPolicy(
 					restoreOnFresh = true,
 					restoreOnRegularStart = fromId.isDefined,

@@ -3,13 +3,13 @@ package se.lu.nateko.cp.meta.persistence.postgres
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.vocabulary.XSD
-import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
-import se.lu.nateko.cp.meta.RdflogConfig
+import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
+import se.lu.nateko.cp.meta.{DbCredentials, DbServer, RdflogConfig}
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
-import java.sql.{BatchUpdateException, PreparedStatement, Timestamp}
+import java.sql.{BatchUpdateException, Connection, PreparedStatement, ResultSet, Timestamp}
 import java.time.Instant
 
 class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfUpdateLog{
@@ -64,20 +64,37 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		}
 	}
 
-	private def allUpdQuery = s"SELECT * FROM $logName ORDER BY id"
-	def updates: CloseableIterator[RdfUpdate] = rdfUpdateIterator(allUpdQuery).plain
-	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = rdfUpdateIterator(allUpdQuery).timed
-	override def updatesFromId(id: Int) = rdfUpdateIterator(s"SELECT * FROM $logName WHERE id >= $id ORDER BY id").plain
+	def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] =
+		new ResultSetIterator(getConnection, readTimedRdfUpdate, s"SELECT * FROM $logName ORDER BY id")
 
-	private def rdfUpdateIterator(query: String) = new RdfUpdateResultSetIterator(getConnection, factory, query)
+	private def readRdfUpdate(rs: ResultSet): RdfUpdate = {
+		def getUri(colName: String): IRI = factory.createIRI(rs.getString(colName))
 
-/*	def updatesUpTo(time: Timestamp): Iterator[RdfUpdate] = {
-		val conn = getConnection
-		val ps = conn.prepareStatement(s"SELECT * FROM $logName WHERE tstamp <= ? ORDER BY id") //no index on time, better test in Scala
-		ps.setTimestamp(1, time)
-		val rs = ps.executeQuery()
-		new RdfUpdateResultSetIterator(rs, factory, () => {ps.close(); conn.close()})
-	}*/
+		val tripleType = rs.getShort("TYPE")
+		val objString = rs.getString("OBJECT")
+
+		val obj: Value = tripleType match{
+			case 0 => //object is a URI
+				factory.createIRI(objString)
+			case 1 => //object is a typed literal
+				val litDatatype = getUri("LITATTR")
+				factory.createLiteral(objString, litDatatype)
+			case 2 => //object is a language-tagged literal
+				val lang = rs.getString("LITATTR")
+				factory.createLiteral(objString, lang)
+		}
+
+		val statement = factory.createStatement(getUri("SUBJECT"), getUri("PREDICATE"), obj)
+		val isAssertion = rs.getBoolean("ASSERTION")
+
+		RdfUpdate(statement, isAssertion)
+	}
+
+	private def readTimedRdfUpdate(rs: ResultSet): (Instant, RdfUpdate) = {
+		val upd = readRdfUpdate(rs)
+		val ts = rs.getTimestamp("tstamp").toInstant
+		ts -> upd
+	}
 
 	def close(): Unit = {}
 
@@ -135,7 +152,7 @@ class PostgresRdfLog(logName: String, serv: DbServer, creds: DbCredentials, fact
 		}
 	}
 
-	private def getConnection() = Postgres.getConnection(serv, creds).get
+	private def getConnection(): Connection = Postgres.getConnection(serv, creds).get
 
 	private def safeDatatype(lit: Literal): String =
 		if(lit.getDatatype == null) XSD.STRING.stringValue

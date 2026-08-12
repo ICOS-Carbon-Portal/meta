@@ -15,8 +15,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
  * Splitting this out is what lets the client itself (with its akka-http and client-certificate
  * TLS machinery) live in `meta` alone.
  */
-class PidFactory(baseUrl: String, prefix: Map[Envri, String]){
-	def prefix(using envri: Envri): String = prefix.getOrElse(
+class PidFactory(baseUrl: String, prefixes: Map[Envri, String]){
+	def prefix(using envri: Envri): String = prefixes.getOrElse(
 		envri,
 		throw new Exception(s"No PID prefix for ENVRI $envri in the config")
 	)

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.persistence
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
@@ -13,6 +14,7 @@ class LoggingInstanceServerTest extends AnyFunSpec{
 
 	val factory = SimpleValueFactory.getInstance()
 	val ctxt = factory.createIRI("http://www.icos-cp.eu/ontology/")
+	val ctxt2 = factory.createIRI("http://www.icos-cp.eu/ontology2/")
 
 	def makeUri(suff: String) = factory.createIRI(ctxt.stringValue, suff)
 

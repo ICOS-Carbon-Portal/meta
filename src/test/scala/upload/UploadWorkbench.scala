@@ -29,16 +29,16 @@ object UploadWorkbench{
 	def atcColMaker(datacitePass: String, cpauthToken: String) =
 		new AtcCollMaker(new DoiMaker(datacitePass), uploadClient(cpauthToken))
 
-	val citer = DoiCitationLookup.unavailable
+	val unavailableCiter: DoiCitationLookup = _ => Future.failed(IllegalStateException("No local citation service in meta"))
 	def uploadClient(cpAuthToken: String) = new CpUploadClient(uploadConfBase.copy(cpauthToken = cpAuthToken))
 
-	private def atmoUpload = FluxdataUpload.atmoUpload(citer)
-	private def fluxHhUpload = FluxdataUpload.fluxHhUpload(citer)
-	private def fluxUpload = FluxdataUpload.fluxUpload(citer)
+	private def atmoUpload = FluxdataUpload.atmoUpload(unavailableCiter)
+	private def fluxHhUpload = FluxdataUpload.fluxHhUpload(unavailableCiter)
+	private def fluxUpload = FluxdataUpload.fluxUpload(unavailableCiter)
 
 	private def doiMachinery(password: String): (DoiMaker, DroughtDoiMaker2) = {
 		val client = new DoiMaker(password)
-		val maker = new DroughtDoiMaker2(client, citer)
+		val maker = new DroughtDoiMaker2(client, unavailableCiter)
 		client -> maker
 	}
 

@@ -206,3 +206,4 @@ object DroughtDoiMaker2{
 	val atcContrib = Contributor(atc, Nil, Nil, Some(ContributorType.Producer))
 	val etcContrib = Contributor(etc, Nil, Nil, Some(ContributorType.Producer))
 }
+

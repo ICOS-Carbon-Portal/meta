@@ -14,8 +14,7 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.{ConfigLoader, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader, SparqlServerConfig}
 import se.lu.nateko.cp.meta.core.data.{Licence, References}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
@@ -57,14 +56,17 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
+		// `meta`'s own CpmetaConfig (in the `meta` module, which rdfStore does not depend on) is not
+		// reachable from here, so these check the cross-app contract through the raw HOCON tree
+		// instead of through meta's Scala types - see docs/rdf-common-split/15-split-config.md.
 		"configure meta to use the standalone endpoint by default" in:
-			ConfigLoader.default.remoteRdfRepository.map(_.queryEndpoint.toString) shouldBe
-				Some("http://127.0.0.1:9095/internal/sparql")
-			ConfigLoader.default.remoteRdfRepository.map(_.updateEndpoint.toString) shouldBe
-				Some("http://127.0.0.1:9095/internal/sparql")
-			ConfigLoader.default.instanceServers.specific("instances").logName shouldBe Some("instances")
-			ConfigLoader.default.rdfLog shouldBe RdfStoreConfigLoader.default.rdfLog
-			ConfigLoader.default.rdfStorage shouldBe RdfStoreConfigLoader.default.rdfStorage
+			val root = AppConfig.rootConfWithWorkingDirOverrides
+			root.getString("cpmeta.remoteRdfRepository.queryEndpoint") shouldBe
+				"http://127.0.0.1:9095/internal/sparql"
+			root.getString("cpmeta.remoteRdfRepository.updateEndpoint") shouldBe
+				"http://127.0.0.1:9095/internal/sparql"
+			root.getString("cpmeta.instanceServers.specific.instances.logName") shouldBe "instances"
+			root.getConfig("cpmeta.rdfLog") shouldBe root.getConfig("rdfStore.rdfLog")
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 

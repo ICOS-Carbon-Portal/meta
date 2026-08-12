@@ -47,7 +47,7 @@ private val graphIriToFile = Seq(
 	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-private val metaConf = se.lu.nateko.cp.meta.ConfigLoader.default
+private val metaConf = se.lu.nateko.cp.meta.RdfStoreConfigLoader.metaView
 
 class TestDb {
 	TestRepo.checkout()

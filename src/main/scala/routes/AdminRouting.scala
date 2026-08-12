@@ -9,7 +9,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}
@@ -23,7 +22,7 @@ class AdminRouting(
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
 	makeMetaReadonly: String => Future[String],
-	conf: SparqlServerConfig
+	conf: SparqlAdminConfig
 ) {
 	import AuthenticationRouting.optEnsureLocalRequest
 	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _

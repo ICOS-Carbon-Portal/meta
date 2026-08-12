@@ -7,34 +7,33 @@ import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.flattenToSeq
-import se.lu.nateko.cp.meta.{CpmetaConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, InstanceServersConfig, UploadServiceConfig}
+import se.lu.nateko.cp.meta.{DataObjectInstServerDefinition, DataObjectInstServersConfig, StoreInstanceServersConfig, StoreMetaConfig, StoreUploadTargetsConfig}
 
 import CitationClient.{CitationCache, DoiCache}
 
 /**
- * `CitationProvider` (in rdf-common) cannot depend on `CpmetaConfig` (still in rdfStore until
- * task 14 moves it to rdf-common), so this factory does the CpmetaConfig -> RdfLenses/PidFactory
- * translation that `CitationProvider` itself used to do inline, and hands `CitationProvider`
- * only the already-resolved pieces it needs. See task 11's deviation note in
- * docs/rdf-common-split/11-move-citation-stack.md.
+ * `CitationProvider` (in rdf-common) cannot depend on `StoreMetaConfig` (in rdfStore), so this
+ * factory does the StoreMetaConfig -> RdfLenses/PidFactory translation that `CitationProvider`
+ * itself used to do inline, and hands `CitationProvider` only the already-resolved pieces it
+ * needs. See task 11's deviation note in docs/rdf-common-split/11-move-citation-stack.md.
  */
 object CitationProviderFactory:
 
 	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
 	)(using ActorSystem, Materializer): CitationProvider =
 		CitationProvider(
 			sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf)
 		)
 
 	def apply(
-		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
 	)(using ActorSystem, Materializer): CitationProvider =
 		CitationProvider(
 			repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf)
 		)
 
-	def pidFactory(conf: CpmetaConfig): PidFactory = {
+	def pidFactory(conf: StoreMetaConfig): PidFactory = {
 		val handleConf = conf.dataUploadService.handle
 		new PidFactory(handleConf.baseUrl, handleConf.prefix)
 	}
@@ -42,7 +41,7 @@ object CitationProviderFactory:
 	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
 
-	def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): RdfLenses =
+	def getLenses(servConf: StoreInstanceServersConfig, uplConf: StoreUploadTargetsConfig): RdfLenses =
 		def confsToLenses[L](confs: Map[Envri, String], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] = confs.flatMap:
 			(envri, instServId) => servConf.specific.get(instServId).map: conf =>
 				envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))

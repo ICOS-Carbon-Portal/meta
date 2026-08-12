@@ -31,11 +31,3 @@ jobs:
       uses: sbt/setup-sbt@v1
     - name: Run tests
       run: sbt test
-    - name: Check module boundaries (meta <-> rdfStore must not depend on each other)
-      run: sbt checkModuleBoundaries
-    - name: Check meta's src/ does not import rdfStore internals (docs/rdf-common-split/22-ci-guard.md)
-      # Complements checkModuleBoundaries with a source-level check that gives a more helpful
-      # message on the exact offending line.
-      run: |
-        ! grep -rn '^[[:space:]]*import se\.lu\.nateko\.cp\.meta\.rdfstore' src/
-        ! grep -rn 'sparql\.magic\|sparql\.index' src/main

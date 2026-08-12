@@ -9,7 +9,6 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.fusion.StatsFetchPatternSearch.GroupPattern
-import se.lu.nateko.cp.meta.services.sparql.magic.fusion.{DobjStatFusion, DofPatternFusion, DofPatternSearch, StatsFetchNode}
 
 class StatsFetchPatternSearchTests extends AnyFunSpec{
 	private val meta = new CpmetaVocab(new MemValueFactory)

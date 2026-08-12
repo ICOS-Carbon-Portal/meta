@@ -1,7 +1,6 @@
 package se.lu.nateko.cp.meta.services.sparql.index
 
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.services.sparql.index.SamplingHeightHierarchicalBitmap
 
 class SamplingHeightHierarchicalBitmapTests extends AnyFunSpec{
 

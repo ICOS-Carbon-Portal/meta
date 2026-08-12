@@ -15,18 +15,6 @@ import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap.MinFilter
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.services.sparql.index.{
-	And,
-	CategFilter,
-	ContFilter,
-	DataObjectFetch,
-	Exists,
-	FileName,
-	SortBy,
-	Station,
-	SubmissionEnd,
-	Spec
-}
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpIndex, IndexHandler}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading

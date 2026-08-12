@@ -20,26 +20,25 @@ import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CitationConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, StoreInstanceServersConfig, StoreMetaConfig, StoreUploadTargetsConfig}
+import se.lu.nateko.cp.meta.{CitationConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig}
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
 
-
 object CitationProvider:
 
 	/**
-	 * `StoreMetaConfig` is rdfStore's own narrow view of the shared `cpmeta` config section
-	 * (see `StoreMetaConfig`'s scaladoc); this overload does the config -> RdfLenses/PidFactory
+	 * `CitationStoreConfig` is rdfStore's own narrow view of the shared `cpmeta` config section
+	 * (see `CitationStoreConfig`'s scaladoc); this overload does the config -> RdfLenses/PidFactory
 	 * translation and defers to the resolved-primitives overload below.
 	 */
 	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
 		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
 
 	def apply(
-		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
 		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
 
@@ -59,7 +58,7 @@ object CitationProvider:
 			dois => CitationClientImpl(dois, citations, citCache, doiCache)
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
-	def pidFactory(conf: StoreMetaConfig): PidFactory =
+	def pidFactory(conf: CitationStoreConfig): PidFactory =
 		val handleConf = conf.dataUploadService.handle
 		new PidFactory(handleConf.baseUrl, handleConf.prefix)
 
@@ -99,9 +98,9 @@ end CitationProvider
  * rdfStore-owned (task 24: derived-metadata ownership moved here from `rdf-common`, reversing
  * an earlier plan - task 11 - to share this class with `meta`; `meta` now reads citation/licence
  * data through the HTTP `DerivedMetadataClient` instead of constructing its own provider). The
- * companion object's `StoreMetaConfig` overloads above are the only construction path in
+ * companion object's `CitationStoreConfig` overloads above are the only construction path in
  * practice; the `MetaCoreConfig`/`CitationConfig`/`RdfLenses`/`PidFactory` overloads exist mainly
- * so tests (`TestDb.scala`) can supply hand-built fixtures without a full `StoreMetaConfig`.
+ * so tests (`TestDb.scala`) can supply hand-built fixtures without a full `CitationStoreConfig`.
  */
 class CitationProvider(
 	val repo: Repository,

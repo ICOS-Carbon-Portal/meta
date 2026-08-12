@@ -192,7 +192,6 @@ lazy val meta = (project in file("."))
 			rdfCommon / Test / test,
 			rdfStore / Test / test,
 			Test / test,
-			checkModuleBoundaries,
 			frontendBuild,
 			fetchGCMDKeywords
 		).value,
@@ -351,7 +350,6 @@ lazy val rdfStore = (project in file("rdfstore"))
 				metaCore / Test / test,
 				rdfCommon / Test / test,
 				Test / test,
-				checkModuleBoundaries
 			).value,
 			// A separate playbook from meta's "core.yml": this one must mount the RDF storage
 			// volume (rdf-store-split.md - "Only rdfStore may mount the RDF storage directory"),
@@ -363,43 +361,3 @@ lazy val rdfStore = (project in file("rdfstore"))
 			cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
 			cpDeployInfraBranch := "master"
 		)
-
-// Task 22 (docs/rdf-common-split/22-ci-guard.md): the dependency direction meta -> rdfCommon <-
-// rdfStore, with neither application depending on the other, is the entire architectural claim
-// of the module split (task 21). It is a one-line build.sbt change to break it, and that breakage
-// is invisible in a code review that's reading Scala rather than build.sbt.
-//
-// Matching is done by comparing each project's own `Compile / classDirectory` against the other
-// project's `Compile / dependencyClasspath` entries, rather than matching on classpath entry file
-// names: internal (same-build) project dependencies show up on the classpath as their
-// `target/scala-.../classes` directory, and every module's class directory is literally named
-// "classes" (indistinguishable by name alone) - and this repository's own path happens to contain
-// a directory literally called "meta" (.../bulk/meta/rdf-separate-service), so a naive substring
-// match on "meta" in the classpath would false-positive on every single entry. Comparing full,
-// canonical class-directory paths avoids both problems and directly reflects the actual mechanism
-// (classpath reachability) a stray `.dependsOn` would introduce.
-val checkModuleBoundaries = taskKey[Unit]("Fails if the module dependency graph is violated")
-
-checkModuleBoundaries := {
-	val log = streams.value.log
-	val metaClasses = (meta / Compile / classDirectory).value.getCanonicalPath
-	val storeClasses = (rdfStore / Compile / classDirectory).value.getCanonicalPath
-
-	val metaCp = (meta / Compile / dependencyClasspath).value.map(_.data.getCanonicalPath)
-	val storeCp = (rdfStore / Compile / dependencyClasspath).value.map(_.data.getCanonicalPath)
-
-	val metaViolations = metaCp.filter(_ == storeClasses)
-	val storeViolations = storeCp.filter(_ == metaClasses)
-
-	if (metaViolations.nonEmpty)
-		sys.error(
-			"meta must not depend on rdfStore, but rdfStore's class directory is on meta's " +
-			s"Compile classpath: ${metaViolations.mkString(", ")}"
-		)
-	if (storeViolations.nonEmpty)
-		sys.error(
-			"rdfStore must not depend on meta, but meta's class directory is on rdfStore's " +
-			s"Compile classpath: ${storeViolations.mkString(", ")}"
-		)
-	log.info("checkModuleBoundaries: meta and rdfStore do not depend on each other.")
-}

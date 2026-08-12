@@ -54,6 +54,10 @@ Cover the verification gates listed in `rdf-store-split.md:184-191`:
   seed a store that is already indexed.
 - Tag the suite so it can be excluded from fast local runs but is mandatory in CI —
   `src/test/scala/test/tags/TagObjects.scala` already provides the tagging mechanism.
+  *(Superseded: the harness this plan describes was built and then removed — see the revision
+  note in `README.md`. `TagObjects.scala` was deleted along with it; no scalatest `Tag` object
+  survives in the build. The one remaining tag is the `tags.DbTest` annotation, now at
+  `rdfstore/src/test/scala/tags/DbTest.java`.)*
 
 ## Verification
 

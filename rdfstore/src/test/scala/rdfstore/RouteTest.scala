@@ -6,7 +6,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.eclipse.rdf4j.common.iteration.EmptyIteration
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
@@ -168,6 +168,43 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				remote.transact(_.add(statement, graph)).isSuccess shouldBe true
 				remote.accessEagerly(_.hasStatement(subject, predicate, obj, false, graph)) shouldBe true
 			finally remote.shutDown()
+
+		"terminate a long-running query with a bad-request response" in:
+			val vf = repo.getValueFactory
+			val graph = vf.createIRI("urn:slow:graph")
+			val pred = vf.createIRI("urn:slow:p")
+			repo.transact: conn =>
+				for i <- 1 to 300 do conn.add(vf.createIRI(s"urn:slow:s$i"), pred, vf.createLiteral(i), graph)
+			.isSuccess shouldBe true
+
+			// a three-way cross product, with a filter that cannot be pushed down to a single
+			// pattern and that matches nothing, so the query runs long without streaming anything
+			// out (a query that has begun streaming is allowed to run past the timeout)
+			val longRunningQuery = """
+				select ?a where {
+					?a ?p1 ?b .
+					?c ?p2 ?d .
+					?e ?p3 ?f .
+					filter(strlen(concat(str(?a), str(?c), str(?e))) > 100000)
+				}
+			"""
+			val slowConf = sparqlConf.copy(maxQueryRuntimeSec = 1)
+			val slowServer = new Rdf4jSparqlServer(repo, slowConf)
+			try
+				given ToResponseMarshaller[SparqlRequest] = slowServer.marshaller
+				given RouteTestTimeout = RouteTestTimeout(20.seconds)
+				val slowRoute = Route(
+					repo,
+					slowConf,
+					DerivedMetadataService.unavailable(vf),
+					message => Future.successful(s"read-only: $message")
+				)
+				val origin = "https://example.icos-cp.eu"
+				Post("/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, longRunningQuery))
+					.withHeaders(Origin(HttpOrigin(origin)), forwardedFor) ~> slowRoute ~> check:
+						status shouldBe StatusCodes.BadRequest
+						header(`Access-Control-Allow-Origin`.name).map(_.value) shouldBe Some(origin)
+			finally slowServer.shutdown()
 
 	override protected def afterAll(): Unit =
 		Await.result(binding.unbind(), 5.seconds)

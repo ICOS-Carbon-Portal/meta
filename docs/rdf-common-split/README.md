@@ -135,8 +135,9 @@ double-append protection), 5 (custom-index/geospatial parity against an embedded
 work: the Postgres infrastructure for item 3 already exists in the harness, but driving
 `RdfMutation`/`LoggingInstanceServer` and inspecting the log table is a separately-verifiable
 suite; items 5 and 6 need a seeded, indexed corpus comparable to `TestDb`'s and dedicated chaos
-scenarios respectively. The suite is tagged `tags.RemoteIntegration` (see
-`rdf-common/src/test/scala/tags/TagObjects.scala`), excluded from the default fast `Test/test`
+scenarios respectively. The suite was tagged `tags.RemoteIntegration` (defined at the time in
+`rdf-common/src/test/scala/tags/TagObjects.scala`, since deleted — see the revision below),
+excluded from the default fast `Test/test`
 run (needs `initdb`/`pg_ctl` on `PATH` and takes several seconds), and always run via the new
 `remoteIntegrationTest` sbt task, which is wired into `cpDeployPreAssembly` so it can never be
 skipped before a production build.
@@ -164,6 +165,20 @@ do, if that coverage is ever judged worth adding. `remoteIntegrationTest`, the
 removed as dead weight along with the harness. LMDB-specific behavior (the fresh-store read-only
 restart, Postgres-backed log replay) is `rdfStore`'s own implementation detail and was never
 `meta`'s to test in the first place; it belongs in a test living in `rdfStore`'s own suite.
+
+**Follow-up on the SPARQL route tests:** dropping `meta`'s dependency on `rdfStore` for local
+query tests also deleted `test/services/sparql/SparqlRouteTests.scala`, whose subject
+(`SparqlRoute`) had moved to `rdfStore`. Only its two biblio-info cases were carried over, into
+`QueryTests` as plain SPARQL-level assertions. Of the rest, CORS and cache MISS/HIT were already
+covered by `rdfstore/RouteTest.scala` and the `CancellationException` → `BadRequest` mapping by
+`SparqlFailureHandlerTest`, but the end-to-end query-timeout case — the one that had carried the
+`SlowRoute` tag — was left uncovered and has since been restored in `rdfstore/RouteTest.scala`.
+It posts a three-way cross product under a `maxQueryRuntimeSec = 1` config and asserts a
+`BadRequest`. The query's filter must be both unpushable and unsatisfiable so that nothing
+streams out before the timeout: `QuotaManager.keepRunningIndefinitely` lets a query that has
+already begun streaming outlive its deadline, which would make the assertion vacuous. It is not
+tagged — at ~1.2s it does not need excluding from fast runs, and no build config ever filtered
+on `SlowRoute` anyway.
 
 ### Phase 6 — cut the edge and ship two applications
 

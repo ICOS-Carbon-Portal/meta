@@ -29,5 +29,9 @@ jobs:
         cache: 'sbt'
     - name: Install sbt
       uses: sbt/setup-sbt@v1
-    - name: Run tests
+    - name: Run meta tests
       run: sbt test
+    - name: Run rdfstore tests
+      run: sbt rdfStore/test
+    - name: Run rdf-common tests
+      run: sbt rdfCommon/test

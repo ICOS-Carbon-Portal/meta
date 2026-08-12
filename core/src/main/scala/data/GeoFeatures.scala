@@ -35,7 +35,7 @@ case class Position(lat: Double, lon: Double, alt: Option[Float], label: Option[
 	type Self = Position
 	def latlon: LatLon = lat -> lon
 
-	def textSpecification = s"Lat: $lat6, Lon: $lon6" + alt.fold("")(alt => s", Alt: $alt m")
+	def textSpecification = s"Lat: $lat6, Lon: $lon6" + alt.fold("")(alt => s", Elev: $alt m")
 
 	def lat6 = PositionUtil.format6(lat)
 	def lon6 = PositionUtil.format6(lon)

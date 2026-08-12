@@ -82,7 +82,7 @@
 							@quickfact(cc.displayCountry, "fa-map-marker-alt")
 						}
 						@for(alt <- station.location.flatMap(_.alt)){
-							@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Altitude"})
+							@quickfact(s"${alt.toInt} m", "fa-arrows-alt-v", Some{"Elevation"})
 						}
 						@for(temperature <- ecoSpecifics.flatMap(_.meanAnnualTemp)){
 							@quickfact(s"$temperature °C", "fa-thermometer-empty", Some("Mean annual temperature"))

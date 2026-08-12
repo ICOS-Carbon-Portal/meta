@@ -22,7 +22,7 @@ module.exports = function(StationMixins) {
 				<Inputs.Header txt="Station Localisation" />
 				<Inputs.Latitude {...this.getProps('hasLat')} header="Latitude [WGS84, decimal degrees]" />
 				<Inputs.Longitude {...this.getProps('hasLon')} header="Longitude [WGS84, decimal degrees]" />
-				<Inputs.Number {...this.getProps('hasElevationAboveSea')} header="Station altitude above sea level [m]" />
+				<Inputs.Number {...this.getProps('hasElevationAboveSea')} header="Station elevation above sea level [m]" />
 				<Inputs.SlashSeparatedInts {...this.getProps('hasElevationAboveGround')} header="Inlet height(s) above ground (slash separated) [m]" />
 				<Inputs.TextArea {...this.getProps('hasAccessibility')} header="Describe accessibility (relevant for mobile lab for ex)" />
 

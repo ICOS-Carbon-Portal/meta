@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.meta.{AppConfig, ConfigLoader, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
@@ -25,7 +25,7 @@ import scala.util.{Failure, Success}
 object Main extends App:
 
 	private val appConfig = AppConfig.rootConfWithWorkingDirOverrides
-	private val metaConfig = ConfigLoader.default
+	private val metaConfig = RdfStoreConfigLoader.metaView
 	private val storeConfig = RdfStoreConfigLoader.default
 	private val host = storeConfig.httpBindInterface
 	private val port = storeConfig.port

@@ -17,15 +17,6 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
 
-// DbServer/DbCredentials used to live in rdf-common/src/main/scala/persistence/postgres/DbConnectionConfig.scala
-// as plain config value carriers for the JDBC connection logic, which has since moved out of
-// rdfCommon entirely (meta and rdfStore each own their own RDF-log read/write implementation).
-// They stay here, next to RdflogConfig, because both CpmetaConfig and RdfStoreConfig need this type.
-case class DbCredentials(db: String, user: String, password: String)
-case class DbServer(host: String, port: Int)
-
-case class RdflogConfig(server: DbServer, credentials: DbCredentials)
-
 enum IngestionMode:
 	case EAGER, BACKGROUND, OFF
 
@@ -42,14 +33,6 @@ case class InstanceServerConfig(
 	logIngestionFromId: Option[Int],
 	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
-)
-
-case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
-
-case class DataObjectInstServersConfig(
-	commonReadContexts: Seq[URI],
-	uriPrefix: URI,
-	definitions: Seq[DataObjectInstServerDefinition]
 )
 
 case class InstanceServersConfig(
@@ -135,25 +118,11 @@ case class LabelingServiceConfig(
 	ontoId: String
 )
 
-case class SparqlServerConfig(
-	maxQueryRuntimeSec: Int,
-	quotaPerMinute: Int,//in seconds
-	quotaPerHour: Int,  //in seconds
-	maxParallelQueries: Int,
-	maxQueryQueue: Int,
-	banLength: Int, //in minutes
-	maxCacheableQuerySize: Int, //in bytes
-	adminUsers: Seq[String]
-)
-
-case class RdfStorageConfig(
-	lmdb: Option[LmdbConfig],
-	path: String,
-	recreateAtStartup: Boolean,
-	indices: String,
-	disableCpIndex: Boolean,
-	recreateCpIndexAtStartup: Boolean
-)
+/**
+ * meta only ever reads `sparql.adminUsers`; the query-tuning fields (maxQueryRuntimeSec,
+ * quotaPerMinute, ...) belong to rdfStore's own `SparqlServerConfig` and are ignored here.
+ */
+case class SparqlAdminConfig(adminUsers: Seq[String])
 
 /**
  * When present, meta uses an RDF4J SPARQLRepository instead of owning a local
@@ -166,20 +135,6 @@ case class RemoteRdfRepositoryConfig(
 	adminEndpoint: URI,
 	derivedMetadataEndpoint: URI
 )
-
-case class RdfStoreConfig(
-	httpBindInterface: String,
-	port: Int,
-	rdfStorage: RdfStorageConfig,
-	rdfLog: RdflogConfig,
-	rdfLogs: Map[String, URI],
-	rdfLogRestoreFromId: Map[String, Int]
-)
-
-case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
-
-// CitationConfig and DoiConfig moved to rdf-common/src/main/scala/CitationConfig.scala
-// (ahead of task 14, see the comment there for why).
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -197,12 +152,11 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	rdfStorage: RdfStorageConfig,
 	remoteRdfRepository: Option[RemoteRdfRepositoryConfig],
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
-	sparql: SparqlServerConfig,
+	sparql: SparqlAdminConfig,
 	citations: CitationConfig,
 	statsClient: StatsClientConfig,
 	sentry: Option[SentryConfig]
@@ -212,6 +166,10 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
+	import SharedConfigJsonProtocol.given RootJsonFormat[RdflogConfig]
+	import SharedConfigJsonProtocol.given RootJsonFormat[DataObjectInstServersConfig]
+	import SharedConfigJsonProtocol.given RootJsonFormat[HandleNetClientConfig]
+	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
 
 	private val IcosFlow = "icos"
 	private val CitiesFlow = "cities"
@@ -219,8 +177,6 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
-	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
-	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
 	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat6(CitiesMetaFlowConfig.apply)
@@ -237,9 +193,6 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 				case None => deserializationError(s"Cannot deserialize as MetaFlowConfig, missing field $TypeField")
 
 	given RootJsonFormat[InstanceServersConfig] = jsonFormat3(InstanceServersConfig.apply)
-	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
-	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
-	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[PublicAuthConfig] = jsonFormat4(PublicAuthConfig.apply)
 	given RootJsonFormat[SchemaOntologyConfig] = jsonFormat2(SchemaOntologyConfig.apply)
 	given RootJsonFormat[InstOntoServerConfig] = jsonFormat4(InstOntoServerConfig.apply)
@@ -247,21 +200,17 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[DataSubmitterConfig] = jsonFormat6(DataSubmitterConfig.apply)
 	given RootJsonFormat[SubmittersConfig] = jsonFormat1(SubmittersConfig.apply)
 	given RootJsonFormat[EtcConfig] = jsonFormat7(EtcConfig.apply)
-	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
-	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[SparqlAdminConfig] = jsonFormat1(SparqlAdminConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
-	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = AppConfig.rootConfWithWorkingDirOverrides.getValue("cpmeta").parseAs[CpmetaConfig]
 
@@ -279,16 +228,3 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 			SubmittersConfig(Envri.values.iterator.map(_ -> Map.empty[String, DataSubmitterConfig]).toMap)
 
 end ConfigLoader
-
-object RdfStoreConfigLoader:
-	import se.lu.nateko.cp.meta.core.CommonJsonSupport.given
-	import DefaultJsonProtocol.*
-
-	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
-	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
-	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
-	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)
-
-	lazy val default: RdfStoreConfig = AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore").parseAs[RdfStoreConfig]

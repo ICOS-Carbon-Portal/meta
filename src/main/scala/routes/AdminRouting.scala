@@ -9,6 +9,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
+import se.lu.nateko.cp.meta.SparqlAdminConfig
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}

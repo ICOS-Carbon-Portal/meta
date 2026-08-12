@@ -4,7 +4,6 @@ import scala.language.unsafeNulls
 
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
-import se.lu.nateko.cp.meta.services.sparql.index.*
 
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Random

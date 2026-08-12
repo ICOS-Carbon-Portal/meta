@@ -47,7 +47,7 @@ private val graphIriToFile = Seq(
 	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-private val metaConf = se.lu.nateko.cp.meta.RdfStoreConfigLoader.metaView
+private val citationStoreConfig = se.lu.nateko.cp.meta.RdfStoreConfigLoader.citationStoreConfig
 
 class TestDb {
 	TestRepo.checkout()
@@ -159,9 +159,9 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = new CitationProvider(
-		base, _ => CitationClientDummy, metaConf.core,
-		CitationProvider.getLenses(metaConf.instanceServers, metaConf.dataUploadService),
-		CitationProvider.pidFactory(metaConf)
+		base, _ => CitationClientDummy, citationStoreConfig.core,
+		CitationProvider.getLenses(citationStoreConfig.instanceServers, citationStoreConfig.dataUploadService),
+		CitationProvider.pidFactory(citationStoreConfig)
 	)
 	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer, DerivedMetadataService(citer))

@@ -25,20 +25,21 @@ import scala.util.{Failure, Success}
 object Main extends App:
 
 	private val appConfig = AppConfig.rootConfWithWorkingDirOverrides
-	private val metaConfig = RdfStoreConfigLoader.metaView
+	private val citationStoreConfig = RdfStoreConfigLoader.citationStoreConfig
+	private val sparqlConfig = RdfStoreConfigLoader.sparqlConfig
 	private val storeConfig = RdfStoreConfigLoader.default
 	private val host = storeConfig.httpBindInterface
 	private val port = storeConfig.port
 
 	private given system: ActorSystem = ActorSystem("cpmeta-rdf-store", appConfig)
 	private given ExecutionContext = system.dispatcher
-	private given EnvriConfigs = metaConfig.core.envriConfigs
+	private given EnvriConfigs = citationStoreConfig.core.envriConfigs
 
 	private val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
 
 	private val startup = for
 		(citCache, doiCache) <- readCitCache().zip(readDoiCache())
-		citer = CitationProvider(baseSail, citCache, doiCache, metaConfig)
+		citer = CitationProvider(baseSail, citCache, doiCache, citationStoreConfig)
 		derivedMetadata = DerivedMetadataService(citer)
 		indexFactories =
 			if isFreshInit || storeConfig.rdfStorage.disableCpIndex then None
@@ -53,11 +54,11 @@ object Main extends App:
 		_ = if isFreshInit then sail.makeReadonly(
 			"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
 		)
-		queryServer = Rdf4jSparqlServer(repo, metaConfig.sparql)
+		queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
 		given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
 		binding <- Http().newServerAt(host, port).bind(Route(
 			repo,
-			metaConfig.sparql,
+			sparqlConfig,
 			derivedMetadata,
 			message => sail.makeReadonlyDumpIndexAndCaches(message)
 		))

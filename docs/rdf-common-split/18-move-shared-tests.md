@@ -36,6 +36,11 @@ Plus the fixtures under `src/test/resources/crypto/` that `HandleNetClientTests`
 - **`test/tags/TagObjects.scala`** — scalatest tag definitions, probably referenced from suites
   in several modules. Either duplicate it or put it in `rdfCommon`'s test tree and give the
   other modules a `dependsOn(rdfCommon % "test->test")`.
+  *(Outcome: put in `rdfCommon`'s test tree, then deleted once both its tags lost their last
+  consumer — `RemoteIntegration` with the task-19 harness, `SlowRoute` with `SparqlRouteTests`.
+  The `tags.DbTest` annotation that shipped alongside it is still used by `rdfStore`'s
+  `QueryTests` and now lives in that module's own test tree, so no cross-module test dependency
+  is needed for tags.)*
 - **`test/TestConfig.scala` and `test/MetaTestFactory.scala`** — shared test helpers. Determine
   which modules' suites need them; `metaCore` already uses a `test->test` dependency
   (`build.sbt:110`), so the pattern exists in this build.

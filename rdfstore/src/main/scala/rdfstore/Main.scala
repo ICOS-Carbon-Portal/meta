@@ -9,7 +9,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProviderFactory
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
@@ -38,7 +38,7 @@ object Main extends App:
 
 	private val startup = for
 		(citCache, doiCache) <- readCitCache().zip(readDoiCache())
-		citer = CitationProviderFactory(baseSail, citCache, doiCache, metaConfig)
+		citer = CitationProvider(baseSail, citCache, doiCache, metaConfig)
 		derivedMetadata = DerivedMetadataService(citer)
 		indexFactories =
 			if isFreshInit || storeConfig.rdfStorage.disableCpIndex then None

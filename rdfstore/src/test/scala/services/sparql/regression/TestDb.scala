@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderFactory, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
@@ -160,8 +160,8 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 
 	val citer = new CitationProvider(
 		base, _ => CitationClientDummy, metaConf.core,
-		CitationProviderFactory.getLenses(metaConf.instanceServers, metaConf.dataUploadService),
-		CitationProviderFactory.pidFactory(metaConf)
+		CitationProvider.getLenses(metaConf.instanceServers, metaConf.dataUploadService),
+		CitationProvider.pidFactory(metaConf)
 	)
 	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer, DerivedMetadataService(citer))

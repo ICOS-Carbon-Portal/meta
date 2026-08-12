@@ -15,18 +15,34 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
+import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.CitationConfig
+import se.lu.nateko.cp.meta.{CitationConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig, StoreInstanceServersConfig, StoreMetaConfig, StoreUploadTargetsConfig}
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
 
 
 object CitationProvider:
+
+	/**
+	 * `StoreMetaConfig` is rdfStore's own narrow view of the shared `cpmeta` config section
+	 * (see `StoreMetaConfig`'s scaladoc); this overload does the config -> RdfLenses/PidFactory
+	 * translation and defers to the resolved-primitives overload below.
+	 */
+	def apply(
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
+	)(using ActorSystem, Materializer): CitationProvider =
+		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+
+	def apply(
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: StoreMetaConfig
+	)(using ActorSystem, Materializer): CitationProvider =
+		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
 		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
@@ -43,14 +59,49 @@ object CitationProvider:
 			dois => CitationClientImpl(dois, citations, citCache, doiCache)
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
+	def pidFactory(conf: StoreMetaConfig): PidFactory =
+		val handleConf = conf.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+
+	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
+		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
+
+	def getLenses(servConf: StoreInstanceServersConfig, uplConf: StoreUploadTargetsConfig): RdfLenses =
+		def confsToLenses[L](confs: Map[Envri, String], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] = confs.flatMap:
+			(envri, instServId) => servConf.specific.get(instServId).map: conf =>
+				envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
+
+		val perFormat = servConf.forDataObjects.map: (envri, config) =>
+			val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
+				val writeContext = getInstServerContext(config, definition)
+				definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
+			envri -> lenses.toMap
+
+		val cpOwn = servConf.metaFlow.flattenToSeq.flatMap: flow =>
+			servConf.specific.get(flow.cpMetaInstanceServerId).map[(String, RdfLens.CpLens)]: config =>
+				flow.cpMetaInstanceServerId -> RdfLens.cpLens(
+					config.writeContext,
+					config.readContexts.getOrElse(Seq(config.writeContext))
+				)
+		.toMap
+
+		RdfLenses(
+			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
+			cpMetaInstances = cpOwn,
+			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
+			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
+			dobjPerFormat = perFormat
+		)
+
+end CitationProvider
 
 /**
- * Note: this takes already-resolved `MetaCoreConfig`/`RdfLenses`/`PidFactory` instead of the
- * whole `CpmetaConfig`, because `CpmetaConfig` (and the instance-server/upload-service
- * configuration it embeds) still lives in `rdfStore` until task 14 moves it to `rdfCommon`.
- * `CitationProvider` itself lives in `rdfCommon` now (task 11), so it cannot depend on a type
- * that is one layer further down the dependency graph; callers (in `meta`/`rdfStore`, which do
- * have `CpmetaConfig`) compute these values and pass them in. See docs/rdf-common-split/11-move-citation-stack.md.
+ * rdfStore-owned (task 24: derived-metadata ownership moved here from `rdf-common`, reversing
+ * an earlier plan - task 11 - to share this class with `meta`; `meta` now reads citation/licence
+ * data through the HTTP `DerivedMetadataClient` instead of constructing its own provider). The
+ * companion object's `StoreMetaConfig` overloads above are the only construction path in
+ * practice; the `MetaCoreConfig`/`CitationConfig`/`RdfLenses`/`PidFactory` overloads exist mainly
+ * so tests (`TestDb.scala`) can supply hand-built fixtures without a full `StoreMetaConfig`.
  */
 class CitationProvider(
 	val repo: Repository,

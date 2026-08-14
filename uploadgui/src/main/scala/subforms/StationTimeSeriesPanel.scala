@@ -57,10 +57,9 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 
 	private val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
-	getElementById[html.Button]("rmL2GeoSelection").foreach: button =>
-		button.onclick = event =>
-			event.preventDefault()
-			spatialCovSelect.unselect()
+	getElementById[html.Button]("rmL2GeoSelection").onclick = event =>
+		event.preventDefault()
+		spatialCovSelect.unselect()
 
 	def resetForm(): Unit = {
 		resetPlaceInfo()

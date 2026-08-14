@@ -24,7 +24,13 @@ class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 
 	val plainMandatory = varDefs.filterNot(_.isOptional).flatMap(_.plain)
 
-	private val plainLookup: Map[String, VarMeta] = varDefs.flatMap(_.plain).map{vm =>
+	private val plainVarMetas = varDefs.flatMap(_.plain)
+
+	private val plainLookupByName: Map[String, VarMeta] = plainVarMetas.map{vm =>
+		vm.label -> vm
+	}.toMap
+
+	private val plainLookupByUriId: Map[String, VarMeta] = plainVarMetas.map{vm =>
 		UriId(vm.model.uri).urlSafeString -> vm
 	}.toMap
 
@@ -32,9 +38,9 @@ class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 		dv => new Regex(dv.title) -> dv
 	}
 
-	def lookup(varUri: URI): Option[VarMeta] = plainLookup.get(UriId(varUri).urlSafeString)
+	def lookup(varUri: URI): Option[VarMeta] = plainLookupByUriId.get(UriId(varUri).urlSafeString)
 
-	def lookup(varName: String): Option[VarMeta] = plainLookup.get(varName).orElse:
+	def lookup(varName: String): Option[VarMeta] = plainLookupByName.get(varName).orElse:
 		regexes.collectFirst:
 			case (reg, dv) if reg.matches(varName) =>
 				VarMeta(dv.self, varName, dv.valueType, dv.valueFormat, dv.isFlagFor, None, None)

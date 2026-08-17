@@ -2,17 +2,17 @@ package se.lu.nateko.cp.meta.services.citation
 
 import scala.language.unsafeNulls
 
-import se.lu.nateko.cp.meta.api.HandleNetClientConfig
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.{CitationConfig, CitationConfigJsonProtocol, SharedConfigJsonProtocol}
+import se.lu.nateko.cp.meta.{CitationConfig, CitationConfigJsonProtocol}
 import spray.json.*
 
 /**
  * The whole configuration `CitationProvider` needs, assembled from two HOCON roots by
  * `RdfStoreConfigLoader.citationStoreConfig`:
  *
- *   - `core`, `citations` and `handle` from the shared `cpmeta` section (rdf-common's
- *     reference.conf), which `meta` reads too;
+ *   - shared `core` and `citations` from rdf-common's `cpmeta` section;
+ *   - `handle` from rdfStore's application-owned, narrow `cpmeta.dataUploadService` defaults;
  *   - `citationGraphs` from rdfStore's own `rdfStore.citationGraphs` (task 25, stage 2), which
  *     replaced the `cpmeta.instanceServers`-shaped read-side copy rdfStore used to carry.
  *
@@ -29,17 +29,20 @@ import spray.json.*
 case class CitationStoreConfig(
 	core: MetaCoreConfig,
 	citations: CitationConfig,
-	handle: HandleNetClientConfig,
+	handle: HandleConfig,
 	citationGraphs: CitationGraphsConfig
 )
 
 /**
- * The `cpmeta` half of `CitationStoreConfig`: parsed straight off the shared section, then flattened
- * into `CitationStoreConfig` by the loader. `dataUploadService` is a one-field view on purpose -
+ * The `cpmeta` half of `CitationStoreConfig`: parsed from the effective section assembled from
+ * rdf-common and rdfStore defaults, then flattened into `CitationStoreConfig` by the loader.
+ * `dataUploadService` is a one-field view on purpose -
  * `metaServers`/`collectionServers`/`documentServers` are meta-only and live in `meta`'s own
- * reference.conf; only `handle` (for `PidFactory`) is still shared.
+ * reference.conf; rdfStore defines only `handle` (for `PidFactory`) in its reference.conf.
  */
-case class StoreUploadTargetsConfig(handle: HandleNetClientConfig)
+case class HandleConfig(prefix: Map[Envri, String], baseUrl: String)
+
+case class StoreUploadTargetsConfig(handle: HandleConfig)
 
 case class CitationCpmetaView(
 	core: MetaCoreConfig,
@@ -50,9 +53,9 @@ case class CitationCpmetaView(
 object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import DefaultJsonProtocol.*
 	import MetaCoreConfig.given
-	import SharedConfigJsonProtocol.given RootJsonFormat[HandleNetClientConfig]
 	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
 
+	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
 	given RootJsonFormat[StoreUploadTargetsConfig] = jsonFormat1(StoreUploadTargetsConfig.apply)
 	given RootJsonFormat[CitationCpmetaView] = jsonFormat3(CitationCpmetaView.apply)
 

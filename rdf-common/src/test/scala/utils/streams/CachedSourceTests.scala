@@ -10,10 +10,9 @@ import scala.util.Success
 
 class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{
 
-	// ActorSystem() resolves every reference.conf on the classpath, including rdf-common's own
-	// (which cross-references rdfStore's `rdfLog`/`rdfStorage` keys - see task 15's note in
-	// docs/rdf-common-split). rdf-common/src/test/resources/reference.conf stubs those keys so
-	// this resolves without pulling in rdfStore's or meta's full configuration.
+	// ActorSystem() resolves every reference.conf on the classpath, including rdf-common's own.
+	// That one is self-contained (its only cross-references are `${metacore}`, from meta-core,
+	// and one internal `${cpmeta.citations...}`), so no test-only stub config is needed here.
 	private given system: ActorSystem = ActorSystem("CachedSourceTests")
 	import system.dispatcher
 

@@ -214,7 +214,7 @@ layering, from most to least specific, is:
 3. Each application's own classpath `application.conf`, if it ships one (currently neither does;
    both rely on `reference.conf` defaults).
 4. `reference.conf`, split across modules:
-   - `rdf-common/src/main/resources/reference.conf` carries the shared `akka` defaults and, for
+   - `rdf-common/src/main/resources/reference.conf` carries, for
      now, *all* of `cpmeta.*` - including fields only `meta` ever reads, like `onto` and
      `fileStoragePath`. This is not the conceptually clean split described by
      `docs/rdf-common-split/15-split-config.md`'s classification table; it is a consequence of
@@ -226,6 +226,9 @@ layering, from most to least specific, is:
      resolve on their own - Typesafe Config requires every `reference.conf` to be independently
      resolvable, and `meta`'s classpath no longer carries `rdfStore`'s `reference.conf` to resolve
      those substitutions from.
+     Akka defaults were subsequently moved into each application's own `reference.conf`, so
+     each independently deployable service owns its logging, HTTP parsing, timeout, and cache
+     policy.
    - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
      `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph), `rdfLogRestoreFromId`, and
      (duplicated, intentionally identical to rdf-common's copy) `rdfLog`/`rdfStorage`.

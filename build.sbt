@@ -129,10 +129,6 @@ lazy val rdfCommon = (project in file("rdf-common"))
 			"com.typesafe"           % "config"                             % "1.4.2",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
 			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test",
-			// rdf-common's own reference.conf configures akka.loggers to use Slf4jLogger (needed
-			// by meta/rdfStore, both of which have this on their Compile classpath already); tests
-			// that spin up an ActorSystem in isolation (e.g. CachedSourceTests) need it too.
-			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion % "test" cross CrossVersion.for3Use2_13,
 		)
 	)
 

@@ -38,8 +38,7 @@ case class SparqlServerConfig(
 	maxParallelQueries: Int,
 	maxQueryQueue: Int,
 	banLength: Int, //in minutes
-	maxCacheableQuerySize: Int, //in bytes
-	adminUsers: Seq[String]
+	maxCacheableQuerySize: Int //in bytes
 )
 
 object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
@@ -51,7 +50,7 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)
-	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
+	given RootJsonFormat[SparqlServerConfig] = jsonFormat7(SparqlServerConfig.apply)
 
 	lazy val default: RdfStoreConfig =
 		AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore").parseAs[RdfStoreConfig]

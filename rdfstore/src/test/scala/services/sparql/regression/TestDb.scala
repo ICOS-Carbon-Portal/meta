@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
+import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig, RdfStoreConfigLoader}
 
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.Duration
@@ -47,7 +47,6 @@ private val graphIriToFile = Seq(
 	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-private val citationStoreConfig = se.lu.nateko.cp.meta.RdfStoreConfigLoader.citationStoreConfig
 
 class TestDb {
 	TestRepo.checkout()
@@ -158,11 +157,15 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	else
 		Some(indexUpdaterFactory -> geoFactory)
 
-	val citer = new CitationProvider(
-		base, _ => CitationClientDummy, citationStoreConfig.core,
-		CitationProvider.getLenses(citationStoreConfig.instanceServers, citationStoreConfig.dataUploadService),
-		CitationProvider.pidFactory(citationStoreConfig)
-	)
+	val citer = {
+			val config = RdfStoreConfigLoader.citationStoreConfig
+			new CitationProvider(
+			base, _ => CitationClientDummy, config.core,
+			CitationProvider.getLenses(config.instanceServers, config.dataUploadService),
+			CitationProvider.pidFactory(config)
+		)
+	}
+
 	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer, DerivedMetadataService(citer))
 }

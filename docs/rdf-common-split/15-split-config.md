@@ -29,7 +29,7 @@ needs it.
 |---|---|
 | `CitationConfig`, `DoiConfig`, `DoiMemberConfig` | citation stack lives in `rdfCommon` (task 11) |
 | `HandleNetClientConfig` | `HandleNetClient` lives in `rdfCommon` (task 05) |
-| `InstanceServersConfig` and its members (`InstanceServerConfig`, `DataObjectInstServersConfig`, `DataObjectInstServerDefinition`, `IngestionConfig`) | **`CitationProvider.scala:22` needs these** to build RDF lenses inside the store |
+| `DataObjectInstServersConfig`, `DataObjectInstServerDefinition` | Both applications use the data-object graph shape, but each owns its own containing `instanceServers` configuration |
 | `UploadServiceConfig` | also needed by `CitationProvider.scala:22` |
 | `SubmittersConfig`, `DataSubmitterConfig` | referenced from the shared upload readers |
 | `MetaCoreConfig`, `PublicAuthConfig` | already from `metaCore` / `cpauth-core` |
@@ -46,9 +46,10 @@ settings. `RdfStoreConfigLoader` moves with them.
 `EtcConfig`, `StatsClientConfig`, `SentryConfig`, `RemoteRdfRepositoryConfig`,
 `fileStoragePath`, and `meta`'s own `port` / `httpBindInterface`.
 
-Note the surprises: `InstanceServersConfig` and `UploadServiceConfig` look like `meta` settings
-but are read by `CitationProvider` inside the store. Verify this against the code rather than
-against intuition before finalising the split.
+`InstanceServersConfig`, `InstanceServerConfig`, and `IngestionConfig` are meta-only. rdfStore's
+`CitationProvider` instead reads `StoreInstanceServersConfig`, a minimal independent view containing
+only the graph contexts, data-object graph definitions, and `cpMetaInstanceServerId` it needs.
+`UploadServiceConfig` remains split into the full meta type and rdfStore's narrow upload-target view.
 
 ## Hard constraint: HOCON keys must not change
 

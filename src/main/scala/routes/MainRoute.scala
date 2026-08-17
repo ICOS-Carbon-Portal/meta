@@ -48,7 +48,7 @@ object MainRoute {
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)
 
-		val labelingRoute = LabelingApiRoute(db.labelingService, authRouting, config.sparql.adminUsers)
+		val labelingRoute = LabelingApiRoute(db.labelingService, authRouting, config.adminUsers)
 
 		val filesRoute = FilesRoute(db.fileService)
 
@@ -56,7 +56,7 @@ object MainRoute {
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(
-			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql
+			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.adminUsers
 		).route
 
 		handleExceptions(exceptionHandler){

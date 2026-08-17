@@ -119,12 +119,6 @@ case class LabelingServiceConfig(
 )
 
 /**
- * meta only ever reads `sparql.adminUsers`; the query-tuning fields (maxQueryRuntimeSec,
- * quotaPerMinute, ...) belong to rdfStore's own `SparqlServerConfig` and are ignored here.
- */
-case class SparqlAdminConfig(adminUsers: Seq[String])
-
-/**
  * When present, meta uses an RDF4J SPARQLRepository instead of owning a local
  * Sail store. The query and update endpoints may be different so that writes
  * can be kept on a private listener/reverse-proxy route.
@@ -156,7 +150,7 @@ case class CpmetaConfig(
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
-	sparql: SparqlAdminConfig,
+	adminUsers: Seq[String],
 	citations: CitationConfig,
 	statsClient: StatsClientConfig,
 	sentry: Option[SentryConfig]
@@ -204,7 +198,6 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
-	given RootJsonFormat[SparqlAdminConfig] = jsonFormat1(SparqlAdminConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)

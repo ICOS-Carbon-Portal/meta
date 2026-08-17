@@ -93,10 +93,10 @@ narrow views instead — `CitationStoreConfig` (`core`, `citations`, `instanceSe
 `CitationProvider`, its only consumer) and `SparqlServerConfig` (`cpmeta.sparql`, for query
 throttling). That narrowing is what task 16's `reference.conf` split had been waiting on: the
 `cpmeta.*` keys only `meta`'s own `CpmetaConfig` reads (`onto`, `stationLabelingService`,
-`fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `statsClient`, meta's own
+`fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `adminUsers`, `statsClient`, meta's own
 `port`/`httpBindInterface`) have moved out of `rdf-common/src/main/resources/reference.conf` into
 `meta`'s own `src/main/resources/reference.conf`, which was an empty placeholder until now.
-`cpmeta.core`, `cpmeta.citations`, `cpmeta.sparql.adminUsers`, and
+`cpmeta.core`, `cpmeta.citations`, and
 `cpmeta.dataUploadService`'s non-`etc` fields stay in `rdf-common`. `cpmeta.instanceServers` is
 duplicated deliberately: meta owns the complete configuration, while rdfStore owns only the
 write/read contexts, data-object graph definitions, and `cpMetaInstanceServerId` needed by
@@ -107,7 +107,8 @@ actually parses, and now holds only genuinely shared defaults. What moved out:
 
 | moved | to | why it isn't shared |
 | --- | --- | --- |
-| `cpmeta.sparql`'s throttling knobs (`maxQueryRuntimeSec`, quotas, `banLength`, …) | `rdfstore` | only `SparqlServerConfig` reads them; `adminUsers` alone stays shared, for meta's `SparqlAdminConfig` |
+| `cpmeta.sparql`'s throttling knobs (`maxQueryRuntimeSec`, quotas, `banLength`, …) | `rdfstore` | only `SparqlServerConfig` reads them |
+| `cpmeta.adminUsers` | `meta` | only meta authorizes its administrative and labeling-email routes with it |
 | `akka.http.caching.lfu-cache` | `rdfstore` | `rdfstore/SparqlRoute.scala` is the only `LfuCache` user |
 | `cpmeta.rdfLog` + the `rdfStore.rdfLog` fallback it substitutes from | `meta` | only meta's `CpmetaConfig` parses it (→ `MetaDb`/`PostgresRdfLog`); the fallback exists solely to make that substitution resolvable off meta's classpath, so it belongs next to it |
 | complete `cpmeta.instanceServers` | `meta` | rdfStore has an independent minimal read-side copy |

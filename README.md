@@ -373,7 +373,7 @@ All the updates need to go through the RDF logs, therefore SPARQL UPDATE protoco
 
 where `instance-server id` is the id of the instance server that will be affected by the change, as specified in `meta`'s config file.
 
-To be allowed to perform the operation, one needs to be a on the `adminUsers` list in the config (`cpmeta.sparql.adminUsers`). Here is a `curl` example of the API usage:
+To be allowed to perform the operation, one needs to be on the `adminUsers` list in the config (`cpmeta.adminUsers`). Here is a `curl` example of the API usage:
 
 `curl --upload-file sparql.rq -H "Cookie: cpauthToken=<the token>" https://meta.icos-cp.eu/admin/delete/sitescsv?dryRun=true`
 

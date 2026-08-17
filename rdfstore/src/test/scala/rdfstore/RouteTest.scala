@@ -40,8 +40,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		maxParallelQueries = 2,
 		maxQueryQueue = 2,
 		banLength = 1,
-		maxCacheableQuerySize = 1024 * 1024,
-		adminUsers = Nil
+		maxCacheableQuerySize = 1024 * 1024
 	)
 	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")

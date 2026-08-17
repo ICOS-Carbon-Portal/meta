@@ -58,6 +58,14 @@ against intuition before finalising the split.
 those paths must keep resolving to the same value after the split. The split is in the Scala
 type model and the JSON formats, **not** in the configuration file layout.
 
+One documented exception, from the later audit of `rdf-common`'s `reference.conf` (see the
+follow-up note in [README.md](README.md)): `cpmeta.rdfStorage` was dropped rather than kept
+resolving. It is dead — `CpmetaConfig` has no `rdfStorage` field and `rdfStore` reads
+`rdfStore.rdfStorage` — so an existing override of it neither changed behaviour before nor
+does now. Which reference.conf a still-live key is *defined* in is likewise not part of the
+contract; the effective merged tree per application is what must not change, and was diffed
+key by key (before/after, with and without a working-dir `application.conf`) when keys moved.
+
 ## Steps
 
 1. Split `CpmetaConfig.scala` into three files in their respective modules, keeping every case

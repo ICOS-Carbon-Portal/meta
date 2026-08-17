@@ -96,7 +96,29 @@ throttling). That narrowing is what task 16's `reference.conf` split had been wa
 them; `cpmeta.rdfLog` stays there too, for the `${rdfStore.rdfLog}` substitution and the raw-HOCON
 cross-app contract check in `rdfstore/src/test/scala/rdfstore/RouteTest.scala` (whose
 `cpmeta.remoteRdfRepository` assertions were dropped, since that key is no longer reachable from
-`rdfStore`'s own classpath once it moved to `meta`-only). Verified: `sbt rdfCommon/compile
+`rdfStore`'s own classpath once it moved to `meta`-only).
+
+**Follow-up pass:** `rdf-common`'s `reference.conf` was audited key by key against what each app
+actually parses, and now holds only genuinely shared defaults. What moved out:
+
+| moved | to | why it isn't shared |
+| --- | --- | --- |
+| `cpmeta.sparql`'s throttling knobs (`maxQueryRuntimeSec`, quotas, `banLength`, …) | `rdfstore` | only `SparqlServerConfig` reads them; `adminUsers` alone stays shared, for meta's `SparqlAdminConfig` |
+| `akka.http.caching.lfu-cache` | `rdfstore` | `rdfstore/SparqlRoute.scala` is the only `LfuCache` user |
+| `cpmeta.rdfLog` + the `rdfStore.rdfLog` fallback it substitutes from | `meta` | only meta's `CpmetaConfig` parses it (→ `MetaDb`/`PostgresRdfLog`); the fallback exists solely to make that substitution resolvable off meta's classpath, so it belongs next to it |
+| `cpmeta.instanceServers.metaFlow`'s `_type`, `icosMetaInstanceServerId`, `otcMetaInstanceServerId`, `atcUpload` | `meta` | `rdfStore`'s `MetaFlowRef` reads only `cpMetaInstanceServerId` |
+| `cpmeta.rdfStorage` + the `rdfStore.rdfStorage` fallback | deleted | dead: `CpmetaConfig` dropped its `rdfStorage` field, and `rdfStore` reads `rdfStore.rdfStorage`, not the `cpmeta` alias |
+
+`rdf-common/src/test/resources/reference.conf` (a stub for the `rdfStore.*` keys rdf-common's own
+`reference.conf` used to cross-reference) went away with the last of those cross-references.
+`instanceServers.specific.*` is the one place where meta-only keys deliberately stay in
+`rdf-common`: `logName`/`skipLogIngestionAtStart`/`ingestion` are `Option`-typed on meta's
+`InstanceServerConfig`, so a record that drifted apart across two files would parse cleanly and
+silently stop journalling that instance server — see the comment on that section. `RouteTest`'s
+`cpmeta.rdfLog` vs `rdfStore.rdfLog` assertion went the way of its `cpmeta.remoteRdfRepository`
+one, for the same reason.
+
+Verified: `sbt rdfCommon/compile
 rdfStore/compile meta/compile`, `rdfStore/Test/test` (229 tests, including `RouteTest`) and
 `meta/Test/compile` all green; `se.lu.nateko.cp.meta.ConfigLoader.default` (in `meta/console`) and
 `se.lu.nateko.cp.meta.RdfStoreConfigLoader.{citationStoreConfig,sparqlConfig,default}` (in

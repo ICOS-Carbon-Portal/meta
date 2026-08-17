@@ -57,14 +57,15 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 
 	"the standalone RDF store" should:
 		// `meta`'s own CpmetaConfig (in the `meta` module, which rdfStore does not depend on) is not
-		// reachable from here, so these check the cross-app contract through the raw HOCON tree
+		// reachable from here, so this checks the cross-app contract through the raw HOCON tree
 		// instead of through meta's Scala types - see docs/rdf-common-split/15-split-config.md.
-		// `cpmeta.remoteRdfRepository` moved to meta's own reference.conf once meta-only keys were
-		// split out, so it is no longer reachable from rdfStore's classpath and isn't checked here.
+		// Only keys shared with meta (i.e. those in rdf-common's reference.conf) are reachable from
+		// rdfStore's classpath: `cpmeta.remoteRdfRepository` and `cpmeta.rdfLog` both moved to
+		// meta's own reference.conf as the meta-only keys were split out, so neither is checked
+		// here any more.
 		"configure meta to use the standalone endpoint by default" in:
 			val root = AppConfig.rootConfWithWorkingDirOverrides
 			root.getString("cpmeta.instanceServers.specific.instances.logName") shouldBe "instances"
-			root.getConfig("cpmeta.rdfLog") shouldBe root.getConfig("rdfStore.rdfLog")
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 

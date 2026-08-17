@@ -161,7 +161,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 			val config = RdfStoreConfigLoader.citationStoreConfig
 			new CitationProvider(
 			base, _ => CitationClientDummy, config.core,
-			CitationProvider.getLenses(config.instanceServers, config.dataUploadService),
+			CitationProvider.getLenses(config.citationGraphs),
 			CitationProvider.pidFactory(config)
 		)
 	}

@@ -90,7 +90,7 @@ since nothing outside `meta` needs its full shape any more. `rdfStore` no longer
 `ConfigLoader.default` at all: `rdfstore/StoreConfig.scala`'s `RdfStoreConfigLoader` parses its own
 narrow views instead — `CitationStoreConfig` (`core`, `citations`, `instanceServers`,
 `dataUploadService`'s `metaServers`/`collectionServers`/`documentServers`/`handle`, next to
-`CitationProvider`, its only consumer) and `SparqlServerConfig` (`cpmeta.sparql`, for query
+`CitationProvider`, its only consumer) and `SparqlServerConfig` (`rdfStore.sparql`, for query
 throttling). That narrowing is what task 16's `reference.conf` split had been waiting on: the
 `cpmeta.*` keys only `meta`'s own `CpmetaConfig` reads (`onto`, `stationLabelingService`,
 `fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `adminUsers`, `statsClient`, meta's own
@@ -107,7 +107,7 @@ actually parses, and now holds only genuinely shared defaults. What moved out:
 
 | moved | to | why it isn't shared |
 | --- | --- | --- |
-| `cpmeta.sparql`'s throttling knobs (`maxQueryRuntimeSec`, quotas, `banLength`, …) | `rdfstore` | only `SparqlServerConfig` reads them |
+| `rdfStore.sparql`'s throttling knobs (`maxQueryRuntimeSec`, quotas, `banLength`, …) | `rdfstore` | only `SparqlServerConfig` reads them |
 | `cpmeta.adminUsers` | `meta` | only meta authorizes its administrative and labeling-email routes with it |
 | `akka.http.caching.lfu-cache` | `rdfstore` | `rdfstore/SparqlRoute.scala` is the only `LfuCache` user |
 | `cpmeta.rdfLog` + the `rdfStore.rdfLog` fallback it substitutes from | `meta` | only meta's `CpmetaConfig` parses it (→ `MetaDb`/`PostgresRdfLog`); the fallback exists solely to make that substitution resolvable off meta's classpath, so it belongs next to it |

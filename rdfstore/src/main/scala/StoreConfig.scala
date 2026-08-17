@@ -74,9 +74,8 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 			citationGraphs = citationGraphs
 		)
 
-	/** `cpmeta.sparql`, used by `Rdf4jSparqlServer`/`Route`/`QuotaManager` for query throttling;
-	 *  unrelated to `citationStoreConfig` above even though both live under `cpmeta`. */
+	/** `rdfStore.sparql`, used by `Rdf4jSparqlServer`/`Route`/`QuotaManager` for query throttling. */
 	lazy val sparqlConfig: SparqlServerConfig =
-		AppConfig.rootConfWithWorkingDirOverrides.getValue("cpmeta.sparql").parseAs[SparqlServerConfig]
+		AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore.sparql").parseAs[SparqlServerConfig]
 
 end RdfStoreConfigLoader

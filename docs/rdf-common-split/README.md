@@ -113,6 +113,7 @@ actually parses, and now holds only genuinely shared defaults. What moved out:
 | `cpmeta.rdfLog` + the `rdfStore.rdfLog` fallback it substitutes from | `meta` | only meta's `CpmetaConfig` parses it (→ `MetaDb`/`PostgresRdfLog`); the fallback exists solely to make that substitution resolvable off meta's classpath, so it belongs next to it |
 | complete `cpmeta.instanceServers` | `meta` | rdfStore has an independent minimal read-side copy |
 | `cpmeta.rdfStorage` + the `rdfStore.rdfStorage` fallback | deleted | dead: `CpmetaConfig` dropped its `rdfStorage` field, and `rdfStore` reads `rdfStore.rdfStorage`, not the `cpmeta` alias |
+| all remaining `akka` defaults | both applications | runtime policy belongs to each independently deployable service; the values currently match but can now evolve independently |
 
 `rdf-common/src/test/resources/reference.conf` (a stub for the `rdfStore.*` keys rdf-common's own
 `reference.conf` used to cross-reference) went away with the last of those cross-references.

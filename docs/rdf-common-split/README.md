@@ -48,10 +48,8 @@ This is open slice 4 in `rdf-store-split.md`.
 
 ## Tasks
 
-Progress: **22 / 23 complete.** Task 15 is the only one left unchecked (deliberately deferred; see
-its note below), so 22/23 is the maximum achievable without doing it. Tick a box when the task's
-own verification section passes, and
-update the count above. (Task 15 is intentionally left unchecked and undone; see its row below.)
+Progress: **23 / 23 complete.** Tick a box when the task's own verification section passes, and
+update the count above.
 
 ### Phase 1 — stand up `rdfCommon` (mechanical)
 
@@ -78,24 +76,32 @@ update the count above. (Task 15 is intentionally left unchecked and undone; see
 ### Phase 4 — configuration
 
 - [x] [14](14-move-config-verbatim.md) — Move `CpmetaConfig.scala` to `rdfCommon` unchanged
-- [ ] [15](15-split-config.md) — Split the configuration three ways *(optional for task 21;
-      attempted and deliberately deferred — see note below)*
+- [x] [15](15-split-config.md) — Split the configuration three ways
 - [x] [16](16-meta-appconfig.md) — Give `meta` its own `AppConfig`
 
-**Note on task 15:** deliberately not done in this pass. `CpmetaConfig` stayed a single 16-field
-case class in `rdfCommon`; `rdfstore/Main.scala` and `src/main/scala/Main.scala` both still call
-the same `ConfigLoader.default`, unnarrowed. This has a real consequence for task 16's
-`reference.conf` split: because `rdfStore`'s own boot path parses the *whole* `cpmeta` object
-(not a narrower store-only view), every `cpmeta.*` default — including fields only `meta` ever
-reads, like `onto` and `fileStoragePath` — has to stay reachable from `rdfStore`'s own module
-classpath. They live in `rdf-common/src/main/resources/reference.conf` (see the comment there)
-rather than being split by conceptual ownership as task 15's classification table would suggest;
-`src/main/resources/reference.conf` in `meta` is consequently an empty placeholder for now. Once
-task 15 narrows the config type `rdfStore` actually parses, the meta-only `cpmeta.*` keys can
-move there. Task 15 was skipped rather than half-done because splitting `CitationProviderFactory`,
-`RdfLogManager`, and both `Main`s onto narrower config types, then verifying independent
-config-validation (task 15's "corrupt a meta-only key, confirm rdfStore still starts") is a
-large, separately-reviewable change in its own right — not required for task 16 or task 21.
+**Note on task 15:** done, in the end, across a few separate passes rather than in one shot.
+`CpmetaConfig.scala` moved back out of `rdfCommon` into `meta` (`src/main/scala/CpmetaConfig.scala`),
+since nothing outside `meta` needs its full shape any more. `rdfStore` no longer calls `meta`'s
+`ConfigLoader.default` at all: `rdfstore/StoreConfig.scala`'s `RdfStoreConfigLoader` parses its own
+narrow views instead — `CitationStoreConfig` (`core`, `citations`, `instanceServers`,
+`dataUploadService`'s `metaServers`/`collectionServers`/`documentServers`/`handle`, next to
+`CitationProvider`, its only consumer) and `SparqlServerConfig` (`cpmeta.sparql`, for query
+throttling). That narrowing is what task 16's `reference.conf` split had been waiting on: the
+`cpmeta.*` keys only `meta`'s own `CpmetaConfig` reads (`onto`, `stationLabelingService`,
+`fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `statsClient`, meta's own
+`port`/`httpBindInterface`) have moved out of `rdf-common/src/main/resources/reference.conf` into
+`meta`'s own `src/main/resources/reference.conf`, which was an empty placeholder until now.
+`cpmeta.core`, `cpmeta.citations`, `cpmeta.sparql`, `cpmeta.instanceServers`, and
+`cpmeta.dataUploadService`'s non-`etc` fields stay in `rdf-common` since `rdfStore` genuinely reads
+them; `cpmeta.rdfLog` stays there too, for the `${rdfStore.rdfLog}` substitution and the raw-HOCON
+cross-app contract check in `rdfstore/src/test/scala/rdfstore/RouteTest.scala` (whose
+`cpmeta.remoteRdfRepository` assertions were dropped, since that key is no longer reachable from
+`rdfStore`'s own classpath once it moved to `meta`-only). Verified: `sbt rdfCommon/compile
+rdfStore/compile meta/compile`, `rdfStore/Test/test` (229 tests, including `RouteTest`) and
+`meta/Test/compile` all green; `se.lu.nateko.cp.meta.ConfigLoader.default` (in `meta/console`) and
+`se.lu.nateko.cp.meta.RdfStoreConfigLoader.{citationStoreConfig,sparqlConfig,default}` (in
+`rdfStore/console`) each resolve their full, correct views independently, confirming `cpmeta.*` no
+longer needs to be reachable in its entirety from `rdfStore`'s classpath.
 
 ### Phase 5 — tests
 

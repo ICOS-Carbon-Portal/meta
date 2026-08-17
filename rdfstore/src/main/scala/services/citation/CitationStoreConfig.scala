@@ -17,7 +17,7 @@ import spray.json.*
  *     replaced the `cpmeta.instanceServers`-shaped read-side copy rdfStore used to carry.
  *
  * Kept next to `CitationProvider` - its only consumer - rather than in the general
- * `StoreConfig.scala`; `cpmeta.sparql`, needed elsewhere in rdfStore for query throttling and
+ * `StoreConfig.scala`; `rdfStore.sparql`, needed elsewhere in rdfStore for query throttling and
  * unrelated to citations, is loaded as its own `SparqlServerConfig` (`RdfStoreConfigLoader.
  * sparqlConfig`) instead of being a field on this type. Meta's own, much larger `CpmetaConfig`
  * lives in the `meta` module, which rdfStore does not depend on.

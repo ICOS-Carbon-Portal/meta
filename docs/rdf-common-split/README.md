@@ -51,6 +51,11 @@ This is open slice 4 in `rdf-store-split.md`.
 Progress: **23 / 23 complete.** Tick a box when the task's own verification section passes, and
 update the count above.
 
+Further design work: [25 — Minimize rdfStore's citation graph configuration](25-minimize-rdfstore-citation-graph-config.md)
+completed the direct store-owned `rdfStore.citationGraphs` model, removing rdfStore's
+instance-server-shaped configuration view. The document also records endpoint and materialization
+alternatives that were deliberately not adopted.
+
 ### Phase 1 — stand up `rdfCommon` (mechanical)
 
 - [x] [01](01-create-rdfcommon-module.md) — Create the `rdfCommon` sbt module

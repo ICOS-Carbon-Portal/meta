@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.meta.services.citation.{
 	CitationCpmetaView, CitationGraphsConfig, CitationGraphsConfigJsonProtocol,
-	CitationStoreConfig, CitationStoreConfigJsonProtocol
+	CitationClientConfig, CitationRuntimeConfig, CitationStoreConfig, CitationStoreConfigJsonProtocol
 }
 import spray.json.*
 
@@ -61,15 +61,17 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 			.getValue("rdfStore.citationGraphs").parseAs[CitationGraphsConfig].validated
 
 	/**
-	 * What `CitationProvider` needs, assembled from the shared `cpmeta` section and rdfStore's own
-	 * `rdfStore.citationGraphs` - see `CitationStoreConfig`'s scaladoc.
+	 * What `CitationProvider` needs, assembled from shared core/DOI settings and rdfStore-owned
+	 * citation policy and graph scopes - see `CitationStoreConfig`'s scaladoc.
 	 */
 	lazy val citationStoreConfig: CitationStoreConfig =
 		val cpmeta = AppConfig.rootConfWithWorkingDirOverrides
 			.getValue("cpmeta").parseAs[CitationCpmetaView]
+		val runtime = AppConfig.rootConfWithWorkingDirOverrides
+			.getValue("rdfStore.citations").parseAs[CitationRuntimeConfig]
 		CitationStoreConfig(
 			core = cpmeta.core,
-			citations = cpmeta.citations,
+			citations = CitationClientConfig(runtime.style, runtime.eagerWarmUp, runtime.timeoutSec, cpmeta.citations.doi),
 			handle = cpmeta.dataUploadService.handle,
 			citationGraphs = citationGraphs
 		)

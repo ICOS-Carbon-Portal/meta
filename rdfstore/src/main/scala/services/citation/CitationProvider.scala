@@ -20,7 +20,6 @@ import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.CitationConfig
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
@@ -44,7 +43,7 @@ object CitationProvider:
 
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
-		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
+		core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
 			dois => CitationClientImpl(dois, citations, citCache, doiCache)
@@ -52,7 +51,7 @@ object CitationProvider:
 
 	def apply(
 		repo: Repository, citCache: CitationCache, doiCache: DoiCache,
-		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
+		core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
 			dois => CitationClientImpl(dois, citations, citCache, doiCache)
@@ -90,7 +89,7 @@ end CitationProvider
  * an earlier plan - task 11 - to share this class with `meta`; `meta` now reads citation/licence
  * data through the HTTP `DerivedMetadataClient` instead of constructing its own provider). The
  * companion object's `CitationStoreConfig` overloads above are the only construction path in
- * practice; the `MetaCoreConfig`/`CitationConfig`/`RdfLenses`/`PidFactory` overloads exist mainly
+ * practice; the `MetaCoreConfig`/`CitationClientConfig`/`RdfLenses`/`PidFactory` overloads exist mainly
  * so tests (`TestDb.scala`) can supply hand-built fixtures without a full `CitationStoreConfig`.
  */
 class CitationProvider(

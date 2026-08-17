@@ -96,7 +96,9 @@ throttling). That narrowing is what task 16's `reference.conf` split had been wa
 `fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `adminUsers`, `statsClient`, meta's own
 `port`/`httpBindInterface`) have moved out of `rdf-common/src/main/resources/reference.conf` into
 `meta`'s own `src/main/resources/reference.conf`, which was an empty placeholder until now.
-`cpmeta.core` and `cpmeta.citations` stay in `rdf-common`. `dataUploadService` is application-owned:
+`cpmeta.core` and the shared DOI endpoint/member credentials in `cpmeta.citations` stay in
+`rdf-common`; citation rendering style, cache warm-up and request timeout are owned by
+`rdfStore.citations`. `dataUploadService` is application-owned:
 meta carries the complete Handle.net client view, while rdfStore carries only `prefix` and
 `baseUrl` at the backward-compatible `handle` path needed by `PidFactory`. `cpmeta.instanceServers` is
 duplicated deliberately: meta owns the complete configuration, while rdfStore owns only the

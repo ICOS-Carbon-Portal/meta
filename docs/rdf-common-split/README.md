@@ -96,8 +96,9 @@ throttling). That narrowing is what task 16's `reference.conf` split had been wa
 `fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `adminUsers`, `statsClient`, meta's own
 `port`/`httpBindInterface`) have moved out of `rdf-common/src/main/resources/reference.conf` into
 `meta`'s own `src/main/resources/reference.conf`, which was an empty placeholder until now.
-`cpmeta.core`, `cpmeta.citations`, and
-`cpmeta.dataUploadService`'s non-`etc` fields stay in `rdf-common`. `cpmeta.instanceServers` is
+`cpmeta.core` and `cpmeta.citations` stay in `rdf-common`. `dataUploadService` is application-owned:
+meta carries the complete Handle.net client view, while rdfStore carries only `prefix` and
+`baseUrl` at the backward-compatible `handle` path needed by `PidFactory`. `cpmeta.instanceServers` is
 duplicated deliberately: meta owns the complete configuration, while rdfStore owns only the
 write/read contexts, data-object graph definitions, and `cpMetaInstanceServerId` needed by
 `CitationProvider`.
@@ -114,6 +115,7 @@ actually parses, and now holds only genuinely shared defaults. What moved out:
 | complete `cpmeta.instanceServers` | `meta` | rdfStore has an independent minimal read-side copy |
 | `cpmeta.rdfStorage` + the `rdfStore.rdfStorage` fallback | deleted | dead: `CpmetaConfig` dropped its `rdfStorage` field, and `rdfStore` reads `rdfStore.rdfStorage`, not the `cpmeta` alias |
 | all remaining `akka` defaults | both applications | runtime policy belongs to each independently deployable service; the values currently match but can now evolve independently |
+| `cpmeta.dataUploadService` | both applications | meta owns the complete upload view; rdfStore owns only `handle`, and does not receive meta's server mappings or ETC settings |
 
 `rdf-common/src/test/resources/reference.conf` (a stub for the `rdfStore.*` keys rdf-common's own
 `reference.conf` used to cross-reference) went away with the last of those cross-references.

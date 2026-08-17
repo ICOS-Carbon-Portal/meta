@@ -59,8 +59,7 @@ object CitationProvider:
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
 	def pidFactory(conf: CitationStoreConfig): PidFactory =
-		val handleConf = conf.handle
-		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+		new PidFactory(conf.handle.baseUrl, conf.handle.prefix)
 
 	def getLenses(graphs: CitationGraphsConfig): RdfLenses =
 		def graphLenses[L](confs: Map[Envri, ReadGraphConfig], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] =

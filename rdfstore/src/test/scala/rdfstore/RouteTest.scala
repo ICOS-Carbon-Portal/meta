@@ -58,6 +58,11 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		"load only rdfStore's direct citation graph view" in:
 			val root = AppConfig.rootConfWithWorkingDirOverrides
 			root.hasPath("cpmeta.instanceServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.metaServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.collectionServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.handle") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.handle.clientCertPemFilePath") shouldBe false
 			val graphs = RdfStoreConfigLoader.citationGraphs
 			graphs.collections.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
 			graphs.documents.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)

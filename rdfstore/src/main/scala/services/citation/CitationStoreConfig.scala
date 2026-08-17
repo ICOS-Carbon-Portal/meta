@@ -4,14 +4,15 @@ import scala.language.unsafeNulls
 
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.{CitationConfig, CitationConfigJsonProtocol}
+import se.lu.nateko.cp.meta.{CitationConfig, CitationConfigJsonProtocol, DoiConfig}
 import spray.json.*
 
 /**
  * The whole configuration `CitationProvider` needs, assembled from two HOCON roots by
  * `RdfStoreConfigLoader.citationStoreConfig`:
  *
- *   - shared `core` and `citations` from rdf-common's `cpmeta` section;
+ *   - shared `core` and DOI settings from rdf-common's `cpmeta` section;
+ *   - citation rendering policy from rdfStore's own `rdfStore.citations` section;
  *   - `handle` from rdfStore's application-owned, narrow `cpmeta.dataUploadService` defaults;
  *   - `citationGraphs` from rdfStore's own `rdfStore.citationGraphs` (task 25, stage 2), which
  *     replaced the `cpmeta.instanceServers`-shaped read-side copy rdfStore used to carry.
@@ -22,16 +23,18 @@ import spray.json.*
  * sparqlConfig`) instead of being a field on this type. Meta's own, much larger `CpmetaConfig`
  * lives in the `meta` module, which rdfStore does not depend on.
  *
- * Note the name: this is *not* `CitationConfig` (rdf-common's `style`/`eagerWarmUp`/`doi` type,
- * held here in the `citations` field) - it is the whole config shape `CitationProvider` needs,
- * of which `CitationConfig` is only one field.
+ * Kept separate from `CitationClientConfig`, which is the rdfStore-only HTTP/cache policy used
+ * by `CitationClient`.
  */
 case class CitationStoreConfig(
 	core: MetaCoreConfig,
-	citations: CitationConfig,
+	citations: CitationClientConfig,
 	handle: HandleConfig,
 	citationGraphs: CitationGraphsConfig
 )
+
+case class CitationClientConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
+case class CitationRuntimeConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
 
 /**
  * The `cpmeta` half of `CitationStoreConfig`: parsed from the effective section assembled from
@@ -58,5 +61,6 @@ object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJ
 	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
 	given RootJsonFormat[StoreUploadTargetsConfig] = jsonFormat1(StoreUploadTargetsConfig.apply)
 	given RootJsonFormat[CitationCpmetaView] = jsonFormat3(CitationCpmetaView.apply)
+	given RootJsonFormat[CitationRuntimeConfig] = jsonFormat3(CitationRuntimeConfig.apply)
 
 end CitationStoreConfigJsonProtocol

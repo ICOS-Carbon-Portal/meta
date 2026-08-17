@@ -27,7 +27,7 @@ needs it.
 
 | Type | Why shared |
 |---|---|
-| `CitationConfig`, `DoiConfig`, `DoiMemberConfig` | citation stack lives in `rdfCommon` (task 11) |
+| `DoiConfig`, `DoiMemberConfig` | meta's DOI service and rdfStore's citation cache use the same endpoint and credentials |
 | `HandleNetClientConfig` | `HandleNetClient` lives in `rdfCommon` (task 05) |
 | `DataObjectInstServersConfig`, `DataObjectInstServerDefinition` | Both applications use the data-object graph shape, but each owns its own containing `instanceServers` configuration |
 | `UploadServiceConfig` | also needed by `CitationProvider.scala:22` |

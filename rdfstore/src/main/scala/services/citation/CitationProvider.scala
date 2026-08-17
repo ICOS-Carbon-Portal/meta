@@ -15,12 +15,12 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix, flattenToSeq}
+import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CitationConfig, DataObjectInstServerDefinition, DataObjectInstServersConfig}
+import se.lu.nateko.cp.meta.CitationConfig
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
@@ -35,12 +35,12 @@ object CitationProvider:
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
-		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.citationGraphs), pidFactory(conf))
 
 	def apply(
 		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
-		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.citationGraphs), pidFactory(conf))
 
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
@@ -59,36 +59,28 @@ object CitationProvider:
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
 	def pidFactory(conf: CitationStoreConfig): PidFactory =
-		val handleConf = conf.dataUploadService.handle
+		val handleConf = conf.handle
 		new PidFactory(handleConf.baseUrl, handleConf.prefix)
 
-	def getInstServerContext(conf: DataObjectInstServersConfig, servDef: DataObjectInstServerDefinition) =
-		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
+	def getLenses(graphs: CitationGraphsConfig): RdfLenses =
+		def graphLenses[L](confs: Map[Envri, ReadGraphConfig], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] =
+			confs.map { case (envri, conf) => envri -> factory(conf.primaryContext, conf.readContexts) }
 
-	def getLenses(servConf: StoreInstanceServersConfig, uplConf: StoreUploadTargetsConfig): RdfLenses =
-		def confsToLenses[L](confs: Map[Envri, String], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] = confs.flatMap:
-			(envri, instServId) => servConf.specific.get(instServId).map: conf =>
-				envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
-
-		val perFormat = servConf.forDataObjects.map: (envri, config) =>
+		val perFormat = graphs.dataObjects.map: (envri, config) =>
 			val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
-				val writeContext = getInstServerContext(config, definition)
-				definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
+				val primaryContext = config.primaryContext(definition)
+				definition.format -> RdfLens.dobjLens(primaryContext, primaryContext +: config.commonReadContexts)
 			envri -> lenses.toMap
 
-		val cpOwn = servConf.metaFlow.flattenToSeq.flatMap: flow =>
-			servConf.specific.get(flow.cpMetaInstanceServerId).map[(String, RdfLens.CpLens)]: config =>
-				flow.cpMetaInstanceServerId -> RdfLens.cpLens(
-					config.writeContext,
-					config.readContexts.getOrElse(Seq(config.writeContext))
-				)
-		.toMap
-
+		// metaInstances/cpMetaInstances are intentionally empty: `RdfLenses.metaInstanceLens` and
+		// `.cpLens` have no rdfStore call site (task 25), they only serve `meta`'s upload,
+		// linked-data and metaflow paths. The aggregate type is still shared, so the two
+		// categories are passed empty rather than removed from `RdfLenses`.
 		RdfLenses(
-			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
-			cpMetaInstances = cpOwn,
-			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
-			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
+			metaInstances = Map.empty,
+			cpMetaInstances = Map.empty,
+			collections = graphLenses(graphs.collections, RdfLens.collLens),
+			documents = graphLenses(graphs.documents, RdfLens.docLens),
 			dobjPerFormat = perFormat
 		)
 

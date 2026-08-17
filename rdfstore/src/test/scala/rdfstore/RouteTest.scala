@@ -56,12 +56,13 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
-		"load only rdfStore's read-side instance-server view" in:
+		"load only rdfStore's direct citation graph view" in:
 			val root = AppConfig.rootConfWithWorkingDirOverrides
-			root.hasPath("cpmeta.instanceServers.specific.instances.logName") shouldBe false
-			RdfStoreConfigLoader.citationStoreConfig.instanceServers.specific.keySet shouldBe Set(
-				"instances", "icos", "icoscolls", "sitescolls", "icosdocs", "sitesdocs", "sitesmeta"
-			)
+			root.hasPath("cpmeta.instanceServers") shouldBe false
+			val graphs = RdfStoreConfigLoader.citationGraphs
+			graphs.collections.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			graphs.documents.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			graphs.dataObjects.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 

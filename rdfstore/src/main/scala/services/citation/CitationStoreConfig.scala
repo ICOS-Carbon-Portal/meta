@@ -13,10 +13,9 @@ import java.net.URI
 
 /**
  * rdfStore's own view of `cpmeta.instanceServers.specific.*`: just the write/read contexts
- * needed to build RdfLenses. Meta-only fields (logName, skipLogIngestionAtStart,
- * logIngestionFromId, ingestion) live on meta's own InstanceServerConfig and are never parsed
- * here; spray-json's generated readers ignore JSON fields that aren't part of the target case
- * class, so the same `cpmeta.instanceServers.specific.*` HOCON parses fine into both views.
+ * needed to build RdfLenses. Meta owns a separate, complete configuration containing logName,
+ * skipLogIngestionAtStart, logIngestionFromId and ingestion; none of those fields are present or
+ * parsed here.
  */
 case class StoreInstanceServerConfig(writeContext: URI, readContexts: Option[Seq[URI]])
 

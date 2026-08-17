@@ -137,7 +137,7 @@ lazy val rdfCommon = (project in file("rdf-common"))
 	)
 
 lazy val meta = (project in file("."))
-		.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
+	.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -339,10 +339,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 
 			assembly / assemblyRepeatableBuild := false,
 
-			// Distinct from meta's "cpmeta" - deploying under the wrong target would overwrite
-			// the wrong service. Confirm with whoever owns the Ansible inventories before this
-			// name is ever used for a real deploy.
-			cpDeployTarget := "cpmetardfstore",
+			cpDeployTarget := "cpmeta_rdfstore",
 			cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta.rdfstore",
 			cpDeployPreAssembly := Def.sequential(
 				metaCore / clean,
@@ -351,13 +348,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 				rdfCommon / Test / test,
 				Test / test,
 			).value,
-			// A separate playbook from meta's "core.yml": this one must mount the RDF storage
-			// volume (rdf-store-split.md - "Only rdfStore may mount the RDF storage directory"),
-			// and meta's playbook must not. rdfStore must be started before meta, since meta's
-			// startup runs a bounded readiness query against the remote SPARQL repository
-			// (rdf-store-split.md). The reverse proxy must route "<meta host>/sparql" to
-			// rdfStore, overwriting X-Forwarded-For with the trusted client address.
-			cpDeployPlaybook := "rdfstore.yml",
+			cpDeployPlaybook := "core.yml",
 			cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
 			cpDeployInfraBranch := "master"
 		)

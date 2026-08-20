@@ -111,7 +111,8 @@ class ObspackNetcdf:
 		# Conversion from 4-bytes float used in ObsPack netCDF files to Python native 8-bytes float,
 		# conversion to proper units and text formatting for consistency.
 		def float32_to_str_with_conversion(x: np.float32, conv_factor: float) -> str:
-			return f"{float(str(x))*conv_factor:.3f}" if not np.isnan(x) else "-999.999"
+			s = f"{float(str(x))*conv_factor:.3f}" if not np.isnan(x) else "-999.999"
+			return s if s != "-999.990" else "-999.999"
 
 		# Conversion from netCDF content to various values, lists and NumPy arrays
 		conv_factors = {"co2": 1e6, "ch4": 1e9, "n2o": 1e9, "co": 1e9}

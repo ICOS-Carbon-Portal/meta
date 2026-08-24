@@ -10,9 +10,7 @@ import scala.util.Success
 
 class CachedSourceTests extends AnyFunSuite with BeforeAndAfterAll{
 
-	// ActorSystem() resolves every reference.conf on the classpath, including rdf-common's own.
-	// That one is self-contained (its only cross-references are `${metacore}`, from meta-core,
-	// and one internal `${cpmeta.citations...}`), so no test-only stub config is needed here.
+	// ActorSystem() resolves every reference.conf on the classpath.
 	private given system: ActorSystem = ActorSystem("CachedSourceTests")
 	import system.dispatcher
 

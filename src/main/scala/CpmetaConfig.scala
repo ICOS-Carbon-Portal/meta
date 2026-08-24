@@ -17,6 +17,28 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
 
+// Config value types formerly shared via rdf-common's SharedConfig.scala/CitationConfig.scala.
+// rdf-common no longer defines application config sections: each application owns the types for
+// the sections it parses, so the two can evolve their configuration independently. The only
+// config type still shared is `DoiConfig`, which shared code (`DoiClientFactory`) takes as a
+// parameter. rdfStore has its own structurally-similar copies of `RdflogConfig` & co, matching
+// its own `rdfStore.rdfLog` section, just as it has its own copy of the HOCON defaults.
+
+case class DbServer(host: String, port: Int)
+case class DbCredentials(db: String, user: String, password: String)
+case class RdflogConfig(server: DbServer, credentials: DbCredentials)
+
+case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
+
+case class DataObjectInstServersConfig(
+	commonReadContexts: Seq[URI],
+	uriPrefix: URI,
+	definitions: Seq[DataObjectInstServerDefinition]
+)
+
+/** meta's `cpmeta.citations` section. rdfStore has its own, differently-shaped one. */
+case class CitationConfig(doi: DoiConfig)
+
 enum IngestionMode:
 	case EAGER, BACKGROUND, OFF
 
@@ -160,13 +182,18 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
-	import SharedConfigJsonProtocol.given RootJsonFormat[RdflogConfig]
-	import SharedConfigJsonProtocol.given RootJsonFormat[DataObjectInstServersConfig]
-	import SharedConfigJsonProtocol.given RootJsonFormat[HandleNetClientConfig]
-	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
+	import DoiConfigJsonProtocol.given RootJsonFormat[DoiConfig]
 
 	private val IcosFlow = "icos"
 	private val CitiesFlow = "cities"
+
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
+	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
 
 	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)

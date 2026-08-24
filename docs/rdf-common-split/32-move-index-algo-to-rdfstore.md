@@ -47,6 +47,22 @@ change is easy, the compatibility decision is not.
 3. Move the `RoaringBitmap` dependency from `metaCore` to `rdfStore`.
 4. Bump `metaCore`'s version.
 
+## Outcome
+
+Done on the user's instruction after the published-library risk above was raised and
+reaffirmed. **Option 1 was not actually confirmed with the team** -- no one has checked whether an
+external consumer imports `se.lu.nateko.cp.meta.core.algo`. If one does, this is a source-breaking
+change for it, and the mitigation is deprecated type aliases in `metaCore` (option 2) or a revert.
+`metaCore` is bumped 0.7.25 -> 0.8.0 to signal it.
+
+The package name stays `se.lu.nateko.cp.meta.core.algo` even though the sources now live in
+rdfStore. This was the deliberate choice the task asked for, and *not* only to avoid churn in 14
+import sites: `HierarchicalBitmap` is `java.io.Serializable` and participates in the kryo index
+dump that rdfStore restores from disk at boot (`IndexHandler`), so a package rename risks
+invalidating every existing dump. A comment on the file records this.
+
+`RoaringBitmap` moved from `metaCore`'s dependencies to `rdfStore`'s.
+
 ## Verification
 
 - `sbt metaCore/test rdfStore/test` green.

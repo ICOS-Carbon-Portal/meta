@@ -20,14 +20,16 @@ lazy val metaCore = (project in file("core"))
 	.enablePlugins(IcosCpSbtCodeGenPlugin)
 	.settings(
 		name := "meta-core",
-		version := "0.7.25",
+		// 0.8.0: se.lu.nateko.cp.meta.core.algo (HierarchicalBitmap & co) moved out to rdfStore,
+		// which is the only thing that ever used it. Source-breaking for any external consumer
+		// that imported it.
+		version := "0.8.0",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"io.spray"              %% "spray-json"                         % "1.3.6",
 			"eu.icoscp"             %% "envri"                              % "0.1.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
-			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
 			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test"
 		),
@@ -308,6 +310,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
+			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",

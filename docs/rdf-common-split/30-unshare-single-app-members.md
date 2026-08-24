@@ -36,6 +36,23 @@ member of `Validated`.
 Work member by member, compiling between each. Prefer keeping the same package name in the
 destination module so call sites do not change.
 
+## Outcome
+
+Moved: `RdfRetraction` deleted (dead), `RdfAssertion` to
+`src/main/scala/instanceserver/RdfAssertion.scala`, `Mergeable` and `Validated.merge` to
+`rdfstore/src/main/scala/utils/Mergeable.scala` (the latter as `Mergeable.mergeValidated`, since
+it can no longer be a member of the shared `Validated` companion).
+
+Assessed and kept, with a comment on each explaining why:
+
+- The `CpVocab` extractors are the exact inverses of minting methods in the same object and share
+  its private `asPrefWithHash` helpers and prefix constants. `CpVocab.DataObject`, which the
+  original census missed, is rdfStore-only for the same reason and belongs to the same group.
+  Moving four of five out would split one URI-naming scheme across two modules.
+- All three `AttributionProvider` companion types are in the public signature of the shared class
+  (`getMemberships`, `getPersonRoles`), and `RoleDetails`/`Membership` drive its own filtering and
+  orderings. Only meta *names* them, but they cannot leave.
+
 ## Verification
 
 - `sbt rdfCommon/Test/compile rdfStore/Test/compile Test/compile` green after each move.

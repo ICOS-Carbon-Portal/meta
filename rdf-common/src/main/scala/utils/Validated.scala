@@ -139,8 +139,4 @@ object Validated:
 				case Default | AtLeastOne | AtMostOne | ExactlyOne =>
 					Validated.ok(s)
 
-	def merge[T](l: Validated[T], r: Validated[T])(using m: Mergeable[T]) =
-		val res = (l.result ++ r.result).reduceOption(m.merge)
-		new Validated(res, l.errors ++ r.errors)
-
 end Validated

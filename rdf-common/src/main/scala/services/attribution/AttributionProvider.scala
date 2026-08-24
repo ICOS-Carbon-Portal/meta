@@ -79,6 +79,13 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 			_ => true
 end AttributionProvider
 
+/**
+ * `RoleDetails`, `Membership` and `PersonRole` are only ever *named* by meta
+ * (`api/OrganizationExtra.scala`), but they cannot move there: all three are in the public
+ * signature of the shared `AttributionProvider` above (`getMemberships`, `getPersonRoles`) and
+ * `RoleDetails`/`Membership` drive its internal filtering and orderings. rdfStore reaches the
+ * same class through `CitationMaker`.
+ */
 object AttributionProvider:
 
 	case class RoleDetails(role: UriResource, start: Option[Instant], end: Option[Instant], weight: Option[Int], extra: Option[String]){

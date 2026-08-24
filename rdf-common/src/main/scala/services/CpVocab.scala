@@ -93,6 +93,17 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 end CpVocab
 
 
+/**
+ * URI naming for CP resources: the minting methods on `CpVocab` above, and the extractors below
+ * that parse the same URIs back.
+ *
+ * `Acquisition`, `Submission`, `NextVersColl`, `VarInfo` and `DataObject` are used only by
+ * rdfStore (the SPARQL magic index and geo filtering), but they stay here deliberately: each is
+ * the exact inverse of a `getAcquisition`/`getSubmission`/... method a few lines up, and they
+ * share the private `asPrefWithHash` helpers and the prefix constants with it. Moving them to
+ * rdfStore would mean publishing those internals and splitting one URI-naming scheme across two
+ * modules, where the two halves could drift apart silently.
+ */
 object CpVocab{
 	import CustomVocab.urlEncode
 	import Sha256Sum.IdLength

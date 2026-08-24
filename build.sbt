@@ -133,7 +133,7 @@ lazy val rdfCommon = (project in file("rdf-common"))
 	)
 
 lazy val meta = (project in file("."))
-	.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
+	.dependsOn(metaCore, rdfCommon, metaCore % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -289,7 +289,7 @@ lazy val tools = (project in file("tools"))
 	)
 
 lazy val rdfStore = (project in file("rdfstore"))
-		.dependsOn(metaCore, rdfCommon, rdfCommon % "test->test")
+		.dependsOn(metaCore, rdfCommon)
 		.enablePlugins(IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta-rdf-store",

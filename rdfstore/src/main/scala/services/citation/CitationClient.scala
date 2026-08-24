@@ -120,7 +120,7 @@ class CitationClientImpl (
 				case Failure(err) => Success(Validated.error(err.getMessage))
 			}
 		}
-		Future.reduceLeft(allFuts.toIndexedSeq)(Validated.merge)
+		Future.reduceLeft(allFuts.toIndexedSeq)(Mergeable.mergeValidated)
 
 	def warmupOneDoiMeta(doi: Doi): Future[Validated[Done]] =
 		log.debug(s"Warming up doi meta cache for DOI $doi")
@@ -140,7 +140,7 @@ class CitationClientImpl (
 				case Nil => Future.successful(soFar)
 				case head :: tail =>
 					warmupOne(head).flatMap{ first =>
-						warmUp(tail, Validated.merge(soFar, first))
+						warmUp(tail, Mergeable.mergeValidated(soFar, first))
 					}
 
 		warmUp(knownDois, Validated.ok(Done)).onComplete{

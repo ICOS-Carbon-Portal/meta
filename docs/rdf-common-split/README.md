@@ -304,7 +304,7 @@ application actually references. Nothing here is required for the split to work;
 piece of one application's domain, or one application's build, still sitting on the shared side.
 
 - [x] [26](26-decouple-meta-deploy-gate.md) — Stop running `rdfStore`'s tests in `meta`'s deploy gate
-- [ ] [27](27-drop-unused-test-dependencies.md) — Drop the unused `rdfCommon % "test->test"` dependencies
+- [x] [27](27-drop-unused-test-dependencies.md) — Drop the unused `rdfCommon % "test->test"` dependencies
 - [ ] [28](28-delete-cachedsource-tests.md) — Delete `CachedSourceTests`
 - [ ] [29](29-unshare-meta-only-exceptions.md) — Move the meta-only exceptions out of `rdfCommon`
 - [ ] [30](30-unshare-single-app-members.md) — Move single-application members out of shared files

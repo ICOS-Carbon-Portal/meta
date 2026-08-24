@@ -213,34 +213,34 @@ layering, from most to least specific, is:
    was given - the environment-specific file, kept out of version control.
 3. Each application's own classpath `application.conf`, if it ships one (currently neither does;
    both rely on `reference.conf` defaults).
-4. `reference.conf`, split across modules:
-   - `rdf-common/src/main/resources/reference.conf` carries, for
-     now, *all* of `cpmeta.*` - including fields only `meta` ever reads, like `onto` and
-     `fileStoragePath`. This is not the conceptually clean split described by
-     `docs/rdf-common-split/15-split-config.md`'s classification table; it is a consequence of
-     that task being left undone (see below), which pins `CpmetaConfig` as one unified,
-     non-optional-fielded case class that both `rdfStore`'s and `meta`'s `ConfigLoader.default`
-     parse the entirety of. It also carries fallback defaults for `rdfStore.rdfLog` and
-     `rdfStore.rdfStorage` specifically (not the rest of the `rdfStore { ... }` block), needed so
-     that `cpmeta.rdfLog = ${rdfStore.rdfLog}`/`cpmeta.rdfStorage = ${rdfStore.rdfStorage}`
-     resolve on their own - Typesafe Config requires every `reference.conf` to be independently
-     resolvable, and `meta`'s classpath no longer carries `rdfStore`'s `reference.conf` to resolve
-     those substitutions from.
-     Akka defaults were subsequently moved into each application's own `reference.conf`, so
-     each independently deployable service owns its logging, HTTP parsing, timeout, and cache
-     policy.
+4. `reference.conf`, split across the two applications:
+   - `rdf-common` ships no `reference.conf` at all. Every default now lives with the
+     application that reads it, so neither service inherits configuration from the shared
+     library. The genuinely shared defaults - `cpmeta.core` (substituted from meta-core's
+     `metacore`) and the `cpmeta.citations.doi` endpoint and member credentials - are
+     duplicated verbatim in both applications' own `reference.conf`; keep the copies in sync.
    - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
-     `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph), `rdfLogRestoreFromId`, and
-     (duplicated, intentionally identical to rdf-common's copy) `rdfLog`/`rdfStorage`.
-   - `meta`'s own `src/main/resources/reference.conf` is currently an empty placeholder: task 15
-     (below) would be the trigger to move the meta-only `cpmeta.*` keys there.
+     its Akka configuration, `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph),
+     `rdfLogRestoreFromId`, `rdfLog`, `rdfStorage`, `sparql` throttling, `citations` rendering
+     policy, `citationGraphs`, and its narrow `cpmeta.dataUploadService.handle` view.
+   - `meta`'s own `src/main/resources/reference.conf` carries its Akka configuration and every
+     `cpmeta.*` key only `meta`'s `CpmetaConfig` reads (`onto`, `stationLabelingService`,
+     `fileStoragePath`, `remoteRdfRepository`, `dataUploadService`, `instanceServers`, `auth`,
+     `adminUsers`, `statsClient`, meta's own `port`/`httpBindInterface`), plus its own literal
+     copy of `rdfStore.rdfLog` - Typesafe Config requires every `reference.conf` to resolve on
+     its own, and meta's classpath no longer carries rdfStore's file to resolve
+     `cpmeta.rdfLog = ${rdfStore.rdfLog}` from.
 
-**Task 15 (splitting `CpmetaConfig` into shared/store-only/meta-only types) was not done.** The
-HOCON key paths were not touched, but the type itself remains a single flat case class. This
-document does not describe a three-way split of the configuration model - only the
-`reference.conf` *resource* layering above, which was completed independently of that type split.
-Operators should keep overriding `rdfStore.*` (not `cpmeta.rdfLog`/`cpmeta.rdfStorage` directly);
-the substitution propagates it.
+**Configuration model.** `CpmetaConfig` is `meta`'s alone and remains a single flat case class;
+`rdfStore` parses its own narrow types (`RdfStoreConfig`, `SparqlServerConfig`,
+`CitationStoreConfig`) instead. `rdf-common` defines no application configuration section any
+more: value types that both apps happened to parse (`RdflogConfig`/`DbServer`/`DbCredentials`,
+the `cpmeta.citations` wrapper) are now defined once per application, matching each app's own
+copy of the HOCON defaults, so the two configuration models can diverge without coordination.
+What is still shared is only what shared *code* takes as a parameter -- `DoiConfig`, the input to
+`DoiClientFactory` -- plus `AppConfig`, which provides loading mechanics and no sections at all.
+Operators should keep overriding `rdfStore.rdfLog` (not `cpmeta.rdfLog` directly); the
+substitution propagates it.
 
 ## Data migration and cutover
 

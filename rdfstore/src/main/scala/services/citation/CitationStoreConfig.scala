@@ -4,14 +4,14 @@ import scala.language.unsafeNulls
 
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.{CitationConfig, CitationConfigJsonProtocol, DoiConfig}
+import se.lu.nateko.cp.meta.{DoiConfig, DoiConfigJsonProtocol}
 import spray.json.*
 
 /**
  * The whole configuration `CitationProvider` needs, assembled from two HOCON roots by
  * `RdfStoreConfigLoader.citationStoreConfig`:
  *
- *   - shared `core` and DOI settings from rdf-common's `cpmeta` section;
+ *   - `core` and DOI settings from rdfStore's own `cpmeta` defaults;
  *   - citation rendering policy from rdfStore's own `rdfStore.citations` section;
  *   - `handle` from rdfStore's application-owned, narrow `cpmeta.dataUploadService` defaults;
  *   - `citationGraphs` from rdfStore's own `rdfStore.citationGraphs` (task 25, stage 2), which
@@ -32,6 +32,9 @@ case class CitationStoreConfig(
 	handle: HandleConfig,
 	citationGraphs: CitationGraphsConfig
 )
+
+/** rdfStore's `cpmeta.citations` section. meta has its own, separately-defined one. */
+case class CitationConfig(doi: DoiConfig)
 
 case class CitationClientConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class CitationRuntimeConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
@@ -56,8 +59,9 @@ case class CitationCpmetaView(
 object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import DefaultJsonProtocol.*
 	import MetaCoreConfig.given
-	import CitationConfigJsonProtocol.given RootJsonFormat[CitationConfig]
+	import DoiConfigJsonProtocol.given RootJsonFormat[DoiConfig]
 
+	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
 	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
 	given RootJsonFormat[StoreUploadTargetsConfig] = jsonFormat1(StoreUploadTargetsConfig.apply)
 	given RootJsonFormat[CitationCpmetaView] = jsonFormat3(CitationCpmetaView.apply)

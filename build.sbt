@@ -186,7 +186,6 @@ lazy val meta = (project in file("."))
 			clean,
 			metaCore / Test / test,
 			rdfCommon / Test / test,
-			rdfStore / Test / test,
 			Test / test,
 			frontendBuild,
 			fetchGCMDKeywords

@@ -15,11 +15,12 @@ gates on rdfStore's full suite — which needs LMDB fixtures and a Postgres clus
 failure blocks a meta deploy for code that is not in meta's artifact, and the fixtures slow the
 gate down for no coverage gain.
 
-`rdfStore`'s own gate (`build.sbt:319-325`) is already correctly scoped: `metaCore`, `rdfCommon`,
+`rdfStore`'s own gate (`build.sbt:340-346`) is already correctly scoped: `metaCore`, `rdfCommon`,
 itself. `meta`'s should be the mirror image: `metaCore`, `rdfCommon`, itself.
 
-Note this is *not* the same as dropping the boundary check — `checkModuleBoundaries` (task 22)
-stays in both gates. Running the other service's tests is not what enforces the boundary.
+Note this is *not* the same as dropping a boundary check. Running the other service's test suite
+is not what keeps `meta` from depending on `rdfStore`; the `dependsOn` list is (and task 22's
+`checkModuleBoundaries`, which this branch's `build.sbt` does not currently define).
 
 ## Steps
 

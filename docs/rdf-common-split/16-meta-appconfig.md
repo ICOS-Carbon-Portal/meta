@@ -31,7 +31,7 @@ inheritance is exactly the dependency this plan removes.
    behaviour is relied on by deployment and must not drift.
 2. Convert the shipped classpath defaults from `application.conf` to `reference.conf`, split by
    owner:
-   - `rdf-common/src/main/resources/reference.conf` — shared defaults
+   - shared defaults are duplicated in meta's and rdfstore's own reference.conf (rdf-common ships none)
    - `rdfstore/src/main/resources/reference.conf` — the `rdfStore { ... }` section and
      store-side `cpmeta.*` defaults
    - `src/main/resources/reference.conf` — `meta`-side `cpmeta.*` defaults

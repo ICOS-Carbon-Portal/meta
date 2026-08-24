@@ -96,8 +96,9 @@ throttling). That narrowing is what task 16's `reference.conf` split had been wa
 `fileStoragePath`, `remoteRdfRepository`, `dataUploadService.etc`, `auth`, `adminUsers`, `statsClient`, meta's own
 `port`/`httpBindInterface`) have moved out of `rdf-common/src/main/resources/reference.conf` into
 `meta`'s own `src/main/resources/reference.conf`, which was an empty placeholder until now.
-`cpmeta.core` and the shared DOI endpoint/member credentials in `cpmeta.citations` stay in
-`rdf-common`; citation rendering style, cache warm-up and request timeout are owned by
+`cpmeta.core` and the shared DOI endpoint/member credentials in `cpmeta.citations` stayed in
+`rdf-common` at that point (they have since been duplicated into both applications too - see the
+second follow-up pass below); citation rendering style, cache warm-up and request timeout are owned by
 `rdfStore.citations`. `dataUploadService` is application-owned:
 meta carries the complete Handle.net client view, while rdfStore carries only `prefix` and
 `baseUrl` at the backward-compatible `handle` path needed by `PidFactory`. `cpmeta.instanceServers` is
@@ -119,6 +120,25 @@ actually parses, and now holds only genuinely shared defaults. What moved out:
 | all remaining `akka` defaults | both applications | runtime policy belongs to each independently deployable service; the values currently match but can now evolve independently |
 | `cpmeta.dataUploadService` | both applications | meta owns the complete upload view; rdfStore owns only `handle`, and does not receive meta's server mappings or ETC settings |
 
+**Second follow-up pass:** `rdf-common` now ships *no* `reference.conf` and defines *no*
+application configuration section. The last shared defaults (`cpmeta.core` and the
+`cpmeta.citations.doi` endpoint/member credentials) are duplicated verbatim into both
+applications' own `reference.conf`, and the config data types followed:
+
+| moved | to | why it isn't shared |
+| --- | --- | --- |
+| `RdflogConfig`, `DbServer`, `DbCredentials` (and their JSON formats) | both applications | each app parses its *own* section (`cpmeta.rdfLog` vs `rdfStore.rdfLog`) into it, and the `persistence/postgres` code reading them is already duplicated per app |
+| `CitationConfig` (the `cpmeta.citations` wrapper) | both applications | a one-field wrapper over `DoiConfig`; defining it per app lets either extend its own citations section |
+| `HandleNetClientConfig` | `meta` | only `meta` mints PIDs against handle.net; rdfStore's `PidFactory` takes plain values, and rdfStore parses its own narrow `HandleConfig` |
+| `DataObjectInstServersConfig`, `DataObjectInstServerDefinition` | `meta` | rdfStore replaced its read-side copy with `CitationGraphsConfig` |
+
+`SharedConfig.scala` is gone as a result; `CitationConfig.scala` became `DoiConfig.scala`, holding
+just `DoiConfig`/`DoiConfigJsonProtocol`. `DoiConfig` stays shared because shared *code* takes it
+as a parameter (`DoiClientFactory`, used by meta's `DoiService` and rdfStore's `CitationClient`),
+not because both apps parse a common section. `AppConfig` also stays: it is loading mechanics
+(the layering of system properties / working-dir `application.conf` / classpath), with no
+knowledge of any section.
+
 `rdf-common/src/test/resources/reference.conf` (a stub for the `rdfStore.*` keys rdf-common's own
 `reference.conf` used to cross-reference) went away with the last of those cross-references.
 `instanceServers` has subsequently moved out as well: both applications now carry explicit,
@@ -126,7 +146,8 @@ independently parseable views, and rdfStore's copy contains no journalling or in
 
 Verified: `sbt rdfCommon/compile
 rdfStore/compile meta/compile`, `rdfStore/Test/test` (229 tests, including `RouteTest`) and
-`meta/Test/compile` all green; `se.lu.nateko.cp.meta.ConfigLoader.default` (in `meta/console`) and
+`meta/Test/compile` all green (and, after the second pass, `metaCore/test`, `rdfCommon/test` and
+`-Werror` compilation of all four modules plus `tools`); `se.lu.nateko.cp.meta.ConfigLoader.default` (in `meta/console`) and
 `se.lu.nateko.cp.meta.RdfStoreConfigLoader.{citationStoreConfig,sparqlConfig,default}` (in
 `rdfStore/console`) each resolve their full, correct views independently, confirming `cpmeta.*` no
 longer needs to be reachable in its entirety from `rdfStore`'s classpath.

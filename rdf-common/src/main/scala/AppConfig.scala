@@ -6,9 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 /**
  * Assembles the application configuration for both `meta` and the standalone
- * `rdfStore` service. Owned by this package (rather than inherited from
- * cpauth-core) because the classpath defaults are shipped with the rdfStore
- * service
+ * `rdfStore` service. Loading *mechanics* are all this shared object provides:
+ * the configuration sections themselves, and the types they parse into, are
+ * owned by each application.
  *
  * The layering is explicit and documented, highest priority first:
  *
@@ -16,9 +16,11 @@ import com.typesafe.config.{Config, ConfigFactory}
  *   2. `application.conf` in the JVM's *working directory*, if present.
  *      This is the environment-specific file, kept out of version control;
  *      see `example.application.conf` in the project root.
- *   3. `application.conf` from the classpath (the defaults shipped in
- *      rdfstore/src/main/resources)
- *   4. the `reference.conf`s of the dependencies (meta-core, cpauth-core, akka, …)
+ *   3. `application.conf` from the classpath, if the application ships one
+ *      (currently neither does)
+ *   4. the `reference.conf`s on the classpath: the application's own
+ *      (src/main/resources or rdfstore/src/main/resources) and those of the
+ *      dependencies (meta-core, cpauth-core, akka, …)
  *
  * Setting `-Dconfig.file`, `-Dconfig.resource` or `-Dconfig.url` disables the
  * working-directory lookup entirely and defers to plain Typesafe Config

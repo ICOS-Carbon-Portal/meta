@@ -11,6 +11,14 @@ import spray.json.*
 
 import java.net.URI
 
+// Config value types formerly shared via rdf-common's SharedConfig.scala. rdf-common no longer
+// defines application config sections: each application owns the types for the sections it
+// parses. `meta` has its own structurally-similar copies, matching its own `cpmeta.rdfLog`
+// section, just as it has its own copy of the HOCON defaults.
+case class DbServer(host: String, port: Int)
+case class DbCredentials(db: String, user: String, password: String)
+case class RdflogConfig(server: DbServer, credentials: DbCredentials)
+
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
 case class RdfStorageConfig(
@@ -43,10 +51,12 @@ case class SparqlServerConfig(
 
 object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import DefaultJsonProtocol.*
-	import SharedConfigJsonProtocol.given RootJsonFormat[RdflogConfig]
 	import CitationStoreConfigJsonProtocol.given
 	import CitationGraphsConfigJsonProtocol.given
 
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)

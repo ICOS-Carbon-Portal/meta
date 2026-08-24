@@ -41,6 +41,15 @@ parallel helper.
 2. Rewrite the `val server = ...` / `server.access` block in `CitationProvider`.
 3. Confirm `server` is not used elsewhere in the file or exposed to callers.
 
+## Outcome
+
+`Rdf4jTriplestoreConnection` was already public and already implemented
+`TriplestoreConnection & SparqlRunner`, so nothing new was needed beyond an `access` helper on
+its companion -- the read-only counterpart of `InstanceServer.access`, minus the write surface.
+`CitationProvider`'s `val server` became a private `access` method delegating to it.
+
+`grep -rnw InstanceServer rdfstore/src/main` now matches only comments.
+
 ## Verification
 
 - `sbt rdfStore/test` green — the citation and derived-metadata suites cover this path.

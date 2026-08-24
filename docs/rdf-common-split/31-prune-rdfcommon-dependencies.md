@@ -42,6 +42,18 @@ parser on the runtime classpath even though only `rio.RDFFormat` is imported.
 2. Full clean compile of every module — a missing runtime-only artifact will not show up in an
    incremental build.
 
+## Outcome
+
+Removed the four unused entries. The akka declarations were also made honest:
+`akka-http-spray-json` -> `akka-http-core`, since rdf-common uses `akka.http.scaladsl.model.Uri`
+and never the marshalling integration. `akka-stream` stays: it is what supplies `akka.Done` and
+`akka.actor.Scheduler` transitively, and akka-http-core needs it anyway.
+
+`rdfCommon/Runtime/dependencyClasspath` after the change still contains `rdf4j-rio-rdfxml`
+(declared) and, transitively, `rdf4j-repository-sparql` and `cpauth-core` -- removing an explicit
+declaration of something another module legitimately pulls in is the point, not removing it from
+the classpath.
+
 ## Verification
 
 - `sbt clean` then `metaCore/test rdfCommon/test rdfStore/Test/compile Test/compile

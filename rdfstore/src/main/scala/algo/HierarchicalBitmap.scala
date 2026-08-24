@@ -1,5 +1,10 @@
 package se.lu.nateko.cp.meta.core.algo
 
+// Moved here from metaCore (task 32): nothing outside rdfStore's SPARQL magic index has ever
+// used these structures. The package name stays `...core.algo` deliberately -- HierarchicalBitmap
+// is java.io.Serializable and takes part in the kryo-serialized index dump that rdfStore restores
+// from disk at boot, so renaming the package would invalidate every existing dump for no gain.
+
 import scala.language.unsafeNulls
 
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap

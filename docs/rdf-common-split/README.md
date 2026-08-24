@@ -297,6 +297,29 @@ grep-based source guard is also added (CI-only, `.github/workflows/scala.yml`), 
 references `"se.lu.nateko.cp.meta.rdfstore.Main"` as a class-name string (to fork it as a separate
 process) without importing the package, which a naive grep would have flagged.
 
+### Phase 7 — tighten the boundary
+
+Found by auditing, after the split shipped, which `rdfCommon` and `metaCore` declarations each
+application actually references. Nothing here is required for the split to work; each item is a
+piece of one application's domain, or one application's build, still sitting on the shared side.
+
+- [ ] [26](26-decouple-meta-deploy-gate.md) — Stop running `rdfStore`'s tests in `meta`'s deploy gate
+- [ ] [27](27-drop-unused-test-dependencies.md) — Drop the unused `rdfCommon % "test->test"` dependencies
+- [ ] [28](28-delete-cachedsource-tests.md) — Delete `CachedSourceTests`
+- [ ] [29](29-unshare-meta-only-exceptions.md) — Move the meta-only exceptions out of `rdfCommon`
+- [ ] [30](30-unshare-single-app-members.md) — Move single-application members out of shared files
+- [ ] [31](31-prune-rdfcommon-dependencies.md) — Prune `rdfCommon`'s unused library dependencies
+- [ ] [32](32-move-index-algo-to-rdfstore.md) — Move `core/algo` into `rdfStore` *(published-library risk — see the task file)*
+- [ ] [33](33-readonly-conn-for-citation-provider.md) — Give `CitationProvider` a read-only connection
+
+What deliberately stays shared, and why: the metadata-reading stack
+(`CpmetaReader`/`DobjMetaReader`/`CollectionReader`/`StaticObjectReader`/`AttributionProvider`/
+`CpVocab`/`CpmetaVocab`/`RdfLens`, ~1,700 lines) is used substantively by both and must produce
+identical `core.data` DTOs on both sides — duplicating it is the coupling risk, not the fix.
+`services/derived/DerivedMetadata.scala` is the wire contract *between* the two services.
+`DoiConfig` is a parameter type of shared code (`DoiClientFactory`). `AppConfig` is loading
+mechanics with no knowledge of any config section.
+
 ## Out of scope
 
 Service authentication on `/logged-update` and `/admin/read-only`, and idempotent mutation

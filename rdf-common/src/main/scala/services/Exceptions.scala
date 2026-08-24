@@ -4,20 +4,16 @@ import scala.language.unsafeNulls
 
 import scala.util.control.NoStackTrace
 
-sealed class ServiceException(val message: String) extends RuntimeException(
+/**
+ * The base metadata-domain error, and the one subtype both applications raise.
+ *
+ * Deliberately not `sealed`: `meta` defines the rest of the hierarchy in its own
+ * `src/main/scala/services/Exceptions.scala` (same package), since the upload, labeling and
+ * authorization errors are meaningful only to meta's routing layer. `rdfStore` raises
+ * `MetadataException` alone.
+ */
+class ServiceException(val message: String) extends RuntimeException(
 		if(message == null) "" else message
 	) with NoStackTrace
 
-final class UploadUserErrorException(message: String) extends ServiceException(message)
-final class UnauthorizedUploadException(message: String) extends ServiceException(message)
-final class UploadCompletionException(message: String) extends ServiceException(message)
 final class MetadataException(message: String) extends ServiceException(message)
-
-final class UnauthorizedStationUpdateException(message: String) extends ServiceException(message)
-final class UnauthorizedUserInfoUpdateException(message: String) extends ServiceException(message)
-
-final class IllegalLabelingStatusException(message: String) extends ServiceException(message)
-
-final class PidMintingException(message: String) extends ServiceException(message)
-
-object CacheSizeLimitExceeded extends ServiceException("Cache size limit exceeded.")

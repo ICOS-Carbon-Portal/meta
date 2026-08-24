@@ -306,7 +306,7 @@ piece of one application's domain, or one application's build, still sitting on 
 - [x] [26](26-decouple-meta-deploy-gate.md) — Stop running `rdfStore`'s tests in `meta`'s deploy gate
 - [x] [27](27-drop-unused-test-dependencies.md) — Drop the unused `rdfCommon % "test->test"` dependencies
 - [x] [28](28-delete-cachedsource-tests.md) — Delete `CachedSourceTests`
-- [ ] [29](29-unshare-meta-only-exceptions.md) — Move the meta-only exceptions out of `rdfCommon`
+- [x] [29](29-unshare-meta-only-exceptions.md) — Move the meta-only exceptions out of `rdfCommon`
 - [ ] [30](30-unshare-single-app-members.md) — Move single-application members out of shared files
 - [ ] [31](31-prune-rdfcommon-dependencies.md) — Prune `rdfCommon`'s unused library dependencies
 - [ ] [32](32-move-index-algo-to-rdfstore.md) — Move `core/algo` into `rdfStore` *(published-library risk — see the task file)*

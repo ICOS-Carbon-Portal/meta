@@ -89,6 +89,18 @@ class Rdf4jTriplestoreConnection(
 
 end Rdf4jTriplestoreConnection
 
+object Rdf4jTriplestoreConnection:
+
+	/**
+	 * Read-only counterpart of `InstanceServer.access`: opens a connection over the whole
+	 * repository and supplies it as the context parameter `StatementSource`'s extension methods
+	 * need. For callers that only read, and so have no business holding an `InstanceServer` --
+	 * which exists to administer named graphs and carries `applyAll`/`applyDiff`/`writeContext`.
+	 */
+	def access[T](repo: Repository)(read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
+		val conn = Rdf4jTriplestoreConnection(null, Nil, repo.getConnection())
+		try read(using conn) finally conn.close()
+
 class Rdf4jSailConnection(
 	val primaryContext: IRI, val readContexts: Seq[IRI], conn: SailConnection, val factory: ValueFactory
 ) extends TriplestoreConnection:

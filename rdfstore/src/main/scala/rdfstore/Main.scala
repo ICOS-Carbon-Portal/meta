@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 /**
@@ -34,30 +34,34 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = citationStoreConfig.core.envriConfigs
 
-	private val startup = for
-		(isFreshInit, baseSail) <- Future(StorageSail(storeConfig.rdfStorage))
-		citer = CitationProvider(baseSail, citationStoreConfig)
-		derivedMetadata = DerivedMetadataService(citer)
-		indexFactories =
+	private val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
+	private val startup = {
+		val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
+		val citer = CitationProvider(baseSail, citationStoreConfig)
+		val derivedMetadata = DerivedMetadataService(citer)
+		val indexFactories =
 			if storeConfig.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
-		sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
-		logManager = RdfLogManager(
+		val sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
+		val logManager = RdfLogManager(
 			RdfStoreConfigLoader.rdfLogConfig,
 			citationStoreConfig.instanceServers,
 			baseSail.getValueFactory
 		)
-		repo = SailRepository(sail)
-		_ = repo.init()
-		_ = logManager.restore(repo, isFreshInit)
-		_ <- sail.initSparqlMagicIndex()
-		queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
-		given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
-		binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
-	yield (binding, queryServer, repo, logManager, baseSail)
+		val repo = SailRepository(sail)
+		repo.init()
+		logManager.restore(repo, isFreshInit)
+		for {
+			_ <- sail.initSparqlMagicIndex()
+			queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
+			given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
+			binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
+		}
+		yield (binding, queryServer, repo, logManager)
+	}
 
 	startup.onComplete:
-		case Success((binding, queryServer, repo, logManager, _)) =>
+		case Success((binding, queryServer, repo, logManager)) =>
 			system.log.info("RDF store listening on {}", binding.localAddress)
 			sys.addShutdownHook:
 				queryServer.shutdown()

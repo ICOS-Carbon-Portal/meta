@@ -146,7 +146,6 @@ case class LabelingServiceConfig(
 case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
 	updateEndpoint: URI,
-	adminEndpoint: URI,
 	derivedMetadataEndpoint: URI
 )
 
@@ -223,7 +222,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)

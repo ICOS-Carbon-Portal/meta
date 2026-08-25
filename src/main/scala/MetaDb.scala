@@ -4,8 +4,6 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
@@ -27,7 +25,6 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, FileStorageService, 
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -44,7 +41,6 @@ class MetaDb (
 	val metaVocab: CpmetaVocab,
 	val lenses: RdfLenses,
 	val metaReader: StaticObjectReader,
-	private val rdfAdminEndpoint: URI,
 	val derivedMetadata: DerivedMetadataClient,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
@@ -55,20 +51,6 @@ class MetaDb (
 
 	val uriSerializer: UriSerializer =
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, config)
-
-	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		Http().singleRequest(HttpRequest(
-			method = HttpMethods.POST,
-			uri = rdfAdminEndpoint.toString,
-			entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, msg)
-		)).flatMap: response =>
-			response.entity.toStrict(30.seconds).flatMap: entity =>
-				val body = entity.data.utf8String
-				if response.status.isSuccess then Future.successful(body)
-				else Future.failed(RuntimeException(
-					s"rdfStore administration failed with ${response.status}: $body"
-				))
-
 
 	override def close(): Unit =
 		for((_, server) <- instanceServers) server.shutDown()
@@ -192,7 +174,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			new MetaDb(
 				instanceServers, instOntos, uploadService, labelingService, fileService,
 				repo, vanillaGlob, vocab, metaVocab, lenses, metaReader,
-				remote.adminEndpoint, DerivedMetadataClient(remote.derivedMetadataEndpoint), config
+				DerivedMetadataClient(remote.derivedMetadataEndpoint), config
 			)
 		end for
 	end apply

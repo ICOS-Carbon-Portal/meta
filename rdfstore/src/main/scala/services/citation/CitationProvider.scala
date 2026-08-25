@@ -21,9 +21,6 @@ import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import CitationClient.CitationCache
-import CitationClient.DoiCache
-
 object CitationProvider:
 
 	/**
@@ -31,30 +28,24 @@ object CitationProvider:
 	 * (see `CitationStoreConfig`'s scaladoc); this overload does the config -> RdfLenses/PidFactory
 	 * translation and defers to the resolved-primitives overload below.
 	 */
-	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
-	)(using ActorSystem, Materializer): CitationProvider =
-		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+	def apply(sail: Sail, conf: CitationStoreConfig)(using ActorSystem, Materializer): CitationProvider =
+		apply(sail, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+
+	def apply(repo: Repository, conf: CitationStoreConfig)(using ActorSystem, Materializer): CitationProvider =
+		apply(repo, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
 
 	def apply(
-		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
-	)(using ActorSystem, Materializer): CitationProvider =
-		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
-
-	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
-		core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
+		sail: Sail, core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+			dois => CitationClientImpl(dois, citations)
 		new CitationProvider(sail, citClientFactory, core, lenses, pidFactory)
 
 	def apply(
-		repo: Repository, citCache: CitationCache, doiCache: DoiCache,
-		core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
+		repo: Repository, core: MetaCoreConfig, citations: CitationClientConfig, lenses: RdfLenses, pidFactory: PidFactory
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+			dois => CitationClientImpl(dois, citations)
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
 	def pidFactory(conf: CitationStoreConfig): PidFactory =

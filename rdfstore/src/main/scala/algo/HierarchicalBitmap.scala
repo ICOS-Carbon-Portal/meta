@@ -274,11 +274,4 @@ object HierarchicalBitmap{
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
 
-	// private def time[T](comp: => T): T = {
-	// 	val start = System.nanoTime
-	// 	val res = comp
-	// 	val us = (System.nanoTime - start) / 1000
-	// 	println(s"Elapsed $us us")
-	// 	res
-	// }
 }

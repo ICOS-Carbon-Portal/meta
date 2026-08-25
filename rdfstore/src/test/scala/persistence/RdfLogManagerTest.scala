@@ -2,7 +2,7 @@ package se.lu.nateko.cp.meta.persistence
 
 import eu.icoscp.envri.Envri
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.persistence.RdfLogManager.ReplayPolicy
+import se.lu.nateko.cp.meta.persistence.RdfLogManager.{ReplayPolicy, RestoreResult}
 import se.lu.nateko.cp.meta.services.citation.{
 	StoreDataObjectServerDefinition,
 	StoreDataObjectServersConfig,
@@ -34,6 +34,13 @@ class RdfLogManagerTest extends AnyFunSpec:
 			val policy = ReplayPolicy(fromId = Some(42))
 			assert(policy.shouldRestore(isFreshStore = true))
 			assert(!policy.shouldRestore(isFreshStore = false))
+
+	describe("RDF-log restore result"):
+		it("does not invalidate a saved index when no log replay was attempted"):
+			assert(!RestoreResult(attemptedLogs = 0).invalidatesIndex)
+
+		it("invalidates a saved index after any attempted log replay"):
+			assert(RestoreResult(attemptedLogs = 1).invalidatesIndex)
 
 	describe("instance-server replay configuration"):
 		val context = URI.create("https://example.test/graph/").nn

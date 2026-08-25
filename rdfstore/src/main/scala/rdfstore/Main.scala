@@ -52,8 +52,8 @@ object Main extends App:
 		)
 		repo = SailRepository(sail)
 		_ = repo.init()
-		_ = logManager.restore(repo, isFreshInit)
-		indexData <- restoreIndex()
+		restoreResult = logManager.restore(repo, isFreshInit)
+		indexData <- restoreIndex(forceRecreate = restoreResult.invalidatesIndex)
 		_ <- sail.initSparqlMagicIndex(indexData)
 		_ = if isFreshInit then sail.makeReadonly(
 			"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
@@ -81,9 +81,9 @@ object Main extends App:
 			baseSail.shutDown()
 			system.terminate()
 
-	private def restoreIndex() =
+	private def restoreIndex(forceRecreate: Boolean) =
 		val conf = storeConfig.rdfStorage
-		val recreate = isFreshInit || conf.recreateCpIndexAtStartup
+		val recreate = isFreshInit || forceRecreate || conf.recreateCpIndexAtStartup
 		if recreate then IndexHandler.dropStorage()
 		if recreate || conf.disableCpIndex then Future.successful(None)
 		else IndexHandler.restore().map(Some(_)).recover:

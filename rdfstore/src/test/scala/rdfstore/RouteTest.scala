@@ -55,18 +55,21 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
-		"load only rdfStore's direct citation graph view" in:
+		"load rdfStore's narrow view of the shared instance-server config" in:
 			val root = AppConfig.rootConfWithWorkingDirOverrides
-			root.hasPath("cpmeta.instanceServers") shouldBe false
+			root.hasPath("cpmeta.instanceServers") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.metaServers") shouldBe false
-			root.hasPath("cpmeta.dataUploadService.collectionServers") shouldBe false
-			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.collectionServers") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle.clientCertPemFilePath") shouldBe false
-			val graphs = RdfStoreConfigLoader.citationGraphs
-			graphs.collections.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
-			graphs.documents.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
-			graphs.dataObjects.keySet shouldBe Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			val citationConf = RdfStoreConfigLoader.citationStoreConfig
+			citationConf.dataUploadService.collectionServers.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			citationConf.dataUploadService.documentServers.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			citationConf.instanceServers.forDataObjects.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
 			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 

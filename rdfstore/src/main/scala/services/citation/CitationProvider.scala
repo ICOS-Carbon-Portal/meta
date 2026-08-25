@@ -34,12 +34,12 @@ object CitationProvider:
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
-		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.citationGraphs), pidFactory(conf))
+		apply(sail, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
 
 	def apply(
 		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CitationStoreConfig
 	)(using ActorSystem, Materializer): CitationProvider =
-		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.citationGraphs), pidFactory(conf))
+		apply(repo, citCache, doiCache, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
 
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
@@ -58,27 +58,28 @@ object CitationProvider:
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
 	def pidFactory(conf: CitationStoreConfig): PidFactory =
-		new PidFactory(conf.handle.baseUrl, conf.handle.prefix)
+		val handle = conf.dataUploadService.handle
+		new PidFactory(handle.baseUrl, handle.prefix)
 
-	def getLenses(graphs: CitationGraphsConfig): RdfLenses =
-		def graphLenses[L](confs: Map[Envri, ReadGraphConfig], factory: (java.net.URI, Seq[java.net.URI]) => L): Map[Envri, L] =
-			confs.map { case (envri, conf) => envri -> factory(conf.primaryContext, conf.readContexts) }
+	def getLenses(servConf: StoreInstanceServersConfig, uploadConf: StoreUploadServiceConfig): RdfLenses =
+		def configuredLenses[L](
+			serverIds: Map[Envri, String],
+			factory: (java.net.URI, Seq[java.net.URI]) => L
+		): Map[Envri, L] = serverIds.flatMap: (envri, serverId) =>
+			servConf.specific.get(serverId).map: conf =>
+				envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
 
-		val perFormat = graphs.dataObjects.map: (envri, config) =>
+		val perFormat = servConf.forDataObjects.map: (envri, config) =>
 			val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
-				val primaryContext = config.primaryContext(definition)
-				definition.format -> RdfLens.dobjLens(primaryContext, primaryContext +: config.commonReadContexts)
+				val writeContext = new java.net.URI(config.uriPrefix.toString + definition.label + "/")
+				definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
 			envri -> lenses.toMap
 
-		// metaInstances/cpMetaInstances are intentionally empty: `RdfLenses.metaInstanceLens` and
-		// `.cpLens` have no rdfStore call site (task 25), they only serve `meta`'s upload,
-		// linked-data and metaflow paths. The aggregate type is still shared, so the two
-		// categories are passed empty rather than removed from `RdfLenses`.
 		RdfLenses(
 			metaInstances = Map.empty,
 			cpMetaInstances = Map.empty,
-			collections = graphLenses(graphs.collections, RdfLens.collLens),
-			documents = graphLenses(graphs.documents, RdfLens.docLens),
+			collections = configuredLenses(uploadConf.collectionServers, RdfLens.collLens),
+			documents = configuredLenses(uploadConf.documentServers, RdfLens.docLens),
 			dobjPerFormat = perFormat
 		)
 

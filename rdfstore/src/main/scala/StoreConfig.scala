@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.meta.services.citation.{
-	CitationCpmetaView, CitationGraphsConfig, CitationGraphsConfigJsonProtocol,
+	CitationCpmetaView,
 	CitationClientConfig, CitationRuntimeConfig, CitationStoreConfig, CitationStoreConfigJsonProtocol
 }
 import spray.json.*
@@ -52,7 +52,6 @@ case class SparqlServerConfig(
 object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import DefaultJsonProtocol.*
 	import CitationStoreConfigJsonProtocol.given
-	import CitationGraphsConfigJsonProtocol.given
 
 	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
 	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
@@ -65,15 +64,7 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	lazy val default: RdfStoreConfig =
 		AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore").parseAs[RdfStoreConfig]
 
-	/** Store-owned graph scopes for citation reads (task 25) - see `CitationGraphsConfig`. */
-	lazy val citationGraphs: CitationGraphsConfig =
-		AppConfig.rootConfWithWorkingDirOverrides
-			.getValue("rdfStore.citationGraphs").parseAs[CitationGraphsConfig].validated
-
-	/**
-	 * What `CitationProvider` needs, assembled from shared core/DOI settings and rdfStore-owned
-	 * citation policy and graph scopes - see `CitationStoreConfig`'s scaladoc.
-	 */
+	/** What `CitationProvider` needs, parsed from the same `cpmeta` shape as meta. */
 	lazy val citationStoreConfig: CitationStoreConfig =
 		val cpmeta = AppConfig.rootConfWithWorkingDirOverrides
 			.getValue("cpmeta").parseAs[CitationCpmetaView]
@@ -82,8 +73,8 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 		CitationStoreConfig(
 			core = cpmeta.core,
 			citations = CitationClientConfig(runtime.style, runtime.eagerWarmUp, runtime.timeoutSec, cpmeta.citations.doi),
-			handle = cpmeta.dataUploadService.handle,
-			citationGraphs = citationGraphs
+			instanceServers = cpmeta.instanceServers,
+			dataUploadService = cpmeta.dataUploadService
 		)
 
 	/** `rdfStore.sparql`, used by `Rdf4jSparqlServer`/`Route`/`QuotaManager` for query throttling. */

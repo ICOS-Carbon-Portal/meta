@@ -13,9 +13,8 @@ import se.lu.nateko.cp.meta.services.sparql.regression.{CitationClientDummy, Tes
 import scala.concurrent.Future
 
 /**
- * Guards the lens categories `CitationProvider` actually reads from (task 25, stage 1). The
- * metadata-instance and portal-metadata categories are now built empty; if any rdfStore read path
- * did depend on them after all, the derivations below would stop resolving.
+ * Guards the lens categories `CitationProvider` reads from the narrow rdfstore view of the
+ * shared `cpmeta.instanceServers` configuration.
  *
  * Note on ENVRI coverage: lens *resolution* is asserted for every configured ENVRI, but only ICOS
  * has collection and document fixtures in the regression corpus, so fixture-backed derivation is
@@ -29,9 +28,13 @@ class CitationDerivationTest extends AsyncFunSpec:
 
 	describe("configured graph scopes"):
 
-		val lenses = CitationProvider.getLenses(conf.citationGraphs)
+		val lenses = CitationProvider.getLenses(conf.instanceServers, conf.dataUploadService)
 
-		val envris = conf.citationGraphs.envris.toSeq.sortBy(_.toString)
+		val envris = (
+			conf.dataUploadService.collectionServers.keySet ++
+			conf.dataUploadService.documentServers.keySet ++
+			conf.instanceServers.forDataObjects.keySet
+		).toSeq.sortBy(_.toString)
 
 		it("covers at least the two supported ENVRIs"):
 			Future.successful(assert(envris.toSet === Set(Envri.ICOS, Envri.SITES)))
@@ -46,7 +49,7 @@ class CitationDerivationTest extends AsyncFunSpec:
 				Future.successful(assert(lenses.documentLens.result.isDefined))
 
 			it(s"resolves a data-object lens for every configured format of $envri"):
-				val formats = conf.citationGraphs.dataObjects(envri).definitions.map(_.format)
+				val formats = conf.instanceServers.forDataObjects(envri).definitions.map(_.format)
 				Future.successful:
 					assert(formats.nonEmpty)
 					assert(formats.forall(lenses.dataObjectLens(_).result.isDefined))
@@ -56,9 +59,6 @@ class CitationDerivationTest extends AsyncFunSpec:
 				assert(lenses.metaInstances.isEmpty)
 				assert(envris.forall(envri => lenses.metaInstanceLens(using envri).result.isEmpty))
 
-		it("has complete direct graph scopes for every ENVRI"):
-			Future.successful(assert(conf.citationGraphs.validated === conf.citationGraphs))
-
 	describe("derived metadata"):
 
 		lazy val db = TestDb()
@@ -67,7 +67,7 @@ class CitationDerivationTest extends AsyncFunSpec:
 			given ActorSystem = ActorSystem("CitationDerivationTest")
 			new CitationProvider(
 				db.repo, _ => CitationClientDummy, conf.core,
-				CitationProvider.getLenses(conf.citationGraphs),
+				CitationProvider.getLenses(conf.instanceServers, conf.dataUploadService),
 				CitationProvider.pidFactory(conf)
 			)
 

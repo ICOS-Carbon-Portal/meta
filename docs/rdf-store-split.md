@@ -221,8 +221,9 @@ layering, from most to least specific, is:
      duplicated verbatim in both applications' own `reference.conf`; keep the copies in sync.
    - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
      its Akka configuration, `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph),
-     `rdfLogRestoreFromId`, `rdfLog`, `rdfStorage`, `sparql` throttling, `citations` rendering
-     policy, `citationGraphs`, and its narrow `cpmeta.dataUploadService.handle` view.
+     `rdfLogRestoreFromId`, `rdfLog`, `rdfStorage`, `sparql` throttling, and `citations` rendering
+     policy. It also carries the master-compatible `cpmeta.instanceServers` defaults and the
+     subset of `cpmeta.dataUploadService` needed by its narrow citation configuration view.
    - `meta`'s own `src/main/resources/reference.conf` carries its Akka configuration and every
      `cpmeta.*` key only `meta`'s `CpmetaConfig` reads (`onto`, `stationLabelingService`,
      `fileStoragePath`, `remoteRdfRepository`, `dataUploadService`, `instanceServers`, `auth`,

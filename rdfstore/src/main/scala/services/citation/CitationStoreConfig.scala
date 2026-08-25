@@ -7,30 +7,19 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.{DoiConfig, DoiConfigJsonProtocol}
 import spray.json.*
 
+import java.net.URI
+
 /**
- * The whole configuration `CitationProvider` needs, assembled from two HOCON roots by
- * `RdfStoreConfigLoader.citationStoreConfig`:
- *
- *   - `core` and DOI settings from rdfStore's own `cpmeta` defaults;
- *   - citation rendering policy from rdfStore's own `rdfStore.citations` section;
- *   - `handle` from rdfStore's application-owned, narrow `cpmeta.dataUploadService` defaults;
- *   - `citationGraphs` from rdfStore's own `rdfStore.citationGraphs` (task 25, stage 2), which
- *     replaced the `cpmeta.instanceServers`-shaped read-side copy rdfStore used to carry.
- *
- * Kept next to `CitationProvider` - its only consumer - rather than in the general
- * `StoreConfig.scala`; `rdfStore.sparql`, needed elsewhere in rdfStore for query throttling and
- * unrelated to citations, is loaded as its own `SparqlServerConfig` (`RdfStoreConfigLoader.
- * sparqlConfig`) instead of being a field on this type. Meta's own, much larger `CpmetaConfig`
- * lives in the `meta` module, which rdfStore does not depend on.
- *
- * Kept separate from `CitationClientConfig`, which is the rdfStore-only HTTP/cache policy used
- * by `CitationClient`.
+ * rdfstore's narrow view of the same `cpmeta` configuration parsed by meta. Spray's product
+ * readers ignore fields that are not represented by these types, so rdfstore can use the shared
+ * configuration layout without knowing about instance-server logging, ingestion, replay,
+ * metaflow, upload transforms, or handle-client credentials.
  */
 case class CitationStoreConfig(
 	core: MetaCoreConfig,
 	citations: CitationClientConfig,
-	handle: HandleConfig,
-	citationGraphs: CitationGraphsConfig
+	instanceServers: StoreInstanceServersConfig,
+	dataUploadService: StoreUploadServiceConfig
 )
 
 /** rdfStore's `cpmeta.citations` section. meta has its own, separately-defined one. */
@@ -39,21 +28,34 @@ case class CitationConfig(doi: DoiConfig)
 case class CitationClientConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class CitationRuntimeConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int)
 
-/**
- * The `cpmeta` half of `CitationStoreConfig`: parsed from the effective section assembled from
- * rdf-common and rdfStore defaults, then flattened into `CitationStoreConfig` by the loader.
- * `dataUploadService` is a one-field view on purpose -
- * `metaServers`/`collectionServers`/`documentServers` are meta-only and live in `meta`'s own
- * reference.conf; rdfStore defines only `handle` (for `PidFactory`) in its reference.conf.
- */
 case class HandleConfig(prefix: Map[Envri, String], baseUrl: String)
 
-case class StoreUploadTargetsConfig(handle: HandleConfig)
+case class StoreInstanceServerConfig(writeContext: URI, readContexts: Option[Seq[URI]])
+
+case class StoreDataObjectServerDefinition(label: String, format: URI)
+
+case class StoreDataObjectServersConfig(
+	commonReadContexts: Seq[URI],
+	uriPrefix: URI,
+	definitions: Seq[StoreDataObjectServerDefinition]
+)
+
+case class StoreInstanceServersConfig(
+	specific: Map[String, StoreInstanceServerConfig],
+	forDataObjects: Map[Envri, StoreDataObjectServersConfig]
+)
+
+case class StoreUploadServiceConfig(
+	collectionServers: Map[Envri, String],
+	documentServers: Map[Envri, String],
+	handle: HandleConfig
+)
 
 case class CitationCpmetaView(
 	core: MetaCoreConfig,
 	citations: CitationConfig,
-	dataUploadService: StoreUploadTargetsConfig
+	instanceServers: StoreInstanceServersConfig,
+	dataUploadService: StoreUploadServiceConfig
 )
 
 object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
@@ -63,8 +65,12 @@ object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJ
 
 	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
 	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
-	given RootJsonFormat[StoreUploadTargetsConfig] = jsonFormat1(StoreUploadTargetsConfig.apply)
-	given RootJsonFormat[CitationCpmetaView] = jsonFormat3(CitationCpmetaView.apply)
+	given RootJsonFormat[StoreInstanceServerConfig] = jsonFormat2(StoreInstanceServerConfig.apply)
+	given RootJsonFormat[StoreDataObjectServerDefinition] = jsonFormat2(StoreDataObjectServerDefinition.apply)
+	given RootJsonFormat[StoreDataObjectServersConfig] = jsonFormat3(StoreDataObjectServersConfig.apply)
+	given RootJsonFormat[StoreInstanceServersConfig] = jsonFormat2(StoreInstanceServersConfig.apply)
+	given RootJsonFormat[StoreUploadServiceConfig] = jsonFormat3(StoreUploadServiceConfig.apply)
+	given RootJsonFormat[CitationCpmetaView] = jsonFormat4(CitationCpmetaView.apply)
 	given RootJsonFormat[CitationRuntimeConfig] = jsonFormat3(CitationRuntimeConfig.apply)
 
 end CitationStoreConfigJsonProtocol

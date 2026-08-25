@@ -15,10 +15,8 @@ Stop `rdfstore/src/main/scala/services/citation/CitationProvider.scala:119` from
 a single read — a `getStatements` sweep to collect every `hasDoi` object at start-up — and then
 uses the repository directly everywhere else.
 
-It is rdfStore's last dependency on that model. It already uses no `TriplestoreConnection`,
-`SparqlRunner`, `CustomVocab` or `UriId` directly, and task 25 removed the
-`instanceServers`-shaped citation graph config for the same reason: "that name was residue from
-the mutable `InstanceServer` model" (`CitationGraphsConfig.scala:26`).
+It is rdfStore's last runtime dependency on that model. Reading a narrow subset of the shared
+`cpmeta.instanceServers` configuration does not require constructing a mutable `InstanceServer`.
 
 This is a small change with no behavioural component. Its value is that it closes the door on
 rdfStore growing write-side instance-server usage later.

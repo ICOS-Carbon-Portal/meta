@@ -34,6 +34,7 @@ case class StoreInstanceServerConfig(
 	writeContext: URI,
 	readContexts: Option[Seq[URI]],
 	logName: Option[String],
+	skipLogIngestionAtStart: Option[Boolean],
 	logIngestionFromId: Option[Int]
 )
 
@@ -78,7 +79,7 @@ object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJ
 	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
 	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
-	given RootJsonFormat[StoreInstanceServerConfig] = jsonFormat4(StoreInstanceServerConfig.apply)
+	given RootJsonFormat[StoreInstanceServerConfig] = jsonFormat5(StoreInstanceServerConfig.apply)
 	given RootJsonFormat[StoreDataObjectServerDefinition] = jsonFormat3(StoreDataObjectServerDefinition.apply)
 	given RootJsonFormat[StoreDataObjectServersConfig] = jsonFormat3(StoreDataObjectServersConfig.apply)
 	given RootJsonFormat[StoreInstanceServersConfig] = jsonFormat2(StoreInstanceServersConfig.apply)

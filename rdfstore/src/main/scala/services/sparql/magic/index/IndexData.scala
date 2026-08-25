@@ -53,8 +53,7 @@ final case class StatEntry(key: StatKey, count: Int)
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
-	// These members are public only because of serialization, and should not be accessed directly.
-
+	// These members should not be accessed directly outside the index.
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
 	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
@@ -63,7 +62,7 @@ final class IndexData(nObjects: Int)(
 	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
 	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
 	val initOk: MutableRoaringBitmap = emptyBitmap
-) extends Serializable:
+):
 	private val log = LoggerFactory.getLogger(getClass())
 
 	private def dataStartBm = DatetimeHierarchicalBitmap(DataStartGeo(objs))

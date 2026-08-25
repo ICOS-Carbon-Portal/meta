@@ -34,7 +34,6 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = citationStoreConfig.core.envriConfigs
 
-	private val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
 	private val startup = {
 		val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
 		val citer = CitationProvider(baseSail, citationStoreConfig)

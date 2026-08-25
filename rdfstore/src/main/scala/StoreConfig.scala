@@ -23,8 +23,7 @@ case class RdfStorageConfig(
 	path: String,
 	recreateAtStartup: Boolean,
 	indices: String,
-	disableCpIndex: Boolean,
-	recreateCpIndexAtStartup: Boolean
+	disableCpIndex: Boolean
 )
 
 case class RdfStoreConfig(
@@ -48,7 +47,7 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import CitationStoreConfigJsonProtocol.given
 
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat3(RdfStoreConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat7(SparqlServerConfig.apply)
 

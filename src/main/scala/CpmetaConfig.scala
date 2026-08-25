@@ -146,7 +146,6 @@ case class LabelingServiceConfig(
 case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
 	updateEndpoint: URI,
-	adminEndpoint: URI,
 	derivedMetadataEndpoint: URI
 )
 

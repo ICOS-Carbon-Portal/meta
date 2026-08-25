@@ -8,7 +8,6 @@ import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -35,14 +34,12 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = citationStoreConfig.core.envriConfigs
 
-	private val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
-
 	private val startup = for
-		(citCache, doiCache) <- readCitCache().zip(readDoiCache())
-		citer = CitationProvider(baseSail, citCache, doiCache, citationStoreConfig)
+		(isFreshInit, baseSail) <- Future(StorageSail(storeConfig.rdfStorage))
+		citer = CitationProvider(baseSail, citationStoreConfig)
 		derivedMetadata = DerivedMetadataService(citer)
 		indexFactories =
-			if isFreshInit || storeConfig.rdfStorage.disableCpIndex then None
+			if storeConfig.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
 		logManager = RdfLogManager(
@@ -52,24 +49,15 @@ object Main extends App:
 		)
 		repo = SailRepository(sail)
 		_ = repo.init()
-		restoreResult = logManager.restore(repo, isFreshInit)
-		indexData <- restoreIndex(forceRecreate = restoreResult.invalidatesIndex)
-		_ <- sail.initSparqlMagicIndex(indexData)
-		_ = if isFreshInit then sail.makeReadonly(
-			"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
-		)
+		_ = logManager.restore(repo, isFreshInit)
+		_ <- sail.initSparqlMagicIndex()
 		queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
 		given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
-		binding <- Http().newServerAt(host, port).bind(Route(
-			repo,
-			sparqlConfig,
-			derivedMetadata,
-			message => sail.makeReadonlyDumpIndexAndCaches(message)
-		))
-	yield (binding, queryServer, repo, logManager)
+		binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
+	yield (binding, queryServer, repo, logManager, baseSail)
 
 	startup.onComplete:
-		case Success((binding, queryServer, repo, logManager)) =>
+		case Success((binding, queryServer, repo, logManager, _)) =>
 			system.log.info("RDF store listening on {}", binding.localAddress)
 			sys.addShutdownHook:
 				queryServer.shutdown()
@@ -78,15 +66,4 @@ object Main extends App:
 				binding.unbind()
 		case Failure(err) =>
 			system.log.error(err, "Could not start RDF store")
-			baseSail.shutDown()
 			system.terminate()
-
-	private def restoreIndex(forceRecreate: Boolean) =
-		val conf = storeConfig.rdfStorage
-		val recreate = isFreshInit || forceRecreate || conf.recreateCpIndexAtStartup
-		if recreate then IndexHandler.dropStorage()
-		if recreate || conf.disableCpIndex then Future.successful(None)
-		else IndexHandler.restore().map(Some(_)).recover:
-			case err =>
-				system.log.warning("Failed to restore SPARQL index: {}", err.getMessage)
-				None

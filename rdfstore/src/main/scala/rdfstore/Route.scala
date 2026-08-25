@@ -16,7 +16,6 @@ import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
 
 import scala.util.{Failure, Success}
-import scala.concurrent.Future
 
 /** SPARQL 1.1 query and update protocol surface owned by the RDF-store process. */
 object Route:
@@ -24,8 +23,7 @@ object Route:
 	def apply(
 		repo: Repository,
 		sparqlConf: SparqlServerConfig,
-		derivedMetadata: DerivedMetadataService,
-		makeReadonly: String => Future[String]
+		derivedMetadata: DerivedMetadataService
 	)(using
 		ActorSystem,
 		ToResponseMarshaller[SparqlRequest]
@@ -64,8 +62,5 @@ object Route:
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")
-		~ path("admin" / "read-only"):
-			post:
-				entity(as[String]) { message => complete(makeReadonly(message)) }
 		~ pathEndOrSingleSlash:
 			complete(StatusCodes.NotFound)

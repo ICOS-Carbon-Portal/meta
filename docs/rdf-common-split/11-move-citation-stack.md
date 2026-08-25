@@ -53,10 +53,7 @@ services/upload/DoiClientFactory.scala        (used by CitationClient)
    akka-http client dependencies to `rdfCommon`.
 3. `CitationConfig` and `DoiConfig` live in `CpmetaConfig.scala`; they arrive in `rdfCommon` in
    task 14. Until then the retained `meta -> rdfStore` edge covers it.
-4. Note the on-disk caches: `citationsCacheDump.json` and `doiMetaCacheDump.json` sit in the
-   repository root. Check which process writes them and make sure the move does not change the
-   path or the working directory assumption.
-5. Compile.
+4. Compile.
 
 ## Verification
 

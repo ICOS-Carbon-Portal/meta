@@ -1,18 +1,13 @@
 package se.lu.nateko.cp.meta.core.algo
 
 // Moved here from metaCore (task 32): nothing outside rdfStore's SPARQL magic index has ever
-// used these structures. The package name stays `...core.algo` deliberately -- HierarchicalBitmap
-// is java.io.Serializable and takes part in the kryo-serialized index dump that rdfStore restores
-// from disk at boot, so renaming the package would invalidate every existing dump for no gain.
+// used these structures.
 
 import scala.language.unsafeNulls
 
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap
 import org.roaringbitmap.buffer.MutableRoaringBitmap
 
-import java.io.DataInput
-import java.io.DataOutput
-import java.io.Serializable
 import java.util as ju
 import scala.collection.mutable.HashMap
 import scala.jdk.CollectionConverters.IteratorHasAsScala
@@ -29,7 +24,7 @@ import BitmapExtension.forEach
  * - number of coordinate-indices on every depth level is small enough for fast batch-operations on bitmaps
  * - a key may correspond to multiple values, but every value has a single key
 */
-class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]) extends Serializable:
+class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo: Geo[K], ord: Ordering[K]):
 
 	private var values = emptyBitmap
 	private var n = 0
@@ -252,30 +247,12 @@ class HierarchicalBitmap[K](val depth: Int, val coord: Option[Coord])(using geo:
 	private def thisLevel(key: K): Coord = geo.coordinate(key, depth)
 	private def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
-	def serialize(out: DataOutput, innerWriter: AnyRef => Unit): Unit =
-		serializeConstructorVariables(out, innerWriter, depth, coord, geo, ord)
-		serializePrivateState(out, innerWriter)
-
-	private def serializePrivateState(out: DataOutput, innerWriter: AnyRef => Unit) =
-		innerWriter(values)
-		out.writeInt(n)
-		innerWriter(children)
-		innerWriter(firstKey)
-		out.writeBoolean(seenDifferentKeys)
-
-	private def deserializePrivateState(in: DataInput, innerReader: [T] => Class[T] => T) =
-		values = innerReader(classOf[MutableRoaringBitmap])
-		n = in.readInt()
-		children = innerReader(classOf[Option[HashMap[Coord, HierarchicalBitmap[K]]]])
-		firstKey = innerReader(classOf[Option[K]])
-		seenDifferentKeys = in.readBoolean()
-
 end HierarchicalBitmap
 
 
 object HierarchicalBitmap{
 	type Coord = Short
-	trait Geo[K] extends Serializable{
+	trait Geo[K]{
 		/** depth zero always returns zero */
 		def coordinate(key: K, depth: Int): Coord
 		def keyLookup(value: Int): K
@@ -296,31 +273,6 @@ object HierarchicalBitmap{
 
 	private type OffsetOrResult = Either[Int, Iterator[Int]]
 	private def open(res: OffsetOrResult): Iterator[Int] = res.fold(_ => Iterator.empty, identity)
-
-	def deserialize[K](in: DataInput, innerReader: [T] => Class[T] => T): HierarchicalBitmap[K] =
-		val bm = deserializeConstructorVariables[K](in, innerReader)
-		bm.deserializePrivateState(in, innerReader)
-		bm
-
-	private def serializeConstructorVariables[K](
-		out: DataOutput,
-		innerWriter: AnyRef => Unit,
-		depth: Int,
-		coord: Option[Coord],
-		geo: Geo[K],
-		ord: Ordering[K]
-	): Unit =
-		out.writeInt(depth)
-		innerWriter(coord)
-		innerWriter(geo)
-		innerWriter(ord)
-
-	private def deserializeConstructorVariables[K](in: DataInput, innerReader: [T] => Class[T] => T) =
-		val depth = in.readInt()
-		val coord = innerReader(classOf[Option[Coord]])
-		val geo = innerReader(classOf[Geo[K]])
-		val ord = innerReader(classOf[Ordering[K]])
-		new HierarchicalBitmap[K](depth, coord)(using geo, ord)
 
 	// private def time[T](comp: => T): T = {
 	// 	val start = System.nanoTime

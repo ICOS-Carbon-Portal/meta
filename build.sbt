@@ -309,7 +309,6 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
-			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",

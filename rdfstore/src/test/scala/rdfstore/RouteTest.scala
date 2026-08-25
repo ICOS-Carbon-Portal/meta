@@ -64,11 +64,17 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle.clientCertPemFilePath") shouldBe false
+			root.hasPath("cpmeta.instanceServers.metaFlow") shouldBe false
+			root.hasPath("cpmeta.instanceServers.specific.instances.ingestion") shouldBe false
 			root.hasPath("cpmeta.rdfLog") shouldBe true
 			root.hasPath("rdfStore.rdfLog") shouldBe false
 			root.hasPath("rdfStore.rdfLogs") shouldBe false
 			root.hasPath("rdfStore.rdfLogRestoreFromId") shouldBe false
 			val citationConf = RdfStoreConfigLoader.citationStoreConfig
+			RdfStoreConfigLoader.rdfLogConfig.server.host shouldBe root.getString("cpmeta.rdfLog.server.host")
+			RdfStoreConfigLoader.rdfLogConfig.credentials.db shouldBe root.getString("cpmeta.rdfLog.credentials.db")
+			citationConf.citations.doi.restEndpoint.toString shouldBe
+				root.getString("cpmeta.citations.doi.restEndpoint")
 			citationConf.dataUploadService.collectionServers.keySet shouldBe
 				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
 			citationConf.dataUploadService.documentServers.keySet shouldBe

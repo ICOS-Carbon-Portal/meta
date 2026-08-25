@@ -17,12 +17,10 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
 
-// Config value types formerly shared via rdf-common's SharedConfig.scala/CitationConfig.scala.
-// rdf-common no longer defines application config sections: each application owns the types for
-// the sections it parses, so the two can evolve their configuration independently. The only
-// config type still shared is `DoiConfig`, which shared code (`DoiClientFactory`) takes as a
-// parameter. rdfStore has its own structurally-similar copies of `RdflogConfig` & co and parses
-// the same `cpmeta.rdfLog` structure from its own application configuration.
+// Each application owns the types for the configuration it parses. Defaults for fields also read
+// by rdfStore live in rdf-common's reference.conf under the same `cpmeta` paths, so the two
+// independently deployed processes share one configuration contract. `DoiConfig` is also shared
+// because shared code (`DoiClientFactory`) takes it as a parameter.
 
 case class DbServer(host: String, port: Int)
 case class DbCredentials(db: String, user: String, password: String)

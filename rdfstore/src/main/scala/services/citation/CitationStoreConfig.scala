@@ -12,8 +12,8 @@ import java.net.URI
 /**
  * rdfstore's narrow view of the same `cpmeta` configuration parsed by meta. Spray's product
  * readers ignore fields that are not represented by these types, so rdfstore can use the shared
- * configuration layout without knowing about instance-server logging, ingestion, replay,
- * metaflow, upload transforms, or handle-client credentials.
+ * configuration layout without knowing about ingestion, metaflow, upload transforms, or
+ * handle-client credentials.
  */
 case class CitationStoreConfig(
 	core: MetaCoreConfig,

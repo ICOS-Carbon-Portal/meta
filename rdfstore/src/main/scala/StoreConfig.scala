@@ -9,10 +9,9 @@ import se.lu.nateko.cp.meta.services.citation.{
 }
 import spray.json.*
 
-// Config value types formerly shared via rdf-common's SharedConfig.scala. rdf-common no longer
-// defines application config sections: each application owns the types for the sections it
-// parses. `meta` has its own structurally-similar copies, matching its own `cpmeta.rdfLog`
-// section, just as it has its own copy of the HOCON defaults.
+// Each application owns the types for the configuration it parses. Defaults for fields also read
+// by meta live in rdf-common's reference.conf under the same `cpmeta` paths; rdfStore uses narrow
+// views of that shared configuration contract.
 case class DbServer(host: String, port: Int)
 case class DbCredentials(db: String, user: String, password: String)
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)

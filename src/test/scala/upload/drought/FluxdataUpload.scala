@@ -138,4 +138,3 @@ class FluxdataUpload(
 		if(spec == fluxnetArchiveSpec) Some(fluxTimeInterval(fe)) else None
 
 }
-

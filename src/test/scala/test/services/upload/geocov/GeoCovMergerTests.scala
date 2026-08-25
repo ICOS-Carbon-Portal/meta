@@ -161,4 +161,3 @@ private def convertStringsToJTS(geomStrings: String*): Seq[Geometry] =
 	val wktReader = new WKTReader(JtsGeoFactory)
 	geomStrings.map(wktReader.read)
 
-

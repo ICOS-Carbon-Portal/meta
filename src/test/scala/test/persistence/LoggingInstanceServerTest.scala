@@ -106,4 +106,3 @@ class LoggingInstanceServerTest extends AnyFunSpec{
 	}
 
 }
-

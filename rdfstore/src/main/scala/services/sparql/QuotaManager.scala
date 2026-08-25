@@ -144,3 +144,4 @@ object QuotaManager:
 		def logQueryFinish(): Unit = {}
 		def logQueryStreamingStart(): Unit = {}
 		def execute(r: Runnable): Unit = inner.execute(r)
+

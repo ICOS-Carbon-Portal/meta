@@ -46,32 +46,39 @@ final class RdfLogManager private (
 end RdfLogManager
 
 object RdfLogManager:
-	final case class LogConfig(name: String, context: URI, fromId: Option[Int])
+	final case class LogConfig(
+		name: String,
+		context: URI,
+		fromId: Option[Int],
+		skipAtStart: Option[Boolean]
+	)
 
 	final case class ReplayPolicy(
-		restoreOnFresh: Boolean = true,
-		restoreOnRegularStart: Boolean = false,
+		skipAtStart: Option[Boolean] = None,
 		fromId: Option[Int] = None
 	):
 		def shouldRestore(isFreshStore: Boolean): Boolean =
-			if isFreshStore then restoreOnFresh else restoreOnRegularStart
+			!skipAtStart.getOrElse(!isFreshStore)
 
 	final case class Binding(name: String, context: IRI, log: RdfLogReader, replay: ReplayPolicy)
 
 	def configuredLogs(instanceServers: StoreInstanceServersConfig): Seq[LogConfig] =
 		val specific = instanceServers.specific.values.flatMap: config =>
-			config.logName.map(LogConfig(_, config.writeContext, config.logIngestionFromId))
+			config.logName.map(LogConfig(
+				_, config.writeContext, config.logIngestionFromId, config.skipLogIngestionAtStart
+			))
 		val dataObjects = instanceServers.forDataObjects.values.flatMap: config =>
 			config.definitions.map: definition =>
 				val context = URI.create(config.uriPrefix.toString + definition.label + "/")
-				LogConfig(definition.label, context, definition.replayLogFrom)
+				LogConfig(
+					definition.label,
+					context,
+					definition.replayLogFrom,
+					definition.replayLogFrom.map(_ => false)
+				)
 
-		(specific ++ dataObjects).toSeq.groupBy(_.name).toSeq.sortBy(_._1).map: (name, configs) =>
-			val distinct = configs.distinct
-			if distinct.sizeIs > 1 then throw IllegalArgumentException(
-				s"Conflicting instance-server RDF-log configuration for '$name': ${distinct.mkString(", ")}"
-			)
-			distinct.head
+		(specific ++ dataObjects).filterNot(_.skipAtStart.contains(true)).toSeq
+			.sortBy(config => (config.name, config.context.toString, config.fromId))
 
 	def apply(
 		rdfLogConfig: RdflogConfig,
@@ -84,8 +91,7 @@ object RdfLogManager:
 				factory.createIRI(config.context.toString),
 				PostgresRdfLogReader(config.name, rdfLogConfig, factory),
 				ReplayPolicy(
-					restoreOnFresh = true,
-					restoreOnRegularStart = config.fromId.isDefined,
+					skipAtStart = config.skipAtStart,
 					fromId = config.fromId
 				)
 			)

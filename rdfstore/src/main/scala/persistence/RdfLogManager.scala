@@ -5,9 +5,12 @@ import scala.language.unsafeNulls
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.RdfStoreConfig
+import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
 import se.lu.nateko.cp.meta.rdfstore.persistence.postgres.PostgresRdfLogReader
+import se.lu.nateko.cp.meta.services.citation.StoreInstanceServersConfig
+
+import java.net.URI
 
 /**
  * Read-side owner of RDF-log restoration.
@@ -43,6 +46,8 @@ final class RdfLogManager private (
 end RdfLogManager
 
 object RdfLogManager:
+	final case class LogConfig(name: String, context: URI, fromId: Option[Int])
+
 	final case class ReplayPolicy(
 		restoreOnFresh: Boolean = true,
 		restoreOnRegularStart: Boolean = false,
@@ -53,17 +58,35 @@ object RdfLogManager:
 
 	final case class Binding(name: String, context: IRI, log: RdfLogReader, replay: ReplayPolicy)
 
-	def apply(storeConfig: RdfStoreConfig, factory: ValueFactory): RdfLogManager =
-		val bindings = storeConfig.rdfLogs.toSeq.map: (name, context) =>
-			val fromId = storeConfig.rdfLogRestoreFromId.get(name)
+	def configuredLogs(instanceServers: StoreInstanceServersConfig): Seq[LogConfig] =
+		val specific = instanceServers.specific.values.flatMap: config =>
+			config.logName.map(LogConfig(_, config.writeContext, config.logIngestionFromId))
+		val dataObjects = instanceServers.forDataObjects.values.flatMap: config =>
+			config.definitions.map: definition =>
+				val context = URI.create(config.uriPrefix.toString + definition.label + "/")
+				LogConfig(definition.label, context, definition.replayLogFrom)
+
+		(specific ++ dataObjects).toSeq.groupBy(_.name).toSeq.sortBy(_._1).map: (name, configs) =>
+			val distinct = configs.distinct
+			if distinct.sizeIs > 1 then throw IllegalArgumentException(
+				s"Conflicting instance-server RDF-log configuration for '$name': ${distinct.mkString(", ")}"
+			)
+			distinct.head
+
+	def apply(
+		rdfLogConfig: RdflogConfig,
+		instanceServers: StoreInstanceServersConfig,
+		factory: ValueFactory
+	): RdfLogManager =
+		val bindings = configuredLogs(instanceServers).map: config =>
 			Binding(
-				name,
-				factory.createIRI(context.toString),
-				PostgresRdfLogReader(name, storeConfig.rdfLog, factory),
+				config.name,
+				factory.createIRI(config.context.toString),
+				PostgresRdfLogReader(config.name, rdfLogConfig, factory),
 				ReplayPolicy(
 					restoreOnFresh = true,
-					restoreOnRegularStart = fromId.isDefined,
-					fromId = fromId
+					restoreOnRegularStart = config.fromId.isDefined,
+					fromId = config.fromId
 				)
 			)
 		new RdfLogManager(bindings)

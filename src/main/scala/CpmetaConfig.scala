@@ -21,8 +21,8 @@ import scala.collection.mutable.WeakHashMap
 // rdf-common no longer defines application config sections: each application owns the types for
 // the sections it parses, so the two can evolve their configuration independently. The only
 // config type still shared is `DoiConfig`, which shared code (`DoiClientFactory`) takes as a
-// parameter. rdfStore has its own structurally-similar copies of `RdflogConfig` & co, matching
-// its own `rdfStore.rdfLog` section, just as it has its own copy of the HOCON defaults.
+// parameter. rdfStore has its own structurally-similar copies of `RdflogConfig` & co and parses
+// the same `cpmeta.rdfLog` structure from its own application configuration.
 
 case class DbServer(host: String, port: Int)
 case class DbCredentials(db: String, user: String, password: String)

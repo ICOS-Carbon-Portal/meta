@@ -45,7 +45,11 @@ object Main extends App:
 			if isFreshInit || storeConfig.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
-		logManager = RdfLogManager(storeConfig, baseSail.getValueFactory)
+		logManager = RdfLogManager(
+			RdfStoreConfigLoader.rdfLogConfig,
+			citationStoreConfig.instanceServers,
+			baseSail.getValueFactory
+		)
 		repo = SailRepository(sail)
 		_ = repo.init()
 		_ = logManager.restore(repo, isFreshInit)

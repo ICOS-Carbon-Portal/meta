@@ -4,12 +4,10 @@ import scala.language.unsafeNulls
 
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.meta.services.citation.{
-	CitationCpmetaView,
+	StoreCpmetaView,
 	CitationClientConfig, CitationRuntimeConfig, CitationStoreConfig, CitationStoreConfigJsonProtocol
 }
 import spray.json.*
-
-import java.net.URI
 
 // Config value types formerly shared via rdf-common's SharedConfig.scala. rdf-common no longer
 // defines application config sections: each application owns the types for the sections it
@@ -33,10 +31,7 @@ case class RdfStorageConfig(
 case class RdfStoreConfig(
 	httpBindInterface: String,
 	port: Int,
-	rdfStorage: RdfStorageConfig,
-	rdfLog: RdflogConfig,
-	rdfLogs: Map[String, URI],
-	rdfLogRestoreFromId: Map[String, Int]
+	rdfStorage: RdfStorageConfig
 )
 
 case class SparqlServerConfig(
@@ -53,21 +48,19 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	import DefaultJsonProtocol.*
 	import CitationStoreConfigJsonProtocol.given
 
-	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
-	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
-	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[RdfStoreConfig] = jsonFormat6(RdfStoreConfig.apply)
+	given RootJsonFormat[RdfStoreConfig] = jsonFormat3(RdfStoreConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat7(SparqlServerConfig.apply)
 
 	lazy val default: RdfStoreConfig =
 		AppConfig.rootConfWithWorkingDirOverrides.getValue("rdfStore").parseAs[RdfStoreConfig]
 
+	private lazy val cpmeta = AppConfig.rootConfWithWorkingDirOverrides
+		.getValue("cpmeta").parseAs[StoreCpmetaView]
+
 	/** What `CitationProvider` needs, parsed from the same `cpmeta` shape as meta. */
 	lazy val citationStoreConfig: CitationStoreConfig =
-		val cpmeta = AppConfig.rootConfWithWorkingDirOverrides
-			.getValue("cpmeta").parseAs[CitationCpmetaView]
 		val runtime = AppConfig.rootConfWithWorkingDirOverrides
 			.getValue("rdfStore.citations").parseAs[CitationRuntimeConfig]
 		CitationStoreConfig(
@@ -76,6 +69,9 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 			instanceServers = cpmeta.instanceServers,
 			dataUploadService = cpmeta.dataUploadService
 		)
+
+	/** The same `cpmeta.rdfLog` connection configuration used by meta's log writers. */
+	lazy val rdfLogConfig: RdflogConfig = cpmeta.rdfLog
 
 	/** `rdfStore.sparql`, used by `Rdf4jSparqlServer`/`Route`/`QuotaManager` for query throttling. */
 	lazy val sparqlConfig: SparqlServerConfig =

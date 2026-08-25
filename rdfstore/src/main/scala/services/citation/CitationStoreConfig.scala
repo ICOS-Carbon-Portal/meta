@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
-import se.lu.nateko.cp.meta.{DoiConfig, DoiConfigJsonProtocol}
+import se.lu.nateko.cp.meta.{DbCredentials, DbServer, DoiConfig, DoiConfigJsonProtocol, RdflogConfig}
 import spray.json.*
 
 import java.net.URI
@@ -30,9 +30,18 @@ case class CitationRuntimeConfig(style: String, eagerWarmUp: Boolean, timeoutSec
 
 case class HandleConfig(prefix: Map[Envri, String], baseUrl: String)
 
-case class StoreInstanceServerConfig(writeContext: URI, readContexts: Option[Seq[URI]])
+case class StoreInstanceServerConfig(
+	writeContext: URI,
+	readContexts: Option[Seq[URI]],
+	logName: Option[String],
+	logIngestionFromId: Option[Int]
+)
 
-case class StoreDataObjectServerDefinition(label: String, format: URI)
+case class StoreDataObjectServerDefinition(
+	label: String,
+	format: URI,
+	replayLogFrom: Option[Int] = None
+)
 
 case class StoreDataObjectServersConfig(
 	commonReadContexts: Seq[URI],
@@ -51,11 +60,12 @@ case class StoreUploadServiceConfig(
 	handle: HandleConfig
 )
 
-case class CitationCpmetaView(
+case class StoreCpmetaView(
 	core: MetaCoreConfig,
 	citations: CitationConfig,
 	instanceServers: StoreInstanceServersConfig,
-	dataUploadService: StoreUploadServiceConfig
+	dataUploadService: StoreUploadServiceConfig,
+	rdfLog: RdflogConfig
 )
 
 object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
@@ -63,14 +73,17 @@ object CitationStoreConfigJsonProtocol extends se.lu.nateko.cp.meta.core.CommonJ
 	import MetaCoreConfig.given
 	import DoiConfigJsonProtocol.given RootJsonFormat[DoiConfig]
 
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
 	given RootJsonFormat[HandleConfig] = jsonFormat2(HandleConfig.apply)
-	given RootJsonFormat[StoreInstanceServerConfig] = jsonFormat2(StoreInstanceServerConfig.apply)
-	given RootJsonFormat[StoreDataObjectServerDefinition] = jsonFormat2(StoreDataObjectServerDefinition.apply)
+	given RootJsonFormat[StoreInstanceServerConfig] = jsonFormat4(StoreInstanceServerConfig.apply)
+	given RootJsonFormat[StoreDataObjectServerDefinition] = jsonFormat3(StoreDataObjectServerDefinition.apply)
 	given RootJsonFormat[StoreDataObjectServersConfig] = jsonFormat3(StoreDataObjectServersConfig.apply)
 	given RootJsonFormat[StoreInstanceServersConfig] = jsonFormat2(StoreInstanceServersConfig.apply)
 	given RootJsonFormat[StoreUploadServiceConfig] = jsonFormat3(StoreUploadServiceConfig.apply)
-	given RootJsonFormat[CitationCpmetaView] = jsonFormat4(CitationCpmetaView.apply)
+	given RootJsonFormat[StoreCpmetaView] = jsonFormat5(StoreCpmetaView.apply)
 	given RootJsonFormat[CitationRuntimeConfig] = jsonFormat3(CitationRuntimeConfig.apply)
 
 end CitationStoreConfigJsonProtocol

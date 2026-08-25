@@ -22,30 +22,38 @@ import java.net.URI
 final class RdfLogManager private (
 	private val bindings: Seq[RdfLogManager.Binding]
 ) extends AutoCloseable:
-	import RdfLogManager.Binding
+	import RdfLogManager.{Binding, RestoreResult}
 
 	private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
 
-	def restore(repo: Repository, isFreshStore: Boolean): Unit =
-		bindings.foreach: binding =>
-			if binding.replay.shouldRestore(isFreshStore) then
-				val fromId = binding.replay.fromId
-				val offsetDescription = fromId.fold("")(id => s" from row id $id")
-				logger.info(s"Restoring RDF log '${binding.name}'$offsetDescription into graph <${binding.context}>")
-				val updates = fromId.fold(binding.log.updates)(binding.log.updatesFromId)
-				RdfUpdateLogIngester.ingest(
-					updates,
-					repo,
-					cleanFirst = fromId.isEmpty,
-					binding.context
-				).get
-				logger.info(s"Restored RDF log '${binding.name}' into graph <${binding.context}>")
+	def restore(repo: Repository, isFreshStore: Boolean): RestoreResult =
+		val selected = bindings.filter(_.replay.shouldRestore(isFreshStore))
+		selected.foreach: binding =>
+			val fromId = binding.replay.fromId
+			val offsetDescription = fromId.fold("")(id => s" from row id $id")
+			logger.info(s"Restoring RDF log '${binding.name}'$offsetDescription into graph <${binding.context}>")
+			val updates = fromId.fold(binding.log.updates)(binding.log.updatesFromId)
+			RdfUpdateLogIngester.ingest(
+				updates,
+				repo,
+				cleanFirst = fromId.isEmpty,
+				binding.context
+			).get
+			logger.info(s"Restored RDF log '${binding.name}' into graph <${binding.context}>")
+		RestoreResult(selected.size)
 
 	override def close(): Unit = bindings.map(_.log).distinct.foreach(_.close())
 
 end RdfLogManager
 
 object RdfLogManager:
+	/**
+	 * A selected replay invalidates the persisted indexes even if its log is currently empty:
+	 * rebuilding unnecessarily is safer than loading index data from before the replay.
+	 */
+	final case class RestoreResult(attemptedLogs: Int):
+		def invalidatesIndex: Boolean = attemptedLogs > 0
+
 	final case class LogConfig(
 		name: String,
 		context: URI,

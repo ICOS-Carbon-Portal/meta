@@ -152,4 +152,3 @@ object DroughtMeta2{
 			).build.iterator().asScala.drop(1).toVector
 		}.get
 }
-

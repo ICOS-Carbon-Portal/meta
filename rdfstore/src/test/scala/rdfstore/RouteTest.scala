@@ -24,7 +24,6 @@ import se.lu.nateko.cp.meta.services.sparql.magic.StatementsEnricher
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import java.net.URI
 import spray.json.*
@@ -50,8 +49,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val route = Route(
 		repo,
 		sparqlConf,
-		DerivedMetadataService.unavailable(repo.getValueFactory),
-		message => Future.successful(s"read-only: $message")
+		DerivedMetadataService.unavailable(repo.getValueFactory)
 	)
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
@@ -92,11 +90,6 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				status shouldBe StatusCodes.OK
 				responseAs[String] shouldBe "ok"
 
-		"delegate read-only and index-dump administration" in:
-			Post("/admin/read-only", HttpEntity(ContentTypes.`text/plain(UTF-8)`, "maintenance")) ~> route ~> check:
-				status shouldBe StatusCodes.OK
-				responseAs[String] shouldBe "read-only: maintenance"
-
 		"serve a versioned derived-metadata batch response" in:
 			Post(
 				"/internal/derived/v1/resolve",
@@ -114,7 +107,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			val references = References.empty.copy(title = Some("Parity item"), citationString = Some("Citation from references"), licence = Some(licence))
 			val metadata = DerivedMetadata(resource, references, Some("Canonical citation"), Some(licence))
 			val derived = DerivedMetadataService.fixed(vf, scala.collection.immutable.Map(resource -> metadata))
-			val parityRoute = Route(repo, sparqlConf, derived, _ => Future.successful("unused"))
+			val parityRoute = Route(repo, sparqlConf, derived)
 
 			Post(
 				"/internal/derived/v1/resolve",
@@ -212,12 +205,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			try
 				given ToResponseMarshaller[SparqlRequest] = slowServer.marshaller
 				given RouteTestTimeout = RouteTestTimeout(20.seconds)
-				val slowRoute = Route(
-					repo,
-					slowConf,
-					DerivedMetadataService.unavailable(vf),
-					message => Future.successful(s"read-only: $message")
-				)
+				val slowRoute = Route(repo, slowConf, DerivedMetadataService.unavailable(vf))
 				val origin = "https://example.icos-cp.eu"
 				Post("/sparql", HttpEntity(ContentTypes.`text/plain(UTF-8)`, longRunningQuery))
 					.withHeaders(Origin(HttpOrigin(origin)), forwardedFor) ~> slowRoute ~> check:

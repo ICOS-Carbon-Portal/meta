@@ -7,7 +7,7 @@ The target is two independently deployable JVM applications:
 1. **`rdfStore`** exclusively owns the RDF4J Sail, its LMDB/NativeStore files, query execution, and the SPARQL query/update protocol, including the public `/sparql` endpoint with its query quotas, timeouts and response cache.
 2. **`meta`** owns metadata-domain behavior (upload validation, RDF production, landing pages, labeling, ontology editors, citations, DOI integration, metadata flows, and normal RDF-log writes) and accesses RDF through an RDF4J `Repository` client.
 
-The process split is implemented. `rdfStore` owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (private SPARQL query/update), `/admin/read-only`, and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
+The process split is implemented. `rdfStore` owns the RDF implementation and runtime configuration, and provides `/sparql` (public, quota-throttled and cached), `/internal/sparql` (private SPARQL query/update), and `/health`. `meta` no longer serves `/sparql`; the public URL is a reverse-proxy route to `rdfStore`. `meta` always connects through RDF4J `SPARQLRepository` and has no embedded-store fallback.
 
 The build split is also implemented (`docs/rdf-common-split/`, tasks 01-23): the two applications no longer depend on each other at all. The dependency direction is `meta -> rdfCommon -> metaCore` and `rdfStore -> rdfCommon -> metaCore`; neither `meta` nor `rdfStore` depends on the other, and `rdfCommon` must never depend on either application. `rdfCommon` is the shared library for configuration (`CpmetaConfig`), vocabularies, the `InstanceServer` API, generic RDF4J utilities, domain exceptions, the citation/DOI stack, read-side object fetchers, and the neutral PostgreSQL RDF-log reader/writer. It excludes the RDF storage-implementation dependencies (`rdf4j-sail-lmdb`, `rdf4j-sail-nativerdf`, `lwjgl`, `kryo`). A CI task, `checkModuleBoundaries`, fails the build if either application's compiled classpath contains the other's class directory (`docs/rdf-common-split/22-ci-guard.md`).
 
@@ -115,7 +115,7 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 | SPARQL parsing, execution quotas, cancellation, result formats | `rdfStore` |
 | Public SPARQL endpoint: CORS, response caching, client throttling | `rdfStore` |
 | Carbon Portal custom query indexes | `rdfStore` |
-| Store backups, compaction, read-only maintenance | `rdfStore` |
+| Store backups and compaction | `rdfStore` |
 | RDF-log writes and change history | `meta` |
 | RDF-log replay during store initialization | `rdfStore` |
 | Upload validation and RDF statement production | `meta` |
@@ -145,14 +145,13 @@ The two persistence systems still cannot provide a distributed atomic commit: an
 
 ## Custom index migration
 
-`CpNotifyingSail`, `IndexHandler`, `GeoIndexProvider`, storage selection, query evaluation, citation-backed statement enrichment, read-only switching, and index snapshots now live in and execute inside `rdfStore`. The module depends on `metaCore` for shared data types and algorithms, never on `meta`.
+`CpNotifyingSail`, `IndexHandler`, `GeoIndexProvider`, storage selection, query evaluation, and citation-backed statement enrichment now live in and execute inside `rdfStore`. Custom indexes are always built from the store's own triples at startup: there is no index snapshot on disk, and no read-only switching. The module depends on `metaCore` for shared data types and algorithms, never on `meta`.
 
 Migration sequence:
 
 1. Storage, indexes, SPARQL execution, RDF access helpers, vocabularies, and enrichment code are compiled by `rdfStore` (implemented).
-2. Indexes are restored or rebuilt in `rdfStore` before its HTTP listener is bound (implemented).
+2. Indexes are built in `rdfStore` before its HTTP listener is bound (implemented).
 3. The embedded Sail/index lifecycle has been deleted from `meta` (implemented).
-4. Index dump/read-only control is exposed on the loopback-bound administration route (implemented); add service authentication before exposing it across hosts.
 
 Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and custom indexes in `rdfStore`. Performance and Carbon Portal-specific query rewrites must still be regression-tested across the new HTTP hop before production cutover.
 
@@ -162,9 +161,8 @@ Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and
 
 1. open and initialize the Sail repository;
 2. on a fresh store, restore each configured RDF log sequentially;
-3. restore or build custom indexes;
-4. leave the freshly built store read-only;
-5. expose the routes so operators can verify the restore, then restart `rdfStore` for normal indexed operation.
+3. build the custom indexes;
+4. expose the routes.
 
 The replay is deliberately sequential. This retains the old protection against NativeStore crashes under unrestrained parallel writes, but limits serialization to initial RDF-log restoration; normal store traffic uses RDF4J's transaction concurrency.
 
@@ -186,7 +184,6 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 	cpmeta.remoteRdfRepository {
 	  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
 	  updateEndpoint = "http://127.0.0.1:9095/internal/sparql"
-	  adminEndpoint = "http://127.0.0.1:9095/admin/read-only"
 	}
 ```
 
@@ -245,7 +242,7 @@ packaged configuration.
 1. **Baseline:** run the existing SPARQL/upload/landing-page suites against the last embedded release.
 2. **Snapshot:** stop metadata writers in the embedded deployment; take both an RDF store snapshot and PostgreSQL log checkpoint.
 3. **Seed:** restore the snapshot onto the volume owned by `rdfStore`. Never copy a live LMDB directory without the store's supported snapshot procedure.
-4. **Shadow reads:** start `rdfStore` read-only and compare a corpus of SELECT/CONSTRUCT queries, named-graph counts, object pages, citations, and geospatial queries.
+4. **Shadow reads:** start `rdfStore` with no metadata writers running, and compare a corpus of SELECT/CONSTRUCT queries, named-graph counts, object pages, citations, and geospatial queries.
 5. **Canary:** start one non-public `meta` instance against `rdfStore`; keep production writes stopped or on the old deployment.
 6. **Write cutover:** stop writers, apply the final log delta, start one remote `meta` writer, then enable other stateless `meta` replicas.
 7. **Observe:** compare update-log high-water marks, graph counts, query latency/error rates, and upload completion behavior.

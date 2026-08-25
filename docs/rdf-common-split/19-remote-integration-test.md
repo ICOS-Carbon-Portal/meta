@@ -49,9 +49,7 @@ Cover the verification gates listed in `rdf-store-split.md:184-191`:
   port; tear the directory down afterwards. `TestDb` in the regression suite already has
   LMDB-on-temp-dir setup code worth reusing (`LmdbConfig`, `RdfStorageConfig`).
 - Point `meta`'s `cpmeta.remoteRdfRepository` at it (`rdf-store-split.md:146-154`).
-- Wait on `/health` before running assertions; `rdfStore` leaves a freshly built store
-  read-only (`rdf-store-split.md:127`), so the fixture must account for the restart step or
-  seed a store that is already indexed.
+- Wait on `/health` before running assertions.
 - Tag the suite so it can be excluded from fast local runs but is mandatory in CI —
   `src/test/scala/test/tags/TagObjects.scala` already provides the tagging mechanism.
   *(Superseded: the harness this plan describes was built and then removed — see the revision

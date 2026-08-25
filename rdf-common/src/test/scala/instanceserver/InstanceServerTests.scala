@@ -40,7 +40,7 @@ class InstanceServerTests extends AnyFunSpec{
 			repo.init()
 			val server1 = new Rdf4jInstanceServer(repo, ctxt)
 			val server2 = new Rdf4jInstanceServer(repo, ctxt2)
-			
+
 			server1.addInstance(makeUri("inst1"), makeUri("class1"))
 			server2.addInstance(makeUri("inst2"), makeUri("class2"))
 
@@ -49,7 +49,7 @@ class InstanceServerTests extends AnyFunSpec{
 				val statements = server.getStatements(None, None, None).toIndexedSeq
 				assert(statements.size === 2)
 			}
-			
+
 			it("Finds an exact triple"){
 				val server = new Rdf4jInstanceServer(repo, Nil, ctxt)
 				val statements = server.getStatements(Some(makeUri("inst1")), Some(RDF.TYPE), Some(makeUri("class1"))).toIndexedSeq

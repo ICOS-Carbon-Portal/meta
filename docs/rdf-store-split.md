@@ -216,30 +216,25 @@ layering, from most to least specific, is:
    was given - the environment-specific file, kept out of version control.
 3. Each application's own classpath `application.conf`, if it ships one (currently neither does;
    both rely on `reference.conf` defaults).
-4. `reference.conf`, split across the two applications:
-   - `rdf-common` ships no `reference.conf` at all. Every default now lives with the
-     application that reads it, so neither service inherits configuration from the shared
-     library. The genuinely shared defaults - `cpmeta.core` (substituted from meta-core's
-     `metacore`) and the `cpmeta.citations.doi` endpoint and member credentials - are
-     duplicated verbatim in both applications' own `reference.conf`; keep the copies in sync.
+4. `reference.conf`, split by ownership:
+   - `rdf-common/src/main/resources/reference.conf` is the single source for every default
+     under `cpmeta` that both processes read: `core`, `citations.doi`, `rdfLog`, the shared
+     `dataUploadService` fields, and `instanceServers`. Operator overrides therefore use the
+     same paths in both processes and the packaged defaults cannot drift.
    - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
      its Akka configuration, `httpBindInterface`, `port`, `rdfStorage`, `sparql` throttling, and
-     `citations` rendering policy. It also carries the
-     master-compatible `cpmeta.instanceServers` and `cpmeta.rdfLog` defaults and the subset of
-     `cpmeta.dataUploadService` needed by its narrow configuration view. RDF-log restore bindings
-     are derived from the instance-server configuration.
+     `citations` rendering policy. RDF-log restore bindings are derived from the shared
+     instance-server configuration.
    - `meta`'s own `src/main/resources/reference.conf` carries its Akka configuration and every
      `cpmeta.*` key only `meta`'s `CpmetaConfig` reads (`onto`, `stationLabelingService`,
-     `fileStoragePath`, `remoteRdfRepository`, `dataUploadService`, `instanceServers`, `auth`,
-     `adminUsers`, `statsClient`, meta's own `port`/`httpBindInterface`), including the same
-     `cpmeta.rdfLog` configuration path parsed by rdfstore.
+     `fileStoragePath`, `remoteRdfRepository`, meta-only `dataUploadService` fields, `auth`,
+     `adminUsers`, `statsClient`, and meta's own `port`/`httpBindInterface`).
 
 **Configuration model.** `CpmetaConfig` is `meta`'s alone and remains a single flat case class;
 `rdfStore` parses its own narrow types (`RdfStoreConfig`, `SparqlServerConfig`,
-`CitationStoreConfig`) instead. `rdf-common` defines no application configuration section any
-more: value types that both apps happened to parse (`RdflogConfig`/`DbServer`/`DbCredentials`,
-the `cpmeta.citations` wrapper) are now defined once per application, matching each app's own
-copy of the HOCON defaults, so the two configuration models can diverge without coordination.
+`CitationStoreConfig`) instead. Their parsed types remain application-owned, but every
+overlapping field uses the shared `cpmeta` key layout and defaults from rdf-common. rdfStore's
+narrow readers ignore meta-only fields in those shared objects.
 What is still shared is only what shared *code* takes as a parameter -- `DoiConfig`, the input to
 `DoiClientFactory` -- plus `AppConfig`, which provides loading mechanics and no sections at all.
 Operators override `cpmeta.rdfLog`; both processes parse that same path from their independently

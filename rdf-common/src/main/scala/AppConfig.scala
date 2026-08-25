@@ -6,9 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 /**
  * Assembles the application configuration for both `meta` and the standalone
- * `rdfStore` service. Loading *mechanics* are all this shared object provides:
- * the configuration sections themselves, and the types they parse into, are
- * owned by each application.
+ * `rdfStore` service. It provides their loading mechanics; defaults for the
+ * overlapping `cpmeta` sections live alongside it in rdf-common's reference.conf,
+ * while service-specific defaults and parsed types remain application-owned.
  *
  * The layering is explicit and documented, highest priority first:
  *
@@ -18,9 +18,9 @@ import com.typesafe.config.{Config, ConfigFactory}
  *      see `example.application.conf` in the project root.
  *   3. `application.conf` from the classpath, if the application ships one
  *      (currently neither does)
- *   4. the `reference.conf`s on the classpath: the application's own
- *      (src/main/resources or rdfstore/src/main/resources) and those of the
- *      dependencies (meta-core, cpauth-core, akka, …)
+ *   4. the `reference.conf`s on the classpath: the application's own, rdf-common's
+ *      shared `cpmeta` defaults, and those of other dependencies (meta-core,
+ *      cpauth-core, akka, …)
  *
  * Setting `-Dconfig.file`, `-Dconfig.resource` or `-Dconfig.url` disables the
  * working-directory lookup entirely and defers to plain Typesafe Config

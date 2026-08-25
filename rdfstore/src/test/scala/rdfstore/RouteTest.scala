@@ -16,6 +16,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader, SparqlServerConfig}
 import se.lu.nateko.cp.meta.core.data.{Licence, References}
+import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -63,6 +64,10 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle") shouldBe true
 			root.hasPath("cpmeta.dataUploadService.handle.clientCertPemFilePath") shouldBe false
+			root.hasPath("cpmeta.rdfLog") shouldBe true
+			root.hasPath("rdfStore.rdfLog") shouldBe false
+			root.hasPath("rdfStore.rdfLogs") shouldBe false
+			root.hasPath("rdfStore.rdfLogRestoreFromId") shouldBe false
 			val citationConf = RdfStoreConfigLoader.citationStoreConfig
 			citationConf.dataUploadService.collectionServers.keySet shouldBe
 				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
@@ -70,8 +75,11 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
 			citationConf.instanceServers.forDataObjects.keySet shouldBe
 				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
-			RdfStoreConfigLoader.default.rdfLogs("instances").toString shouldBe
+			val logs = RdfLogManager.configuredLogs(citationConf.instanceServers).map(c => c.name -> c).toMap
+			logs("instances").context.toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
+			logs("wdcgg").context.toString shouldBe
+				"http://meta.icos-cp.eu/resources/wdcgg/"
 
 		"report health" in:
 			Get("/health") ~> route ~> check:

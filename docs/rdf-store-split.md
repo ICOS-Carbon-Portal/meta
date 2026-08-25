@@ -190,7 +190,10 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 	}
 ```
 
-The standalone application owns the storage and RDF-log implementation, but keeps the pre-split configuration contract for deployment compatibility. Existing overrides continue to use `cpmeta.rdfStorage`, `cpmeta.rdfLog`, per-instance `logName`, `skipLogIngestionAtStart`, `logIngestionFromId`, and per-data-format `replayLogFrom`. The `rdfStore.rdfStorage`, `rdfStore.rdfLog`, `rdfStore.rdfLogs`, and `rdfStore.rdfLogRestoreFromId` settings remain available as defaults and for new store-only logs.
+The standalone application owns the storage and RDF-log reader implementation. RDF storage uses
+`rdfStore.rdfStorage`; the log database, graph bindings, and replay offsets retain the master
+contract under `cpmeta.rdfLog` and `cpmeta.instanceServers`. There are no parallel
+`rdfStore.rdfLog`, `rdfStore.rdfLogs`, or `rdfStore.rdfLogRestoreFromId` settings.
 
 Only the standalone listener settings are new:
 
@@ -220,17 +223,16 @@ layering, from most to least specific, is:
      `metacore`) and the `cpmeta.citations.doi` endpoint and member credentials - are
      duplicated verbatim in both applications' own `reference.conf`; keep the copies in sync.
    - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
-     its Akka configuration, `httpBindInterface`, `port`, `rdfLogs` (log name -> named graph),
-     `rdfLogRestoreFromId`, `rdfLog`, `rdfStorage`, `sparql` throttling, and `citations` rendering
-     policy. It also carries the master-compatible `cpmeta.instanceServers` defaults and the
-     subset of `cpmeta.dataUploadService` needed by its narrow citation configuration view.
+     its Akka configuration, `httpBindInterface`, `port`, `rdfStorage`, `sparql` throttling, and
+     `citations` rendering policy. It also carries the
+     master-compatible `cpmeta.instanceServers` and `cpmeta.rdfLog` defaults and the subset of
+     `cpmeta.dataUploadService` needed by its narrow configuration view. RDF-log restore bindings
+     are derived from the instance-server configuration.
    - `meta`'s own `src/main/resources/reference.conf` carries its Akka configuration and every
      `cpmeta.*` key only `meta`'s `CpmetaConfig` reads (`onto`, `stationLabelingService`,
      `fileStoragePath`, `remoteRdfRepository`, `dataUploadService`, `instanceServers`, `auth`,
-     `adminUsers`, `statsClient`, meta's own `port`/`httpBindInterface`), plus its own literal
-     copy of `rdfStore.rdfLog` - Typesafe Config requires every `reference.conf` to resolve on
-     its own, and meta's classpath no longer carries rdfStore's file to resolve
-     `cpmeta.rdfLog = ${rdfStore.rdfLog}` from.
+     `adminUsers`, `statsClient`, meta's own `port`/`httpBindInterface`), including the same
+     `cpmeta.rdfLog` configuration path parsed by rdfstore.
 
 **Configuration model.** `CpmetaConfig` is `meta`'s alone and remains a single flat case class;
 `rdfStore` parses its own narrow types (`RdfStoreConfig`, `SparqlServerConfig`,
@@ -240,8 +242,8 @@ the `cpmeta.citations` wrapper) are now defined once per application, matching e
 copy of the HOCON defaults, so the two configuration models can diverge without coordination.
 What is still shared is only what shared *code* takes as a parameter -- `DoiConfig`, the input to
 `DoiClientFactory` -- plus `AppConfig`, which provides loading mechanics and no sections at all.
-Operators should keep overriding `rdfStore.rdfLog` (not `cpmeta.rdfLog` directly); the
-substitution propagates it.
+Operators override `cpmeta.rdfLog`; both processes parse that same path from their independently
+packaged configuration.
 
 ## Data migration and cutover
 

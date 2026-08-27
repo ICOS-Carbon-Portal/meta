@@ -10,34 +10,37 @@ from pathlib import Path
 # For organizations that are not included in the WDCGG list, start with a higher value than
 # the highest one already in use in the list.
 ORGANIZATION_CODE_CONVERSION = {
-	'1': '54',
-	'2': '177',
-	'3': '37',
-	'4': '19',
-	'5': '178',
-	'6': '157',
-	'7': '179',
-	'8': '3',
-	'9': '180',
-	'10': '181',
-	'11': '24',
-	'12': '182',
-	'13': '183',
-	'14': '25',
-	'15': '64',
-	'16': '45',
-	'17': '77',
-	'18': '184',
-	'19': '185',
-	'20': '186',
-	'21': '187',
-	'22': '71',
-	'23': '188',
-	'24': '189'
+	'1': '178',
+	'2': '54',
+	'3': '172',
+	'4': '37',
+	'5': '19',
+	'6': '170',
+	'7': '157',
+	'8': '171',
+	'9': '3',
+	'10': '173',
+	'11': '160',
+	'12': '24',
+	'13': '169',
+	'14': '107',
+	'15': '166',
+	'16': '25',
+	'17': '64',
+	'18': '179',
+	'19': '45',
+	'20': '77',
+	'21': '165',
+	'22': '174',
+	'23': '168',
+	'24': '164',
+	'25': '71',
+	'26': '175',
+	'27': '167'
 }
 
 # Code of the first organization that is not included in the WDCGG list (see link above).
-FIRST_NEW_ORGANIZATION_CODE = 177
+FIRST_NEW_ORGANIZATION_CODE = 178
 
 # Known contact errors in ICOS metadata.
 CONTACT_CORRECTIONS: dict[str, dict[str, str]] = {

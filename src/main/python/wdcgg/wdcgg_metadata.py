@@ -319,6 +319,8 @@ class WdcggMetadataClient:
 		measurement_unit = MEASUREMENT_UNITS[dobj_info.gas_species]
 		scale = SCALES[dobj_info.gas_species]
 		doi_info = self.doi_obspack_release(OBJECT_SPECS_OBSPACK_RELEASE[dobj_info.gas_species])
+		if not doi_info.doi:
+			doi_info = self.doi_obspack_collection(dobj_info.url)
 
 		self.metadata.append(asdict(WdcggMetadata(
 			Contributor = CONTRIBUTOR,
@@ -625,7 +627,7 @@ class WdcggMetadataClient:
 		if len(dois) > 1:
 			warnings.warn(
 				"More than one Obspack release was found in the time period "
-				f"{earliest} to {latest}. The latest was used."
+				f"{earliest} to {latest}. The latest was used (DOI: {dois[0]})."
 			)
 			return DoiInfo(doi=dois[0], doi_category_code="2")
 		elif len(dois) == 1:
@@ -634,6 +636,21 @@ class WdcggMetadataClient:
 			warnings.warn(
 				f"No Obspack release was found in the time period {earliest} to {latest}."
 			)
+			return DoiInfo(doi="", doi_category_code="9")
+
+	def doi_obspack_collection(self, dobj_url: str) -> DoiInfo:
+		coll_query = sparql.obspack_collection_query(dobj_url)
+		coll_dois = sparql.run_sparql_select_query_single_param(coll_query)
+		if len(coll_dois) > 1:
+			warnings.warn(
+				f"More than one Obspack collection was found for data object {dobj_url}. "
+				f"The one with DOI {coll_dois[0]} was used."
+			)
+			return DoiInfo(doi=coll_dois[0], doi_category_code="2")
+		elif len(coll_dois) == 1:
+			return DoiInfo(doi=coll_dois[0], doi_category_code="2")
+		else:
+			warnings.warn(f"No Obspack collection was found for data object {dobj_url}.")
 			return DoiInfo(doi="", doi_category_code="9")
 
 

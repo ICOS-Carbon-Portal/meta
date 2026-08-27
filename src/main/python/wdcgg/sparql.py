@@ -143,6 +143,17 @@ ORDER BY DESC(?submTime)
 	""" % (object_spec, *submission_window_to_utc_str(submission_window, "%Y-%m-%dT%H:%M:%SZ"))
 
 
+def obspack_collection_query(dobj_url: str) -> str:
+	return """
+PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+SELECT ?doi WHERE {
+	?coll dcterms:hasPart <%s> .
+	?coll cpmeta:hasDoi ?doi .
+}
+	""" % dobj_url
+
+
 def instrument_query(instrument_atc_id: int) -> str:
 	return """
 PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>

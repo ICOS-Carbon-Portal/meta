@@ -16,8 +16,8 @@ import java.net.URI
  * Read-side owner of RDF-log restoration.
  *
  * Meta appends normal mutations to the logs through LoggingInstanceServer. rdfStore only
- * consumes those logs when it initializes a fresh store or when an operator requests a
- * configured partial replay.
+ * consumes those logs when an operator starts it with the `--restore` command-line flag; the
+ * configuration then decides which logs are replayed, and from which row id.
  */
 final class RdfLogManager private (
 	private val bindings: Seq[RdfLogManager.Binding]
@@ -26,8 +26,8 @@ final class RdfLogManager private (
 
 	private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
 
-	def restore(repo: Repository, isFreshStore: Boolean): RestoreResult =
-		val selected = bindings.filter(_.replay.shouldRestore(isFreshStore))
+	def restore(repo: Repository, restoreRequested: Boolean): RestoreResult =
+		val selected = bindings.filter(_.replay.shouldRestore(restoreRequested))
 		selected.foreach: binding =>
 			val fromId = binding.replay.fromId
 			val offsetDescription = fromId.fold("")(id => s" from row id $id")
@@ -65,8 +65,12 @@ object RdfLogManager:
 		skipAtStart: Option[Boolean] = None,
 		fromId: Option[Int] = None
 	):
-		def shouldRestore(isFreshStore: Boolean): Boolean =
-			!skipAtStart.getOrElse(!isFreshStore)
+		/**
+		 * Replay only happens when the operator asked for it on the command line;
+		 * a log configured to be skipped stays skipped even then.
+		 */
+		def shouldRestore(restoreRequested: Boolean): Boolean =
+			restoreRequested && !skipAtStart.getOrElse(false)
 
 	final case class Binding(name: String, context: IRI, log: RdfLogReader, replay: ReplayPolicy)
 

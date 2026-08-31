@@ -129,12 +129,11 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
-		recreateAtStartup = false,
 		indices = "spoc,posc,opsc",
 		disableCpIndex = false
 	)
 
-	val (_, base) = StorageSail.apply(rdfConf)
+	val base = StorageSail.apply(rdfConf)
 	val indexUpdaterFactory = IndexHandler(system.scheduler)
 	val geoFactory = GeoIndexProvider()
 	val idxFactories = Some(indexUpdaterFactory -> geoFactory)

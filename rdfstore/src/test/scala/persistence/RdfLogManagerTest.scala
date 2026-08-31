@@ -15,25 +15,25 @@ import java.net.URI
 class RdfLogManagerTest extends AnyFunSpec:
 
 	describe("RDF-log replay policy"):
-		it("defaults to restoring only a fresh store"):
+		it("restores only when the replay was requested on the command line"):
 			val policy = ReplayPolicy()
-			assert(policy.shouldRestore(isFreshStore = true))
-			assert(!policy.shouldRestore(isFreshStore = false))
+			assert(policy.shouldRestore(restoreRequested = true))
+			assert(!policy.shouldRestore(restoreRequested = false))
 
-		it("honours an explicit request to restore at every startup"):
+		it("honours an explicit request not to skip restoration"):
 			val policy = ReplayPolicy(skipAtStart = Some(false))
-			assert(policy.shouldRestore(isFreshStore = true))
-			assert(policy.shouldRestore(isFreshStore = false))
+			assert(policy.shouldRestore(restoreRequested = true))
+			assert(!policy.shouldRestore(restoreRequested = false))
 
-		it("honours an explicit request to skip restoration at every startup"):
+		it("honours an explicit request to skip restoration"):
 			val policy = ReplayPolicy(skipAtStart = Some(true))
-			assert(!policy.shouldRestore(isFreshStore = true))
-			assert(!policy.shouldRestore(isFreshStore = false))
+			assert(!policy.shouldRestore(restoreRequested = true))
+			assert(!policy.shouldRestore(restoreRequested = false))
 
-		it("does not let an offset implicitly enable regular-start restoration"):
+		it("does not let an offset implicitly enable restoration"):
 			val policy = ReplayPolicy(fromId = Some(42))
-			assert(policy.shouldRestore(isFreshStore = true))
-			assert(!policy.shouldRestore(isFreshStore = false))
+			assert(policy.shouldRestore(restoreRequested = true))
+			assert(!policy.shouldRestore(restoreRequested = false))
 
 	describe("RDF-log restore result"):
 		it("does not invalidate a saved index when no log replay was attempted"):

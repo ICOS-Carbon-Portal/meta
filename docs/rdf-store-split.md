@@ -117,7 +117,7 @@ A DTO-level RDF API would duplicate RDF4J query, value, context, and transaction
 | Carbon Portal custom query indexes | `rdfStore` |
 | Store backups and compaction | `rdfStore` |
 | RDF-log writes and change history | `meta` |
-| RDF-log replay during store initialization | `rdfStore` |
+| RDF-log replay (operator-triggered, `--restore`) | `rdfStore` |
 | Upload validation and RDF statement production | `meta` |
 | Ontology-driven editors and labeling workflow | `meta` |
 | Landing-page composition | `meta` |
@@ -157,14 +157,33 @@ Queries sent through remote mode are evaluated by the same `CpNotifyingSail` and
 
 ## Startup and readiness
 
-`rdfStore` startup order:
+`rdfStore` has two mutually exclusive run modes.
+
+Serving mode (no arguments):
 
 1. open and initialize the Sail repository;
-2. on a fresh store, restore each configured RDF log sequentially;
-3. build the custom indexes;
-4. expose the routes.
+2. build the custom indexes;
+3. expose the routes.
 
-The replay is deliberately sequential. This retains the old protection against NativeStore crashes under unrestrained parallel writes, but limits serialization to initial RDF-log restoration; normal store traffic uses RDF4J's transaction concurrency.
+Restore mode (`--restore`), a one-off maintenance run:
+
+1. open the storage tuned for bulk ingest (`forceSync` off);
+2. replay each selected RDF log sequentially;
+3. close the store and exit.
+
+Replay is never implicit: without `--restore` the store is served exactly as it is on disk, also
+when the RDF storage directory was just created and the store is empty. Which logs are replayed, and from which
+row id, is still decided by `cpmeta.instanceServers` (a log configured with
+`skipLogIngestionAtStart = true` is skipped even when the flag is given).
+
+Restore mode neither builds the indexes nor binds the HTTP endpoints, so a partially restored
+store is never queryable, and no readiness signal has to cover a mid-replay state. The indexes
+are not persisted, so the following, normally started process rebuilds them from the restored
+store. The mode exits rather than serving because `forceSync` off is only acceptable for a
+re-runnable ingest; a serving process must reopen the storage with durable settings. The
+process exits with 1 on a failed replay, leaving the store incomplete for a re-run.
+
+The replay is deliberately sequential. This retains the old protection against NativeStore crashes under unrestrained parallel writes, but limits serialization to RDF-log restoration; normal store traffic uses RDF4J's transaction concurrency.
 
 `meta` startup order:
 

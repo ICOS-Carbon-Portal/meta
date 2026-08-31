@@ -8,39 +8,31 @@ import org.eclipse.rdf4j.sail.nativerdf.NativeStore
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.RdfStorageConfig
 
-import java.nio.file.{FileVisitOption, Files, Paths}
+import java.nio.file.Paths
 
 object StorageSail:
 	private val log = LoggerFactory.getLogger(getClass())
 
-	def apply(conf: RdfStorageConfig): (Boolean, MainSail) =
+	/**
+	 * @param bulkLoad tunes the storage for a re-runnable bulk ingest (RDF-log replay) instead of
+	 *   for serving traffic. Must not be used by a process that stays up to serve queries: it
+	 *   trades per-commit durability for ingest speed.
+	 */
+	def apply(conf: RdfStorageConfig, bulkLoad: Boolean = false): MainSail =
 		val subFolder = if conf.lmdb.isDefined then "lmdb" else "native"
 		val storageDir = Paths.get(conf.path).resolve(subFolder)
-		val didNotExist = !Files.exists(storageDir)
 
-		def storageFiles = Files.walk(storageDir, FileVisitOption.FOLLOW_LINKS)
-			.filter(Files.isRegularFile(_))
-
-		if(didNotExist)
-			Files.createDirectories(storageDir)
-		else if(conf.recreateAtStartup){
-			log.info("Purging the current RDF storage")
-			storageFiles.forEach(Files.delete)
-		}
-
-		val isFreshInit = didNotExist || conf.recreateAtStartup || !storageFiles.findAny.isPresent
-
-		if(isFreshInit) log.warn(
-			"ATTENTION: THIS IS A FRESH INIT OF RDFSTORE. RESTART ON COMPLETION WITH rdfStore.rdfStorage.recreateAtStartup = false"
-		)
-
-		val forceSync = !isFreshInit
+		// a log replay is re-runnable from scratch, so an fsync per commit buys nothing there, and
+		// costs a lot on the mass ingest that follows. Serving traffic is never re-runnable, not
+		// even into a store that starts out empty, so it always gets the durable setting.
+		val forceSync = !bulkLoad
+		if(!forceSync) log.info("Opening the RDF storage tuned for bulk ingest (forceSync off)")
 		val sail: MainSail = conf.lmdb match
 			case Some(lmdb) =>
 				val lmdbConf = new LmdbStoreConfig()
 				lmdbConf.setForceSync(forceSync)
 				lmdbConf.setTripleIndexes(conf.indices)
-				lmdbConf.setAutoGrow(!isFreshInit)
+				lmdbConf.setAutoGrow(!bulkLoad)
 
 				lmdbConf.setTripleDBSize:
 					Math.max(lmdb.tripleDbSize, LmdbStoreConfig.TRIPLE_DB_SIZE)
@@ -55,11 +47,11 @@ object StorageSail:
 				log.info("LmdbStore instantiated")
 				lmdbSail
 			case None =>
-				val indices = if isFreshInit then "" else conf.indices
+				val indices = if bulkLoad then "" else conf.indices
 				val nativeSail = NativeStore(storageDir.toFile, indices)
 				nativeSail.setForceSync(forceSync)
 				log.info("NativeStore instantiated")
 				nativeSail
-		isFreshInit -> sail
+		sail
 	end apply
 end StorageSail

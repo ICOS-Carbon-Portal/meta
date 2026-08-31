@@ -343,7 +343,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 				rdfCommon / Test / test,
 				Test / test,
 			).value,
-			cpDeployPlaybook := "core.yml",
+			cpDeployPlaybook := "rdfstore.yml",
 			cpDeployPermittedInventories := Some(Seq("test-fs4")),
 			cpDeployInfraBranch := "valter/meta-split-rdfstore"
 		)

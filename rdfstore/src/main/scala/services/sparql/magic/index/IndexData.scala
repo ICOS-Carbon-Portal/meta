@@ -53,7 +53,7 @@ final case class StatEntry(key: StatKey, count: Int)
 def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
-	private[magic] val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
+	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
 	private[magic] val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
 	private val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	private val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,

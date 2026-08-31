@@ -191,8 +191,8 @@ lazy val meta = (project in file("."))
 			fetchGCMDKeywords
 		).value,
 		cpDeployPlaybook := "core.yml",
-		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-		cpDeployInfraBranch := "master",
+		cpDeployPermittedInventories := Some(Seq("test-fs4")),
+			cpDeployInfraBranch := "valter/meta-split-rdfstore",
 
 		assembly / fullClasspath := {
 			val cp = (assembly / fullClasspath).value
@@ -344,6 +344,6 @@ lazy val rdfStore = (project in file("rdfstore"))
 				Test / test,
 			).value,
 			cpDeployPlaybook := "core.yml",
-			cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-			cpDeployInfraBranch := "master"
+			cpDeployPermittedInventories := Some(Seq("test-fs4")),
+			cpDeployInfraBranch := "valter/meta-split-rdfstore"
 		)

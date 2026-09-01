@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, PidFactory}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
-import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, MetaIngestionProviders, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
@@ -149,7 +149,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val serversFut =
 			given ExecutionContext = ExecutionContext.global
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
+			makeInstanceServers(repo, MetaIngestionProviders.allProviders, config).andThen:
 				case _ => log.info("instance servers created")
 
 

@@ -26,10 +26,15 @@ case class RdfStorageConfig(
 	disableCpIndex: Boolean
 )
 
+/** A static, classpath-shipped OWL schema graph that rdfStore ingests itself at
+  * startup, since (unlike instance data) it is not recoverable from the rdf log. */
+case class SchemaOntologyConfig(writeContext: java.net.URI, owlResource: String)
+
 case class RdfStoreConfig(
 	httpBindInterface: String,
 	port: Int,
-	rdfStorage: RdfStorageConfig
+	rdfStorage: RdfStorageConfig,
+	schemaOntologies: Seq[SchemaOntologyConfig]
 )
 
 case class SparqlServerConfig(
@@ -48,7 +53,8 @@ object RdfStoreConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
-	given RootJsonFormat[RdfStoreConfig] = jsonFormat3(RdfStoreConfig.apply)
+	given RootJsonFormat[SchemaOntologyConfig] = jsonFormat2(SchemaOntologyConfig.apply)
+	given RootJsonFormat[RdfStoreConfig] = jsonFormat4(RdfStoreConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat7(SparqlServerConfig.apply)
 
 	lazy val default: RdfStoreConfig =

@@ -6,15 +6,18 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader}
+import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader, SchemaOntologyConfig}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
+import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
+import se.lu.nateko.cp.meta.utils.rdf4j.*
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
@@ -50,7 +53,9 @@ object Main extends App:
 		val repo = SailRepository(sail)
 		repo.init()
 		logManager.restore(repo, isFreshInit)
+		val schemaOntologiesIngested = ingestSchemaOntologies(repo, storeConfig.schemaOntologies)
 		for {
+			_ <- schemaOntologiesIngested
 			_ <- sail.initSparqlMagicIndex()
 			queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
@@ -70,3 +75,21 @@ object Main extends App:
 		case Failure(err) =>
 			system.log.error(err, "Could not start RDF store")
 			system.terminate()
+
+	/**
+	 * The store's OWL schema graphs (cpmeta, stationEntry, otcmeta, …). Unlike instance
+	 * data, they are not covered by the rdf log, so rdfStore must (re)ingest them itself
+	 * from the classpath on every startup, before serving any SPARQL queries.
+	 */
+	private def ingestSchemaOntologies(
+		repo: SailRepository, configs: Seq[SchemaOntologyConfig]
+	)(using ExecutionContext): Future[Unit] =
+		given valueFactory: org.eclipse.rdf4j.model.ValueFactory = repo.getValueFactory
+		given BnodeStabilizers = new BnodeStabilizers
+		Future.sequence(configs.map{ conf =>
+			val writeContext = conf.writeContext.toRdf
+			val target = new Rdf4jInstanceServer(repo, writeContext)
+			Ingestion.ingest(target, new RdfXmlFileIngester(conf.owlResource), valueFactory).andThen:
+				case Success(_) => system.log.info("ingested schema ontology into {}", writeContext)
+				case Failure(err) => system.log.error(err, "failed to ingest schema ontology into {}", writeContext)
+		}).map(_ => ())

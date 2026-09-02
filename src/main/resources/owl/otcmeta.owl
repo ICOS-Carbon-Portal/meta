@@ -61,6 +61,15 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/broad_match -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/broad_match">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2004/02/skos/core#closeMatch"/>
+        <rdfs:label>broad match (SKOS)</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/device -->
 
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/device">
@@ -74,7 +83,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
-        <rdfs:label>is instance of a device</rdfs:label>
+        <rdfs:label>sensor name (L22)</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -137,6 +146,7 @@
     <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasOwner">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance"/>
         <rdfs:range>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -145,7 +155,7 @@
                 </owl:unionOf>
             </owl:Class>
         </rdfs:range>
-        <rdfs:label>owner</rdfs:label>
+        <rdfs:label>owner (organisation or person)</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -168,6 +178,16 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/AssumedRole"/>
         <rdfs:range rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Role"/>
         <rdfs:label>role kind</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/is_an_instance_of_sensor -->
+
+    <owl:ObjectProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/is_an_instance_of_sensor">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance"/>
+        <rdfs:comment>is an instance of sensor</rdfs:comment>
+        <rdfs:label>is instance of sensor</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -283,6 +303,68 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/EDIOS_ID -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/EDIOS_ID">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>European Directory of the Initial Ocean-Observing Systems (EDIOS) ID  https://www.seadatanet.org/Metadata/EDIOS-Observing-systems</rdfs:comment>
+        <rdfs:label>EDIOS ID</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/EDMO -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/EDMO">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment>European Directory of Marine Organisations (EDMO) code for the organization</rdfs:comment>
+        <rdfs:label>EDMO</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/OceanExpertID -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/OceanExpertID">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/OceanSITES_ID -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/OceanSITES_ID">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>OceanSITES ID</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/RoR -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/RoR">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Organization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#anyURI">Research Organization Registry (RoR) code for organization name</rdfs:comment>
+        <rdfs:label>RoR</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/WIGOS_ID -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/WIGOS_ID">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasStationId"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>WIGOS ID</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/airIntakePosition">
@@ -345,7 +427,8 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label>country code</rdfs:label>
+        <rdfs:comment>country code from ISO_3116 or C32</rdfs:comment>
+        <rdfs:label>Country code (ISO 3116 or C32)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -357,6 +440,17 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
         <rdfs:label>exhaust position</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/final_port_of_call -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/final_port_of_call">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>final port of call</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -534,7 +628,7 @@
                 </owl:withRestrictions>
             </rdfs:Datatype>
         </rdfs:range>
-        <rdfs:label>E-mail</rdfs:label>
+        <rdfs:label>E-mail *</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -564,7 +658,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label>first name</rdfs:label>
+        <rdfs:label>first name *</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -604,7 +698,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label>last name</rdfs:label>
+        <rdfs:label>last name *</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -681,6 +775,7 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasName">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -758,7 +853,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-        <rdfs:label>port of call</rdfs:label>
+        <rdfs:label>initial port of call</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -832,6 +927,7 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -839,6 +935,12 @@
                     <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor"/>
                 </owl:unionOf>
             </owl:Class>
+        </rdfs:domain>
+        <rdfs:domain>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/is_an_instance_of_sensor"/>
+                <owl:someValuesFrom rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance"/>
+            </owl:Restriction>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:label>serial number</rdfs:label>
@@ -850,14 +952,7 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasSpatialReference">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy"/>
-                    <rdf:Description rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
-                </owl:unionOf>
-            </owl:Class>
-        </rdfs:domain>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:comment>spatial reference in GeoJSON (any feature except points; encoded as plain string)</rdfs:comment>
         <rdfs:label>spatial reference (GeoJSON)</rdfs:label>
@@ -879,7 +974,7 @@
             </owl:Class>
         </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
-        <rdfs:label>start time</rdfs:label>
+        <rdfs:label>start time *</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -945,6 +1040,7 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>Unit (NVS P06)</rdfs:label>
         <rdfs:label>unit</rdfs:label>
     </owl:DatatypeProperty>
     
@@ -983,6 +1079,74 @@
         <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Device"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
         <rdfs:label>measures (SKOS)</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/mooring_code_name -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/mooring_code_name">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Mooring"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>IMO or WIGOS ID - whatever is recommended by OceanOPS</rdfs:comment>
+        <rdfs:label>mooring code name</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/parameter -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/parameter">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Variable"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:comment>Use NERC Vocabulary Server P01</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/platform_position -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/platform_position">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Where on the platform is the sensor?</rdfs:comment>
+        <rdfs:label>platform position</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/project_ID -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/project_ID">
+        <rdfs:subPropertyOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/fundingInfoProp"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Funding"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>European Directory of Marine Environmental Research Projects (EDMERP)</rdfs:comment>
+        <rdfs:label>EDMERP project ID</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/purpose_of_observation -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/purpose_of_observation">
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>a description of the station objectives or long term aim of the monitoring programme</rdfs:comment>
+        <rdfs:label>purpose of observation</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/ship_code -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/ship_code">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Ship"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>IMO_WMO code or expocode</rdfs:comment>
+        <rdfs:label>ship code</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -1102,7 +1266,7 @@
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:comment>Abstract device, whom Instrument and Sensor are concrete physical instances of</rdfs:comment>
-        <rdfs:label>Device</rdfs:label>
+        <rdfs:label>Device_old</rdfs:label>
     </owl:Class>
     
 
@@ -1281,7 +1445,7 @@
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
             </owl:Restriction>
         </rdfs:subClassOf>
-        <rdfs:label>Sensor</rdfs:label>
+        <rdfs:label>Sensor_old</rdfs:label>
     </owl:Class>
     
 
@@ -1303,6 +1467,54 @@
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:label>Sensor Deployment</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/is_an_instance_of_sensor"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:label>Sensor Instance</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_new -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_new">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasManufacturer"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasModelName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment>replacing Device_OLD</rdfs:comment>
+        <rdfs:label>Sensor</rdfs:label>
     </owl:Class>
     
 

@@ -4,14 +4,14 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.{IRI, Literal, Statement, Value, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, RdfStatement, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -223,7 +223,7 @@ private final class CachingConnection(
 
 	override def close(): Unit = inner.close()
 
-	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
 		val statements = subjectStatements(subject) match
 			case Some(all) => all.filter(matches(predicate, obj))
 			case None => cache.lookups.getOrElseUpdate(
@@ -237,7 +237,7 @@ private final class CachingConnection(
 			case Some(all) => all.exists(matches(predicate, obj))
 			case None => inner.hasStatement(subject, predicate, obj)
 
-	private def subjectStatements(subject: IRI | Null): Option[IndexedSeq[Statement]] =
+	private def subjectStatements(subject: IRI | Null): Option[IndexedSeq[RdfStatement]] =
 		if subject == null then None
 		else cache.subjects.getOrElseUpdate(
 			(readContexts, subject),
@@ -252,8 +252,8 @@ private object CachingConnection:
 	private val MaxSubjectStatements = 1000
 
 	final class Cache:
-		val subjects = mutable.HashMap.empty[(Seq[IRI], IRI), Option[IndexedSeq[Statement]]]
-		val lookups = mutable.HashMap.empty[(Seq[IRI], IRI | Null, IRI | Null, Value | Null), IndexedSeq[Statement]]
+		val subjects = mutable.HashMap.empty[(Seq[IRI], IRI), Option[IndexedSeq[RdfStatement]]]
+		val lookups = mutable.HashMap.empty[(Seq[IRI], IRI | Null, IRI | Null, Value | Null), IndexedSeq[RdfStatement]]
 
-	private def matches(predicate: IRI | Null, obj: Value | Null)(st: Statement): Boolean =
+	private def matches(predicate: IRI | Null, obj: Value | Null)(st: RdfStatement): Boolean =
 		(predicate == null || predicate == st.getPredicate) && (obj == null || obj == st.getObject)

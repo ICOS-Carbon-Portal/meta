@@ -18,6 +18,7 @@ import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLBooleanXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
+import org.eclipse.rdf4j.query.impl.SimpleDataset
 import org.eclipse.rdf4j.query.{BooleanQuery, GraphQuery, MalformedQueryException, Query, TupleQuery}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.RDFWriterFactory
@@ -95,7 +96,14 @@ class Rdf4jSparqlServer(
 				val conn = repo.getConnection()
 
 				val (closer, sparqlFut) = Try:
-						conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+						if !queryStr.dataset.isEmpty then
+							val dataset = SimpleDataset()
+							val factory = conn.getValueFactory
+							queryStr.dataset.defaultGraphs.foreach(uri => dataset.addDefaultGraph(factory.createIRI(uri)))
+							queryStr.dataset.namedGraphs.foreach(uri => dataset.addNamedGraph(factory.createIRI(uri)))
+							query.setDataset(dataset)
+						query
 					.flatMap: query =>
 						val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
 						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)

@@ -25,7 +25,6 @@ import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import play.twirl.api.Html
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
@@ -33,8 +32,8 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -55,6 +54,8 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]]
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]]
 }
 
 object UriSerializer{
@@ -90,7 +91,7 @@ class Rdf4jUriSerializer(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	doiCiter: PlainDoiCiter,
+	derivedMetadata: DerivedMetadataClient,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
@@ -99,12 +100,16 @@ class Rdf4jUriSerializer(
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
 	import RdfLens.{MetaConn, GlobConn, DocConn}
+	private given ExecutionContext = system.dispatcher
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
-	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val pidFactory = {
+		val handleConf = config.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+	}
+	private val attribution = new AttributionProvider(vocab, metaVocab)
+	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats)
@@ -139,6 +144,20 @@ class Rdf4jUriSerializer(
 			fetchStaticColl(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
 
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
+		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
+			fetch(item)
+				.map(enriched => new Validated(Some(enriched), parsed.errors))
+				.recover { case err =>
+					parsed.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")
+				}
+
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]] =
+		enrich(fetchStaticObject(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
+
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]] =
+		enrich(fetchStaticCollection(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
+
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
 		server.access: conn ?=>
@@ -160,19 +179,19 @@ class Rdf4jUriSerializer(
 		for
 			given DocConn <- lenses.documentLens
 			st <- objReader.getStation(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(st.org.self.uri)
+			membs <- attribution.getMemberships(st.org.self.uri)
 		yield OrganizationExtra(st, membs)
 
 	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
 		for
 			org <- objReader.getOrganization(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(org.self.uri)
+			membs <- attribution.getMemberships(org.self.uri)
 		yield OrganizationExtra(org, membs)
 
 	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
 		for
 			pers <- objReader.getPerson(uri.toRdf)
-			roles <- citer.attrProvider.getPersonRoles(pers.self.uri)
+			roles <- attribution.getPersonRoles(pers.self.uri)
 		yield PersonExtra(pers, roles)
 
 	private def access[T, C <: TriplestoreConnection](lensV: Validated[RdfLens[C]])(reader: C ?=> Validated[T]): Validated[T] =
@@ -245,10 +264,10 @@ class Rdf4jUriSerializer(
 		uri.path match
 			case Hash.Object(hash) =>
 				given CpVocab = vocab
-				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
+				pageContentMarshalling.staticObjectAsyncMarshaller(() => fetchStaticObjectWithDerived(uri))
 
 			case Hash.Collection(hash) =>
-				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticColl(hash))
+				pageContentMarshalling.staticCollectionAsyncMarshaller(() => fetchStaticCollectionWithDerived(uri))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,

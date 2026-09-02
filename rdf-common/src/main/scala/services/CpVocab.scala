@@ -1,0 +1,173 @@
+package se.lu.nateko.cp.meta.services
+
+import scala.language.unsafeNulls
+
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import se.lu.nateko.cp.meta.api.{CustomVocab, UriId}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, IcosStationSpecifics, Position, staticCollLandingPage, staticObjAccessUrl, staticObjLandingPage}
+import se.lu.nateko.cp.meta.utils.rdf4j.===
+
+import java.net.URI
+
+class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) extends CustomVocab:
+	import CpVocab.*
+	import CustomVocab.urlEncode
+
+	private val baseResourceUriProviders: Map[Envri, BaseUriProvider] = envriConfigs.map{
+		case (envri, envriConf) =>
+			envri -> makeUriProvider(s"${envriConf.metaItemPrefix}resources/")
+	}
+
+	private given (using envri: Envri): EnvriConfig = envriConfigs(envri)
+
+	private given (using envri: Envri): BaseUriProvider = baseResourceUriProviders(envri)
+
+	private val icosBup: BaseUriProvider = baseResourceUriProviders(Envri.ICOS)
+
+	def getStation(stationId: UriId)(using Envri) = getRelative(s"stations/", stationId)
+
+	def getPerson(firstName: String, lastName: String)(using Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
+	def getPerson(cpId: UriId)(using Envri): IRI = getRelativeRaw("people/" + cpId)
+
+//	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
+//		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
+//	)(icosBup)
+
+	def getInstrDeployment(deplId: UriId)(using Envri): IRI = getRelative("deployments/", deplId)
+	def getMembership(membId: UriId)(using Envri): IRI = getRelative("memberships/", membId)
+
+	def getFunding(fundId: UriId)(using Envri): IRI = getRelative("fundings/", fundId)
+
+	/** Generic per-Envri resource URI minting, exposed so that TC-scoped vocabulary extensions
+	  * (e.g. `TcVocab` in `meta`) can mint URIs under the same resource namespace without
+	  * reaching into this class's private `BaseUriProvider` state. */
+	def resourceUri(prefix: String, id: UriId)(using Envri): IRI = getRelative(prefix, id)
+
+	def getOrganization(orgId: UriId)(using Envri) = getRelative("organizations/", orgId)
+
+	def getNetwork(networkType: String, id: UriId)(using Envri) = getRelative(Seq("networks", networkType).mkString("/") + "/", id)
+
+	def getInstrument(id: UriId)(using Envri) = getRelative("instruments/", id)
+
+	val Seq(atc, etc, otc, cp, cal) = Seq("ATC", "ETC", "OTC", "CP", "CAL").map(UriId.apply).map(getOrganization(_)(using Envri.ICOS))
+
+	val Seq(icosProject, miscProject, atmoTheme, ecoTheme, oceanTheme) = Seq(
+		"projects/icos", "projects/misc", "themes/atmosphere", "themes/ecosystem", "themes/ocean"
+	).map(getRelativeRaw(_)(using icosBup))
+
+	def hasOceanTheme(icosSpec: IcosStationSpecifics): Boolean = icosSpec.theme.exists(_.self.uri === oceanTheme)
+
+	def getAncillaryEntry(valueId: String) = getRelativeRaw("ancillary/" + valueId)(using icosBup)
+
+	def getStaticObject(hash: Sha256Sum)(using Envri) = factory.createIRI(staticObjLandingPage(hash).toString)
+	def getCollection(hash: Sha256Sum)(using Envri) = factory.createIRI(staticCollLandingPage(hash).toString)
+
+	def getStaticObjectAccessUrl(hash: Sha256Sum)(using Envri) = staticObjAccessUrl(hash)
+
+	def getAcquisition(hash: Sha256Sum)(using Envri) = getRelativeRaw(AcqPrefix + hash.id)
+	def getProduction(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + hash.id)
+	def getProductionContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ProdPrefix + ContribsPrefix + hash.id)
+	def getDocContribList(hash: Sha256Sum)(using Envri) = getRelativeRaw(ContribsPrefix + hash.id)
+	def getSubmission(hash: Sha256Sum)(using Envri) = getRelativeRaw(SubmPrefix + hash.id)
+	def getSpatialCoverage(hash: Sha256Sum)(using Envri): IRI = getSpatialCoverage(UriId(hash.id))
+	def getSpatialCoverage(id: UriId)(using Envri) = getRelativeRaw(SpatCovPrefix + id.urlSafeString)
+	def getVarInfo(hash: Sha256Sum, varLabel: String)(using Envri) = getRelativeRaw(s"${VarInfoPrefix}${urlEncode(varLabel)}_${hash.id}")
+	def getPosition(pos: Position)(using Envri) = getRelativeRaw(s"position_${pos.lat6}_${pos.lon6}")
+
+	def getNextVersionColl(hash: Sha256Sum)(using Envri) = getRelativeRaw(NextVersionCollPrefix + hash.id)
+
+	def getObjectSpecification(lastSegment: UriId)(using envri: Envri) =
+		val suffix: String = envri match
+			case Envri.ICOS | Envri.ICOSCities => "cpmeta/"
+			case Envri.SITES =>  "objspecs/"
+		getRelative(suffix, lastSegment)
+
+	def lookupIcosEcoDatasetVar(varName: String): Option[IRI] = getEcoVariableFamily(varName).map: fam =>
+		getRelativeRaw(s"cpmeta/${fam}_n_n_n")(using icosBup)
+
+	val atmGhgProdSpec = getObjectSpecification(UriId("atmGhgProduct"))(using Envri.ICOS)
+	val cfCompliantNetcdfSpec = getObjectSpecification(UriId("arbitraryCfNetcdf"))(using Envri.ICOS)
+
+end CpVocab
+
+
+/**
+ * URI naming for CP resources: the minting methods on `CpVocab` above, and the extractors below
+ * that parse the same URIs back.
+ *
+ * `Acquisition`, `Submission`, `NextVersColl`, `VarInfo` and `DataObject` are used only by
+ * rdfStore (the SPARQL magic index and geo filtering), but they stay here deliberately: each is
+ * the exact inverse of a `getAcquisition`/`getSubmission`/... method a few lines up, and they
+ * share the private `asPrefWithHash` helpers and the prefix constants with it. Moving them to
+ * rdfStore would mean publishing those internals and splitting one URI-naming scheme across two
+ * modules, where the two halves could drift apart silently.
+ */
+object CpVocab{
+	import CustomVocab.urlEncode
+	import Sha256Sum.IdLength
+
+	val NextVersionCollPrefix = "nextvcoll_"
+	val AcqPrefix = "acq_"
+	val ProdPrefix = "prod_"
+	val ContribsPrefix = "contribs_"
+	val SubmPrefix = "subm_"
+	val SpatCovPrefix = "spcov_"
+	val VarInfoPrefix = "varinfo_"
+	val RolesPrefix = "roles/"
+	val CCBY4 = new URI("https://creativecommons.org/licenses/by/4.0")
+	val LabeledStationStatus = "STEP3APPROVED"
+	val EcoVarFamilyRegex = """^(.+)_\d{1,2}_\d{1,2}_\d{1,2}$""".r
+	val KnownEcoVarFamilies = Set(
+		"SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT", "TA", "RH", "PPFD_IN", "PPFD_OUT",
+		"PPFD_BC_IN", "PPFD_BC_OUT", "PPFD_DIF", "SW_DIF", "G", "WTD", "PA", "P", "D_SNOW", "P_SNOW",
+		"WS", "WD"
+	)
+
+	object Acquisition{
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, AcqPrefix)
+	}
+
+	object Submission{
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, SubmPrefix)
+	}
+
+	object DataObject{
+		def unapply(iri: IRI): Option[(Sha256Sum, String)] = asPrefWithHash(iri, "")
+			.map(hash => hash -> iri.stringValue.stripSuffix(iri.getLocalName))
+	}
+
+	object NextVersColl:
+		def unapply(iri: IRI): Option[Sha256Sum] = asPrefWithHash(iri, NextVersionCollPrefix)
+
+	object VarInfo{
+
+		def unapply(iri: IRI): Option[(Sha256Sum, String)] = {
+			val uriSegm = iri.getLocalName
+			asPrefWithHashSuff(uriSegm, VarInfoPrefix).flatMap{hash =>
+				if(uriSegm(uriSegm.length - IdLength - 1) == '_')
+					Some(hash -> uriSegm.drop(VarInfoPrefix.length).dropRight(IdLength + 1))
+				else None
+			}
+		}
+	}
+
+	private def asPrefWithHash(iri: IRI, prefix: String): Option[Sha256Sum] = {
+		val uriSegm = iri.getLocalName
+		if(uriSegm.length == prefix.length + IdLength) asPrefWithHashSuff(uriSegm, prefix) else None
+	}
+
+	private def asPrefWithHashSuff(uriSegm: String, prefix: String): Option[Sha256Sum] =
+		if(uriSegm.startsWith(prefix))
+			Sha256Sum.fromBase64Url(uriSegm.takeRight(IdLength)).toOption
+		else
+			None
+
+	def getPersonCpId(firstName: String, lastName: String) = UriId(s"${urlEncode(firstName)}_${urlEncode(lastName)}")
+
+	def getEcoVariableFamily(varName: String): Option[String] = varName match
+		case EcoVarFamilyRegex(famName) if KnownEcoVarFamilies.contains(famName) => Some(famName)
+		case _ => None
+
+}

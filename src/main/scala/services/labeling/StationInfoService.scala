@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Literal, Statement}
 import se.lu.nateko.cp.cpauth.core.UserId
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, StatementSource}
 import se.lu.nateko.cp.meta.onto.InstOnto
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import spray.json.{JsObject, JsString}
@@ -58,7 +58,7 @@ trait StationInfoService:
 
 			getStatements(stationUri) -> newInfo
 
-		db.applyLblDiff(currentInfo.filter(notProtected), newInfo.filter(notProtected))
+		db.applyLblDiff(currentInfo.filter(notProtected), newInfo.filter(notProtectedStatement))
 
 	end saveStationInfo
 
@@ -114,7 +114,12 @@ trait StationInfoService:
 	private def lookupDatatype(classUri: java.net.URI, propUri: java.net.URI): Option[IRI] =
 		dataTypeInfos.get(classUri).flatMap(_.get(propUri)).map(uri => factory.createIRI(uri))
 
-	private def notProtected(statement: Statement): Boolean = statement match{
+	private def notProtected(statement: RdfStatement): Boolean = statement match{
+		case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
+		case _ => true
+	}
+
+	private def notProtectedStatement(statement: Statement): Boolean = statement match{
 		case Rdf4jStatement(_, pred, _) if protectedPredicates.contains(pred) => false
 		case _ => true
 	}

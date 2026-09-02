@@ -9,21 +9,24 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, FileStorageService, MetadataException, UnauthorizedStationUpdateException}
 
+import scala.concurrent.ExecutionContext
+
 
 class StationLabelingService(
 	instanceServers: Map[String, InstanceServer],
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
 	protected val metaVocab: CpmetaVocab,
-	protected val config: LabelingServiceConfig
-) extends UserInfoService with StationInfoService with FileService with LifecycleService:
+	protected val config: LabelingServiceConfig,
+)(using protected val executionContext: ExecutionContext)
+	extends UserInfoService with StationInfoService with FileService with LifecycleService:
 	import LabelingDb.{LblAppConn, ProvConn}
 	import StatementSource.{getStringValues, getUriValues, getOptionalString, getSingleString}
 
 	protected val db = LabelingDb(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),
 		lblServer = instanceServers(config.instanceServerId),
-		icosServer = instanceServers(config.icosMetaInstanceServerId)
+		icosServer = instanceServers(config.icosMetaInstanceServerId),
 	)
 	protected given factory: ValueFactory = metaVocab.factory
 	protected val vocab = new StationsVocab(factory)

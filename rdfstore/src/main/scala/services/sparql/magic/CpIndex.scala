@@ -61,7 +61,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 		sail.accessEagerly:
 			StatementSource.getStatements(null, null, null)
 			.foreach: s =>
-				put(RdfUpdate(s, true))
+				put(RdfUpdate(s.toRdf4jStatement(using sail.getValueFactory), true))
 				statementCount += 1
 				if statementCount % 1000000 == 0 then
 					log.info(s"SPARQL magic index received ${statementCount / 1000000} million RDF assertions by now...")
@@ -158,4 +158,3 @@ end CpIndex
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
-

@@ -66,8 +66,9 @@ class Rdf4jTriplestoreConnection(
 	val primaryContext: IRI, val readContexts: Seq[IRI], conn: RepositoryConnection
 ) extends TriplestoreConnection with SparqlRunner:
 
-	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
 		Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
+			.mapC(RdfStatement.fromRdf4jStatement)
 
 	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
 		conn.hasStatement(subject, predicate, obj, false, readContexts*)
@@ -105,8 +106,9 @@ class Rdf4jSailConnection(
 	val primaryContext: IRI, val readContexts: Seq[IRI], conn: SailConnection, val factory: ValueFactory
 ) extends TriplestoreConnection:
 
-	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
+	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
 		Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
+			.mapC(RdfStatement.fromRdf4jStatement)
 
 	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
 		conn.hasStatement(subject, predicate, obj, false, readContexts*)

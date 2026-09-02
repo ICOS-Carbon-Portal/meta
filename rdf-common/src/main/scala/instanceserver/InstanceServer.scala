@@ -50,7 +50,7 @@ trait InstanceServer extends AutoCloseable:
 	final def removePropertyValue(instUri: IRI, propUri: IRI, value: Value): Try[Unit] =
 		remove(factory.createStatement(instUri, propUri, value))
 
-	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
+	final def applyDiff(from: Seq[Statement | RdfStatement], to: Seq[Statement]): Unit =
 		val updates = RdfUpdate.diff(from, to, factory)
 		applyAll(updates)()
 

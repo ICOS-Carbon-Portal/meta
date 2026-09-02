@@ -12,8 +12,10 @@ object RdfUpdate {
 	 * `dirtyOlds` through `factory` first so that statement equality is well-defined.
 	 * Shared by InstanceServer.applyDiff and the metadata-updater write-side services.
 	 */
-	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
-		val olds = dirtyOlds.map(s => factory.createStatement(s.getSubject, s.getPredicate, s.getObject))
+	def diff(dirtyOlds: Seq[Statement | RdfStatement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
+		val olds = dirtyOlds.map:
+			case s: Statement => factory.createStatement(s.getSubject, s.getPredicate, s.getObject)
+			case s: RdfStatement => s.toRdf4jStatement(using factory)
 
 		olds.diff(news).map(RdfUpdate(_, false)) ++
 		news.diff(olds).map(RdfUpdate(_, true))

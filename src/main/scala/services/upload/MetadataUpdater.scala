@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.CollConn
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStatements, getUriValues}
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, RdfUpdate, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -20,11 +20,14 @@ abstract class MetadataUpdater(vocab: CpVocab):
 	protected def stability(sp: SubjPred, hash: Sha256Sum)(using Envri): StatementStability
 
 	def calculateUpdates(
-		hash: Sha256Sum, oldStatements: Seq[Statement], newStatements: Seq[Statement]
+		hash: Sha256Sum, oldStatements: Seq[Statement | RdfStatement], newStatements: Seq[Statement]
 	)(using Envri, TriplestoreConnection): Seq[RdfUpdate] =
+		val normalizedOldStatements: Seq[Statement] = oldStatements.map:
+			case st: Statement => vocab.factory.createStatement(st.getSubject, st.getPredicate, st.getObject)
+			case st: RdfStatement => st.toRdf4jStatement(using vocab.factory)
 
-		val statDiff = if(oldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
-			val oldBySp = new BySubjPred(oldStatements)
+		val statDiff = if(normalizedOldStatements.isEmpty) newStatements.map(RdfUpdate(_, true)) else {
+			val oldBySp = new BySubjPred(normalizedOldStatements)
 			val newBySp = new BySubjPred(newStatements)
 			val allSps = (oldBySp.sps ++ newBySp.sps).toSeq
 
@@ -64,7 +67,7 @@ class StaticCollMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends 
 		else if subjIsSpatCov then Sticky
 		else Plain
 
-	def getCurrentStatements(collIri: IRI)(using CollConn): IndexedSeq[Statement] =
+	def getCurrentStatements(collIri: IRI)(using CollConn): IndexedSeq[RdfStatement] =
 		getStatements(collIri, null, null).toIndexedSeq ++
 		getUriValues(collIri, metaVocab.hasSpatialCoverage).flatMap: covIri =>
 			getStatements(covIri, null, null)
@@ -147,7 +150,7 @@ object MetadataUpdater{
 
 	type SubjPred = (Resource, IRI)
 
-	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] =
+	def diff(dirtyOlds: Seq[Statement | RdfStatement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] =
 		RdfUpdate.diff(dirtyOlds, news, factory)
 
 	private class BySubjPred(stats: Seq[Statement]){

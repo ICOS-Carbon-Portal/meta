@@ -36,13 +36,13 @@ class RdfReader(metaReader: DobjMetaReader, glob: InstanceServer, lenses: Metafl
 		fetcher.getCurrentState[T]
 
 	def getTcUsages(iri: IRI): IndexedSeq[Statement] = glob.access:
-		getStatements(null, null, iri)(using lenses.envriLens).map(stripContext).toIndexedSeq
+		getStatements(null, null, iri)(using lenses.envriLens).map(_.toRdf4jStatement(using glob.factory)).toIndexedSeq
 
 	def getTcStatements(iri: IRI): IndexedSeq[Statement] = glob.access:
-		getStatements(iri)(using lenses.envriLens).map(stripContext).toIndexedSeq
+		getStatements(iri)(using lenses.envriLens).map(_.toRdf4jStatement(using glob.factory)).toIndexedSeq
 
 	def getCpStatements(iri: IRI): IndexedSeq[Statement] = glob.access:
-		getStatements(iri, null, null)(using lenses.cpLens).map(stripContext).toIndexedSeq
+		getStatements(iri, null, null)(using lenses.cpLens).map(_.toRdf4jStatement(using glob.factory)).toIndexedSeq
 
 	def keepMeaningful(updates: Seq[RdfUpdate]): IndexedSeq[RdfUpdate] = glob.access: glConn ?=>
 		val conn: MetaConn = lenses.envriLens(using glConn)
@@ -52,8 +52,6 @@ class RdfReader(metaReader: DobjMetaReader, glob: InstanceServer, lenses: Metafl
 		val meaningfulDels = dels.filter(dupd => primConn.hasStatement(dupd.statement))
 		(meaningfulDels ++ meaningfulAdds).toIndexedSeq
 
-	private def stripContext(s: Statement) = glob.factory
-		.createStatement(s.getSubject, s.getPredicate, s.getObject)
 end RdfReader
 
 private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriConfigs):

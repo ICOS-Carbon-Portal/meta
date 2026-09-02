@@ -15,7 +15,7 @@ import Validated.{CardinalityExpectation, validateSize}
 import CardinalityExpectation.{AtMostOne, ExactlyOne}
 
 trait StatementSource {
-	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement]
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement]
 	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean
 
 	final def hasStatement(st: Statement): Boolean = st.getSubject() match
@@ -26,10 +26,10 @@ trait StatementSource {
 object StatementSource {
 	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using
 		source: StatementSource
-	): CloseableIterator[Statement] =
+	): CloseableIterator[RdfStatement] =
 		source.getStatements(subject, predicate, obj)
 
-	def getStatements(subject: IRI)(using StatementSource): IndexedSeq[Statement] =
+	def getStatements(subject: IRI)(using StatementSource): IndexedSeq[RdfStatement] =
 		getStatements(subject, null, null).toIndexedSeq
 
 	def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null)(using

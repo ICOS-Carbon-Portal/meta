@@ -25,6 +25,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.jdk.CollectionConverters.*
 import java.net.URI
 import spray.json.*
 
@@ -174,11 +175,22 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				val subject = vf.createIRI("urn:remote:s")
 				val predicate = vf.createIRI("urn:remote:p")
 				val obj = vf.createLiteral("remote value")
+				val otherGraph = vf.createIRI("urn:remote:other-graph")
+				val otherSubject = vf.createIRI("urn:remote:other-s")
 				val statement = vf.createStatement(
 					subject, predicate, obj
 				)
-				remote.transact(_.add(statement, graph)).isSuccess shouldBe true
+				val otherStatement = vf.createStatement(otherSubject, predicate, obj)
+				remote.transact: conn =>
+					conn.add(statement, graph)
+					conn.add(otherStatement, otherGraph)
+				.isSuccess shouldBe true
 				remote.accessEagerly(_.hasStatement(subject, predicate, obj, false, graph)) shouldBe true
+				remote.accessEagerly(_.hasStatement(otherSubject, predicate, obj, false, graph)) shouldBe false
+				remote.accessEagerly: conn =>
+					val statements = conn.getStatements(null, null, null, false, graph)
+					try statements.iterator().asScala.toSeq should contain only statement
+					finally statements.close()
 			finally remote.shutDown()
 
 		"terminate a long-running query with a bad-request response" in:

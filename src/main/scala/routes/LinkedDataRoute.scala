@@ -64,6 +64,7 @@ object LinkedDataRoute {
 							)
 						given EnvriConfig = envriConfs(envri)
 						complete(
+							StatusCodes.NotFound,
 							HttpEntity(
 								ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`),
 								views.html.MessagePage(

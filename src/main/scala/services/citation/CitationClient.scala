@@ -24,6 +24,7 @@ import se.lu.nateko.cp.meta.utils.async.errorLite
 import se.lu.nateko.cp.meta.utils.async.timeLimit
 
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -247,6 +248,9 @@ object CitationClient:
 				case _ => throw Exception("Citation/DOI dump was not a JSON array")
 			TrieMap.apply(tuples*)
 		}.recover{
+			case _: NoSuchFileException =>
+				log.info(s"Cache dump $file does not exist; starting with empty cache")
+				TrieMap.empty
 			case err: Throwable =>
 				log.error("Could not read cache dump", err)
 				TrieMap.empty

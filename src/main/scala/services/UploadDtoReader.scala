@@ -58,7 +58,8 @@ object UploadDtoReader{
 					acquisitionInterval = l2.acquisition.interval,
 					nRows = l2.nRows,
 					production = l2.productionInfo.map(dataProductionToDto(_)),
-					spatial = l2.coverage.map(readCoverage)
+					spatial = l2.coverage.map(readCoverage),
+					customLandingPage = dobj.accessUrl
 				))
 			},
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>

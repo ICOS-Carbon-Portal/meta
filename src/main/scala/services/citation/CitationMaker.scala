@@ -35,7 +35,8 @@ class CitationMaker(
 	doiCiter: PlainDoiCiter,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	coreConf: MetaCoreConfig
+	coreConf: MetaCoreConfig,
+	extCitFetcher: Option[StaticObjCitationFetcher] = None
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
@@ -60,7 +61,13 @@ class CitationMaker(
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
 				case dobj: DataObject => summon[Envri] match
-					case Envri.SITES => Validated(getSitesCitation(dobj))
+					case Envri.SITES =>
+						val externalCitOpt = for
+							fetcher <- extCitFetcher
+							url     <- dobj.accessUrl.filter(_.getHost == "meta.icos-cp.eu")
+							cit     <- fetcher.getCitationEager(url).flatMap(_.toOption)
+						yield cit
+						Validated(getSitesCitation(dobj, externalCitOpt))
 					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
@@ -228,7 +235,7 @@ class CitationMaker(
 			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	end getIcosCitation
 
-	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo =
+	private def getSitesCitation(dobj: DataObject, citTextOverride: Option[String] = None)(using e: Envri): CitationInfo =
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
@@ -258,7 +265,7 @@ class CitationMaker(
 			pidUrl <- pidUrlOpt
 		) yield s"$authors($year). $title, $time [Data set]. ${e.longName} (${e.shortName}). $pidUrl"
 
-		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
+		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citTextOverride.orElse(citString))
 
 	end getSitesCitation
 

@@ -29,6 +29,7 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 	def samplingHeight: Try[Option[Float]] = samplingHeightInput.value.withErrorContext("Sampling height")
 	def instrUri: Try[OptionalOneOrSeq[URI]] = instrUriInput.value.withErrorContext("Instrument URI");
 	def spatial: Try[Option[GeoCoverage]] = spatialCovSelect.spatialCoverage
+	def customLandingPage: Try[Option[URI]] = externalPageInput.value.withErrorContext("Third-party landing page")
 
 	def samplingPoint: Try[Option[Position]] = samplingPointSelect.value.flatten match {
 		case Some(`customSamplingPoint`) =>
@@ -54,6 +55,7 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 	private val latitudeInput = new DoubleOptInput("latitude", notifyUpdate)
 	private val longitudeInput = new DoubleOptInput("longitude", notifyUpdate)
 	private val spatialCovSelect = new GeoCoverageSelector(covs, "timeser")
+	private val externalPageInput = new UriOptInput("l2landingpage", notifyUpdate)
 
 	private val customSamplingPoint = SamplingPoint(new URI(""), 0, 0, "Custom")
 
@@ -68,6 +70,7 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 		samplingHeightInput.value = None
 		instrUriInput.value = None
 		spatialCovSelect.resetForm()
+		externalPageInput.reset()
 	}
 
 	bus.subscribe{
@@ -99,6 +102,7 @@ class StationTimeSeriesPanel(covs: IndexedSeq[SpatialCoverage]) (using bus: PubS
 					samplingHeightInput.value = l2.samplingHeight
 					instrUriInput.value = l2.instrument
 					spatialCovSelect.handleReceivedSpatialCoverage(l2.spatial)
+					externalPageInput.value = l2.customLandingPage
 
 					whenDone(StationTimeSeriesPanel.getStationInfo(l2, stationSelect.getOptions)){
 						case None =>

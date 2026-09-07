@@ -330,24 +330,28 @@ private[linkeddata] object Rdf4jUriSerializer{
 			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceInfoQuery(res)).evaluate().asCloseableIterator
 		).toIndexedSeq
 
-		val propInfos = rows.iterator.filter(getOptLit(_, "direction").contains("out")).flatMap: bset =>
-			val propUriOpt = getOptUriRes(bset, "prop", "propLabel")
-			val propValueOpt: Option[PropValue] = bset.getValue("val") match
-				case uri: IRI => Some(Left(UriResource(uri.toJava, getOptLit(bset, "valLabel"), Nil)))
-				case lit: Literal => Some(Right(lit.stringValue))
-				case _ => None
-			propUriOpt zip propValueOpt
+		val (usageInfos, propInfos) = rows
+			.iterator
+			.flatMap{bset => getOptLit(bset, "direction") match
+				case Some("in") =>
+					val usage = getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
+					usage.map(Left(_))
 
-		val usageInfos =
-			rows
-				.iterator
-				.filter(getOptLit(_, "direction")
-				.contains("in")).flatMap(bset => {
-						getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
-					})
+				case Some("out") =>
+					val propUriOpt = getOptUriRes(bset, "prop", "propLabel")
+					val propValueOpt: Option[PropValue] = bset.getValue("val") match
+						case uri: IRI => Some(Left(UriResource(uri.toJava, getOptLit(bset, "valLabel"), Nil)))
+						case lit: Literal => Some(Right(lit.stringValue))
+						case _ => None
+					(propUriOpt zip propValueOpt).map(Right(_))
+
+				case _ => None
+			}
+			.toIndexedSeq
+			.partitionMap(identity)
 
 		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos.toIndexedSeq)
+		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos)
 
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 

@@ -229,9 +229,6 @@ class Rdf4jUriSerializer(
 	private def isObjSpec(uri: Uri): Boolean = server.access:
 		hasStatement(uri.toRdf, metaVocab.hasDataLevel, null)
 
-	private def isLabeledRes(uri: Uri): Boolean = server.access:
-		hasStatement(uri.toRdf, RDFS.LABEL, null)
-
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =
 
 		def resourceMarshallings[T : JsonWriter](
@@ -289,18 +286,8 @@ class Rdf4jUriSerializer(
 				views.html.PersonLandingPage(_, _)
 			)(using OrganizationExtra.persExtraWriter)
 
-			case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-				customJson(() => access(lenses.documentLens)(objReader.getSpecification(uri.toRdf))),
-				defaultHtml(uri)
-			)
-
-			case _ if isLabeledRes(uri) => oneOf(
-				customJson(() => accessMeta(getLabeledResource(uri.toRdf))),
-				defaultHtml(uri)
-			)
-
 			case _ =>
-				oneOf(defaultHtml(uri))
+				oneOf(genericResourceJson(uri), defaultHtml(uri))
 
 	end getMarshallings
 
@@ -309,13 +296,21 @@ class Rdf4jUriSerializer(
 	private def customJson[T : JsonWriter](fetchDto: () => Validated[T]): Marshalling[HttpResponse] =
 		WithFixedContentType(ContentTypes.`application/json`, () => PageContentMarshalling.getJson(fetchDto()))
 
+	private def genericResourceJson(uri: Uri)(using Envri): Marshalling[HttpResponse] =
+		WithFixedContentType(ContentTypes.`application/json`, () =>
+			if uri.path.startsWith(Uri.Path("/resources/")) && isObjSpec(uri) then
+				PageContentMarshalling.getJson(access(lenses.documentLens)(objReader.getSpecification(uri.toRdf)))
+			else
+				PageContentMarshalling.getJson(accessMeta(getLabeledResource(uri.toRdf)))
+		)
+
 	private def defaultHtml(uri: Uri): Marshalling[HttpResponse] =
 		WithOpenCharset(MediaTypes.`text/html`, getDefaultHtml(uri))
 
 end Rdf4jUriSerializer
 
 
-private object Rdf4jUriSerializer{
+private[linkeddata] object Rdf4jUriSerializer{
 
 	type FLMHR = Future[List[Marshalling[HttpResponse]]]
 	type VOE[O] = Validated[OrganizationExtra[O]]
@@ -331,31 +326,28 @@ private object Rdf4jUriSerializer{
 	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>
 		val conn = use(repo.getConnection())
 
-		val propInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate().asCloseableIterator
-		).map{bset =>
+		val rows = use(
+			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceInfoQuery(res)).evaluate().asCloseableIterator
+		).toIndexedSeq
 
-			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
-
-			val propValueOpt: Option[PropValue] = bset.getValue("val") match {
-				case uri: IRI =>
-					val valLabel = getOptLit(bset, "valLabel")
-					Some(Left(UriResource(uri.toJava, valLabel, Nil)))
-				case lit: Literal =>
-					Some(Right(lit.stringValue))
+		val propInfos = rows.iterator.filter(getOptLit(_, "direction").contains("out")).flatMap: bset =>
+			val propUriOpt = getOptUriRes(bset, "prop", "propLabel")
+			val propValueOpt: Option[PropValue] = bset.getValue("val") match
+				case uri: IRI => Some(Left(UriResource(uri.toJava, getOptLit(bset, "valLabel"), Nil)))
+				case lit: Literal => Some(Right(lit.stringValue))
 				case _ => None
-			}
 			propUriOpt zip propValueOpt
-		}.flatten.take(Limit).toIndexedSeq
 
-		val usageInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate().asCloseableIterator
-		).map{bset =>
-			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
-		}.flatten.take(Limit).toIndexedSeq
+		val usageInfos =
+			rows
+				.iterator
+				.filter(getOptLit(_, "direction")
+				.contains("in")).flatMap(bset => {
+						getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
+					})
 
 		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos)
+		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos.toIndexedSeq)
 
 		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
 
@@ -391,20 +383,35 @@ private object Rdf4jUriSerializer{
 		}
 	}
 
-	def resourceViewInfoQuery(res: Uri) =
-		s"""SELECT ?prop ?propLabel ?val ?valLabel
-		|WHERE{
-		|	<${res.toString}> ?prop ?val .
-		|	OPTIONAL {?prop rdfs:label ?propLabel}
-		|	OPTIONAL {?val rdfs:label ?valLabel}
-		|}""".stripMargin
-
-	def resourceUsageInfoQuery(res: Uri) =
-		s"""SELECT ?obj ?objLabel ?prop ?propLabel
-		|WHERE{
-		|	?obj ?prop <${res.toString}> .
-		|	OPTIONAL {?obj rdfs:label ?objLabel}
-		|	OPTIONAL {?prop rdfs:label ?propLabel}
+	def resourceInfoQuery(res: Uri) =
+		s"""PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		|SELECT ?direction ?prop ?propLabel ?val ?valLabel ?obj ?objLabel
+		|WHERE {
+		|	{
+		|		{
+		|			SELECT ?prop ?propLabel ?val ?valLabel
+		|			WHERE {
+		|				<${res.toString}> ?prop ?val .
+		|				OPTIONAL {?prop rdfs:label ?propLabel}
+		|				OPTIONAL {?val rdfs:label ?valLabel}
+		|			}
+		|			LIMIT $Limit
+		|		}
+		|		BIND("out" AS ?direction)
+		|	}
+		|	UNION
+		|	{
+		|		{
+		|			SELECT ?obj ?objLabel ?prop ?propLabel
+		|			WHERE {
+		|				?obj ?prop <${res.toString}> .
+		|				OPTIONAL {?obj rdfs:label ?objLabel}
+		|				OPTIONAL {?prop rdfs:label ?propLabel}
+		|			}
+		|			LIMIT $Limit
+		|		}
+		|		BIND("in" AS ?direction)
+		|	}
 		|}""".stripMargin
 
 }

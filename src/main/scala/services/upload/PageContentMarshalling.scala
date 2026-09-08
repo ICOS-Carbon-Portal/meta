@@ -27,14 +27,16 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticObject] = (obj, errors) =>
-			for(
-				dlCount <- statisticsClient.getObjDownloadCount(obj);
-				previewCount <- statisticsClient.getPreviewCount(obj.hash)
-			) yield {
+		val template: PageTemplate[StaticObject] = (obj, errors) => {
+			val stats =
+				statisticsClient.getObjDownloadCount(obj)
+				.zip(statisticsClient.getPreviewCount(obj.hash))
+
+			stats.map { case (dlCount, previewCount) =>
 				val extras = LandingPageExtras(dlCount, previewCount, errors)
 				LandingPage(obj, extras, handleProxies)
 			}
+		}
 		makeMarshaller(template, messagePage("Data object not found", _))
 
 
@@ -50,11 +52,16 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 
 	def staticObjectAsyncMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[StaticObject]]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticObject] = (obj, errors) =>
-			for
-				dlCount <- statisticsClient.getObjDownloadCount(obj)
-				previewCount <- statisticsClient.getPreviewCount(obj.hash)
-			yield LandingPage(obj, LandingPageExtras(dlCount, previewCount, errors), handleProxies)
+		val template: PageTemplate[StaticObject] = (obj, errors) => {
+			val stats =
+				statisticsClient
+					.getObjDownloadCount(obj)
+					.zip(statisticsClient.getPreviewCount(obj.hash))
+
+			stats.map { case (dlCount, previewCount) =>
+				LandingPage(obj, LandingPageExtras(dlCount, previewCount, errors), handleProxies)
+			}
+		}
 		makeAsyncMarshaller(template, messagePage("Data object not found", _))
 
 	def staticCollectionAsyncMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[StaticCollection]]] =

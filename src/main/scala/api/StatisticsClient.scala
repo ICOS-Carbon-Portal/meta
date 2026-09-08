@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils.async.timeLimit
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
@@ -32,6 +33,7 @@ object StatisticsClient extends DefaultJsonProtocol {
 
 class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {
 	import StatisticsClient.*
+	private val requestTimeout = config.requestTimeoutMillis.millis
 	private val http = Http()
 	private val log = Logging.getLogger(system, this)
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
@@ -43,25 +45,31 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 
 	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
-		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
+		val connSet = defPoolSet.connectionSettings
+			.withConnectingTimeout(20.millis)
+			.withIdleTimeout(requestTimeout)
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
 	}
 
-	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] = http
-		.singleRequest(
-			HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
-			settings = connPoolSetts
-		)
-		.flatMap { res =>
-			res.status match {
-				case StatusCodes.OK =>
-					Unmarshal(res.entity).to[T].map(Option(_))
-				case s =>
-					Unmarshal(res.entity).to[String].flatMap(
-						errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
-					)
-			}
-		}.recover{
+	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] =
+		timeLimit(
+			http.singleRequest(
+				HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
+				settings = connPoolSetts
+			).flatMap { res =>
+				res.status match {
+					case StatusCodes.OK =>
+						Unmarshal(res.entity).to[T].map(Option(_))
+					case s =>
+						Unmarshal(res.entity).to[String].flatMap(
+							errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
+						)
+				}
+			},
+			requestTimeout,
+			system.scheduler,
+			s"fetching statistics from $uri"
+		).recover{
 			case err: Throwable =>
 				log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None

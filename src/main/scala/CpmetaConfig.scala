@@ -153,7 +153,7 @@ case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
 }
 
-case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig)
+case class StatsClientConfig(downloadsUri: String, previews: RestheartConfig, requestTimeoutMillis: Int)
 
 case class SentryConfig(dsn: String)
 
@@ -224,7 +224,7 @@ object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
-	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
+	given RootJsonFormat[StatsClientConfig] = jsonFormat3(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)

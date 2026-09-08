@@ -1,7 +1,7 @@
 package se.lu.nateko.cp.meta.services.labeling
 
 import org.eclipse.rdf4j.model.Statement
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, RdfStatement, TriplestoreConnection}
 
 object LabelingDb:
 
@@ -44,8 +44,8 @@ class LabelingDb(
 	def accessIcos[T](reader: IcosConn ?=> T): T = icosServer.access: conn ?=>
 		reader(using asIcos(conn))
 
-	def applyLblDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
+	def applyLblDiff(from: Seq[RdfStatement], to: Seq[Statement]): Unit =
 		lblServer.applyDiff(from, to)
 
-	def applyProvDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
+	def applyProvDiff(from: Seq[RdfStatement], to: Seq[Statement]): Unit =
 		provServer.applyDiff(from, to)

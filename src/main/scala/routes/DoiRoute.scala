@@ -4,11 +4,10 @@ import akka.event.{Logging, LoggingBus}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
@@ -18,7 +17,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
-		doiCitClient: CitationClient,
+		derivedMetadata: DerivedMetadataClient,
 		coreConf: MetaCoreConfig
 	)(using logBus : LoggingBus): Route = {
 
@@ -49,8 +48,8 @@ object DoiRoute extends CpmetaJsonProtocol{
 		pathPrefix("dois" / "dropCache"){
 			post{
 				path(Remaining){maybeDoi =>
-					doiCitClient.dropCache(Doi.parse(maybeDoi).get)
-					complete(StatusCodes.OK)
+					onSuccess(derivedMetadata.dropDoiCache(maybeDoi)):
+						complete(StatusCodes.NoContent)
 				}
 			} ~
 			requirePost

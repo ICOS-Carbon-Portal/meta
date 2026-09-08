@@ -16,15 +16,15 @@ object DtoDownloadRoute extends CpmetaJsonProtocol{
 
 	given Unmarshaller[String, Uri] = Unmarshaller(_ => s => Future.fromTry(Try(Uri(s))))
 
-	def apply(uriSer: UriSerializer): Route = {
+	def apply(uriSer: UriSerializer)(using scala.concurrent.ExecutionContext): Route = {
 		val service = new UploadDtoReader(uriSer)
 
 		(get & path("dtodownload")){
 			parameter("uri".as[Uri]){uri =>
-				val uDtoV = service.readDto(uri)
-				uDtoV.result match
-					case None => complete(StatusCodes.NotFound -> uDtoV.errors.mkString("\n"))
-					case Some(dto) => complete(WithErrors(dto, uDtoV.errors))
+				onSuccess(service.readDto(uri)): uDtoV =>
+					uDtoV.result match
+						case None => complete(StatusCodes.NotFound -> uDtoV.errors.mkString("\n"))
+						case Some(dto) => complete(WithErrors(dto, uDtoV.errors))
 			} ~
 			complete(StatusCodes.BadRequest -> "Expected a URL as 'uri' query parameter")
 		}

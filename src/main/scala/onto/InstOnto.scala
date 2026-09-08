@@ -182,7 +182,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		val uri = factory.createIRI(uriStr)
 		val toRemove = instServer.access:
 			getStatements(uri) ++ getStatements(null, null, uri)
-		instServer.removeAll(toRemove)
+		instServer.removeAll(toRemove.map(_.toRdf4jStatement(using instServer.factory)))
 
 
 	def performReplacement(replacement: ReplaceDto): Try[Unit] = instServer.access:

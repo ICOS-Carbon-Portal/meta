@@ -3,7 +3,6 @@ import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.utils.async.executeSequentially
 
@@ -11,7 +10,7 @@ import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class DroughtDoiMaker2(maker: DoiMaker, citer: CitationClient)(implicit ctxt: ExecutionContext){
+class DroughtDoiMaker2(maker: DoiMaker, citer: DoiCitationLookup)(implicit ctxt: ExecutionContext){
 	import DroughtDoiMaker2.*
 	import DoiMaker.*
 

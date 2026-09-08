@@ -1,0 +1,19 @@
+package se.lu.nateko.cp.meta.rdfstore.persistence.postgres
+
+import scala.language.unsafeNulls
+
+import se.lu.nateko.cp.meta.{DbCredentials, DbServer}
+
+import java.sql.{Connection, DriverManager}
+import scala.util.Try
+
+object Postgres {
+
+	private lazy val driverClass = Class.forName("org.postgresql.Driver")
+
+	def getConnection(serv: DbServer, creds: DbCredentials): Try[Connection] = Try{
+		driverClass
+		val url = s"jdbc:postgresql://${serv.host}:${serv.port}/${creds.db}"
+		DriverManager.getConnection(url, creds.user, creds.password)
+	}
+}

@@ -4,13 +4,12 @@ import scala.language.unsafeNulls
 
 import com.typesafe.config.ConfigFactory
 import eu.icoscp.envri.Envri
-import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
 import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
-import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
+import se.lu.nateko.cp.meta.api.HandleNetClientConfig
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
-import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer}
 import spray.json.*
 
 import java.net.URI
@@ -18,7 +17,25 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.collection.mutable.WeakHashMap
 
+// Each application owns the types for the configuration it parses. Defaults for fields also read
+// by rdfStore live in rdf-common's reference.conf under the same `cpmeta` paths, so the two
+// independently deployed processes share one configuration contract. `DoiConfig` is also shared
+// because shared code (`DoiClientFactory`) takes it as a parameter.
+
+case class DbServer(host: String, port: Int)
+case class DbCredentials(db: String, user: String, password: String)
 case class RdflogConfig(server: DbServer, credentials: DbCredentials)
+
+case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
+
+case class DataObjectInstServersConfig(
+	commonReadContexts: Seq[URI],
+	uriPrefix: URI,
+	definitions: Seq[DataObjectInstServerDefinition]
+)
+
+/** meta's `cpmeta.citations` section. rdfStore has its own, differently-shaped one. */
+case class CitationConfig(doi: DoiConfig)
 
 enum IngestionMode:
 	case EAGER, BACKGROUND, OFF
@@ -36,14 +53,6 @@ case class InstanceServerConfig(
 	logIngestionFromId: Option[Int],
 	readContexts: Option[Seq[URI]],
 	ingestion: Option[IngestionConfig]
-)
-
-case class DataObjectInstServerDefinition(label: String, format: URI, replayLogFrom: Option[Int] = None)
-
-case class DataObjectInstServersConfig(
-	commonReadContexts: Seq[URI],
-	uriPrefix: URI,
-	definitions: Seq[DataObjectInstServerDefinition]
 )
 
 case class InstanceServersConfig(
@@ -129,39 +138,16 @@ case class LabelingServiceConfig(
 	ontoId: String
 )
 
-case class HandleNetClientConfig(
-	prefix: Map[Envri, String],
-	baseUrl: String,
-	serverCertPemFilePath: Option[String],
-	clientCertPemFilePath: String,
-	clientPrivKeyPKCS8FilePath: String,
-	dryRun: Boolean
+/**
+ * When present, meta uses an RDF4J SPARQLRepository instead of owning a local
+ * Sail store. The query and update endpoints may be different so that writes
+ * can be kept on a private listener/reverse-proxy route.
+ */
+case class RemoteRdfRepositoryConfig(
+	queryEndpoint: URI,
+	updateEndpoint: URI,
+	derivedMetadataEndpoint: URI
 )
-
-case class SparqlServerConfig(
-	maxQueryRuntimeSec: Int,
-	quotaPerMinute: Int,//in seconds
-	quotaPerHour: Int,  //in seconds
-	maxParallelQueries: Int,
-	maxQueryQueue: Int,
-	banLength: Int, //in minutes
-	maxCacheableQuerySize: Int, //in bytes
-	adminUsers: Seq[String]
-)
-
-case class RdfStorageConfig(
-	lmdb: Option[LmdbConfig],
-	path: String,
-	recreateAtStartup: Boolean,
-	indices: String,
-	disableCpIndex: Boolean,
-	recreateCpIndexAtStartup: Boolean
-)
-
-case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
-
-case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
-case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
 case class RestheartConfig(baseUri: String, dbNames: Map[Envri, String]) {
 	def dbName(implicit envri: Envri): String = dbNames(envri)
@@ -179,29 +165,36 @@ case class CpmetaConfig(
 	instanceServers: InstanceServersConfig,
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
-	rdfStorage: RdfStorageConfig,
+	remoteRdfRepository: Option[RemoteRdfRepositoryConfig],
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
-	sparql: SparqlServerConfig,
+	adminUsers: Seq[String],
 	citations: CitationConfig,
 	statsClient: StatsClientConfig,
 	sentry: Option[SentryConfig]
 )
 
-object ConfigLoader extends CpmetaJsonProtocol:
+object ConfigLoader extends se.lu.nateko.cp.meta.core.CommonJsonSupport:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
+	import DoiConfigJsonProtocol.given RootJsonFormat[DoiConfig]
 
 	private val IcosFlow = "icos"
 	private val CitiesFlow = "cities"
 
+	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
+	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
+	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
+	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
+	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
+	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
+	given RootJsonFormat[CitationConfig] = jsonFormat1(CitationConfig.apply)
+
 	given RootJsonFormat[IngestionMode] = enumFormat(IngestionMode.valueOf, IngestionMode.values)
 	given RootJsonFormat[IngestionConfig] = jsonFormat3(IngestionConfig.apply)
 	given RootJsonFormat[InstanceServerConfig] = jsonFormat6(InstanceServerConfig.apply)
-	given RootJsonFormat[DataObjectInstServerDefinition] = jsonFormat3(DataObjectInstServerDefinition.apply)
-	given RootJsonFormat[DataObjectInstServersConfig] = jsonFormat3(DataObjectInstServersConfig.apply)
 	given RootJsonFormat[MetaUploadConf] = jsonFormat2(MetaUploadConf.apply)
 	given RootJsonFormat[IcosMetaFlowConfig] = jsonFormat4(IcosMetaFlowConfig.apply)
 	given RootJsonFormat[CitiesMetaFlowConfig] = jsonFormat6(CitiesMetaFlowConfig.apply)
@@ -218,9 +211,6 @@ object ConfigLoader extends CpmetaJsonProtocol:
 				case None => deserializationError(s"Cannot deserialize as MetaFlowConfig, missing field $TypeField")
 
 	given RootJsonFormat[InstanceServersConfig] = jsonFormat3(InstanceServersConfig.apply)
-	given RootJsonFormat[DbServer] = jsonFormat2(DbServer.apply)
-	given RootJsonFormat[DbCredentials] = jsonFormat3(DbCredentials.apply)
-	given RootJsonFormat[RdflogConfig] = jsonFormat2(RdflogConfig.apply)
 	given RootJsonFormat[PublicAuthConfig] = jsonFormat4(PublicAuthConfig.apply)
 	given RootJsonFormat[SchemaOntologyConfig] = jsonFormat2(SchemaOntologyConfig.apply)
 	given RootJsonFormat[InstOntoServerConfig] = jsonFormat4(InstOntoServerConfig.apply)
@@ -228,24 +218,18 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[DataSubmitterConfig] = jsonFormat6(DataSubmitterConfig.apply)
 	given RootJsonFormat[SubmittersConfig] = jsonFormat1(SubmittersConfig.apply)
 	given RootJsonFormat[EtcConfig] = jsonFormat7(EtcConfig.apply)
-	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
 	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
-	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
-	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
-	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
-	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[RestheartConfig] = jsonFormat2(RestheartConfig.apply)
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
 	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
 
-	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
+	lazy val default: CpmetaConfig = AppConfig.rootConfWithWorkingDirOverrides.getValue("cpmeta").parseAs[CpmetaConfig]
 
 	private val submConfCache = WeakHashMap.empty[FileTime, SubmittersConfig]
 

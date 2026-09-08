@@ -1,6 +1,8 @@
 # ICOS Carbon Portal metadata service
 
 Metadata service for hosting, mantaining and querying information about things like ICOS stations, people, instruments, archived data objects, etc.
+
+The RDF4J store, SPARQL endpoint, Carbon Portal magic index, and citation-backed query enrichment run in the standalone `rdfStore` application. `meta` connects to it with RDF4J's `SPARQLRepository`; there is no embedded-store fallback. The architecture and remaining production-hardening work are documented in [docs/rdf-store-split.md](docs/rdf-store-split.md). `meta` and `rdfStore` also no longer depend on each other at build time; the shared library that made that possible, and the task-by-task record of how it was extracted, is documented in [docs/rdf-common-split/](docs/rdf-common-split/README.md).
 It is deployed to **https://meta.icos-cp.eu/** with different services accessible via different paths:
 
 - [/uploadgui/](https://meta.icos-cp.eu/uploadgui/): web application for data/document object upload and collection creation (see instructions for manual upload below). 
@@ -371,7 +373,7 @@ All the updates need to go through the RDF logs, therefore SPARQL UPDATE protoco
 
 where `instance-server id` is the id of the instance server that will be affected by the change, as specified in `meta`'s config file.
 
-To be allowed to perform the operation, one needs to be a on the `adminUsers` list in the config (`cpmeta.sparql.adminUsers`). Here is a `curl` example of the API usage:
+To be allowed to perform the operation, one needs to be on the `adminUsers` list in the config (`cpmeta.adminUsers`). Here is a `curl` example of the API usage:
 
 `curl --upload-file sparql.rq -H "Cookie: cpauthToken=<the token>" https://meta.icos-cp.eu/admin/delete/sitescsv?dryRun=true`
 

@@ -5,6 +5,7 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLog
 
 import scala.util.Try
 
+/** Preserves the original RDF transaction + RDF-log append behavior. */
 class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extends InstanceServer:
 
 	def factory = inner.factory
@@ -16,17 +17,16 @@ class LoggingInstanceServer(inner: InstanceServer, val log: RdfUpdateLog) extend
 		inner.getStatements(subject, predicate, obj)
 
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
-		inner.applyAll(updates){
+		inner.applyAll(updates):
 			log.appendAll(updates)
 			cotransact
-		}
 
-	override def shutDown(): Unit = {
+	override def shutDown(): Unit =
 		inner.shutDown()
 		log.close()
-	}
 
-	def withContexts(read: Seq[IRI], write: IRI) = new LoggingInstanceServer(inner.withContexts(read, write), log)
+	def withContexts(read: Seq[IRI], write: IRI) =
+		LoggingInstanceServer(inner.withContexts(read, write), log)
 
 	override def getConnection() = inner.getConnection()
 

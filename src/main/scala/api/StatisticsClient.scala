@@ -14,11 +14,10 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-import java.net.URI
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 
@@ -72,11 +71,12 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 			.map(_.map(_.map(_.count).sum))
 	}
 
-	def getObjDownloadCount(obj: StaticObject)(using Envri): Future[Option[Int]] =
-		getDownloadCount(obj.hash.base64Url)
+	def getObjDownloadCount(hash: Sha256Sum)(using Envri): Future[Option[Int]] =
+		getDownloadCount(hash.base64Url)
 
-	def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]] =
-		getDownloadCount(uri.getPath.split('/').last)
+	// collection landing page URLs, which the stats service knows collections by, use the truncated hash
+	def getCollDownloadCount(hash: Sha256Sum)(using Envri): Future[Option[Int]] =
+		getDownloadCount(hash.id)
 
 	private def getDownloadCount(hash: String)(using envri: Envri): Future[Option[Int]] = {
 		val uri = Uri(config.downloadsUri).withQuery(Uri.Query("hashId" -> hash))

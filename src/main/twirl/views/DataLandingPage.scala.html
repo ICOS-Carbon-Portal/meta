@@ -220,15 +220,7 @@
 			</div>
 
 			<div class="row gy-2">
-				<h2 class="fs-3 mt-5">Statistics</h2>
-				@htmlProperty{Downloads}{
-					@extras.downloadStats.getOrElse("Not available")
-				}
-				@if(dobj.isPreviewable){
-					@htmlProperty{Previews}{
-						@extras.previewStats.getOrElse("Not available")
-					}
-				}
+				@statistics(statsUrl, dobj.isPreviewable)
 			</div>
 
 			<div class="row gy-2">
@@ -328,6 +320,7 @@
 }
 
 @icon = @{dobj.specification.theme.markerIcon.map(_.toString).getOrElse("")}
+@statsUrl = @{s"/$objectPathPrefix${dobj.hash.base64Url}/statistics"}
 @uploadComplete = @{dobj.size.isDefined}
 @underMoratorium = @{uploadComplete && dobj.submission.stop.exists(_.compareTo(Instant.now()) > 0)}
 

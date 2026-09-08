@@ -65,10 +65,7 @@
 				}
 				@property(s"Submission started (${conf.defaultTimezoneId})", doc.submission.start.getDateTimeStr)
 
-				<h2 class="fs-3 mt-5">Statistics</h2>
-				@htmlProperty{Downloads}{
-					@extras.downloadStats.getOrElse("Not available")
-				}
+				@statistics(statsUrl)
 			</div>
 		</div>
 		<div class="col-md-4">
@@ -108,3 +105,4 @@
 }
 
 @uploadComplete = @{doc.size.isDefined}
+@statsUrl = @{s"/$objectPathPrefix${doc.hash.base64Url}/statistics"}

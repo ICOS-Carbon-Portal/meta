@@ -242,6 +242,12 @@ Programmatic access to individual data objects' metadata is performed by sending
 
 Other supported content types are intended for fetching different serializations of RDF metadata: `application/xml` or `application/rdf+xml` for RDF/XML, and `text/plain` or `text/turtle` for RDF/Turtle.
 
+Download and preview counts are *not* part of this metadata; they come from CP's statistics services and are therefore served separately, so that the landing pages need not wait for them. The landing pages fetch them asynchronously (displaying `-` in the meantime) from
+
+`curl https://meta.icos-cp.eu/objects/13ecfdcc363a1eb4b7f4e04b1cb2c6f5b2d5f30d47a5ea4a1ba48ee2c9f5e2b1/statistics`
+
+which answers with a JSON object having optional `downloads` and `previews` properties (a property is absent if the corresponding statistics service could not be reached). Note that the download statistics are keyed on the object's *full* SHA-256 hashsum, so this endpoint &mdash; unlike the landing page itself &mdash; needs the complete hashsum (hex- or Base64Url-encoded), not the truncated landing page id. Collections have the analogous `/collections/<id>/statistics` endpoint, taking the landing page id and answering with a `downloads` property only.
+
 ### Other metadata entities
 
 Same principles and approaches to metadata access apply to document objects, collections, organizations, people, data types, variables, etc. However, the list of supported content types and richness of the corresponding metadata representations and HTML landing pages may vary.

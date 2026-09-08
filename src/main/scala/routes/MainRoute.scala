@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.stream.Materializer
 import io.sentry.Sentry
+import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
@@ -34,6 +35,7 @@ object MainRoute {
 
 		given LoggingBus = sys.eventStream
 		given EnvriConfigs = config.core.envriConfigs
+		given Materializer = Materializer.matFromSystem(using sys)
 
 		val sparqler = new Rdf4jSparqlRunner(db.magicRepo)
 
@@ -44,6 +46,9 @@ object MainRoute {
 		val doiService = new DoiService(config.citations.doi, db.uriSerializer, db.derivedMetadata)
 		val doiRoute = DoiRoute(doiService, authRouting, db.derivedMetadata, config.core)
 		val linkedDataRoute = LinkedDataRoute(config.instanceServers, db.uriSerializer, db.instanceServers, db.vocab)
+
+		val statsClient = new StatisticsClient(config.statsClient, config.core.envriConfigs)
+		val statsRoute = StatisticsRoute(statsClient)
 
 		val metaEntryRouting = new MetadataEntryRouting(authRouting)
 		val metaEntryRoute = metaEntryRouting.entryRoute(db.instOntos, config.onto.instOntoServers)
@@ -70,6 +75,7 @@ object MainRoute {
 			sitemapRoute ~
 			adminRoute ~
 			dtoDlRoute ~
+			statsRoute ~
 			path("buildInfo"){
 				complete(se.lu.nateko.cp.meta.BuildInfo.toString)
 			} ~

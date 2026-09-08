@@ -12,7 +12,6 @@ import akka.http.scaladsl.model.Uri.Path.Empty
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.model.Uri.Path.Slash
 import akka.http.scaladsl.model.*
-import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
@@ -93,7 +92,7 @@ class Rdf4jUriSerializer(
 	lenses: RdfLenses,
 	derivedMetadata: DerivedMetadataClient,
 	config: CpmetaConfig
-)(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
+)(using envries: EnvriConfigs, system: ActorSystem) extends UriSerializer:
 
 	import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getLabeledResource, hasStatement}
 	import InstanceServerSerializer.statementIterMarshaller
@@ -110,9 +109,7 @@ class Rdf4jUriSerializer(
 	}
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
-	private val pageContentMarshalling =
-		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new PageContentMarshalling(config.core.handleProxies, stats)
+	private val pageContentMarshalling = new PageContentMarshalling(config.core.handleProxies)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))

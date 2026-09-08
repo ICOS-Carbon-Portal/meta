@@ -1,0 +1,35 @@
+@*
+ * Statistics are not part of the server-rendered page: they come from a separate service which
+ * may be slow or down, so the page shows placeholders and fills them in from /<hash>/statistics.
+ *@
+@(statsUrl: String, withPreviews: Boolean = false)
+<h2 class="fs-3 mt-5">Statistics</h2>
+@htmlProperty{Downloads}{<span id="download-stats">-</span>}
+@if(withPreviews){
+	@htmlProperty{Previews}{<span id="preview-stats">-</span>}
+}
+<script type="text/javascript">
+	(function(){
+		var notAvailable = "Not available";
+
+		function render(elemId, count){
+			var elem = document.getElementById(elemId);
+			if(elem) elem.textContent = (count === null || count === undefined) ? notAvailable : count;
+		}
+
+		fetch("@statsUrl", {headers: {"Accept": "application/json"}})
+			.then(function(resp){
+				if(!resp.ok) throw new Error("Got HTTP " + resp.status + " from @statsUrl");
+				return resp.json();
+			})
+			.then(function(stats){
+				render("download-stats", stats.downloads);
+				render("preview-stats", stats.previews);
+			})
+			.catch(function(err){
+				console.log("Could not fetch statistics: " + err.message);
+				render("download-stats", notAvailable);
+				render("preview-stats", notAvailable);
+			});
+	})();
+</script>

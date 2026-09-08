@@ -52,10 +52,7 @@
 					}
 				}
 
-				<h2 class="fs-3 mt-5">Statistics</h2>
-				@htmlProperty{Downloads}{
-					@extras.downloadStats.getOrElse("Not available")
-				}
+				@statistics(statsUrl)
 			</div>
 		</div>
 		<div class="col-md-4">
@@ -83,6 +80,8 @@
 }
 
 @accessUrl = @{staticCollAccessUrl(coll.res)}
+
+@statsUrl = @{s"${coll.res.getRawPath}/statistics"}
 
 @headerExtra = {
 	<a class="btn btn-warning" href="@accessUrl">Download</a>

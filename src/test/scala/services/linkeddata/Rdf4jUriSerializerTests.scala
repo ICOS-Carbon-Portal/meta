@@ -7,6 +7,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 class Rdf4jUriSerializerTests extends AnyFunSpec:
 
@@ -42,4 +43,27 @@ class Rdf4jUriSerializerTests extends AnyFunSpec:
 				assert(info.usage.exists: (resource, property) =>
 					resource.label.contains("User") && property.uri.toString == uses.stringValue
 				)
+			finally repo.shutDown()
+
+	describe("LandingPageSnapshot"):
+		it("fetches a resource and its linked resources from named graphs"):
+			val repo = SailRepository(MemoryStore())
+			repo.init()
+			try
+				val factory = repo.getValueFactory
+				val root = factory.createIRI("http://example.org/root")
+				val target = factory.createIRI("http://example.org/target")
+				val pointsTo = factory.createIRI("http://example.org/pointsTo")
+				val name = factory.createIRI("http://example.org/name")
+				val graph = factory.createIRI("http://example.org/graph")
+				val conn = repo.getConnection
+				try
+					conn.add(root, pointsTo, target, graph)
+					conn.add(target, name, factory.createLiteral("Target"), graph)
+				finally conn.close()
+
+				val snapshot = LandingPageSnapshot.fetch(root, repo, CpmetaVocab(factory)).get
+
+				assert(snapshot.hasStatement(root, pointsTo, target))
+				assert(snapshot.hasStatement(target, name, factory.createLiteral("Target")))
 			finally repo.shutDown()

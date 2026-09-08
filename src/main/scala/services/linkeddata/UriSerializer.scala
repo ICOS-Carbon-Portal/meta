@@ -160,19 +160,18 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		server.access: conn ?=>
-			val objIri = vocab.getStaticObject(hash)
+		val objIri = vocab.getStaticObject(hash)
+		Validated.fromTry(LandingPageSnapshot.fetch(objIri, repo, metaVocab)).flatMap: conn =>
 			given GlobConn = RdfLens.global(using conn)
 			objReader.fetchStaticObject(objIri)
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		access(lenses.collectionLens):
-			val collUri = vocab.getCollection(hash)
-			for
-				given DocConn <- lenses.documentLens
-				coll <- objReader.fetchStaticColl(collUri, Some(hash))
-			yield coll
+		val collUri = vocab.getCollection(hash)
+		Validated.fromTry(LandingPageSnapshot.fetch(collUri, repo, metaVocab)).flatMap: conn =>
+			lenses.collectionLens.flatMap: collLens =>
+				lenses.documentLens.flatMap: docLens =>
+					objReader.fetchStaticColl(collUri, Some(hash))(using collLens(using conn), docLens(using conn))
 
 
 	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:
@@ -326,11 +325,10 @@ private[linkeddata] object Rdf4jUriSerializer{
 	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>
 		val conn = use(repo.getConnection())
 
-		val rows = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceInfoQuery(res)).evaluate().asCloseableIterator
-		).toIndexedSeq
 
-		val (usageInfos, propInfos) = rows
+		val (usageInfos, propInfos) =
+			use(conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceInfoQuery(res)).evaluate().asCloseableIterator)
+			.toIndexedSeq
 			.iterator
 			.flatMap{bset => getOptLit(bset, "direction") match
 				case Some("in") =>

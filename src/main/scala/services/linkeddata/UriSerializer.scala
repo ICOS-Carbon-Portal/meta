@@ -29,7 +29,7 @@ import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.{SubjectCachingTriplestoreConnection, TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
@@ -160,7 +160,7 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		server.access: conn ?=>
+		accessCached: conn ?=>
 			val objIri = vocab.getStaticObject(hash)
 			given GlobConn = RdfLens.global(using conn)
 			objReader.fetchStaticObject(objIri)
@@ -195,9 +195,13 @@ class Rdf4jUriSerializer(
 		yield PersonExtra(pers, roles)
 
 	private def access[T, C <: TriplestoreConnection](lensV: Validated[RdfLens[C]])(reader: C ?=> Validated[T]): Validated[T] =
-		server.access:
+		accessCached:
 			lensV.flatMap: lens =>
 				reader(using lens)
+
+	private def accessCached[T](read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
+		val conn = SubjectCachingTriplestoreConnection(server.getConnection())
+		try read(using conn) finally conn.close()
 
 	private def accessMeta[T](reader: MetaConn ?=> Validated[T])(using Envri): Validated[T] =
 		access(lenses.metaInstanceLens)(reader)

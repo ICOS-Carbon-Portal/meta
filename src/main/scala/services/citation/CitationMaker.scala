@@ -62,12 +62,11 @@ class CitationMaker(
 				case doc:  DocObject  => Validated(getDocCitation(doc))
 				case dobj: DataObject => summon[Envri] match
 					case Envri.SITES =>
-						val externalCitOpt = for
+						val externalCitOverride: Option[String] = for
 							fetcher <- extCitFetcher
 							url     <- dobj.accessUrl.filter(_.getHost == "meta.icos-cp.eu")
-							cit     <- fetcher.getCitationEager(url).flatMap(_.toOption)
-						yield cit
-						Validated(getSitesCitation(dobj, externalCitOpt))
+						yield presentExternalCitation(fetcher.getCitationEager(url))
+						Validated(getSitesCitation(dobj, externalCitOverride))
 					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
@@ -141,6 +140,10 @@ class CitationMaker(
 		case Some(Success(cit)) => cit
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
+
+	private def presentExternalCitation(eagerRes: Option[Try[String]]): String = eagerRes match
+		case Some(Success(cit)) => cit
+		case _ => "Fetching citation... try refreshing the page in a few seconds"
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(

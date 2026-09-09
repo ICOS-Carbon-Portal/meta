@@ -136,7 +136,7 @@ trait CpmetaReader:
 				orderWeight = orderWeightOpt
 			)
 
-	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
+	def getPerson(pers: IRI): StatementSource ?=> Validated[Person] =
 		for
 			self <- getLabeledResource(pers)
 			firstName <- getSingleString(pers, metaVocab.hasFirstName)

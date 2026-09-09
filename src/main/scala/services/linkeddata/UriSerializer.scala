@@ -179,14 +179,19 @@ class Rdf4jUriSerializer(
 		for
 			given DocConn <- lenses.documentLens
 			st <- objReader.getStation(uri.toRdf)
-			membs <- attribution.getMemberships(st.org.self.uri)
+			membs <- fetchMemberships(st.org.self.uri)
 		yield OrganizationExtra(st, membs)
 
 	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
 		for
 			org <- objReader.getOrganization(uri.toRdf)
-			membs <- attribution.getMemberships(org.self.uri)
+			membs <- fetchMemberships(org.self.uri)
 		yield OrganizationExtra(org, membs)
+
+	private def fetchMemberships(org: JavaUri)(using conn: MetaConn): Validated[IndexedSeq[AttributionProvider.Membership]] =
+		conn match
+			case sparql: SparqlRunner => attribution.getMembershipsBatched(org)(using conn, sparql)
+			case _ => attribution.getMemberships(org)
 
 	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
 		for

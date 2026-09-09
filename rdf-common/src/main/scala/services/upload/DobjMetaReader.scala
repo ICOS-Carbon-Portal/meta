@@ -2,11 +2,13 @@ package se.lu.nateko.cp.meta.services.upload
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.{IRI, Value}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
-import se.lu.nateko.cp.meta.api.RdfLens
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
+import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList, parseJsonStringArray}
@@ -20,21 +22,23 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	import RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 	def getSpecification(spec: IRI)(using DocConn): Validated[DataObjectSpec] =
+		val properties = SubjectStatements(spec)
 		for
-			self <- getLabeledResource(spec)
-			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)
+			self <- getLabeledResource(spec)(using properties)
+			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)(using properties)
 			project <- getProject(projectUri)
-			dataThemeUri <- getSingleUri(spec, metaVocab.hasDataTheme)
+			dataThemeUri <- getSingleUri(spec, metaVocab.hasDataTheme)(using properties)
 			dataTheme <- getDataTheme(dataThemeUri)
-			formatUri <- getSingleUri(spec, metaVocab.hasFormat)
+			formatUri <- getSingleUri(spec, metaVocab.hasFormat)(using properties)
 			format <- getObjectFormat(formatUri)
 			specificDatasetType <- getSpecDatasetType(spec)
-			encoding <- getLabeledResource(spec, metaVocab.hasEncoding)
-			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)
-			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)
+			encodingUri <- getSingleUri(spec, metaVocab.hasEncoding)(using properties)
+			encoding <- getLabeledResource(encodingUri)
+			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)(using properties)
+			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)(using properties)
 			datasetSpec <- datasetSpecUri.map(getDatasetSpec).sinkOption
 			documentation <- getDocumentationObjs(spec)
-			keywords <- getOptionalString(spec, metaVocab.hasKeywords)
+			keywords <- getOptionalString(spec, metaVocab.hasKeywords)(using properties)
 		yield
 			DataObjectSpec(
 				self = self,
@@ -290,17 +294,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 
-	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
-		val deploymentVs = getPropValueHolders(metaVocab.atOrganization, stationUri)
-			.collect:
-				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
-					val instrs = getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList
-					val instr = instrs match
-						case Nil => Validated.error(s"No instruments for deployment $depl")
-						case one :: Nil => Validated.ok(one)
-						case many => Validated.error(s"Too many instruments for deployment $depl")
-					instr.flatMap(getInstrumentDeployment(depl, _))
-			.toIndexedSeq
+	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta])(using conn: MetaConn): Validated[Seq[VarMeta]] =
+		val deploymentVs = conn match
+			case sparql: SparqlRunner => getDeploymentsBatched(stationUri)(using conn, sparql)
+			case _ => getDeployments(stationUri)
 		Validated.sequence(deploymentVs).map: deployments =>
 			cols.map: vm =>
 				val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
@@ -311,6 +308,77 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				}
 				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
 	end addInstrDeplInfo
+
+	private def getDeployments(stationUri: IRI)(using MetaConn): IndexedSeq[Validated[InstrumentDeployment]] =
+		getPropValueHolders(metaVocab.atOrganization, stationUri)
+			.collect:
+				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+					getDeployment(depl, getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList)
+			.toIndexedSeq
+
+	private def getDeploymentsBatched(stationUri: IRI)(using conn: MetaConn, sparql: SparqlRunner): IndexedSeq[Validated[InstrumentDeployment]] =
+		val result = sparql.evaluateTupleQuery(deploymentInstrumentsQuery(stationUri, conn.readContexts))
+		val deploymentInstruments = try
+			result.map: binding =>
+				val deployment = binding.getValue("deployment").asInstanceOf[IRI]
+				val instrument = Option(binding.getValue("instrument")).collect { case iri: IRI => iri }
+				deployment -> instrument
+			.toIndexedSeq
+		finally result.close()
+		if deploymentInstruments.isEmpty then IndexedSeq.empty
+		else
+			val resources = deploymentInstruments.flatMap((deployment, instrument) => deployment +: instrument.toSeq)
+			val statementsResult = sparql.evaluateGraphQuery(prefetchedStatementsQuery(resources, conn.readContexts))
+			val statements = try statementsResult.map(RdfStatement.fromRdf4jStatement).toIndexedSeq finally statementsResult.close()
+			val prefetchedConn = PrefetchedTriplestoreConnection(conn, statements)
+			deploymentInstruments.groupMap(_._1)(_._2).toIndexedSeq.map: (deployment, instruments) =>
+				getDeployment(deployment, instruments.flatten.toList)(using prefetchedConn.asInstanceOf[MetaConn])
+
+	private def getDeployment(deployment: IRI, instruments: List[IRI])(using MetaConn): Validated[InstrumentDeployment] =
+		instruments match
+			case Nil => Validated.error(s"No instruments for deployment $deployment")
+			case one :: Nil => getInstrumentDeployment(deployment, one)
+			case many => Validated.error(s"Too many instruments for deployment $deployment")
+
+	private[upload] def deploymentInstrumentsQuery(stationUri: IRI, contexts: Seq[IRI]): String =
+		def iri(value: IRI): String = NTriplesUtil.toNTriplesString(value)
+		val from = contexts.distinct.map(context => s"FROM ${iri(context)}").mkString("\n")
+		s"""SELECT ?deployment ?instrument
+			|$from
+			|WHERE {
+			|  ?deployment a ${iri(metaVocab.ssn.deploymentClass)} ;
+			|    ${iri(metaVocab.atOrganization)} ${iri(stationUri)} .
+			|  OPTIONAL { ?instrument ${iri(metaVocab.ssn.hasDeployment)} ?deployment }
+			|}""".stripMargin
+
+	private[upload] def prefetchedStatementsQuery(resources: Seq[IRI], contexts: Seq[IRI]): String =
+		def iri(value: IRI): String = NTriplesUtil.toNTriplesString(value)
+		val from = contexts.distinct.map(context => s"FROM ${iri(context)}").mkString("\n")
+		val values = resources.distinct.map(iri).mkString(" ")
+		s"""CONSTRUCT { ?resource ?predicate ?value }
+			|$from
+			|WHERE {
+			|  VALUES ?resource { $values }
+			|  ?resource ?predicate ?value
+			|}""".stripMargin
+
+	private final class PrefetchedTriplestoreConnection(delegate: TriplestoreConnection, statements: IndexedSeq[RdfStatement]) extends TriplestoreConnection:
+		private val bySubject = statements.groupMap(_.subject)(identity)
+
+		override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
+			Option(subject).flatMap(bySubject.get).fold(delegate.getStatements(subject, predicate, obj)): prefetched =>
+				new CloseableIterator.Wrap(prefetched.iterator.filter: statement =>
+					(predicate == null || statement.predicate == predicate) && (obj == null || statement.obj == obj), () => ())
+
+		override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+			Option(subject).flatMap(bySubject.get).fold(delegate.hasStatement(subject, predicate, obj)): prefetched =>
+				prefetched.exists(statement => (predicate == null || statement.predicate == predicate) && (obj == null || statement.obj == obj))
+
+		override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection = delegate.withContexts(primary, read)
+		override def primaryContext: IRI = delegate.primaryContext
+		override def readContexts: Seq[IRI] = delegate.readContexts
+		override def factory = delegate.factory
+		override def close(): Unit = ()
 
 	protected def getSpatioTempMeta(
 		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]

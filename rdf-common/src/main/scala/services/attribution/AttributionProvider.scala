@@ -2,10 +2,13 @@ package se.lu.nateko.cp.meta.services.attribution
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 import se.lu.nateko.cp.meta.api.RdfLens.MetaConn
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, Organization, Person, UriResource}
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.CpmetaReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -32,6 +35,54 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 	)
 
 	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] =
+		readMemberships(org)
+
+	/** Complete membership model for a landing page, with no remote reads during parsing. */
+	def getMembershipsBatched(org: URI)(using conn: MetaConn, sparql: SparqlRunner): Validated[IndexedSeq[Membership]] =
+		Validated:
+			val result = sparql.evaluateGraphQuery(membershipsQuery(org, conn.readContexts))
+			try result.map(RdfStatement.fromRdf4jStatement).toIndexedSeq.distinct
+			finally result.close()
+		.flatMap: statements =>
+			given StatementSource = new StatementSource:
+				def getStatements(s: IRI | Null, p: IRI | Null, o: Value | Null): CloseableIterator[RdfStatement] =
+					new CloseableIterator.Wrap(statements.iterator.filter(st =>
+						(s == null || st.subject == s) && (p == null || st.predicate == p) && (o == null || st.obj == o)
+					), () => ())
+				def hasStatement(s: IRI | Null, p: IRI | Null, o: Value | Null): Boolean =
+					val iter = getStatements(s, p, o)
+					try iter.hasNext finally iter.close()
+			readMemberships(org)
+
+	private[attribution] def membershipsQuery(org: URI, contexts: Seq[IRI]): String =
+		def term(iri: IRI): String = NTriplesUtil.toNTriplesString(iri)
+		def props(iris: IRI*): String = iris.map(term).mkString(" ")
+		import metaVocab.*
+		val from = contexts.distinct.map(c => s"FROM ${term(c)}").mkString("\n")
+		val atOrg = term(metaVocab.atOrganization)
+		val membership = term(metaVocab.hasMembership)
+		val role = term(metaVocab.hasRole)
+		s"""CONSTRUCT {
+			| ?m $atOrg ${term(org.toRdf)} .
+			| ?person $membership ?m .
+			| ?s ?p ?o .
+			|}
+			|$from
+			|WHERE {
+			| ?m $atOrg ${term(org.toRdf)} .
+			| ?person $membership ?m .
+			| FILTER(isIRI(?m) && isIRI(?person))
+			| OPTIONAL {
+			|   { VALUES ?p { ${props(hasRole, hasStartTime, hasEndTime, hasAttributionWeight, hasExtraRoleInfo)} }
+			|     ?m ?p ?o . BIND(?m AS ?s) }
+			|   UNION { VALUES ?p { ${props(RDFS.LABEL, RDFS.COMMENT, hasFirstName, hasLastName, hasEmail, hasOrcidId)} }
+			|     ?person ?p ?o . BIND(?person AS ?s) }
+			|   UNION { VALUES ?p { ${props(RDFS.LABEL, RDFS.COMMENT)} }
+			|     ?m $role ?s . FILTER(isIRI(?s)) ?s ?p ?o }
+			| }
+			|}""".stripMargin
+
+	private def readMemberships(org: URI)(using StatementSource): Validated[IndexedSeq[Membership]] =
 		Validated.sequence:
 			for
 				memb <- getPropValueHolders(metaVocab.atOrganization, org.toRdf)
@@ -51,7 +102,7 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 				yield PersonRole(org, role)
 
 
-	private def readRoleDetails(memb: IRI)(using MetaConn): Validated[RoleDetails] =
+	private def readRoleDetails(memb: IRI)(using StatementSource): Validated[RoleDetails] =
 		for
 			role <- getLabeledResource(memb, metaVocab.hasRole)
 			start <- getOptionalInstant(memb, metaVocab.hasStartTime)

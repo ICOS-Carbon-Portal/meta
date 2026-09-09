@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
@@ -33,7 +33,7 @@ class StaticObjectReader(
 		getOptionalLong,
 		getOptionalString
 	}
-	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
+	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn, MetaConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -54,26 +54,27 @@ class StaticObjectReader(
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
 
 	def getExistingDataObject(dobj: IRI)(using envri: Envri, dobjConn: DobjConn): Validated[DataObject] =
+		val properties = SubjectStatements(dobj)
 		for
-			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
+			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)(using properties)
 			docLens <- lenses.documentLens
 			docConn: DocConn = docLens
 			spec <- getSpecification(specIri)(using docConn)
 			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
-			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
-			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
+			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookupForStaticObject)
+			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)(using properties)
 			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
 				case DatasetType.SpatioTemporal =>
 					getSpatioTempMeta(dobj, valTypeLookup, productionOpt)(using dobjConn, docConn).map(Left.apply)
 				case DatasetType.StationTimeSeries =>
 					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt, docConn).map(Right.apply)
-			hash <- getHashsum(dobj, metaVocab.hasSha256sum)
+			hash <- getHashsum(dobj, metaVocab.hasSha256sum)(using properties)
 			accessUrl <- getAccessUrl(hash, spec)
-			fileName <- getSingleString(dobj, metaVocab.hasName)
-			sizeOpt <- getOptionalLong(dobj, metaVocab.hasSizeInBytes)
-			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)
-			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)
+			fileName <- getSingleString(dobj, metaVocab.hasName)(using properties)
+			sizeOpt <- getOptionalLong(dobj, metaVocab.hasSizeInBytes)(using properties)
+			doiOpt <- getOptionalString(dobj, metaVocab.hasDoi)(using properties)
+			submissionUri <- getSingleUri(dobj, metaVocab.wasSubmittedBy)(using properties)
 			submission <- getSubmission(submissionUri)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(dobj)(using collectionLens)
@@ -100,16 +101,22 @@ class StaticObjectReader(
 			init.copy(references = refs)
 	end getExistingDataObject
 
+	private def getValTypeLookupForStaticObject(datasetSpec: IRI)(using conn: MetaConn): Validated[VarMetaLookup] =
+		conn match
+			case sparql: SparqlRunner => getValTypeLookupBatched(datasetSpec)(using conn, sparql)
+			case _ => getValTypeLookup(datasetSpec)
+
 	def getExistingDocumentObject(doc: IRI)(using Envri, DocConn): Validated[DocObject] =
+		val properties = SubjectStatements(doc)
 		for
-			hash <- getHashsum(doc, metaVocab.hasSha256sum)
-			fileName <- getSingleString(doc, metaVocab.hasName)
-			sizeOpt <- getOptionalLong(doc, metaVocab.hasSizeInBytes)
-			submissionUri <- getSingleUri(doc, metaVocab.wasSubmittedBy)
+			hash <- getHashsum(doc, metaVocab.hasSha256sum)(using properties)
+			fileName <- getSingleString(doc, metaVocab.hasName)(using properties)
+			sizeOpt <- getOptionalLong(doc, metaVocab.hasSizeInBytes)(using properties)
+			submissionUri <- getSingleUri(doc, metaVocab.wasSubmittedBy)(using properties)
 			submission <- getSubmission(submissionUri)
-			doiOpt <- getOptionalString(doc, metaVocab.hasDoi)
-			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)
-			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)
+			doiOpt <- getOptionalString(doc, metaVocab.hasDoi)(using properties)
+			descriptionOpt <- getOptionalString(doc, metaVocab.dcterms.description)(using properties)
+			titleOpt <- getOptionalString(doc, metaVocab.dcterms.title)(using properties)
 			authors <- getContributors(doc, metaVocab.dcterms.creator)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(doc)(using collectionLens)

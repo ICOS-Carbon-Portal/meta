@@ -2,11 +2,12 @@ package se.lu.nateko.cp.meta.services.upload
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.{IRI, Value}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
-import se.lu.nateko.cp.meta.api.RdfLens
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
+import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens, SparqlRunner}
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, StatementSource}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
@@ -26,10 +27,11 @@ trait CpmetaReader:
 		getPlainStaticObject(dobj)
 
 	private def getPlainStaticObject(dobj: IRI)(using StatementSource): Validated[PlainStaticObject] =
+		val properties = SubjectStatements(dobj)
 		for
-			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
-			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:
-				case None => getSingleString(dobj, metaVocab.hasName)
+			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)(using properties)
+			fileName <- getOptionalString(dobj, metaVocab.dcterms.title)(using properties).flatMap:
+				case None => getSingleString(dobj, metaVocab.hasName)(using properties)
 				case Some(title) => Validated.ok(title)
 		yield
 			PlainStaticObject(dobj.toJava, hashsum, fileName)
@@ -73,11 +75,12 @@ trait CpmetaReader:
 			)
 
 	def getSubmission(subm: IRI): MetaConn ?=> Validated[DataSubmission] =
+		val properties = SubjectStatements(subm)
 		for
-			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)(using properties)
 			submitter <- getOrganization(submitterUri)
-			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)
-			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)
+			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)(using properties)
+			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)(using properties)
 		yield
 			DataSubmission(
 				submitter = submitter,
@@ -93,12 +96,13 @@ trait CpmetaReader:
 				getOrganization(uri)
 
 	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
+		val properties = SubjectStatements(org)
 		for
-			self <- getLabeledResource(org)
-			name <- getSingleString(org, metaVocab.hasName)
-			emailOpt <- getOptionalString(org, metaVocab.hasEmail)
-			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
-			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
+			self <- getLabeledResource(org)(using properties)
+			name <- getSingleString(org, metaVocab.hasName)(using properties)
+			emailOpt <- getOptionalString(org, metaVocab.hasEmail)(using properties)
+			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)(using properties)
+			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)(using properties)
 			webpageDetailsOpt <- webpageUriOpt.map(getWebpageElems).sinkOption
 		yield
 			Organization(
@@ -135,13 +139,14 @@ trait CpmetaReader:
 				orderWeight = orderWeightOpt
 			)
 
-	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
+	def getPerson(pers: IRI): StatementSource ?=> Validated[Person] =
+		val properties = SubjectStatements(pers)
 		for
-			self <- getLabeledResource(pers)
-			firstName <- getSingleString(pers, metaVocab.hasFirstName)
-			lastName <- getSingleString(pers, metaVocab.hasLastName)
-			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
-			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)
+			self <- getLabeledResource(pers)(using properties)
+			firstName <- getSingleString(pers, metaVocab.hasFirstName)(using properties)
+			lastName <- getSingleString(pers, metaVocab.hasLastName)(using properties)
+			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)(using properties)
+			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)(using properties)
 		yield
 			Person(
 				self = self,
@@ -152,9 +157,10 @@ trait CpmetaReader:
 			)
 
 	def getProject(project: IRI): MetaConn ?=> Validated[Project] =
+		val properties = SubjectStatements(project)
 		for
-			self <- getLabeledResource(project)
-			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)
+			self <- getLabeledResource(project)(using properties)
+			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)(using properties)
 		yield
 			Project(
 				self = self,
@@ -162,19 +168,21 @@ trait CpmetaReader:
 			)
 
 	def getObjectFormat(format: IRI): MetaConn ?=> Validated[ObjectFormat] =
+		val properties = SubjectStatements(format)
 		for
-			self <- getLabeledResource(format)
+			self <- getLabeledResource(format)(using properties)
 		yield
 			ObjectFormat(
 				self = self,
-				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
+				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)(using properties)).filterNot(_.isEmpty)
 			)
 
 	def getDataTheme(theme: IRI): MetaConn ?=> Validated[DataTheme] =
+		val properties = SubjectStatements(theme)
 		for
-			self <- getLabeledResource(theme)
-			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)
-			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
+			self <- getLabeledResource(theme)(using properties)
+			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)(using properties)
+			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)(using properties)
 		yield DataTheme(self = self, icon = icon, markerIcon = markerIconOpt)
 
 	def getTemporalCoverage[C <: DobjConn](dobj: IRI): C ?=> Validated[TemporalCoverage] =
@@ -284,6 +292,22 @@ trait CpmetaReader:
 			else Nil
 
 	def getValTypeLookup(datasetSpec: IRI): MetaConn ?=> Validated[VarMetaLookup] =
+		getValTypeLookupFrom(datasetSpec)
+
+	/**
+	 * Fetches all variable/column metadata needed by [[getValTypeLookup]] in one query.
+	 * This is intended for remote connections, where property-at-a-time reads are HTTP requests.
+	 */
+	def getValTypeLookupBatched(datasetSpec: IRI)(using conn: MetaConn, sparql: SparqlRunner): Validated[VarMetaLookup] =
+		Validated:
+			sparql.evaluateGraphQuery(datasetVariablesQuery(datasetSpec, conn.readContexts))
+				.map(RdfStatement.fromRdf4jStatement)
+				.toIndexedSeq
+		.flatMap: statements =>
+			given StatementSource = InMemoryStatementSource(statements)
+			getValTypeLookupFrom(datasetSpec)
+
+	private def getValTypeLookupFrom(datasetSpec: IRI)(using StatementSource): Validated[VarMetaLookup] =
 		for
 			datasetVars <- getDatasetVars(datasetSpec)
 			datasetColumns <- getDatasetColumns(datasetSpec)
@@ -305,31 +329,34 @@ trait CpmetaReader:
 				)
 
 	def getValueType(vt: IRI): MetaConn ?=> Validated[ValueType] =
+		getValueTypeFrom(vt)
+
+	private def getValueTypeFrom(vt: IRI)(using StatementSource): Validated[ValueType] =
 		for
 			labeledResource <- getLabeledResource(vt)
 			quantityKindUri <- getOptionalUri(vt, metaVocab.hasQuantityKind)
-			quantityKind <- quantityKindUri.map(getLabeledResource).sinkOption
+			quantityKind <- quantityKindUri.map(getLabeledResource[StatementSource]).sinkOption
 			unit <- getOptionalString(vt, metaVocab.hasUnit)
 		yield
 			ValueType(labeledResource, quantityKind, unit)
 
-	private def getDatasetVars(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
+	private def getDatasetVars(ds: IRI)(using StatementSource): Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasVariable, hasVariableTitle, isRegexVariable, isOptionalVariable)
 
-	private def getDatasetColumns(ds: IRI): MetaConn ?=> Validated[Seq[DatasetVariable]] =
+	private def getDatasetColumns(ds: IRI)(using StatementSource): Validated[Seq[DatasetVariable]] =
 		import metaVocab.*
 		getDatasetVarsOrCols(ds, hasColumn, hasColumnTitle, isRegexColumn, isOptionalColumn)
 
 	private def getDatasetVarsOrCols(
 		ds: IRI, varProp: IRI, titleProp: IRI, regexProp: IRI, optProp: IRI
-	): MetaConn ?=> Validated[Seq[DatasetVariable]] =
+	)(using StatementSource): Validated[Seq[DatasetVariable]] =
 		Validated.sequence(getUriValues(ds, varProp).map: dv =>
 			for
 				self <- getLabeledResource(dv)
 				title <- getSingleString(dv, titleProp)
 				valueTypeUri <- getSingleUri(dv, metaVocab.hasValueType)
-				valueType <- getValueType(valueTypeUri)
+				valueType <- getValueTypeFrom(valueTypeUri)
 				valueFormat <- getOptionalUri(dv, metaVocab.hasValueFormat)
 				isRegex <- getOptionalBool(dv, regexProp)
 				isOptional <- getOptionalBool(dv, optProp)
@@ -345,6 +372,53 @@ trait CpmetaReader:
 					isOptional = isOptional.getOrElse(false)
 				)
 		)
+
+	private[upload] def datasetVariablesQuery(datasetSpec: IRI, readContexts: Seq[IRI]): String =
+		import metaVocab.*
+		def iri(value: IRI): String = NTriplesUtil.toNTriplesString(value)
+		def values(values: IRI*): String = values.map(iri).mkString(" ")
+		val from = readContexts.distinct.map(context => s"FROM ${iri(context)}").mkString("\n")
+
+		s"""CONSTRUCT {
+			|  ${iri(datasetSpec)} ?membership ?variable .
+			|  ?variable ?variableProperty ?variableValue .
+			|  ?valueType ?valueTypeProperty ?valueTypeValue .
+			|  ?quantityKind ?quantityKindProperty ?quantityKindValue .
+			|}
+			|$from
+			|WHERE {
+			|  VALUES ?membership { ${values(hasVariable, hasColumn)} }
+			|  ${iri(datasetSpec)} ?membership ?variable .
+			|  OPTIONAL {
+			|    {
+			|      VALUES ?variableProperty { ${values(RDFS.LABEL, RDFS.COMMENT, hasVariableTitle, hasColumnTitle, hasValueType, hasValueFormat, isRegexVariable, isRegexColumn, isOptionalVariable, isOptionalColumn, isQualityFlagFor)} }
+			|      ?variable ?variableProperty ?variableValue .
+			|    } UNION {
+			|      ?variable ${iri(hasValueType)} ?valueType .
+			|      VALUES ?valueTypeProperty { ${values(RDFS.LABEL, RDFS.COMMENT, hasQuantityKind, hasUnit)} }
+			|      ?valueType ?valueTypeProperty ?valueTypeValue .
+			|    } UNION {
+			|      ?variable ${iri(hasValueType)} ?valueType .
+			|      ?valueType ${iri(hasQuantityKind)} ?quantityKind .
+			|      VALUES ?quantityKindProperty { ${values(RDFS.LABEL, RDFS.COMMENT)} }
+			|      ?quantityKind ?quantityKindProperty ?quantityKindValue .
+			|    }
+			|  }
+			|}""".stripMargin
+
+	private final class InMemoryStatementSource(statements: IndexedSeq[RdfStatement]) extends StatementSource:
+		override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
+			val matching = statements.iterator.filter: statement =>
+				(subject == null || statement.subject == subject) &&
+				(predicate == null || statement.predicate == predicate) &&
+				(obj == null || statement.obj == obj)
+			new CloseableIterator.Wrap(matching, () => ())
+
+		override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+			statements.exists: statement =>
+				(subject == null || statement.subject == subject) &&
+				(predicate == null || statement.predicate == predicate) &&
+				(obj == null || statement.obj == obj)
 
 	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
 		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != CpmetaVocab.defaultInstrModel))

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.linkeddata
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
@@ -101,6 +102,7 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	import RdfLens.{MetaConn, GlobConn, DocConn}
 	private given ExecutionContext = system.dispatcher
+	private val log = Logging.getLogger(system, this)
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
@@ -179,14 +181,19 @@ class Rdf4jUriSerializer(
 		for
 			given DocConn <- lenses.documentLens
 			st <- objReader.getStation(uri.toRdf)
-			membs <- attribution.getMemberships(st.org.self.uri)
+			membs <- fetchMemberships(st.org.self.uri)
 		yield OrganizationExtra(st, membs)
 
 	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
 		for
 			org <- objReader.getOrganization(uri.toRdf)
-			membs <- attribution.getMemberships(org.self.uri)
+			membs <- fetchMemberships(org.self.uri)
 		yield OrganizationExtra(org, membs)
+
+	private def fetchMemberships(org: JavaUri)(using conn: MetaConn): Validated[IndexedSeq[AttributionProvider.Membership]] =
+		conn match
+			case sparql: SparqlRunner => attribution.getMembershipsBatched(org)(using conn, sparql)
+			case _ => attribution.getMemberships(org)
 
 	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
 		for

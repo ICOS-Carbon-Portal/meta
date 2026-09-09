@@ -2,13 +2,13 @@ package se.lu.nateko.cp.meta.services.upload
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.{IRI, Value}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
-import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.{CloseableIterator, RdfLens}
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList, parseJsonStringArray}
@@ -323,8 +323,14 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				deployment -> instrument
 			.toIndexedSeq
 		finally result.close()
-		deploymentInstruments.groupMap(_._1)(_._2).toIndexedSeq.map: (deployment, instruments) =>
-			getDeployment(deployment, instruments.flatten.toList)
+		if deploymentInstruments.isEmpty then IndexedSeq.empty
+		else
+			val resources = deploymentInstruments.flatMap((deployment, instrument) => deployment +: instrument.toSeq)
+			val statementsResult = sparql.evaluateGraphQuery(prefetchedStatementsQuery(resources, conn.readContexts))
+			val statements = try statementsResult.map(RdfStatement.fromRdf4jStatement).toIndexedSeq finally statementsResult.close()
+			val prefetchedConn = PrefetchedTriplestoreConnection(conn, statements)
+			deploymentInstruments.groupMap(_._1)(_._2).toIndexedSeq.map: (deployment, instruments) =>
+				getDeployment(deployment, instruments.flatten.toList)(using prefetchedConn.asInstanceOf[MetaConn])
 
 	private def getDeployment(deployment: IRI, instruments: List[IRI])(using MetaConn): Validated[InstrumentDeployment] =
 		instruments match
@@ -342,6 +348,35 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			|    ${iri(metaVocab.atOrganization)} ${iri(stationUri)} .
 			|  OPTIONAL { ?instrument ${iri(metaVocab.ssn.hasDeployment)} ?deployment }
 			|}""".stripMargin
+
+	private[upload] def prefetchedStatementsQuery(resources: Seq[IRI], contexts: Seq[IRI]): String =
+		def iri(value: IRI): String = NTriplesUtil.toNTriplesString(value)
+		val from = contexts.distinct.map(context => s"FROM ${iri(context)}").mkString("\n")
+		val values = resources.distinct.map(iri).mkString(" ")
+		s"""CONSTRUCT { ?resource ?predicate ?value }
+			|$from
+			|WHERE {
+			|  VALUES ?resource { $values }
+			|  ?resource ?predicate ?value
+			|}""".stripMargin
+
+	private final class PrefetchedTriplestoreConnection(delegate: TriplestoreConnection, statements: IndexedSeq[RdfStatement]) extends TriplestoreConnection:
+		private val bySubject = statements.groupMap(_.subject)(identity)
+
+		override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] =
+			Option(subject).flatMap(bySubject.get).fold(delegate.getStatements(subject, predicate, obj)): prefetched =>
+				new CloseableIterator.Wrap(prefetched.iterator.filter: statement =>
+					(predicate == null || statement.predicate == predicate) && (obj == null || statement.obj == obj), () => ())
+
+		override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
+			Option(subject).flatMap(bySubject.get).fold(delegate.hasStatement(subject, predicate, obj)): prefetched =>
+				prefetched.exists(statement => (predicate == null || statement.predicate == predicate) && (obj == null || statement.obj == obj))
+
+		override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection = delegate.withContexts(primary, read)
+		override def primaryContext: IRI = delegate.primaryContext
+		override def readContexts: Seq[IRI] = delegate.readContexts
+		override def factory = delegate.factory
+		override def close(): Unit = ()
 
 	protected def getSpatioTempMeta(
 		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]

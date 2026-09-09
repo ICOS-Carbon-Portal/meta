@@ -103,6 +103,7 @@ class DatasetVariableBatchTests extends AnyFunSpec:
 				repoConn.add(firstDeployment, RDF.TYPE, metaVocab.ssn.deploymentClass, graph)
 				repoConn.add(firstDeployment, metaVocab.atOrganization, station, graph)
 				repoConn.add(instrument, metaVocab.ssn.hasDeployment, firstDeployment, graph)
+				repoConn.add(instrument, RDFS.LABEL, factory.createLiteral("Instrument label"), graph)
 				repoConn.add(secondDeployment, RDF.TYPE, metaVocab.ssn.deploymentClass, graph)
 				repoConn.add(secondDeployment, metaVocab.atOrganization, station, graph)
 				repoConn.add(iri("otherDeployment"), RDF.TYPE, metaVocab.ssn.deploymentClass, otherGraph)
@@ -112,6 +113,12 @@ class DatasetVariableBatchTests extends AnyFunSpec:
 				assert(rows.map(_.getValue("deployment")).toSet === Set(firstDeployment, secondDeployment))
 				assert(rows.find(_.getValue("deployment") == firstDeployment).flatMap(row => Option(row.getValue("instrument"))).contains(instrument))
 				assert(rows.find(_.getValue("deployment") == secondDeployment).flatMap(row => Option(row.getValue("instrument"))).isEmpty)
+
+				val prefetched = Rdf4jSparqlRunner(repo)
+					.evaluateGraphQuery(reader.prefetchedStatementsQuery(Seq(firstDeployment, instrument), Seq(graph)))
+					.toIndexedSeq
+				assert(prefetched.exists(statement => statement.getSubject == instrument && statement.getPredicate == RDFS.LABEL))
+				assert(!prefetched.exists(_.getSubject == iri("otherDeployment")))
 			finally
 				repoConn.close()
 				repo.shutDown()

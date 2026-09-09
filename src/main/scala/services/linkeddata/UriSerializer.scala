@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.services.linkeddata
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
@@ -101,6 +102,7 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	import RdfLens.{MetaConn, GlobConn, DocConn}
 	private given ExecutionContext = system.dispatcher
+	private val log = Logging.getLogger(system, this)
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
@@ -160,10 +162,17 @@ class Rdf4jUriSerializer(
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		accessCached: conn ?=>
+		val startedAt = System.nanoTime()
+		val conn = SubjectCachingTriplestoreConnection(server.getConnection())
+		try
 			val objIri = vocab.getStaticObject(hash)
 			given GlobConn = RdfLens.global(using conn)
 			objReader.fetchStaticObject(objIri)
+		finally
+			conn.profileSummary.foreach: summary =>
+				val elapsedMillis = (System.nanoTime() - startedAt) / 1000000
+				log.info(s"Object RDF-read profile for $hash: elapsed=${elapsedMillis}ms, $summary")
+			conn.close()
 
 
 	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =

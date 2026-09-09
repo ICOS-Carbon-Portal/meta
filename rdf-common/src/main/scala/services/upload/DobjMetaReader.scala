@@ -4,7 +4,9 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil
 import se.lu.nateko.cp.meta.api.RdfLens
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -290,17 +292,10 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 
-	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
-		val deploymentVs = getPropValueHolders(metaVocab.atOrganization, stationUri)
-			.collect:
-				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
-					val instrs = getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList
-					val instr = instrs match
-						case Nil => Validated.error(s"No instruments for deployment $depl")
-						case one :: Nil => Validated.ok(one)
-						case many => Validated.error(s"Too many instruments for deployment $depl")
-					instr.flatMap(getInstrumentDeployment(depl, _))
-			.toIndexedSeq
+	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta])(using conn: MetaConn): Validated[Seq[VarMeta]] =
+		val deploymentVs = conn match
+			case sparql: SparqlRunner => getDeploymentsBatched(stationUri)(using conn, sparql)
+			case _ => getDeployments(stationUri)
 		Validated.sequence(deploymentVs).map: deployments =>
 			cols.map: vm =>
 				val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
@@ -311,6 +306,42 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				}
 				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
 	end addInstrDeplInfo
+
+	private def getDeployments(stationUri: IRI)(using MetaConn): IndexedSeq[Validated[InstrumentDeployment]] =
+		getPropValueHolders(metaVocab.atOrganization, stationUri)
+			.collect:
+				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+					getDeployment(depl, getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList)
+			.toIndexedSeq
+
+	private def getDeploymentsBatched(stationUri: IRI)(using conn: MetaConn, sparql: SparqlRunner): IndexedSeq[Validated[InstrumentDeployment]] =
+		val result = sparql.evaluateTupleQuery(deploymentInstrumentsQuery(stationUri, conn.readContexts))
+		val deploymentInstruments = try
+			result.map: binding =>
+				val deployment = binding.getValue("deployment").asInstanceOf[IRI]
+				val instrument = Option(binding.getValue("instrument")).collect { case iri: IRI => iri }
+				deployment -> instrument
+			.toIndexedSeq
+		finally result.close()
+		deploymentInstruments.groupMap(_._1)(_._2).toIndexedSeq.map: (deployment, instruments) =>
+			getDeployment(deployment, instruments.flatten.toList)
+
+	private def getDeployment(deployment: IRI, instruments: List[IRI])(using MetaConn): Validated[InstrumentDeployment] =
+		instruments match
+			case Nil => Validated.error(s"No instruments for deployment $deployment")
+			case one :: Nil => getInstrumentDeployment(deployment, one)
+			case many => Validated.error(s"Too many instruments for deployment $deployment")
+
+	private[upload] def deploymentInstrumentsQuery(stationUri: IRI, contexts: Seq[IRI]): String =
+		def iri(value: IRI): String = NTriplesUtil.toNTriplesString(value)
+		val from = contexts.distinct.map(context => s"FROM ${iri(context)}").mkString("\n")
+		s"""SELECT ?deployment ?instrument
+			|$from
+			|WHERE {
+			|  ?deployment a ${iri(metaVocab.ssn.deploymentClass)} ;
+			|    ${iri(metaVocab.atOrganization)} ${iri(stationUri)} .
+			|  OPTIONAL { ?instrument ${iri(metaVocab.ssn.hasDeployment)} ?deployment }
+			|}""".stripMargin
 
 	protected def getSpatioTempMeta(
 		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]

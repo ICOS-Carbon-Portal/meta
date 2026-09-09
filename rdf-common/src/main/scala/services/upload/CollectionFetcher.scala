@@ -60,22 +60,23 @@ private[upload] class CollectionReader(val metaVocab: CpmetaVocab, citer: Citabl
 	private def getExistingStaticColl(
 		coll: IRI, hashOpt: Option[Sha256Sum] = None
 	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
+		val properties = SubjectStatements(coll)(using collConn)
 
 		val membersV = Validated.sequence:
-			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
+			getUriValues(coll, dct.hasPart)(using properties).map: item =>
 				if collectionExists(item) then getPlainStaticCollection(item)
 				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 		for
 			hash <- hashOpt.fold(hashFromIri(coll))(Validated.ok)
-			creatorUri <- getSingleUri[CollConn](coll, dct.creator)
+			creatorUri <- getSingleUri(coll, dct.creator)(using properties)
 			members <- membersV
 			creator <- getOrganization(creatorUri)(using collConn)
-			title <- getCollTitle(coll)
-			description <- getOptionalString[CollConn](coll, dct.description)
+			title <- getSingleString(coll, dct.title)(using properties)
+			description <- getOptionalString(coll, dct.description)(using properties)
 			parentColls <- getParentCollections(coll)
-			doi <- getOptionalString[CollConn](coll, metaVocab.hasDoi)
-			documentationUriOpt <- getOptionalUri[CollConn](coll, RDFS.SEEALSO)
+			doi <- getOptionalString(coll, metaVocab.hasDoi)(using properties)
+			documentationUriOpt <- getOptionalUri(coll, RDFS.SEEALSO)(using properties)
 			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
 			coverage <- fetchCollCoverage(coll)
 		yield

@@ -22,21 +22,23 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	import RdfLens.{MetaConn, DocConn, DobjConn, GlobConn}
 
 	def getSpecification(spec: IRI)(using DocConn): Validated[DataObjectSpec] =
+		val properties = SubjectStatements(spec)
 		for
-			self <- getLabeledResource(spec)
-			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)
+			self <- getLabeledResource(spec)(using properties)
+			projectUri <- getSingleUri(spec, metaVocab.hasAssociatedProject)(using properties)
 			project <- getProject(projectUri)
-			dataThemeUri <- getSingleUri(spec, metaVocab.hasDataTheme)
+			dataThemeUri <- getSingleUri(spec, metaVocab.hasDataTheme)(using properties)
 			dataTheme <- getDataTheme(dataThemeUri)
-			formatUri <- getSingleUri(spec, metaVocab.hasFormat)
+			formatUri <- getSingleUri(spec, metaVocab.hasFormat)(using properties)
 			format <- getObjectFormat(formatUri)
 			specificDatasetType <- getSpecDatasetType(spec)
-			encoding <- getLabeledResource(spec, metaVocab.hasEncoding)
-			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)
-			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)
+			encodingUri <- getSingleUri(spec, metaVocab.hasEncoding)(using properties)
+			encoding <- getLabeledResource(encodingUri)
+			dataLevel <- getSingleInt(spec, metaVocab.hasDataLevel)(using properties)
+			datasetSpecUri <- getOptionalUri(spec, metaVocab.containsDataset)(using properties)
 			datasetSpec <- datasetSpecUri.map(getDatasetSpec).sinkOption
 			documentation <- getDocumentationObjs(spec)
-			keywords <- getOptionalString(spec, metaVocab.hasKeywords)
+			keywords <- getOptionalString(spec, metaVocab.hasKeywords)(using properties)
 		yield
 			DataObjectSpec(
 				self = self,

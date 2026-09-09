@@ -27,10 +27,11 @@ trait CpmetaReader:
 		getPlainStaticObject(dobj)
 
 	private def getPlainStaticObject(dobj: IRI)(using StatementSource): Validated[PlainStaticObject] =
+		val properties = SubjectStatements(dobj)
 		for
-			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)
-			fileName <- getOptionalString(dobj, metaVocab.dcterms.title).flatMap:
-				case None => getSingleString(dobj, metaVocab.hasName)
+			hashsum <- getHashsum(dobj, metaVocab.hasSha256sum)(using properties)
+			fileName <- getOptionalString(dobj, metaVocab.dcterms.title)(using properties).flatMap:
+				case None => getSingleString(dobj, metaVocab.hasName)(using properties)
 				case Some(title) => Validated.ok(title)
 		yield
 			PlainStaticObject(dobj.toJava, hashsum, fileName)
@@ -74,11 +75,12 @@ trait CpmetaReader:
 			)
 
 	def getSubmission(subm: IRI): MetaConn ?=> Validated[DataSubmission] =
+		val properties = SubjectStatements(subm)
 		for
-			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)
+			submitterUri <- getSingleUri(subm, metaVocab.prov.wasAssociatedWith)(using properties)
 			submitter <- getOrganization(submitterUri)
-			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)
-			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)
+			start <- getSingleInstant(subm, metaVocab.prov.startedAtTime)(using properties)
+			stop <- getOptionalInstant(subm, metaVocab.prov.endedAtTime)(using properties)
 		yield
 			DataSubmission(
 				submitter = submitter,
@@ -94,12 +96,13 @@ trait CpmetaReader:
 				getOrganization(uri)
 
 	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
+		val properties = SubjectStatements(org)
 		for
-			self <- getLabeledResource(org)
-			name <- getSingleString(org, metaVocab.hasName)
-			emailOpt <- getOptionalString(org, metaVocab.hasEmail)
-			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)
-			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)
+			self <- getLabeledResource(org)(using properties)
+			name <- getSingleString(org, metaVocab.hasName)(using properties)
+			emailOpt <- getOptionalString(org, metaVocab.hasEmail)(using properties)
+			websiteOpt <- getOptionalUri(org, RDFS.SEEALSO)(using properties)
+			webpageUriOpt <- getOptionalUri(org, metaVocab.hasWebpageElements)(using properties)
 			webpageDetailsOpt <- webpageUriOpt.map(getWebpageElems).sinkOption
 		yield
 			Organization(
@@ -137,12 +140,13 @@ trait CpmetaReader:
 			)
 
 	def getPerson(pers: IRI): StatementSource ?=> Validated[Person] =
+		val properties = SubjectStatements(pers)
 		for
-			self <- getLabeledResource(pers)
-			firstName <- getSingleString(pers, metaVocab.hasFirstName)
-			lastName <- getSingleString(pers, metaVocab.hasLastName)
-			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
-			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)
+			self <- getLabeledResource(pers)(using properties)
+			firstName <- getSingleString(pers, metaVocab.hasFirstName)(using properties)
+			lastName <- getSingleString(pers, metaVocab.hasLastName)(using properties)
+			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)(using properties)
+			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)(using properties)
 		yield
 			Person(
 				self = self,
@@ -153,9 +157,10 @@ trait CpmetaReader:
 			)
 
 	def getProject(project: IRI): MetaConn ?=> Validated[Project] =
+		val properties = SubjectStatements(project)
 		for
-			self <- getLabeledResource(project)
-			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)
+			self <- getLabeledResource(project)(using properties)
+			keywordsOpt <- getOptionalString(project, metaVocab.hasKeywords)(using properties)
 		yield
 			Project(
 				self = self,
@@ -163,19 +168,21 @@ trait CpmetaReader:
 			)
 
 	def getObjectFormat(format: IRI): MetaConn ?=> Validated[ObjectFormat] =
+		val properties = SubjectStatements(format)
 		for
-			self <- getLabeledResource(format)
+			self <- getLabeledResource(format)(using properties)
 		yield
 			ObjectFormat(
 				self = self,
-				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)).filterNot(_.isEmpty)
+				goodFlagValues = Some(getStringValues(format, metaVocab.hasGoodFlagValue)(using properties)).filterNot(_.isEmpty)
 			)
 
 	def getDataTheme(theme: IRI): MetaConn ?=> Validated[DataTheme] =
+		val properties = SubjectStatements(theme)
 		for
-			self <- getLabeledResource(theme)
-			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)
-			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)
+			self <- getLabeledResource(theme)(using properties)
+			icon <- getSingleUriLiteral(theme, metaVocab.hasIcon)(using properties)
+			markerIconOpt <- getOptionalUriLiteral(theme, metaVocab.hasMarkerIcon)(using properties)
 		yield DataTheme(self = self, icon = icon, markerIcon = markerIconOpt)
 
 	def getTemporalCoverage[C <: DobjConn](dobj: IRI): C ?=> Validated[TemporalCoverage] =

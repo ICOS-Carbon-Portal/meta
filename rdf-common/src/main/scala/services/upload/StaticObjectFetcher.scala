@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, SparqlRunner}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
@@ -33,7 +33,7 @@ class StaticObjectReader(
 		getOptionalLong,
 		getOptionalString
 	}
-	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
+	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn, MetaConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -60,7 +60,7 @@ class StaticObjectReader(
 			docConn: DocConn = docLens
 			spec <- getSpecification(specIri)(using docConn)
 			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
-			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
+			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookupForStaticObject)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
 			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
@@ -99,6 +99,11 @@ class StaticObjectReader(
 		yield
 			init.copy(references = refs)
 	end getExistingDataObject
+
+	private def getValTypeLookupForStaticObject(datasetSpec: IRI)(using conn: MetaConn): Validated[VarMetaLookup] =
+		conn match
+			case sparql: SparqlRunner => getValTypeLookupBatched(datasetSpec)(using conn, sparql)
+			case _ => getValTypeLookup(datasetSpec)
 
 	def getExistingDocumentObject(doc: IRI)(using Envri, DocConn): Validated[DocObject] =
 		for

@@ -61,12 +61,7 @@ class CitationMaker(
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
 				case dobj: DataObject => summon[Envri] match
-					case Envri.SITES =>
-						val externalCitOverride: Option[String] = for
-							fetcher <- extCitFetcher
-							url     <- dobj.accessUrl.filter(_.getHost == "meta.icos-cp.eu")
-						yield presentExternalCitation(fetcher.getCitationEager(url))
-						Validated(getSitesCitation(dobj, externalCitOverride))
+					case Envri.SITES => Validated(getSitesCitation(dobj))
 					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
@@ -76,9 +71,9 @@ class CitationMaker(
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
 			val coreRefs = sobj.references.copy(
-				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(externalCitation(sobj, CitationStyle.HTML)).orElse(citInfo.citText),
+				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(externalCitation(sobj, CitationStyle.bibtex)).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(externalCitation(sobj, CitationStyle.ris)).orElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
@@ -143,7 +138,15 @@ class CitationMaker(
 
 	private def presentExternalCitation(eagerRes: Option[Try[String]]): String = eagerRes match
 		case Some(Success(cit)) => cit
-		case _ => "Fetching citation... try refreshing the page in a few seconds"
+		case _ => "Fetching... try refreshing the page in a few seconds"
+
+	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using envri: Envri): Option[String] =
+		if envri == Envri.SITES then
+			for
+				fetcher <- extCitFetcher
+				url     <- sobj.accessUrl.filter(_.getHost == "meta.icos-cp.eu")
+			yield presentExternalCitation(fetcher.getCitationEager(url, style))
+		else None
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
@@ -238,7 +241,7 @@ class CitationMaker(
 			new CitationInfo(pidUrlOpt, Option(authors).filterNot(_.isEmpty), titleOpt, yearOpt, tempCov, citText)
 	end getIcosCitation
 
-	private def getSitesCitation(dobj: DataObject, citTextOverride: Option[String] = None)(using e: Envri): CitationInfo =
+	private def getSitesCitation(dobj: DataObject)(using e: Envri): CitationInfo =
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val tempCov = getTemporalCoverageDisplay(dobj, zoneId)
 		val yearOpt = dobj.submission.stop.map(getYear(zoneId))
@@ -268,7 +271,7 @@ class CitationMaker(
 			pidUrl <- pidUrlOpt
 		) yield s"$authors($year). $title, $time [Data set]. ${e.longName} (${e.shortName}). $pidUrl"
 
-		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citTextOverride.orElse(citString))
+		new CitationInfo(pidUrlOpt, None, titleOpt, yearOpt, tempCov, citString)
 
 	end getSitesCitation
 

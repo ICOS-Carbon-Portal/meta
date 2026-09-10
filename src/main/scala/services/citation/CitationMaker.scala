@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, IcosMirror}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
@@ -140,11 +140,11 @@ class CitationMaker(
 		case Some(Success(cit)) => cit
 		case _ => "Fetching... try refreshing the page in a few seconds"
 
-	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using envri: Envri): Option[String] =
-		if envri == Envri.SITES then
+	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[String] =
+		if IcosMirror.isIcosMirrored(sobj.accessUrl) then
 			for
 				fetcher <- extCitFetcher
-				url     <- sobj.accessUrl.filter(_.getHost == "meta.icos-cp.eu")
+				url     <- sobj.accessUrl
 			yield presentExternalCitation(fetcher.getCitationEager(url, style))
 		else None
 

@@ -158,9 +158,12 @@ object HandleNetClient{
 			envri,
 			throw new Exception(s"No PID prefix for ENVRI $envri in the config")
 		)
+		def prefixOpt(using envri: Envri): Option[String] = conf.prefix.get(envri)
 		def getPid(suffix: String)(using Envri) = s"${prefix}/$suffix"
 		def getSuffix(hash: Sha256Sum): String = hash.id
 		def getPid(hash: Sha256Sum)(using Envri): String = getPid(getSuffix(hash))
+		def getPidOpt(hash: Sha256Sum)(using Envri): Option[String] =
+			prefixOpt.map(pref => s"$pref/${getSuffix(hash)}")
 		def pidUrlStr(suffix: String)(using Envri) = s"${conf.baseUrl}api/handles/${getPid(suffix)}"
 	}
 //	implicit val system = ActorSystem()

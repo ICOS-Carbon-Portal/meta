@@ -10,7 +10,7 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, IcosMirror}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -84,7 +84,7 @@ class StaticObjectReader(
 				accessUrl = if hasBeenPublished then accessUrl else None,
 				fileName = fileName,
 				size = sizeOpt,
-				pid = if(sizeOpt.isDefined) getPid(hash, spec.format.self.uri) else None,
+				pid = if(sizeOpt.isDefined) getPid(hash, spec.format.self.uri, accessUrl) else None,
 				doi = doiOpt,
 				submission = submission,
 				specification = spec,
@@ -136,8 +136,11 @@ class StaticObjectReader(
 		yield
 			init.copy(references = refs)
 
-	private def getPid(hash: Sha256Sum, format: URI)(using Envri): Option[String] =
-		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
+	private def getPid(hash: Sha256Sum, format: URI, accessUrl: Option[URI])(using Envri): Option[String] =
+		if metaVocab.wdcggFormat === format then None
+		else if IcosMirror.isIcosMirrored(accessUrl) then
+			pidFactory.getPidOpt(hash)(using Envri.ICOS).orElse(Some(pidFactory.getPid(hash)))
+		else Some(pidFactory.getPid(hash))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =
 		if metaVocab.wdcggFormat === spec.format.self.uri then

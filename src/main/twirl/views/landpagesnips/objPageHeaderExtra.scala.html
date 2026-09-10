@@ -2,6 +2,7 @@
 @import se.lu.nateko.cp.meta.core.data.DataObject
 @import se.lu.nateko.cp.meta.core.data.staticObjLandingPage
 @import se.lu.nateko.cp.meta.views.LandingPageHelpers.getDownloadURL
+@import se.lu.nateko.cp.meta.services.IcosMirror.IcosMetaHost
 
 @(dobj: DataObject)(implicit envriConf: EnvriConfig)
 <div class="d-flex gap-1 flex-shrink-0">
@@ -12,7 +13,7 @@
 	@dobj.accessUrl.filter(_.getHost != envriConf.dataHost).fold{
 		<a class="btn btn-warning" href="@{getDownloadURL(dobj)}">Download</a>
 	}{ externalUrl =>
-		@defining(if(externalUrl.getHost == "meta.icos-cp.eu") "icos.eu" else externalUrl.getHost){ hostLabel =>
+		@defining(if(externalUrl.getHost == IcosMetaHost) "icos.eu" else externalUrl.getHost){ hostLabel =>
 			<a class="btn btn-warning" href="@{externalUrl}" target="_blank" rel="noopener noreferrer">View on @{hostLabel}</a>
 		}
 	}

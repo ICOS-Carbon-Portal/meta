@@ -35,6 +35,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.citation.StaticObjCitationFetcher
 import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -103,7 +104,8 @@ class Rdf4jUriSerializer(
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
+	private val extCitFetcher = new StaticObjCitationFetcher
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, Some(extCitFetcher))
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)

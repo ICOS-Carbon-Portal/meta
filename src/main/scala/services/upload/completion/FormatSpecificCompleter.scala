@@ -11,4 +11,4 @@ trait FormatSpecificCompleter:
 
 	def getUpdates(hash: Sha256Sum)(using TriplestoreConnection): Seq[RdfUpdate]
 
-	def finalize(hash: Sha256Sum): Future[Report]
+	def finalize(hash: Sha256Sum, mintPid: Boolean): Future[Report]

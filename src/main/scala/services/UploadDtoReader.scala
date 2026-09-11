@@ -46,7 +46,7 @@ object UploadDtoReader{
 					forStation = l3.station.map(_.org.self.uri),
 					samplingHeight = l3.samplingHeight,
 					production = dataProductionToDto(l3.productionInfo),
-					customLandingPage = dobj.accessUrl.filterNot(uri => uri.getPath.endsWith(dobj.hash.id)),
+					customLandingPage = dobj.accessUrl,
 					variables = l3.variables.map(_.map(_.label))
 				))
 				case Right(l2) => Right(StationTimeSeriesDto(
@@ -58,7 +58,8 @@ object UploadDtoReader{
 					acquisitionInterval = l2.acquisition.interval,
 					nRows = l2.nRows,
 					production = l2.productionInfo.map(dataProductionToDto(_)),
-					spatial = l2.coverage.map(readCoverage)
+					spatial = l2.coverage.map(readCoverage),
+					customLandingPage = dobj.accessUrl
 				))
 			},
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>

@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, IcosMirror}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
@@ -35,7 +35,8 @@ class CitationMaker(
 	doiCiter: PlainDoiCiter,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	coreConf: MetaCoreConfig
+	coreConf: MetaCoreConfig,
+	extCitFetcher: Option[StaticObjCitationFetcher] = None
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
@@ -70,9 +71,9 @@ class CitationMaker(
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
 			val coreRefs = sobj.references.copy(
-				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(externalCitation(sobj, CitationStyle.HTML)).orElse(citInfo.citText),
+				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(externalCitation(sobj, CitationStyle.bibtex)).orElse(Some(structuredCitations.toBibTex)),
+				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(externalCitation(sobj, CitationStyle.ris)).orElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
@@ -134,6 +135,18 @@ class CitationMaker(
 		case Some(Success(cit)) => cit
 		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
 	}
+
+	private def presentExternalCitation(eagerRes: Option[Try[String]]): String = eagerRes match
+		case Some(Success(cit)) => cit
+		case _ => "Fetching... try refreshing the page in a few seconds"
+
+	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[String] =
+		if IcosMirror.isIcosMirrored(sobj.accessUrl) then
+			for
+				fetcher <- extCitFetcher
+				url     <- sobj.accessUrl
+			yield presentExternalCitation(fetcher.getCitationEager(url, style))
+		else None
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(

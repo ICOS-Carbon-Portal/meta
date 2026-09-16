@@ -775,7 +775,6 @@
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/hasName">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
-        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Person"/>
         <rdfs:domain>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
@@ -1481,10 +1480,10 @@
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
-            <owl:Restriction>
+            
                 <owl:onProperty rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber"/>
                 <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
+           
         </rdfs:subClassOf>
         <rdfs:label>Sensor Instance</rdfs:label>
     </owl:Class>

@@ -23,7 +23,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
-import play.twirl.api.Html
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -110,9 +109,11 @@ class Rdf4jUriSerializer(
 	}
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
-	private val pageContentMarshalling =
-		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new PageContentMarshalling(config.core.handleProxies, stats)
+	private val landingPageRenderer = new LandingPageRenderer(config.core.handleProxies, vocab)
+	private val landingPages = new LandingPageAssembler(
+		new StatisticsClient(config.statsClient, config.core.envriConfigs)
+	)
+	private val pageContentMarshalling = new PageContentMarshalling(landingPages, landingPageRenderer)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -220,7 +221,8 @@ class Rdf4jUriSerializer(
 				status = if(viewInfo.isEmpty) StatusCodes.NotFound else StatusCodes.OK,
 				entity = HttpEntity(
 					ContentType.WithCharset(MediaTypes.`text/html`, charset),
-					if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "The requested page could not be found.").body else views.html.UriResourcePage(viewInfo).body
+					if(viewInfo.isEmpty) views.html.MessagePage("Page not found", "The requested page could not be found.").body
+					else landingPageRenderer.render(landingPages.genericResource(viewInfo)).body
 				)
 			)
 		)
@@ -236,14 +238,14 @@ class Rdf4jUriSerializer(
 
 		def resourceMarshallings[T : JsonWriter](
 			resId: String, resourceType: String, fetcher: Uri => Validated[T],
-			pageTemplate: (T, PageContentMarshalling.ErrorList) => Html
+			page: (T, PageContentMarshalling.ErrorList) => LandingPage
 		): FLMHR =
 			lazy val itemV = fetcher(uri.withQuery(Uri.Query.Empty))
 			oneOf(
 				PageContentMarshalling.twirlStatusHtmlMarshalling: () =>
 					itemV.result match
 						case Some(value) =>
-							StatusCodes.OK -> pageTemplate(value, itemV.errors)
+							StatusCodes.OK -> landingPageRenderer.render(page(value, itemV.errors))
 						case None =>
 							if itemV.errors.isEmpty then
 								val notFoundPage = views.html.MessagePage(
@@ -263,7 +265,6 @@ class Rdf4jUriSerializer(
 
 		uri.path match
 			case Hash.Object(hash) =>
-				given CpVocab = vocab
 				pageContentMarshalling.staticObjectAsyncMarshaller(() => fetchStaticObjectWithDerived(uri))
 
 			case Hash.Collection(hash) =>
@@ -271,22 +272,22 @@ class Rdf4jUriSerializer(
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", fetchStation,
-				(st, errors) => views.html.StationLandingPage(st, vocab, errors)
+				landingPages.station
 			)
 
 			case UriPath("resources", "organizations", orgId) => resourceMarshallings(
 				orgId, "organization", fetchOrg,
-				views.html.OrgLandingPage(_, _)
+				landingPages.organization
 			)
 
 			case UriPath("resources", "instruments", instrId) => resourceMarshallings(
 				instrId, "instrument", uri => access(lenses.metaInstanceLens)(objReader.getInstrument(uri.toRdf)),
-				views.html.InstrumentLandingPage(_, _)
+				landingPages.instrument
 			)
 
 			case UriPath("resources", "people", persId) => resourceMarshallings(
 				persId, "person", fetchPerson,
-				views.html.PersonLandingPage(_, _)
+				landingPages.person
 			)(using OrganizationExtra.persExtraWriter)
 
 			case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(

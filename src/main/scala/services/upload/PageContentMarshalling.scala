@@ -7,82 +7,65 @@ import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshall
 import akka.http.scaladsl.model.*
 import eu.icoscp.envri.Envri
 import play.twirl.api.Html
-import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
-import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
-import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.linkeddata.{LandingPage, LandingPageAssembler, LandingPageRenderer}
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
-import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
-import views.html.{CollectionLandingPage, LandingPage, MessagePage}
+import views.html.MessagePage
 
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
+class PageContentMarshalling(
+	landingPages: LandingPageAssembler,
+	renderer: LandingPageRenderer
+):
 
 	import PageContentMarshalling.*
 
-	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
-		import statisticsClient.executionContext
-		val template: PageTemplate[StaticObject] = (obj, errors) =>
-			for(
-				dlCount <- statisticsClient.getObjDownloadCount(obj);
-				previewCount <- statisticsClient.getPreviewCount(obj.hash)
-			) yield {
-				val extras = LandingPageExtras(dlCount, previewCount, errors)
-				LandingPage(obj, extras, handleProxies)
-			}
-		makeMarshaller(template, messagePage("Data object not found", _))
-
+	def staticObjectMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticObject]] =
+		makeLandingPageMarshaller(
+			landingPages.staticObject,
+			messagePage("Data object not found", _)
+		)
 
 	def staticCollectionMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
-		import statisticsClient.executionContext
-		val template: PageTemplate[StaticCollection] = (coll, errors) =>
-			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
-			yield {
-				val extras = LandingPageExtras(dlCount, None, errors)
-				CollectionLandingPage(coll, extras, handleProxies)
-			}
-		makeMarshaller(template, messagePage("Collection not found", _))
+		makeLandingPageMarshaller(
+			landingPages.staticCollection,
+			messagePage("Collection not found", _)
+		)
 
 
 	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
-	private def makeMarshaller[T: JsonWriter](
-		templateFetcher: (T, ErrorList) => Future[Html],
+	private def makeLandingPageMarshaller[T: JsonWriter, P <: LandingPage](
+		assemble: (T, ErrorList) => Future[P],
 		notFoundPage: ErrorList => Html,
-	): ToResponseMarshaller[() => Validated[T]] = {
-
-		def fetchHtmlMaker(itemV: Validated[T])(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match
-			case Some(item) =>
-				templateFetcher(item, itemV.errors).map: html =>
-					charset => HttpResponse(entity = getHtml(html, charset))
-
-			case None =>
-				Future.successful:
-					charset => HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage(itemV.errors), charset))
-
-
+	)(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[T]] =
 		Marshaller {exeCtxt => producer =>
 			given ExecutionContext = exeCtxt
 			val itemV: Validated[T] = producer()
-			for (
-				htmlMaker <- fetchHtmlMaker(itemV)
-			) yield List(
-				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
-				WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
-			)
+			fetchHtmlMaker(itemV, assemble, notFoundPage).map: htmlMaker =>
+				List(
+					WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
+					WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
+				)
 		}
-	}
+
+	private def fetchHtmlMaker[T, P <: LandingPage](
+		itemV: Validated[T], assemble: (T, ErrorList) => Future[P], notFoundPage: ErrorList => Html
+	)(using ExecutionContext, Envri, EnvriConfig): Future[HttpCharset => HttpResponse] = itemV.result match
+		case Some(item) => assemble(item, itemV.errors).map: page =>
+			val html = renderer.render(page)
+			charset => HttpResponse(entity = getHtml(html, charset))
+		case None => Future.successful: charset =>
+			HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage(itemV.errors), charset))
 end PageContentMarshalling
 
 object PageContentMarshalling:
 
 	type ErrorList = Seq[String]
-	type PageTemplate[T] = (T, ErrorList) => Future[Html]
-
 	given twirlHtmlEntityMarshaller: ToEntityMarshaller[Html] = Marshaller(
 		_ => html => Future.successful(
 			WithOpenCharset(MediaTypes.`text/html`, getHtml(html, _)) :: Nil

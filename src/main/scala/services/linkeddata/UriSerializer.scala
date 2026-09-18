@@ -14,14 +14,7 @@ import akka.http.scaladsl.model.Uri.Path.Slash
 import akka.http.scaladsl.model.*
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
-import org.eclipse.rdf4j.model.ValueFactory
-import org.eclipse.rdf4j.model.vocabulary.RDF
-import org.eclipse.rdf4j.model.vocabulary.RDFS
-import org.eclipse.rdf4j.query.BindingSet
-import org.eclipse.rdf4j.query.QueryLanguage
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api
@@ -29,25 +22,19 @@ import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.upload.{PageContentMarshalling, StaticObjectReader}
+import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.views.ResourceViewInfo
-import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
 import spray.json.JsonWriter
 
 import java.net.{URI => JavaUri}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Try
-import scala.util.Using
 import se.lu.nateko.cp.meta.services.CpmetaVocab
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 
 
 trait UriSerializer {
@@ -93,17 +80,12 @@ class Rdf4jUriSerializer(
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
-	import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getLabeledResource, hasStatement}
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
-	import RdfLens.{MetaConn, GlobConn, DocConn}
-
-	private given ValueFactory = repo.getValueFactory
-	private val server = new Rdf4jInstanceServer(repo)
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
-	private val objReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val landingPageBuilder = new LandingPageBuilder(repo, vocab, metaVocab, lenses, pidFactory, citer)
 	private val landingPageRenderer = new LandingPageRenderer(config.core.handleProxies, vocab)
 	private val landingPages = new LandingPageAssembler(
 		new StatisticsClient(config.statsClient, config.core.envriConfigs)
@@ -123,74 +105,25 @@ class Rdf4jUriSerializer(
 		),
 		rdfMarshaller
 	)
-	private def inferEnvri(uri: Uri) = EnvriResolver.infer(new java.net.URI(uri.toString)).getOrElse(
+	private def inferEnvri(uri: Uri) = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse:
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
-	)
 
 	def fetchStaticObject(uri: Uri): Validated[StaticObject] = uri.path match
 		case Hash.Object(hash) =>
 			given Envri = inferEnvri(uri)
-			fetchStaticObj(hash)
+			landingPageBuilder.staticObject(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
-
 
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection] = uri.path match
 		case Hash.Collection(hash) =>
 			given Envri = inferEnvri(uri)
-			fetchStaticColl(hash)
+			landingPageBuilder.staticCollection(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
-
-
-	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
-		server.access: conn ?=>
-			val objIri = vocab.getStaticObject(hash)
-			given GlobConn = RdfLens.global(using conn)
-			objReader.fetchStaticObject(objIri)
-
-
-	private def fetchStaticColl(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		access(lenses.collectionLens):
-			val collUri = vocab.getCollection(hash)
-			for
-				given DocConn <- lenses.documentLens
-				coll <- objReader.fetchStaticColl(collUri, Some(hash))
-			yield coll
-
-
-	private def fetchStation(uri: Uri)(using Envri): VOE[Station] = accessMeta:
-		for
-			given DocConn <- lenses.documentLens
-			st <- objReader.getStation(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(st.org.self.uri)
-		yield OrganizationExtra(st, membs)
-
-	private def fetchOrg(uri: Uri)(using Envri): VOE[Organization] = accessMeta:
-		for
-			org <- objReader.getOrganization(uri.toRdf)
-			membs <- citer.attrProvider.getMemberships(org.self.uri)
-		yield OrganizationExtra(org, membs)
-
-	private def fetchPerson(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta:
-		for
-			pers <- objReader.getPerson(uri.toRdf)
-			roles <- citer.attrProvider.getPersonRoles(pers.self.uri)
-		yield PersonExtra(pers, roles)
-
-	private def access[T, C <: TriplestoreConnection](lensV: Validated[RdfLens[C]])(reader: C ?=> Validated[T]): Validated[T] =
-		server.access:
-			lensV.flatMap: lens =>
-				reader(using lens)
-
-	private def accessMeta[T](reader: MetaConn ?=> Validated[T])(using Envri): Validated[T] =
-		access(lenses.metaInstanceLens)(reader)
-
-	// private def readMetaRes[T, C <: MetaConn](uri: Uri)(reader: (DobjMetaReader, IRI) => C ?=> Validated[T])(using Envri): Validated[T] =
-	// 	accessMeta(reader(objReader, uri.toRdf))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
 		given EnvriConfig = envries(envri)
-		getViewInfo(uri, repo).fold(
+		landingPageBuilder.genericResource(uri).fold(
 			err => HttpResponse(
 				status = StatusCodes.InternalServerError,
 				entity = HttpEntity(
@@ -208,12 +141,6 @@ class Rdf4jUriSerializer(
 			)
 		)
 
-
-	private def isObjSpec(uri: Uri): Boolean = server.access:
-		hasStatement(uri.toRdf, metaVocab.hasDataLevel, null)
-
-	private def isLabeledRes(uri: Uri): Boolean = server.access:
-		hasStatement(uri.toRdf, RDFS.LABEL, null)
 
 	private def getMarshallings(uri: Uri)(using Envri, EnvriConfig, ExecutionContext): FLMHR =
 
@@ -246,38 +173,38 @@ class Rdf4jUriSerializer(
 
 		uri.path match
 			case Hash.Object(hash) =>
-				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObj(hash))
+				pageContentMarshalling.staticObjectMarshaller(() => landingPageBuilder.staticObject(hash))
 
 			case Hash.Collection(hash) =>
-				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticColl(hash))
+				pageContentMarshalling.staticCollectionMarshaller(() => landingPageBuilder.staticCollection(hash))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
-				stId, "station", fetchStation,
+				stId, "station", landingPageBuilder.station,
 				landingPages.station
 			)
 
 			case UriPath("resources", "organizations", orgId) => resourceMarshallings(
-				orgId, "organization", fetchOrg,
+				orgId, "organization", landingPageBuilder.organization,
 				landingPages.organization
 			)
 
 			case UriPath("resources", "instruments", instrId) => resourceMarshallings(
-				instrId, "instrument", uri => access(lenses.metaInstanceLens)(objReader.getInstrument(uri.toRdf)),
+				instrId, "instrument", landingPageBuilder.instrument,
 				landingPages.instrument
 			)
 
 			case UriPath("resources", "people", persId) => resourceMarshallings(
-				persId, "person", fetchPerson,
+				persId, "person", landingPageBuilder.person,
 				landingPages.person
 			)(using OrganizationExtra.persExtraWriter)
 
-			case Slash(Segment("resources", _)) if isObjSpec(uri) => oneOf(
-				customJson(() => access(lenses.documentLens)(objReader.getSpecification(uri.toRdf))),
+			case Slash(Segment("resources", _)) if landingPageBuilder.isObjectSpecification(uri) => oneOf(
+				customJson(() => landingPageBuilder.specification(uri)),
 				defaultHtml(uri)
 			)
 
-			case _ if isLabeledRes(uri) => oneOf(
-				customJson(() => accessMeta(getLabeledResource(uri.toRdf))),
+			case _ if landingPageBuilder.isLabeledResource(uri) => oneOf(
+				customJson(() => landingPageBuilder.labeledResource(uri)),
 				defaultHtml(uri)
 			)
 
@@ -300,93 +227,11 @@ end Rdf4jUriSerializer
 private object Rdf4jUriSerializer{
 
 	type FLMHR = Future[List[Marshalling[HttpResponse]]]
-	type VOE[O] = Validated[OrganizationExtra[O]]
-
-	val Limit = 500
 
 	private def getStatementsIter(res: Uri, repo: Repository): CloseableIterator[Statement] = {
 		val uri = repo.getValueFactory.createIRI(res.toString)
 		repo.access(conn => conn.getStatements(uri, null, null, false)) ++
 		repo.access(conn => conn.getStatements(null, null, uri, false))
 	}
-
-	def getViewInfo(res: Uri, repo: Repository): Try[ResourceViewInfo] = Using.Manager{use =>
-		val conn = use(repo.getConnection())
-
-		val propInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceViewInfoQuery(res)).evaluate().asCloseableIterator
-		).map{bset =>
-
-			val propUriOpt: Option[UriResource] = getOptUriRes(bset, "prop", "propLabel")
-
-			val propValueOpt: Option[PropValue] = bset.getValue("val") match {
-				case uri: IRI =>
-					val valLabel = getOptLit(bset, "valLabel")
-					Some(Left(UriResource(uri.toJava, valLabel, Nil)))
-				case lit: Literal =>
-					Some(Right(lit.stringValue))
-				case _ => None
-			}
-			propUriOpt zip propValueOpt
-		}.flatten.take(Limit).toIndexedSeq
-
-		val usageInfos = use(
-			conn.prepareTupleQuery(QueryLanguage.SPARQL, resourceUsageInfoQuery(res)).evaluate().asCloseableIterator
-		).map{bset =>
-			getOptUriRes(bset, "obj", "objLabel") zip getOptUriRes(bset, "prop", "propLabel")
-		}.flatten.take(Limit).toIndexedSeq
-
-		val uri = JavaUri.create(res.toString)
-		val seed = ResourceViewInfo(UriResource(uri, None, Nil), Nil, Nil, usageInfos)
-
-		propInfos.foldLeft(seed)((acc, propAndVal) => propAndVal match {
-
-			case (UriResource(propUri, _, _), Right(strVal)) if(propUri === RDFS.LABEL) =>
-				acc.copy(res = acc.res.copy(label = Some(strVal)))
-
-			case (UriResource(propUri, _, _), Right(strVal)) if(propUri === RDFS.COMMENT) =>
-				acc.copy(res = acc.res.copy(comments = acc.res.comments :+ strVal))
-
-			case (UriResource(propUri, _, _), Left(rdfType)) if(propUri === RDF.TYPE) =>
-				acc.copy(types = rdfType :: acc.types)
-
-			case _ =>
-				acc.copy(propValues = propAndVal :: acc.propValues)
-		})
-	}
-
-
-	private def getOptUriRes(bset: BindingSet, varName: String, lblName: String): Option[UriResource] = {
-		bset.getValue(varName) match {
-			case uri: IRI =>
-				val label = getOptLit(bset, lblName)
-				Some(UriResource(uri.toJava, label, Nil))
-			case _ => None
-		}
-	}
-
-	private def getOptLit(bset: BindingSet, varName: String): Option[String] = {
-		bset.getValue(varName) match {
-			case null => None
-			case lit: Literal => Some(lit.stringValue)
-			case _ => None
-		}
-	}
-
-	def resourceViewInfoQuery(res: Uri) =
-		s"""SELECT ?prop ?propLabel ?val ?valLabel
-		|WHERE{
-		|	<${res.toString}> ?prop ?val .
-		|	OPTIONAL {?prop rdfs:label ?propLabel}
-		|	OPTIONAL {?val rdfs:label ?valLabel}
-		|}""".stripMargin
-
-	def resourceUsageInfoQuery(res: Uri) =
-		s"""SELECT ?obj ?objLabel ?prop ?propLabel
-		|WHERE{
-		|	?obj ?prop <${res.toString}> .
-		|	OPTIONAL {?obj rdfs:label ?objLabel}
-		|	OPTIONAL {?prop rdfs:label ?propLabel}
-		|}""".stripMargin
 
 }

@@ -181,27 +181,26 @@ final class LandingPageBuilder(
 			Using.resource(snapshot.getConnection()): target =>
 				val seen = mutable.Set.empty[IRI]
 				var frontier = Set(root)
-				var depth = 0
-				while frontier.nonEmpty && depth <= links.maxDepth do
-					val batch = frontier.diff(seen)
+				while frontier.nonEmpty do
+					val batch = frontier
 					seen ++= batch
 					val statements = fetchBatch(conn, target, batch, links.inverse)
-					val predicatesOf = statements
+					val statementsOf = statements
 						.collect:
-							case (subject: IRI, predicate, _, _) if batch.contains(subject) => subject -> predicate
+							case (subject: IRI, predicate, obj, _) if batch.contains(subject) =>
+								subject -> (predicate, obj)
 						.groupMap(_._1)(_._2)
 						.withDefaultValue(Nil)
 
 					val forward = statements.collect:
 						case (subject: IRI, predicate, obj: IRI, _) if
-							batch.contains(subject) && links.follows(subject, predicate, predicatesOf(subject)) =>
+							batch.contains(subject) && links.follows(subject, predicate, statementsOf(subject)) =>
 							obj
 					val backward = statements.collect:
 						case (subject: IRI, predicate, obj: IRI, _) if
 							batch.contains(obj) && links.inverse.contains(predicate) =>
 							subject
 					frontier = (forward ++ backward).toSet.diff(seen)
-					depth += 1
 			snapshot
 		catch
 			case err: Throwable =>
@@ -262,17 +261,16 @@ final class LandingPageBuilder(
 		)
 
 	private val staticObjectLinks = LinkPolicy(
-		maxDepth = StaticObjectLinkDepth,
 		inverse = Set(
 			metaVocab.dcterms.hasPart,
 			metaVocab.isNextVersionOf,
 			metaVocab.atOrganization,
 			metaVocab.ssn.hasDeployment
 		),
-		follows = (_, predicate, subjectPredicates) =>
+		follows = (_, predicate, subjectStatements) =>
 			staticObjectForwardLinks.contains(predicate) ||
 				predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
-				(predicate === metaVocab.dcterms.hasPart && subjectPredicates.contains(metaVocab.isNextVersionOf))
+				(predicate === metaVocab.dcterms.hasPart && isPlainCollection(subjectStatements))
 	)
 
 	/**
@@ -283,13 +281,20 @@ final class LandingPageBuilder(
 	 * members are of no interest, and there can be very many of them.
 	 */
 	private def collectionLinks(collectionIri: IRI) = LinkPolicy(
-		maxDepth = CollectionLinkDepth,
 		inverse = Set(metaVocab.dcterms.hasPart, metaVocab.isNextVersionOf),
-		follows = (subject, predicate, subjectPredicates) =>
+		follows = (subject, predicate, subjectStatements) =>
 			collectionForwardLinks.contains(predicate) ||
 				(predicate === metaVocab.dcterms.hasPart &&
-					(subject === collectionIri || subjectPredicates.contains(metaVocab.isNextVersionOf)))
+					(subject === collectionIri || isPlainCollection(subjectStatements)))
 	)
+
+	/**
+	 * The readers only walk `dcterms:hasPart` out of a plain collection -- the small wrapper a
+	 * version chain is made of -- so that is the only place the crawl follows it too. Following it
+	 * out of an ordinary collection would drag in every one of its members, and their metadata.
+	 */
+	private def isPlainCollection(subjectStatements: Seq[(IRI, Value)]): Boolean =
+		subjectStatements.contains(RDF.TYPE -> metaVocab.plainCollectionClass)
 
 	private def fetchBatch(
 		conn: SparqlRunner,
@@ -343,24 +348,22 @@ final class LandingPageBuilder(
 
 object LandingPageBuilder:
 	private val ResultLimit = 500
-	// Longest metadata chain currently rendered is object -> spec -> dataset -> variable -> value type -> quantity kind.
-	private val StaticObjectLinkDepth = 5
-	// Longest chain is collection -> next version -> its members -> submission -> submitter -> webpage elements -> link box.
-	private val CollectionLinkDepth = 6
 
 	/**
 	 * The shape of the metadata closure a landing page needs: which properties to follow out of the
-	 * resources fetched so far, which to follow into them, and how long a chain of them can get.
+	 * resources fetched so far, and which to follow into them. The crawl follows them to a fixpoint:
+	 * every resource is fetched at most once, so the closure is finite and needs no cutoff -- and
+	 * with no cutoff there is no page that silently comes out with a part of its metadata missing.
+	 * Keeping pages cheap is therefore the job of these two properties alone, and they are meant to
+	 * describe exactly what the readers walk.
 	 *
-	 * `follows` is also given the subject and its properties, because whether a link is worth
-	 * following can depend on what the subject turned out to be: `dcterms:hasPart`, for one, leads
-	 * to all the members of a collection, which are only wanted for some of the collections met.
+	 * `follows` is given the subject and the statements it turned out to have, as well as the
+	 * predicate, because whether a link is worth following can depend on what the subject is.
 	 */
 	private class LinkPolicy(
-		val maxDepth: Int,
 		val inverse: Set[IRI],
-		/** (subject, predicate, the properties the subject turned out to have) */
-		val follows: (IRI, IRI, Seq[IRI]) => Boolean
+		/** (subject, predicate, the properties and values the subject turned out to have) */
+		val follows: (IRI, IRI, Seq[(IRI, Value)]) => Boolean
 	)
 
 	private def getOptUriResource(bindings: BindingSet, valueName: String, labelName: String): Option[UriResource] =

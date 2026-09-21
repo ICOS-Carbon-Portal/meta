@@ -17,7 +17,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{PidFactory, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{
+	AtcStationSpecifics, DataObject, DatasetType, DocObject, EnvriConfig, EnvriConfigs, Position,
+	StaticObject, TimeInterval, UriResource
+}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageBuilder
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -64,54 +67,200 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 		fixture.repo.shutDown()
 		system.terminate()
 
-	/** Builds one page, requires it to have been built without errors, and returns the query counts. */
-	private def countQueries[T](page: => Validated[T]): QueryCounts =
+	/**
+	 * Builds one page, requiring it to have been built without errors, and captures the query
+	 * counts of that build. Called from a `lazy val` so that the counts always belong to the
+	 * build, no matter which of the tests sharing the page happens to run first.
+	 */
+	private def build[T](page: => Validated[T]): (T, QueryCounts) =
 		counter.reset()
 		val built = page
 		val counts = counter.snapshot
 		assert(built.errors === Nil)
-		assert(built.result.isDefined)
-		counts
+		built.result.getOrElse(fail("the page was not built at all")) -> counts
+
+	private def asDataObject(obj: StaticObject): DataObject = obj match
+		case dobj: DataObject => dobj
+		case other => fail(s"Expected a DataObject, got $other")
+
+	private def asDocObject(obj: StaticObject): DocObject = obj match
+		case doc: DocObject => doc
+		case other => fail(s"Expected a DocObject, got $other")
 
 	describe("data object landing page"):
+		lazy val (page, counts) = build(builder.staticObject(fixture.dobjHash))
+
 		it("reads the object with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.staticObject(fixture.dobjHash))
 			assert(counts === QueryCounts(connections = 1, statements = 91, existence = 6, sparql = 0))
 
+		it("has the file-level metadata of the object"):
+			val dobj = asDataObject(page)
+			assert(dobj.hash === fixture.dobjHash)
+			assert(dobj.fileName === "test_data.csv")
+			assert(dobj.size === Some(12345L))
+			assert(dobj.accessUrl === Some(fixture.dobjAccessUrl))
+			assert(dobj.pid === Some(s"11676/${fixture.dobjHash.id}"))
+			assert(dobj.doi === None)
+			assert(dobj.submission.submitter.name === "Carbon Portal")
+			assert(dobj.submission.start === fixture.submStart)
+			assert(dobj.submission.stop === Some(fixture.submStop))
+
+		it("has the specification of the object"):
+			val spec = asDataObject(page).specification
+			assert(spec.self.uri === fixture.specResource)
+			assert(spec.self.label === Some("Test time series"))
+			assert(spec.dataLevel === 2)
+			assert(spec.specificDatasetType === DatasetType.StationTimeSeries)
+			assert(spec.project.self.label === Some("ICOS"))
+			assert(spec.theme.self.label === Some("Atmosphere"))
+			assert(spec.format.self.label === Some("ASCII CSV time series"))
+			assert(spec.encoding.label === Some("plain text"))
+
+		it("has the station time series acquisition metadata"):
+			val l2 = asDataObject(page).specificInfo match
+				case Right(stationTimeSeries) => stationTimeSeries
+				case Left(spatioTemporal) => fail(s"Expected station time series metadata, got $spatioTemporal")
+			assert(l2.nRows === Some(100))
+			assert(l2.columns === None)
+			assert(l2.productionInfo === None)
+			assert(l2.acquisition.station.id === "TST")
+			assert(l2.acquisition.station.org.name === "Test station")
+			assert(l2.acquisition.interval === Some(TimeInterval(fixture.acqStart, fixture.acqStop)))
+			assert(l2.acquisition.samplingHeight === Some(50f))
+			assert(l2.acquisition.instruments.map(_.label) === Seq(Some("Test instrument")))
+
+		it("knows the collection the object is a part of, and that it is the only version"):
+			val dobj = asDataObject(page)
+			assert(dobj.parentCollections.map(_.label) === Seq(Some("Test collection")))
+			assert(dobj.previousVersion === None)
+			assert(dobj.nextVersion === None)
+			assert(dobj.latestVersion === Left(fixture.dobjResource))
+
 	describe("document object landing page"):
+		lazy val (page, counts) = build(builder.staticObject(fixture.docHash))
+
 		it("reads the document with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.staticObject(fixture.docHash))
 			assert(counts === QueryCounts(connections = 1, statements = 33, existence = 2, sparql = 0))
 
+		it("is built into a document object with its title and authors"):
+			val doc = asDocObject(page)
+			assert(doc.hash === fixture.docHash)
+			assert(doc.fileName === "test_doc.pdf")
+			assert(doc.size === Some(54321L))
+			assert(doc.accessUrl === Some(fixture.docAccessUrl))
+			assert(doc.pid === Some(s"11676/${fixture.docHash.id}"))
+			assert(doc.description === None)
+			assert(doc.references.title === Some("Test document"))
+			assert(doc.references.authors.map(_.map(_.self.label)) === Some(Seq(Some("Test Person"))))
+			assert(doc.submission.submitter.name === "Carbon Portal")
+			assert(doc.parentCollections.map(_.label) === Seq(Some("Test collection")))
+
 	describe("collection landing page"):
+		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
+
 		it("reads the collection with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.staticCollection(fixture.collHash))
 			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
 
+		it("is built into a collection with both of its members"):
+			assert(page.res === fixture.collResource)
+			assert(page.hash === fixture.collHash)
+			assert(page.title === "Test collection")
+			assert(page.description === Some("A collection of test items"))
+			assert(page.creator.name === "Carbon Portal")
+			assert(page.doi === None)
+			assert(page.members.map(_.res).toSet === Set(fixture.dobjResource, fixture.docResource))
+			//members are sorted by name, and a document object is named by its title
+			assert(page.members.map(_.name) === Seq("Test document", "test_data.csv"))
+			assert(page.parentCollections === Nil)
+
 	describe("station landing page"):
+		lazy val (page, counts) = build(builder.station(fixture.stationUri))
+
 		it("reads the station and its memberships with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.station(fixture.stationUri))
 			assert(counts === QueryCounts(connections = 1, statements = 40, existence = 3, sparql = 0))
 
+		it("is built into a station with its location and country"):
+			val station = page.org
+			assert(station.id === "TST")
+			assert(station.org.self.uri === fixture.stationResource)
+			assert(station.org.name === "Test station")
+			assert(station.location === Some(Position(56.1, 13.4, Some(150f), Some("TST"), None)))
+			assert(station.countryCode.map(_.code) === Some("SE"))
+			assert(station.responsibleOrganization === None)
+			assert(station.specificInfo.isInstanceOf[AtcStationSpecifics])
+
+		it("is built with the station's staff"):
+			assert(page.staff.map(_.person.self.label) === Seq(Some("Test Person")))
+			assert(page.staff.map(_.role.role.label) === Seq(Some("PI")))
+			assert(page.staff.map(_.role.start) === Seq(Some(fixture.acqStart)))
+			assert(page.currentStaff.size === 1)
+			assert(page.formerStaff === Nil)
+
 	describe("organization landing page"):
+		lazy val (page, counts) = build(builder.organization(fixture.orgUri))
+
 		it("reads the organization and its memberships with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.organization(fixture.orgUri))
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
 
+		it("is built into an organization without staff of its own"):
+			assert(page.org.self.label === Some("CP"))
+			assert(page.org.name === "Carbon Portal")
+			assert(page.org.email === None)
+			assert(page.org.website === None)
+			//the only membership in the fixture is at the station, not at this organization
+			assert(page.staff === Nil)
+
 	describe("person landing page"):
+		lazy val (page, counts) = build(builder.person(fixture.personUri))
+
 		it("reads the person and their roles with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.person(fixture.personUri))
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
 
+		it("is built into a person with their role at the station"):
+			assert(page.person.self.uri === fixture.personResource)
+			assert(page.person.firstName === "Test")
+			assert(page.person.lastName === "Person")
+			assert(page.person.orcid === None)
+			assert(page.roles.map(_.org.label) === Seq(Some("TST")))
+			assert(page.roles.map(_.role.role.label) === Seq(Some("PI")))
+
 	describe("instrument landing page"):
+		lazy val (page, counts) = build(builder.instrument(fixture.instrumentUri))
+
 		it("reads the instrument with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.instrument(fixture.instrumentUri))
 			assert(counts === QueryCounts(connections = 1, statements = 18, existence = 1, sparql = 0))
 
+		it("is built into an instrument with its model, serial number and owner"):
+			assert(page.self.uri === fixture.instrumentResource)
+			assert(page.self.label === Some("Test instrument"))
+			assert(page.model === "Picarro G2401")
+			assert(page.serialNumber === "SN-1")
+			assert(page.name === Some("Test instrument"))
+			assert(page.owner.map(_.name) === Some("Carbon Portal"))
+			assert(page.vendor === None)
+			assert(page.parts === Nil)
+			assert(page.partOf === None)
+			assert(page.deployments === Nil)
+
 	describe("object specification landing page"):
+		lazy val (page, counts) = build(builder.specification(fixture.specUri))
+
 		it("reads the specification with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.specification(fixture.specUri))
 			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 0, sparql = 0))
+
+		it("is built into a specification with project, theme, format and encoding"):
+			assert(page.self.uri === fixture.specResource)
+			assert(page.self.label === Some("Test time series"))
+			assert(page.dataLevel === 2)
+			assert(page.specificDatasetType === DatasetType.StationTimeSeries)
+			assert(page.project.self.label === Some("ICOS"))
+			assert(page.theme.self.uri === fixture.themeResource)
+			assert(page.theme.icon === URI("https://static.icos-cp.eu/atmosphere.svg"))
+			assert(page.format.self.label === Some("ASCII CSV time series"))
+			assert(page.encoding.label === Some("plain text"))
+			assert(page.datasetSpec === None)
+			assert(page.documentation === Nil)
+			assert(page.keywords === None)
 
 		it("recognizes the specification with a single existence check"):
 			counter.reset()
@@ -119,9 +268,13 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(counter.snapshot === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
 
 	describe("labeled resource landing page"):
+		lazy val (page, counts) = build(builder.labeledResource(fixture.themeUri))
+
 		it("reads the labeled resource with the expected number of RDF-store queries"):
-			val counts = countQueries(builder.labeledResource(fixture.themeUri))
 			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
+
+		it("is built into the URI, label and comments of the resource"):
+			assert(page === UriResource(fixture.themeResource, Some("Atmosphere"), Nil))
 
 		it("recognizes the labeled resource with a single existence check"):
 			counter.reset()
@@ -129,13 +282,30 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(counter.snapshot === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
 
 	describe("generic (fallback) resource page"):
-		it("is served by exactly two SPARQL queries"):
+		lazy val (page, counts) =
 			counter.reset()
-			val viewInfo = builder.genericResource(fixture.stationUri)
-			val counts = counter.snapshot
-			assert(viewInfo.isSuccess)
-			assert(!viewInfo.get.isEmpty)
+			val viewInfo = builder.genericResource(fixture.stationUri).get
+			viewInfo -> counter.snapshot
+
+		it("is served by exactly two SPARQL queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 2))
+
+		it("is built into the properties, types and usages of the resource"):
+			assert(!page.isEmpty)
+			assert(page.res === UriResource(fixture.stationResource, Some("TST"), Nil))
+			assert(page.types.map(_.uri) === List(fixture.stationClassResource))
+
+			val props = page.propValues.map((prop, value) => prop.uri.toString -> value)
+			assert(props.contains(fixture.metaVocab.hasStationId.stringValue -> Right("TST")))
+			assert(props.contains(fixture.metaVocab.hasName.stringValue -> Right("Test station")))
+
+			//the acquisition of the data object, and the membership of the person, point at the station
+			val usages = page.usage.map((subj, prop) => subj.uri.toString -> prop.uri.toString)
+			assert(usages.contains(
+				s"http://meta.icos-cp.eu/resources/acq_${fixture.dobjHash.id}" ->
+					fixture.metaVocab.prov.wasAssociatedWith.stringValue
+			))
+			assert(usages.exists((_, prop) => prop == fixture.metaVocab.atOrganization.stringValue))
 
 end LandingPageBuilderTests
 
@@ -242,10 +412,23 @@ object LandingPageBuilderTests:
 		val specUri = Uri(spec.stringValue)
 		val themeUri = Uri(vocab.atmoTheme.stringValue)
 
-		private val acqStart = Instant.parse("2021-01-01T00:00:00Z")
-		private val acqStop = Instant.parse("2021-12-31T23:59:59Z")
-		private val submStart = Instant.parse("2022-01-02T10:00:00Z")
-		private val submStop = Instant.parse("2022-01-02T11:00:00Z")
+		val dobjResource = URI(dobj.stringValue)
+		val docResource = URI(doc.stringValue)
+		val collResource = URI(coll.stringValue)
+		val stationResource = URI(station.stringValue)
+		val personResource = URI(person.stringValue)
+		val instrumentResource = URI(instrument.stringValue)
+		val specResource = URI(spec.stringValue)
+		val themeResource = URI(vocab.atmoTheme.stringValue)
+		val stationClassResource = URI(metaVocab.atmoStationClass.stringValue)
+
+		val dobjAccessUrl = vocab.getStaticObjectAccessUrl(dobjHash)
+		val docAccessUrl = vocab.getStaticObjectAccessUrl(docHash)
+
+		val acqStart = Instant.parse("2021-01-01T00:00:00Z")
+		val acqStop = Instant.parse("2021-12-31T23:59:59Z")
+		val submStart = Instant.parse("2022-01-02T10:00:00Z")
+		val submStop = Instant.parse("2022-01-02T11:00:00Z")
 
 		Using.resource(repo.getConnection()): conn =>
 			def add(graph: IRI)(triples: (IRI, IRI, Value)*): Unit =

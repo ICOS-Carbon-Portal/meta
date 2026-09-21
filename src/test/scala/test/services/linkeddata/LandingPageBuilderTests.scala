@@ -6,12 +6,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.query.{QueryLanguage, TupleQuery}
 import org.eclipse.rdf4j.repository.base.{RepositoryConnectionWrapper, RepositoryWrapper}
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, RepositoryResult}
+import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
@@ -74,7 +74,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	 */
 	private def build[T](page: => Validated[T]): (T, QueryCounts) =
 		counter.reset()
-		val built = page
+		val built = page()
 		val counts = counter.snapshot
 		assert(built.errors === Nil)
 		built.result.getOrElse(fail("the page was not built at all")) -> counts
@@ -374,15 +374,6 @@ object LandingPageBuilderTests:
 
 		val vocab = CpVocab(repo.getValueFactory)
 		val metaVocab = CpmetaVocab(repo.getValueFactory)
-		private val factory = repo.getValueFactory
-		private def iri(uri: String): IRI = factory.createIRI(uri)
-
-		private val cpmetaGraph = iri("http://meta.icos-cp.eu/resources/cpmeta/")
-		private val metaGraph = iri("http://meta.icos-cp.eu/resources/icos/")
-		private val docsGraph = iri("http://meta.icos-cp.eu/documents/")
-		private val collsGraph = iri("http://meta.icos-cp.eu/collections/")
-		//the RDF graph of the 'tscsv' data-object instance server (format csvWithIso8601tsFirstCol)
-		private val dobjGraph = iri("http://meta.icos-cp.eu/resources/tscsv/")
 
 		private def hash(seed: Byte) = Sha256Sum.fromBytes(Array.fill(18)(seed)).get
 		val dobjHash = hash(1)
@@ -392,17 +383,10 @@ object LandingPageBuilderTests:
 		private val org = vocab.cp
 		private val station = vocab.getStation(UriId("TST"))
 		private val person = vocab.getPerson(UriId("Test_Person"))
-		private val membership = vocab.getMembership(UriId("TST_PI_Person"))
-		private val role = iri("http://meta.icos-cp.eu/resources/roles/PI")
 		private val instrument = vocab.getInstrument(UriId("TST_1"))
 		private val spec = vocab.getObjectSpecification(UriId("testTimeSeries"))
-		private val format = iri("http://meta.icos-cp.eu/ontologies/cpmeta/csvWithIso8601tsFirstCol")
-		private val encoding = iri("http://meta.icos-cp.eu/ontologies/cpmeta/asciiEncoding")
 		private val dobj = vocab.getStaticObject(dobjHash)
-		private val acquisition = vocab.getAcquisition(dobjHash)
-		private val submission = vocab.getSubmission(dobjHash)
 		private val doc = vocab.getStaticObject(docHash)
-		private val docSubmission = vocab.getSubmission(docHash)
 		private val coll = vocab.getCollection(collHash)
 
 		val stationUri = Uri(station.stringValue)
@@ -430,100 +414,11 @@ object LandingPageBuilderTests:
 		val submStart = Instant.parse("2022-01-02T10:00:00Z")
 		val submStop = Instant.parse("2022-01-02T11:00:00Z")
 
-		Using.resource(repo.getConnection()): conn =>
-			def add(graph: IRI)(triples: (IRI, IRI, Value)*): Unit =
-				triples.foreach: (subj, pred, obj) =>
-					conn.add(subj, pred, obj, graph)
-
-			add(cpmetaGraph)(
-				(vocab.icosProject, RDFS.LABEL, vocab.lit("ICOS")),
-				(vocab.atmoTheme, RDFS.LABEL, vocab.lit("Atmosphere")),
-				(vocab.atmoTheme, metaVocab.hasIcon, vocab.lit(URI("https://static.icos-cp.eu/atmosphere.svg"))),
-				(format, RDFS.LABEL, vocab.lit("ASCII CSV time series")),
-				(encoding, RDFS.LABEL, vocab.lit("plain text")),
-				(role, RDF.TYPE, metaVocab.roleClass),
-				(role, RDFS.LABEL, vocab.lit("PI")),
-				(org, RDF.TYPE, metaVocab.orgClass),
-				(org, RDFS.LABEL, vocab.lit("CP")),
-				(org, metaVocab.hasName, vocab.lit("Carbon Portal")),
-				(spec, RDF.TYPE, metaVocab.dataObjectSpecClass),
-				(spec, RDFS.LABEL, vocab.lit("Test time series")),
-				(spec, metaVocab.hasAssociatedProject, vocab.icosProject),
-				(spec, metaVocab.hasDataTheme, vocab.atmoTheme),
-				(spec, metaVocab.hasFormat, format),
-				(spec, metaVocab.hasEncoding, encoding),
-				(spec, metaVocab.hasSpecificDatasetType, metaVocab.stationTimeSeriesDs),
-				(spec, metaVocab.hasDataLevel, vocab.lit(2))
-			)
-
-			add(metaGraph)(
-				(station, RDF.TYPE, metaVocab.atmoStationClass),
-				(station, RDFS.LABEL, vocab.lit("TST")),
-				(station, metaVocab.hasName, vocab.lit("Test station")),
-				(station, metaVocab.hasStationId, vocab.lit("TST")),
-				(station, metaVocab.hasLatitude, vocab.lit(56.1)),
-				(station, metaVocab.hasLongitude, vocab.lit(13.4)),
-				(station, metaVocab.hasElevation, vocab.lit(150f)),
-				(station, metaVocab.countryCode, vocab.lit("SE")),
-				(person, RDF.TYPE, metaVocab.personClass),
-				(person, RDFS.LABEL, vocab.lit("Test Person")),
-				(person, metaVocab.hasFirstName, vocab.lit("Test")),
-				(person, metaVocab.hasLastName, vocab.lit("Person")),
-				(person, metaVocab.hasMembership, membership),
-				(membership, RDF.TYPE, metaVocab.membershipClass),
-				(membership, metaVocab.atOrganization, station),
-				(membership, metaVocab.hasRole, role),
-				(membership, metaVocab.hasStartTime, vocab.lit(acqStart)),
-				(instrument, RDF.TYPE, metaVocab.instrumentClass),
-				(instrument, metaVocab.hasName, vocab.lit("Test instrument")),
-				(instrument, metaVocab.hasModel, vocab.lit("Picarro G2401")),
-				(instrument, metaVocab.hasSerialNumber, vocab.lit("SN-1")),
-				(instrument, metaVocab.hasInstrumentOwner, org)
-			)
-
-			add(dobjGraph)(
-				(dobj, RDF.TYPE, metaVocab.dataObjectClass),
-				(dobj, metaVocab.hasObjectSpec, spec),
-				(dobj, metaVocab.hasSha256sum, vocab.lit(dobjHash.base64, XSD.BASE64BINARY)),
-				(dobj, metaVocab.hasName, vocab.lit("test_data.csv")),
-				(dobj, metaVocab.hasSizeInBytes, vocab.lit(12345L)),
-				(dobj, metaVocab.hasNumberOfRows, vocab.lit(100)),
-				(dobj, metaVocab.wasSubmittedBy, submission),
-				(dobj, metaVocab.wasAcquiredBy, acquisition),
-				(submission, RDF.TYPE, metaVocab.submissionClass),
-				(submission, metaVocab.prov.wasAssociatedWith, org),
-				(submission, metaVocab.prov.startedAtTime, vocab.lit(submStart)),
-				(submission, metaVocab.prov.endedAtTime, vocab.lit(submStop)),
-				(acquisition, RDF.TYPE, metaVocab.aquisitionClass),
-				(acquisition, metaVocab.prov.wasAssociatedWith, station),
-				(acquisition, metaVocab.prov.startedAtTime, vocab.lit(acqStart)),
-				(acquisition, metaVocab.prov.endedAtTime, vocab.lit(acqStop)),
-				(acquisition, metaVocab.hasSamplingHeight, vocab.lit(50f)),
-				(acquisition, metaVocab.wasPerformedWith, instrument)
-			)
-
-			add(docsGraph)(
-				(doc, RDF.TYPE, metaVocab.docObjectClass),
-				(doc, metaVocab.hasSha256sum, vocab.lit(docHash.base64, XSD.BASE64BINARY)),
-				(doc, metaVocab.hasName, vocab.lit("test_doc.pdf")),
-				(doc, metaVocab.hasSizeInBytes, vocab.lit(54321L)),
-				(doc, metaVocab.dcterms.title, vocab.lit("Test document")),
-				(doc, metaVocab.dcterms.creator, person),
-				(doc, metaVocab.wasSubmittedBy, docSubmission),
-				(docSubmission, RDF.TYPE, metaVocab.submissionClass),
-				(docSubmission, metaVocab.prov.wasAssociatedWith, org),
-				(docSubmission, metaVocab.prov.startedAtTime, vocab.lit(submStart)),
-				(docSubmission, metaVocab.prov.endedAtTime, vocab.lit(submStop))
-			)
-
-			add(collsGraph)(
-				(coll, RDF.TYPE, metaVocab.collectionClass),
-				(coll, metaVocab.dcterms.title, vocab.lit("Test collection")),
-				(coll, metaVocab.dcterms.description, vocab.lit("A collection of test items")),
-				(coll, metaVocab.dcterms.creator, org),
-				(coll, metaVocab.dcterms.hasPart, dobj),
-				(coll, metaVocab.dcterms.hasPart, doc)
-			)
+		Using.resources(
+			getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
+			repo.getConnection()
+		): (stream, conn) =>
+			conn.add(stream, "", RDFFormat.TRIG)
 
 	end Fixture
 

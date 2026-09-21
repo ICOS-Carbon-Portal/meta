@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, Literal, Resource, Value, ValueFactory}
-import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS, XSD}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -62,12 +62,15 @@ final class LandingPageBuilder(
 	def staticCollectionWithDerived(uri: Uri, hash: Sha256Sum)(using Envri): Future[Validated[StaticCollection]] =
 		enrich(staticCollection(hash))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
 
-	def station(uri: Uri)(using Envri): Validated[OrganizationExtra[Station]] = accessMeta:
-		for
-			given DocConn <- lenses.documentLens
-			station <- objectReader.getStation(uri.toRdf)
-			memberships <- attribution.getMemberships(station.org.self.uri)
-		yield OrganizationExtra(station, memberships)
+	def station(uri: Uri)(using Envri): Validated[OrganizationExtra[Station]] =
+		val stationIri = uri.toRdf
+		fromSnapshot(thematicCentres + stationIri, stationLinks): snapshotConn =>
+			for
+				//DocConn is a MetaConn, so the memberships are read through it too, as before
+				given DocConn <- lenses.documentLens.map(lens => lens(using snapshotConn))
+				station <- objectReader.getStation(stationIri)
+				memberships <- attribution.getMemberships(station.org.self.uri)
+			yield OrganizationExtra(station, memberships)
 
 	def organization(uri: Uri)(using Envri): Validated[OrganizationExtra[Organization]] = accessMeta:
 		for
@@ -133,13 +136,13 @@ final class LandingPageBuilder(
 
 	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
 		val objectIri = vocab.getStaticObject(hash)
-		fromSnapshot(objectIri, staticObjectLinks): snapshotConn =>
+		fromSnapshot(thematicCentres + objectIri, staticObjectLinks): snapshotConn =>
 			given GlobConn = RdfLens.global(using snapshotConn)
 			objectReader.fetchStaticObject(objectIri)
 
 	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		val collectionIri = vocab.getCollection(hash)
-		fromSnapshot(collectionIri, collectionLinks(collectionIri)): snapshotConn =>
+		fromSnapshot(Set(collectionIri), collectionLinks(collectionIri)): snapshotConn =>
 			for
 				collLens <- lenses.collectionLens
 				docLens <- lenses.documentLens
@@ -149,7 +152,7 @@ final class LandingPageBuilder(
 			yield collection
 
 	/**
-	 * Reads the metadata closure of `root` into a short-lived local repository, and lets `reader`
+	 * Reads the metadata closure of `roots` into a short-lived local repository, and lets `reader`
 	 * build the page from that snapshot instead of from the RDF store.
 	 *
 	 * The readers predate the RDF-store service and follow links one statement at a time. Against a
@@ -160,11 +163,11 @@ final class LandingPageBuilder(
 	 * snapshot retains the named graphs of the statements, so the readers can keep using their
 	 * normal graph lenses, without making any further network requests.
 	 */
-	private def fromSnapshot[T](root: IRI, links: LinkPolicy)(
+	private def fromSnapshot[T](roots: Set[IRI], links: LinkPolicy)(
 		reader: (TriplestoreConnection & SparqlRunner) => Validated[T]
 	): Validated[T] =
 		val snapshot = server.access: conn ?=>
-			metadataSnapshot(conn, root, links)
+			metadataSnapshot(conn, roots, links)
 		try
 			Rdf4jInstanceServer(snapshot).access: snapshotConn ?=>
 				reader(snapshotConn)
@@ -172,7 +175,7 @@ final class LandingPageBuilder(
 
 	private def metadataSnapshot(
 		conn: TriplestoreConnection & SparqlRunner,
-		root: IRI,
+		roots: Set[IRI],
 		links: LinkPolicy
 	): Repository =
 		val snapshot = SailRepository(MemoryStore())
@@ -180,11 +183,11 @@ final class LandingPageBuilder(
 		try
 			Using.resource(snapshot.getConnection()): target =>
 				val seen = mutable.Set.empty[IRI]
-				var frontier = Set(root)
+				var frontier = roots
 				while frontier.nonEmpty do
 					val batch = frontier
 					seen ++= batch
-					val statements = fetchBatch(conn, target, batch, links.inverse)
+					val statements = fetchBatch(conn, target, batch, links)
 					val statementsOf = statements
 						.collect:
 							case (subject: IRI, predicate, obj, _) if batch.contains(subject) =>
@@ -200,12 +203,25 @@ final class LandingPageBuilder(
 						case (subject: IRI, predicate, obj: IRI, _) if
 							batch.contains(obj) && links.inverse.contains(predicate) =>
 							subject
-					frontier = (forward ++ backward).toSet.diff(seen)
+					// the literal-valued inverse branch of the query only returns the frontier's own
+					// links, so the predicate alone identifies them
+					val backwardFromLiterals = statements.collect:
+						case (subject: IRI, predicate, _: Literal, _) if links.inverseLiteral.contains(predicate) =>
+							subject
+					frontier = (forward ++ backward ++ backwardFromLiterals).toSet.diff(seen)
 			snapshot
 		catch
 			case err: Throwable =>
 				snapshot.shutDown()
 				throw err
+
+	/**
+	 * `DobjMetaReader.getLabelingDate` finds the labeling-app counterpart of a station by an
+	 * `xsd:anyURI` literal holding the station's URI, rather than by an ordinary link -- hence the
+	 * literal-valued inverse link in the policies of the pages that show a station.
+	 */
+	private val labelingCounterpartOf: IRI = repo.getValueFactory
+		.createIRI("http://meta.icos-cp.eu/ontologies/stationentry/", "hasProductionCounterpart")
 
 	private val staticObjectForwardLinks: Set[IRI] = Set(
 			metaVocab.hasObjectSpec,
@@ -267,6 +283,7 @@ final class LandingPageBuilder(
 			metaVocab.atOrganization,
 			metaVocab.ssn.hasDeployment
 		),
+		inverseLiteral = Set(labelingCounterpartOf),
 		follows = (_, predicate, subjectStatements) =>
 			staticObjectForwardLinks.contains(predicate) ||
 				predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
@@ -296,13 +313,51 @@ final class LandingPageBuilder(
 	private def isPlainCollection(subjectStatements: Seq[(IRI, Value)]): Boolean =
 		subjectStatements.contains(RDF.TYPE -> metaVocab.plainCollectionClass)
 
+	private val stationForwardLinks: Set[IRI] = Set(
+			RDFS.SEEALSO,
+			metaVocab.hasWebpageElements,
+			metaVocab.hasLinkbox,
+			metaVocab.hasSpatialCoverage,
+			metaVocab.hasResponsibleOrganization,
+			metaVocab.hasAssociatedNetwork,
+			metaVocab.hasDocumentationObject,
+			metaVocab.hasFunding,
+			metaVocab.hasFunder,
+			metaVocab.operatesOn,
+			metaVocab.hasEcosystemType,
+			metaVocab.hasClimateZone,
+			metaVocab.hasDataTheme,
+			metaVocab.hasRole
+		)
+
+	/**
+	 * The station page is the station itself, its location and coverage, its sites, networks,
+	 * funding and documentation, its labeling date, and the people whose memberships point at it:
+	 * `cpmeta:atOrganization` leads from the station to those memberships, and `cpmeta:hasMembership`
+	 * from each membership to the person holding it.
+	 */
+	private val stationLinks = LinkPolicy(
+		inverse = Set(metaVocab.atOrganization, metaVocab.hasMembership),
+		inverseLiteral = Set(labelingCounterpartOf),
+		follows = (_, predicate, _) => stationForwardLinks.contains(predicate)
+	)
+
+	/**
+	 * Every page showing an ICOS station shows the data theme of the thematic centre the station
+	 * belongs to, and no link leads from the station to that centre: the reader picks the centre by
+	 * the class of the station (see `DobjMetaReader.getBasicIcosSpecifics`). All three centres are
+	 * therefore seeded together with the resource the page is about -- being in the first frontier,
+	 * they cost no query of their own.
+	 */
+	private val thematicCentres: Set[IRI] = Set(vocab.atc, vocab.etc, vocab.otc)
+
 	private def fetchBatch(
 		conn: SparqlRunner,
 		target: RepositoryConnection,
 		batch: Set[IRI],
-		inverseLinks: Set[IRI]
+		links: LinkPolicy
 	): IndexedSeq[(Resource, IRI, Value, Resource)] =
-		Using.resource(conn.evaluateTupleQuery(batchQuery(batch, inverseLinks))): rows =>
+		Using.resource(conn.evaluateTupleQuery(batchQuery(batch, links))): rows =>
 			rows.map: bindings =>
 				val subject = bindings.getValue("subject").asInstanceOf[Resource]
 				val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
@@ -312,22 +367,36 @@ final class LandingPageBuilder(
 				(subject, predicate, obj, context)
 			.toIndexedSeq
 
-	private def batchQuery(batch: Set[IRI], inverseLinks: Set[IRI]): String =
-		val values = batch.iterator.map(sparqlIri).mkString(" ")
-		val inversePredicates = inverseLinks.iterator.map(sparqlIri).mkString(" ")
+	private def batchQuery(batch: Set[IRI], links: LinkPolicy): String =
+		val iris = batch.iterator.map(sparqlIri).mkString(" ")
+
+		def inverseBranch(objects: String, predicates: Set[IRI]) =
+			s"""{
+				|    VALUES ?object { $objects }
+				|    VALUES ?predicate { ${predicates.iterator.map(sparqlIri).mkString(" ")} }
+				|    GRAPH ?context { ?subject ?predicate ?object }
+				|  }""".stripMargin
+
+		val forwardBranch =
+			s"""{
+				|    VALUES ?subject { $iris }
+				|    GRAPH ?context { ?subject ?predicate ?object }
+				|  }""".stripMargin
+
+		val literalBranch = Option.when(links.inverseLiteral.nonEmpty):
+			inverseBranch(batch.iterator.map(sparqlAnyUriLiteral).mkString(" "), links.inverseLiteral)
+
+		val branches = (forwardBranch +: inverseBranch(iris, links.inverse) +: literalBranch.toSeq)
+			.mkString(" UNION ")
+
 		s"""SELECT DISTINCT ?subject ?predicate ?object ?context
 			|WHERE {
-			|  {
-			|    VALUES ?subject { $values }
-			|    GRAPH ?context { ?subject ?predicate ?object }
-			|  } UNION {
-			|    VALUES ?object { $values }
-			|    VALUES ?predicate { $inversePredicates }
-			|    GRAPH ?context { ?subject ?predicate ?object }
-			|  }
+			|  $branches
 			|}""".stripMargin
 
 	private def sparqlIri(iri: IRI): String = s"<${iri.stringValue}>"
+
+	private def sparqlAnyUriLiteral(iri: IRI): String = s""""${iri.stringValue}"^^<${XSD.ANYURI.stringValue}>"""
 
 	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
 		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
@@ -362,6 +431,11 @@ object LandingPageBuilder:
 	 */
 	private class LinkPolicy(
 		val inverse: Set[IRI],
+		/**
+		 * Inverse links whose object is not the resource itself but a literal spelling of its URI.
+		 * The readers use no such link except for the labeling metadata of a station.
+		 */
+		val inverseLiteral: Set[IRI] = Set.empty,
 		/** (subject, predicate, the properties and values the subject turned out to have) */
 		val follows: (IRI, IRI, Seq[(IRI, Value)]) => Boolean
 	)

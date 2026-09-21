@@ -28,7 +28,7 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
 
 import java.net.URI
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext
 import scala.util.Using
@@ -129,6 +129,18 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(l2.acquisition.samplingHeight === Some(50f))
 			assert(l2.acquisition.instruments.map(_.label) === Seq(Some("Test instrument")))
 
+		it("has the ICOS specifics of the station it was acquired at"):
+			val station = asDataObject(page).specificInfo match
+				case Right(stationTimeSeries) => stationTimeSeries.acquisition.station
+				case Left(spatioTemporal) => fail(s"Expected station time series metadata, got $spatioTemporal")
+			//as on the station page, these come from the thematic centre and the labeling app,
+			//neither of which is reachable from the object by a link
+			val specifics = station.specificInfo match
+				case atc: AtcStationSpecifics => atc
+				case other => fail(s"Expected ATC station specifics, got $other")
+			assert(specifics.theme.map(_.self.uri) === Some(fixture.themeResource))
+			assert(specifics.labelingDate === Some(LocalDate.of(2019, 6, 1)))
+
 		it("knows the collection the object is a part of, and that it is the only version"):
 			val dobj = asDataObject(page)
 			assert(dobj.parentCollections.map(_.label) === Seq(Some("Test collection")))
@@ -176,8 +188,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("station landing page"):
 		lazy val (page, counts) = build(builder.station(fixture.stationUri))
 
-		it("reads the station and its memberships"):
-			assert(counts === QueryCounts(connections = 1, statements = 40, existence = 3, sparql = 0))
+		it("reads the station and its memberships in three bounded RDF-store queries"):
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 3))
 
 		it("is built into a station with its location and country"):
 			val station = page.org
@@ -187,7 +199,14 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(station.location === Some(Position(56.1, 13.4, Some(150f), Some("TST"), None)))
 			assert(station.countryCode.map(_.code) === Some("SE"))
 			assert(station.responsibleOrganization === None)
-			assert(station.specificInfo.isInstanceOf[AtcStationSpecifics])
+
+		it("has the ICOS specifics the station's thematic centre and the labeling app supply"):
+			val specifics = page.org.specificInfo match
+				case atc: AtcStationSpecifics => atc
+				case other => fail(s"Expected ATC station specifics, got $other")
+			//neither of these is reachable from the station by a link
+			assert(specifics.theme.map(_.self.uri) === Some(fixture.themeResource))
+			assert(specifics.labelingDate === Some(LocalDate.of(2019, 6, 1)))
 
 		it("is built with the station's staff"):
 			assert(page.staff.map(_.person.self.label) === Seq(Some("Test Person")))

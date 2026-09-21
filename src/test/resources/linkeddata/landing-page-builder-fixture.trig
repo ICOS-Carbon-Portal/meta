@@ -3,6 +3,7 @@
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix stentry: <http://meta.icos-cp.eu/ontologies/stationentry/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://meta.icos-cp.eu/resources/cpmeta/> {
@@ -50,6 +51,12 @@
 		cpmeta:hasElevation "150.0"^^xsd:float ;
 		cpmeta:countryCode "SE" .
 
+	<http://meta.icos-cp.eu/resources/organizations/ATC>
+		a cpmeta:ThematicCenter ;
+		rdfs:label "ATC" ;
+		cpmeta:hasName "Atmosphere Thematic Centre" ;
+		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> .
+
 	<http://meta.icos-cp.eu/resources/people/Test_Person>
 		a cpmeta:Person ;
 		rdfs:label "Test Person" ;
@@ -69,6 +76,15 @@
 		cpmeta:hasModel "Picarro G2401" ;
 		cpmeta:hasSerialNumber "SN-1" ;
 		cpmeta:hasInstrumentOwner <http://meta.icos-cp.eu/resources/organizations/CP> .
+}
+
+#the labeling app links its station entries to the production stations by a plain xsd:anyURI
+#literal, which is where the labeling date of an ICOS station comes from
+<http://meta.icos-cp.eu/resources/stationlabeling/> {
+	<http://meta.icos-cp.eu/resources/stationentry/AS_TST>
+		stentry:hasProductionCounterpart "http://meta.icos-cp.eu/resources/stations/TST"^^xsd:anyURI ;
+		stentry:hasApplicationStatus "STEP3APPROVED" ;
+		stentry:hasAppStatusDate "2019-06-01T12:00:00Z"^^xsd:dateTime .
 }
 
 <http://meta.icos-cp.eu/resources/tscsv/> {

@@ -74,10 +74,10 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	 */
 	private def build[T](page: => Validated[T]): (T, QueryCounts) =
 		counter.reset()
-		val built = page()
+		val built = page
 		val counts = counter.snapshot
 		assert(built.errors === Nil)
-		built.result.getOrElse(fail("the page was not built at all")) -> counts
+		(built.result.getOrElse(fail("the page was not built at all")), counts)
 
 	private def asDataObject(obj: StaticObject): DataObject = obj match
 		case dobj: DataObject => dobj
@@ -158,7 +158,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("collection landing page"):
 		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
 
-		it("reads the collection with the expected number of RDF-store queries"):
+		it("reads the collection"):
 			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
 
 		it("is built into a collection with both of its members"):
@@ -176,7 +176,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("station landing page"):
 		lazy val (page, counts) = build(builder.station(fixture.stationUri))
 
-		it("reads the station and its memberships with the expected number of RDF-store queries"):
+		it("reads the station and its memberships"):
 			assert(counts === QueryCounts(connections = 1, statements = 40, existence = 3, sparql = 0))
 
 		it("is built into a station with its location and country"):
@@ -199,7 +199,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("organization landing page"):
 		lazy val (page, counts) = build(builder.organization(fixture.orgUri))
 
-		it("reads the organization and its memberships with the expected number of RDF-store queries"):
+		it("reads the organization and its memberships"):
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
 
 		it("is built into an organization without staff of its own"):
@@ -213,7 +213,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("person landing page"):
 		lazy val (page, counts) = build(builder.person(fixture.personUri))
 
-		it("reads the person and their roles with the expected number of RDF-store queries"):
+		it("reads the person and their roles"):
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
 
 		it("is built into a person with their role at the station"):
@@ -227,7 +227,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("instrument landing page"):
 		lazy val (page, counts) = build(builder.instrument(fixture.instrumentUri))
 
-		it("reads the instrument with the expected number of RDF-store queries"):
+		it("reads the instrument"):
 			assert(counts === QueryCounts(connections = 1, statements = 18, existence = 1, sparql = 0))
 
 		it("is built into an instrument with its model, serial number and owner"):
@@ -245,7 +245,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("object specification landing page"):
 		lazy val (page, counts) = build(builder.specification(fixture.specUri))
 
-		it("reads the specification with the expected number of RDF-store queries"):
+		it("reads the specification"):
 			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 0, sparql = 0))
 
 		it("is built into a specification with project, theme, format and encoding"):
@@ -270,7 +270,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("labeled resource landing page"):
 		lazy val (page, counts) = build(builder.labeledResource(fixture.themeUri))
 
-		it("reads the labeled resource with the expected number of RDF-store queries"):
+		it("reads the labeled resource"):
 			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
 
 		it("is built into the URI, label and comments of the resource"):
@@ -380,25 +380,20 @@ object LandingPageBuilderTests:
 		val docHash = hash(2)
 		val collHash = hash(3)
 
-		private val org = vocab.cp
 		private val station = vocab.getStation(UriId("TST"))
 		private val person = vocab.getPerson(UriId("Test_Person"))
 		private val instrument = vocab.getInstrument(UriId("TST_1"))
 		private val spec = vocab.getObjectSpecification(UriId("testTimeSeries"))
-		private val dobj = vocab.getStaticObject(dobjHash)
-		private val doc = vocab.getStaticObject(docHash)
-		private val coll = vocab.getCollection(collHash)
-
 		val stationUri = Uri(station.stringValue)
-		val orgUri = Uri(org.stringValue)
+		val orgUri = Uri(vocab.cp.stringValue)
 		val personUri = Uri(person.stringValue)
 		val instrumentUri = Uri(instrument.stringValue)
 		val specUri = Uri(spec.stringValue)
 		val themeUri = Uri(vocab.atmoTheme.stringValue)
 
-		val dobjResource = URI(dobj.stringValue)
-		val docResource = URI(doc.stringValue)
-		val collResource = URI(coll.stringValue)
+		val dobjResource = URI(vocab.getStaticObject(dobjHash).stringValue)
+		val docResource = URI(vocab.getStaticObject(docHash).stringValue)
+		val collResource = URI(vocab.getCollection(collHash).stringValue)
 		val stationResource = URI(station.stringValue)
 		val personResource = URI(person.stringValue)
 		val instrumentResource = URI(instrument.stringValue)

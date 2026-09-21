@@ -24,6 +24,7 @@ import se.lu.nateko.cp.meta.views.ResourceViewInfo
 import se.lu.nateko.cp.meta.views.ResourceViewInfo.PropValue
 
 import java.net.{URI => JavaUri}
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Try, Using}
 
@@ -131,37 +132,141 @@ final class LandingPageBuilder(
 					acc.copy(propValues = propertyAndValue :: acc.propValues)
 
 	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = server.access: conn ?=>
-		/*
-		 * StaticObjectReader predates the RDF-store service and follows links one statement at a
-		 * time.  Against a remote repository that turns a single landing page into dozens (and,
-		 * for rich data objects, hundreds) of SPARQL requests.  Read the named graphs once and
-		 * retain their contexts in a short-lived local repository instead.  The reader can then
-		 * keep using its normal graph lenses, without making any further network requests.
-		 */
-		val snapshot = snapshotRepository(conn)
+		val objectIri = vocab.getStaticObject(hash)
+		val snapshot = staticObjectSnapshot(conn, objectIri)
 		try
 			Rdf4jInstanceServer(snapshot).access: snapshotConn ?=>
-				val objectIri = vocab.getStaticObject(hash)
 				given GlobConn = RdfLens.global(using snapshotConn)
 				objectReader.fetchStaticObject(objectIri)
 		finally snapshot.shutDown()
 
-	private def snapshotRepository(conn: TriplestoreConnection & se.lu.nateko.cp.meta.api.SparqlRunner): Repository =
+	/**
+	 * Fetch the object metadata closure in a few indexed batches, rather than allowing
+	 * StaticObjectReader to turn each property lookup into a remote request. Each batch obtains all
+	 * triples for a small `VALUES` frontier, plus the inverse links the reader uses. This is much
+	 * cheaper for the triplestore than one deeply nested cross-graph traversal.
+	 */
+	private def staticObjectSnapshot(
+		conn: TriplestoreConnection & se.lu.nateko.cp.meta.api.SparqlRunner,
+		objectIri: IRI
+	): Repository =
 		val snapshot = SailRepository(MemoryStore())
 		snapshot.init()
 		try
-			Using.resources(conn.evaluateTupleQuery(snapshotQuery), snapshot.getConnection()): (rows, target) =>
-				rows.foreach: bindings =>
-					val subject = bindings.getValue("subject").asInstanceOf[Resource]
-					val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
-					val obj = bindings.getValue("object")
-					val context = bindings.getValue("context").asInstanceOf[Resource]
-					target.add(subject, predicate, obj, context)
+			Using.resource(snapshot.getConnection()): target =>
+				val seen = mutable.Set.empty[IRI]
+				var frontier = Set(objectIri)
+				var depth = 0
+				while frontier.nonEmpty && depth <= LandingPageBuilder.StaticObjectLinkDepth do
+					val batch = frontier.diff(seen)
+					seen ++= batch
+					val statements = fetchStaticObjectBatch(conn, target, batch)
+					val versionedCollections = statements.collect:
+						case (subject: IRI, predicate, _, _) if
+							batch.contains(subject) && predicate === metaVocab.isNextVersionOf =>
+							subject
+
+					val forward = statements.collect:
+						case (subject: IRI, predicate, obj: IRI, _) if
+							batch.contains(subject) && isStaticObjectForwardLink(predicate, versionedCollections.contains(subject)) =>
+							obj
+					val backward = statements.collect:
+						case (subject: IRI, predicate, obj: IRI, _) if
+							batch.contains(obj) && staticObjectInverseLinks.contains(predicate) =>
+							subject
+					frontier = (forward ++ backward).toSet.diff(seen)
+					depth += 1
 			snapshot
 		catch
 			case err: Throwable =>
 				snapshot.shutDown()
 				throw err
+
+	private val staticObjectForwardLinks: Set[IRI] = Set(
+			metaVocab.hasObjectSpec,
+			metaVocab.wasSubmittedBy,
+			metaVocab.wasAcquiredBy,
+			metaVocab.wasProducedBy,
+			metaVocab.hasAssociatedProject,
+			metaVocab.hasDataTheme,
+			metaVocab.hasFormat,
+			metaVocab.hasEncoding,
+			metaVocab.containsDataset,
+			metaVocab.hasDocumentationObject,
+			metaVocab.hasVariable,
+			metaVocab.hasColumn,
+			metaVocab.hasValueType,
+			metaVocab.hasQuantityKind,
+			metaVocab.prov.wasAssociatedWith,
+			metaVocab.wasPerformedBy,
+			metaVocab.wasParticipatedInBy,
+			metaVocab.wasHostedBy,
+			metaVocab.prov.hadPrimarySource,
+			metaVocab.dcterms.creator,
+			RDFS.SEEALSO,
+			metaVocab.hasSpatialCoverage,
+			metaVocab.hasResponsibleOrganization,
+			metaVocab.hasAssociatedNetwork,
+			metaVocab.hasFunding,
+			metaVocab.hasFunder,
+			metaVocab.operatesOn,
+			metaVocab.hasEcosystemType,
+			metaVocab.hasClimateZone,
+			metaVocab.wasPerformedWith,
+			metaVocab.wasPerformedAt,
+			metaVocab.hasSamplingPoint,
+			metaVocab.hasActualVariable,
+			metaVocab.hasInstrumentOwner,
+			metaVocab.hasVendor,
+			metaVocab.hasInstrumentComponent,
+			metaVocab.ssn.hasDeployment,
+			metaVocab.ssn.forProperty,
+			metaVocab.hasWebpageElements,
+			metaVocab.hasLinkbox
+		)
+	private val staticObjectInverseLinks: Set[IRI] = Set(
+			metaVocab.dcterms.hasPart,
+			metaVocab.isNextVersionOf,
+			metaVocab.atOrganization,
+			metaVocab.ssn.hasDeployment
+		)
+
+	private def fetchStaticObjectBatch(
+		conn: se.lu.nateko.cp.meta.api.SparqlRunner,
+		target: org.eclipse.rdf4j.repository.RepositoryConnection,
+		batch: Set[IRI]
+	): IndexedSeq[(Resource, IRI, org.eclipse.rdf4j.model.Value, Resource)] =
+		Using.resource(conn.evaluateTupleQuery(staticObjectBatchQuery(batch))): rows =>
+			rows.map: bindings =>
+				val subject = bindings.getValue("subject").asInstanceOf[Resource]
+				val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
+				val obj = bindings.getValue("object")
+				val context = bindings.getValue("context").asInstanceOf[Resource]
+				target.add(subject, predicate, obj, context)
+				(subject, predicate, obj, context)
+			.toIndexedSeq
+
+	private def staticObjectBatchQuery(batch: Set[IRI]): String =
+		val values = batch.iterator.map(sparqlIri).mkString(" ")
+		val inversePredicates = staticObjectInverseLinks.iterator.map(sparqlIri).mkString(" ")
+		s"""SELECT DISTINCT ?subject ?predicate ?object ?context
+			|WHERE {
+			|  {
+			|    VALUES ?subject { $values }
+			|    GRAPH ?context { ?subject ?predicate ?object }
+			|  } UNION {
+			|    VALUES ?object { $values }
+			|    VALUES ?predicate { $inversePredicates }
+			|    GRAPH ?context { ?subject ?predicate ?object }
+			|  }
+			|}""".stripMargin
+
+	private def isStaticObjectForwardLink(predicate: IRI, isVersionedCollection: Boolean): Boolean =
+		staticObjectForwardLinks.contains(predicate) ||
+			(predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
+				(isVersionedCollection && predicate === metaVocab.dcterms.hasPart))
+
+	private def sparqlIri(iri: IRI): String = s"<${iri.stringValue}>"
 
 	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		access(lenses.collectionLens):
@@ -190,17 +295,8 @@ final class LandingPageBuilder(
 
 object LandingPageBuilder:
 	private val ResultLimit = 500
-
-	/*
-	 * `GRAPH ?context` is intentional: RDF4J's graph-query result does not expose statement
-	 * contexts, while the readers rely on lens-specific contexts to distinguish document, data
-	 * object, collection, and metadata graphs.
-	 */
-	private val snapshotQuery =
-		"""SELECT ?subject ?predicate ?object ?context
-			|WHERE {
-			|  GRAPH ?context { ?subject ?predicate ?object }
-			|}""".stripMargin
+	// Longest metadata chain currently rendered is object -> spec -> dataset -> variable -> value type -> quantity kind.
+	private val StaticObjectLinkDepth = 5
 
 	private def getOptUriResource(bindings: BindingSet, valueName: String, labelName: String): Option[UriResource] =
 		bindings.getValue(valueName) match

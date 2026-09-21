@@ -90,8 +90,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("data object landing page"):
 		lazy val (page, counts) = build(builder.staticObject(fixture.dobjHash))
 
-		it("reads the object from one RDF-store snapshot query"):
-			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 1))
+		it("reads the object in four bounded RDF-store queries"):
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 4))
 
 		it("has the file-level metadata of the object"):
 			val dobj = asDataObject(page)
@@ -139,8 +139,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("document object landing page"):
 		lazy val (page, counts) = build(builder.staticObject(fixture.docHash))
 
-		it("reads the document from one RDF-store snapshot query"):
-			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 1))
+		it("reads the document in three bounded RDF-store queries"):
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 3))
 
 		it("is built into a document object with its title and authors"):
 			val doc = asDocObject(page)

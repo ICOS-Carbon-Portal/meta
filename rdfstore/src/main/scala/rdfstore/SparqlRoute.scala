@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 import scala.collection.immutable.Queue
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -34,6 +35,9 @@ import scala.util.Random
 object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
+
+	/** Time allowed for reading a (SPARQL query) request payload into memory */
+	val entityStrictifyTimeout: FiniteDuration = 10.seconds
 
 	val getClientIp: Directive1[String] = optionalHeaderValueByName(`X-Forwarded-For`.name).flatMap:
 		case Some(ip) if ip.trim.nonEmpty => provide(ip)
@@ -75,9 +79,12 @@ object SparqlRoute:
 				badRequestResponse
 			} ~
 			post{
-				formField("query")(makeResponse) ~
-				entity(as[String])(makeResponse) ~
-				badRequestResponse
+				//making the entity strict once, up front, as both alternatives below consume it
+				toStrictEntity(entityStrictifyTimeout){
+					formField("query")(makeResponse) ~
+					entity(as[String])(makeResponse) ~
+					badRequestResponse
+				}
 			}
 
 		val spCache = SparqlCache(conf.maxCacheableQuerySize)

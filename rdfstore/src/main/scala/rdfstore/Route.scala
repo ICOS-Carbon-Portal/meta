@@ -14,6 +14,7 @@ import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadataRequest, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
+import se.lu.nateko.cp.meta.rdfstore.SparqlRoute.entityStrictifyTimeout
 
 import scala.util.{Failure, Success}
 
@@ -48,21 +49,27 @@ object Route:
 				datasetFromQueryParameters: dataset =>
 					parameter("query")(query => complete(SparqlRequest(query, Quota.Unlimited, dataset)))
 			~ post:
-				formFields("query", "default-graph-uri".repeated, "named-graph-uri".repeated):
-					(query, defaultGraphs, namedGraphs) =>
-						complete(SparqlRequest(
-							query,
-							Quota.Unlimited,
-							SparqlDataset(defaultGraphs.toSeq, namedGraphs.toSeq)
-						))
-				~
-				formField("update")(executeUnloggedUpdate) ~
-				extractRequest: request =>
-					datasetFromQueryParameters: dataset =>
-						entity(as[String]): body =>
-							if request.entity.contentType.mediaType.subType == "sparql-update"
-							then executeUnloggedUpdate(body)
-							else complete(SparqlRequest(body, Quota.Unlimited, dataset))
+				// Every alternative below consumes the request entity (the formField directives
+				// do it implicitly, via toStrictEntity), so the entity must be made strict once,
+				// up front. Otherwise a rejected alternative leaves the (non-strict, for larger
+				// payloads) entity stream materialized, and the next one fails with
+				// "Substream Source(EntitySource) cannot be materialized more than once".
+				toStrictEntity(entityStrictifyTimeout):
+					formFields("query", "default-graph-uri".repeated, "named-graph-uri".repeated):
+						(query, defaultGraphs, namedGraphs) =>
+							complete(SparqlRequest(
+								query,
+								Quota.Unlimited,
+								SparqlDataset(defaultGraphs.toSeq, namedGraphs.toSeq)
+							))
+					~
+					formField("update")(executeUnloggedUpdate) ~
+					extractRequest: request =>
+						datasetFromQueryParameters: dataset =>
+							entity(as[String]): body =>
+								if request.entity.contentType.mediaType.subType == "sparql-update"
+								then executeUnloggedUpdate(body)
+								else complete(SparqlRequest(body, Quota.Unlimited, dataset))
 
 		SparqlRoute(sparqlConf)
 		~ path("internal" / "sparql"):

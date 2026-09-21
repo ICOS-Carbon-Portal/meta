@@ -4,10 +4,10 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.{IRI, Literal, Resource, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, Resource, Value, ValueFactory}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
-import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.api.*
@@ -131,48 +131,74 @@ final class LandingPageBuilder(
 				case _ =>
 					acc.copy(propValues = propertyAndValue :: acc.propValues)
 
-	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = server.access: conn ?=>
+	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] =
 		val objectIri = vocab.getStaticObject(hash)
-		val snapshot = staticObjectSnapshot(conn, objectIri)
-		try
-			Rdf4jInstanceServer(snapshot).access: snapshotConn ?=>
-				given GlobConn = RdfLens.global(using snapshotConn)
-				objectReader.fetchStaticObject(objectIri)
-		finally snapshot.shutDown()
+		fromSnapshot(objectIri, staticObjectLinks): snapshotConn =>
+			given GlobConn = RdfLens.global(using snapshotConn)
+			objectReader.fetchStaticObject(objectIri)
+
+	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
+		val collectionIri = vocab.getCollection(hash)
+		fromSnapshot(collectionIri, collectionLinks(collectionIri)): snapshotConn =>
+			for
+				collLens <- lenses.collectionLens
+				docLens <- lenses.documentLens
+				collection <- objectReader.fetchStaticColl(collectionIri, Some(hash))(
+					using collLens(using snapshotConn), docLens(using snapshotConn)
+				)
+			yield collection
 
 	/**
-	 * Fetch the object metadata closure in a few indexed batches, rather than allowing
-	 * StaticObjectReader to turn each property lookup into a remote request. Each batch obtains all
-	 * triples for a small `VALUES` frontier, plus the inverse links the reader uses. This is much
-	 * cheaper for the triplestore than one deeply nested cross-graph traversal.
+	 * Reads the metadata closure of `root` into a short-lived local repository, and lets `reader`
+	 * build the page from that snapshot instead of from the RDF store.
+	 *
+	 * The readers predate the RDF-store service and follow links one statement at a time. Against a
+	 * remote repository that turns a single landing page into dozens (and, for rich data objects,
+	 * hundreds) of requests. The closure is fetched in a few indexed batches instead: each batch
+	 * obtains all triples for a small `VALUES` frontier, plus the inverse links the readers use,
+	 * which is much cheaper for the triplestore than one deeply nested cross-graph traversal. The
+	 * snapshot retains the named graphs of the statements, so the readers can keep using their
+	 * normal graph lenses, without making any further network requests.
 	 */
-	private def staticObjectSnapshot(
-		conn: TriplestoreConnection & se.lu.nateko.cp.meta.api.SparqlRunner,
-		objectIri: IRI
+	private def fromSnapshot[T](root: IRI, links: LinkPolicy)(
+		reader: (TriplestoreConnection & SparqlRunner) => Validated[T]
+	): Validated[T] =
+		val snapshot = server.access: conn ?=>
+			metadataSnapshot(conn, root, links)
+		try
+			Rdf4jInstanceServer(snapshot).access: snapshotConn ?=>
+				reader(snapshotConn)
+		finally snapshot.shutDown()
+
+	private def metadataSnapshot(
+		conn: TriplestoreConnection & SparqlRunner,
+		root: IRI,
+		links: LinkPolicy
 	): Repository =
 		val snapshot = SailRepository(MemoryStore())
 		snapshot.init()
 		try
 			Using.resource(snapshot.getConnection()): target =>
 				val seen = mutable.Set.empty[IRI]
-				var frontier = Set(objectIri)
+				var frontier = Set(root)
 				var depth = 0
-				while frontier.nonEmpty && depth <= LandingPageBuilder.StaticObjectLinkDepth do
+				while frontier.nonEmpty && depth <= links.maxDepth do
 					val batch = frontier.diff(seen)
 					seen ++= batch
-					val statements = fetchStaticObjectBatch(conn, target, batch)
-					val versionedCollections = statements.collect:
-						case (subject: IRI, predicate, _, _) if
-							batch.contains(subject) && predicate === metaVocab.isNextVersionOf =>
-							subject
+					val statements = fetchBatch(conn, target, batch, links.inverse)
+					val predicatesOf = statements
+						.collect:
+							case (subject: IRI, predicate, _, _) if batch.contains(subject) => subject -> predicate
+						.groupMap(_._1)(_._2)
+						.withDefaultValue(Nil)
 
 					val forward = statements.collect:
 						case (subject: IRI, predicate, obj: IRI, _) if
-							batch.contains(subject) && isStaticObjectForwardLink(predicate, versionedCollections.contains(subject)) =>
+							batch.contains(subject) && links.follows(subject, predicate, predicatesOf(subject)) =>
 							obj
 					val backward = statements.collect:
 						case (subject: IRI, predicate, obj: IRI, _) if
-							batch.contains(obj) && staticObjectInverseLinks.contains(predicate) =>
+							batch.contains(obj) && links.inverse.contains(predicate) =>
 							subject
 					frontier = (forward ++ backward).toSet.diff(seen)
 					depth += 1
@@ -224,19 +250,54 @@ final class LandingPageBuilder(
 			metaVocab.hasWebpageElements,
 			metaVocab.hasLinkbox
 		)
-	private val staticObjectInverseLinks: Set[IRI] = Set(
+	private val collectionForwardLinks: Set[IRI] = Set(
+			metaVocab.dcterms.creator,
+			RDFS.SEEALSO,
+			metaVocab.hasSpatialCoverage,
+			metaVocab.hasWebpageElements,
+			metaVocab.hasLinkbox,
+			metaVocab.isNextVersionOf,
+			metaVocab.wasSubmittedBy,
+			metaVocab.prov.wasAssociatedWith
+		)
+
+	private val staticObjectLinks = LinkPolicy(
+		maxDepth = StaticObjectLinkDepth,
+		inverse = Set(
 			metaVocab.dcterms.hasPart,
 			metaVocab.isNextVersionOf,
 			metaVocab.atOrganization,
 			metaVocab.ssn.hasDeployment
-		)
+		),
+		follows = (_, predicate, subjectPredicates) =>
+			staticObjectForwardLinks.contains(predicate) ||
+				predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
+				(predicate === metaVocab.dcterms.hasPart && subjectPredicates.contains(metaVocab.isNextVersionOf))
+	)
 
-	private def fetchStaticObjectBatch(
-		conn: se.lu.nateko.cp.meta.api.SparqlRunner,
-		target: org.eclipse.rdf4j.repository.RepositoryConnection,
-		batch: Set[IRI]
-	): IndexedSeq[(Resource, IRI, org.eclipse.rdf4j.model.Value, Resource)] =
-		Using.resource(conn.evaluateTupleQuery(staticObjectBatchQuery(batch))): rows =>
+	/**
+	 * The collection page is made of the collection itself, its members, its creator organization,
+	 * its documentation and coverage, plus its neighbouring versions and parent collections.
+	 * `dcterms:hasPart` is followed out of the collection the page is about, and out of the plain
+	 * collections version chains are made of, but not out of the parent collections: their other
+	 * members are of no interest, and there can be very many of them.
+	 */
+	private def collectionLinks(collectionIri: IRI) = LinkPolicy(
+		maxDepth = CollectionLinkDepth,
+		inverse = Set(metaVocab.dcterms.hasPart, metaVocab.isNextVersionOf),
+		follows = (subject, predicate, subjectPredicates) =>
+			collectionForwardLinks.contains(predicate) ||
+				(predicate === metaVocab.dcterms.hasPart &&
+					(subject === collectionIri || subjectPredicates.contains(metaVocab.isNextVersionOf)))
+	)
+
+	private def fetchBatch(
+		conn: SparqlRunner,
+		target: RepositoryConnection,
+		batch: Set[IRI],
+		inverseLinks: Set[IRI]
+	): IndexedSeq[(Resource, IRI, Value, Resource)] =
+		Using.resource(conn.evaluateTupleQuery(batchQuery(batch, inverseLinks))): rows =>
 			rows.map: bindings =>
 				val subject = bindings.getValue("subject").asInstanceOf[Resource]
 				val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
@@ -246,9 +307,9 @@ final class LandingPageBuilder(
 				(subject, predicate, obj, context)
 			.toIndexedSeq
 
-	private def staticObjectBatchQuery(batch: Set[IRI]): String =
+	private def batchQuery(batch: Set[IRI], inverseLinks: Set[IRI]): String =
 		val values = batch.iterator.map(sparqlIri).mkString(" ")
-		val inversePredicates = staticObjectInverseLinks.iterator.map(sparqlIri).mkString(" ")
+		val inversePredicates = inverseLinks.iterator.map(sparqlIri).mkString(" ")
 		s"""SELECT DISTINCT ?subject ?predicate ?object ?context
 			|WHERE {
 			|  {
@@ -261,20 +322,7 @@ final class LandingPageBuilder(
 			|  }
 			|}""".stripMargin
 
-	private def isStaticObjectForwardLink(predicate: IRI, isVersionedCollection: Boolean): Boolean =
-		staticObjectForwardLinks.contains(predicate) ||
-			(predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
-				(isVersionedCollection && predicate === metaVocab.dcterms.hasPart))
-
 	private def sparqlIri(iri: IRI): String = s"<${iri.stringValue}>"
-
-	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		access(lenses.collectionLens):
-			val collectionUri = vocab.getCollection(hash)
-			for
-				given DocConn <- lenses.documentLens
-				collection <- objectReader.fetchStaticColl(collectionUri, Some(hash))
-			yield collection
 
 	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
 		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
@@ -297,6 +345,23 @@ object LandingPageBuilder:
 	private val ResultLimit = 500
 	// Longest metadata chain currently rendered is object -> spec -> dataset -> variable -> value type -> quantity kind.
 	private val StaticObjectLinkDepth = 5
+	// Longest chain is collection -> next version -> its members -> submission -> submitter -> webpage elements -> link box.
+	private val CollectionLinkDepth = 6
+
+	/**
+	 * The shape of the metadata closure a landing page needs: which properties to follow out of the
+	 * resources fetched so far, which to follow into them, and how long a chain of them can get.
+	 *
+	 * `follows` is also given the subject and its properties, because whether a link is worth
+	 * following can depend on what the subject turned out to be: `dcterms:hasPart`, for one, leads
+	 * to all the members of a collection, which are only wanted for some of the collections met.
+	 */
+	private class LinkPolicy(
+		val maxDepth: Int,
+		val inverse: Set[IRI],
+		/** (subject, predicate, the properties the subject turned out to have) */
+		val follows: (IRI, IRI, Seq[IRI]) => Boolean
+	)
 
 	private def getOptUriResource(bindings: BindingSet, valueName: String, labelName: String): Option[UriResource] =
 		bindings.getValue(valueName) match

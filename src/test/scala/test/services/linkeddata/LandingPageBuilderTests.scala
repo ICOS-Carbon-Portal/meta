@@ -158,8 +158,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("collection landing page"):
 		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
 
-		it("reads the collection"):
-			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
+		it("reads the collection in three bounded RDF-store queries"):
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 3))
 
 		it("is built into a collection with both of its members"):
 			assert(page.res === fixture.collResource)

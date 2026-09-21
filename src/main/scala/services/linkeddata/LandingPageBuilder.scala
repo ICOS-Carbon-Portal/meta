@@ -4,10 +4,12 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
 import eu.icoscp.envri.Envri
-import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
+import org.eclipse.rdf4j.model.{IRI, Literal, Resource, ValueFactory}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
@@ -129,9 +131,37 @@ final class LandingPageBuilder(
 					acc.copy(propValues = propertyAndValue :: acc.propValues)
 
 	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = server.access: conn ?=>
-		val objectIri = vocab.getStaticObject(hash)
-		given GlobConn = RdfLens.global(using conn)
-		objectReader.fetchStaticObject(objectIri)
+		/*
+		 * StaticObjectReader predates the RDF-store service and follows links one statement at a
+		 * time.  Against a remote repository that turns a single landing page into dozens (and,
+		 * for rich data objects, hundreds) of SPARQL requests.  Read the named graphs once and
+		 * retain their contexts in a short-lived local repository instead.  The reader can then
+		 * keep using its normal graph lenses, without making any further network requests.
+		 */
+		val snapshot = snapshotRepository(conn)
+		try
+			Rdf4jInstanceServer(snapshot).access: snapshotConn ?=>
+				val objectIri = vocab.getStaticObject(hash)
+				given GlobConn = RdfLens.global(using snapshotConn)
+				objectReader.fetchStaticObject(objectIri)
+		finally snapshot.shutDown()
+
+	private def snapshotRepository(conn: TriplestoreConnection & se.lu.nateko.cp.meta.api.SparqlRunner): Repository =
+		val snapshot = SailRepository(MemoryStore())
+		snapshot.init()
+		try
+			Using.resources(conn.evaluateTupleQuery(snapshotQuery), snapshot.getConnection()): (rows, target) =>
+				rows.foreach: bindings =>
+					val subject = bindings.getValue("subject").asInstanceOf[Resource]
+					val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
+					val obj = bindings.getValue("object")
+					val context = bindings.getValue("context").asInstanceOf[Resource]
+					target.add(subject, predicate, obj, context)
+			snapshot
+		catch
+			case err: Throwable =>
+				snapshot.shutDown()
+				throw err
 
 	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
 		access(lenses.collectionLens):
@@ -160,6 +190,17 @@ final class LandingPageBuilder(
 
 object LandingPageBuilder:
 	private val ResultLimit = 500
+
+	/*
+	 * `GRAPH ?context` is intentional: RDF4J's graph-query result does not expose statement
+	 * contexts, while the readers rely on lens-specific contexts to distinguish document, data
+	 * object, collection, and metadata graphs.
+	 */
+	private val snapshotQuery =
+		"""SELECT ?subject ?predicate ?object ?context
+			|WHERE {
+			|  GRAPH ?context { ?subject ?predicate ?object }
+			|}""".stripMargin
 
 	private def getOptUriResource(bindings: BindingSet, valueName: String, labelName: String): Option[UriResource] =
 		bindings.getValue(valueName) match

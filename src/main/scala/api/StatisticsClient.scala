@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal}
+import akka.pattern.{CircuitBreaker, CircuitBreakerOpenException}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.StatsClientConfig
@@ -24,6 +25,14 @@ import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 
 object StatisticsClient extends DefaultJsonProtocol {
+	/** Keeps the akka-http pool from letting its exponential connection backoff grow into minutes */
+	private val MaxConnBackoff = 1.second
+	/** Number of consecutive failures after which statistics requests are skipped altogether */
+	private val MaxFailures = 3
+	private val CallTimeout = 10.seconds
+	/** How long statistics requests stay skipped before the stats server is probed again */
+	private val ResetTimeout = 1.minute
+
 	case class RestHeartCount(count: Int)
 	case class StatsApiCount(downloadCount: Int)
 	given RootJsonFormat[StatsApiCount] = jsonFormat1(StatsApiCount.apply)
@@ -44,24 +53,43 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
 		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
-		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
+		// while the stats server is down, the pool backs off exponentially between connection
+		// attempts, and requests simply wait for that backoff to expire. Left at its default
+		// maximum of 2 minutes, that makes every landing page slower to load than the previous one.
+		defPoolSet
+			.withConnectionSettings(connSet)
+			.withMaxRetries(0)
+			.withMaxConnectionBackoff(MaxConnBackoff)
 	}
 
-	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] = http
-		.singleRequest(
-			HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
-			settings = connPoolSetts
-		)
-		.flatMap { res =>
-			res.status match {
-				case StatusCodes.OK =>
-					Unmarshal(res.entity).to[T].map(Option(_))
-				case s =>
-					Unmarshal(res.entity).to[String].flatMap(
-						errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
-					)
+	// statistics are optional extras on the landing pages, so rather than making every page
+	// pay the price of an unavailable stats server, skip the requests until it is back
+	private val breaker = CircuitBreaker(system.scheduler, MaxFailures, CallTimeout, ResetTimeout)
+		.onOpen(log.warning("Statistics server seems to be unavailable, pausing statistics fetching"))
+		.onClose(log.info("Statistics server is responding again, resuming statistics fetching"))
+
+	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] = breaker
+		.withCircuitBreaker{
+			http.singleRequest(
+				HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
+				settings = connPoolSetts
+			)
+			.flatMap { res =>
+				res.status match {
+					case StatusCodes.OK =>
+						Unmarshal(res.entity).to[T]
+					case s =>
+						Unmarshal(res.entity).to[String].flatMap(
+							errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
+						)
+				}
 			}
-		}.recover{
+		}
+		.map(Option(_))
+		.recover{
+			case _: CircuitBreakerOpenException =>
+				log.debug(s"Skipped fetching statistics from $uri, statistics server considered unavailable")
+				None
 			case err: Throwable =>
 				log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None

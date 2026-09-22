@@ -17,9 +17,12 @@ import scala.concurrent.Future
 final class LandingPageAssembler(statistics: StatisticsClient):
 	def staticObject(metadata: StaticObject, warnings: Seq[String])(using Envri): Future[LandingPage.StaticObjectPage] =
 		import statistics.executionContext
+		// Concurrently fetch statistics
+		val downloadsResult = statistics.getObjDownloadCount(metadata)
+		val previewsResult = statistics.getPreviewCount(metadata.hash)
 		for
-			downloads <- statistics.getObjDownloadCount(metadata)
-			previews <- statistics.getPreviewCount(metadata.hash)
+			downloads <- downloadsResult
+			previews <- previewsResult
 		yield LandingPage.StaticObjectPage(
 			metadata,
 			LandingPageMetrics(downloads, previews),

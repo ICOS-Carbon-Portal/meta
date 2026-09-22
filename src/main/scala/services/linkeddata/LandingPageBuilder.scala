@@ -51,10 +51,12 @@ final class LandingPageBuilder(
 	private val server = new Rdf4jInstanceServer(repo)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
 	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
+	private val collectionBuilder = CollectionLandingPageBuilder(repo, vocab, metaVocab, lenses, objectReader)
 
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 
-	def staticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] = readStaticCollection(hash)
+	def staticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
+		collectionBuilder.staticCollection(hash)
 
 	def staticObjectWithDerived(uri: Uri, hash: Sha256Sum)(using Envri): Future[Validated[StaticObject]] =
 		enrich(staticObject(hash))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
@@ -139,17 +141,6 @@ final class LandingPageBuilder(
 		fromSnapshot(thematicCentres + objectIri, staticObjectLinks): snapshotConn =>
 			given GlobConn = RdfLens.global(using snapshotConn)
 			objectReader.fetchStaticObject(objectIri)
-
-	private def readStaticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] =
-		val collectionIri = vocab.getCollection(hash)
-		fromSnapshot(Set(collectionIri), collectionLinks(collectionIri)): snapshotConn =>
-			for
-				collLens <- lenses.collectionLens
-				docLens <- lenses.documentLens
-				collection <- objectReader.fetchStaticColl(collectionIri, Some(hash))(
-					using collLens(using snapshotConn), docLens(using snapshotConn)
-				)
-			yield collection
 
 	/**
 	 * Reads the metadata closure of `roots` into a short-lived local repository, and lets `reader`
@@ -265,17 +256,6 @@ final class LandingPageBuilder(
 			metaVocab.hasWebpageElements,
 			metaVocab.hasLinkbox
 		)
-	private val collectionForwardLinks: Set[IRI] = Set(
-			metaVocab.dcterms.creator,
-			RDFS.SEEALSO,
-			metaVocab.hasSpatialCoverage,
-			metaVocab.hasWebpageElements,
-			metaVocab.hasLinkbox,
-			metaVocab.isNextVersionOf,
-			metaVocab.wasSubmittedBy,
-			metaVocab.prov.wasAssociatedWith
-		)
-
 	private val staticObjectLinks = LinkPolicy(
 		inverse = Set(
 			metaVocab.dcterms.hasPart,
@@ -288,21 +268,6 @@ final class LandingPageBuilder(
 			staticObjectForwardLinks.contains(predicate) ||
 				predicate.stringValue.startsWith(RDF.NAMESPACE + "_") ||
 				(predicate === metaVocab.dcterms.hasPart && isPlainCollection(subjectStatements))
-	)
-
-	/**
-	 * The collection page is made of the collection itself, its members, its creator organization,
-	 * its documentation and coverage, plus its neighbouring versions and parent collections.
-	 * `dcterms:hasPart` is followed out of the collection the page is about, and out of the plain
-	 * collections version chains are made of, but not out of the parent collections: their other
-	 * members are of no interest, and there can be very many of them.
-	 */
-	private def collectionLinks(collectionIri: IRI) = LinkPolicy(
-		inverse = Set(metaVocab.dcterms.hasPart, metaVocab.isNextVersionOf),
-		follows = (subject, predicate, subjectStatements) =>
-			collectionForwardLinks.contains(predicate) ||
-				(predicate === metaVocab.dcterms.hasPart &&
-					(subject === collectionIri || isPlainCollection(subjectStatements)))
 	)
 
 	/**
@@ -357,7 +322,14 @@ final class LandingPageBuilder(
 		batch: Set[IRI],
 		links: LinkPolicy
 	): IndexedSeq[(Resource, IRI, Value, Resource)] =
-		Using.resource(conn.evaluateTupleQuery(batchQuery(batch, links))): rows =>
+		fetchQuery(conn, target, batchQuery(batch, links))
+
+	private def fetchQuery(
+		conn: SparqlRunner,
+		target: RepositoryConnection,
+		query: String
+	): IndexedSeq[(Resource, IRI, Value, Resource)] =
+		Using.resource(conn.evaluateTupleQuery(query)): rows =>
 			rows.map: bindings =>
 				val subject = bindings.getValue("subject").asInstanceOf[Resource]
 				val predicate = bindings.getValue("predicate").asInstanceOf[IRI]
@@ -416,6 +388,7 @@ final class LandingPageBuilder(
 		access(lenses.metaInstanceLens)(reader)
 
 object LandingPageBuilder:
+	// Legacy generic-resource-page limit: outgoing properties and incoming usages are each truncated to this size.
 	private val ResultLimit = 500
 
 	/**

@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.query.{QueryLanguage, TupleQuery}
 import org.eclipse.rdf4j.repository.base.{RepositoryConnectionWrapper, RepositoryWrapper}
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -52,10 +53,10 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 
 	private val counter = QueryCounter()
 	private val fixture = Fixture()
-	private val builder = LandingPageBuilder(
-		CountingRepository(fixture.repo, counter),
-		fixture.vocab,
-		fixture.metaVocab,
+	private val builder = builderFor(fixture, counter)
+
+	private def builderFor(fixture: Fixture, counter: QueryCounter) = LandingPageBuilder(
+		CountingRepository(fixture.repo, counter), fixture.vocab, fixture.metaVocab,
 		MetaDb.getLenses(config.instanceServers, config.dataUploadService),
 		PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix),
 		// only reached by the *WithDerived methods, which this test deliberately avoids:
@@ -170,8 +171,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("collection landing page"):
 		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
 
-		it("reads the collection in three bounded RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 3))
+		it("reads the collection in two role-bounded RDF-store queries"):
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 2))
 
 		it("is built into a collection with both of its members"):
 			assert(page.res === fixture.collResource)
@@ -184,6 +185,51 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 			//members are sorted by name, and a document object is named by its title
 			assert(page.members.map(_.name) === Seq("Test document", "test_data.csv"))
 			assert(page.parentCollections === Nil)
+
+		it("does not crawl collections that happen to contain one of its members"):
+			val otherFixture = Fixture()
+			val otherCounter = QueryCounter()
+			try
+				val vf = otherFixture.repo.getValueFactory
+				val graph = vf.createIRI("http://meta.icos-cp.eu/collections/")
+				val unrelated = vf.createIRI("https://meta.icos-cp.eu/collections/unrelated")
+				val unrelatedPrevious = vf.createIRI("https://meta.icos-cp.eu/collections/unrelated-previous")
+				val member = vf.createIRI(otherFixture.dobjResource.toString)
+				Using.resource(otherFixture.repo.getConnection()): conn =>
+					conn.add(unrelated, RDF.TYPE, otherFixture.metaVocab.plainCollectionClass, graph)
+					conn.add(unrelated, otherFixture.metaVocab.dcterms.hasPart, member, graph)
+					conn.add(unrelated, otherFixture.metaVocab.isNextVersionOf, unrelatedPrevious, graph)
+
+				val otherBuilder = builderFor(otherFixture, otherCounter)
+				val built = otherBuilder.staticCollection(otherFixture.collHash)
+				assert(built.errors === Nil)
+				assert(otherCounter.snapshot.sparql === 2)
+			finally otherFixture.repo.shutDown()
+
+		it("retains newer versions represented by a plain collection wrapper"):
+			val versionFixture = Fixture()
+			val versionCounter = QueryCounter()
+			try
+				val vf = versionFixture.repo.getValueFactory
+				val graph = vf.createIRI("http://meta.icos-cp.eu/collections/")
+				val current = versionFixture.vocab.getCollection(versionFixture.collHash)
+				val nextHash = Sha256Sum.fromBytes(Array.fill(18)(4.toByte)).get
+				val next = versionFixture.vocab.getCollection(nextHash)
+				val wrapper = vf.createIRI("https://meta.icos-cp.eu/collections/version-wrapper")
+				Using.resource(versionFixture.repo.getConnection()): conn =>
+					conn.add(wrapper, RDF.TYPE, versionFixture.metaVocab.plainCollectionClass, graph)
+					conn.add(wrapper, versionFixture.metaVocab.isNextVersionOf, current, graph)
+					conn.add(wrapper, versionFixture.metaVocab.dcterms.hasPart, next, graph)
+					conn.add(next, RDF.TYPE, versionFixture.metaVocab.collectionClass, graph)
+
+				val built = builderFor(versionFixture, versionCounter)
+					.staticCollection(versionFixture.collHash)
+				assert(built.errors === Nil)
+				val collection = built.result.getOrElse(fail("the versioned collection was not built"))
+				val nextUri = URI(next.stringValue)
+				assert(collection.nextVersion === Some(Left(nextUri)))
+				assert(collection.latestVersion === Left(nextUri))
+			finally versionFixture.repo.shutDown()
 
 	describe("station landing page"):
 		lazy val (page, counts) = build(builder.station(fixture.stationUri))

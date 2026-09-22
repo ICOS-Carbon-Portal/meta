@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.{RDF, XSD}
 import org.eclipse.rdf4j.query.{QueryLanguage, TupleQuery}
 import org.eclipse.rdf4j.repository.base.{RepositoryConnectionWrapper, RepositoryWrapper}
 import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -171,8 +171,8 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 	describe("collection landing page"):
 		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
 
-		it("reads the collection in two role-bounded RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 2))
+		it("batches member summaries and otherwise follows the original reader"):
+			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 1, sparql = 2))
 
 		it("is built into a collection with both of its members"):
 			assert(page.res === fixture.collResource)
@@ -205,6 +205,29 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 				assert(built.errors === Nil)
 				assert(otherCounter.snapshot.sparql === 2)
 			finally otherFixture.repo.shutDown()
+
+		it("adds one query when the member list crosses the batch size"):
+			val largeFixture = Fixture()
+			val largeCounter = QueryCounter()
+			try
+				val vf = largeFixture.repo.getValueFactory
+				val collectionGraph = vf.createIRI("http://meta.icos-cp.eu/collections/")
+				val documentGraph = vf.createIRI("http://meta.icos-cp.eu/documents/")
+				val collection = largeFixture.vocab.getCollection(largeFixture.collHash)
+				Using.resource(largeFixture.repo.getConnection()): conn =>
+					(0 until 249).foreach: index =>
+						val hash = Sha256Sum.fromBytes(Array.tabulate(18)(i => (index + i).toByte)).get
+						val member = largeFixture.vocab.getStaticObject(hash)
+						conn.add(collection, largeFixture.metaVocab.dcterms.hasPart, member, collectionGraph)
+						conn.add(member, RDF.TYPE, largeFixture.metaVocab.docObjectClass, documentGraph)
+						conn.add(member, largeFixture.metaVocab.hasSha256sum, vf.createLiteral(hash.base64, XSD.BASE64BINARY), documentGraph)
+						conn.add(member, largeFixture.metaVocab.hasName, vf.createLiteral(s"member-$index"), documentGraph)
+
+				val built = builderFor(largeFixture, largeCounter).staticCollection(largeFixture.collHash)
+				assert(built.errors === Nil)
+				assert(built.result.map(_.members.size) === Some(251))
+				assert(largeCounter.snapshot === QueryCounts(1, 17, 1, 3))
+			finally largeFixture.repo.shutDown()
 
 		it("retains newer versions represented by a plain collection wrapper"):
 			val versionFixture = Fixture()

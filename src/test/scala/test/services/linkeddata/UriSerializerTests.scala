@@ -73,6 +73,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private def serialize(uri: Uri): Route = get:
 		complete(uri)
 
+	private def renderLandingPage(uri: Uri): String =
+		var body = ""
+		Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
+			body = responseAs[String]
+			assert(status === StatusCodes.OK, body)
+			assert(contentType.mediaType === MediaTypes.`text/html`)
+		body
+
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
 			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(missingObjectUri) ~> check:
@@ -113,42 +121,73 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				assert(body.contains(predicate.stringValue))
 
 	describe("landing page URIs"):
-		val landingPages = Seq(
-			("data object", Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"), Seq(
-				"test_data.csv", "Test time series", "12345", "100", "Test station", "50.0", "Test instrument"
-			)),
-			("document object", Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"), Seq(
-				"Test document", "test_doc.pdf", "54321", "Test Person", "Carbon Portal"
-			)),
-			("collection", Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"), Seq(
-				"Test collection", "A collection of test items", "Carbon Portal", "test_data.csv", "Test document"
-			)),
-			("station", Uri("http://meta.icos-cp.eu/resources/stations/TST"), Seq(
-				"Test station", "TST", "56.1", "13.4", "150 m", "Sweden"
-			)),
-			("organization", Uri("http://meta.icos-cp.eu/resources/organizations/CP"), Seq("Carbon Portal", "CP")),
-			("instrument", Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"), Seq(
-				"Test instrument", "Picarro G2401", "SN-1", "Carbon Portal"
-			)),
-			("person", Uri("http://meta.icos-cp.eu/resources/people/Test_Person"), Seq(
-				"Test Person", "TST", "PI", "2021-01-01"
-			)),
-			("object specification", Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"), Seq(
-				"Test time series", "ICOS", "Atmosphere", "ASCII CSV time series", "plain text", "2"
-			)),
-			("labeled resource", Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"), Seq(
-				"Atmosphere", "https://static.icos-cp.eu/atmosphere.svg"
-			))
-		)
+		it("renders the data object landing page as HTML"):
+			val body = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			assert(body.contains("test_data.csv"))
+			assert(body.contains("Test time series"))
+			assert(body.contains("12345"))
+			assert(body.contains("100"))
+			assert(body.contains("Test station"))
+			assert(body.contains("50.0"))
+			assert(body.contains("Test instrument"))
 
-		landingPages.foreach: (pageType, uri, expectedContents) =>
-			it(s"renders the $pageType landing page as HTML"):
-				Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
-					assert(status === StatusCodes.OK, responseAs[String])
-					assert(contentType.mediaType === MediaTypes.`text/html`)
-					val body = responseAs[String]
-					expectedContents.foreach: expectedContent =>
-						assert(body.contains(expectedContent), s"$pageType page did not contain '$expectedContent'")
+		it("renders the document object landing page as HTML"):
+			val body = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+			assert(body.contains("Test document"))
+			assert(body.contains("test_doc.pdf"))
+			assert(body.contains("54321"))
+			assert(body.contains("Test Person"))
+			assert(body.contains("Carbon Portal"))
+
+		it("renders the collection landing page as HTML"):
+			val body = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
+			assert(body.contains("Test collection"))
+			assert(body.contains("A collection of test items"))
+			assert(body.contains("Carbon Portal"))
+			assert(body.contains("test_data.csv"))
+			assert(body.contains("Test document"))
+
+		it("renders the station landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
+			assert(body.contains("Test station"))
+			assert(body.contains("TST"))
+			assert(body.contains("56.1"))
+			assert(body.contains("13.4"))
+			assert(body.contains("150 m"))
+			assert(body.contains("Sweden"))
+
+		it("renders the organization landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/organizations/CP"))
+			assert(body.contains("Carbon Portal"))
+			assert(body.contains("CP"))
+
+		it("renders the instrument landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
+			assert(body.contains("Test instrument"))
+			assert(body.contains("Picarro G2401"))
+			assert(body.contains("SN-1"))
+			assert(body.contains("Carbon Portal"))
+
+		it("renders the person landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))
+			assert(body.contains("Test Person"))
+			assert(body.contains("TST"))
+			assert(body.contains("PI"))
+			assert(body.contains("2021-01-01"))
+
+		it("renders the object specification landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"))
+			assert(body.contains("Test time series"))
+			assert(body.contains("ICOS"))
+			assert(body.contains("Atmosphere"))
+			assert(body.contains("ASCII CSV time series"))
+			assert(body.contains("plain text"))
+			assert(body.contains("2"))
+
+		it("renders the labeled resource landing page as HTML"):
+			val body = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"))
+			assert(body.contains("Atmosphere"))
+			assert(body.contains("https://static.icos-cp.eu/atmosphere.svg"))
 
 	override def afterAll(): Unit =
 		repo.shutDown()

@@ -42,6 +42,8 @@ class StaticObjectReader(
 				given DocConn <- lenses.documentLens
 				docObj <- getExistingDocumentObject(objIri)
 			yield docObj
+		else if !dataObjExists(objIri) then
+			new Validated(None)
 		else for
 			given DobjConn <- getLensForDataObj(objIri)
 			dobj <- getExistingDataObject(objIri)

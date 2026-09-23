@@ -48,7 +48,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 		Validated.sequence(allParentColls.filterNot(deprecatedSet.contains).map(fetchCollLite))
 
 	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum])(using CollConn, DocConn): Validated[StaticCollection] =
-		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
+		if !collectionExists(collUri) then new Validated(None)
 		else getExistingStaticColl(collUri, hashOpt)
 
 	def fetchCollCoverage(collUri: IRI)(using conn: CollConn): Validated[Option[GeoFeature]] =

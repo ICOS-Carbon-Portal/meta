@@ -49,7 +49,21 @@ private[upload] class CollectionReader(val metaVocab: CpmetaVocab, citer: Citabl
 
 	def fetchStaticColl(collUri: IRI, hashOpt: Option[Sha256Sum])(using CollConn, DocConn): Validated[StaticCollection] =
 		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
-		else getExistingStaticColl(collUri, hashOpt)
+		else getExistingStaticColl(collUri, hashOpt, fetchCollectionMembers(collUri))
+
+	def fetchStaticColl(
+		collUri: IRI,
+		hashOpt: Option[Sha256Sum],
+		members: Validated[Seq[PlainStaticItem]]
+	)(using CollConn, DocConn): Validated[StaticCollection] =
+		if !collectionExists(collUri) then Validated.error(s"Collection $collUri does not exist")
+		else getExistingStaticColl(collUri, hashOpt, members)
+
+	def fetchCollectionMembers(coll: IRI)(using collConn: CollConn, docConn: DocConn): Validated[Seq[PlainStaticItem]] =
+		Validated.sequence:
+			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
+				if collectionExists(item)(using collConn) then getPlainStaticCollection(item)(using collConn)
+				else getPlainDataObject(item)(using RdfLens.global(using docConn))
 
 	def fetchCollCoverage(collUri: IRI)(using conn: CollConn): Validated[Option[GeoFeature]] =
 		getOptionalUri(collUri, metaVocab.hasSpatialCoverage).flatMap:
@@ -58,14 +72,10 @@ private[upload] class CollectionReader(val metaVocab: CpmetaVocab, citer: Citabl
 				getCoverage(covIri).map(Option.apply).orElse(None)
 
 	private def getExistingStaticColl(
-		coll: IRI, hashOpt: Option[Sha256Sum] = None
+		coll: IRI,
+		hashOpt: Option[Sha256Sum],
+		membersV: Validated[Seq[PlainStaticItem]]
 	)(using collConn: CollConn, docConn: DocConn): Validated[StaticCollection] =
-
-		val membersV = Validated.sequence:
-			getUriValues(coll, dct.hasPart)(using collConn).map: item =>
-				if collectionExists(item) then getPlainStaticCollection(item)
-				else getPlainDataObject(item)(using RdfLens.global(using docConn))
-
 		for
 			hash <- hashOpt.fold(hashFromIri(coll))(Validated.ok)
 			creatorUri <- getSingleUri[CollConn](coll, dct.creator)

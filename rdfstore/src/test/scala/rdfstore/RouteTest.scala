@@ -4,7 +4,9 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpHeader, HttpMethods, HttpRequest, StatusCodes}
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.eclipse.rdf4j.common.iteration.EmptyIteration
@@ -192,6 +194,25 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 					try statements.iterator().asScala.toSeq should contain only statement
 					finally statements.close()
 			finally remote.shutDown()
+
+		"accept a SPARQL query POSTed with a non-strict (chunked) request entity" in:
+			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
+			val query = "SELECT ?o WHERE { GRAPH <urn:chunked:graph> { ?s ?p ?o } }"
+			def chunked = HttpEntity.Chunked.fromData(
+				ContentTypes.`text/plain(UTF-8)`,
+				Source(query.grouped(8).map(ByteString.apply).toList)
+			)
+
+			def post(path: String, headers: Seq[HttpHeader]) =
+				val resp = Await.result(
+					Http().singleRequest(HttpRequest(HttpMethods.POST, s"$baseUrl$path", headers.toList, chunked)),
+					10.seconds
+				)
+				val body = Await.result(resp.entity.toStrict(10.seconds), 10.seconds).data.utf8String
+				resp.status -> body
+
+			post("/internal/sparql", Nil)._1 shouldBe StatusCodes.OK
+			post("/sparql", Seq(forwardedFor))._1 shouldBe StatusCodes.OK
 
 		"terminate a long-running query with a bad-request response" in:
 			val vf = repo.getValueFactory

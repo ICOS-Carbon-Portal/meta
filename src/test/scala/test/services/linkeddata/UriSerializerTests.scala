@@ -12,6 +12,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
@@ -32,6 +33,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private given EnvriConfigs = config.core.envriConfigs
 	private val repo: Repository = SailRepository(MemoryStore())
 	repo.init()
+	Using.resources(
+		getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
+		repo.getConnection()
+	): (stream, conn) =>
+		conn.add(stream, "", RDFFormat.TRIG)
 
 	private val vocab = CpVocab(repo.getValueFactory)
 	private val metaVocab = CpmetaVocab(repo.getValueFactory)
@@ -105,6 +111,26 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				assert(body.contains("Serializer test resource"))
 				assert(body.contains(referringResource.stringValue))
 				assert(body.contains(predicate.stringValue))
+
+	describe("landing page URIs"):
+		val landingPages = Seq(
+			("data object", Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"), "test_data.csv"),
+			("document object", Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"), "Test document"),
+			("collection", Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"), "Test collection"),
+			("station", Uri("http://meta.icos-cp.eu/resources/stations/TST"), "Test station"),
+			("organization", Uri("http://meta.icos-cp.eu/resources/organizations/CP"), "Carbon Portal"),
+			("instrument", Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"), "Picarro G2401"),
+			("person", Uri("http://meta.icos-cp.eu/resources/people/Test_Person"), "Test Person"),
+			("object specification", Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"), "Test time series"),
+			("labeled resource", Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"), "Atmosphere")
+		)
+
+		landingPages.foreach: (pageType, uri, expectedContent) =>
+			it(s"renders the $pageType landing page as HTML"):
+				Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
+					assert(status === StatusCodes.OK, responseAs[String])
+					assert(contentType.mediaType === MediaTypes.`text/html`)
+					assert(responseAs[String].contains(expectedContent))
 
 	override def afterAll(): Unit =
 		repo.shutDown()

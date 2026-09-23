@@ -85,8 +85,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			page = Jsoup.parse(body)
 		page
 
-	private def assertHeading(page: Document, expected: String): Unit =
-		assert(Option(page.selectFirst("h1")).map(_.text) === Some(expected))
+	private case class RenderedLink(text: String, href: String)
+
+	private def heading(page: Document): String =
+		Option(page.selectFirst("h1")).map(_.text).getOrElse(fail("Missing heading"))
 
 	private def property(page: Document, label: String): Element =
 		page.select("label.fw-bold").asScala.find(_.text == label)
@@ -98,18 +100,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.map(_.parent.parent.nextElementSibling)
 			.getOrElse(fail(s"Missing property with link '$href'; found ${page.select("label.fw-bold a").eachAttr("href")}"))
 
-	private def assertProperty(page: Document, label: String, expected: String): Unit =
-		assert(property(page, label).text === expected)
+	private def propertyText(page: Document, label: String): String = property(page, label).text
 
-	private def assertLinkedProperty(page: Document, label: String, text: String, href: String): Unit =
-		val link = property(page, label).selectFirst("a")
-		assert(Option(link).map(_.text) === Some(text))
-		assert(Option(link).map(_.attr("href")) === Some(href))
+	private def propertyLink(page: Document, label: String): RenderedLink =
+		val link = Option(property(page, label).selectFirst("a"))
+			.getOrElse(fail(s"Property '$label' has no link"))
+		RenderedLink(link.text, link.attr("href"))
 
-	private def assertPropertyWithLinkedLabel(page: Document, labelHref: String, text: String, href: String): Unit =
-		val link = propertyWithLinkedLabel(page, labelHref).selectFirst("a")
-		assert(Option(link).map(_.text) === Some(text))
-		assert(Option(link).map(_.attr("href")) === Some(href))
+	private def linkedLabelProperty(page: Document, labelHref: String): RenderedLink =
+		val link = Option(propertyWithLinkedLabel(page, labelHref).selectFirst("a"))
+			.getOrElse(fail(s"Property '$labelHref' has no value link"))
+		RenderedLink(link.text, link.attr("href"))
 
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
@@ -127,10 +128,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("a labeled resource URI"):
 		it("renders the generic resource page as HTML"):
 			val page = renderLandingPage(resourceUri)
-			assertHeading(page, "Serializer test resource")
-			assertProperty(page, "URI", resource.stringValue)
-			assertProperty(page, "Label", "Serializer test resource")
-			assertProperty(page, "Comment", "Serializer test comment")
+			assert(heading(page) === "Serializer test resource")
+			assert(propertyText(page, "URI") === resource.stringValue)
+			assert(propertyText(page, "Label") === "Serializer test resource")
+			assert(propertyText(page, "Comment") === "Serializer test comment")
 			val usage = page.selectFirst("label.fw-bold a[href='/resources/test/serializer_test_referrer']")
 			assert(Option(usage).map(_.text) === Some("http://meta.icos-cp.eu/resources/test/serializer_test_referrer"))
 
@@ -154,79 +155,79 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assertHeading(page, "Test time series from Test station (50.0 m)")
-			assertProperty(page, "File name", "test_data.csv")
-			assertProperty(page, "File size", "12 KB (12345 bytes)")
-			assertProperty(page, "Number of data rows", "100")
-			assertProperty(page, "Data level", "2")
-			assertProperty(page, "Sampling height", "50.0")
-			assertLinkedProperty(page, "Data type", "Test time series", "/resources/cpmeta/testTimeSeries")
-			assertLinkedProperty(page, "Station", "Test station", "/resources/stations/TST")
-			assertLinkedProperty(page, "Instrument", "Test instrument", "/resources/instruments/TST_1")
+			assert(heading(page) === "Test time series from Test station (50.0 m)")
+			assert(propertyText(page, "File name") === "test_data.csv")
+			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
+			assert(propertyText(page, "Number of data rows") === "100")
+			assert(propertyText(page, "Data level") === "2")
+			assert(propertyText(page, "Sampling height") === "50.0")
+			assert(propertyLink(page, "Data type") === RenderedLink("Test time series", "/resources/cpmeta/testTimeSeries"))
+			assert(propertyLink(page, "Station") === RenderedLink("Test station", "/resources/stations/TST"))
+			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 			assert(page.select("h2").asScala.map(_.text).contains("Acquisition"))
 			assert(page.select("h2").asScala.map(_.text).contains("Technical information"))
 
 		it("renders the document object landing page as HTML"):
 			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
-			assertHeading(page, "Test document")
-			assertProperty(page, "File name", "test_doc.pdf")
-			assertProperty(page, "File size", "53 KB (54321 bytes)")
-			assertLinkedProperty(page, "Submitted by", "Carbon Portal", "/resources/organizations/CP")
+			assert(heading(page) === "Test document")
+			assert(propertyText(page, "File name") === "test_doc.pdf")
+			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
+			assert(propertyLink(page, "Submitted by") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 			assert(page.select("h2").asScala.map(_.text).contains("Submission"))
 			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
 
 		it("renders the collection landing page as HTML"):
 			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
-			assertHeading(page, "Test collection")
-			assertProperty(page, "Description", "A collection of test items")
-			assertLinkedProperty(page, "Collection creator", "Carbon Portal", "/resources/organizations/CP")
-			assertProperty(page, "Number of items", "2")
+			assert(heading(page) === "Test collection")
+			assert(propertyText(page, "Description") === "A collection of test items")
+			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
+			assert(propertyText(page, "Number of items") === "2")
 			val itemLinks = page.select("a[target=_blank]").asScala.map(link => link.text -> link.attr("href")).toSet
 			assert(itemLinks.contains("test_data.csv" -> "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
 			assert(itemLinks.contains("Test document" -> "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
 
 		it("renders the station landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
-			assertHeading(page, "Test station")
-			assertProperty(page, "Station ID", "TST")
-			assertProperty(page, "Country code", "SE")
-			assertProperty(page, "Latitude/Longitude", "56.1, 13.4")
-			assertProperty(page, "Elevation", "150 m")
+			assert(heading(page) === "Test station")
+			assert(propertyText(page, "Station ID") === "TST")
+			assert(propertyText(page, "Country code") === "SE")
+			assert(propertyText(page, "Latitude/Longitude") === "56.1, 13.4")
+			assert(propertyText(page, "Elevation") === "150 m")
 
 		it("renders the organization landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/organizations/CP"))
-			assertHeading(page, "Carbon Portal (CP)")
-			assertProperty(page, "Name", "Carbon Portal")
+			assert(heading(page) === "Carbon Portal (CP)")
+			assert(propertyText(page, "Name") === "Carbon Portal")
 
 		it("renders the instrument landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
-			assertHeading(page, "Test instrument")
-			assertProperty(page, "Model", "Picarro G2401")
-			assertProperty(page, "Serial number", "SN-1")
-			assertLinkedProperty(page, "Owner", "Carbon Portal", "/resources/organizations/CP")
+			assert(heading(page) === "Test instrument")
+			assert(propertyText(page, "Model") === "Picarro G2401")
+			assert(propertyText(page, "Serial number") === "SN-1")
+			assert(propertyLink(page, "Owner") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 
 		it("renders the person landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))
-			assertHeading(page, "Test Person")
-			assertProperty(page, "First name", "Test")
-			assertProperty(page, "Last name", "Person")
+			assert(heading(page) === "Test Person")
+			assert(propertyText(page, "First name") === "Test")
+			assert(propertyText(page, "Last name") === "Person")
 			val roleCells = page.select("table tbody tr").asScala.flatMap(_.select("td").asScala.map(_.text))
 			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
 
 		it("renders the object specification landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"))
-			assertHeading(page, "Test time series")
-			assertProperty(page, "Label", "Test time series")
-			assertPropertyWithLinkedLabel(page, "/ontologies/cpmeta/hasAssociatedProject", "ICOS", "/resources/projects/icos")
-			assertPropertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataTheme", "Atmosphere", "/resources/themes/atmosphere")
-			assertPropertyWithLinkedLabel(page, "/ontologies/cpmeta/hasFormat", "ASCII CSV time series", "/ontologies/cpmeta/csvWithIso8601tsFirstCol")
-			assertPropertyWithLinkedLabel(page, "/ontologies/cpmeta/hasEncoding", "plain text", "/ontologies/cpmeta/asciiEncoding")
+			assert(heading(page) === "Test time series")
+			assert(propertyText(page, "Label") === "Test time series")
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasAssociatedProject") === RenderedLink("ICOS", "/resources/projects/icos"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDataTheme") === RenderedLink("Atmosphere", "/resources/themes/atmosphere"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasFormat") === RenderedLink("ASCII CSV time series", "/ontologies/cpmeta/csvWithIso8601tsFirstCol"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasEncoding") === RenderedLink("plain text", "/ontologies/cpmeta/asciiEncoding"))
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataLevel").text === "2")
 
 		it("renders the labeled resource landing page as HTML"):
 			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"))
-			assertHeading(page, "Atmosphere")
-			assertProperty(page, "Label", "Atmosphere")
+			assert(heading(page) === "Atmosphere")
+			assert(propertyText(page, "Label") === "Atmosphere")
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg")
 
 	override def afterAll(): Unit =

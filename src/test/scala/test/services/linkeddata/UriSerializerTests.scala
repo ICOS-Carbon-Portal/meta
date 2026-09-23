@@ -114,23 +114,41 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	describe("landing page URIs"):
 		val landingPages = Seq(
-			("data object", Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"), "test_data.csv"),
-			("document object", Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"), "Test document"),
-			("collection", Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"), "Test collection"),
-			("station", Uri("http://meta.icos-cp.eu/resources/stations/TST"), "Test station"),
-			("organization", Uri("http://meta.icos-cp.eu/resources/organizations/CP"), "Carbon Portal"),
-			("instrument", Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"), "Picarro G2401"),
-			("person", Uri("http://meta.icos-cp.eu/resources/people/Test_Person"), "Test Person"),
-			("object specification", Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"), "Test time series"),
-			("labeled resource", Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"), "Atmosphere")
+			("data object", Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"), Seq(
+				"test_data.csv", "Test time series", "12345", "100", "Test station", "50.0", "Test instrument"
+			)),
+			("document object", Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"), Seq(
+				"Test document", "test_doc.pdf", "54321", "Test Person", "Carbon Portal"
+			)),
+			("collection", Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"), Seq(
+				"Test collection", "A collection of test items", "Carbon Portal", "test_data.csv", "Test document"
+			)),
+			("station", Uri("http://meta.icos-cp.eu/resources/stations/TST"), Seq(
+				"Test station", "TST", "56.1", "13.4", "150 m", "Sweden"
+			)),
+			("organization", Uri("http://meta.icos-cp.eu/resources/organizations/CP"), Seq("Carbon Portal", "CP")),
+			("instrument", Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"), Seq(
+				"Test instrument", "Picarro G2401", "SN-1", "Carbon Portal"
+			)),
+			("person", Uri("http://meta.icos-cp.eu/resources/people/Test_Person"), Seq(
+				"Test Person", "TST", "PI", "2021-01-01"
+			)),
+			("object specification", Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"), Seq(
+				"Test time series", "ICOS", "Atmosphere", "ASCII CSV time series", "plain text", "2"
+			)),
+			("labeled resource", Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"), Seq(
+				"Atmosphere", "https://static.icos-cp.eu/atmosphere.svg"
+			))
 		)
 
-		landingPages.foreach: (pageType, uri, expectedContent) =>
+		landingPages.foreach: (pageType, uri, expectedContents) =>
 			it(s"renders the $pageType landing page as HTML"):
 				Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
 					assert(status === StatusCodes.OK, responseAs[String])
 					assert(contentType.mediaType === MediaTypes.`text/html`)
-					assert(responseAs[String].contains(expectedContent))
+					val body = responseAs[String]
+					expectedContents.foreach: expectedContent =>
+						assert(body.contains(expectedContent), s"$pageType page did not contain '$expectedContent'")
 
 	override def afterAll(): Unit =
 		repo.shutDown()

@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.model.{IRI, Literal, ValueFactory}
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses, *}
+import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}

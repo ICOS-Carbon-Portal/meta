@@ -15,13 +15,13 @@ import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, Repositor
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.{PidFactory, UriId}
+import se.lu.nateko.cp.meta.api.{HandleNetClient, UriId}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{
 	AtcStationSpecifics, DataObject, DatasetType, DocObject, EnvriConfig, EnvriConfigs, Position,
 	StaticObject, TimeInterval, UriResource
 }
-import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageBuilder
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -52,15 +52,17 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 
 	private val counter = QueryCounter()
 	private val fixture = Fixture()
+	private val doiCiter = new PlainDoiCiter:
+		def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None
+		def getDoiEager(doi: se.lu.nateko.cp.doi.Doi) = None
+	private val citer = CitationMaker(doiCiter, fixture.vocab, fixture.metaVocab, config.core)
 	private val builder = LandingPageBuilder(
 		CountingRepository(fixture.repo, counter),
 		fixture.vocab,
 		fixture.metaVocab,
 		MetaDb.getLenses(config.instanceServers, config.dataUploadService),
-		PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix),
-		// only reached by the *WithDerived methods, which this test deliberately avoids:
-		// derived metadata is an HTTP call to rdfStore, not an RDF-store query
-		DerivedMetadataClient(URI("http://localhost:1/derived/v1/resolve"))
+		HandleNetClient.PidFactory(config.dataUploadService.handle),
+		citer
 	)
 
 	override def afterAll(): Unit =
@@ -91,7 +93,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.staticObject(fixture.dobjHash))
 
 		it("reads the object with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 91, existence = 6, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 112, existence = 6, sparql = 0))
 
 		it("has the file-level metadata of the object"):
 			val dobj = asDataObject(page)
@@ -140,7 +142,7 @@ class LandingPageBuilderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.staticObject(fixture.docHash))
 
 		it("reads the document with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 33, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 36, existence = 2, sparql = 0))
 
 		it("is built into a document object with its title and authors"):
 			val doc = asDocObject(page)

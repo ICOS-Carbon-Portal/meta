@@ -1,0 +1,141 @@
+@prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix stentry: <http://meta.icos-cp.eu/ontologies/stationentry/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://meta.icos-cp.eu/resources/cpmeta/> {
+	<http://meta.icos-cp.eu/resources/projects/icos>
+		rdfs:label "ICOS" .
+
+	<http://meta.icos-cp.eu/resources/themes/atmosphere>
+		rdfs:label "Atmosphere" ;
+		cpmeta:hasIcon "https://static.icos-cp.eu/atmosphere.svg"^^xsd:anyURI .
+
+	cpmeta:csvWithIso8601tsFirstCol
+		rdfs:label "ASCII CSV time series" .
+
+	cpmeta:asciiEncoding
+		rdfs:label "plain text" .
+
+	<http://meta.icos-cp.eu/resources/roles/PI>
+		a cpmeta:Role ;
+		rdfs:label "PI" .
+
+	<http://meta.icos-cp.eu/resources/organizations/CP>
+		a cpmeta:Organization ;
+		rdfs:label "CP" ;
+		cpmeta:hasName "Carbon Portal" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries>
+		a cpmeta:DataObjectSpec ;
+		rdfs:label "Test time series" ;
+		cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> ;
+		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
+		cpmeta:hasFormat cpmeta:csvWithIso8601tsFirstCol ;
+		cpmeta:hasEncoding cpmeta:asciiEncoding ;
+		cpmeta:hasSpecificDatasetType cpmeta:stationTimeSeriesDataset ;
+		cpmeta:hasDataLevel "2"^^xsd:integer .
+}
+
+<http://meta.icos-cp.eu/resources/icos/> {
+	<http://meta.icos-cp.eu/resources/stations/TST>
+		a cpmeta:AS ;
+		rdfs:label "TST" ;
+		cpmeta:hasName "Test station" ;
+		cpmeta:hasStationId "TST" ;
+		cpmeta:hasLatitude "56.1"^^xsd:double ;
+		cpmeta:hasLongitude "13.4"^^xsd:double ;
+		cpmeta:hasElevation "150.0"^^xsd:float ;
+		cpmeta:countryCode "SE" .
+
+	<http://meta.icos-cp.eu/resources/organizations/ATC>
+		a cpmeta:ThematicCenter ;
+		rdfs:label "ATC" ;
+		cpmeta:hasName "Atmosphere Thematic Centre" ;
+		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> .
+
+	<http://meta.icos-cp.eu/resources/people/Test_Person>
+		a cpmeta:Person ;
+		rdfs:label "Test Person" ;
+		cpmeta:hasFirstName "Test" ;
+		cpmeta:hasLastName "Person" ;
+		cpmeta:hasMembership <http://meta.icos-cp.eu/resources/memberships/TST_PI_Person> .
+
+	<http://meta.icos-cp.eu/resources/memberships/TST_PI_Person>
+		a cpmeta:Membership ;
+		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> ;
+		cpmeta:hasStartTime "2021-01-01T00:00:00Z"^^xsd:dateTime .
+
+	<http://meta.icos-cp.eu/resources/instruments/TST_1>
+		a cpmeta:Instrument ;
+		cpmeta:hasName "Test instrument" ;
+		cpmeta:hasModel "Picarro G2401" ;
+		cpmeta:hasSerialNumber "SN-1" ;
+		cpmeta:hasInstrumentOwner <http://meta.icos-cp.eu/resources/organizations/CP> .
+}
+
+#the labeling app links its station entries to the production stations by a plain xsd:anyURI
+#literal, which is where the labeling date of an ICOS station comes from
+<http://meta.icos-cp.eu/resources/stationlabeling/> {
+	<http://meta.icos-cp.eu/resources/stationentry/AS_TST>
+		stentry:hasProductionCounterpart "http://meta.icos-cp.eu/resources/stations/TST"^^xsd:anyURI ;
+		stentry:hasApplicationStatus "STEP3APPROVED" ;
+		stentry:hasAppStatusDate "2019-06-01T12:00:00Z"^^xsd:dateTime .
+}
+
+<http://meta.icos-cp.eu/resources/tscsv/> {
+	<https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataObject ;
+		cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries> ;
+		cpmeta:hasSha256sum "AQEBAQEBAQEBAQEBAQEBAQEB"^^xsd:base64Binary ;
+		cpmeta:hasName "test_data.csv" ;
+		cpmeta:hasSizeInBytes "12345"^^xsd:long ;
+		cpmeta:hasNumberOfRows "100"^^xsd:integer ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB> .
+
+	<http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataSubmission ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		prov:startedAtTime "2022-01-02T10:00:00Z"^^xsd:dateTime ;
+		prov:endedAtTime "2022-01-02T11:00:00Z"^^xsd:dateTime .
+
+	<http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataAcquisition ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/TST> ;
+		prov:startedAtTime "2021-01-01T00:00:00Z"^^xsd:dateTime ;
+		prov:endedAtTime "2021-12-31T23:59:59Z"^^xsd:dateTime ;
+		cpmeta:hasSamplingHeight "50.0"^^xsd:float ;
+		cpmeta:wasPerformedWith <http://meta.icos-cp.eu/resources/instruments/TST_1> .
+}
+
+<http://meta.icos-cp.eu/documents/> {
+	<https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC>
+		a cpmeta:DocumentObject ;
+		cpmeta:hasSha256sum "AgICAgICAgICAgICAgICAgIC"^^xsd:base64Binary ;
+		cpmeta:hasName "test_doc.pdf" ;
+		cpmeta:hasSizeInBytes "54321"^^xsd:long ;
+		dcterms:title "Test document" ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/people/Test_Person> ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AgICAgICAgICAgICAgICAgIC> .
+
+	<http://meta.icos-cp.eu/resources/subm_AgICAgICAgICAgICAgICAgIC>
+		a cpmeta:DataSubmission ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		prov:startedAtTime "2022-01-02T10:00:00Z"^^xsd:dateTime ;
+		prov:endedAtTime "2022-01-02T11:00:00Z"^^xsd:dateTime .
+}
+
+<http://meta.icos-cp.eu/collections/> {
+	<https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD>
+		a cpmeta:Collection ;
+		dcterms:title "Test collection" ;
+		dcterms:description "A collection of test items" ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> .
+}

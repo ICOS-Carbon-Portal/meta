@@ -433,6 +433,28 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/end_date -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/end_date">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Event_Log"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+        <rdfs:label>end date</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/event_description -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/event_description">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Event_Log"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:label>event description</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/exhaustPosition -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/exhaustPosition">
@@ -1149,6 +1171,17 @@
     
 
 
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/start_date -->
+
+    <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/start_date">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Event_Log"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+        <rdfs:label>start date</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth -->
 
     <owl:DatatypeProperty rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/waterIntakeDepth">
@@ -1274,6 +1307,14 @@
     <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/DriftingBuoy">
         <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Platform"/>
         <rdfs:label>Drifting Buoy</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://meta.icos-cp.eu/ontologies/otcmeta/Event_Log -->
+
+    <owl:Class rdf:about="http://meta.icos-cp.eu/ontologies/otcmeta/Event_Log">
+        <rdfs:subClassOf rdf:resource="http://meta.icos-cp.eu/ontologies/otcmeta/Station"/>
     </owl:Class>
     
 

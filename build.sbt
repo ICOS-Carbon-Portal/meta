@@ -81,7 +81,13 @@ frontendBuild := {
 	import scala.sys.process.Process
 	val log = streams.value.log
 	val targetDir = (Compile / classDirectory).value.getAbsolutePath
-	val exitCode = (Process("npm ci") #&& Process(s"npm run gulp -- --target=$targetDir")).!
+	val stationDir = file("src/main/js/station")
+	val exitCode = (
+		Process("npm ci") #&&
+		Process(s"npm run gulp -- --target=$targetDir") #&&
+		Process("npm ci", stationDir) #&&
+		Process("npm run publish", stationDir, "SCALA_CLASS_DIR" -> targetDir)
+	).!
 	if(exitCode == 0) log.info("Front end build was successfull")
 	else sys.error("Front end build error")
 }

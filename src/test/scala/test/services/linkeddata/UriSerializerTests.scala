@@ -34,11 +34,13 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private val config = ConfigLoader.default
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
-	private val repo: Repository = SailRepository(MemoryStore())
-	repo.init()
+	private val fixtureRepo: Repository = SailRepository(MemoryStore())
+	private val counter = QueryCounter()
+	private val repo: Repository = CountingRepository(fixtureRepo, counter)
+	fixtureRepo.init()
 	Using.resources(
 		getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
-		repo.getConnection()
+		fixtureRepo.getConnection()
 	): (stream, conn) =>
 		conn.add(stream, "", RDFFormat.TRIG)
 
@@ -76,14 +78,15 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private def serialize(uri: Uri): Route = get:
 		complete(uri)
 
-	private def renderLandingPage(uri: Uri): Document =
+	private def renderLandingPage(uri: Uri): (Document, QueryCounts) =
+		counter.reset()
 		var page: Document = null
 		Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType.mediaType === MediaTypes.`text/html`)
 			page = Jsoup.parse(body)
-		page
+		page -> counter.snapshot
 
 	private case class RenderedLink(text: String, href: String)
 
@@ -127,7 +130,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	describe("a labeled resource URI"):
 		it("renders the generic resource page as HTML"):
-			val page = renderLandingPage(resourceUri)
+			val (page, counts) = renderLandingPage(resourceUri)
+			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
 			assert(heading(page) === "Serializer test resource")
 			assert(propertyText(page, "URI") === resource.stringValue)
 			assert(propertyText(page, "Label") === "Serializer test resource")
@@ -154,7 +158,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
-			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 7, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -168,7 +173,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(page.select("h2").asScala.map(_.text).contains("Technical information"))
 
 		it("renders the document object landing page as HTML"):
-			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+			assert(counts === QueryCounts(connections = 1, statements = 36, existence = 2, sparql = 0))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
 			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
@@ -177,7 +183,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
 
 		it("renders the collection landing page as HTML"):
-			val page = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
+			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
+			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
@@ -187,7 +194,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(itemLinks.contains("Test document" -> "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
 
 		it("renders the station landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
+			assert(counts === QueryCounts(connections = 1, statements = 45, existence = 4, sparql = 0))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
 			assert(propertyText(page, "Country code") === "SE")
@@ -195,19 +203,22 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Elevation") === "150 m")
 
 		it("renders the organization landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/organizations/CP"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/organizations/CP"))
+			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
 			assert(heading(page) === "Carbon Portal (CP)")
 			assert(propertyText(page, "Name") === "Carbon Portal")
 
 		it("renders the instrument landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
+			assert(counts === QueryCounts(connections = 1, statements = 18, existence = 1, sparql = 0))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
 			assert(propertyText(page, "Serial number") === "SN-1")
 			assert(propertyLink(page, "Owner") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 
 		it("renders the person landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))
+			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
 			assert(heading(page) === "Test Person")
 			assert(propertyText(page, "First name") === "Test")
 			assert(propertyText(page, "Last name") === "Person")
@@ -215,7 +226,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
 
 		it("renders the object specification landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries"))
+			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
 			assert(heading(page) === "Test time series")
 			assert(propertyText(page, "Label") === "Test time series")
 			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasAssociatedProject") === RenderedLink("ICOS", "/resources/projects/icos"))
@@ -225,11 +237,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataLevel").text === "2")
 
 		it("renders the labeled resource landing page as HTML"):
-			val page = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"))
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"))
+			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
 			assert(heading(page) === "Atmosphere")
 			assert(propertyText(page, "Label") === "Atmosphere")
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg")
 
 	override def afterAll(): Unit =
-		repo.shutDown()
+		fixtureRepo.shutDown()
 		super.afterAll()

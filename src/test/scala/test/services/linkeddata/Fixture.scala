@@ -41,6 +41,12 @@ object Fixture {
 	val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
 	val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
 
+	//the hashes of the objects and collections, as the loader addresses them
+	private def hash(seed: Byte) = Sha256Sum.fromBytes(Array.fill(18)(seed)).get
+	val timeSeriesHash = hash(1)
+	val documentHash = hash(2)
+	val testCollectionHash = hash(3)
+
 	val timeSeriesObject = Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
 	val versionedObject = Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
 	val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")

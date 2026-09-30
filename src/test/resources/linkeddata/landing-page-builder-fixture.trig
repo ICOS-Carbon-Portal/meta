@@ -3,7 +3,8 @@
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix stentry: <http://meta.icos-cp.eu/ontologies/stationentry/> .
+@prefix ssn: <http://www.w3.org/ns/ssn/> .
+@prefix stentry:<http://meta.icos-cp.eu/ontologies/stationentry/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://meta.icos-cp.eu/resources/cpmeta/> {
@@ -37,7 +38,55 @@
 		cpmeta:hasFormat cpmeta:csvWithIso8601tsFirstCol ;
 		cpmeta:hasEncoding cpmeta:asciiEncoding ;
 		cpmeta:hasSpecificDatasetType cpmeta:stationTimeSeriesDataset ;
+		cpmeta:containsDataset <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset> ;
 		cpmeta:hasDataLevel "2"^^xsd:integer .
+
+	#the dataset columns are what the "Previewable variables" table on data object landing pages is made of
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset>
+		a cpmeta:TabularDatasetSpec ;
+		rdfs:label "Test time series dataset" ;
+		cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_TIMESTAMP> ;
+		cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_co2> ;
+		cpmeta:hasColumn <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_ch4> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_TIMESTAMP>
+		a cpmeta:DatasetColumn ;
+		rdfs:label "Timestamp column" ;
+		cpmeta:hasColumnTitle "TIMESTAMP" ;
+		cpmeta:hasValueType <http://meta.icos-cp.eu/resources/cpmeta/timestamp> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_co2>
+		a cpmeta:DatasetColumn ;
+		rdfs:label "CO2 column" ;
+		cpmeta:hasColumnTitle "co2" ;
+		cpmeta:hasValueType <http://meta.icos-cp.eu/resources/cpmeta/co2MixingRatio> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_ch4>
+		a cpmeta:DatasetColumn ;
+		rdfs:label "CH4 column" ;
+		cpmeta:hasColumnTitle "ch4" ;
+		cpmeta:hasValueType <http://meta.icos-cp.eu/resources/cpmeta/ch4MixingRatio> .
+
+	#no quantity kind or unit, so no preview link
+	<http://meta.icos-cp.eu/resources/cpmeta/timestamp>
+		a cpmeta:ValueType ;
+		rdfs:label "time instant, UTC" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/co2MixingRatio>
+		a cpmeta:ValueType ;
+		rdfs:label "CO2 mixing ratio (dry mole fraction)" ;
+		cpmeta:hasQuantityKind <http://meta.icos-cp.eu/resources/cpmeta/portion> ;
+		cpmeta:hasUnit "µmol mol-1" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/ch4MixingRatio>
+		a cpmeta:ValueType ;
+		rdfs:label "CH4 mixing ratio (dry mole fraction)" ;
+		cpmeta:hasQuantityKind <http://meta.icos-cp.eu/resources/cpmeta/portion> ;
+		cpmeta:hasUnit "nmol mol-1" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/portion>
+		a cpmeta:QuantityKind ;
+		rdfs:label "portion" .
 }
 
 <http://meta.icos-cp.eu/resources/icos/> {
@@ -75,7 +124,29 @@
 		cpmeta:hasName "Test instrument" ;
 		cpmeta:hasModel "Picarro G2401" ;
 		cpmeta:hasSerialNumber "SN-1" ;
-		cpmeta:hasInstrumentOwner <http://meta.icos-cp.eu/resources/organizations/CP> .
+		cpmeta:hasInstrumentOwner <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		ssn:hasDeployment <http://meta.icos-cp.eu/resources/deployments/TST_1_co2> ;
+		ssn:hasDeployment <http://meta.icos-cp.eu/resources/deployments/TST_1_co2_old> .
+
+	#overlaps the acquisition interval of the test data object, so shown for its co2 column
+	<http://meta.icos-cp.eu/resources/deployments/TST_1_co2>
+		a ssn:Deployment ;
+		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:hasVariableName "co2" ;
+		ssn:forProperty <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_co2> ;
+		cpmeta:hasStartTime "2020-06-01T00:00:00Z"^^xsd:dateTime ;
+		cpmeta:hasLatitude "56.1"^^xsd:double ;
+		cpmeta:hasLongitude "13.4"^^xsd:double ;
+		cpmeta:hasSamplingHeight "50.0"^^xsd:float .
+
+	#ended before the acquisition interval started, so not shown
+	<http://meta.icos-cp.eu/resources/deployments/TST_1_co2_old>
+		a ssn:Deployment ;
+		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:hasVariableName "co2" ;
+		ssn:forProperty <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset_co2> ;
+		cpmeta:hasStartTime "2018-01-01T00:00:00Z"^^xsd:dateTime ;
+		cpmeta:hasEndTime "2019-01-01T00:00:00Z"^^xsd:dateTime .
 }
 
 #the labeling app links its station entries to the production stations by a plain xsd:anyURI
@@ -95,6 +166,7 @@
 		cpmeta:hasName "test_data.csv" ;
 		cpmeta:hasSizeInBytes "12345"^^xsd:long ;
 		cpmeta:hasNumberOfRows "100"^^xsd:integer ;
+		cpmeta:hasActualColumnNames "[\"TIMESTAMP\",\"co2\",\"ch4\"]" ;
 		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
 		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB> .
 

@@ -115,6 +115,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.getOrElse(fail(s"Property '$labelHref' has no value link"))
 		RenderedLink(link.text, link.attr("href"))
 
+	private def previewableVariablesTable(page: Document): Element =
+		page.select("h2").asScala.find(_.text == "Previewable variables")
+			.flatMap(h2 => Option(h2.nextElementSibling.selectFirst("table")))
+			.getOrElse(fail("Missing previewable variables table"))
+
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
 			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(missingObjectUri) ~> check:
@@ -159,7 +164,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 7, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 205, existence = 10, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -171,6 +176,38 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 			assert(page.select("h2").asScala.map(_.text).contains("Acquisition"))
 			assert(page.select("h2").asScala.map(_.text).contains("Technical information"))
+
+		it("renders the previewable variables of the data object landing page"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			val table = previewableVariablesTable(page)
+			val headers = table.selectFirst("thead > tr").children.asScala.map(_.text)
+			assert(headers === Seq("Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"))
+
+			val rows = table.selectFirst("tbody").children.asScala.map(_.children.asScala.toSeq).toSeq
+			assert(rows.map(_.take(5).map(_.text)) === Seq(
+				Seq("TIMESTAMP", "time instant, UTC", "", "", ""),
+				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
+				Seq("ch4", "CH4 mixing ratio (dry mole fraction)", "nmol mol-1", "portion", "Preview")
+			))
+
+			val previewLinks = rows.map(cells => Option(cells(4).selectFirst("a")).map(_.attr("href")))
+			def previewUrl(variable: String) =
+				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
+			assert(previewLinks === Seq(None, Some(previewUrl("co2")), Some(previewUrl("ch4"))))
+
+			// only the co2 deployment that overlaps the acquisition interval is shown
+			val deploymentCells = rows.map(_(5))
+			assert(deploymentCells(0).children.isEmpty)
+			assert(deploymentCells(2).children.isEmpty)
+			val deploymentRows = deploymentCells(1).select("table.instrument-deployment tbody tr").asScala
+				.map(_.children.asScala.map(_.text).toSeq).toSeq
+			assert(deploymentRows === Seq(Seq(
+				"Start: 2020-06-01 00:00:00 Stop: Not done",
+				"Latitude: 56.1 Longitude: 13.4 Altitude: 50.0 m",
+				"Test instrument"
+			)))
+			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
+			assert(RenderedLink(instrumentLink.text, instrumentLink.attr("href")) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
@@ -195,7 +232,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the station landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
-			assert(counts === QueryCounts(connections = 1, statements = 45, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 47, existence = 4, sparql = 0))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
 			assert(propertyText(page, "Country code") === "SE")
@@ -210,7 +247,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the instrument landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
-			assert(counts === QueryCounts(connections = 1, statements = 18, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 56, existence = 1, sparql = 0))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
 			assert(propertyText(page, "Serial number") === "SN-1")

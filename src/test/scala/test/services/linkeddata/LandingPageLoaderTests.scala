@@ -93,7 +93,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.staticObject(fixture.dobjHash))
 
 		it("reads the object with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 7, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
 
 		it("has the file-level metadata of the object"):
 			val dobj = asDataObject(page)
@@ -123,8 +123,16 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 				case Right(stationTimeSeries) => stationTimeSeries
 				case Left(spatioTemporal) => fail(s"Expected station time series metadata, got $spatioTemporal")
 			assert(l2.nRows === Some(100))
-			assert(l2.columns === None)
-			assert(l2.productionInfo === None)
+			assert(l2.columns.map(_.map(_.label)) === Some(Seq("TIMESTAMP", "co2", "ch4")))
+			//only the co2 deployment that overlaps the acquisition interval is kept
+			assert(l2.columns.map(_.map(_.instrumentDeployments.map(_.map(_.instrument.uri)))) ===
+				Some(Seq(None, Some(Seq(fixture.instrumentResource)), None)))
+			val production = l2.productionInfo.getOrElse(fail("Missing production"))
+			assert(production.comment === Some("Test production comment"))
+			assert(production.host.map(_.name) === Some("Atmosphere Thematic Centre"))
+			assert(production.contributors.size === 3)
+			assert(production.sources.size === 2)
+			assert(production.dateTime === Instant.parse("2022-01-01T12:00:00Z"))
 			assert(l2.acquisition.station.id === "TST")
 			assert(l2.acquisition.station.org.name === "Test station")
 			assert(l2.acquisition.interval === Some(TimeInterval(fixture.acqStart, fixture.acqStop)))
@@ -142,7 +150,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.staticObject(fixture.docHash))
 
 		it("reads the document with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 36, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
 
 		it("is built into a document object with its title and authors"):
 			val doc = asDocObject(page)
@@ -153,7 +161,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(doc.pid === Some(s"11676/${fixture.docHash.id}"))
 			assert(doc.description === None)
 			assert(doc.references.title === Some("Test document"))
-			assert(doc.references.authors.map(_.map(_.self.label)) === Some(Seq(Some("Test Person"))))
+			assert(doc.references.authors.map(_.map(_.self.label)) === Some(Seq(Some("Zed Contributor"), Some("Test Person"))))
 			assert(doc.submission.submitter.name === "Carbon Portal")
 			assert(doc.parentCollections.map(_.label) === Seq(Some("Test collection")))
 
@@ -161,25 +169,25 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
 
 		it("reads the collection with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
 
-		it("is built into a collection with both of its members"):
+		it("is built into a collection with all of its members"):
 			assert(page.res === fixture.collResource)
 			assert(page.hash === fixture.collHash)
 			assert(page.title === "Test collection")
 			assert(page.description === Some("A collection of test items"))
 			assert(page.creator.name === "Carbon Portal")
 			assert(page.doi === None)
-			assert(page.members.map(_.res).toSet === Set(fixture.dobjResource, fixture.docResource))
-			//members are sorted by name, and a document object is named by its title
-			assert(page.members.map(_.name) === Seq("Test document", "test_data.csv"))
+			assert(page.members.map(_.res).toSet === Set(fixture.nestedCollResource, fixture.dobjResource, fixture.docResource))
+			//members are sorted by name, and a document object or a collection is named by its title
+			assert(page.members.map(_.name) === Seq("Nested collection", "Test document", "test_data.csv"))
 			assert(page.parentCollections === Nil)
 
 	describe("station landing page"):
 		lazy val (page, counts) = build(builder.station(fixture.stationUri))
 
 		it("reads the station and its memberships with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 45, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
 
 		it("is built into a station with its location and country"):
 			val station = page.org
@@ -188,7 +196,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(station.org.name === "Test station")
 			assert(station.location === Some(Position(56.1, 13.4, Some(150f), Some("TST"), None)))
 			assert(station.countryCode.map(_.code) === Some("SE"))
-			assert(station.responsibleOrganization === None)
+			assert(station.responsibleOrganization.map(_.name) === Some("Carbon Portal"))
 			assert(station.specificInfo.isInstanceOf[AtcStationSpecifics])
 
 		it("is built with the station's staff"):
@@ -230,25 +238,27 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 		lazy val (page, counts) = build(builder.instrument(fixture.instrumentUri))
 
 		it("reads the instrument with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 18, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
 
-		it("is built into an instrument with its model, serial number and owner"):
+		it("is built into an instrument with its model, serial number, owner, vendor, parts and deployments"):
 			assert(page.self.uri === fixture.instrumentResource)
 			assert(page.self.label === Some("Test instrument"))
 			assert(page.model === "Picarro G2401")
 			assert(page.serialNumber === "SN-1")
 			assert(page.name === Some("Test instrument"))
 			assert(page.owner.map(_.name) === Some("Carbon Portal"))
-			assert(page.vendor === None)
-			assert(page.parts === Nil)
+			assert(page.vendor.map(_.name) === Some("Picarro Inc."))
+			assert(page.parts.map(_.uri) === Seq(fixture.instrumentPartResource))
 			assert(page.partOf === None)
-			assert(page.deployments === Nil)
+			assert(page.deployments.map(_.start).toSet === Set(
+				Some(Instant.parse("2020-06-01T00:00:00Z")), Some(Instant.parse("2018-01-01T00:00:00Z"))
+			))
 
 	describe("object specification metadata"):
 		lazy val (page, counts) = build(builder.specification(fixture.specUri))
 
 		it("reads the specification with the expected number of RDF-store queries"):
-			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 0, sparql = 0))
 
 		it("is built into a specification with project, theme, format and encoding"):
 			assert(page.self.uri === fixture.specResource)
@@ -260,8 +270,8 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.theme.icon === URI("https://static.icos-cp.eu/atmosphere.svg"))
 			assert(page.format.self.label === Some("ASCII CSV time series"))
 			assert(page.encoding.label === Some("plain text"))
-			assert(page.datasetSpec === None)
-			assert(page.documentation === Nil)
+			assert(page.datasetSpec.map(_.self.label) === Some(Some("Test time series dataset")))
+			assert(page.documentation.map(_.res) === Seq(fixture.specDocResource))
 			assert(page.keywords === None)
 
 		it("recognizes the specification with a single existence check"):
@@ -294,7 +304,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 
 		it("is built into the properties, types and usages of the resource"):
 			assert(!page.isEmpty)
-			assert(page.res === UriResource(fixture.stationResource, Some("TST"), Nil))
+			assert(page.res === UriResource(fixture.stationResource, Some("TST"), Seq("Test station description")))
 			assert(page.types.map(_.uri) === List(fixture.stationClassResource))
 
 			val props = page.propValues.map((prop, value) => prop.uri.toString -> value)
@@ -349,6 +359,8 @@ object LandingPageLoaderTests:
 		private val dobj = vocab.getStaticObject(dobjHash)
 		private val doc = vocab.getStaticObject(docHash)
 		private val coll = vocab.getCollection(collHash)
+		private val nestedColl = vocab.getCollection(hash(12))
+		private val specDoc = vocab.getStaticObject(hash(17))
 
 		val stationUri = Uri(station.stringValue)
 		val orgUri = Uri(org.stringValue)
@@ -360,9 +372,12 @@ object LandingPageLoaderTests:
 		val dobjResource = URI(dobj.stringValue)
 		val docResource = URI(doc.stringValue)
 		val collResource = URI(coll.stringValue)
+		val nestedCollResource = URI(nestedColl.stringValue)
+		val specDocResource = URI(specDoc.stringValue)
 		val stationResource = URI(station.stringValue)
 		val personResource = URI(person.stringValue)
 		val instrumentResource = URI(instrument.stringValue)
+		val instrumentPartResource = URI(vocab.getInstrument(UriId("TST_2")).stringValue)
 		val specResource = URI(spec.stringValue)
 		val themeResource = URI(vocab.atmoTheme.stringValue)
 		val stationClassResource = URI(metaVocab.atmoStationClass.stringValue)

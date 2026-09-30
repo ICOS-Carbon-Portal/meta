@@ -46,6 +46,7 @@
 		cpmeta:hasEncoding cpmeta:asciiEncoding ;
 		cpmeta:hasSpecificDatasetType cpmeta:stationTimeSeriesDataset ;
 		cpmeta:containsDataset <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeriesDataset> ;
+		cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER> ;
 		cpmeta:hasDataLevel "2"^^xsd:integer .
 
 	#the dataset columns are what the "Previewable variables" table on data object landing pages is made of
@@ -305,6 +306,13 @@
 }
 
 <http://meta.icos-cp.eu/documents/> {
+	<https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER>
+		a cpmeta:DocumentObject ;
+		cpmeta:hasSha256sum "ERERERERERERERERERERERER"^^xsd:base64Binary ;
+		cpmeta:hasName "test_time_series_description.pdf" ;
+		cpmeta:hasSizeInBytes "1000"^^xsd:long ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AgICAgICAgICAgICAgICAgIC> .
+
 	<https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC>
 		a cpmeta:DocumentObject ;
 		cpmeta:hasSha256sum "AgICAgICAgICAgICAgICAgIC"^^xsd:base64Binary ;

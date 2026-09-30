@@ -187,7 +187,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 307, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -250,11 +250,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				RenderedLink("previous_data.csv", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"),
 				RenderedLink("versioned_data.csv", "/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
 			))
-			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
+
+		it("lists the spec documentation before the production documentation on data object landing pages"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			assert(propertyLinks(page, "Documentation") === Seq(
+				RenderedLink("test_time_series_description.pdf", "/objects/ERERERERERERERERERERERER"),
+				RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")
+			))
 
 		it("renders the version chain of a data object landing page"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
-			assert(counts === QueryCounts(connections = 1, statements = 265, existence = 24, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 268, existence = 24, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
 			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
@@ -437,6 +443,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasFormat") === RenderedLink("ASCII CSV time series", "/ontologies/cpmeta/csvWithIso8601tsFirstCol"))
 			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasEncoding") === RenderedLink("plain text", "/ontologies/cpmeta/asciiEncoding"))
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataLevel").text === "2")
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDocumentationObject") ===
+				RenderedLink("https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER", "/objects/ERERERERERERERERERERERER"))
 
 		it("renders the labeled resource landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/themes/atmosphere"))

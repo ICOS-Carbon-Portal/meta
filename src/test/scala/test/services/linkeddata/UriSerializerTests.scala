@@ -96,6 +96,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 		page -> counter.snapshot
 
 	private case class RenderedLink(text: String, href: String)
+	private object RenderedLink:
+		def apply(elem: Element): RenderedLink = RenderedLink(elem.text, elem.attr("href"))
 
 	private def heading(page: Document): String =
 		Option(page.selectFirst("h1")).map(_.text).getOrElse(fail("Missing heading"))
@@ -113,19 +115,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private def propertyLinks(page: Document, label: String): Seq[RenderedLink] =
 		page.select("label.fw-bold").asScala.filter(_.text == label).toSeq
 			.flatMap(_.parent.nextElementSibling.select("a").asScala)
-			.map(link => RenderedLink(link.text, link.attr("href")))
+			.map(RenderedLink(_))
 
 	private def propertyText(page: Document, label: String): String = property(page, label).text
 
 	private def propertyLink(page: Document, label: String): RenderedLink =
-		val link = Option(property(page, label).selectFirst("a"))
+		Option(property(page, label).selectFirst("a")).map(RenderedLink(_))
 			.getOrElse(fail(s"Property '$label' has no link"))
-		RenderedLink(link.text, link.attr("href"))
 
 	private def linkedLabelProperty(page: Document, labelHref: String): RenderedLink =
-		val link = Option(propertyWithLinkedLabel(page, labelHref).selectFirst("a"))
+		Option(propertyWithLinkedLabel(page, labelHref).selectFirst("a")).map(RenderedLink(_))
 			.getOrElse(fail(s"Property '$labelHref' has no value link"))
-		RenderedLink(link.text, link.attr("href"))
 
 	private def tableAfterHeading(page: Document, heading: String): Element =
 		page.select("h2").asScala.find(_.text == heading)
@@ -139,8 +139,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	private def metadataErrors(page: Document): Seq[String] =
 		page.select("div.alert.d-flex > div").asScala.map(_.text).toSeq
-
-	private def link(elem: Element): RenderedLink = RenderedLink(elem.text, elem.attr("href"))
 
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
@@ -229,7 +227,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				"Test instrument"
 			)))
 			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
-			assert(RenderedLink(instrumentLink.text, instrumentLink.attr("href")) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
+			assert(RenderedLink(instrumentLink) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 
 		it("renders the production of the data object landing page"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
@@ -266,7 +264,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			// the latest version is reached through a plain collection that supersedes the next version
 			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
 			assert(alert.selectFirst(".alert-heading").text === "Deprecated data")
-			val latestLinks = alert.select("a.alert-link").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			val latestLinks = alert.select("a.alert-link").asScala.map(RenderedLink(_)).toSeq
 			assert(latestLinks === Seq(
 				RenderedLink("CQkJCQkJCQkJCQkJCQkJCQkJ", "/objects/CQkJCQkJCQkJCQkJCQkJCQkJ"),
 				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
@@ -343,14 +341,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 			assert(propertyText(page, "Number of items") === "3")
-			val itemLinks = page.select("a[target=_blank]").asScala.map(link => link.text -> link.attr("href")).toSet
-			assert(itemLinks.contains("test_data.csv" -> "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(itemLinks.contains("Test document" -> "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSet
+			assert(itemLinks.contains(RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")))
+			assert(itemLinks.contains(RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")))
 
 		it("renders the nested collections and versions of the collection landing page"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
 			// members are sorted by name; the nested collection is listed by its title
-			val itemLinks = page.select("a[target=_blank]").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
 			assert(itemLinks === Seq(
 				RenderedLink("Nested collection", "https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"),
 				RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"),
@@ -369,9 +367,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O"))
 			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
 			assert(alert.selectFirst(".alert-heading").text === "Deprecated collection")
-			assert(Option(alert.selectFirst("a.alert-link")).map(link => RenderedLink(link.text, link.attr("href"))) ===
+			assert(Option(alert.selectFirst("a.alert-link")).map(RenderedLink(_)) ===
 				Some(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
-			val itemLinks = page.select("a[target=_blank]").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
 			assert(itemLinks === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
 
 		it("lists only the current parent collections on data object landing pages"):
@@ -407,8 +405,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				Seq("Swedish Research Council", "2019-001", "Early award", "2019-01-01", "2020-12-31", ""),
 				Seq("Swedish Research Council", "", "Ongoing award", "2021-01-01", "", "Ongoing funding")
 			))
-			assert(link(fundingRows(0)(0).selectFirst("a")) === RenderedLink("Swedish Research Council", "/resources/organizations/VR"))
-			assert(link(fundingRows(0)(1).selectFirst("a")) === RenderedLink("2019-001", "https://example.org/awards/2019-001"))
+			assert(RenderedLink(fundingRows(0)(0).selectFirst("a")) === RenderedLink("Swedish Research Council", "/resources/organizations/VR"))
+			assert(RenderedLink(fundingRows(0)(1).selectFirst("a")) === RenderedLink("2019-001", "https://example.org/awards/2019-001"))
 			assert(fundingRows(1)(2).select("a").isEmpty)
 
 			// the spatial coverage makes the location section with its map appear
@@ -423,7 +421,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(heading(page) === "ICOS STATION Test ecosystem station")
 			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
 			assert(page.text.contains("Welcome to the test ecosystem station"))
-			val linkBoxes = page.select("h3.h6 a").asScala.map(link).toSeq
+			val linkBoxes = page.select("h3.h6 a").asScala.map(RenderedLink(_)).toSeq
 			assert(linkBoxes === Seq(
 				RenderedLink("Station news", "https://example.org/es_tst/news"),
 				RenderedLink("Station data", "https://example.org/es_tst/data")
@@ -489,7 +487,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				Seq("co2", "CO2 column", "Test station", "", "", "", "2018-01-01 00:00:00", "2019-01-01 00:00:00"),
 				Seq("co2", "CO2 column", "Test station", "56.1", "13.4", "50.0 m", "2020-06-01 00:00:00", "")
 			))
-			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(link))
+			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(RenderedLink(_)))
 			assert(deploymentLinks === Seq(
 				RenderedLink("CO2 column", "/resources/cpmeta/testTimeSeriesDataset_co2"),
 				RenderedLink("Test station", "/resources/stations/TST")

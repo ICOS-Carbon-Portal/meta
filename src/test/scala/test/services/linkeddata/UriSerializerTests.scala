@@ -2,9 +2,11 @@ package se.lu.nateko.cp.meta.test.services.linkeddata
 
 import scala.language.unsafeNulls
 
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.{ContentTypes, MediaTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -25,13 +27,27 @@ import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, Rdf4j
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
 
+import spray.json.*
+import scala.concurrent.Await
+import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
 
 /** Characterizes the HTTP behavior of the original, pre-LandingPageBuilder URI serializer. */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
-	private val config = ConfigLoader.default
+	private given RouteTestTimeout = RouteTestTimeout(5.seconds)
+	// Both statistics endpoints return an empty list when there are no recorded events.
+	private val statisticsServer = Await.result(
+		Http().newServerAt("127.0.0.1", 0).bind(complete(HttpEntity(ContentTypes.`application/json`, "[]"))),
+		5.seconds
+	)
+	private val statisticsUri = s"http://127.0.0.1:${statisticsServer.localAddress.getPort}"
+	private val defaultConfig = ConfigLoader.default
+	private val config = defaultConfig.copy(statsClient = defaultConfig.statsClient.copy(
+		downloadsUri = s"$statisticsUri/downloads",
+		previews = defaultConfig.statsClient.previews.copy(baseUri = statisticsUri)
+	))
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
 	private val fixtureRepo: Repository = SailRepository(MemoryStore())
@@ -115,18 +131,52 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.getOrElse(fail(s"Property '$labelHref' has no value link"))
 		RenderedLink(link.text, link.attr("href"))
 
-	describe("an unknown object URI"):
-		it("returns the original HTML not-found page"):
-			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(missingObjectUri) ~> check:
-				assert(status === StatusCodes.NotFound)
-				assert(contentType.mediaType === MediaTypes.`text/html`)
-				assert(responseAs[String].contains("Data object not found"))
+	for (kind, uri, message) <- Seq(
+		("object", missingObjectUri, "Data object not found"),
+		("collection", Uri(s"https://meta.icos-cp.eu/collections/${missingObjectHash.id}"), "Collection not found")
+	) do
+		describe(s"an unknown $kind URI"):
+			it("returns an HTML 404 without metadata errors"):
+				Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
+					assert(status === StatusCodes.NotFound)
+					assert(contentType.mediaType === MediaTypes.`text/html`)
+					assert(responseAs[String].contains(message))
+					assert(!responseAs[String].contains("got 0"))
 
-		it("returns an error response for JSON because the RDF read produced errors"):
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(missingObjectUri) ~> check:
-				assert(status === StatusCodes.InternalServerError)
-				assert(contentType === ContentTypes.`text/plain(UTF-8)`)
-				assert(responseAs[String].nonEmpty)
+			it("returns an empty JSON-request 404 rather than a metadata error"):
+				Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri) ~> check:
+					assert(status === StatusCodes.NotFound)
+					assert(responseAs[String].isEmpty)
+
+	for (kind, path, requiredPredicate, expectedText) <- Seq(
+		("data object", "objects/AQEBAQEBAQEBAQEBAQEBAQEB", metaVocab.hasObjectSpec, "test_data.csv"),
+		("document object", "objects/AgICAgICAgICAgICAgICAgIC", metaVocab.hasName, "test_doc.pdf"),
+		("collection", "collections/AwMDAwMDAwMDAwMDAwMDAwMD", metaVocab.dcterms.title, "Test collection")
+	) do
+		val uri = Uri(s"https://meta.icos-cp.eu/$path")
+		describe(s"an existing $kind"):
+			it("returns valid JSON"):
+				Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri) ~> check:
+					assert(status === StatusCodes.OK, responseAs[String])
+					assert(contentType === ContentTypes.`application/json`)
+					assert(responseAs[String].parseJson.isInstanceOf[JsObject])
+					assert(responseAs[String].contains(expectedText))
+
+			for mediaType <- Seq(MediaTypes.`text/html`, MediaTypes.`application/json`) do
+				it(s"returns 500 for $mediaType when required metadata is missing"):
+					val iri = repo.getValueFactory.createIRI(uri.toString)
+					Using.resource(repo.getConnection()): conn =>
+						val removed = Using.resource(conn.getStatements(iri, requiredPredicate, null, false)):
+							_.iterator.asScala.toList
+						assert(removed.nonEmpty)
+						conn.remove(removed.asJava)
+						try
+							Get() ~> Accept(mediaType) ~> serialize(uri) ~> check:
+								assert(status === StatusCodes.InternalServerError, responseAs[String])
+								val expectedType = if mediaType == MediaTypes.`text/html` then MediaTypes.`text/html` else MediaTypes.`text/plain`
+								assert(contentType.mediaType === expectedType)
+								assert(responseAs[String].contains(requiredPredicate.getLocalName))
+						finally conn.add(removed.asJava)
 
 	describe("a labeled resource URI"):
 		it("renders the generic resource page as HTML"):
@@ -159,7 +209,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 7, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 8, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -244,5 +294,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg")
 
 	override def afterAll(): Unit =
-		fixtureRepo.shutDown()
-		super.afterAll()
+		try
+			fixtureRepo.shutDown()
+			Await.result(statisticsServer.unbind(), 5.seconds)
+		finally super.afterAll()

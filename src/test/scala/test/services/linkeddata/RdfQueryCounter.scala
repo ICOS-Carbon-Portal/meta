@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, Repositor
 case class QueryCounts(connections: Int, statements: Int, existence: Int, sparql: Int)
 
 /** Counts reads made through an RDF4J repository, per query kind. */
-final class QueryCounter:
+final class QueryCounter {
 	private val connections = AtomicInteger()
 	private val statements = AtomicInteger()
 	private val existence = AtomicInteger()
@@ -27,28 +27,35 @@ final class QueryCounter:
 
 	def snapshot: QueryCounts =
 		QueryCounts(connections.get, statements.get, existence.get, sparql.get)
+}
 
-final class CountingRepository(delegate: Repository, counter: QueryCounter) extends RepositoryWrapper(delegate):
-	override def getConnection(): RepositoryConnection =
+final class CountingRepository(delegate: Repository, counter: QueryCounter) extends RepositoryWrapper(delegate) {
+	override def getConnection(): RepositoryConnection = {
 		counter.countConnection()
 		CountingConnection(this, super.getConnection(), counter)
+	}
+}
 
 final class CountingConnection(
 	repo: Repository, delegate: RepositoryConnection, counter: QueryCounter
-) extends RepositoryConnectionWrapper(repo, delegate):
+) extends RepositoryConnectionWrapper(repo, delegate) {
 
 	override def getStatements(
 		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
-	): RepositoryResult[org.eclipse.rdf4j.model.Statement] =
+	): RepositoryResult[org.eclipse.rdf4j.model.Statement] = {
 		counter.countStatements()
 		super.getStatements(subj, pred, obj, includeInferred, contexts*)
+	}
 
 	override def hasStatement(
 		subj: Resource, pred: IRI, obj: Value, includeInferred: Boolean, contexts: Resource*
-	): Boolean =
+	): Boolean = {
 		counter.countExistence()
 		super.hasStatement(subj, pred, obj, includeInferred, contexts*)
+	}
 
-	override def prepareTupleQuery(ql: QueryLanguage, query: String, baseURI: String): TupleQuery =
+	override def prepareTupleQuery(ql: QueryLanguage, query: String, baseURI: String): TupleQuery = {
 		counter.countSparql()
 		super.prepareTupleQuery(ql, query, baseURI)
+	}
+}

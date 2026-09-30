@@ -9,7 +9,15 @@ import org.eclipse.rdf4j.query.{QueryLanguage, TupleQuery}
 import org.eclipse.rdf4j.repository.base.{RepositoryConnectionWrapper, RepositoryWrapper}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, RepositoryResult}
 
-case class QueryCounts(connections: Int, statements: Int, existence: Int, sparql: Int)
+case class QueryCounts(connections: Int, statements: Int, existence: Int, sparql: Int) {
+	/** For stating the cost of a read path as the sum of the costs of its steps. */
+	def +(other: QueryCounts): QueryCounts = QueryCounts(
+		connections + other.connections,
+		statements + other.statements,
+		existence + other.existence,
+		sparql + other.sparql
+	)
+}
 
 /** Counts reads made through an RDF4J repository, per query kind. */
 private final class QueryCounter {

@@ -30,13 +30,17 @@ import scala.concurrent.ExecutionContext
 import scala.util.Using
 
 /**
- * Guards the number of RDF-store round trips every landing page costs.
+ * Guards what the loader reads, and the number of RDF-store round trips it takes to read it.
  *
  * The loader is given an in-memory triplestore with a hand-made, minimal-but-complete metadata
  * fixture, wrapped in a proxy that counts every statement lookup, existence check and SPARQL
- * query made through it. Each expectation below is therefore a snapshot of how chatty one page
+ * query made through it. Each expectation below is therefore a snapshot of how chatty one read
  * is: a change in the counts means the read path changed, and the new number has to be looked at
  * (and only then written down here) rather than silently accepted.
+ *
+ * Most of what the loader reads becomes a landing page of its own. The specification and the
+ * labeled resource do not: they have no Twirl page, and the serializer serves them as JSON only,
+ * falling back to the generic resource page for HTML.
  */
 class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 
@@ -240,7 +244,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.partOf === None)
 			assert(page.deployments === Nil)
 
-	describe("object specification landing page"):
+	describe("object specification metadata"):
 		lazy val (page, counts) = build(builder.specification(fixture.specUri))
 
 		it("reads the specification with the expected number of RDF-store queries"):
@@ -265,7 +269,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(builder.isObjectSpecification(fixture.specUri))
 			assert(counter.snapshot === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
 
-	describe("labeled resource landing page"):
+	describe("labeled resource metadata"):
 		lazy val (page, counts) = build(builder.labeledResource(fixture.themeUri))
 
 		it("reads the labeled resource with the expected number of RDF-store queries"):
@@ -324,7 +328,7 @@ object LandingPageLoaderTests:
 		val repo: Repository = SailRepository(MemoryStore())
 		repo.init()
 		Using.resources(
-			getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
+			getClass.getResourceAsStream("/linkeddata/uri-serializer-fixture.trig"),
 			repo.getConnection()
 		): (stream, conn) =>
 			conn.add(stream, "", RDFFormat.TRIG)

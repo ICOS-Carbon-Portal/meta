@@ -25,7 +25,9 @@ import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 /**
- * Characterizes the HTTP behavior of the original, pre-LandingPageBuilder URI serializer.
+ * Characterizes the HTTP behavior of the URI serializer: content negotiation, status codes and the
+ * choice of page, all of which it still owns after handing the reading of every page to the
+ * LandingPageLoader.
  *
  * Every landing-page test also builds the same page with the LandingPageLoader and puts the query
  * counts of the two read paths next to each other. Both read the same fixture through a fresh
@@ -34,6 +36,12 @@ import scala.util.Try
  * asserted here; that is [[LandingPageLoaderTests]]. A change in either count means a read path
  * changed, and the new number has to be looked at (and only then written down here) rather than
  * silently accepted.
+ *
+ * Every real landing page costs the serializer exactly what it costs the loader: those URIs are
+ * recognized by their shape alone, and the page is whatever the loader built. The URIs that have
+ * no page of their own are recognized by probing the store instead (see [[probeCounts]]), and
+ * their counts are stated as the sum of that probing and the read that follows it, so that
+ * nothing is left unaccounted for.
  */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
@@ -84,9 +92,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the generic resource page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.resourceUri)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
-			//the serializer looks the resource up as an object specification and as a labeled
-			//resource before falling back to the generic page the loader goes straight to
-			assert(loadGenericResource(Fixture.resourceUri) === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 2))
+			//all the serializer adds to the loader is the probing it does to pick the page
+			assert(counts === probeCounts(Fixture.resourceUri) + loadGenericResource(Fixture.resourceUri))
 			assert(heading(page) === "Serializer test resource")
 			assert(propertyText(page, "URI") === Fixture.resource.stringValue)
 			assert(propertyText(page, "Label") === "Serializer test resource")
@@ -98,6 +105,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("returns its labeled-resource representation as JSON") {
 			val (body, counts) = renderJson(Fixture.resourceUri)
 			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === probeCounts(Fixture.resourceUri) + loadLandingPage(_.labeledResource(Fixture.resourceUri)))
 			assert(body.contains(Fixture.resource.stringValue))
 			assert(body.contains("Serializer test resource"))
 		}
@@ -590,16 +598,15 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	/**
 	 * There is no Twirl page for an object specification, nor for a labeled resource. Both are
-	 * recognized by the serializer, but only so that their JSON can be served by dedicated readers;
-	 * in HTML both fall through to the generic resource page.
+	 * recognized by the serializer, but only so that their JSON can be served by the loader's
+	 * dedicated readers; in HTML both fall through to the generic resource page, which is why
+	 * neither test below reads anything the loader built for that resource kind.
 	 */
 	describe("URIs recognized by the serializer but rendered by the generic page") {
 		it("renders an object specification as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.objectSpec)
 			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
-			//the serializer has no specification page and renders the generic one instead, so it pays
-			//two SPARQL queries where the loader reads the specification statement by statement
-			assert(loadLandingPage(_.specification(Fixture.objectSpec)) === QueryCounts(connections = 1, statements = 29, existence = 0, sparql = 0))
+			assert(counts === probeCounts(Fixture.objectSpec) + loadGenericResource(Fixture.objectSpec))
 			assert(heading(page) === "Test time series")
 			assert(propertyText(page, "Label") === "Test time series")
 			//the properties are labeled by the ontology predicates, as on any generic page, rather
@@ -628,9 +635,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				))
 		}
 
-		it("serves the object specification as JSON") {
+		it("serves the object specification the loader reads as JSON") {
 			val (body, counts) = renderJson(Fixture.objectSpec)
-			assert(counts === QueryCounts(connections = 2, statements = 29, existence = 1, sparql = 0))
+			assert(counts === probeCounts(Fixture.objectSpec) + loadLandingPage(_.specification(Fixture.objectSpec)))
 			assert(body.contains("Test time series"))
 			assert(body.contains("Atmosphere"))
 		}
@@ -638,8 +645,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders a labeled resource as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.dataTheme)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
-			//likewise the generic page, where the loader only needs the label and the comments
-			assert(loadLandingPage(_.labeledResource(Fixture.dataTheme)) === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
+			assert(counts === probeCounts(Fixture.dataTheme) + loadGenericResource(Fixture.dataTheme))
 			assert(heading(page) === "Atmosphere")
 			assert(propertyText(page, "Label") === "Atmosphere")
 			assert(
@@ -647,9 +653,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			)
 		}
 
-		it("serves the labeled resource as JSON") {
+		it("serves the labeled resource the loader reads as JSON") {
 			val (body, counts) = renderJson(Fixture.dataTheme)
-			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === probeCounts(Fixture.dataTheme) + loadLandingPage(_.labeledResource(Fixture.dataTheme)))
 			assert(body.contains("Atmosphere"))
 		}
 	}
@@ -713,6 +719,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val (pageLoader, repo) = loader()
 		val built = pageLoader.genericResource(uri)
 		assert(built.isSuccess, built)
+		repo.counts
+	}
+
+	/**
+	 * What the serializer's routing spends before it even knows which page a `/resources/...` URI
+	 * gets: an existence check for a data level, and, when that misses, one for a label. Pages
+	 * reached by URI shape alone (objects, collections, stations, ...) pay none of this.
+	 */
+	private def probeCounts(uri: Uri): QueryCounts = {
+		val (pageLoader, repo) = loader()
+		if (!pageLoader.isObjectSpecification(uri)) pageLoader.isLabeledResource(uri)
 		repo.counts
 	}
 

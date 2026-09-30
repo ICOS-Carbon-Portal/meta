@@ -31,6 +31,14 @@ import scala.util.{Try, Using}
 /** Characterizes the HTTP behavior of the original, pre-LandingPageBuilder URI serializer. */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
+	// the statistics services are not running; with the default exponential backoff after each refused
+	// connection, every page rendered later in the suite would get slower and eventually time out
+	override def testConfigSource =
+		"""akka.http.host-connection-pool {
+			base-connection-backoff = 10ms
+			max-connection-backoff = 20ms
+		}"""
+
 	private val config = ConfigLoader.default
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs

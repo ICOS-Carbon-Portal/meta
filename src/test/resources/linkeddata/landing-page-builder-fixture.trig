@@ -127,6 +127,18 @@
 		cpmeta:hasNorthernBound "56.2"^^xsd:double ;
 		cpmeta:hasEasternBound "13.5"^^xsd:double .
 
+	<http://meta.icos-cp.eu/resources/sites/TST_tower>
+		a cpmeta:Site ;
+		rdfs:label "TST tower" ;
+		cpmeta:hasEcosystemType <http://meta.icos-cp.eu/resources/ecosystems/ENF> ;
+		cpmeta:hasSpatialCoverage <http://meta.icos-cp.eu/resources/spcov_TST_tower> .
+
+	<http://meta.icos-cp.eu/resources/spcov_TST_tower>
+		a cpmeta:Position ;
+		rdfs:label "TST tower area" ;
+		cpmeta:hasLatitude "56.1"^^xsd:double ;
+		cpmeta:hasLongitude "13.4"^^xsd:double .
+
 	<http://meta.icos-cp.eu/resources/networks/TestNet>
 		rdfs:label "Test network" ;
 		rdfs:seeAlso <https://example.org/testnet> .
@@ -397,9 +409,21 @@
 		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
 		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_BQUFBQUFBQUFBQUFBQUFBQUF> .
 
+	#several instruments, a site with its own ecosystem and location, and a sampling point
 	<http://meta.icos-cp.eu/resources/acq_BQUFBQUFBQUFBQUFBQUFBQUF>
 		a cpmeta:DataAcquisition ;
-		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/TST> .
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:wasPerformedWith <http://meta.icos-cp.eu/resources/instruments/TST_1> ;
+		cpmeta:wasPerformedWith <http://meta.icos-cp.eu/resources/instruments/TST_2> ;
+		cpmeta:wasPerformedAt <http://meta.icos-cp.eu/resources/sites/TST_tower> ;
+		cpmeta:hasSamplingPoint <http://meta.icos-cp.eu/resources/position_BQUFBQUFBQUFBQUFBQUFBQUF> ;
+		cpmeta:hasSamplingHeight "25.0"^^xsd:float .
+
+	<http://meta.icos-cp.eu/resources/position_BQUFBQUFBQUFBQUFBQUFBQUF>
+		a cpmeta:Position ;
+		rdfs:label "Tower inlet" ;
+		cpmeta:hasLatitude "56.1001"^^xsd:double ;
+		cpmeta:hasLongitude "13.4002"^^xsd:double .
 
 	<https://meta.icos-cp.eu/objects/BwcHBwcHBwcHBwcHBwcHBwcH>
 		a cpmeta:DataObject ;

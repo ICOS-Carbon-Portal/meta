@@ -260,7 +260,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the version chain of a data object landing page"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
-			assert(counts === QueryCounts(connections = 1, statements = 268, existence = 24, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 291, existence = 24, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
 			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
@@ -273,6 +273,21 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
 			))
 			assert(alert.text.contains("Latest versions:"))
+
+		it("renders the acquisition site, instruments and sampling point of a data object landing page"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
+			assert(metadataErrors(page) === Nil)
+			// shown both in the acquisition section and in the side card
+			assert(page.select("label.fw-bold").asScala.filter(_.text == "Location").map(_.parent.nextElementSibling.text).toSeq ===
+				Seq("TST tower area", "TST tower area"))
+			assert(propertyLinks(page, "Ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
+			assert(propertyLinks(page, "Instrument").sortBy(_.href) === Seq(
+				RenderedLink("Test instrument", "/resources/instruments/TST_1"),
+				RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")
+			))
+			assert(propertyText(page, "Sampling height") === "25.0")
+			assert(propertyText(page, "Sampling point") === "Tower inlet")
+			assert(propertyText(page, "Coordinates") === "Lat: 56.1001, Lon: 13.4002")
 
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))

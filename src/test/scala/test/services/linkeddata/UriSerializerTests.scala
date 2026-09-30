@@ -128,10 +128,20 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.getOrElse(fail(s"Property '$labelHref' has no value link"))
 		RenderedLink(link.text, link.attr("href"))
 
-	private def previewableVariablesTable(page: Document): Element =
-		page.select("h2").asScala.find(_.text == "Previewable variables")
-			.flatMap(h2 => Option(h2.nextElementSibling.selectFirst("table")))
-			.getOrElse(fail("Missing previewable variables table"))
+	private def tableAfterHeading(page: Document, heading: String): Element =
+		page.select("h2").asScala.find(_.text == heading)
+			.flatMap(h2 => Option(h2.nextElementSibling).map(sibling => if sibling.tagName == "table" then sibling else sibling.selectFirst("table")))
+			.getOrElse(fail(s"Missing table after heading '$heading'"))
+
+	private def previewableVariablesTable(page: Document): Element = tableAfterHeading(page, "Previewable variables")
+
+	private def tableRows(table: Element): Seq[Seq[Element]] =
+		table.selectFirst("tbody").children.asScala.map(_.children.asScala.toSeq).toSeq
+
+	private def metadataErrors(page: Document): Seq[String] =
+		page.select("div.alert.d-flex > div").asScala.map(_.text).toSeq
+
+	private def link(elem: Element): RenderedLink = RenderedLink(elem.text, elem.attr("href"))
 
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
@@ -177,7 +187,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 258, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 307, existence = 11, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -244,7 +254,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the version chain of a data object landing page"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
-			assert(counts === QueryCounts(connections = 1, statements = 216, existence = 24, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 265, existence = 24, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
 			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
@@ -314,12 +324,85 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the station landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
-			assert(counts === QueryCounts(connections = 1, statements = 47, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
 			assert(propertyText(page, "Country code") === "SE")
 			assert(propertyText(page, "Latitude/Longitude") === "56.1, 13.4")
 			assert(propertyText(page, "Elevation") === "150 m")
+
+		it("renders the sub-resources of the ICOS station landing page"):
+			val (page, _) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))
+			assert(metadataErrors(page) === Nil)
+			assert(propertyText(page, "Description") === "Test station description")
+			assert(propertyText(page, "WIGOS ID") === "0-20008-0-TST")
+			assert(propertyText(page, "ICOS Station class") === "1")
+			assert(propertyText(page, "ICOS Labeling date") === "2019-06-01")
+			assert(propertyText(page, "Time zone offset") === "1")
+			assert(propertyLinks(page, "Associated networks") === Seq(RenderedLink("Test network", "/resources/networks/TestNet")))
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
+			assert(propertyLinks(page, "Organization") === Seq(RenderedLink("Carbon Portal", "/resources/organizations/CP")))
+
+			// sorted by end date, the ongoing funding last
+			val fundingRows = tableRows(tableAfterHeading(page, "Acknowledgements"))
+			assert(fundingRows.map(_.map(_.text)) === Seq(
+				Seq("Swedish Research Council", "2019-001", "Early award", "2019-01-01", "2020-12-31", ""),
+				Seq("Swedish Research Council", "", "Ongoing award", "2021-01-01", "", "Ongoing funding")
+			))
+			assert(link(fundingRows(0)(0).selectFirst("a")) === RenderedLink("Swedish Research Council", "/resources/organizations/VR"))
+			assert(link(fundingRows(0)(1).selectFirst("a")) === RenderedLink("2019-001", "https://example.org/awards/2019-001"))
+			assert(fundingRows(1)(2).select("a").isEmpty)
+
+			// the spatial coverage makes the location section with its map appear
+			assert(page.select("h2").asScala.map(_.text).contains("Location"))
+			assert(page.select("iframe").asScala.map(_.attr("src")).toSeq === Seq("/station/?station=/resources/stations/TST&icon="))
+			assert(page.select("img.img-fluid").asScala.map(_.attr("src")).toSeq === Seq("https://static.icos-cp.eu/images/stations/TST.jpg"))
+
+		it("renders the ecosystem station landing page with webpage elements"):
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/ES_TST"))
+			assert(counts === QueryCounts(connections = 1, statements = 48, existence = 2, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "ICOS STATION Test ecosystem station")
+			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
+			assert(page.text.contains("Welcome to the test ecosystem station"))
+			val linkBoxes = page.select("h3.h6 a").asScala.map(link).toSeq
+			assert(linkBoxes === Seq(
+				RenderedLink("Station news", "https://example.org/es_tst/news"),
+				RenderedLink("Station data", "https://example.org/es_tst/data")
+			))
+			assert(page.select("h2").asScala.map(_.text).contains("Detailed information"))
+			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfc - Subarctic", "/resources/climateZones/Dfc")))
+			assert(propertyLinks(page, "Main ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
+			assert(propertyText(page, "Mean annual temperature") === "1.8 °C")
+			assert(propertyText(page, "Mean annual precipitation") === "614.0 mm")
+			assert(propertyText(page, "Mean annual incoming SW radiation") === "90.5 W/m2")
+			assert(propertyLinks(page, "Documentation resource") === Seq(RenderedLink("https://example.org/es_tst/docs", "https://example.org/es_tst/docs")))
+			assert(propertyLinks(page, "Data publication") === Seq(RenderedLink("https://doi.org/10.1234/es_tst", "https://doi.org/10.1234/es_tst")))
+			assert(propertyText(page, "Latitude/Longitude") === "64.25, 19.77")
+			assert(propertyText(page, "Elevation") === "235 m")
+
+		it("renders the SITES station landing page"):
+			val sitesStation = Uri("https://meta.fieldsites.se/resources/stations/Testsjon")
+			val (page, counts) = renderLandingPage(sitesStation)
+			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "Testsjön Research Station")
+			assert(propertyText(page, "Station ID") === "TSJ")
+			assert(propertyLinks(page, "Main ecosystems") === Seq(
+				RenderedLink("Forest", "/resources/ecosystems/forest"),
+				RenderedLink("Lake", "/resources/ecosystems/lake")
+			))
+			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfb - Warm-summer humid continental", "/resources/climateZones/Dfb")))
+			assert(propertyText(page, "Mean annual temperature") === "5.5 °C")
+			assert(propertyText(page, "Operational period") === "2015-")
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("testsjon_description.pdf", "/objects/EBAQEBAQEBAQEBAQEBAQEBAQ")))
+
+		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Uri("https://meta.fieldsites.se/resources/stations/Testsjon")) ~> check:
+				assert(status === StatusCodes.OK, responseAs[String])
+				val body = responseAs[String]
+				Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach: expected =>
+					assert(body.contains(expected), s"'$expected' missing in $body")
 
 		it("renders the organization landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/organizations/CP"))

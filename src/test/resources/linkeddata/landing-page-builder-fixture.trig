@@ -3,6 +3,7 @@
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sitesont: <https://meta.fieldsites.se/ontologies/sites/> .
 @prefix ssn: <http://www.w3.org/ns/ssn/> .
 @prefix stentry:<http://meta.icos-cp.eu/ontologies/stationentry/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -20,6 +21,12 @@
 
 	cpmeta:asciiEncoding
 		rdfs:label "plain text" .
+
+	<http://meta.icos-cp.eu/resources/climateZones/Dfc>
+		rdfs:label "Dfc - Subarctic" .
+
+	<http://meta.icos-cp.eu/resources/ecosystems/ENF>
+		rdfs:label "ENF - Evergreen Needleleaf Forests" .
 
 	<http://meta.icos-cp.eu/resources/roles/PI>
 		a cpmeta:Role ;
@@ -98,7 +105,94 @@
 		cpmeta:hasLatitude "56.1"^^xsd:double ;
 		cpmeta:hasLongitude "13.4"^^xsd:double ;
 		cpmeta:hasElevation "150.0"^^xsd:float ;
-		cpmeta:countryCode "SE" .
+		cpmeta:countryCode "SE" ;
+		rdfs:comment "Test station description" ;
+		cpmeta:hasWigosId "0-20008-0-TST" ;
+		cpmeta:hasStationClass "1" ;
+		cpmeta:hasTimeZoneOffset "1"^^xsd:integer ;
+		cpmeta:hasResponsibleOrganization <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		cpmeta:hasAssociatedNetwork <http://meta.icos-cp.eu/resources/networks/TestNet> ;
+		cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/TST_ongoing> ;
+		cpmeta:hasFunding <http://meta.icos-cp.eu/resources/fundings/TST_early> ;
+		cpmeta:hasDepiction "https://static.icos-cp.eu/images/stations/TST.jpg"^^xsd:anyURI ;
+		cpmeta:hasSpatialCoverage <http://meta.icos-cp.eu/resources/spcov_TST> ;
+		cpmeta:hasDocumentationObject <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> .
+
+	<http://meta.icos-cp.eu/resources/spcov_TST>
+		a cpmeta:LatLonBox ;
+		rdfs:label "TST footprint" ;
+		cpmeta:hasSouthernBound "56.0"^^xsd:double ;
+		cpmeta:hasWesternBound "13.3"^^xsd:double ;
+		cpmeta:hasNorthernBound "56.2"^^xsd:double ;
+		cpmeta:hasEasternBound "13.5"^^xsd:double .
+
+	<http://meta.icos-cp.eu/resources/networks/TestNet>
+		rdfs:label "Test network" ;
+		rdfs:seeAlso <https://example.org/testnet> .
+
+	#listed in the order of their end dates, the ongoing one last
+	<http://meta.icos-cp.eu/resources/fundings/TST_ongoing>
+		a cpmeta:Funding ;
+		rdfs:label "Ongoing TST funding" ;
+		rdfs:comment "Ongoing funding" ;
+		cpmeta:hasFunder <http://meta.icos-cp.eu/resources/organizations/VR> ;
+		cpmeta:awardTitle "Ongoing award" ;
+		cpmeta:hasStartDate "2021-01-01"^^xsd:date .
+
+	<http://meta.icos-cp.eu/resources/fundings/TST_early>
+		a cpmeta:Funding ;
+		rdfs:label "Early TST funding" ;
+		cpmeta:hasFunder <http://meta.icos-cp.eu/resources/organizations/VR> ;
+		cpmeta:awardTitle "Early award" ;
+		cpmeta:awardNumber "2019-001" ;
+		cpmeta:awardURI "https://example.org/awards/2019-001"^^xsd:anyURI ;
+		cpmeta:hasStartDate "2019-01-01"^^xsd:date ;
+		cpmeta:hasEndDate "2020-12-31"^^xsd:date .
+
+	<http://meta.icos-cp.eu/resources/organizations/VR>
+		a cpmeta:Funder ;
+		rdfs:label "VR" ;
+		cpmeta:hasName "Swedish Research Council" ;
+		cpmeta:funderIdentifier "https://ror.org/03zttf063" ;
+		cpmeta:funderIdentifierType "ROR" .
+
+	#an ecosystem station with its own webpage elements, which switch the station page to a different layout
+	<http://meta.icos-cp.eu/resources/stations/ES_TST>
+		a cpmeta:ES ;
+		rdfs:label "ES_TST" ;
+		cpmeta:hasName "Test ecosystem station" ;
+		cpmeta:hasStationId "ES_TST" ;
+		cpmeta:hasLatitude "64.25"^^xsd:double ;
+		cpmeta:hasLongitude "19.77"^^xsd:double ;
+		cpmeta:hasElevation "235.0"^^xsd:float ;
+		cpmeta:countryCode "SE" ;
+		cpmeta:hasClimateZone <http://meta.icos-cp.eu/resources/climateZones/Dfc> ;
+		cpmeta:hasEcosystemType <http://meta.icos-cp.eu/resources/ecosystems/ENF> ;
+		cpmeta:hasMeanAnnualTemp "1.8"^^xsd:float ;
+		cpmeta:hasMeanAnnualPrecip "614.0"^^xsd:float ;
+		cpmeta:hasMeanAnnualRadiation "90.5"^^xsd:float ;
+		cpmeta:hasDocumentationUri "https://example.org/es_tst/docs"^^xsd:anyURI ;
+		cpmeta:hasAssociatedPublication "https://doi.org/10.1234/es_tst"^^xsd:anyURI ;
+		cpmeta:hasWebpageElements <http://meta.icos-cp.eu/resources/webpages/ES_TST> .
+
+	<http://meta.icos-cp.eu/resources/webpages/ES_TST>
+		rdfs:label "ES_TST webpage" ;
+		rdfs:comment "Welcome to the test ecosystem station" ;
+		cpmeta:hasCoverImage "https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"^^xsd:anyURI ;
+		cpmeta:hasLinkbox <http://meta.icos-cp.eu/resources/webpages/ES_TST_data> ;
+		cpmeta:hasLinkbox <http://meta.icos-cp.eu/resources/webpages/ES_TST_news> .
+
+	<http://meta.icos-cp.eu/resources/webpages/ES_TST_data>
+		cpmeta:hasName "Station data" ;
+		cpmeta:hasCoverImage "https://static.icos-cp.eu/images/stations/ES_TST_data.jpg"^^xsd:anyURI ;
+		cpmeta:hasWebpageLink "https://example.org/es_tst/data"^^xsd:anyURI ;
+		cpmeta:hasOrderWeight "2"^^xsd:integer .
+
+	<http://meta.icos-cp.eu/resources/webpages/ES_TST_news>
+		cpmeta:hasName "Station news" ;
+		cpmeta:hasCoverImage "https://static.icos-cp.eu/images/stations/ES_TST_news.jpg"^^xsd:anyURI ;
+		cpmeta:hasWebpageLink "https://example.org/es_tst/news"^^xsd:anyURI ;
+		cpmeta:hasOrderWeight "1"^^xsd:integer .
 
 	<http://meta.icos-cp.eu/resources/organizations/ATC>
 		a cpmeta:ThematicCenter ;
@@ -325,4 +419,65 @@
 		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BgYGBgYGBgYGBgYGBgYGBgYG> ;
 		dcterms:hasPart <https://meta.icos-cp.eu/objects/CQkJCQkJCQkJCQkJCQkJCQkJ> ;
 		dcterms:hasPart <https://meta.icos-cp.eu/objects/CgoKCgoKCgoKCgoKCgoKCgoK> .
+}
+
+#a SITES station, read through the SITES metadata graphs because its URI infers the SITES envri
+<https://meta.fieldsites.se/resources/sites/> {
+	<https://meta.fieldsites.se/resources/stations/Testsjon>
+		a sitesont:Station ;
+		rdfs:label "Testsjon" ;
+		cpmeta:hasName "Testsjön Research Station" ;
+		cpmeta:hasStationId "TSJ" ;
+		cpmeta:hasLatitude "59.8"^^xsd:double ;
+		cpmeta:hasLongitude "17.6"^^xsd:double ;
+		cpmeta:countryCode "SE" ;
+		cpmeta:operatesOn <https://meta.fieldsites.se/resources/sites/Testsjon_forest> ;
+		cpmeta:operatesOn <https://meta.fieldsites.se/resources/sites/Testsjon_lake> ;
+		cpmeta:hasEcosystemType <https://meta.fieldsites.se/resources/ecosystems/forest> ;
+		cpmeta:hasEcosystemType <https://meta.fieldsites.se/resources/ecosystems/lake> ;
+		cpmeta:hasClimateZone <https://meta.fieldsites.se/resources/climateZones/Dfb> ;
+		cpmeta:hasMeanAnnualTemp "5.5"^^xsd:float ;
+		cpmeta:hasMeanAnnualPrecip "550.0"^^xsd:float ;
+		cpmeta:hasOperationalPeriod "2015-" ;
+		cpmeta:hasDocumentationObject <https://meta.fieldsites.se/objects/EBAQEBAQEBAQEBAQEBAQEBAQ> .
+
+	#each site has its own ecosystem and a spatial coverage of a different kind
+	<https://meta.fieldsites.se/resources/sites/Testsjon_forest>
+		a cpmeta:Site ;
+		rdfs:label "Testsjön forest" ;
+		cpmeta:hasEcosystemType <https://meta.fieldsites.se/resources/ecosystems/forest> ;
+		cpmeta:hasSpatialCoverage <https://meta.fieldsites.se/resources/position_Testsjon_forest> .
+
+	<https://meta.fieldsites.se/resources/position_Testsjon_forest>
+		a cpmeta:Position ;
+		rdfs:label "Forest mast" ;
+		cpmeta:hasLatitude "59.81"^^xsd:double ;
+		cpmeta:hasLongitude "17.61"^^xsd:double .
+
+	<https://meta.fieldsites.se/resources/sites/Testsjon_lake>
+		a cpmeta:Site ;
+		rdfs:label "Testsjön lake" ;
+		cpmeta:hasEcosystemType <https://meta.fieldsites.se/resources/ecosystems/lake> ;
+		cpmeta:hasSpatialCoverage <https://meta.fieldsites.se/resources/spcov_Testsjon_lake> .
+
+	<https://meta.fieldsites.se/resources/spcov_Testsjon_lake>
+		a cpmeta:SpatialCoverage ;
+		rdfs:label "Lake outline" ;
+		cpmeta:asGeoJSON "{\"type\":\"Polygon\",\"coordinates\":[[[17.6,59.8],[17.7,59.8],[17.7,59.9],[17.6,59.8]]]}" .
+
+	<https://meta.fieldsites.se/resources/ecosystems/forest>
+		rdfs:label "Forest" .
+
+	<https://meta.fieldsites.se/resources/ecosystems/lake>
+		rdfs:label "Lake" .
+
+	<https://meta.fieldsites.se/resources/climateZones/Dfb>
+		rdfs:label "Dfb - Warm-summer humid continental" .
+}
+
+<https://meta.fieldsites.se/documents/> {
+	<https://meta.fieldsites.se/objects/EBAQEBAQEBAQEBAQEBAQEBAQ>
+		a cpmeta:DocumentObject ;
+		cpmeta:hasSha256sum "EBAQEBAQEBAQEBAQEBAQEBAQ"^^xsd:base64Binary ;
+		cpmeta:hasName "testsjon_description.pdf" .
 }

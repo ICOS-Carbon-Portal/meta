@@ -88,12 +88,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	private def renderLandingPage(uri: Uri): (Document, QueryCounts) =
 		counter.reset()
-		var page: Document = null
-		Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
+		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType.mediaType === MediaTypes.`text/html`)
-			page = Jsoup.parse(body)
+			Jsoup.parse(body)
 		page -> counter.snapshot
 
 	private case class RenderedLink(text: String, href: String)

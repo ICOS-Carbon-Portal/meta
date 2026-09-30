@@ -132,13 +132,27 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.flatMap(h2 => Option(h2.nextElementSibling).map(sibling => if sibling.tagName == "table" then sibling else sibling.selectFirst("table")))
 			.getOrElse(fail(s"Missing table after heading '$heading'"))
 
-	private def previewableVariablesTable(page: Document): Element = tableAfterHeading(page, "Previewable variables")
-
 	private def tableRows(table: Element): Seq[Seq[Element]] =
 		table.selectFirst("tbody").children.asScala.map(_.children.asScala.toSeq).toSeq
 
 	private def metadataErrors(page: Document): Seq[String] =
 		page.select("div.alert.d-flex > div").asScala.map(_.text).toSeq
+
+	private def sectionHeadings(page: Document): Seq[String] =
+		page.select("h2").asScala.map(_.text).toSeq
+
+	private def collectionItems(page: Document): Seq[RenderedLink] =
+		page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
+
+	private case class DeprecationAlert(heading: String, text: String, latestLinks: Seq[RenderedLink])
+
+	private def deprecationAlert(page: Document): DeprecationAlert =
+		val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
+		DeprecationAlert(
+			alert.selectFirst(".alert-heading").text,
+			alert.text,
+			alert.select("a.alert-link").asScala.map(RenderedLink(_)).toSeq
+		)
 
 	describe("an unknown object URI"):
 		it("returns the original HTML not-found page"):
@@ -194,16 +208,16 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyLink(page, "Data type") === RenderedLink("Test time series", "/resources/cpmeta/testTimeSeries"))
 			assert(propertyLink(page, "Station") === RenderedLink("Test station", "/resources/stations/TST"))
 			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
-			assert(page.select("h2").asScala.map(_.text).contains("Acquisition"))
-			assert(page.select("h2").asScala.map(_.text).contains("Technical information"))
+			assert(sectionHeadings(page).contains("Acquisition"))
+			assert(sectionHeadings(page).contains("Technical information"))
 
 		it("renders the previewable variables of the data object landing page"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			val table = previewableVariablesTable(page)
+			val table = tableAfterHeading(page, "Previewable variables")
 			val headers = table.selectFirst("thead > tr").children.asScala.map(_.text)
 			assert(headers === Seq("Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"))
 
-			val rows = table.selectFirst("tbody").children.asScala.map(_.children.asScala.toSeq).toSeq
+			val rows = tableRows(table)
 			assert(rows.map(_.take(5).map(_.text)) === Seq(
 				Seq("TIMESTAMP", "time instant, UTC", "", "", ""),
 				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
@@ -231,7 +245,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the production of the data object landing page"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(page.select("h2").asScala.map(_.text).contains("Production"))
+			assert(sectionHeadings(page).contains("Production"))
 			assert(propertyLink(page, "File made by") === RenderedLink("Test Person", "/resources/people/Test_Person"))
 			assert(propertyLink(page, "Host organization") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
 			assert(propertyText(page, "Production time (UTC)") === "2022-01-01 12:00:00")
@@ -262,10 +276,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
 			// the latest version is reached through a plain collection that supersedes the next version
-			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
-			assert(alert.selectFirst(".alert-heading").text === "Deprecated data")
-			val latestLinks = alert.select("a.alert-link").asScala.map(RenderedLink(_)).toSeq
-			assert(latestLinks === Seq(
+			val alert = deprecationAlert(page)
+			assert(alert.heading === "Deprecated data")
+			assert(alert.latestLinks === Seq(
 				RenderedLink("CQkJCQkJCQkJCQkJCQkJCQkJ", "/objects/CQkJCQkJCQkJCQkJCQkJCQkJ"),
 				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
 			))
@@ -299,10 +312,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Coverage") === "S: 50, W: 10, N: 60, E: 20")
 			assert(propertyText(page, "Data level") === "3")
 			assert(propertyLink(page, "File made by") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
-			assert(page.select("h2").asScala.map(_.text).contains("Acquisition") === false)
+			assert(sectionHeadings(page).contains("Acquisition") === false)
 
 			// the regex-defined variable is listed under its actual name; the undefined one is left out
-			val rows = tableRows(previewableVariablesTable(page))
+			val rows = tableRows(tableAfterHeading(page, "Previewable variables"))
 			assert(rows.map(_.map(_.text)).sortBy(_.head) === Seq(
 				Seq("flux_co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
 				Seq("tas", "air temperature", "K", "temperature", "Preview")
@@ -322,7 +335,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "File name") === "test_doc.pdf")
 			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
 			assert(propertyLink(page, "Submitted by") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
-			assert(page.select("h2").asScala.map(_.text).contains("Submission"))
+			assert(sectionHeadings(page).contains("Submission"))
 			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
 
 		it("renders the creators of the document object landing page as authors"):
@@ -341,15 +354,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 			assert(propertyText(page, "Number of items") === "3")
-			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSet
+			val itemLinks = collectionItems(page)
 			assert(itemLinks.contains(RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")))
 			assert(itemLinks.contains(RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")))
 
 		it("renders the nested collections and versions of the collection landing page"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
 			// members are sorted by name; the nested collection is listed by its title
-			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
-			assert(itemLinks === Seq(
+			assert(collectionItems(page) === Seq(
 				RenderedLink("Nested collection", "https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"),
 				RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"),
 				RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
@@ -365,12 +377,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(heading(page) === "Nested collection")
 			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O"))
-			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
-			assert(alert.selectFirst(".alert-heading").text === "Deprecated collection")
-			assert(Option(alert.selectFirst("a.alert-link")).map(RenderedLink(_)) ===
-				Some(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
-			val itemLinks = page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
-			assert(itemLinks === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
+			val alert = deprecationAlert(page)
+			assert(alert.heading === "Deprecated collection")
+			assert(alert.latestLinks === Seq(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
+			assert(collectionItems(page) === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
 
 		it("lists only the current parent collections on data object landing pages"):
 			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
@@ -410,7 +420,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(fundingRows(1)(2).select("a").isEmpty)
 
 			// the spatial coverage makes the location section with its map appear
-			assert(page.select("h2").asScala.map(_.text).contains("Location"))
+			assert(sectionHeadings(page).contains("Location"))
 			assert(page.select("iframe").asScala.map(_.attr("src")).toSeq === Seq("/station/?station=/resources/stations/TST&icon="))
 			assert(page.select("img.img-fluid").asScala.map(_.attr("src")).toSeq === Seq("https://static.icos-cp.eu/images/stations/TST.jpg"))
 
@@ -426,7 +436,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				RenderedLink("Station news", "https://example.org/es_tst/news"),
 				RenderedLink("Station data", "https://example.org/es_tst/data")
 			))
-			assert(page.select("h2").asScala.map(_.text).contains("Detailed information"))
+			assert(sectionHeadings(page).contains("Detailed information"))
 			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfc - Subarctic", "/resources/climateZones/Dfc")))
 			assert(propertyLinks(page, "Main ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
 			assert(propertyText(page, "Mean annual temperature") === "1.8 °C")
@@ -498,7 +508,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
 			assert(heading(page) === "Nafion dryer (SN-2)")
 			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink("Test instrument", "/resources/instruments/TST_1")))
-			assert(page.select("h2").asScala.map(_.text).contains("Deployments") === false)
+			assert(sectionHeadings(page).contains("Deployments") === false)
 
 		it("renders the person landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))

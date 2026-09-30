@@ -145,6 +145,13 @@
 }
 
 <http://meta.icos-cp.eu/resources/icos/> {
+	<http://meta.icos-cp.eu/resources/test/serializer_test>
+		rdfs:label "Serializer test resource" ;
+		rdfs:comment "Serializer test comment" .
+
+	<http://meta.icos-cp.eu/resources/test/serializer_test_referrer>
+		<http://example.org/refersTo> <http://meta.icos-cp.eu/resources/test/serializer_test> .
+
 	<http://meta.icos-cp.eu/resources/stations/TST>
 		a cpmeta:AS ;
 		rdfs:label "TST" ;

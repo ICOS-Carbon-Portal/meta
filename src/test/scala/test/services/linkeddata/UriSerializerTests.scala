@@ -11,7 +11,6 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import eu.icoscp.envri.Envri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.RDFFormat
@@ -56,6 +55,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private val metaVocab = CpmetaVocab(repo.getValueFactory)
 	private val resource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test")
 	private val referringResource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test_referrer")
+	private val predicate = repo.getValueFactory.createIRI("http://example.org/refersTo")
 	private val resourceUri = Uri(resource.stringValue)
 
 	private val doiCiter = new PlainDoiCiter:
@@ -73,8 +73,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	private given ToResponseMarshaller[Uri] = serializer.marshaller
 
-	private val graph = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/icos/")
-	private val predicate = repo.getValueFactory.createIRI("http://example.org/refersTo")
 	private val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
 	private val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
 
@@ -93,11 +91,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private val person = Uri("http://meta.icos-cp.eu/resources/people/Test_Person")
 	private val objectSpec = Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries")
 	private val dataTheme = Uri("http://meta.icos-cp.eu/resources/themes/atmosphere")
-
-	Using.resource(repo.getConnection()): conn =>
-		conn.add(resource, RDFS.LABEL, vocab.lit("Serializer test resource"), graph)
-		conn.add(resource, RDFS.COMMENT, vocab.lit("Serializer test comment"), graph)
-		conn.add(referringResource, predicate, resource, graph)
 
 	private def serialize(uri: Uri): Route = get:
 		complete(uri)

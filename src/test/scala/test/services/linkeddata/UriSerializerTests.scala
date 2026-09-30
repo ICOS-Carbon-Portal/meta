@@ -78,6 +78,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		page -> Fixture.counter.snapshot
 	}
 
+	private def renderJson(uri: Uri): String =
+		Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri) ~> check {
+			val body = responseAs[String]
+			assert(status === StatusCodes.OK, body)
+			assert(contentType === ContentTypes.`application/json`)
+			body
+		}
+
 	describe("an unknown object URI") {
 		it("returns the original HTML not-found page") {
 			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(Fixture.missingObjectUri) ~> check {
@@ -109,13 +117,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns its labeled-resource representation as JSON") {
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.resourceUri) ~> check {
-				assert(status === StatusCodes.OK, responseAs[String])
-				assert(contentType === ContentTypes.`application/json`)
-				val body = responseAs[String]
-				assert(body.contains(Fixture.resource.stringValue))
-				assert(body.contains("Serializer test resource"))
-			}
+			val body = renderJson(Fixture.resourceUri)
+			assert(body.contains(Fixture.resource.stringValue))
+			assert(body.contains("Serializer test resource"))
 		}
 
 		it("serializes both outgoing and incoming statements as RDF") {
@@ -156,7 +160,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the previewable variables of the data object landing page") {
 			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
 			val table = tableAfterHeading(page, "Previewable variables")
-			assert(table.select("> thead > tr > th").eachText.asScala === Seq(
+			assert(table.select("> thead > tr > th").asScala.map(_.text) === Seq(
 				"Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"
 			))
 
@@ -174,7 +178,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				"Preview",
 				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
 			)
-			assert(rows.map(_.flatMap(_.select("a").asScala.map(RenderedLink(_)))) === Seq(
+			assert(rows.map(_.flatMap(links(_))) === Seq(
 				Seq(),
 				Seq(preview("co2"), RenderedLink("Test instrument", "/resources/instruments/TST_1")),
 				Seq(preview("ch4"))
@@ -292,12 +296,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns the variable value ranges of the spatiotemporal data object as JSON") {
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.spatialObject) ~> check {
-				assert(status === StatusCodes.OK, responseAs[String])
-				val body = responseAs[String].replaceAll("\\s", "")
-				assert(body.contains(""""minMax":[250.5,310.25]"""), body)
-				assert(!body.contains("unknown_var"))
-			}
+			val body = renderJson(Fixture.spatialObject).replaceAll("\\s", "")
+			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
+			assert(!body.contains("unknown_var"))
 		}
 	}
 
@@ -432,22 +433,19 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				Seq("Swedish Research Council", "2019-001", "Early award", "2019-01-01", "2020-12-31", ""),
 				Seq("Swedish Research Council", "", "Ongoing award", "2021-01-01", "", "Ongoing funding")
 			))
-			assert(RenderedLink(fundingRows(0)(0).selectFirst("a")) === RenderedLink(
-				"Swedish Research Council",
-				"/resources/organizations/VR"
+			val funder = RenderedLink("Swedish Research Council", "/resources/organizations/VR")
+			val awardUrl = "https://example.org/awards/2019-001"
+			assert(fundingRows.map(_.flatMap(links(_))) === Seq(
+				Seq(funder, RenderedLink("2019-001", awardUrl), RenderedLink("Early award", awardUrl)),
+				Seq(funder)
 			))
-			assert(RenderedLink(fundingRows(0)(1).selectFirst("a")) === RenderedLink(
-				"2019-001",
-				"https://example.org/awards/2019-001"
-			))
-			assert(fundingRows(1)(2).select("a").isEmpty)
 
 			// the spatial coverage makes the location section with its map appear
 			assert(sectionHeadings(page).contains("Location"))
-			assert(page.select("iframe").asScala.map(_.attr("src")).toSeq === Seq(
+			assert(page.select("iframe").eachAttr("src").asScala === Seq(
 				"/station/?station=/resources/stations/TST&icon="
 			))
-			assert(page.select("img.img-fluid").asScala.map(_.attr("src")).toSeq === Seq(
+			assert(page.select("img.img-fluid").eachAttr("src").asScala === Seq(
 				"https://static.icos-cp.eu/images/stations/TST.jpg"
 			))
 		}
@@ -459,8 +457,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(heading(page) === "ICOS STATION Test ecosystem station")
 			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
 			assert(page.text.contains("Welcome to the test ecosystem station"))
-			val linkBoxes = page.select("h3.h6 a").asScala.map(RenderedLink(_)).toSeq
-			assert(linkBoxes === Seq(
+			assert(links(page, "h3.h6 a") === Seq(
 				RenderedLink("Station news", "https://example.org/es_tst/news"),
 				RenderedLink("Station data", "https://example.org/es_tst/data")
 			))
@@ -511,12 +508,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON") {
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.sitesStation) ~> check {
-				assert(status === StatusCodes.OK, responseAs[String])
-				val body = responseAs[String]
-				Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach { expected =>
-					assert(body.contains(expected), s"'$expected' missing in $body")
-				}
+			val body = renderJson(Fixture.sitesStation)
+			Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach { expected =>
+				assert(body.contains(expected), s"'$expected' missing in $body")
 			}
 		}
 	}
@@ -556,8 +550,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				Seq("co2", "CO2 column", "Test station", "", "", "", "2018-01-01 00:00:00", "2019-01-01 00:00:00"),
 				Seq("co2", "CO2 column", "Test station", "56.1", "13.4", "50.0 m", "2020-06-01 00:00:00", "")
 			))
-			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(RenderedLink(_)))
-			assert(deploymentLinks === Seq(
+			assert(deploymentRows.head.flatMap(links(_)) === Seq(
 				RenderedLink("CO2 column", "/resources/cpmeta/testTimeSeriesDataset_co2"),
 				RenderedLink("Test station", "/resources/stations/TST")
 			))
@@ -582,8 +575,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(heading(page) === "Test Person")
 			assert(propertyText(page, "First name") === "Test")
 			assert(propertyText(page, "Last name") === "Person")
-			val roleCells = page.select("table tbody tr").asScala.flatMap(_.select("td").asScala.map(_.text))
-			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
+			assert(page.select("table tbody tr td").asScala.map(_.text) === Seq("PI", "TST", "2021-01-01", ""))
 		}
 	}
 
@@ -635,6 +627,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		def apply(elem: Element): RenderedLink = RenderedLink(elem.text, elem.attr("href"))
 	}
 
+	private def links(scope: Element, selector: String = "a"): Seq[RenderedLink] =
+		scope.select(selector).asScala.map(RenderedLink(_)).toSeq
+
 	private def heading(page: Document): String =
 		Option(page.selectFirst("h1")).map(_.text).getOrElse(fail("Missing heading"))
 
@@ -672,14 +667,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 	private def propertyLinks(scope: Element, label: String): Seq[RenderedLink] =
-		propertyValues(scope, label).flatMap(_.select("a").asScala).map(RenderedLink(_))
+		propertyValues(scope, label).flatMap(links(_))
 
 	private def propertyText(scope: Element, label: String): String = property(scope, label).text
 
 	private def propertyTexts(scope: Element, label: String): Seq[String] = propertyValues(scope, label).map(_.text)
 
 	private def singleLink(value: Element, description: String): RenderedLink =
-		value.select("a").asScala.map(RenderedLink(_)).toSeq match {
+		links(value) match {
 			case Seq(single) => single
 			case links => fail(s"Expected one link for $description, got $links")
 		}
@@ -708,8 +703,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private def sectionHeadings(page: Document): Seq[String] =
 		page.select("h2").asScala.map(_.text).toSeq
 
-	private def collectionItems(page: Document): Seq[RenderedLink] =
-		page.select("a[target=_blank]").asScala.map(RenderedLink(_)).toSeq
+	private def collectionItems(page: Document): Seq[RenderedLink] = links(page, "a[target=_blank]")
 
 	private case class DeprecationAlert(heading: String, text: String, latestLinks: Seq[RenderedLink])
 
@@ -718,7 +712,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		DeprecationAlert(
 			alert.selectFirst(".alert-heading").text,
 			alert.text,
-			alert.select("a.alert-link").asScala.map(RenderedLink(_)).toSeq
+			links(alert, "a.alert-link")
 		)
 	}
 

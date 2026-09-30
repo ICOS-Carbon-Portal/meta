@@ -156,34 +156,29 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the previewable variables of the data object landing page") {
 			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
 			val table = tableAfterHeading(page, "Previewable variables")
-			val headers = table.selectFirst("thead > tr").children.asScala.map(_.text)
-			assert(headers === Seq("Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"))
-
-			val rows = tableRows(table)
-			assert(rows.map(_.take(5).map(_.text)) === Seq(
-				Seq("TIMESTAMP", "time instant, UTC", "", "", ""),
-				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
-				Seq("ch4", "CH4 mixing ratio (dry mole fraction)", "nmol mol-1", "portion", "Preview")
+			assert(table.select("> thead > tr > th").eachText.asScala === Seq(
+				"Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"
 			))
 
-			val previewLinks = rows.map(cells => Option(cells(4).selectFirst("a")).map(_.attr("href")))
-			def previewUrl(variable: String) =
-				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
-			assert(previewLinks === Seq(None, Some(previewUrl("co2")), Some(previewUrl("ch4"))))
-
 			// only the co2 deployment that overlaps the acquisition interval is shown
-			val deploymentCells = rows.map(_(5))
-			assert(deploymentCells(0).children.isEmpty)
-			assert(deploymentCells(2).children.isEmpty)
-			val deploymentRows = deploymentCells(1).select("table.instrument-deployment tbody tr").asScala
-				.map(_.children.asScala.map(_.text).toSeq).toSeq
-			assert(deploymentRows === Seq(Seq(
-				"Start: 2020-06-01 00:00:00 Stop: Not done",
-				"Latitude: 56.1 Longitude: 13.4 Altitude: 50.0 m",
-				"Test instrument"
-			)))
-			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
-			assert(RenderedLink(instrumentLink) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
+			val rows = tableRows(table)
+			assert(rows.map(_.map(_.text)) === Seq(
+				Seq("TIMESTAMP", "time instant, UTC", "", "", "", ""),
+				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview",
+					"Time interval Position Instrument " +
+					"Start: 2020-06-01 00:00:00 Stop: Not done Latitude: 56.1 Longitude: 13.4 Altitude: 50.0 m Test instrument"),
+				Seq("ch4", "CH4 mixing ratio (dry mole fraction)", "nmol mol-1", "portion", "Preview", "")
+			))
+
+			def preview(variable: String) = RenderedLink(
+				"Preview",
+				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
+			)
+			assert(rows.map(_.flatMap(_.select("a").asScala.map(RenderedLink(_)))) === Seq(
+				Seq(),
+				Seq(preview("co2"), RenderedLink("Test instrument", "/resources/instruments/TST_1")),
+				Seq(preview("ch4"))
+			))
 		}
 
 		it("renders the production of the data object landing page") {

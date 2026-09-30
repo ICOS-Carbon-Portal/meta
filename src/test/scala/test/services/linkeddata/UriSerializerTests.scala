@@ -38,32 +38,23 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			max-connection-backoff = 20ms
 		}"""
 
+	override def afterAll(): Unit =
+		Fixture.fixtureRepo.shutDown()
+		super.afterAll()
+
 	private val config = ConfigLoader.default
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
-	private val fixtureRepo: Repository = SailRepository(MemoryStore())
-	private val counter = QueryCounter()
-	private val repo: Repository = CountingRepository(fixtureRepo, counter)
-	fixtureRepo.init()
-	Using.resources(
-		getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
-		fixtureRepo.getConnection()
-	): (stream, conn) =>
-		conn.add(stream, "", RDFFormat.TRIG)
 
-	private val vocab = CpVocab(repo.getValueFactory)
-	private val metaVocab = CpmetaVocab(repo.getValueFactory)
-	private val resource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test")
-	private val referringResource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test_referrer")
-	private val predicate = repo.getValueFactory.createIRI("http://example.org/refersTo")
-	private val resourceUri = Uri(resource.stringValue)
+	private val vocab = CpVocab(Fixture.repo.getValueFactory)
+	private val metaVocab = CpmetaVocab(Fixture.repo.getValueFactory)
 
 	private val doiCiter = new PlainDoiCiter:
 		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
 		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
 
 	private val serializer = new Rdf4jUriSerializer(
-		repo,
+		Fixture.repo,
 		vocab,
 		metaVocab,
 		MetaDb.getLenses(config.instanceServers, config.dataUploadService),
@@ -73,36 +64,408 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 	private given ToResponseMarshaller[Uri] = serializer.marshaller
 
-	private val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
-	private val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
-
-	private val timeSeriesObject = Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
-	private val versionedObject = Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
-	private val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")
-	private val documentObject = Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")
-	private val testCollection = Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD")
-	private val nestedCollection = Uri("https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM")
-	private val icosStation = Uri("http://meta.icos-cp.eu/resources/stations/TST")
-	private val ecosystemStation = Uri("http://meta.icos-cp.eu/resources/stations/ES_TST")
-	private val sitesStation = Uri("https://meta.fieldsites.se/resources/stations/Testsjon")
-	private val organization = Uri("http://meta.icos-cp.eu/resources/organizations/CP")
-	private val instrument = Uri("http://meta.icos-cp.eu/resources/instruments/TST_1")
-	private val instrumentComponent = Uri("http://meta.icos-cp.eu/resources/instruments/TST_2")
-	private val person = Uri("http://meta.icos-cp.eu/resources/people/Test_Person")
-	private val objectSpec = Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries")
-	private val dataTheme = Uri("http://meta.icos-cp.eu/resources/themes/atmosphere")
-
 	private def serialize(uri: Uri): Route = get:
 		complete(uri)
 
 	private def renderLandingPage(uri: Uri): (Document, QueryCounts) =
-		counter.reset()
+		Fixture.counter.reset()
 		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check:
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType.mediaType === MediaTypes.`text/html`)
 			Jsoup.parse(body)
-		page -> counter.snapshot
+		page -> Fixture.counter.snapshot
+
+	describe("an unknown object URI"):
+		it("returns the original HTML not-found page"):
+			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(Fixture.missingObjectUri) ~> check:
+				assert(status === StatusCodes.NotFound)
+				assert(contentType.mediaType === MediaTypes.`text/html`)
+				assert(responseAs[String].contains("Data object not found"))
+
+		it("returns an error response for JSON because the RDF read produced errors"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.missingObjectUri) ~> check:
+				assert(status === StatusCodes.InternalServerError)
+				assert(contentType === ContentTypes.`text/plain(UTF-8)`)
+				assert(responseAs[String].nonEmpty)
+
+	describe("a labeled resource URI"):
+		it("renders the generic resource page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.resourceUri)
+			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
+			assert(heading(page) === "Serializer test resource")
+			assert(propertyText(page, "URI") === Fixture.resource.stringValue)
+			assert(propertyText(page, "Label") === "Serializer test resource")
+			assert(propertyText(page, "Comment") === "Serializer test comment")
+			val usage = page.selectFirst("label.fw-bold a[href='/resources/test/serializer_test_referrer']")
+			assert(Option(usage).map(_.text) === Some("http://meta.icos-cp.eu/resources/test/serializer_test_referrer"))
+
+		it("returns its labeled-resource representation as JSON"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.resourceUri) ~> check:
+				assert(status === StatusCodes.OK, responseAs[String])
+				assert(contentType === ContentTypes.`application/json`)
+				val body = responseAs[String]
+				assert(body.contains(Fixture.resource.stringValue))
+				assert(body.contains("Serializer test resource"))
+
+		it("serializes both outgoing and incoming statements as RDF"):
+			Get() ~> Accept(MediaTypes.`text/plain`) ~> serialize(Fixture.resourceUri) ~> check:
+				assert(status === StatusCodes.OK)
+				assert(contentType === InstanceServerSerializer.turtleContType)
+				val body = responseAs[String]
+				assert(body.contains("Serializer test resource"))
+				assert(body.contains(Fixture.referringResource.stringValue))
+				assert(body.contains(Fixture.predicate.stringValue))
+
+	describe("data object landing pages"):
+		it("renders the data object landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
+			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
+			assert(heading(page) === "Test time series from Test station (50.0 m)")
+			assert(propertyText(page, "File name") === "test_data.csv")
+			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
+			assert(propertyText(page, "Number of data rows") === "100")
+			assert(propertyText(page, "Data level") === "2")
+			assert(propertyText(page, "Sampling height") === "50.0")
+			assert(propertyLink(page, "Data type") === RenderedLink("Test time series", "/resources/cpmeta/testTimeSeries"))
+			assert(propertyLink(page, "Station") === RenderedLink("Test station", "/resources/stations/TST"))
+			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
+			assert(sectionHeadings(page).contains("Acquisition"))
+			assert(sectionHeadings(page).contains("Technical information"))
+
+		it("renders the previewable variables of the data object landing page"):
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
+			val table = tableAfterHeading(page, "Previewable variables")
+			val headers = table.selectFirst("thead > tr").children.asScala.map(_.text)
+			assert(headers === Seq("Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"))
+
+			val rows = tableRows(table)
+			assert(rows.map(_.take(5).map(_.text)) === Seq(
+				Seq("TIMESTAMP", "time instant, UTC", "", "", ""),
+				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
+				Seq("ch4", "CH4 mixing ratio (dry mole fraction)", "nmol mol-1", "portion", "Preview")
+			))
+
+			val previewLinks = rows.map(cells => Option(cells(4).selectFirst("a")).map(_.attr("href")))
+			def previewUrl(variable: String) =
+				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
+			assert(previewLinks === Seq(None, Some(previewUrl("co2")), Some(previewUrl("ch4"))))
+
+			// only the co2 deployment that overlaps the acquisition interval is shown
+			val deploymentCells = rows.map(_(5))
+			assert(deploymentCells(0).children.isEmpty)
+			assert(deploymentCells(2).children.isEmpty)
+			val deploymentRows = deploymentCells(1).select("table.instrument-deployment tbody tr").asScala
+				.map(_.children.asScala.map(_.text).toSeq).toSeq
+			assert(deploymentRows === Seq(Seq(
+				"Start: 2020-06-01 00:00:00 Stop: Not done",
+				"Latitude: 56.1 Longitude: 13.4 Altitude: 50.0 m",
+				"Test instrument"
+			)))
+			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
+			assert(RenderedLink(instrumentLink) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
+
+		it("renders the production of the data object landing page"):
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
+			assert(sectionHeadings(page).contains("Production"))
+			assert(propertyLink(page, "File made by") === RenderedLink("Test Person", "/resources/people/Test_Person"))
+			assert(propertyLink(page, "Host organization") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
+			assert(propertyText(page, "Production time (UTC)") === "2022-01-01 12:00:00")
+			assert(propertyText(page, "Comment") === "Test production comment")
+			// rdf:Seq order, not sorted
+			assert(propertyLinks(page, "Contributors") === Seq(
+				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
+				RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"),
+				RenderedLink("Test Person", "/resources/people/Test_Person")
+			))
+			// sorted by name, read from the global graph view
+			assert(propertyLinks(page, "Source object") === Seq(
+				RenderedLink("previous_data.csv", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"),
+				RenderedLink("versioned_data.csv", "/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
+			))
+
+		it("lists the spec documentation before the production documentation on data object landing pages"):
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
+			assert(propertyLinks(page, "Documentation") === Seq(
+				RenderedLink("test_time_series_description.pdf", "/objects/ERERERERERERERERERERERER"),
+				RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")
+			))
+
+		it("renders the version chain of a data object landing page"):
+			val (page, counts) = renderLandingPage(Fixture.versionedObject)
+			assert(counts === QueryCounts(connections = 1, statements = 291, existence = 24, sparql = 0))
+			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
+			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
+			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
+			// the latest version is reached through a plain collection that supersedes the next version
+			val alert = deprecationAlert(page)
+			assert(alert.heading === "Deprecated data")
+			assert(alert.latestLinks === Seq(
+				RenderedLink("CQkJCQkJCQkJCQkJCQkJCQkJ", "/objects/CQkJCQkJCQkJCQkJCQkJCQkJ"),
+				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
+			))
+			assert(alert.text.contains("Latest versions:"))
+
+		it("renders the acquisition site, instruments and sampling point of a data object landing page"):
+			val (page, _) = renderLandingPage(Fixture.versionedObject)
+			assert(metadataErrors(page) === Nil)
+			// shown both in the acquisition section and in the side card
+			assert(page.select("label.fw-bold").asScala.filter(_.text == "Location").map(_.parent.nextElementSibling.text).toSeq ===
+				Seq("TST tower area", "TST tower area"))
+			assert(propertyLinks(page, "Ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
+			assert(propertyLinks(page, "Instrument").sortBy(_.href) === Seq(
+				RenderedLink("Test instrument", "/resources/instruments/TST_1"),
+				RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")
+			))
+			assert(propertyText(page, "Sampling height") === "25.0")
+			assert(propertyText(page, "Sampling point") === "Tower inlet")
+			assert(propertyText(page, "Coordinates") === "Lat: 56.1001, Lon: 13.4002")
+
+		it("lists only the current parent collections on data object landing pages"):
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject)
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+			val (nestedMember, _) = renderLandingPage(Fixture.versionedObject)
+			assert(propertyLinks(nestedMember, "Part of") === Seq(RenderedLink("Nested collection, version 2", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
+
+		it("renders the spatiotemporal data object landing page"):
+			val (page, counts) = renderLandingPage(Fixture.spatialObject)
+			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "Test spatial data object")
+			assert(propertyText(page, "Description") === "Gridded test data")
+			assert(propertyText(page, "Temporal coverage from (UTC)") === "2020-01-01 00:00:00")
+			assert(propertyText(page, "Temporal coverage to (UTC)") === "2020-12-31 00:00:00")
+			assert(propertyText(page, "Temporal resolution") === "monthly")
+			assert(propertyText(page, "Coverage") === "S: 50, W: 10, N: 60, E: 20")
+			assert(propertyText(page, "Data level") === "3")
+			assert(propertyLink(page, "File made by") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
+			assert(sectionHeadings(page).contains("Acquisition") === false)
+
+			// the regex-defined variable is listed under its actual name; the undefined one is left out
+			val rows = tableRows(tableAfterHeading(page, "Previewable variables"))
+			assert(rows.map(_.map(_.text)).sortBy(_.head) === Seq(
+				Seq("flux_co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
+				Seq("tas", "air temperature", "K", "temperature", "Preview")
+			))
+
+		it("returns the variable value ranges of the spatiotemporal data object as JSON"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.spatialObject) ~> check:
+				assert(status === StatusCodes.OK, responseAs[String])
+				val body = responseAs[String].replaceAll("\\s", "")
+				assert(body.contains(""""minMax":[250.5,310.25]"""), body)
+				assert(!body.contains("unknown_var"))
+
+	describe("document landing pages"):
+		it("renders the document object landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.documentObject)
+			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
+			assert(heading(page) === "Test document")
+			assert(propertyText(page, "File name") === "test_doc.pdf")
+			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
+			assert(propertyLink(page, "Submitted by") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
+			assert(sectionHeadings(page).contains("Submission"))
+			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
+
+		it("renders the creators of the document object landing page as authors"):
+			val (page, _) = renderLandingPage(Fixture.documentObject)
+			assert(propertyLinks(page, "Authors") === Seq(
+				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
+				RenderedLink("Test Person", "/resources/people/Test_Person")
+			))
+			// the document is part of the test collection, but not of its superseded previous version
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+
+	describe("collection landing pages"):
+		it("renders the collection landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.testCollection)
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
+			assert(heading(page) === "Test collection")
+			assert(propertyText(page, "Description") === "A collection of test items")
+			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
+			assert(propertyText(page, "Number of items") === "3")
+			val itemLinks = collectionItems(page)
+			assert(itemLinks.contains(RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")))
+			assert(itemLinks.contains(RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")))
+
+		it("renders the nested collections and versions of the collection landing page"):
+			val (page, _) = renderLandingPage(Fixture.testCollection)
+			// members are sorted by name; the nested collection is listed by its title
+			assert(collectionItems(page) === Seq(
+				RenderedLink("Nested collection", "https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"),
+				RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"),
+				RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
+			))
+			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/collections/DQ0NDQ0NDQ0NDQ0NDQ0NDQ0N"))
+			assert(propertyLinks(page, "Next version").isEmpty)
+			assert(propertyLinks(page, "Part of").isEmpty)
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
+
+		it("renders the nested collection landing page"):
+			val (page, counts) = renderLandingPage(Fixture.nestedCollection)
+			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 6, sparql = 0))
+			assert(heading(page) === "Nested collection")
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O"))
+			val alert = deprecationAlert(page)
+			assert(alert.heading === "Deprecated collection")
+			assert(alert.latestLinks === Seq(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
+			assert(collectionItems(page) === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
+
+	describe("station landing pages"):
+		it("renders the station landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.icosStation)
+			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(heading(page) === "Test station")
+			assert(propertyText(page, "Station ID") === "TST")
+			assert(propertyText(page, "Country code") === "SE")
+			assert(propertyText(page, "Latitude/Longitude") === "56.1, 13.4")
+			assert(propertyText(page, "Elevation") === "150 m")
+
+		it("renders the sub-resources of the ICOS station landing page"):
+			val (page, _) = renderLandingPage(Fixture.icosStation)
+			assert(metadataErrors(page) === Nil)
+			assert(propertyText(page, "Description") === "Test station description")
+			assert(propertyText(page, "WIGOS ID") === "0-20008-0-TST")
+			assert(propertyText(page, "ICOS Station class") === "1")
+			assert(propertyText(page, "ICOS Labeling date") === "2019-06-01")
+			assert(propertyText(page, "Time zone offset") === "1")
+			assert(propertyLinks(page, "Associated networks") === Seq(RenderedLink("Test network", "/resources/networks/TestNet")))
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
+			assert(propertyLinks(page, "Organization") === Seq(RenderedLink("Carbon Portal", "/resources/organizations/CP")))
+
+			// sorted by end date, the ongoing funding last
+			val fundingRows = tableRows(tableAfterHeading(page, "Acknowledgements"))
+			assert(fundingRows.map(_.map(_.text)) === Seq(
+				Seq("Swedish Research Council", "2019-001", "Early award", "2019-01-01", "2020-12-31", ""),
+				Seq("Swedish Research Council", "", "Ongoing award", "2021-01-01", "", "Ongoing funding")
+			))
+			assert(RenderedLink(fundingRows(0)(0).selectFirst("a")) === RenderedLink("Swedish Research Council", "/resources/organizations/VR"))
+			assert(RenderedLink(fundingRows(0)(1).selectFirst("a")) === RenderedLink("2019-001", "https://example.org/awards/2019-001"))
+			assert(fundingRows(1)(2).select("a").isEmpty)
+
+			// the spatial coverage makes the location section with its map appear
+			assert(sectionHeadings(page).contains("Location"))
+			assert(page.select("iframe").asScala.map(_.attr("src")).toSeq === Seq("/station/?station=/resources/stations/TST&icon="))
+			assert(page.select("img.img-fluid").asScala.map(_.attr("src")).toSeq === Seq("https://static.icos-cp.eu/images/stations/TST.jpg"))
+
+		it("renders the ecosystem station landing page with webpage elements"):
+			val (page, counts) = renderLandingPage(Fixture.ecosystemStation)
+			assert(counts === QueryCounts(connections = 1, statements = 48, existence = 2, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "ICOS STATION Test ecosystem station")
+			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
+			assert(page.text.contains("Welcome to the test ecosystem station"))
+			val linkBoxes = page.select("h3.h6 a").asScala.map(RenderedLink(_)).toSeq
+			assert(linkBoxes === Seq(
+				RenderedLink("Station news", "https://example.org/es_tst/news"),
+				RenderedLink("Station data", "https://example.org/es_tst/data")
+			))
+			assert(sectionHeadings(page).contains("Detailed information"))
+			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfc - Subarctic", "/resources/climateZones/Dfc")))
+			assert(propertyLinks(page, "Main ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
+			assert(propertyText(page, "Mean annual temperature") === "1.8 °C")
+			assert(propertyText(page, "Mean annual precipitation") === "614.0 mm")
+			assert(propertyText(page, "Mean annual incoming SW radiation") === "90.5 W/m2")
+			assert(propertyLinks(page, "Documentation resource") === Seq(RenderedLink("https://example.org/es_tst/docs", "https://example.org/es_tst/docs")))
+			assert(propertyLinks(page, "Data publication") === Seq(RenderedLink("https://doi.org/10.1234/es_tst", "https://doi.org/10.1234/es_tst")))
+			assert(propertyText(page, "Latitude/Longitude") === "64.25, 19.77")
+			assert(propertyText(page, "Elevation") === "235 m")
+
+		it("renders the SITES station landing page"):
+			val (page, counts) = renderLandingPage(Fixture.sitesStation)
+			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "Testsjön Research Station")
+			assert(propertyText(page, "Station ID") === "TSJ")
+			assert(propertyLinks(page, "Main ecosystems") === Seq(
+				RenderedLink("Forest", "/resources/ecosystems/forest"),
+				RenderedLink("Lake", "/resources/ecosystems/lake")
+			))
+			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfb - Warm-summer humid continental", "/resources/climateZones/Dfb")))
+			assert(propertyText(page, "Mean annual temperature") === "5.5 °C")
+			assert(propertyText(page, "Operational period") === "2015-")
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("testsjon_description.pdf", "/objects/EBAQEBAQEBAQEBAQEBAQEBAQ")))
+
+		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.sitesStation) ~> check:
+				assert(status === StatusCodes.OK, responseAs[String])
+				val body = responseAs[String]
+				Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach: expected =>
+					assert(body.contains(expected), s"'$expected' missing in $body")
+
+	describe("organization landing pages"):
+		it("renders the organization landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.organization)
+			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
+			assert(heading(page) === "Carbon Portal (CP)")
+			assert(propertyText(page, "Name") === "Carbon Portal")
+
+	describe("instrument landing pages"):
+		it("renders the instrument landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.instrument)
+			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(heading(page) === "Test instrument")
+			assert(propertyText(page, "Model") === "Picarro G2401")
+			assert(propertyText(page, "Serial number") === "SN-1")
+			assert(propertyLink(page, "Owner") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
+
+		it("renders the vendor, components and deployments of the instrument landing page"):
+			val (page, _) = renderLandingPage(Fixture.instrument)
+			assert(metadataErrors(page) === Nil)
+			assert(propertyLink(page, "Vendor") === RenderedLink("Picarro Inc.", "/resources/organizations/Picarro"))
+			assert(propertyLinks(page, "Has component") === Seq(RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")))
+			assert(propertyLinks(page, "Is part of").isEmpty)
+			assert(propertyText(page, "Comment") === "Main analyser")
+			// all deployments are listed, regardless of any acquisition interval
+			val deploymentRows = tableRows(tableAfterHeading(page, "Deployments"))
+			assert(deploymentRows.map(_.map(_.text)).sortBy(_(6)) === Seq(
+				Seq("co2", "CO2 column", "Test station", "", "", "", "2018-01-01 00:00:00", "2019-01-01 00:00:00"),
+				Seq("co2", "CO2 column", "Test station", "56.1", "13.4", "50.0 m", "2020-06-01 00:00:00", "")
+			))
+			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(RenderedLink(_)))
+			assert(deploymentLinks === Seq(
+				RenderedLink("CO2 column", "/resources/cpmeta/testTimeSeriesDataset_co2"),
+				RenderedLink("Test station", "/resources/stations/TST")
+			))
+
+		it("renders the instrument component landing page"):
+			val (page, counts) = renderLandingPage(Fixture.instrumentComponent)
+			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
+			assert(heading(page) === "Nafion dryer (SN-2)")
+			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink("Test instrument", "/resources/instruments/TST_1")))
+			assert(sectionHeadings(page).contains("Deployments") === false)
+
+	describe("person landing pages"):
+		it("renders the person landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.person)
+			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
+			assert(heading(page) === "Test Person")
+			assert(propertyText(page, "First name") === "Test")
+			assert(propertyText(page, "Last name") === "Person")
+			val roleCells = page.select("table tbody tr").asScala.flatMap(_.select("td").asScala.map(_.text))
+			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
+
+	describe("object specification landing pages"):
+		it("renders the object specification landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.objectSpec)
+			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
+			assert(heading(page) === "Test time series")
+			assert(propertyText(page, "Label") === "Test time series")
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasAssociatedProject") === RenderedLink("ICOS", "/resources/projects/icos"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDataTheme") === RenderedLink("Atmosphere", "/resources/themes/atmosphere"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasFormat") === RenderedLink("ASCII CSV time series", "/ontologies/cpmeta/csvWithIso8601tsFirstCol"))
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasEncoding") === RenderedLink("plain text", "/ontologies/cpmeta/asciiEncoding"))
+			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataLevel").text === "2")
+			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDocumentationObject") ===
+				RenderedLink("https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER", "/objects/ERERERERERERERERERERERER"))
+
+	describe("labeled resource landing pages"):
+		it("renders the labeled resource landing page as HTML"):
+			val (page, counts) = renderLandingPage(Fixture.dataTheme)
+			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
+			assert(heading(page) === "Atmosphere")
+			assert(propertyText(page, "Label") === "Atmosphere")
+			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg")
 
 	private case class RenderedLink(text: String, href: String)
 	private object RenderedLink:
@@ -163,397 +526,37 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			alert.select("a.alert-link").asScala.map(RenderedLink(_)).toSeq
 		)
 
-	describe("an unknown object URI"):
-		it("returns the original HTML not-found page"):
-			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(missingObjectUri) ~> check:
-				assert(status === StatusCodes.NotFound)
-				assert(contentType.mediaType === MediaTypes.`text/html`)
-				assert(responseAs[String].contains("Data object not found"))
+	private object Fixture:
+		val fixtureRepo: Repository = SailRepository(MemoryStore())
+		val counter = QueryCounter()
+		val repo: Repository = CountingRepository(fixtureRepo, counter)
+		fixtureRepo.init()
+		Using.resources(
+			getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
+			fixtureRepo.getConnection()
+		): (stream, conn) =>
+			conn.add(stream, "", RDFFormat.TRIG)
 
-		it("returns an error response for JSON because the RDF read produced errors"):
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(missingObjectUri) ~> check:
-				assert(status === StatusCodes.InternalServerError)
-				assert(contentType === ContentTypes.`text/plain(UTF-8)`)
-				assert(responseAs[String].nonEmpty)
+		val resource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test")
+		val referringResource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test_referrer")
+		val predicate = repo.getValueFactory.createIRI("http://example.org/refersTo")
+		val resourceUri = Uri(resource.stringValue)
 
-	describe("a labeled resource URI"):
-		it("renders the generic resource page as HTML"):
-			val (page, counts) = renderLandingPage(resourceUri)
-			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
-			assert(heading(page) === "Serializer test resource")
-			assert(propertyText(page, "URI") === resource.stringValue)
-			assert(propertyText(page, "Label") === "Serializer test resource")
-			assert(propertyText(page, "Comment") === "Serializer test comment")
-			val usage = page.selectFirst("label.fw-bold a[href='/resources/test/serializer_test_referrer']")
-			assert(Option(usage).map(_.text) === Some("http://meta.icos-cp.eu/resources/test/serializer_test_referrer"))
+		val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
+		val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
 
-		it("returns its labeled-resource representation as JSON"):
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(resourceUri) ~> check:
-				assert(status === StatusCodes.OK, responseAs[String])
-				assert(contentType === ContentTypes.`application/json`)
-				val body = responseAs[String]
-				assert(body.contains(resource.stringValue))
-				assert(body.contains("Serializer test resource"))
-
-		it("serializes both outgoing and incoming statements as RDF"):
-			Get() ~> Accept(MediaTypes.`text/plain`) ~> serialize(resourceUri) ~> check:
-				assert(status === StatusCodes.OK)
-				assert(contentType === InstanceServerSerializer.turtleContType)
-				val body = responseAs[String]
-				assert(body.contains("Serializer test resource"))
-				assert(body.contains(referringResource.stringValue))
-				assert(body.contains(predicate.stringValue))
-
-	describe("data object landing pages"):
-		it("renders the data object landing page as HTML"):
-			val (page, counts) = renderLandingPage(timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
-			assert(heading(page) === "Test time series from Test station (50.0 m)")
-			assert(propertyText(page, "File name") === "test_data.csv")
-			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
-			assert(propertyText(page, "Number of data rows") === "100")
-			assert(propertyText(page, "Data level") === "2")
-			assert(propertyText(page, "Sampling height") === "50.0")
-			assert(propertyLink(page, "Data type") === RenderedLink("Test time series", "/resources/cpmeta/testTimeSeries"))
-			assert(propertyLink(page, "Station") === RenderedLink("Test station", "/resources/stations/TST"))
-			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
-			assert(sectionHeadings(page).contains("Acquisition"))
-			assert(sectionHeadings(page).contains("Technical information"))
-
-		it("renders the previewable variables of the data object landing page"):
-			val (page, _) = renderLandingPage(timeSeriesObject)
-			val table = tableAfterHeading(page, "Previewable variables")
-			val headers = table.selectFirst("thead > tr").children.asScala.map(_.text)
-			assert(headers === Seq("Name", "Value type", "Unit", "Quantity kind", "Preview", "Instrument Deployments"))
-
-			val rows = tableRows(table)
-			assert(rows.map(_.take(5).map(_.text)) === Seq(
-				Seq("TIMESTAMP", "time instant, UTC", "", "", ""),
-				Seq("co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
-				Seq("ch4", "CH4 mixing ratio (dry mole fraction)", "nmol mol-1", "portion", "Preview")
-			))
-
-			val previewLinks = rows.map(cells => Option(cells(4).selectFirst("a")).map(_.attr("href")))
-			def previewUrl(variable: String) =
-				s"https://data.icos-cp.eu/portal/#%7B%22route%22:%22preview%22,%22preview%22:%5B%22AQEBAQEBAQEBAQEBAQEBAQEB%22%5D,%22yAxis%22:%22$variable%22%7D"
-			assert(previewLinks === Seq(None, Some(previewUrl("co2")), Some(previewUrl("ch4"))))
-
-			// only the co2 deployment that overlaps the acquisition interval is shown
-			val deploymentCells = rows.map(_(5))
-			assert(deploymentCells(0).children.isEmpty)
-			assert(deploymentCells(2).children.isEmpty)
-			val deploymentRows = deploymentCells(1).select("table.instrument-deployment tbody tr").asScala
-				.map(_.children.asScala.map(_.text).toSeq).toSeq
-			assert(deploymentRows === Seq(Seq(
-				"Start: 2020-06-01 00:00:00 Stop: Not done",
-				"Latitude: 56.1 Longitude: 13.4 Altitude: 50.0 m",
-				"Test instrument"
-			)))
-			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
-			assert(RenderedLink(instrumentLink) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
-
-		it("renders the production of the data object landing page"):
-			val (page, _) = renderLandingPage(timeSeriesObject)
-			assert(sectionHeadings(page).contains("Production"))
-			assert(propertyLink(page, "File made by") === RenderedLink("Test Person", "/resources/people/Test_Person"))
-			assert(propertyLink(page, "Host organization") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
-			assert(propertyText(page, "Production time (UTC)") === "2022-01-01 12:00:00")
-			assert(propertyText(page, "Comment") === "Test production comment")
-			// rdf:Seq order, not sorted
-			assert(propertyLinks(page, "Contributors") === Seq(
-				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
-				RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"),
-				RenderedLink("Test Person", "/resources/people/Test_Person")
-			))
-			// sorted by name, read from the global graph view
-			assert(propertyLinks(page, "Source object") === Seq(
-				RenderedLink("previous_data.csv", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"),
-				RenderedLink("versioned_data.csv", "/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
-			))
-
-		it("lists the spec documentation before the production documentation on data object landing pages"):
-			val (page, _) = renderLandingPage(timeSeriesObject)
-			assert(propertyLinks(page, "Documentation") === Seq(
-				RenderedLink("test_time_series_description.pdf", "/objects/ERERERERERERERERERERERER"),
-				RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")
-			))
-
-		it("renders the version chain of a data object landing page"):
-			val (page, counts) = renderLandingPage(versionedObject)
-			assert(counts === QueryCounts(connections = 1, statements = 291, existence = 24, sparql = 0))
-			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
-			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
-			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
-			// the latest version is reached through a plain collection that supersedes the next version
-			val alert = deprecationAlert(page)
-			assert(alert.heading === "Deprecated data")
-			assert(alert.latestLinks === Seq(
-				RenderedLink("CQkJCQkJCQkJCQkJCQkJCQkJ", "/objects/CQkJCQkJCQkJCQkJCQkJCQkJ"),
-				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
-			))
-			assert(alert.text.contains("Latest versions:"))
-
-		it("renders the acquisition site, instruments and sampling point of a data object landing page"):
-			val (page, _) = renderLandingPage(versionedObject)
-			assert(metadataErrors(page) === Nil)
-			// shown both in the acquisition section and in the side card
-			assert(page.select("label.fw-bold").asScala.filter(_.text == "Location").map(_.parent.nextElementSibling.text).toSeq ===
-				Seq("TST tower area", "TST tower area"))
-			assert(propertyLinks(page, "Ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
-			assert(propertyLinks(page, "Instrument").sortBy(_.href) === Seq(
-				RenderedLink("Test instrument", "/resources/instruments/TST_1"),
-				RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")
-			))
-			assert(propertyText(page, "Sampling height") === "25.0")
-			assert(propertyText(page, "Sampling point") === "Tower inlet")
-			assert(propertyText(page, "Coordinates") === "Lat: 56.1001, Lon: 13.4002")
-
-		it("lists only the current parent collections on data object landing pages"):
-			val (page, _) = renderLandingPage(timeSeriesObject)
-			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
-			val (nestedMember, _) = renderLandingPage(versionedObject)
-			assert(propertyLinks(nestedMember, "Part of") === Seq(RenderedLink("Nested collection, version 2", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
-
-		it("renders the spatiotemporal data object landing page"):
-			val (page, counts) = renderLandingPage(spatialObject)
-			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
-			assert(metadataErrors(page) === Nil)
-			assert(heading(page) === "Test spatial data object")
-			assert(propertyText(page, "Description") === "Gridded test data")
-			assert(propertyText(page, "Temporal coverage from (UTC)") === "2020-01-01 00:00:00")
-			assert(propertyText(page, "Temporal coverage to (UTC)") === "2020-12-31 00:00:00")
-			assert(propertyText(page, "Temporal resolution") === "monthly")
-			assert(propertyText(page, "Coverage") === "S: 50, W: 10, N: 60, E: 20")
-			assert(propertyText(page, "Data level") === "3")
-			assert(propertyLink(page, "File made by") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
-			assert(sectionHeadings(page).contains("Acquisition") === false)
-
-			// the regex-defined variable is listed under its actual name; the undefined one is left out
-			val rows = tableRows(tableAfterHeading(page, "Previewable variables"))
-			assert(rows.map(_.map(_.text)).sortBy(_.head) === Seq(
-				Seq("flux_co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
-				Seq("tas", "air temperature", "K", "temperature", "Preview")
-			))
-
-		it("returns the variable value ranges of the spatiotemporal data object as JSON"):
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(spatialObject) ~> check:
-				assert(status === StatusCodes.OK, responseAs[String])
-				val body = responseAs[String].replaceAll("\\s", "")
-				assert(body.contains(""""minMax":[250.5,310.25]"""), body)
-				assert(!body.contains("unknown_var"))
-
-	describe("document landing pages"):
-		it("renders the document object landing page as HTML"):
-			val (page, counts) = renderLandingPage(documentObject)
-			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
-			assert(heading(page) === "Test document")
-			assert(propertyText(page, "File name") === "test_doc.pdf")
-			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
-			assert(propertyLink(page, "Submitted by") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
-			assert(sectionHeadings(page).contains("Submission"))
-			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
-
-		it("renders the creators of the document object landing page as authors"):
-			val (page, _) = renderLandingPage(documentObject)
-			assert(propertyLinks(page, "Authors") === Seq(
-				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
-				RenderedLink("Test Person", "/resources/people/Test_Person")
-			))
-			// the document is part of the test collection, but not of its superseded previous version
-			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
-
-	describe("collection landing pages"):
-		it("renders the collection landing page as HTML"):
-			val (page, counts) = renderLandingPage(testCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
-			assert(heading(page) === "Test collection")
-			assert(propertyText(page, "Description") === "A collection of test items")
-			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
-			assert(propertyText(page, "Number of items") === "3")
-			val itemLinks = collectionItems(page)
-			assert(itemLinks.contains(RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")))
-			assert(itemLinks.contains(RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")))
-
-		it("renders the nested collections and versions of the collection landing page"):
-			val (page, _) = renderLandingPage(testCollection)
-			// members are sorted by name; the nested collection is listed by its title
-			assert(collectionItems(page) === Seq(
-				RenderedLink("Nested collection", "https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"),
-				RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"),
-				RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
-			))
-			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/collections/DQ0NDQ0NDQ0NDQ0NDQ0NDQ0N"))
-			assert(propertyLinks(page, "Next version").isEmpty)
-			assert(propertyLinks(page, "Part of").isEmpty)
-			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
-
-		it("renders the nested collection landing page"):
-			val (page, counts) = renderLandingPage(nestedCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 6, sparql = 0))
-			assert(heading(page) === "Nested collection")
-			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
-			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O"))
-			val alert = deprecationAlert(page)
-			assert(alert.heading === "Deprecated collection")
-			assert(alert.latestLinks === Seq(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
-			assert(collectionItems(page) === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
-
-	describe("station landing pages"):
-		it("renders the station landing page as HTML"):
-			val (page, counts) = renderLandingPage(icosStation)
-			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
-			assert(heading(page) === "Test station")
-			assert(propertyText(page, "Station ID") === "TST")
-			assert(propertyText(page, "Country code") === "SE")
-			assert(propertyText(page, "Latitude/Longitude") === "56.1, 13.4")
-			assert(propertyText(page, "Elevation") === "150 m")
-
-		it("renders the sub-resources of the ICOS station landing page"):
-			val (page, _) = renderLandingPage(icosStation)
-			assert(metadataErrors(page) === Nil)
-			assert(propertyText(page, "Description") === "Test station description")
-			assert(propertyText(page, "WIGOS ID") === "0-20008-0-TST")
-			assert(propertyText(page, "ICOS Station class") === "1")
-			assert(propertyText(page, "ICOS Labeling date") === "2019-06-01")
-			assert(propertyText(page, "Time zone offset") === "1")
-			assert(propertyLinks(page, "Associated networks") === Seq(RenderedLink("Test network", "/resources/networks/TestNet")))
-			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
-			assert(propertyLinks(page, "Organization") === Seq(RenderedLink("Carbon Portal", "/resources/organizations/CP")))
-
-			// sorted by end date, the ongoing funding last
-			val fundingRows = tableRows(tableAfterHeading(page, "Acknowledgements"))
-			assert(fundingRows.map(_.map(_.text)) === Seq(
-				Seq("Swedish Research Council", "2019-001", "Early award", "2019-01-01", "2020-12-31", ""),
-				Seq("Swedish Research Council", "", "Ongoing award", "2021-01-01", "", "Ongoing funding")
-			))
-			assert(RenderedLink(fundingRows(0)(0).selectFirst("a")) === RenderedLink("Swedish Research Council", "/resources/organizations/VR"))
-			assert(RenderedLink(fundingRows(0)(1).selectFirst("a")) === RenderedLink("2019-001", "https://example.org/awards/2019-001"))
-			assert(fundingRows(1)(2).select("a").isEmpty)
-
-			// the spatial coverage makes the location section with its map appear
-			assert(sectionHeadings(page).contains("Location"))
-			assert(page.select("iframe").asScala.map(_.attr("src")).toSeq === Seq("/station/?station=/resources/stations/TST&icon="))
-			assert(page.select("img.img-fluid").asScala.map(_.attr("src")).toSeq === Seq("https://static.icos-cp.eu/images/stations/TST.jpg"))
-
-		it("renders the ecosystem station landing page with webpage elements"):
-			val (page, counts) = renderLandingPage(ecosystemStation)
-			assert(counts === QueryCounts(connections = 1, statements = 48, existence = 2, sparql = 0))
-			assert(metadataErrors(page) === Nil)
-			assert(heading(page) === "ICOS STATION Test ecosystem station")
-			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
-			assert(page.text.contains("Welcome to the test ecosystem station"))
-			val linkBoxes = page.select("h3.h6 a").asScala.map(RenderedLink(_)).toSeq
-			assert(linkBoxes === Seq(
-				RenderedLink("Station news", "https://example.org/es_tst/news"),
-				RenderedLink("Station data", "https://example.org/es_tst/data")
-			))
-			assert(sectionHeadings(page).contains("Detailed information"))
-			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfc - Subarctic", "/resources/climateZones/Dfc")))
-			assert(propertyLinks(page, "Main ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
-			assert(propertyText(page, "Mean annual temperature") === "1.8 °C")
-			assert(propertyText(page, "Mean annual precipitation") === "614.0 mm")
-			assert(propertyText(page, "Mean annual incoming SW radiation") === "90.5 W/m2")
-			assert(propertyLinks(page, "Documentation resource") === Seq(RenderedLink("https://example.org/es_tst/docs", "https://example.org/es_tst/docs")))
-			assert(propertyLinks(page, "Data publication") === Seq(RenderedLink("https://doi.org/10.1234/es_tst", "https://doi.org/10.1234/es_tst")))
-			assert(propertyText(page, "Latitude/Longitude") === "64.25, 19.77")
-			assert(propertyText(page, "Elevation") === "235 m")
-
-		it("renders the SITES station landing page"):
-			val (page, counts) = renderLandingPage(sitesStation)
-			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
-			assert(metadataErrors(page) === Nil)
-			assert(heading(page) === "Testsjön Research Station")
-			assert(propertyText(page, "Station ID") === "TSJ")
-			assert(propertyLinks(page, "Main ecosystems") === Seq(
-				RenderedLink("Forest", "/resources/ecosystems/forest"),
-				RenderedLink("Lake", "/resources/ecosystems/lake")
-			))
-			assert(propertyLinks(page, "Climate zone") === Seq(RenderedLink("Dfb - Warm-summer humid continental", "/resources/climateZones/Dfb")))
-			assert(propertyText(page, "Mean annual temperature") === "5.5 °C")
-			assert(propertyText(page, "Operational period") === "2015-")
-			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("testsjon_description.pdf", "/objects/EBAQEBAQEBAQEBAQEBAQEBAQ")))
-
-		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON"):
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(sitesStation) ~> check:
-				assert(status === StatusCodes.OK, responseAs[String])
-				val body = responseAs[String]
-				Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach: expected =>
-					assert(body.contains(expected), s"'$expected' missing in $body")
-
-	describe("organization landing pages"):
-		it("renders the organization landing page as HTML"):
-			val (page, counts) = renderLandingPage(organization)
-			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
-			assert(heading(page) === "Carbon Portal (CP)")
-			assert(propertyText(page, "Name") === "Carbon Portal")
-
-	describe("instrument landing pages"):
-		it("renders the instrument landing page as HTML"):
-			val (page, counts) = renderLandingPage(instrument)
-			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
-			assert(heading(page) === "Test instrument")
-			assert(propertyText(page, "Model") === "Picarro G2401")
-			assert(propertyText(page, "Serial number") === "SN-1")
-			assert(propertyLink(page, "Owner") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
-
-		it("renders the vendor, components and deployments of the instrument landing page"):
-			val (page, _) = renderLandingPage(instrument)
-			assert(metadataErrors(page) === Nil)
-			assert(propertyLink(page, "Vendor") === RenderedLink("Picarro Inc.", "/resources/organizations/Picarro"))
-			assert(propertyLinks(page, "Has component") === Seq(RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")))
-			assert(propertyLinks(page, "Is part of").isEmpty)
-			assert(propertyText(page, "Comment") === "Main analyser")
-			// all deployments are listed, regardless of any acquisition interval
-			val deploymentRows = tableRows(tableAfterHeading(page, "Deployments"))
-			assert(deploymentRows.map(_.map(_.text)).sortBy(_(6)) === Seq(
-				Seq("co2", "CO2 column", "Test station", "", "", "", "2018-01-01 00:00:00", "2019-01-01 00:00:00"),
-				Seq("co2", "CO2 column", "Test station", "56.1", "13.4", "50.0 m", "2020-06-01 00:00:00", "")
-			))
-			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(RenderedLink(_)))
-			assert(deploymentLinks === Seq(
-				RenderedLink("CO2 column", "/resources/cpmeta/testTimeSeriesDataset_co2"),
-				RenderedLink("Test station", "/resources/stations/TST")
-			))
-
-		it("renders the instrument component landing page"):
-			val (page, counts) = renderLandingPage(instrumentComponent)
-			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
-			assert(heading(page) === "Nafion dryer (SN-2)")
-			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink("Test instrument", "/resources/instruments/TST_1")))
-			assert(sectionHeadings(page).contains("Deployments") === false)
-
-	describe("person landing pages"):
-		it("renders the person landing page as HTML"):
-			val (page, counts) = renderLandingPage(person)
-			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
-			assert(heading(page) === "Test Person")
-			assert(propertyText(page, "First name") === "Test")
-			assert(propertyText(page, "Last name") === "Person")
-			val roleCells = page.select("table tbody tr").asScala.flatMap(_.select("td").asScala.map(_.text))
-			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
-
-	describe("object specification landing pages"):
-		it("renders the object specification landing page as HTML"):
-			val (page, counts) = renderLandingPage(objectSpec)
-			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
-			assert(heading(page) === "Test time series")
-			assert(propertyText(page, "Label") === "Test time series")
-			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasAssociatedProject") === RenderedLink("ICOS", "/resources/projects/icos"))
-			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDataTheme") === RenderedLink("Atmosphere", "/resources/themes/atmosphere"))
-			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasFormat") === RenderedLink("ASCII CSV time series", "/ontologies/cpmeta/csvWithIso8601tsFirstCol"))
-			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasEncoding") === RenderedLink("plain text", "/ontologies/cpmeta/asciiEncoding"))
-			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasDataLevel").text === "2")
-			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDocumentationObject") ===
-				RenderedLink("https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER", "/objects/ERERERERERERERERERERERER"))
-
-	describe("labeled resource landing pages"):
-		it("renders the labeled resource landing page as HTML"):
-			val (page, counts) = renderLandingPage(dataTheme)
-			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
-			assert(heading(page) === "Atmosphere")
-			assert(propertyText(page, "Label") === "Atmosphere")
-			assert(propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg")
-
-	override def afterAll(): Unit =
-		fixtureRepo.shutDown()
-		super.afterAll()
+		val timeSeriesObject = Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
+		val versionedObject = Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
+		val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")
+		val documentObject = Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")
+		val testCollection = Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD")
+		val nestedCollection = Uri("https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM")
+		val icosStation = Uri("http://meta.icos-cp.eu/resources/stations/TST")
+		val ecosystemStation = Uri("http://meta.icos-cp.eu/resources/stations/ES_TST")
+		val sitesStation = Uri("https://meta.fieldsites.se/resources/stations/Testsjon")
+		val organization = Uri("http://meta.icos-cp.eu/resources/organizations/CP")
+		val instrument = Uri("http://meta.icos-cp.eu/resources/instruments/TST_1")
+		val instrumentComponent = Uri("http://meta.icos-cp.eu/resources/instruments/TST_2")
+		val person = Uri("http://meta.icos-cp.eu/resources/people/Test_Person")
+		val objectSpec = Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries")
+		val dataTheme = Uri("http://meta.icos-cp.eu/resources/themes/atmosphere")

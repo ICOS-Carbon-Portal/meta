@@ -177,7 +177,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 256, existence = 10, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 258, existence = 11, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -244,7 +244,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the version chain of a data object landing page"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
-			assert(counts === QueryCounts(connections = 1, statements = 211, existence = 20, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 216, existence = 24, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
 			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
 			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
@@ -270,14 +270,47 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the collection landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
-			assert(counts === QueryCounts(connections = 1, statements = 23, existence = 3, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
-			assert(propertyText(page, "Number of items") === "2")
+			assert(propertyText(page, "Number of items") === "3")
 			val itemLinks = page.select("a[target=_blank]").asScala.map(link => link.text -> link.attr("href")).toSet
 			assert(itemLinks.contains("test_data.csv" -> "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
 			assert(itemLinks.contains("Test document" -> "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+
+		it("renders the nested collections and versions of the collection landing page"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))
+			// members are sorted by name; the nested collection is listed by its title
+			val itemLinks = page.select("a[target=_blank]").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			assert(itemLinks === Seq(
+				RenderedLink("Nested collection", "https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"),
+				RenderedLink("Test document", "https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"),
+				RenderedLink("test_data.csv", "https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
+			))
+			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/collections/DQ0NDQ0NDQ0NDQ0NDQ0NDQ0N"))
+			assert(propertyLinks(page, "Next version").isEmpty)
+			assert(propertyLinks(page, "Part of").isEmpty)
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
+
+		it("renders the nested collection landing page"):
+			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM"))
+			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 6, sparql = 0))
+			assert(heading(page) === "Nested collection")
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O"))
+			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
+			assert(alert.selectFirst(".alert-heading").text === "Deprecated collection")
+			assert(Option(alert.selectFirst("a.alert-link")).map(link => RenderedLink(link.text, link.attr("href"))) ===
+				Some(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
+			val itemLinks = page.select("a[target=_blank]").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			assert(itemLinks === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
+
+		it("lists only the current parent collections on data object landing pages"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+			val (nestedMember, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
+			assert(propertyLinks(nestedMember, "Part of") === Seq(RenderedLink("Nested collection, version 2", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
 
 		it("renders the station landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/stations/TST"))

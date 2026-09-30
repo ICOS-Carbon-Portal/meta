@@ -234,7 +234,31 @@
 		dcterms:description "A collection of test items" ;
 		dcterms:creator <http://meta.icos-cp.eu/resources/organizations/CP> ;
 		dcterms:hasPart <https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB> ;
-		dcterms:hasPart <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> .
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM> ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/collections/DQ0NDQ0NDQ0NDQ0NDQ0NDQ0N> ;
+		rdfs:seeAlso <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> .
+
+	#superseded by the test collection, so not listed among the parents of the objects it contains
+	<https://meta.icos-cp.eu/collections/DQ0NDQ0NDQ0NDQ0NDQ0NDQ0N>
+		a cpmeta:Collection ;
+		dcterms:title "Old test collection" ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB> .
+
+	#a collection nested in the test collection, itself superseded by a newer version
+	<https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM>
+		a cpmeta:Collection ;
+		dcterms:title "Nested collection" ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> .
+
+	<https://meta.icos-cp.eu/collections/Dg4ODg4ODg4ODg4ODg4ODg4O>
+		a cpmeta:Collection ;
+		dcterms:title "Nested collection, version 2" ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> .
 }
 
 #version chain: BAQE <- BQUF <- BgYG <- plain collection of CQkJ and CgoK;

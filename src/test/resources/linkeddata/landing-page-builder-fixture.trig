@@ -22,6 +22,53 @@
 	cpmeta:asciiEncoding
 		rdfs:label "plain text" .
 
+	#a spatiotemporal (level 3) spec, whose variables are defined by title or by regex
+	<http://meta.icos-cp.eu/resources/cpmeta/testSpatialData>
+		a cpmeta:DataObjectSpec ;
+		rdfs:label "Test spatial data" ;
+		cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> ;
+		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
+		cpmeta:hasFormat cpmeta:netcdf ;
+		cpmeta:hasEncoding cpmeta:netcdfEncoding ;
+		cpmeta:hasSpecificDatasetType cpmeta:spatioTemporalDataset ;
+		cpmeta:containsDataset <http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset> ;
+		cpmeta:hasDataLevel "3"^^xsd:integer .
+
+	cpmeta:netcdf
+		rdfs:label "NetCDF" .
+
+	cpmeta:netcdfEncoding
+		rdfs:label "NetCDF encoding" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset>
+		a cpmeta:DatasetSpec ;
+		rdfs:label "Test spatial dataset" ;
+		cpmeta:hasVariable <http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset_tas> ;
+		cpmeta:hasVariable <http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset_flux> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset_tas>
+		a cpmeta:DatasetVariable ;
+		rdfs:label "Air temperature variable" ;
+		cpmeta:hasVariableTitle "tas" ;
+		cpmeta:hasValueType <http://meta.icos-cp.eu/resources/cpmeta/airTemperature> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testSpatialDataset_flux>
+		a cpmeta:DatasetVariable ;
+		rdfs:label "Flux variables" ;
+		cpmeta:hasVariableTitle "flux_\\w+" ;
+		cpmeta:isRegexVariable true ;
+		cpmeta:hasValueType <http://meta.icos-cp.eu/resources/cpmeta/co2MixingRatio> .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/airTemperature>
+		a cpmeta:ValueType ;
+		rdfs:label "air temperature" ;
+		cpmeta:hasQuantityKind <http://meta.icos-cp.eu/resources/cpmeta/temperature> ;
+		cpmeta:hasUnit "K" .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/temperature>
+		a cpmeta:QuantityKind ;
+		rdfs:label "temperature" .
+
 	<http://meta.icos-cp.eu/resources/climateZones/Dfc>
 		rdfs:label "Dfc - Subarctic" .
 
@@ -527,4 +574,56 @@
 		a cpmeta:DocumentObject ;
 		cpmeta:hasSha256sum "EBAQEBAQEBAQEBAQEBAQEBAQ"^^xsd:base64Binary ;
 		cpmeta:hasName "testsjon_description.pdf" .
+}
+
+<http://meta.icos-cp.eu/resources/netcdf/> {
+	<https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS>
+		a cpmeta:DataObject ;
+		cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/testSpatialData> ;
+		cpmeta:hasSha256sum "EhISEhISEhISEhISEhISEhIS"^^xsd:base64Binary ;
+		cpmeta:hasName "test_spatial.nc" ;
+		cpmeta:hasSizeInBytes "99999"^^xsd:long ;
+		dcterms:title "Test spatial data object" ;
+		dcterms:description "Gridded test data" ;
+		cpmeta:hasSpatialCoverage <http://meta.icos-cp.eu/resources/spcov_EhISEhISEhISEhISEhISEhIS> ;
+		cpmeta:hasStartTime "2020-01-01T00:00:00Z"^^xsd:dateTime ;
+		cpmeta:hasEndTime "2020-12-31T00:00:00Z"^^xsd:dateTime ;
+		cpmeta:hasTemporalResolution "monthly" ;
+		cpmeta:hasActualVariable <http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_tas> ;
+		cpmeta:hasActualVariable <http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_flux_co2> ;
+		cpmeta:hasActualVariable <http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_unknown> ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_EhISEhISEhISEhISEhISEhIS> ;
+		cpmeta:wasProducedBy <http://meta.icos-cp.eu/resources/prod_EhISEhISEhISEhISEhISEhIS> .
+
+	<http://meta.icos-cp.eu/resources/spcov_EhISEhISEhISEhISEhISEhIS>
+		a cpmeta:LatLonBox ;
+		rdfs:label "Test domain" ;
+		cpmeta:hasSouthernBound "50.0"^^xsd:double ;
+		cpmeta:hasWesternBound "10.0"^^xsd:double ;
+		cpmeta:hasNorthernBound "60.0"^^xsd:double ;
+		cpmeta:hasEasternBound "20.0"^^xsd:double .
+
+	<http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_tas>
+		rdfs:label "tas" ;
+		cpmeta:hasMinValue "250.5"^^xsd:double ;
+		cpmeta:hasMaxValue "310.25"^^xsd:double .
+
+	#matched by the regex variable definition
+	<http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_flux_co2>
+		rdfs:label "flux_co2" .
+
+	#not defined by the dataset spec, so left out
+	<http://meta.icos-cp.eu/resources/var_EhISEhISEhISEhISEhISEhIS_unknown>
+		rdfs:label "unknown_var" .
+
+	<http://meta.icos-cp.eu/resources/subm_EhISEhISEhISEhISEhISEhIS>
+		a cpmeta:DataSubmission ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		prov:startedAtTime "2022-01-02T10:00:00Z"^^xsd:dateTime ;
+		prov:endedAtTime "2022-01-02T11:00:00Z"^^xsd:dateTime .
+
+	<http://meta.icos-cp.eu/resources/prod_EhISEhISEhISEhISEhISEhIS>
+		a cpmeta:DataProduction ;
+		cpmeta:wasPerformedBy <http://meta.icos-cp.eu/resources/organizations/ATC> ;
+		cpmeta:hasEndTime "2021-06-01T00:00:00Z"^^xsd:dateTime .
 }

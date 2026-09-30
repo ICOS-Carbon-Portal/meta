@@ -289,6 +289,35 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Sampling point") === "Tower inlet")
 			assert(propertyText(page, "Coordinates") === "Lat: 56.1001, Lon: 13.4002")
 
+		it("renders the spatiotemporal data object landing page"):
+			val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")
+			val (page, counts) = renderLandingPage(spatialObject)
+			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(metadataErrors(page) === Nil)
+			assert(heading(page) === "Test spatial data object")
+			assert(propertyText(page, "Description") === "Gridded test data")
+			assert(propertyText(page, "Temporal coverage from (UTC)") === "2020-01-01 00:00:00")
+			assert(propertyText(page, "Temporal coverage to (UTC)") === "2020-12-31 00:00:00")
+			assert(propertyText(page, "Temporal resolution") === "monthly")
+			assert(propertyText(page, "Coverage") === "S: 50, W: 10, N: 60, E: 20")
+			assert(propertyText(page, "Data level") === "3")
+			assert(propertyLink(page, "File made by") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
+			assert(page.select("h2").asScala.map(_.text).contains("Acquisition") === false)
+
+			// the regex-defined variable is listed under its actual name; the undefined one is left out
+			val rows = tableRows(previewableVariablesTable(page))
+			assert(rows.map(_.map(_.text)).sortBy(_.head) === Seq(
+				Seq("flux_co2", "CO2 mixing ratio (dry mole fraction)", "µmol mol-1", "portion", "Preview"),
+				Seq("tas", "air temperature", "K", "temperature", "Preview")
+			))
+
+		it("returns the variable value ranges of the spatiotemporal data object as JSON"):
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")) ~> check:
+				assert(status === StatusCodes.OK, responseAs[String])
+				val body = responseAs[String].replaceAll("\\s", "")
+				assert(body.contains(""""minMax":[250.5,310.25]"""), body)
+				assert(!body.contains("unknown_var"))
+
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
 			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))

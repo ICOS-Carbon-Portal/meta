@@ -320,6 +320,7 @@
 		cpmeta:hasSizeInBytes "54321"^^xsd:long ;
 		dcterms:title "Test document" ;
 		dcterms:creator <http://meta.icos-cp.eu/resources/people/Test_Person> ;
+		dcterms:creator <http://meta.icos-cp.eu/resources/people/Zed_Contributor> ;
 		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AgICAgICAgICAgICAgICAgIC> .
 
 	<http://meta.icos-cp.eu/resources/subm_AgICAgICAgICAgICAgICAgIC>

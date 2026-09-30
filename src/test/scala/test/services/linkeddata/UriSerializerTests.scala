@@ -276,13 +276,22 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
-			assert(counts === QueryCounts(connections = 1, statements = 36, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
 			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
 			assert(propertyLink(page, "Submitted by") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
 			assert(page.select("h2").asScala.map(_.text).contains("Submission"))
 			assert(page.select("a[href='./AgICAgICAgICAgICAgICAgIC/test_doc.pdf.json']").size === 1)
+
+		it("renders the creators of the document object landing page as authors"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
+			assert(propertyLinks(page, "Authors") === Seq(
+				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
+				RenderedLink("Test Person", "/resources/people/Test_Person")
+			))
+			// the document is part of the test collection, but not of its superseded previous version
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
 
 		it("renders the collection landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD"))

@@ -209,6 +209,22 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
 			assert(RenderedLink(instrumentLink.text, instrumentLink.attr("href")) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 
+		it("renders the version chain of a data object landing page"):
+			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))
+			assert(counts === QueryCounts(connections = 1, statements = 211, existence = 20, sparql = 0))
+			assert(propertyLink(page, "Previous version") === RenderedLink("View previous version", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"))
+			// the incomplete and the under-moratorium next versions are ignored; the remaining one lives in another graph
+			assert(propertyLink(page, "Next version") === RenderedLink("View next version", "/objects/BgYGBgYGBgYGBgYGBgYGBgYG"))
+			// the latest version is reached through a plain collection that supersedes the next version
+			val alert = Option(page.selectFirst(".alert-warning")).getOrElse(fail("Missing deprecation alert"))
+			assert(alert.selectFirst(".alert-heading").text === "Deprecated data")
+			val latestLinks = alert.select("a.alert-link").asScala.map(link => RenderedLink(link.text, link.attr("href"))).toSeq
+			assert(latestLinks === Seq(
+				RenderedLink("CQkJCQkJCQkJCQkJCQkJCQkJ", "/objects/CQkJCQkJCQkJCQkJCQkJCQkJ"),
+				RenderedLink("CgoKCgoKCgoKCgoKCgoKCgoK", "/objects/CgoKCgoKCgoKCgoKCgoKCgoK")
+			))
+			assert(alert.text.contains("Latest versions:"))
+
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC"))
 			assert(counts === QueryCounts(connections = 1, statements = 36, existence = 2, sparql = 0))

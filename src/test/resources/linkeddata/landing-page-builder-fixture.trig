@@ -211,3 +211,67 @@
 		dcterms:hasPart <https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB> ;
 		dcterms:hasPart <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> .
 }
+
+#version chain: BAQE <- BQUF <- BgYG <- plain collection of CQkJ and CgoK;
+#BQUF is the object under test, its incomplete (BwcH) and moratorium (CAgI) next versions must be ignored
+<http://meta.icos-cp.eu/resources/tscsv/> {
+	<https://meta.icos-cp.eu/objects/BAQEBAQEBAQEBAQEBAQEBAQE>
+		a cpmeta:DataObject ;
+		cpmeta:hasSizeInBytes "100"^^xsd:long .
+
+	<https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF>
+		a cpmeta:DataObject ;
+		cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries> ;
+		cpmeta:hasSha256sum "BQUFBQUFBQUFBQUFBQUFBQUF"^^xsd:base64Binary ;
+		cpmeta:hasName "versioned_data.csv" ;
+		cpmeta:hasSizeInBytes "200"^^xsd:long ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BAQEBAQEBAQEBAQEBAQEBAQE> ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_BQUFBQUFBQUFBQUFBQUFBQUF> .
+
+	<http://meta.icos-cp.eu/resources/acq_BQUFBQUFBQUFBQUFBQUFBQUF>
+		a cpmeta:DataAcquisition ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/TST> .
+
+	<https://meta.icos-cp.eu/objects/BwcHBwcHBwcHBwcHBwcHBwcH>
+		a cpmeta:DataObject ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> .
+
+	<https://meta.icos-cp.eu/objects/CAgICAgICAgICAgICAgICAgI>
+		a cpmeta:DataObject ;
+		cpmeta:hasSizeInBytes "300"^^xsd:long ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_CAgICAgICAgICAgICAgICAgI> .
+
+	<http://meta.icos-cp.eu/resources/subm_CAgICAgICAgICAgICAgICAgI>
+		a cpmeta:DataSubmission ;
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		prov:startedAtTime "2022-01-02T10:00:00Z"^^xsd:dateTime ;
+		prov:endedAtTime "2999-01-01T00:00:00Z"^^xsd:dateTime .
+}
+
+#the next version was uploaded in a different format, so it lives in a different graph
+<http://meta.icos-cp.eu/resources/atmcsv/> {
+	<https://meta.icos-cp.eu/objects/BgYGBgYGBgYGBgYGBgYGBgYG>
+		a cpmeta:DataObject ;
+		cpmeta:hasSizeInBytes "400"^^xsd:long ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> .
+
+	<https://meta.icos-cp.eu/objects/CQkJCQkJCQkJCQkJCQkJCQkJ>
+		a cpmeta:DataObject ;
+		cpmeta:hasSizeInBytes "500"^^xsd:long .
+
+	<https://meta.icos-cp.eu/objects/CgoKCgoKCgoKCgoKCgoKCgoK>
+		a cpmeta:DataObject ;
+		cpmeta:hasSizeInBytes "600"^^xsd:long .
+}
+
+<http://meta.icos-cp.eu/collections/> {
+	#a plain collection acting as a single next version of multiple objects
+	<https://meta.icos-cp.eu/collections/CwsLCwsLCwsLCwsLCwsLCwsL>
+		a cpmeta:PlainCollection ;
+		cpmeta:isNextVersionOf <https://meta.icos-cp.eu/objects/BgYGBgYGBgYGBgYGBgYGBgYG> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/CQkJCQkJCQkJCQkJCQkJCQkJ> ;
+		dcterms:hasPart <https://meta.icos-cp.eu/objects/CgoKCgoKCgoKCgoKCgoKCgoK> .
+}

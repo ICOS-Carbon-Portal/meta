@@ -128,9 +128,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Data level") === "2")
 			assert(propertyText(page, "Sampling height") === "50.0")
 			assert(propertyLink(page, "Data type") === RenderedLink("Test time series", "/resources/cpmeta/testTimeSeries"))
-			// shown both in the acquisition section and in the side card
 			val station = RenderedLink("Test station", "/resources/stations/TST")
-			assert(propertyLinks(page, "Station") === Seq(station, station))
+			assert(propertyLink(section(page, "Acquisition"), "Station") === station)
+			assert(propertyLink(mapCard(page), "Station") === station)
+			assert(propertyLinks(page, "Station").size === 2)
 			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 			assert(sectionHeadings(page).contains("Acquisition"))
 			assert(sectionHeadings(page).contains("Technical information"))
@@ -211,8 +212,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 		it("renders the acquisition site, instruments and sampling point of a data object landing page"):
 			val (page, _) = renderLandingPage(Fixture.versionedObject)
 			assert(metadataErrors(page) === Nil)
-			// shown both in the acquisition section and in the side card
-			assert(propertyTexts(page, "Location") === Seq("TST tower area", "TST tower area"))
+			assert(propertyText(section(page, "Acquisition"), "Location") === "TST tower area")
+			assert(propertyText(mapCard(page), "Location") === "TST tower area")
+			assert(propertyTexts(page, "Location").size === 2)
 			assert(propertyLinks(page, "Ecosystem") === Seq(RenderedLink("ENF - Evergreen Needleleaf Forests", "/resources/ecosystems/ENF")))
 			assert(propertyLinks(page, "Instrument").sortBy(_.href) === Seq(
 				RenderedLink("Test instrument", "/resources/instruments/TST_1"),
@@ -475,38 +477,52 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	private def heading(page: Document): String =
 		Option(page.selectFirst("h1")).map(_.text).getOrElse(fail("Missing heading"))
 
-	private def propertyValues(page: Document, label: String): Seq[Element] =
-		page.select("label.fw-bold").asScala.filter(_.text == label).map(_.parent.nextElementSibling).toSeq
+	/** The properties listed under a main-column section heading, up to the next heading. */
+	private def section(page: Document, heading: String): Element =
+		val h2 = page.select("div.col-md-8 > div.row > h2").asScala.find(_.text == heading)
+			.getOrElse(fail(s"Missing section '$heading'"))
+		val scope = Element("div")
+		Iterator.iterate(h2.nextElementSibling)(_.nextElementSibling)
+			.takeWhile(elem => elem != null && elem.tagName != "h2")
+			.foreach(elem => scope.appendChild(elem.clone()))
+		scope
 
-	private def property(page: Document, label: String): Element =
-		propertyValues(page, label) match
+	/** The side-column card below the location map. */
+	private def mapCard(page: Document): Element =
+		Option(page.selectFirst("div.col-md-4 .card:has(iframe)")).getOrElse(fail("Missing map card"))
+
+	private def propertyValues(scope: Element, label: String): Seq[Element] =
+		scope.select("label.fw-bold").asScala.filter(_.text == label).map(_.parent.nextElementSibling).toSeq
+
+	private def property(scope: Element, label: String): Element =
+		propertyValues(scope, label) match
 			case Seq(single) => single
 			case Seq() => fail(s"Missing property '$label'")
 			case many => fail(s"Property '$label' appears ${many.size} times")
 
-	private def propertyWithLinkedLabel(page: Document, href: String): Element =
-		page.select("label.fw-bold a").asScala.filter(_.attr("href") == href).toSeq match
+	private def propertyWithLinkedLabel(scope: Element, href: String): Element =
+		scope.select("label.fw-bold a").asScala.filter(_.attr("href") == href).toSeq match
 			case Seq(single) => single.parent.parent.nextElementSibling
-			case Seq() => fail(s"Missing property with link '$href'; found ${page.select("label.fw-bold a").eachAttr("href")}")
+			case Seq() => fail(s"Missing property with link '$href'; found ${scope.select("label.fw-bold a").eachAttr("href")}")
 			case many => fail(s"Property with link '$href' appears ${many.size} times")
 
-	private def propertyLinks(page: Document, label: String): Seq[RenderedLink] =
-		propertyValues(page, label).flatMap(_.select("a").asScala).map(RenderedLink(_))
+	private def propertyLinks(scope: Element, label: String): Seq[RenderedLink] =
+		propertyValues(scope, label).flatMap(_.select("a").asScala).map(RenderedLink(_))
 
-	private def propertyText(page: Document, label: String): String = property(page, label).text
+	private def propertyText(scope: Element, label: String): String = property(scope, label).text
 
-	private def propertyTexts(page: Document, label: String): Seq[String] = propertyValues(page, label).map(_.text)
+	private def propertyTexts(scope: Element, label: String): Seq[String] = propertyValues(scope, label).map(_.text)
 
 	private def singleLink(value: Element, description: String): RenderedLink =
 		value.select("a").asScala.map(RenderedLink(_)).toSeq match
 			case Seq(single) => single
 			case links => fail(s"Expected one link for $description, got $links")
 
-	private def propertyLink(page: Document, label: String): RenderedLink =
-		singleLink(property(page, label), s"'$label'")
+	private def propertyLink(scope: Element, label: String): RenderedLink =
+		singleLink(property(scope, label), s"'$label'")
 
-	private def linkedLabelProperty(page: Document, labelHref: String): RenderedLink =
-		singleLink(propertyWithLinkedLabel(page, labelHref), s"'$labelHref'")
+	private def linkedLabelProperty(scope: Element, labelHref: String): RenderedLink =
+		singleLink(propertyWithLinkedLabel(scope, labelHref), s"'$labelHref'")
 
 	private def tableAfterHeading(page: Document, heading: String): Element =
 		page.select("h2").asScala.find(_.text == heading)

@@ -113,6 +113,12 @@
 		cpmeta:hasLastName "Person" ;
 		cpmeta:hasMembership <http://meta.icos-cp.eu/resources/memberships/TST_PI_Person> .
 
+	<http://meta.icos-cp.eu/resources/people/Zed_Contributor>
+		a cpmeta:Person ;
+		rdfs:label "Zed Contributor" ;
+		cpmeta:hasFirstName "Zed" ;
+		cpmeta:hasLastName "Contributor" .
+
 	<http://meta.icos-cp.eu/resources/memberships/TST_PI_Person>
 		a cpmeta:Membership ;
 		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
@@ -168,7 +174,26 @@
 		cpmeta:hasNumberOfRows "100"^^xsd:integer ;
 		cpmeta:hasActualColumnNames "[\"TIMESTAMP\",\"co2\",\"ch4\"]" ;
 		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
-		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB> .
+		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		cpmeta:wasProducedBy <http://meta.icos-cp.eu/resources/prod_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		prov:hadPrimarySource <https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF> ;
+		prov:hadPrimarySource <https://meta.icos-cp.eu/objects/BAQEBAQEBAQEBAQEBAQEBAQE> .
+
+	#contributors given as an rdf:Seq keep their order instead of being sorted
+	<http://meta.icos-cp.eu/resources/prod_AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataProduction ;
+		cpmeta:wasPerformedBy <http://meta.icos-cp.eu/resources/people/Test_Person> ;
+		cpmeta:wasParticipatedInBy <http://meta.icos-cp.eu/resources/contributors_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		cpmeta:wasHostedBy <http://meta.icos-cp.eu/resources/organizations/ATC> ;
+		rdfs:comment "Test production comment" ;
+		rdfs:seeAlso <https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC> ;
+		cpmeta:hasEndTime "2022-01-01T12:00:00Z"^^xsd:dateTime .
+
+	<http://meta.icos-cp.eu/resources/contributors_AQEBAQEBAQEBAQEBAQEBAQEB>
+		a rdf:Seq ;
+		rdf:_1 <http://meta.icos-cp.eu/resources/people/Zed_Contributor> ;
+		rdf:_2 <http://meta.icos-cp.eu/resources/organizations/ATC> ;
+		rdf:_3 <http://meta.icos-cp.eu/resources/people/Test_Person> .
 
 	<http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB>
 		a cpmeta:DataSubmission ;
@@ -217,6 +242,8 @@
 <http://meta.icos-cp.eu/resources/tscsv/> {
 	<https://meta.icos-cp.eu/objects/BAQEBAQEBAQEBAQEBAQEBAQE>
 		a cpmeta:DataObject ;
+		cpmeta:hasSha256sum "BAQEBAQEBAQEBAQEBAQEBAQE"^^xsd:base64Binary ;
+		cpmeta:hasName "previous_data.csv" ;
 		cpmeta:hasSizeInBytes "100"^^xsd:long .
 
 	<https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF>

@@ -111,6 +111,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			.map(_.parent.parent.nextElementSibling)
 			.getOrElse(fail(s"Missing property with link '$href'; found ${page.select("label.fw-bold a").eachAttr("href")}"))
 
+	private def propertyLinks(page: Document, label: String): Seq[RenderedLink] =
+		page.select("label.fw-bold").asScala.filter(_.text == label).toSeq
+			.flatMap(_.parent.nextElementSibling.select("a").asScala)
+			.map(link => RenderedLink(link.text, link.attr("href")))
+
 	private def propertyText(page: Document, label: String): String = property(page, label).text
 
 	private def propertyLink(page: Document, label: String): RenderedLink =
@@ -172,7 +177,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 205, existence = 10, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 256, existence = 10, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -216,6 +221,26 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			)))
 			val instrumentLink = deploymentCells(1).selectFirst("table.instrument-deployment tbody tr a")
 			assert(RenderedLink(instrumentLink.text, instrumentLink.attr("href")) === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
+
+		it("renders the production of the data object landing page"):
+			val (page, _) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
+			assert(page.select("h2").asScala.map(_.text).contains("Production"))
+			assert(propertyLink(page, "File made by") === RenderedLink("Test Person", "/resources/people/Test_Person"))
+			assert(propertyLink(page, "Host organization") === RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"))
+			assert(propertyText(page, "Production time (UTC)") === "2022-01-01 12:00:00")
+			assert(propertyText(page, "Comment") === "Test production comment")
+			// rdf:Seq order, not sorted
+			assert(propertyLinks(page, "Contributors") === Seq(
+				RenderedLink("Zed Contributor", "/resources/people/Zed_Contributor"),
+				RenderedLink("Atmosphere Thematic Centre", "/resources/organizations/ATC"),
+				RenderedLink("Test Person", "/resources/people/Test_Person")
+			))
+			// sorted by name, read from the global graph view
+			assert(propertyLinks(page, "Source object") === Seq(
+				RenderedLink("previous_data.csv", "/objects/BAQEBAQEBAQEBAQEBAQEBAQE"),
+				RenderedLink("versioned_data.csv", "/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
+			))
+			assert(propertyLinks(page, "Documentation") === Seq(RenderedLink("Test document", "/objects/AgICAgICAgICAgICAgICAgIC")))
 
 		it("renders the version chain of a data object landing page"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF"))

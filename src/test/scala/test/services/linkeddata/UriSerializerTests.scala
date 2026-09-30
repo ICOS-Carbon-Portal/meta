@@ -427,11 +427,37 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 
 		it("renders the instrument landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
-			assert(counts === QueryCounts(connections = 1, statements = 56, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
 			assert(propertyText(page, "Serial number") === "SN-1")
 			assert(propertyLink(page, "Owner") === RenderedLink("Carbon Portal", "/resources/organizations/CP"))
+
+		it("renders the vendor, components and deployments of the instrument landing page"):
+			val (page, _) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_1"))
+			assert(metadataErrors(page) === Nil)
+			assert(propertyLink(page, "Vendor") === RenderedLink("Picarro Inc.", "/resources/organizations/Picarro"))
+			assert(propertyLinks(page, "Has component") === Seq(RenderedLink("Nafion dryer (SN-2)", "/resources/instruments/TST_2")))
+			assert(propertyLinks(page, "Is part of").isEmpty)
+			assert(propertyText(page, "Comment") === "Main analyser")
+			// all deployments are listed, regardless of any acquisition interval
+			val deploymentRows = tableRows(tableAfterHeading(page, "Deployments"))
+			assert(deploymentRows.map(_.map(_.text)).sortBy(_(6)) === Seq(
+				Seq("co2", "CO2 column", "Test station", "", "", "", "2018-01-01 00:00:00", "2019-01-01 00:00:00"),
+				Seq("co2", "CO2 column", "Test station", "56.1", "13.4", "50.0 m", "2020-06-01 00:00:00", "")
+			))
+			val deploymentLinks = deploymentRows.head.flatMap(_.select("a").asScala.map(link))
+			assert(deploymentLinks === Seq(
+				RenderedLink("CO2 column", "/resources/cpmeta/testTimeSeriesDataset_co2"),
+				RenderedLink("Test station", "/resources/stations/TST")
+			))
+
+		it("renders the instrument component landing page"):
+			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/instruments/TST_2"))
+			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
+			assert(heading(page) === "Nafion dryer (SN-2)")
+			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink("Test instrument", "/resources/instruments/TST_1")))
+			assert(page.select("h2").asScala.map(_.text).contains("Deployments") === false)
 
 		it("renders the person landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("http://meta.icos-cp.eu/resources/people/Test_Person"))

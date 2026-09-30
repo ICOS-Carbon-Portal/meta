@@ -226,8 +226,22 @@
 		cpmeta:hasModel "Picarro G2401" ;
 		cpmeta:hasSerialNumber "SN-1" ;
 		cpmeta:hasInstrumentOwner <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		cpmeta:hasVendor <http://meta.icos-cp.eu/resources/organizations/Picarro> ;
+		cpmeta:hasInstrumentComponent <http://meta.icos-cp.eu/resources/instruments/TST_2> ;
+		rdfs:comment "Main analyser" ;
 		ssn:hasDeployment <http://meta.icos-cp.eu/resources/deployments/TST_1_co2> ;
 		ssn:hasDeployment <http://meta.icos-cp.eu/resources/deployments/TST_1_co2_old> .
+
+	#no name, so labeled by model and serial number
+	<http://meta.icos-cp.eu/resources/instruments/TST_2>
+		a cpmeta:Instrument ;
+		cpmeta:hasModel "Nafion dryer" ;
+		cpmeta:hasSerialNumber "SN-2" .
+
+	<http://meta.icos-cp.eu/resources/organizations/Picarro>
+		a cpmeta:Organization ;
+		rdfs:label "Picarro" ;
+		cpmeta:hasName "Picarro Inc." .
 
 	#overlaps the acquisition interval of the test data object, so shown for its co2 column
 	<http://meta.icos-cp.eu/resources/deployments/TST_1_co2>

@@ -211,7 +211,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				assert(body.contains(referringResource.stringValue))
 				assert(body.contains(predicate.stringValue))
 
-	describe("landing page URIs"):
+	describe("data object landing pages"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(timeSeriesObject)
 			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
@@ -315,6 +315,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyText(page, "Sampling point") === "Tower inlet")
 			assert(propertyText(page, "Coordinates") === "Lat: 56.1001, Lon: 13.4002")
 
+		it("lists only the current parent collections on data object landing pages"):
+			val (page, _) = renderLandingPage(timeSeriesObject)
+			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
+			val (nestedMember, _) = renderLandingPage(versionedObject)
+			assert(propertyLinks(nestedMember, "Part of") === Seq(RenderedLink("Nested collection, version 2", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
+
 		it("renders the spatiotemporal data object landing page"):
 			val (page, counts) = renderLandingPage(spatialObject)
 			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
@@ -343,6 +349,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 				assert(!body.contains("unknown_var"))
 
+	describe("document landing pages"):
 		it("renders the document object landing page as HTML"):
 			val (page, counts) = renderLandingPage(documentObject)
 			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
@@ -362,6 +369,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			// the document is part of the test collection, but not of its superseded previous version
 			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
 
+	describe("collection landing pages"):
 		it("renders the collection landing page as HTML"):
 			val (page, counts) = renderLandingPage(testCollection)
 			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
@@ -397,12 +405,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(alert.latestLinks === Seq(RenderedLink("Dg4ODg4ODg4ODg4ODg4ODg4O", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
 			assert(collectionItems(page) === Seq(RenderedLink("versioned_data.csv", "https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")))
 
-		it("lists only the current parent collections on data object landing pages"):
-			val (page, _) = renderLandingPage(timeSeriesObject)
-			assert(propertyLinks(page, "Part of") === Seq(RenderedLink("Test collection", "/collections/AwMDAwMDAwMDAwMDAwMDAwMD")))
-			val (nestedMember, _) = renderLandingPage(versionedObject)
-			assert(propertyLinks(nestedMember, "Part of") === Seq(RenderedLink("Nested collection, version 2", "/collections/Dg4ODg4ODg4ODg4ODg4ODg4O")))
-
+	describe("station landing pages"):
 		it("renders the station landing page as HTML"):
 			val (page, counts) = renderLandingPage(icosStation)
 			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
@@ -484,12 +487,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 				Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach: expected =>
 					assert(body.contains(expected), s"'$expected' missing in $body")
 
+	describe("organization landing pages"):
 		it("renders the organization landing page as HTML"):
 			val (page, counts) = renderLandingPage(organization)
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
 			assert(heading(page) === "Carbon Portal (CP)")
 			assert(propertyText(page, "Name") === "Carbon Portal")
 
+	describe("instrument landing pages"):
 		it("renders the instrument landing page as HTML"):
 			val (page, counts) = renderLandingPage(instrument)
 			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
@@ -524,6 +529,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink("Test instrument", "/resources/instruments/TST_1")))
 			assert(sectionHeadings(page).contains("Deployments") === false)
 
+	describe("person landing pages"):
 		it("renders the person landing page as HTML"):
 			val (page, counts) = renderLandingPage(person)
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
@@ -533,6 +539,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			val roleCells = page.select("table tbody tr").asScala.flatMap(_.select("td").asScala.map(_.text))
 			assert(roleCells === Seq("PI", "TST", "2021-01-01", ""))
 
+	describe("object specification landing pages"):
 		it("renders the object specification landing page as HTML"):
 			val (page, counts) = renderLandingPage(objectSpec)
 			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
@@ -546,6 +553,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasDocumentationObject") ===
 				RenderedLink("https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER", "/objects/ERERERERERERERERERERERER"))
 
+	describe("labeled resource landing pages"):
 		it("renders the labeled resource landing page as HTML"):
 			val (page, counts) = renderLandingPage(dataTheme)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))

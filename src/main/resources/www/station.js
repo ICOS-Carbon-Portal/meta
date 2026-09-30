@@ -1,10 +1,5 @@
-import * as L from 'leaflet';
-import {crs3006, lm3006MaxZoom, swedenLatLngBounds} from '@icos-cp/leaflet-crs';
-
-const LM_TILES_BASE_URL = '//tiles.fieldsites.se';
-
 const envri = window.envri;
-const isSites = envri === 'SITES';
+const LM_TILES_BASE_URL = '//tiles.fieldsites.se';
 
 var queryParams = processQuery(window.location.search);
 
@@ -18,25 +13,17 @@ function initMap(locations) {
 	var mapDiv = document.getElementById("map");
 	if (!mapDiv) return;
 
-	const scrollWheelZoom = window.top === window.self;
-	var map = isSites
-		? L.map(mapDiv, {
-			crs: crs3006,
-			maxZoom: lm3006MaxZoom,
-			maxBounds: swedenLatLngBounds.pad(0.1),
-			scrollWheelZoom
-		})
-		: L.map(mapDiv, {
-			minZoom: 1,
-			maxBounds: [[-90, -180],[90, 180]],
-			scrollWheelZoom
-		});
+	var map = L.map(mapDiv, {
+		minZoom: 1,
+		maxBounds: [[-90, -180],[90, 180]],
+		scrollWheelZoom: window.top === window.self
+	});
 
-	var baseMaps = isSites ? getLmBaseMaps() : getBaseMaps(18);
+	var baseMaps = getBaseMaps(18);
 	map.addLayer(baseMaps.Topographic);
 	const icon = getIcon(queryParams.icon);
 	var overlays = [];
-	const CustomLayers = L.Control.Layers.extend({
+	L.Control.CustomLayers = L.Control.Layers.extend({
 		_initLayout: function() {
 			const className = 'leaflet-control-layers';
 			L.Control.Layers.prototype._initLayout.call(this);
@@ -109,7 +96,7 @@ function initMap(locations) {
 		}
 	});
 
-	var layercontrol = new CustomLayers(baseMaps, overlays);
+	var layercontrol = new L.Control.CustomLayers(baseMaps, overlays);
 	layercontrol.addTo(map);
 
 	const featureGroups = locations.map(function ({ label, description, geoJson }) {
@@ -172,7 +159,7 @@ function initMap(locations) {
 			},
 			featureGroups[0].getBounds()
 		);
-		map.fitBounds(bounds, {maxZoom: isSites ? 10 : 14 } );
+		map.fitBounds(bounds, {maxZoom: 14 } );
 	}
 
 }
@@ -223,18 +210,20 @@ function getIcon(iconUrl){
 }
 
 function getLmUrl(layer) {
-	return `${LM_TILES_BASE_URL}/wmts/${layer}/lm_3006/{z}/{x}/{y}.png`;
-}
-
-function getLmBaseMaps(){
-	const attribution = '© Lantmäteriet';
-	return {
-		"Topographic": L.tileLayer(window.location.protocol + getLmUrl('topowebb'), {attribution}),
-		"Topographic Toned": L.tileLayer(window.location.protocol + getLmUrl('topowebb_nedtonad'), {attribution})
-	};
+	return `${LM_TILES_BASE_URL}/wmts/${layer}/webmercator/{z}/{x}/{y}.png`;
 }
 
 function getBaseMaps(maxZoom){
+	var topoLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb'), {
+		maxNativeZoom: 17,
+		attribution: '© Lantmäteriet'
+	});
+
+	var topoTonedLM = L.tileLayer(window.location.protocol + getLmUrl('topowebb_nedtonad'), {
+		maxNativeZoom: 17,
+		attribution: '© Lantmäteriet'
+	});
+
 	var topo = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
 		maxZoom
 	});
@@ -246,7 +235,14 @@ function getBaseMaps(maxZoom){
 	var osm = L.tileLayer(window.location.protocol + "//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		maxZoom
 	});
-	return {
+	return envri == "SITES"
+	? {
+		"Topographic": topoLM,
+		"Topographic Toned": topoTonedLM,
+		"Satellite": image,
+		"OSM": osm
+	}
+	: {
 		"Topographic": topo,
 		"Satellite": image,
 		"OSM": osm

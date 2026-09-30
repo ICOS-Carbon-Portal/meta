@@ -209,7 +209,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest:
 	describe("landing page URIs"):
 		it("renders the data object landing page as HTML"):
 			val (page, counts) = renderLandingPage(Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB"))
-			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 7, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 117, existence = 8, sparql = 0))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")

@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.UploadDtoReader
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 
@@ -16,7 +17,7 @@ object DtoDownloadRoute extends CpmetaJsonProtocol{
 
 	given Unmarshaller[String, Uri] = Unmarshaller(_ => s => Future.fromTry(Try(Uri(s))))
 
-	def apply(uriSer: UriSerializer): Route = {
+	def apply(uriSer: UriSerializer)(using EnvriConfigs): Route = {
 		val service = new UploadDtoReader(uriSer)
 
 		(get & path("dtodownload")){

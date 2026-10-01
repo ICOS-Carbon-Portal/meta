@@ -3,9 +3,11 @@ package se.lu.nateko.cp.meta.services
 import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
+import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, GeoCoverage, ReferencesDto, SpatioTemporalDto, StaticCollectionDto, StationTimeSeriesDto, UploadDto}
@@ -16,12 +18,12 @@ import scala.util.Success
 
 import UriSerializer.Hash
 
-class UploadDtoReader(uriSer: UriSerializer){
+class UploadDtoReader(uriSer: UriSerializer)(using EnvriConfigs){
 	import UploadDtoReader.*
 
 	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
 		case Hash.Object(_) =>
-			uriSer.fetchStaticObject(uri).map(objToDto)
+			uriSer.fetchStaticObject(uri).map(objToDto(_)(using envriConfig(uri)))
 
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
@@ -31,7 +33,10 @@ class UploadDtoReader(uriSer: UriSerializer){
 }
 
 object UploadDtoReader{
-	def objToDto(obj: StaticObject) = obj match {
+	private def envriConfig(uri: Uri)(using confs: EnvriConfigs): EnvriConfig =
+		confs(EnvriResolver.infer(new URI(uri.toString)).getOrElse(Envri.ICOS))
+
+	def objToDto(obj: StaticObject)(using EnvriConfig) = obj match {
 		case dobj: DataObject => DataObjectDto(
 			submitterId = "",
 			hashSum = dobj.hash,
@@ -46,7 +51,7 @@ object UploadDtoReader{
 					forStation = l3.station.map(_.org.self.uri),
 					samplingHeight = l3.samplingHeight,
 					production = dataProductionToDto(l3.productionInfo),
-					customLandingPage = dobj.accessUrl,
+					customLandingPage = externalLandingPage(dobj),
 					variables = l3.variables.map(_.map(_.label))
 				))
 				case Right(l2) => Right(StationTimeSeriesDto(
@@ -59,7 +64,7 @@ object UploadDtoReader{
 					nRows = l2.nRows,
 					production = l2.productionInfo.map(dataProductionToDto(_)),
 					spatial = l2.coverage.map(readCoverage),
-					customLandingPage = dobj.accessUrl
+					customLandingPage = externalLandingPage(dobj)
 				))
 			},
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>

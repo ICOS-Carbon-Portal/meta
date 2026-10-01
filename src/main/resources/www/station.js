@@ -1,5 +1,7 @@
 const envri = window.envri;
 const LM_TILES_BASE_URL = '//tiles.fieldsites.se';
+const ESRI_SERVICES_URL = '//server.arcgisonline.com/arcgis/rest/services';
+const ESRI_ATTRIBUTION = 'Powered by <a href="https://www.esri.com" target="_blank">Esri</a>';
 
 var queryParams = processQuery(window.location.search);
 
@@ -19,7 +21,13 @@ function initMap(locations) {
 		scrollWheelZoom: window.top === window.self
 	});
 
+	const attributionControl = map.attributionControl;
+	attributionControl.setPrefix(attributionControl.options.prefix.replace('<a ', '<a target="_blank" '));
+
 	var baseMaps = getBaseMaps(18);
+	Object.values(baseMaps)
+		.filter(layer => layer.options.esriServiceName)
+		.forEach(layer => loadEsriAttribution(map, layer));
 	map.addLayer(baseMaps.Topographic);
 	const icon = getIcon(queryParams.icon);
 	var overlays = [];
@@ -209,6 +217,37 @@ function getIcon(iconUrl){
 		});
 }
 
+function getEsriLayer(serviceName, maxZoom){
+	return L.tileLayer(window.location.protocol + `${ESRI_SERVICES_URL}/${serviceName}/MapServer/tile/{z}/{y}/{x}`, {
+		maxZoom,
+		attribution: ESRI_ATTRIBUTION,
+		esriServiceName: serviceName
+	});
+}
+
+// Esri requires showing the data providers from the service's copyrightText, which can change
+function loadEsriAttribution(map, layer){
+	fetch(`https:${ESRI_SERVICES_URL}/${layer.options.esriServiceName}/MapServer?f=json`)
+		.then(response => response.json())
+		.then(service => {
+			if (!service.copyrightText) return;
+
+			const attribution = `${ESRI_ATTRIBUTION} | ${escapeHtml(service.copyrightText)}`;
+			if (map.hasLayer(layer)) {
+				map.attributionControl.removeAttribution(layer.options.attribution);
+				map.attributionControl.addAttribution(attribution);
+			}
+			layer.options.attribution = attribution;
+		})
+		.catch(error => console.error(`Could not load attribution for ${layer.options.esriServiceName}`, error));
+}
+
+function escapeHtml(text){
+	const element = document.createElement('span');
+	element.textContent = text;
+	return element.innerHTML;
+}
+
 function getLmUrl(layer) {
 	return `${LM_TILES_BASE_URL}/wmts/${layer}/webmercator/{z}/{x}/{y}.png`;
 }
@@ -224,16 +263,13 @@ function getBaseMaps(maxZoom){
 		attribution: '© Lantmäteriet'
 	});
 
-	var topo = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-		maxZoom
-	});
+	var topo = getEsriLayer('World_Topo_Map', maxZoom);
 
-	var image = L.tileLayer(window.location.protocol + '//server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-		maxZoom
-	});
+	var image = getEsriLayer('World_Imagery', maxZoom);
 
 	var osm = L.tileLayer(window.location.protocol + "//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-		maxZoom
+		maxZoom,
+		attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 	});
 	return envri == "SITES"
 	? {

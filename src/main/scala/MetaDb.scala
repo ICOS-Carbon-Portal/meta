@@ -57,7 +57,7 @@ class MetaDb (
 
 	val uriSerializer: UriSerializer =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config, stats)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, citer.externalObjs, config, stats)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		magicRepo.getSail match

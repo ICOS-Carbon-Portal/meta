@@ -17,9 +17,9 @@ import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.{HandleNetClient, StatisticsProvider}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, ExternalObjFetcher, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
@@ -690,6 +690,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		def getObjDownloadCount(obj: StaticObject)(using Envri): Future[Option[Int]] = Future.successful(None)
 		def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]] = Future.successful(None)
 	}
+	private lazy val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri, store: Repository = repo): (Route, () => QueryCounts) = {
@@ -700,6 +701,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
 			doiCiter,
+			externalObjs,
 			config,
 			statisticsProvider
 		)
@@ -714,8 +716,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
 		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
+		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker, externalObjs)
 		loader -> countingRepo
 	}
 

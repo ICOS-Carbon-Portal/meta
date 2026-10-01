@@ -108,12 +108,26 @@ case class EtcConfig(
 	ingestFileMeta: Boolean
 )
 
+enum ExternalCitationStrategy:
+	case LOCAL, CPMETA_JSON
+
+enum ExternalPidPolicy:
+	case MINT_LOCAL, NONE, FROM_SOURCE
+
+case class ExternalProviderConfig(
+	host: String,
+	label: String,
+	citation: ExternalCitationStrategy,
+	pid: ExternalPidPolicy
+)
+
 case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	documentServers: Map[Envri, String],
 	handle: HandleNetClientConfig,
-	etc: EtcConfig
+	etc: EtcConfig,
+	externalProviders: Map[Envri, Seq[ExternalProviderConfig]]
 )
 
 case class LabelingServiceConfig(
@@ -230,7 +244,11 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[EtcConfig] = jsonFormat7(EtcConfig.apply)
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
-	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
+	given RootJsonFormat[ExternalCitationStrategy] = enumFormat(ExternalCitationStrategy.valueOf, ExternalCitationStrategy.values)
+	given RootJsonFormat[ExternalPidPolicy] = enumFormat(ExternalPidPolicy.valueOf, ExternalPidPolicy.values)
+	given RootJsonFormat[ExternalProviderConfig] = jsonFormat4(ExternalProviderConfig.apply)
+
+	given RootJsonFormat[UploadServiceConfig] = jsonFormat6(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)

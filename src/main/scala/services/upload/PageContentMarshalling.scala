@@ -12,7 +12,8 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
-import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.{CpVocab, ExternalProviders}
+import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
@@ -21,7 +22,11 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
+class PageContentMarshalling(
+	handleProxies: HandleProxiesConfig,
+	statisticsClient: StatisticsClient,
+	externalProviders: ExternalProviders
+):
 
 	import PageContentMarshalling.*
 
@@ -32,7 +37,8 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield {
-				val extras = LandingPageExtras(dlCount, previewCount, errors)
+				val externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label)
+				val extras = LandingPageExtras(dlCount, previewCount, errors, externalHostLabel)
 				LandingPage(obj, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Data object not found", _))

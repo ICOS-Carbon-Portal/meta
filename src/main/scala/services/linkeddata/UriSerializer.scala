@@ -27,7 +27,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
-import se.lu.nateko.cp.meta.services.citation.StaticObjCitationFetcher
+import se.lu.nateko.cp.meta.services.citation.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -79,6 +79,7 @@ class Rdf4jUriSerializer(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	doiCiter: PlainDoiCiter,
+	externalObjs: ExternalObjFetcher,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
@@ -86,12 +87,11 @@ class Rdf4jUriSerializer(
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val extCitFetcher = new StaticObjCitationFetcher
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, Some(extCitFetcher))
-	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer)
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
+	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer, externalObjs)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new PageContentMarshalling(config.core.handleProxies, stats)
+		new PageContentMarshalling(config.core.handleProxies, stats, externalObjs.providers)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))

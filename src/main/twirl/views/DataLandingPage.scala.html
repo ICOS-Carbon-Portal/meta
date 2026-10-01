@@ -6,6 +6,7 @@
 @import se.lu.nateko.cp.meta.views.LandingPageExtras
 @import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 @import se.lu.nateko.cp.meta.services.CpVocab
+@import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 @import se.lu.nateko.cp.meta.utils.rdf4j.*
 @import se.lu.nateko.cp.meta.utils.*
 @import landpagesnips.*
@@ -219,7 +220,7 @@
 			}
 			</div>
 
-			@if(dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)){
+			@if(externalLandingPage(dobj).isEmpty){
 				<div class="row gy-2">
 					<h2 class="fs-3 mt-5">Statistics</h2>
 					@htmlProperty{Downloads}{
@@ -339,7 +340,7 @@
 
 @headerExtra = @{
 	if(dobj.accessUrl.isDefined && uploadComplete)
-		Some(objPageHeaderExtra(dobj))
+		Some(objPageHeaderExtra(dobj, extras.externalHostLabel))
 	else None
 }
 

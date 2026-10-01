@@ -12,7 +12,8 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, IcosMirror}
+import se.lu.nateko.cp.meta.ExternalCitationStrategy
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
@@ -36,7 +37,7 @@ class CitationMaker(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	coreConf: MetaCoreConfig,
-	extCitFetcher: Option[StaticObjCitationFetcher] = None
+	externalObjs: ExternalObjFetcher
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
@@ -137,16 +138,16 @@ class CitationMaker(
 	}
 
 	private def presentExternalCitation(eagerRes: Option[Try[String]]): String = eagerRes match
+		case None => "Fetching... try refreshing the page in a few seconds"
 		case Some(Success(cit)) => cit
-		case _ => "Fetching... try refreshing the page in a few seconds"
+		case Some(Failure(err)) => "Error fetching external citation: " + err.getMessage
 
 	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[String] =
-		if IcosMirror.isIcosMirrored(sobj.accessUrl) then
-			for
-				fetcher <- extCitFetcher
-				url     <- sobj.accessUrl
-			yield presentExternalCitation(fetcher.getCitationEager(url, style))
-		else None
+		for
+			url <- sobj.accessUrl
+			provider <- externalObjs.providers.lookup(url)
+			if provider.citation == ExternalCitationStrategy.CPMETA_JSON
+		yield presentExternalCitation(externalObjs.getCitationEager(url, style))
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(

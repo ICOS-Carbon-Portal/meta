@@ -1,5 +1,6 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import java.time.Instant
+@import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 
 @(dobj: StaticObject)(implicit conf: EnvriConfig)
 <details>
@@ -14,7 +15,7 @@
 						<tr>
 							<th>File</th>
 							<th class="text-end">Size</th>
-							@if(dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)){
+							@if(externalLandingPage(dobj).isEmpty){
 								<th></th>
 							}
 						</tr>
@@ -31,7 +32,7 @@
 			const expander = document.getElementById("zipcontentsexpander")
 			const dataHost = "@conf.dataHost"
 			const hash = "@dobj.hash.id"
-			const showDownload = @{dobj.accessUrl.fold(true)(_.getHost == conf.dataHost)}
+			const showDownload = @{externalLandingPage(dobj).isEmpty}
 			let firstRender = true
 
 			function formatBytes(bytes, decimals = 2){

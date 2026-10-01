@@ -10,16 +10,21 @@ import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{NetCdfExtract, SpatialTimeSeriesExtract, TimeSeriesExtract, UploadCompletionInfo}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
-import se.lu.nateko.cp.meta.services.{IcosMirror, MetadataException}
+import se.lu.nateko.cp.meta.services.{ExternalProviders, MetadataException}
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, toJava}
 
+import java.net.URI
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 
 
-class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
+class UploadCompleter(
+	servers: DataObjectInstanceServers,
+	handles: HandleNetClient,
+	externalProviders: ExternalProviders
+)(using ExecutionContext):
 	import servers.{ metaVocab, vocab }
 	import StatementSource.{getStatements, hasStatement}
 
@@ -38,7 +43,7 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 				completer.getUpdates(hash) ++ getUploadStopTimeUpdates(hash) ++ getBytesSizeUpdates(hash, info.bytes)
 
 			mintPid = server.access:
-				!isIcosMirrored(hash)
+				externalProviders.mintsLocalPid(getLandingPage(hash))
 
 			report <- completer.finalize(hash, mintPid)
 
@@ -49,10 +54,9 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 	private def dobjLens(server: InstanceServer): DobjLens =
 		RdfLens.dobjLens(server.writeContext.toJava, server.readContexts.map(_.toJava))
 
-	private def isIcosMirrored(hash: Sha256Sum)(using Envri, StatementSource): Boolean =
-		val landingPage = getStatements(vocab.getStaticObject(hash), RDFS.SEEALSO, null).collectFirst:
+	private def getLandingPage(hash: Sha256Sum)(using Envri, StatementSource): Option[URI] =
+		getStatements(vocab.getStaticObject(hash), RDFS.SEEALSO, null).collectFirst:
 			case Rdf4jStatement(_, _, uri: IRI) => uri.toJava
-		IcosMirror.isIcosMirrored(landingPage)
 
 	private def getUploadStopTimeUpdates(hash: Sha256Sum)(using Envri, StatementSource): Seq[RdfUpdate] =
 		val submissionUri = vocab.getSubmission(hash)

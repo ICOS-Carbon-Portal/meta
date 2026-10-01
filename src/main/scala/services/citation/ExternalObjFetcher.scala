@@ -11,6 +11,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.data.{References, StaticObject}
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.services.ExternalProviders
 
 import java.net.URI
 import java.time.{Duration, Instant}
@@ -18,9 +19,9 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class StaticObjCitationFetcher(using system: ActorSystem):
+class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSystem):
 	import system.dispatcher
-	import StaticObjCitationFetcher.*
+	import ExternalObjFetcher.*
 	private val log = LoggerFactory.getLogger(getClass)
 	private val http = Http()
 	private val cache = TrieMap.empty[URI, Future[Cached]]
@@ -32,6 +33,9 @@ class StaticObjCitationFetcher(using system: ActorSystem):
 				styleField(cached.refs, style) match
 					case Some(cit) => Success(cit)
 					case None      => Failure(Exception(s"No $style citation in object at $url"))
+
+	def getPidEager(url: URI): Option[String] =
+		fetchIfNeeded(url).value.flatMap(_.toOption).flatMap(_.pid)
 
 	private def styleField(refs: References, style: CitationStyle): Option[String] = style match
 		case CitationStyle.bibtex => refs.citationBibTex
@@ -68,11 +72,14 @@ class StaticObjCitationFetcher(using system: ActorSystem):
 			uri = url.toString,
 			headers = List(Accept(MediaTypes.`application/json`))
 		)).flatMap: resp =>
-			Unmarshal(resp).to[StaticObject]
-		.map(obj => Cached(obj.references, Instant.now()))
+			if resp.status.isSuccess() then Unmarshal(resp).to[StaticObject]
+			else
+				resp.discardEntityBytes()
+				Future.failed(Exception(s"Got ${resp.status} from $url"))
+		.map(obj => Cached(obj.references, obj.pid, Instant.now()))
 		.andThen:
-			case Failure(err) => log.warn(s"Failed to fetch citation from $url: ${err.getMessage}")
+			case Failure(err) => log.warn(s"Failed to fetch external object metadata from $url: ${err.getMessage}")
 
-object StaticObjCitationFetcher:
+object ExternalObjFetcher:
 	private val ttl: Duration = Duration.ofMinutes(5)
-	private case class Cached(refs: References, fetchedAt: Instant)
+	private case class Cached(refs: References, pid: Option[String], fetchedAt: Instant)

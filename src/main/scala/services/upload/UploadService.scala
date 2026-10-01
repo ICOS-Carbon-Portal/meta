@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.completion.{Report, UploadCompleter}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.validation.UploadValidator
-import se.lu.nateko.cp.meta.services.{MetadataException, UploadUserErrorException}
+import se.lu.nateko.cp.meta.services.{ExternalProviders, MetadataException, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DocObjectDto, ObjectUploadDto, StaticCollectionDto, SubmitterProfile, UploadServiceConfig}
@@ -44,7 +44,7 @@ class UploadService(
 	private given vf: ValueFactory = vocab.factory
 	private val validator = new UploadValidator(servers)
 	private val handles = new HandleNetClient(conf.handle)
-	private val completer = new UploadCompleter(servers, handles)
+	private val completer = new UploadCompleter(servers, handles, ExternalProviders(conf.externalProviders))
 	private val metaUpdater = new ObjMetadataUpdater(vocab, metaVocab)
 	private val staticCollUpdater = new StaticCollMetadataUpdater(vocab, metaVocab)
 	private val statementProd = StatementsProducer(vocab, metaVocab)

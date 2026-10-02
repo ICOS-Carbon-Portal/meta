@@ -11,7 +11,8 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList, parseJsonStringArray}
 
-import java.time.{LocalDate, ZoneId}
+import java.net.URI as JavaUri
+import java.time.{Instant, LocalDate, ZoneId}
 import scala.collection.mutable
 import scala.util.Try
 
@@ -293,9 +294,30 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	end getStationTimeSerMeta
 
 	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
+
+		def isRelevantFor(vm: VarMeta)(
+			variableName: Option[String], forProperty: Option[JavaUri], start: Option[Instant], stop: Option[Instant]
+		): Boolean =
+			variableName.contains(vm.label) &&                    //variable name matches
+			forProperty.exists(_ === vm.model.uri) &&             //variable metadata URI matches
+			start.fold(true)(start => start.isBefore(acqInterval.stop)) && //starts before data collection end
+			stop.fold(true)(stop => stop.isAfter(acqInterval.start))       //ends after data collection start
+
+		// a cheap look at the deployment, to avoid reading the irrelevant ones in full
+		def mayBeRelevant(depl: IRI): Boolean =
+			val relevance = for
+				variableName <- getOptionalString(depl, metaVocab.hasVariableName)
+				forProperty <- getOptionalUri(depl, metaVocab.ssn.forProperty)
+				start <- getOptionalInstant(depl, metaVocab.hasStartTime)
+				stop <- getOptionalInstant(depl, metaVocab.hasEndTime)
+			yield
+				cols.exists(isRelevantFor(_)(variableName, forProperty.map(_.toJava), start, stop))
+			// if the deployment metadata is broken, reading it in full will report the problem
+			relevance.result.getOrElse(true) || relevance.errors.nonEmpty
+
 		val deploymentVs = getPropValueHolders(metaVocab.atOrganization, stationUri)
 			.collect:
-				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) =>
+				case depl if hasStatement(depl, RDF.TYPE, metaVocab.ssn.deploymentClass) && mayBeRelevant(depl) =>
 					val instrs = getPropValueHolders(metaVocab.ssn.hasDeployment, depl).toList
 					val instr = instrs match
 						case Nil => Validated.error(s"No instruments for deployment $depl")
@@ -305,12 +327,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			.toIndexedSeq
 		Validated.sequence(deploymentVs).map: deployments =>
 			cols.map: vm =>
-				val deps: Seq[InstrumentDeployment] = deployments.filter{dep =>
-					dep.variableName.contains(vm.label) &&                //variable name matches
-					dep.forProperty.exists(_.uri === vm.model.uri) &&        //variable metadata URI matches
-					dep.start.fold(true)(start => start.isBefore(acqInterval.stop)) && //starts before data collection end
-					dep.stop.fold(true)(stop => stop.isAfter(acqInterval.start))       //ends after data collection start
-				}
+				val deps: Seq[InstrumentDeployment] = deployments.filter: dep =>
+					isRelevantFor(vm)(dep.variableName, dep.forProperty.map(_.uri), dep.start, dep.stop)
 				vm.copy(instrumentDeployments = Some(deps).filter(_.nonEmpty))
 	end addInstrDeplInfo
 

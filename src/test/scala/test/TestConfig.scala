@@ -2,11 +2,15 @@ package se.lu.nateko.cp.meta.test
 
 import scala.language.unsafeNulls
 
+import com.typesafe.config.ConfigFactory
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.{OWLClass, OWLDataProperty, OWLObjectProperty, PrefixManager}
 import org.semanticweb.owlapi.util.DefaultPrefixManager
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.parseAs
+import se.lu.nateko.cp.meta.CpmetaConfig
+import se.lu.nateko.cp.meta.ConfigLoader.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer}
 import se.lu.nateko.cp.meta.utils.owlapi.*
@@ -15,6 +19,16 @@ import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import java.net.URI
 
 object TestConfig {
+	/**
+	 * The config bundled with the app, unlike ConfigLoader.default not overridden by an
+	 * application.conf in the working directory, so that tests do not depend on where they are run.
+	 */
+	lazy val metaConfig: CpmetaConfig = ConfigFactory.defaultApplication
+		.withFallback(ConfigFactory.defaultReferenceUnresolved)
+		.resolve
+		.getValue("cpmeta")
+		.parseAs[CpmetaConfig]
+
 	val manager = OWLManager.createOWLOntologyManager
 	val factory = manager.getOWLDataFactory
 	lazy val owlOnto = {

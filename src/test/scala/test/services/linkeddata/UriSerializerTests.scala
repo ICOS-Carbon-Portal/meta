@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.{ContentTypes, MediaTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentType, ContentTypes, MediaType, MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -45,7 +45,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	describe("an unknown object URI") {
 		it("returns the original HTML not-found page") {
-			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(Fixture.missingObjectUri, Fixture.repo) ~> check {
+			val (route, _counts) = serialize(Fixture.missingObjectUri)
+			Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
 				assert(status === StatusCodes.NotFound)
 				assert(contentType.mediaType === MediaTypes.`text/html`)
 				assert(responseAs[String].contains("Data object not found"))
@@ -53,11 +54,20 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns an error response for JSON because the RDF read produced errors") {
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.missingObjectUri, Fixture.repo) ~> check {
+			val (route, _counts) = serialize(Fixture.missingObjectUri)
+			Get() ~> Accept(MediaTypes.`application/json`) ~> route ~> check {
 				assert(status === StatusCodes.InternalServerError)
 				assert(contentType === ContentTypes.`text/plain(UTF-8)`)
 				assert(responseAs[String].nonEmpty)
 			}
+		}
+
+		it("returns an RDF document with only the namespace prefixes") {
+			val (body, counts) =
+				renderRdf(Fixture.missingObjectUri, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
+			// includes the failed static object fetch, which runs before the RDF fallback is chosen
+			assert(counts === QueryCounts(connections = 3, statements = 3, existence = 1, sparql = 0))
+			assert(body.linesIterator.map(_.trim).forall(line => line.isEmpty || line.startsWith("@prefix")), body)
 		}
 	}
 
@@ -81,18 +91,37 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("serializes both outgoing and incoming statements as RDF") {
-			Get() ~> Accept(MediaTypes.`text/plain`) ~> serialize(Fixture.resourceUri, Fixture.repo) ~> check {
-				assert(status === StatusCodes.OK)
-				assert(contentType === InstanceServerSerializer.turtleContType)
-				val body = responseAs[String]
+			val (body, counts) = renderRdf(Fixture.resourceUri, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
+			// the resource type checks run before the RDF fallback is chosen
+			assert(counts === QueryCounts(connections = 4, statements = 2, existence = 2, sparql = 0))
+			assert(body.contains("Serializer test resource"))
+			assert(body.contains(Fixture.referringResource.stringValue))
+			assert(body.contains(Fixture.predicate.stringValue))
+		}
+
+		Seq(
+			MediaTypes.`text/plain` -> InstanceServerSerializer.turtleContType,
+			InstanceServerSerializer.turtleContType.mediaType -> InstanceServerSerializer.turtleContType,
+			MediaTypes.`application/xml` -> InstanceServerSerializer.xmlContType,
+			InstanceServerSerializer.xmlContType.mediaType -> InstanceServerSerializer.xmlContType
+		).foreach { (accepted, returned) =>
+			it(s"serializes the statements as ${returned.mediaType} when accepting $accepted") {
+				val (body, _counts) = renderRdf(Fixture.resourceUri, accepted, returned)
 				assert(body.contains("Serializer test resource"))
 				assert(body.contains(Fixture.referringResource.stringValue))
-				assert(body.contains(Fixture.predicate.stringValue))
 			}
 		}
 	}
 
 	describe("data object landing pages") {
+		it("falls back to serializing the data object statements as RDF") {
+			val (body, counts) =
+				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
+			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
+			assert(counts === QueryCounts(connections = 3, statements = 312, existence = 11, sparql = 0))
+			assert(body.contains("test_data.csv"))
+		}
+
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
 			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
@@ -584,7 +613,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 
-	private def serialize(uri: Uri, repo: Repository): Route = {
+	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
+	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
+		val repo = CountingRepository(Fixture.repo)
 		val config = ConfigLoader.default
 		given Envri = Envri.ICOS
 		given EnvriConfigs = config.core.envriConfigs
@@ -604,31 +635,43 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		)
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller
-		get(complete(uri))
+		get(complete(uri)) -> (() => repo.counts)
 	}
 
-	/** Renders the page through a fresh counting view of the fixture, so the counts cover this render only. */
+	/** Renders the page as HTML. */
 	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
-		val repo = CountingRepository(Fixture.repo)
-		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri, repo) ~> check {
+		val (route, getCounts) = serialize(uri)
+		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType.mediaType === MediaTypes.`text/html`)
 			Jsoup.parse(body)
 		}
-		page -> repo.counts
+		page -> getCounts()
 	}
 
-	/** Renders the JSON through a fresh counting view of the fixture, so the counts cover this render only. */
+	/** Renders the statements as RDF. */
+	private def renderRdf(uri: Uri, accepted: MediaType, returned: ContentType): (String, QueryCounts) = {
+		val (route, getCounts) = serialize(uri)
+		val body = Get() ~> Accept(accepted) ~> route ~> check {
+			val body = responseAs[String]
+			assert(status === StatusCodes.OK, body)
+			assert(contentType === returned)
+			body
+		}
+		body -> getCounts()
+	}
+
+	/** Renders the JSON representation. */
 	private def renderJson(uri: Uri): (String, QueryCounts) = {
-		val repo = CountingRepository(Fixture.repo)
-		val body = Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri, repo) ~> check {
+		val (route, getCounts) = serialize(uri)
+		val body = Get() ~> Accept(MediaTypes.`application/json`) ~> route ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType === ContentTypes.`application/json`)
 			body
 		}
-		body -> repo.counts
+		body -> getCounts()
 	}
 
 

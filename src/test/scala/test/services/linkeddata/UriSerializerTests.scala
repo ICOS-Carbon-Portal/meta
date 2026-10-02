@@ -11,13 +11,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import eu.icoscp.envri.Envri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.rio.RDFFormat
-import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.{CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, Rdf4jUriSerializer}
@@ -25,7 +20,7 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
 
 import scala.jdk.CollectionConverters.*
-import scala.util.{Try, Using}
+import scala.util.Try
 
 /** Characterizes the HTTP behavior of the original, pre-LandingPageBuilder URI serializer. */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
@@ -38,8 +33,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			max-connection-backoff = 20ms
 		}"""
 
+	private val repo = Fixture.createRepo()
+
 	override def afterAll(): Unit = {
-		Fixture.repo.shutDown()
+		repo.shutDown()
 		super.afterAll()
 	}
 
@@ -633,7 +630,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
-		val repo = CountingRepository(Fixture.repo)
+		val countingRepo = CountingRepository(repo)
 		val config = ConfigLoader.default
 		given Envri = Envri.ICOS
 		given EnvriConfigs = config.core.envriConfigs
@@ -644,16 +641,16 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		val serializer = new Rdf4jUriSerializer(
-			repo,
-			CpVocab(repo.getValueFactory),
-			CpmetaVocab(repo.getValueFactory),
+			countingRepo,
+			CpVocab(countingRepo.getValueFactory),
+			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
 			doiCiter,
 			config
 		)
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller
-		get(complete(uri)) -> (() => repo.counts)
+		get(complete(uri)) -> (() => countingRepo.counts)
 	}
 
 	/** Renders the page as HTML. */
@@ -785,41 +782,5 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			alert.text,
 			links(alert, "a.alert-link")
 		)
-	}
-
-	private object Fixture {
-		val repo: Repository = SailRepository(MemoryStore())
-		repo.init()
-		Using.resources(
-			getClass.getResourceAsStream("/linkeddata/uri-serializer-fixture.trig"),
-			repo.getConnection()
-		) { (stream, conn) =>
-			conn.add(stream, "", RDFFormat.TRIG)
-		}
-
-		val resource = repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test")
-		val referringResource =
-			repo.getValueFactory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test_referrer")
-		val predicate = repo.getValueFactory.createIRI("http://example.org/refersTo")
-		val resourceUri = Uri(resource.stringValue)
-
-		val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
-		val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
-
-		val timeSeriesObject = Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
-		val versionedObject = Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
-		val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")
-		val documentObject = Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")
-		val testCollection = Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD")
-		val nestedCollection = Uri("https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM")
-		val icosStation = Uri("http://meta.icos-cp.eu/resources/stations/TST")
-		val ecosystemStation = Uri("http://meta.icos-cp.eu/resources/stations/ES_TST")
-		val sitesStation = Uri("https://meta.fieldsites.se/resources/stations/Testsjon")
-		val organization = Uri("http://meta.icos-cp.eu/resources/organizations/CP")
-		val instrument = Uri("http://meta.icos-cp.eu/resources/instruments/TST_1")
-		val instrumentComponent = Uri("http://meta.icos-cp.eu/resources/instruments/TST_2")
-		val person = Uri("http://meta.icos-cp.eu/resources/people/Test_Person")
-		val objectSpec = Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries")
-		val dataTheme = Uri("http://meta.icos-cp.eu/resources/themes/atmosphere")
 	}
 }

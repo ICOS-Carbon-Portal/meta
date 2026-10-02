@@ -631,18 +631,18 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 
-	private val config = ConfigLoader.default
-	private given Envri = Envri.ICOS
-	private given EnvriConfigs = config.core.envriConfigs
-	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val doiCiter = new PlainDoiCiter {
-		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-	}
-
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
 		val repo = CountingRepository(Fixture.repo)
+		val config = ConfigLoader.default
+		given Envri = Envri.ICOS
+		given EnvriConfigs = config.core.envriConfigs
+		val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+		val doiCiter = new PlainDoiCiter {
+			def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
+			def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+		}
+
 		val serializer = new Rdf4jUriSerializer(
 			repo,
 			CpVocab(repo.getValueFactory),

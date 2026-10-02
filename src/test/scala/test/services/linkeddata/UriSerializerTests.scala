@@ -139,13 +139,13 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 291, existence = 8, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 289, existence = 8, sparql = 0))
 			assert(body.contains("test_data.csv"))
 		}
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 289, existence = 8, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 287, existence = 8, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
@@ -227,7 +227,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the version chain of a data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.versionedObject)
-			assert(counts === QueryCounts(connections = 1, statements = 284, existence = 21, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 259, existence = 15, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink(
 				"View previous version",
 				"/objects/BAQEBAQEBAQEBAQEBAQEBAQE"
@@ -281,7 +281,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the spatiotemporal data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.spatialObject)
-			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 122, existence = 1, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "Test spatial data object")
 			assert(propertyText(page, "Description") === "Gridded test data")
@@ -306,7 +306,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("returns the variable value ranges of the spatiotemporal data object as JSON") {
 			val (json, counts) = renderJson(Fixture.spatialObject)
-			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 122, existence = 1, sparql = 0))
 			val body = json.replaceAll("\\s", "")
 			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 			assert(!body.contains("unknown_var"))
@@ -316,7 +316,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("document landing pages") {
 		it("renders the document object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.documentObject)
-			assert(counts === QueryCounts(connections = 1, statements = 40, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 39, existence = 2, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.documentHash)))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
@@ -343,7 +343,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("collection landing pages") {
 		it("renders the collection landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.testCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 25, existence = 4, sparql = 0))
 			assert(counts === loadLandingPage(_.staticCollection(Fixture.testCollectionHash)))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
@@ -385,7 +385,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the nested collection landing page") {
 			val (page, counts) = renderLandingPage(Fixture.nestedCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 6, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 5, sparql = 0))
 			assert(heading(page) === "Nested collection")
 			assert(propertyLinks(page, "Part of") === Seq(RenderedLink(
 				"Test collection",

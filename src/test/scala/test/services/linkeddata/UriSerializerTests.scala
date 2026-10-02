@@ -569,12 +569,19 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 	}
 
-	describe("object specification landing pages") {
-		it("renders the object specification landing page as HTML") {
+	/**
+	 * There is no Twirl page for an object specification, nor for a labeled resource. Both are
+	 * recognized by the serializer, but only so that their JSON can be served by dedicated readers;
+	 * in HTML both fall through to the generic resource page.
+	 */
+	describe("URIs recognized by the serializer but rendered by the generic page") {
+		it("renders an object specification as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.objectSpec)
 			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
 			assert(heading(page) === "Test time series")
 			assert(propertyText(page, "Label") === "Test time series")
+			//the properties are labeled by the ontology predicates, as on any generic page, rather
+			//than by the names a specification landing page would give them
 			assert(linkedLabelProperty(page, "/ontologies/cpmeta/hasAssociatedProject") === RenderedLink(
 				"ICOS",
 				"/resources/projects/icos"
@@ -598,10 +605,15 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 					"/objects/ERERERERERERERERERERERER"
 				))
 		}
-	}
 
-	describe("labeled resource landing pages") {
-		it("renders the labeled resource landing page as HTML") {
+		it("serves the object specification as JSON") {
+			val (body, counts) = renderJson(Fixture.objectSpec)
+			assert(counts === QueryCounts(connections = 2, statements = 29, existence = 1, sparql = 0))
+			assert(body.contains("Test time series"))
+			assert(body.contains("Atmosphere"))
+		}
+
+		it("renders a labeled resource as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.dataTheme)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
 			assert(heading(page) === "Atmosphere")
@@ -610,21 +622,27 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				propertyWithLinkedLabel(page, "/ontologies/cpmeta/hasIcon").text === "https://static.icos-cp.eu/atmosphere.svg"
 			)
 		}
+
+		it("serves the labeled resource as JSON") {
+			val (body, counts) = renderJson(Fixture.dataTheme)
+			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(body.contains("Atmosphere"))
+		}
 	}
 
+
+	private val config = ConfigLoader.default
+	private given Envri = Envri.ICOS
+	private given EnvriConfigs = config.core.envriConfigs
+	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+	private val doiCiter = new PlainDoiCiter {
+		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
+		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
 		val repo = CountingRepository(Fixture.repo)
-		val config = ConfigLoader.default
-		given Envri = Envri.ICOS
-		given EnvriConfigs = config.core.envriConfigs
-		val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-		val doiCiter = new PlainDoiCiter {
-			def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-			def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-		}
-
 		val serializer = new Rdf4jUriSerializer(
 			repo,
 			CpVocab(repo.getValueFactory),

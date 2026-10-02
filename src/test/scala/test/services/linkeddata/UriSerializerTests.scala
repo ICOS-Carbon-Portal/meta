@@ -43,55 +43,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		super.afterAll()
 	}
 
-	private val config = ConfigLoader.default
-	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val doiCiter = new PlainDoiCiter {
-		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-	}
-
-	private def serializer(repo: Repository): Rdf4jUriSerializer = {
-		given Envri = Envri.ICOS
-		given EnvriConfigs = config.core.envriConfigs
-
-		new Rdf4jUriSerializer(
-			repo,
-			CpVocab(repo.getValueFactory),
-			CpmetaVocab(repo.getValueFactory),
-			lenses,
-			doiCiter,
-			config
-		)
-	}
-
-	private def serialize(uri: Uri, repo: Repository = Fixture.repo): Route = {
-		given ToResponseMarshaller[Uri] = serializer(repo).marshaller
-		get(complete(uri))
-	}
-
-	/** Renders the page through a fresh counting view of the fixture, so the counts cover this render only. */
-	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
-		val repo = CountingRepository(Fixture.repo)
-		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri, repo) ~> check {
-			val body = responseAs[String]
-			assert(status === StatusCodes.OK, body)
-			assert(contentType.mediaType === MediaTypes.`text/html`)
-			Jsoup.parse(body)
-		}
-		page -> repo.counts
-	}
-
-	private def renderJson(uri: Uri): String =
-		Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri) ~> check {
-			val body = responseAs[String]
-			assert(status === StatusCodes.OK, body)
-			assert(contentType === ContentTypes.`application/json`)
-			body
-		}
-
 	describe("an unknown object URI") {
 		it("returns the original HTML not-found page") {
-			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(Fixture.missingObjectUri) ~> check {
+			Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(Fixture.missingObjectUri, Fixture.repo) ~> check {
 				assert(status === StatusCodes.NotFound)
 				assert(contentType.mediaType === MediaTypes.`text/html`)
 				assert(responseAs[String].contains("Data object not found"))
@@ -99,7 +53,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns an error response for JSON because the RDF read produced errors") {
-			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.missingObjectUri) ~> check {
+			Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(Fixture.missingObjectUri, Fixture.repo) ~> check {
 				assert(status === StatusCodes.InternalServerError)
 				assert(contentType === ContentTypes.`text/plain(UTF-8)`)
 				assert(responseAs[String].nonEmpty)
@@ -126,7 +80,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("serializes both outgoing and incoming statements as RDF") {
-			Get() ~> Accept(MediaTypes.`text/plain`) ~> serialize(Fixture.resourceUri) ~> check {
+			Get() ~> Accept(MediaTypes.`text/plain`) ~> serialize(Fixture.resourceUri, Fixture.repo) ~> check {
 				assert(status === StatusCodes.OK)
 				assert(contentType === InstanceServerSerializer.turtleContType)
 				val body = responseAs[String]
@@ -624,6 +578,51 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			)
 		}
 	}
+
+
+	private def serialize(uri: Uri, repo: Repository): Route = {
+		val config = ConfigLoader.default
+		given Envri = Envri.ICOS
+		given EnvriConfigs = config.core.envriConfigs
+		val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+		val doiCiter = new PlainDoiCiter {
+			def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
+			def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+		}
+
+		val serializer = new Rdf4jUriSerializer(
+			repo,
+			CpVocab(repo.getValueFactory),
+			CpmetaVocab(repo.getValueFactory),
+			lenses,
+			doiCiter,
+			config
+		)
+
+		given ToResponseMarshaller[Uri] = serializer.marshaller
+		get(complete(uri))
+	}
+
+	/** Renders the page through a fresh counting view of the fixture, so the counts cover this render only. */
+	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
+		val repo = CountingRepository(Fixture.repo)
+		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri, repo) ~> check {
+			val body = responseAs[String]
+			assert(status === StatusCodes.OK, body)
+			assert(contentType.mediaType === MediaTypes.`text/html`)
+			Jsoup.parse(body)
+		}
+		page -> repo.counts
+	}
+
+	private def renderJson(uri: Uri): String =
+		Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri, Fixture.repo) ~> check {
+			val body = responseAs[String]
+			assert(status === StatusCodes.OK, body)
+			assert(contentType === ContentTypes.`application/json`)
+			body
+		}
+
 
 	private case class RenderedLink(text: String, href: String)
 	private object RenderedLink {

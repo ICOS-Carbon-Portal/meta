@@ -80,7 +80,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticObject(Fixture.timeSeriesHash))
 
 		it("reads the object with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 300, existence = 8, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 289, existence = 8, sparql = 0))
 		}
 
 		it("has the file-level metadata of the object") {

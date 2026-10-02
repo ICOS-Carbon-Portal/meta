@@ -74,7 +74,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns its labeled-resource representation as JSON") {
-			val body = renderJson(Fixture.resourceUri)
+			val (body, counts) = renderJson(Fixture.resourceUri)
+			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
 			assert(body.contains(Fixture.resource.stringValue))
 			assert(body.contains("Serializer test resource"))
 		}
@@ -253,7 +254,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns the variable value ranges of the spatiotemporal data object as JSON") {
-			val body = renderJson(Fixture.spatialObject).replaceAll("\\s", "")
+			val (json, counts) = renderJson(Fixture.spatialObject)
+			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			val body = json.replaceAll("\\s", "")
 			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 			assert(!body.contains("unknown_var"))
 		}
@@ -465,7 +468,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 
 		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON") {
-			val body = renderJson(Fixture.sitesStation)
+			val (body, counts) = renderJson(Fixture.sitesStation)
+			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
 			Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach { expected =>
 				assert(body.contains(expected), s"'$expected' missing in $body")
 			}
@@ -615,13 +619,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		page -> repo.counts
 	}
 
-	private def renderJson(uri: Uri): String =
-		Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri, Fixture.repo) ~> check {
+	/** Renders the JSON through a fresh counting view of the fixture, so the counts cover this render only. */
+	private def renderJson(uri: Uri): (String, QueryCounts) = {
+		val repo = CountingRepository(Fixture.repo)
+		val body = Get() ~> Accept(MediaTypes.`application/json`) ~> serialize(uri, repo) ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType === ContentTypes.`application/json`)
 			body
 		}
+		body -> repo.counts
+	}
 
 
 	private case class RenderedLink(text: String, href: String)

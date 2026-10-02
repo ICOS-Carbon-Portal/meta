@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.linkeddata
+ package se.lu.nateko.cp.meta.test.services.linkeddata
 
 import scala.language.unsafeNulls
 
@@ -26,7 +26,6 @@ import se.lu.nateko.cp.meta.test.TestConfig
 
 import java.net.URI
 import java.time.Instant
-import scala.concurrent.ExecutionContext
 
 /**
  * Guards what the loader reads, and the number of RDF-store round trips it takes to read it.

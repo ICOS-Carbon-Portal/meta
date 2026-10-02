@@ -80,7 +80,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticObject(Fixture.timeSeriesHash))
 
 		it("reads the object with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 307, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 300, existence = 8, sparql = 0))
 		}
 
 		it("has the file-level metadata of the object") {
@@ -194,7 +194,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.station(Fixture.icosStation))
 
 		it("reads the station and its memberships with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 89, existence = 1, sparql = 0))
 		}
 
 		it("is built into a station with its location and country") {

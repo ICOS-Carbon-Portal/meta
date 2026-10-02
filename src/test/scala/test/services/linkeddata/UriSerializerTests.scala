@@ -19,7 +19,8 @@ import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, Pla
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
+import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.test.TestConfig
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
@@ -663,7 +664,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 
-	private val config = ConfigLoader.default
+	private val config = TestConfig.metaConfig
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)

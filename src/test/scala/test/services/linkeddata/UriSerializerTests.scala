@@ -145,7 +145,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
 			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
-			assert(loadLandingPage(_.staticObject(Fixture.timeSeriesHash)) === counts)
+			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -316,7 +316,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the document object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.documentObject)
 			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
-			assert(loadLandingPage(_.staticObject(Fixture.documentHash)) === counts)
+			assert(counts === loadLandingPage(_.staticObject(Fixture.documentHash)))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
 			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
@@ -343,7 +343,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the collection landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.testCollection)
 			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
-			assert(loadLandingPage(_.staticCollection(Fixture.testCollectionHash)) === counts)
+			assert(counts === loadLandingPage(_.staticCollection(Fixture.testCollectionHash)))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink(
@@ -411,7 +411,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the station landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.icosStation)
 			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
-			assert(loadLandingPage(_.station(Fixture.icosStation)) === counts)
+			assert(counts === loadLandingPage(_.station(Fixture.icosStation)))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
 			assert(propertyText(page, "Country code") === "SE")
@@ -533,7 +533,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the organization landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.organization)
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
-			assert(loadLandingPage(_.organization(Fixture.organization)) === counts)
+			assert(counts === loadLandingPage(_.organization(Fixture.organization)))
 			assert(heading(page) === "Carbon Portal (CP)")
 			assert(propertyText(page, "Name") === "Carbon Portal")
 		}
@@ -543,7 +543,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the instrument landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.instrument)
 			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
-			assert(loadLandingPage(_.instrument(Fixture.instrument)) === counts)
+			assert(counts === loadLandingPage(_.instrument(Fixture.instrument)))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
 			assert(propertyText(page, "Serial number") === "SN-1")
@@ -588,7 +588,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the person landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.person)
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
-			assert(loadLandingPage(_.person(Fixture.person)) === counts)
+			assert(counts === loadLandingPage(_.person(Fixture.person)))
 			assert(heading(page) === "Test Person")
 			assert(propertyText(page, "First name") === "Test")
 			assert(propertyText(page, "Last name") === "Person")
@@ -693,14 +693,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val loader = LandingPageLoader(
-			countingRepo,
-			vocab,
-			metaVocab,
-			lenses,
-			HandleNetClient.PidFactory(config.dataUploadService.handle),
-			CitationMaker(doiCiter, vocab, metaVocab, config.core)
-		)
+		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
 		loader -> countingRepo
 	}
 

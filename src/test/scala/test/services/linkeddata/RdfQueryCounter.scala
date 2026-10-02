@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, Repositor
 case class QueryCounts(connections: Int, statements: Int, existence: Int, sparql: Int)
 
 /** Counts reads made through an RDF4J repository, per query kind. */
-final class QueryCounter {
+private final class QueryCounter {
 	private val connections = AtomicInteger()
 	private val statements = AtomicInteger()
 	private val existence = AtomicInteger()
@@ -23,20 +23,23 @@ final class QueryCounter {
 	def countExistence(): Unit = existence.incrementAndGet()
 	def countSparql(): Unit = sparql.incrementAndGet()
 
-	def reset(): Unit = List(connections, statements, existence, sparql).foreach(_.set(0))
-
 	def snapshot: QueryCounts =
 		QueryCounts(connections.get, statements.get, existence.get, sparql.get)
 }
 
-final class CountingRepository(delegate: Repository, counter: QueryCounter) extends RepositoryWrapper(delegate) {
+final class CountingRepository(delegate: Repository) extends RepositoryWrapper(delegate) {
+	private val counter = QueryCounter()
+
+	/** The reads made through this repository so far. */
+	def counts: QueryCounts = counter.snapshot
+
 	override def getConnection(): RepositoryConnection = {
 		counter.countConnection()
 		CountingConnection(this, super.getConnection(), counter)
 	}
 }
 
-final class CountingConnection(
+private final class CountingConnection(
 	repo: Repository, delegate: RepositoryConnection, counter: QueryCounter
 ) extends RepositoryConnectionWrapper(repo, delegate) {
 

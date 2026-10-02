@@ -39,43 +39,46 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}"""
 
 	override def afterAll(): Unit = {
-		Fixture.fixtureRepo.shutDown()
+		Fixture.repo.shutDown()
 		super.afterAll()
 	}
 
-	private val serializer = {
-		val doiCiter = new PlainDoiCiter {
-			def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-			def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-		}
+	private val config = ConfigLoader.default
+	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+	private val doiCiter = new PlainDoiCiter {
+		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
+		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+	}
 
-		val config = ConfigLoader.default
+	private def serializer(repo: Repository): Rdf4jUriSerializer = {
 		given Envri = Envri.ICOS
 		given EnvriConfigs = config.core.envriConfigs
 
 		new Rdf4jUriSerializer(
-			Fixture.repo,
-			CpVocab(Fixture.repo.getValueFactory),
-			CpmetaVocab(Fixture.repo.getValueFactory),
-			MetaDb.getLenses(config.instanceServers, config.dataUploadService),
+			repo,
+			CpVocab(repo.getValueFactory),
+			CpmetaVocab(repo.getValueFactory),
+			lenses,
 			doiCiter,
 			config
 		)
 	}
 
-	private given ToResponseMarshaller[Uri] = serializer.marshaller
+	private def serialize(uri: Uri, repo: Repository = Fixture.repo): Route = {
+		given ToResponseMarshaller[Uri] = serializer(repo).marshaller
+		get(complete(uri))
+	}
 
-	private def serialize(uri: Uri): Route = get(complete(uri))
-
+	/** Renders the page through a fresh counting view of the fixture, so the counts cover this render only. */
 	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
-		Fixture.counter.reset()
-		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri) ~> check {
+		val repo = CountingRepository(Fixture.repo)
+		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> serialize(uri, repo) ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)
 			assert(contentType.mediaType === MediaTypes.`text/html`)
 			Jsoup.parse(body)
 		}
-		page -> Fixture.counter.snapshot
+		page -> repo.counts
 	}
 
 	private def renderJson(uri: Uri): String =
@@ -717,13 +720,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 	private object Fixture {
-		val fixtureRepo: Repository = SailRepository(MemoryStore())
-		val counter = QueryCounter()
-		val repo: Repository = CountingRepository(fixtureRepo, counter)
-		fixtureRepo.init()
+		val repo: Repository = SailRepository(MemoryStore())
+		repo.init()
 		Using.resources(
 			getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
-			fixtureRepo.getConnection()
+			repo.getConnection()
 		) { (stream, conn) =>
 			conn.add(stream, "", RDFFormat.TRIG)
 		}

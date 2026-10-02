@@ -543,7 +543,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("instrument landing pages") {
 		it("renders the instrument landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.instrument)
-			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
 			assert(counts === loadLandingPage(_.instrument(Fixture.instrument)))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
@@ -575,7 +575,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the instrument component landing page") {
 			val (page, counts) = renderLandingPage(Fixture.instrumentComponent)
-			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 13, existence = 1, sparql = 0))
 			assert(heading(page) === "Nafion dryer (SN-2)")
 			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink(
 				"Test instrument",

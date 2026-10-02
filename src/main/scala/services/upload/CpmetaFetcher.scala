@@ -87,11 +87,9 @@ trait CpmetaReader:
 			)
 
 	def getAgent(uri: IRI): MetaConn ?=> Validated[Agent] =
-		getOptionalString(uri, metaVocab.hasFirstName).flatMap: a =>
-			if a.isDefined then
-				getPerson(uri)
-			else
-				getOrganization(uri)
+		getOptionalString(uri, metaVocab.hasFirstName).flatMap:
+			case Some(firstName) => getPerson(uri, firstName)
+			case None => getOrganization(uri)
 
 	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
 		for
@@ -137,9 +135,11 @@ trait CpmetaReader:
 			)
 
 	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
+		getSingleString(pers, metaVocab.hasFirstName).flatMap(getPerson(pers, _))
+
+	private def getPerson(pers: IRI, firstName: String): MetaConn ?=> Validated[Person] =
 		for
 			self <- getLabeledResource(pers)
-			firstName <- getSingleString(pers, metaVocab.hasFirstName)
 			lastName <- getSingleString(pers, metaVocab.hasLastName)
 			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
 			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)

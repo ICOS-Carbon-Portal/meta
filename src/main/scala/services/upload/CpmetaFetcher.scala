@@ -264,13 +264,21 @@ trait CpmetaReader:
 		)
 
 	def getLatestVersion(item: IRI)(using ItemConn): OneOrSeq[URI] =
-		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
-			val nextVersions = getNextVersions(item).flatMap: next =>
+		getLatestVersion(item, getNextVersions(item))
+
+	/** The next and the latest versions of the item, with the next versions looked up only once */
+	def getNextAndLatestVersions(item: IRI)(using ItemConn): (OptionalOneOrSeq[URI], OneOrSeq[URI]) =
+		val nextVersions = getNextVersions(item)
+		OptionalOneOrSeq.fromSeq(nextVersions.map(_.toJava)) -> getLatestVersion(item, nextVersions)
+
+	private def getLatestVersion(item: IRI, nextVersions: IndexedSeq[IRI])(using ItemConn): OneOrSeq[URI] =
+		def latest(item: IRI, nextVersions: IndexedSeq[IRI], seen: Set[IRI]): Seq[IRI] =
+			val latestVersions = nextVersions.flatMap: next =>
 				if seen.contains(next)
 				then Nil
-				else latest(next, seen + next)
-			if nextVersions.isEmpty then Seq(item) else nextVersions
-		latest(item, Set.empty).map(_.toJava) match
+				else latest(next, getNextVersions(next), seen + next)
+			if latestVersions.isEmpty then Seq(item) else latestVersions
+		latest(item, nextVersions, Set.empty).map(_.toJava) match
 			case Seq(single) => Left(single)
 			case many => Right(many)
 

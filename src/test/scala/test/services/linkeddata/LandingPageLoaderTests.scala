@@ -50,20 +50,20 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 	private given Materializer = Materializer.matFromSystem
 	private given ExecutionContext = system.dispatcher
 
-	private val counter = QueryCounter()
 	private val fixture = Fixture()
 	private val doiCiter = new PlainDoiCiter:
 		def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None
 		def getDoiEager(doi: se.lu.nateko.cp.doi.Doi) = None
 	private val citer = CitationMaker(doiCiter, fixture.vocab, fixture.metaVocab, config.core)
-	private val builder = LandingPageLoader(
-		CountingRepository(fixture.repo, counter),
-		fixture.vocab,
-		fixture.metaVocab,
-		MetaDb.getLenses(config.instanceServers, config.dataUploadService),
-		HandleNetClient.PidFactory(config.dataUploadService.handle),
-		citer
-	)
+	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+
+	/** Makes one read with a loader of its own, over a fresh counting view of the fixture. */
+	private def counted[T](read: LandingPageLoader => T): (T, QueryCounts) =
+		val repo = CountingRepository(fixture.repo)
+		val loader = LandingPageLoader(repo, fixture.vocab, fixture.metaVocab, lenses, pidFactory, citer)
+		val result = read(loader)
+		result -> repo.counts
 
 	override def afterAll(): Unit =
 		fixture.repo.shutDown()
@@ -71,13 +71,11 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 
 	/**
 	 * Builds one page, requiring it to have been built without errors, and captures the query
-	 * counts of that build. Called from a `lazy val` so that the counts always belong to the
-	 * build, no matter which of the tests sharing the page happens to run first.
+	 * counts of that build. Called from a `lazy val` so that the tests sharing the page build it
+	 * only once.
 	 */
-	private def build[T](page: => Validated[T]): (T, QueryCounts) =
-		counter.reset()
-		val built = page
-		val counts = counter.snapshot
+	private def build[T](page: LandingPageLoader => Validated[T]): (T, QueryCounts) =
+		val (built, counts) = counted(page)
 		assert(built.errors === Nil)
 		built.result.getOrElse(fail("the page was not built at all")) -> counts
 
@@ -90,7 +88,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 		case other => fail(s"Expected a DocObject, got $other")
 
 	describe("data object landing page"):
-		lazy val (page, counts) = build(builder.staticObject(fixture.dobjHash))
+		lazy val (page, counts) = build(_.staticObject(fixture.dobjHash))
 
 		it("reads the object with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
@@ -147,7 +145,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(dobj.latestVersion === Left(fixture.dobjResource))
 
 	describe("document object landing page"):
-		lazy val (page, counts) = build(builder.staticObject(fixture.docHash))
+		lazy val (page, counts) = build(_.staticObject(fixture.docHash))
 
 		it("reads the document with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
@@ -166,7 +164,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(doc.parentCollections.map(_.label) === Seq(Some("Test collection")))
 
 	describe("collection landing page"):
-		lazy val (page, counts) = build(builder.staticCollection(fixture.collHash))
+		lazy val (page, counts) = build(_.staticCollection(fixture.collHash))
 
 		it("reads the collection with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
@@ -184,7 +182,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.parentCollections === Nil)
 
 	describe("station landing page"):
-		lazy val (page, counts) = build(builder.station(fixture.stationUri))
+		lazy val (page, counts) = build(_.station(fixture.stationUri))
 
 		it("reads the station and its memberships with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
@@ -207,7 +205,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.formerStaff === Nil)
 
 	describe("organization landing page"):
-		lazy val (page, counts) = build(builder.organization(fixture.orgUri))
+		lazy val (page, counts) = build(_.organization(fixture.orgUri))
 
 		it("reads the organization and its memberships with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
@@ -221,7 +219,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.staff === Nil)
 
 	describe("person landing page"):
-		lazy val (page, counts) = build(builder.person(fixture.personUri))
+		lazy val (page, counts) = build(_.person(fixture.personUri))
 
 		it("reads the person and their roles with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
@@ -235,7 +233,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.roles.map(_.role.role.label) === Seq(Some("PI")))
 
 	describe("instrument landing page"):
-		lazy val (page, counts) = build(builder.instrument(fixture.instrumentUri))
+		lazy val (page, counts) = build(_.instrument(fixture.instrumentUri))
 
 		it("reads the instrument with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
@@ -255,7 +253,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			))
 
 	describe("object specification metadata"):
-		lazy val (page, counts) = build(builder.specification(fixture.specUri))
+		lazy val (page, counts) = build(_.specification(fixture.specUri))
 
 		it("reads the specification with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 0, sparql = 0))
@@ -275,12 +273,12 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page.keywords === None)
 
 		it("recognizes the specification with a single existence check"):
-			counter.reset()
-			assert(builder.isObjectSpecification(fixture.specUri))
-			assert(counter.snapshot === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
+			val (recognized, counts) = counted(_.isObjectSpecification(fixture.specUri))
+			assert(recognized)
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
 
 	describe("labeled resource metadata"):
-		lazy val (page, counts) = build(builder.labeledResource(fixture.themeUri))
+		lazy val (page, counts) = build(_.labeledResource(fixture.themeUri))
 
 		it("reads the labeled resource with the expected number of RDF-store queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
@@ -289,15 +287,12 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll:
 			assert(page === UriResource(fixture.themeResource, Some("Atmosphere"), Nil))
 
 		it("recognizes the labeled resource with a single existence check"):
-			counter.reset()
-			assert(builder.isLabeledResource(fixture.themeUri))
-			assert(counter.snapshot === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
+			val (recognized, counts) = counted(_.isLabeledResource(fixture.themeUri))
+			assert(recognized)
+			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 1, sparql = 0))
 
 	describe("generic (fallback) resource page"):
-		lazy val (page, counts) =
-			counter.reset()
-			val viewInfo = builder.genericResource(fixture.stationUri).get
-			viewInfo -> counter.snapshot
+		lazy val (page, counts) = counted(_.genericResource(fixture.stationUri).get)
 
 		it("is served by exactly two SPARQL queries"):
 			assert(counts === QueryCounts(connections = 1, statements = 0, existence = 0, sparql = 2))

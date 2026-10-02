@@ -139,13 +139,13 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 312, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 309, existence = 11, sparql = 0))
 			assert(body.contains("test_data.csv"))
 		}
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 307, existence = 11, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
@@ -316,7 +316,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("document landing pages") {
 		it("renders the document object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.documentObject)
-			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 40, existence = 2, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.documentHash)))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")

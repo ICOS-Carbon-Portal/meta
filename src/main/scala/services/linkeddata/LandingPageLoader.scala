@@ -128,7 +128,7 @@ final class LandingPageLoader(
 		}
 	}
 
-	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = server.access { conn ?=>
+	private def readStaticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = cachedAccess { conn ?=>
 		val objectIri = vocab.getStaticObject(hash)
 		given GlobConn = RdfLens.global(using conn)
 		objectReader.fetchStaticObject(objectIri)
@@ -145,10 +145,15 @@ final class LandingPageLoader(
 
 	private def access[T, C <: TriplestoreConnection](
 		lens: Validated[RdfLens[C]]
-	)(reader: C ?=> Validated[T]): Validated[T] = server.access {
+	)(reader: C ?=> Validated[T]): Validated[T] = cachedAccess {
 		lens.flatMap { connection =>
 			reader(using connection)
 		}
+	}
+
+	/** A read in which every statement is fetched from the RDF store at most once */
+	private def cachedAccess[T](read: TriplestoreConnection ?=> T): T = server.access { conn ?=>
+		read(using CachingConnection(conn))
 	}
 
 	private def accessMeta[T](reader: MetaConn ?=> Validated[T])(using Envri): Validated[T] =

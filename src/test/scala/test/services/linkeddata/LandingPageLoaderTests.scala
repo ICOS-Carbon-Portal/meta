@@ -21,7 +21,8 @@ import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, Pla
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
-import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
+import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.test.TestConfig
 
 import java.net.URI
 import java.time.Instant
@@ -44,7 +45,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val repo = Fixture.createRepo()
 
 	private given Envri = Envri.ICOS
-	private val config = ConfigLoader.default
+	private val config = TestConfig.metaConfig
 	private given EnvriConfigs = config.core.envriConfigs
 	private val metaVocab = CpmetaVocab(repo.getValueFactory)
 	private val vocab = CpVocab(repo.getValueFactory)

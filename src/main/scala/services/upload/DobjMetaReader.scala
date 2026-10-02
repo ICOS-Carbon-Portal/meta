@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList, parseJsonStringArray}
 
 import java.time.{LocalDate, ZoneId}
+import scala.collection.mutable
 import scala.util.Try
 
 
@@ -126,7 +127,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			)
 
 	private def getStationSpecifics(stat: IRI): DocConn ?=> Validated[StationSpecifics] = mc ?=>
-		if resourceHasType(stat, metaVocab.sites.stationClass) then
+		val types = getTypes(stat).toSet
+		if types.contains(metaVocab.sites.stationClass) then
 			for
 				sites <- Validated.sequence(getUriValues(stat, metaVocab.operatesOn).map(getSite))
 				ecosystems <- Validated.sequence:
@@ -149,7 +151,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					discontinued = discontinued.getOrElse(false),
 					documentation = documentation
 				)
-		else if resourceHasType(stat, metaVocab.ecoStationClass) then
+		else if types.contains(metaVocab.ecoStationClass) then
 			for
 				icosSpecs <- getBasicIcosSpecifics(stat, vocab.etc)
 				climateZoneUri <- getOptionalUri(stat, metaVocab.hasClimateZone)
@@ -169,15 +171,15 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					stationDocs = getUriLiteralValues(stat, metaVocab.hasDocumentationUri),
 					stationPubs = getUriLiteralValues(stat, metaVocab.hasAssociatedPublication)
 				)
-		else if resourceHasType(stat, metaVocab.atmoStationClass) then
+		else if types.contains(metaVocab.atmoStationClass) then
 			for
 				spec <- getBasicIcosSpecifics(stat, vocab.atc)
 				wigosId <- getOptionalString(stat, metaVocab.hasWigosId)
 			yield
 				AtcStationSpecifics(spec, wigosId)
-		else if resourceHasType(stat, metaVocab.oceStationClass) then
+		else if types.contains(metaVocab.oceStationClass) then
 			getBasicIcosSpecifics(stat, vocab.otc)
-		else if resourceHasType(stat, metaVocab.cityStationClass) then
+		else if types.contains(metaVocab.cityStationClass) then
 			for
 				timeZoneOffset <- getOptionalInt(stat, metaVocab.hasTimeZoneOffset)
 				networkStr <- getOptionalString(stat, metaVocab.belongsToNetwork)
@@ -382,27 +384,30 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				dateTime = dateTime
 			)
 
-	private def getFundings(stat: IRI): MetaConn ?=> Validated[Seq[Funding]] = Validated.sequence:
-		getUriValues(stat, metaVocab.hasFunding).map: furi =>
-			for
-				self        <- getLabeledResource(furi)
-				funderUri   <- getSingleUri(furi, metaVocab.hasFunder)
-				funder      <- getFunder(funderUri)
-				awardTitle  <- getOptionalString(furi, metaVocab.awardTitle)
-				awardNumber <- getOptionalString(furi, metaVocab.awardNumber)
-				awardUrl    <- getOptionalUriLiteral(furi, metaVocab.awardURI)
-				start       <- getOptionalLocalDate(furi, metaVocab.hasStartDate)
-				stop        <- getOptionalLocalDate(furi, metaVocab.hasEndDate)
-			yield
-				Funding(
-					self = self,
-					funder = funder,
-					awardTitle = awardTitle,
-					awardNumber = awardNumber,
-					awardUrl = awardUrl,
-					start = start,
-					stop = stop
-				)
+	private def getFundings(stat: IRI): MetaConn ?=> Validated[Seq[Funding]] =
+		//stations tend to be funded by the same funder many times over
+		val funders = mutable.Map.empty[IRI, Validated[Funder]]
+		Validated.sequence:
+			getUriValues(stat, metaVocab.hasFunding).map: furi =>
+				for
+					self        <- getLabeledResource(furi)
+					funderUri   <- getSingleUri(furi, metaVocab.hasFunder)
+					funder      <- funders.getOrElseUpdate(funderUri, getFunder(funderUri))
+					awardTitle  <- getOptionalString(furi, metaVocab.awardTitle)
+					awardNumber <- getOptionalString(furi, metaVocab.awardNumber)
+					awardUrl    <- getOptionalUriLiteral(furi, metaVocab.awardURI)
+					start       <- getOptionalLocalDate(furi, metaVocab.hasStartDate)
+					stop        <- getOptionalLocalDate(furi, metaVocab.hasEndDate)
+				yield
+					Funding(
+						self = self,
+						funder = funder,
+						awardTitle = awardTitle,
+						awardNumber = awardNumber,
+						awardUrl = awardUrl,
+						start = start,
+						stop = stop
+					)
 
 	def getFunder(iri: IRI): MetaConn ?=> Validated[Funder] =
 		for

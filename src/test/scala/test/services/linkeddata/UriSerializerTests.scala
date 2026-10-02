@@ -139,13 +139,13 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 309, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 302, existence = 8, sparql = 0))
 			assert(body.contains("test_data.csv"))
 		}
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 307, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 300, existence = 8, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
@@ -227,7 +227,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the version chain of a data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.versionedObject)
-			assert(counts === QueryCounts(connections = 1, statements = 291, existence = 24, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 284, existence = 21, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink(
 				"View previous version",
 				"/objects/BAQEBAQEBAQEBAQEBAQEBAQE"
@@ -411,7 +411,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("station landing pages") {
 		it("renders the station landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.icosStation)
-			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 89, existence = 1, sparql = 0))
 			assert(counts === loadLandingPage(_.station(Fixture.icosStation)))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
@@ -466,7 +466,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the ecosystem station landing page with webpage elements") {
 			val (page, counts) = renderLandingPage(Fixture.ecosystemStation)
-			assert(counts === QueryCounts(connections = 1, statements = 48, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 49, existence = 0, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "ICOS STATION Test ecosystem station")
 			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
@@ -501,7 +501,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the SITES station landing page") {
 			val (page, counts) = renderLandingPage(Fixture.sitesStation)
-			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 56, existence = 0, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "Testsjön Research Station")
 			assert(propertyText(page, "Station ID") === "TSJ")
@@ -523,7 +523,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON") {
 			val (body, counts) = renderJson(Fixture.sitesStation)
-			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 56, existence = 0, sparql = 0))
 			Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach { expected =>
 				assert(body.contains(expected), s"'$expected' missing in $body")
 			}

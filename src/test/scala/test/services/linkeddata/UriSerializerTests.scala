@@ -14,7 +14,7 @@ import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -635,8 +635,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 				))
 		}
 
-		it("serves the object specification the loader reads as JSON") {
+		it("serves the object specification as JSON") {
 			val (body, counts) = renderJson(Fixture.objectSpec)
+			assert(counts === QueryCounts(connections = 2, statements = 29, existence = 1, sparql = 0))
 			assert(counts === probeCounts(Fixture.objectSpec) + loadLandingPage(_.specification(Fixture.objectSpec)))
 			assert(body.contains("Test time series"))
 			assert(body.contains("Atmosphere"))
@@ -653,8 +654,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			)
 		}
 
-		it("serves the labeled resource the loader reads as JSON") {
+		it("serves the labeled resource as JSON") {
 			val (body, counts) = renderJson(Fixture.dataTheme)
+			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
 			assert(counts === probeCounts(Fixture.dataTheme) + loadLandingPage(_.labeledResource(Fixture.dataTheme)))
 			assert(body.contains("Atmosphere"))
 		}
@@ -664,7 +666,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private val config = ConfigLoader.default
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
-	private given EnvriConfig = config.core.envriConfigs(Envri.ICOS)
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
 	private val doiCiter = new PlainDoiCiter {
 		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None

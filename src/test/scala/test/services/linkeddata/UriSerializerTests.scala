@@ -773,7 +773,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val repo: Repository = SailRepository(MemoryStore())
 		repo.init()
 		Using.resources(
-			getClass.getResourceAsStream("/linkeddata/landing-page-builder-fixture.trig"),
+			getClass.getResourceAsStream("/linkeddata/uri-serializer-fixture.trig"),
 			repo.getConnection()
 		) { (stream, conn) =>
 			conn.add(stream, "", RDFFormat.TRIG)

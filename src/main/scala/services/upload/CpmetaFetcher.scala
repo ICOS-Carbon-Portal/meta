@@ -348,31 +348,38 @@ trait CpmetaReader:
 		)
 
 	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
-		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
-		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
-
 		for
-			model <- modelValid
-			serialNumber <- serialNumberValid
+			model <- getOptionalString(instr, metaVocab.hasModel)
+			serialNumber <- getOptionalString(instr, metaVocab.hasSerialNumber)
 			name <- getOptionalString(instr, metaVocab.hasName)
 		yield
-			val label = name.orElse:
-				(model, serialNumber) match
-					case (None, None) => None
-					case (None, nbr) => nbr
-					case (m, None) => m
-					case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
-			.getOrElse:
-				instr.getLocalName
+			getInstrumentLite(instr, model, serialNumber, name)
 
-			val comments = getStringValues(instr, RDFS.COMMENT)
+	private def getInstrumentLite(
+		instr: IRI, modelOpt: Option[String], serialNumberOpt: Option[String], name: Option[String]
+	): MetaConn ?=> UriResource =
+		val model = modelOpt.filter(_ != TcMetaSource.defaultInstrModel)
+		val serialNumber = serialNumberOpt.filter(_ != TcMetaSource.defaultSerialNum)
 
-			UriResource(instr.toJava, Some(label), comments)
+		val label = name.orElse:
+			(model, serialNumber) match
+				case (None, None) => None
+				case (None, nbr) => nbr
+				case (m, None) => m
+				case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
+		.getOrElse:
+			instr.getLocalName
+
+		val comments = getStringValues(instr, RDFS.COMMENT)
+
+		UriResource(instr.toJava, Some(label), comments)
 
 	def getInstrumentDeployment(iri: IRI, instrument: IRI): MetaConn ?=> Validated[InstrumentDeployment] =
+		getInstrumentLite(instrument).flatMap(getInstrumentDeployment(iri, _))
+
+	private def getInstrumentDeployment(iri: IRI, instrument: UriResource): MetaConn ?=> Validated[InstrumentDeployment] =
 		for
 			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
-			instrument <- getInstrumentLite(instrument)
 			station <- getOrganization(stationIri)
 			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
@@ -394,10 +401,10 @@ trait CpmetaReader:
 	def getInstrument(instr: IRI): MetaConn ?=> Validated[Instrument] =
 		if resourceHasType(instr, metaVocab.instrumentClass) then
 			for
-				self <- getInstrumentLite(instr)
 				model <- getSingleString(instr, metaVocab.hasModel)
 				serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
 				name <- getOptionalString(instr, metaVocab.hasName)
+				self = getInstrumentLite(instr, Some(model), Some(serialNumber), name)
 				vendor <- getOptionalUri(instr, metaVocab.hasVendor)
 				vendorOrg <- vendor.map(getOrganization).sinkOption
 				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
@@ -405,7 +412,7 @@ trait CpmetaReader:
 				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
 				partOf <- getPropValueHolders(metaVocab.hasInstrumentComponent, instr)
 					.map(getInstrumentLite).headOption.sinkOption
-				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
+				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, self)))
 			yield
 				Instrument(
 					self = self,

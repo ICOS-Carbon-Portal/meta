@@ -255,7 +255,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.instrument(Fixture.instrument))
 
 		it("reads the instrument with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
 		}
 
 		it("is built into an instrument with its model, serial number, owner, vendor, parts and deployments") {

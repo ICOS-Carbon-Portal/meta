@@ -60,7 +60,7 @@ class StaticObjectReader(
 			docLens <- lenses.documentLens
 			docConn: DocConn = docLens
 			spec <- getSpecification(specIri)(using docConn)
-			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
+			valTypeLookupUri = spec.datasetSpec.map(ds => vocab.factory.createIRI(ds.self.uri.toString))
 			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
 			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
@@ -79,6 +79,8 @@ class StaticObjectReader(
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(dobj)(using collectionLens)
 			hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
+			// next and previous versions can have different format, so may be in an arbitrary RDF graph
+			(nextVersion, latestVersion) = getNextAndLatestVersions(dobj)(using RdfLens.global)
 			init = DataObject(
 				hash = hash,
 				accessUrl = if hasBeenPublished then accessUrl else None,
@@ -89,9 +91,8 @@ class StaticObjectReader(
 				submission = submission,
 				specification = spec,
 				specificInfo = levelSpecificInfo,
-				// next and previous versions can have different format, so may be in an arbitrary RDF graph
-				nextVersion = getNextVersionAsUri(dobj)(using RdfLens.global),
-				latestVersion = getLatestVersion(dobj)(using RdfLens.global),
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
 				previousVersion = getPreviousVersion(dobj)(using RdfLens.global).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty
@@ -114,6 +115,7 @@ class StaticObjectReader(
 			authors <- getContributors(doc, metaVocab.dcterms.creator)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(doc)(using collectionLens)
+			(nextVersion, latestVersion) = getNextAndLatestVersions(doc)
 			init = DocObject(
 				hash = hash,
 				accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
@@ -123,8 +125,8 @@ class StaticObjectReader(
 				doi = doiOpt,
 				description = descriptionOpt,
 				submission = submission,
-				nextVersion = getNextVersionAsUri(doc),
-				latestVersion = getLatestVersion(doc),
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
 				previousVersion = getPreviousVersion(doc).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty.copy(

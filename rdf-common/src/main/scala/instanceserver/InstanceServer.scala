@@ -51,7 +51,7 @@ trait InstanceServer extends AutoCloseable:
 		remove(factory.createStatement(instUri, propUri, value))
 
 	final def applyDiff(from: Seq[Statement], to: Seq[Statement]): Unit =
-		val updates = RdfUpdate.diff(from, to, factory)
+		val updates = RdfUpdateDiff.diff(from, to, factory)
 		applyAll(updates)()
 
 end InstanceServer

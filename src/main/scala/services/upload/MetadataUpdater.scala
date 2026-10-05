@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.api.RdfLens.CollConn
 import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStatements, getUriValues}
-import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, RdfUpdateDiff, StatementSource, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
@@ -147,8 +147,13 @@ object MetadataUpdater{
 
 	type SubjPred = (Resource, IRI)
 
-	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] =
-		RdfUpdateDiff.diff(dirtyOlds, news, factory)
+	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
+
+		val olds = dirtyOlds.map(s => factory.createStatement(s.getSubject, s.getPredicate, s.getObject))
+
+		olds.diff(news).map(RdfUpdate(_, false)) ++
+		news.diff(olds).map(RdfUpdate(_, true))
+	}
 
 	private class BySubjPred(stats: Seq[Statement]){
 

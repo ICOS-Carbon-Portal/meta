@@ -287,13 +287,15 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 					acqIntervalOpt match
 						case None => Validated.ok(columns)
 						case Some(interval) =>
-							addInstrDeplInfo(stationUri, interval, columns)
+							addInstrDeplInfo(stationUri, station.org, interval, columns)
 			columnsOptV.sinkOption.map: columnsOpt =>
 				StationTimeSeriesMeta(acq, prod, nRows, lblCoverage, columnsOpt)
 		resV.flatMap(identity)
 	end getStationTimeSerMeta
 
-	private def addInstrDeplInfo(stationUri: IRI, acqInterval: TimeInterval, cols: Seq[VarMeta]): MetaConn ?=> Validated[Seq[VarMeta]] =
+	private def addInstrDeplInfo(
+		stationUri: IRI, station: Organization, acqInterval: TimeInterval, cols: Seq[VarMeta]
+	): MetaConn ?=> Validated[Seq[VarMeta]] =
 
 		def isRelevantFor(vm: VarMeta)(
 			variableName: Option[String], forProperty: Option[JavaUri], start: Option[Instant], stop: Option[Instant]
@@ -323,7 +325,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 						case Nil => Validated.error(s"No instruments for deployment $depl")
 						case one :: Nil => Validated.ok(one)
 						case many => Validated.error(s"Too many instruments for deployment $depl")
-					instr.flatMap(getInstrumentDeployment(depl, _))
+					instr.flatMap(getInstrumentDeployment(depl, _, station))
 			.toIndexedSeq
 		Validated.sequence(deploymentVs).map: deployments =>
 			cols.map: vm =>

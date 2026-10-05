@@ -48,8 +48,13 @@ class StaticObjectReader(
 		yield dobj
 
 	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
-		getObjFormatForDobj(dobjIri).flatMap: objFormat =>
-			lenses.dataObjectLens(objFormat.toJava)
+		for
+			specIri <- getSingleUri(dobjIri, metaVocab.hasObjectSpec)
+			docLens <- lenses.documentLens
+			// the specification is read through the document lens, so its format is looked up there, too
+			objFormat <- getObjSpecFormat(specIri)(using docLens)
+			dobjLens <- lenses.dataObjectLens(objFormat.toJava)
+		yield dobjLens
 
 	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
@@ -97,7 +102,7 @@ class StaticObjectReader(
 				parentCollections = parendColls,
 				references = References.empty
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.getCitationInfo(init, docConn)
 		yield
 			init.copy(references = refs)
 	end getExistingDataObject
@@ -134,7 +139,7 @@ class StaticObjectReader(
 					authors = Option(authors.toSeq)
 				)
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.getCitationInfo(init, summon[DocConn])
 		yield
 			init.copy(references = refs)
 

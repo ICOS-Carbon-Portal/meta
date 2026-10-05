@@ -677,7 +677,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpVocab(countingRepo.getValueFactory),
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
-			DerivedMetadataClient(config.remoteRdfRepository.get.derivedMetadataEndpoint),
+			DerivedMetadataClient(config.remoteRdfRepository.derivedMetadataEndpoint),
 			config
 		)
 

@@ -127,10 +127,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config)
 		given EnvriConfigs = config.core.envriConfigs
 
-		val remote = config.remoteRdfRepository.getOrElse:
-			throw IllegalArgumentException(
-				"cpmeta.remoteRdfRepository is required; meta no longer owns an embedded RDF store"
-			)
+		val remote = config.remoteRdfRepository
 		val repo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
 		repo.enableQuadMode(true)
 		repo.init()
@@ -312,7 +309,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			servConf.ingestion match{
 
-				case Some(IngestionConfig(ingesterId, waitFor, mode @ (EAGER | BACKGROUND))) =>
+				//schema ontologies are ingested by rdfStore
+				case Some(IngestionConfig(ingesterId, waitFor, mode @ (EAGER | BACKGROUND)))
+					if !Ingestion.schemaOntologyResources.contains(ingesterId) =>
 
 					val (withDependencies, dependenciesDone): (ServerFutures, Future[Unit]) = waitFor match {
 						case None =>

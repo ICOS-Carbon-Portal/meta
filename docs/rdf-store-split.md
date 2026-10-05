@@ -178,64 +178,40 @@ Readiness should distinguish `live` (process responds) from `ready` (repository 
 
 ## Configuration
 
-`meta` requires the remote repository configuration:
+`meta` connects to the store through the remote repository configuration:
 
 ```hocon
-	cpmeta.remoteRdfRepository {
-	  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
-	  updateEndpoint = "http://127.0.0.1:9095/internal/sparql"
-	}
+cpmeta.remoteRdfRepository {
+  queryEndpoint = "http://127.0.0.1:9095/internal/sparql"
+  updateEndpoint = "http://127.0.0.1:9095/internal/sparql"
+  derivedMetadataEndpoint = "http://127.0.0.1:9095/internal/derived/v1/resolve"
+}
 ```
 
-The standalone application owns the storage and RDF-log reader implementation. RDF storage uses
-`rdfStore.rdfStorage`; the log database, graph bindings, and replay offsets retain the master
-contract under `cpmeta.rdfLog` and `cpmeta.instanceServers`. There are no parallel
-`rdfStore.rdfLog`, `rdfStore.rdfLogs`, or `rdfStore.rdfLogRestoreFromId` settings.
-
-Only the standalone listener settings are new:
+The standalone application owns the storage and RDF-log reader implementation. It is configured
+through the same `cpmeta` settings that configured the embedded store on master: `rdfStorage`,
+`sparql`, `citations`, `rdfLog`, and `instanceServers` (graph bindings, replay offsets, and the
+`cpMetaOnto`/`stationEntryOnto`/`otcMetaOnto` schema-ontology ingesters, which rdfStore now runs
+and meta skips). The only new setting is the standalone listener:
 
 ```hocon
-rdfStore {
+cpmeta.rdfStore {
   httpBindInterface = "127.0.0.1"
   port = 9095
 }
 ```
 
-### Configuration resource layering (as of `docs/rdf-common-split/` tasks 14-16)
+### Configuration
 
-The application configuration resource is no longer owned solely by `rdfStore` and inherited by
-`meta` through a build dependency - that dependency is gone (§ Status and objective). The
-layering, from most to least specific, is:
+For now, `meta` and `rdfStore` share one configuration model and one configuration file:
 
-1. JVM system properties (`-Dcpmeta.port=...`), or an explicitly named `-Dconfig.file`/
-   `-Dconfig.resource`/`-Dconfig.url`.
-2. `application.conf` in the JVM's working directory, if present and no explicit config property
-   was given - the environment-specific file, kept out of version control.
-3. Each application's own classpath `application.conf`, if it ships one (currently neither does;
-   both rely on `reference.conf` defaults).
-4. `reference.conf`, split by ownership:
-   - `rdf-common/src/main/resources/reference.conf` is the single source for every default
-     under `cpmeta` that both processes read: `core`, `citations.doi`, `rdfLog`, the shared
-     `dataUploadService` fields, and `instanceServers`. Operator overrides therefore use the
-     same paths in both processes and the packaged defaults cannot drift.
-   - `rdfstore/src/main/resources/reference.conf` carries `rdfStore`-only defaults:
-     its Akka configuration, `httpBindInterface`, `port`, `rdfStorage`, `sparql` throttling, and
-     `citations` rendering policy. RDF-log restore bindings are derived from the shared
-     instance-server configuration.
-   - `meta`'s own `src/main/resources/reference.conf` carries its Akka configuration and every
-     `cpmeta.*` key only `meta`'s `CpmetaConfig` reads (`onto`, `stationLabelingService`,
-     `fileStoragePath`, `remoteRdfRepository`, meta-only `dataUploadService` fields, `auth`,
-     `adminUsers`, `statsClient`, and meta's own `port`/`httpBindInterface`).
-
-**Configuration model.** `CpmetaConfig` is `meta`'s alone and remains a single flat case class;
-`rdfStore` parses its own narrow types (`RdfStoreConfig`, `SparqlServerConfig`,
-`CitationStoreConfig`) instead. Their parsed types remain application-owned, but every
-overlapping field uses the shared `cpmeta` key layout and defaults from rdf-common. rdfStore's
-narrow readers ignore meta-only fields in those shared objects.
-What is still shared is only what shared *code* takes as a parameter -- `DoiConfig`, the input to
-`DoiClientFactory` -- plus `AppConfig`, which provides loading mechanics and no sections at all.
-Operators override `cpmeta.rdfLog`; both processes parse that same path from their independently
-packaged configuration.
+- `CpmetaConfig` and `ConfigLoader` (master's `CpmetaConfig.scala`) live in rdf-common. Both
+  applications parse the whole `cpmeta` section with `ConfigLoader.default`, and each uses the
+  parts it needs.
+- The packaged defaults are master's `application.conf`, moved to
+  `rdf-common/src/main/resources/application.conf`, with the additions above.
+- Loading is unchanged from master: cpauth-core's `ConfigLoader.appConfig` lets an
+  `application.conf` in the JVM's working directory override the classpath defaults.
 
 ## Data migration and cutover
 

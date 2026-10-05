@@ -18,6 +18,7 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
+import se.lu.nateko.cp.meta.HandleNetClientConfig
 import se.lu.nateko.cp.meta.utils.akkahttp.*
 import se.lu.nateko.cp.meta.utils.async.*
 

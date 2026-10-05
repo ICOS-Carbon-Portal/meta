@@ -5,6 +5,7 @@ import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import io.sentry.Sentry
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.routes.MainRoute
@@ -14,7 +15,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Main extends App with CpmetaJsonProtocol{
 
-	given system: ActorSystem = ActorSystem("cpmeta", config = AppConfig.rootConfWithWorkingDirOverrides)
+	given system: ActorSystem = ActorSystem("cpmeta", config = appConfig)
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 

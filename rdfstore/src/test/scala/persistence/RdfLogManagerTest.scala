@@ -3,11 +3,11 @@ package se.lu.nateko.cp.meta.persistence
 import eu.icoscp.envri.Envri
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.persistence.RdfLogManager.{ReplayPolicy, RestoreResult}
-import se.lu.nateko.cp.meta.services.citation.{
-	StoreDataObjectServerDefinition,
-	StoreDataObjectServersConfig,
-	StoreInstanceServerConfig,
-	StoreInstanceServersConfig
+import se.lu.nateko.cp.meta.{
+	DataObjectInstServerDefinition,
+	DataObjectInstServersConfig,
+	InstanceServerConfig,
+	InstanceServersConfig
 }
 
 import java.net.URI
@@ -46,29 +46,39 @@ class RdfLogManagerTest extends AnyFunSpec:
 		val context = URI.create("https://example.test/graph/").nn
 
 		it("excludes instance servers configured to skip log ingestion"):
-			val config = StoreInstanceServersConfig(
+			def servConf(skipLogIngestionAtStart: Option[Boolean]) = InstanceServerConfig(
+				writeContext = context,
+				logName = Some("shared"),
+				skipLogIngestionAtStart = skipLogIngestionAtStart,
+				logIngestionFromId = None,
+				readContexts = None,
+				ingestion = None
+			)
+			val config = InstanceServersConfig(
 				specific = Map(
-					"writer" -> StoreInstanceServerConfig(context, None, Some("shared"), None, None),
-					"alias" -> StoreInstanceServerConfig(context, None, Some("shared"), Some(true), None)
+					"writer" -> servConf(None),
+					"alias" -> servConf(Some(true))
 				),
-				forDataObjects = Map.empty
+				forDataObjects = Map.empty,
+				metaFlow = None
 			)
 
 			val logs = RdfLogManager.configuredLogs(config)
 			assert(logs.map(_.name) === Seq("shared"))
 
 		it("turns a data-object replay offset into an explicit regular-start replay"):
-			val config = StoreInstanceServersConfig(
+			val config = InstanceServersConfig(
 				specific = Map.empty,
 				forDataObjects = Map(
-					Envri.ICOS -> StoreDataObjectServersConfig(
+					Envri.ICOS -> DataObjectInstServersConfig(
 						commonReadContexts = Seq.empty,
 						uriPrefix = URI.create("https://example.test/objects/").nn,
-						definitions = Seq(StoreDataObjectServerDefinition(
+						definitions = Seq(DataObjectInstServerDefinition(
 							label = "data", format = URI.create("https://example.test/format").nn, replayLogFrom = Some(42)
 						))
 					)
-				)
+				),
+				metaFlow = None
 			)
 
 			val log = RdfLogManager.configuredLogs(config).head

@@ -12,6 +12,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.doi.DoiMeta
+import se.lu.nateko.cp.meta.CitationConfig
 import se.lu.nateko.cp.meta.services.upload.DoiClientFactory
 import se.lu.nateko.cp.meta.utils.Mergeable
 import se.lu.nateko.cp.meta.utils.Validated
@@ -55,7 +56,7 @@ trait CitationClient extends PlainDoiCiter:
 
 
 class CitationClientImpl (
-	knownDois: List[Doi], config: CitationClientConfig
+	knownDois: List[Doi], config: CitationConfig
 )(using system: ActorSystem, mat: Materializer) extends CitationClient:
 	import system.{dispatcher, scheduler}
 	private val log = Logging.getLogger(system, this)

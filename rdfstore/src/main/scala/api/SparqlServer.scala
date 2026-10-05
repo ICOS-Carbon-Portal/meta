@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.api
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import se.lu.nateko.cp.meta.rdfstore.{Quota, SparqlDataset}
 
-final case class SparqlQuery(
+case class SparqlQuery(
 	query: String,
 	quota: Quota,
 	dataset: SparqlDataset = SparqlDataset()

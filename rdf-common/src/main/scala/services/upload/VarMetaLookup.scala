@@ -5,7 +5,7 @@ import se.lu.nateko.cp.meta.core.data.{UriResource, ValueType, VarMeta}
 import java.net.URI
 import scala.util.matching.Regex
 
-private[upload] class DatasetVariable(
+class DatasetVariable(
 	val self: UriResource,
 	val title: String,
 	val valueType: ValueType,
@@ -19,7 +19,7 @@ private[upload] class DatasetVariable(
 		then Some(VarMeta(self, title, valueType, valueFormat, isFlagFor, None, None))
 		else None
 
-private[upload] class VarMetaLookup(varDefs: Seq[DatasetVariable]):
+class VarMetaLookup(varDefs: Seq[DatasetVariable]):
 
 	val plainMandatory = varDefs.filterNot(_.isOptional).flatMap(_.plain)
 

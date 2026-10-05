@@ -11,7 +11,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IteratorHasAsJava
 
 import se.lu.nateko.cp.meta.core.algo.BitmapExtension.forEach
-import se.lu.nateko.cp.meta.utils.geo.{JtsGeoFactory, ConcaveHullLengthRatio}
 
 trait Cluster:
 	def area: Geometry

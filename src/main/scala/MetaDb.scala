@@ -214,11 +214,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		new UploadService(dataObjServers, etcHelper, uploadConf)
 	}
 
-	private def makeInstanceServer(
-		initRepo: Repository,
-		conf: InstanceServerConfig,
-		globalConfig: CpmetaConfig
-	): InstanceServer =
+	private def makeInstanceServer(initRepo: Repository, conf: InstanceServerConfig, globConf: CpmetaConfig): InstanceServer =
 
 		given factory: ValueFactory = initRepo.getValueFactory
 
@@ -227,7 +223,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val server = new Rdf4jInstanceServer(initRepo, readContexts, writeContext)
 		conf.logName.fold[InstanceServer](server): logName =>
-			new LoggingInstanceServer(server, PostgresRdfLog(logName, globalConfig.rdfLog, server.factory))
+			new LoggingInstanceServer(server, PostgresRdfLog(logName, globConf.rdfLog, server.factory))
 
 	end makeInstanceServer
 

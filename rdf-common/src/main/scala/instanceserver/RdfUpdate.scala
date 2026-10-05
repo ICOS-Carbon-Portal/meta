@@ -19,3 +19,23 @@ object RdfUpdate {
 		news.diff(olds).map(RdfUpdate(_, true))
 	}
 }
+
+object RdfAssertion {
+	def unapply(update: RdfUpdate): Option[Statement] = {
+		if (update.isAssertion) {
+			Some(update.statement)
+		} else {
+			None
+		}
+	}
+}
+
+object RdfRetraction {
+	def unapply(update: RdfUpdate): Option[Statement] = {
+		if (!update.isAssertion) {
+			Some(update.statement)
+		} else {
+			None
+		}
+	}
+}

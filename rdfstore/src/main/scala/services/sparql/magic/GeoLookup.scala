@@ -11,7 +11,6 @@ import se.lu.nateko.cp.meta.core.crypto.Md5Sum
 import se.lu.nateko.cp.meta.core.data.{DatasetType, GeoFeature, GeoJson}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStatements, getSingleUri, getSingleString}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
-import se.lu.nateko.cp.meta.utils.geo.JtsGeoFactory
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
 
 class GeoLookup(staticObjReader: StaticObjectReader)(using conn: GlobConn):

@@ -2,6 +2,8 @@ package se.lu.nateko.cp.meta.rdfstore
 
 import scala.language.unsafeNulls
 
+import se.lu.nateko.cp.meta.api.SparqlQuery
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -57,7 +59,7 @@ object Main extends App:
 			_ <- schemaOntologiesIngested
 			_ <- sail.initSparqlMagicIndex()
 			queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
-			given ToResponseMarshaller[SparqlRequest] = queryServer.marshaller
+			given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
 			binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
 		}
 		yield (binding, queryServer, repo, logManager)

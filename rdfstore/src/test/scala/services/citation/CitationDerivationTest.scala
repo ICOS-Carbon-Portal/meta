@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.ConfigLoader
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
-import se.lu.nateko.cp.meta.services.sparql.regression.{CitationClientDummy, TestDb}
+import se.lu.nateko.cp.meta.test.services.sparql.regression.{CitationClientDummy, TestDb}
 
 import scala.concurrent.Future
 

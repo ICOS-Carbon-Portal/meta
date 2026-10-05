@@ -17,7 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{
 	TimeInterval,
 	UriResource
 }
-import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated

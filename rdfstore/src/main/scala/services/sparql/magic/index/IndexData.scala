@@ -54,13 +54,13 @@ def emptyBitmap = MutableRoaringBitmap.bitmapOf()
 
 final class IndexData(nObjects: Int)(
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-	private[magic] val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
+	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
 	private val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	private val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	private val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
-	private[magic] val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
-	private[magic] val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
-	private[magic] val initOk: MutableRoaringBitmap = emptyBitmap
+	val contMap: AnyRefMap[ContProp, HierarchicalBitmap[?]] = AnyRefMap.empty,
+	val stats: AnyRefMap[StatKey, MutableRoaringBitmap] = AnyRefMap.empty,
+	val initOk: MutableRoaringBitmap = emptyBitmap
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 

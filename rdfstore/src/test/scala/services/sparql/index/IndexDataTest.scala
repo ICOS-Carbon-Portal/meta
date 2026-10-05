@@ -3,6 +3,8 @@ package se.lu.nateko.cp.meta.services.sparql.index
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.Resource
+import org.eclipse.rdf4j.model.Statement
 import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
@@ -13,7 +15,7 @@ import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.instanceserver.{RdfStatement, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
@@ -404,10 +406,10 @@ private def specIRI(name: String) = {
 }
 
 class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSource {
-	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[RdfStatement] = {
+	def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] = {
 		val filtered = statements.filter(st =>
 			matchingStatement(Rdf4jStatement(subject, predicate, obj), st)
-		).map(st => RdfStatement(st.subj, st.pred, st.obj))
+		).map(TestStatement(_))
 
 		CloseableIterator.Wrap(filtered.iterator, () => ())
 	}
@@ -429,4 +431,14 @@ class StaticStatementSource(statements: Seq[Rdf4jStatement]) extends StatementSo
 			matchingStatement(Rdf4jStatement(subject, predicate, obj), statement)
 		).isDefined
 	}
+}
+
+// The StatementSource interface requires the more general Statement type, which includes context.
+// IndexData never cares about context, however, so we can "upcast" like this.
+// TODO: Introduce a more limited RdfStatementSource, use it in IndexData, and get rid of this workaround.
+final class TestStatement(inner: Rdf4jStatement) extends Statement {
+	override def getObject(): Value = inner.obj
+	override def getSubject(): Resource = inner.subj
+	override def getPredicate(): IRI = inner.pred
+	override def getContext(): Resource = ???
 }

@@ -42,9 +42,7 @@ class LoggingInstanceServerTest extends AnyFunSpec{
 
 			loggingServer.removeAll:
 				loggingServer.access: conn ?=>
-					conn.getStatements(person1, null, null)
-						.map(_.toRdf4jStatement(using factory))
-						.toIndexedSeq
+					conn.getStatements(person1, null, null).toIndexedSeq
 
 			it("logs all the RDF updates properly"){
 				val updates = log.updates.toSeq

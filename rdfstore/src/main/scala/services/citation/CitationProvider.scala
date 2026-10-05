@@ -14,7 +14,7 @@ import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, SparqlRunner}
-import se.lu.nateko.cp.meta.{CitationConfig, CpmetaConfig, InstanceServersConfig, UploadServiceConfig}
+import se.lu.nateko.cp.meta.{CitationConfig, CpmetaConfig}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jTriplestoreConnection, StatementSource, TriplestoreConnection}
@@ -24,15 +24,11 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 object CitationProvider:
 
-	/**
-	 * Does the config -> RdfLenses/PidFactory translation and defers to the
-	 * resolved-primitives overload below.
-	 */
 	def apply(sail: Sail, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProvider =
-		apply(sail, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+		apply(sail, conf.core, conf.citations, CitationProviderConfig.getLenses(conf), CitationProviderConfig.pidFactory(conf))
 
 	def apply(repo: Repository, conf: CpmetaConfig)(using ActorSystem, Materializer): CitationProvider =
-		apply(repo, conf.core, conf.citations, getLenses(conf.instanceServers, conf.dataUploadService), pidFactory(conf))
+		apply(repo, conf.core, conf.citations, CitationProviderConfig.getLenses(conf), CitationProviderConfig.pidFactory(conf))
 
 	def apply(
 		sail: Sail, core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
@@ -48,42 +44,8 @@ object CitationProvider:
 			dois => CitationClientImpl(dois, citations)
 		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
 
-	def pidFactory(conf: CpmetaConfig): PidFactory =
-		val handle = conf.dataUploadService.handle
-		new PidFactory(handle.baseUrl, handle.prefix)
-
-	def getLenses(servConf: InstanceServersConfig, uploadConf: UploadServiceConfig): RdfLenses =
-		def configuredLenses[L](
-			serverIds: Map[Envri, String],
-			factory: (java.net.URI, Seq[java.net.URI]) => L
-		): Map[Envri, L] = serverIds.flatMap: (envri, serverId) =>
-			servConf.specific.get(serverId).map: conf =>
-				envri -> factory(conf.writeContext, conf.readContexts.getOrElse(Seq(conf.writeContext)))
-
-		val perFormat = servConf.forDataObjects.map: (envri, config) =>
-			val lenses = config.definitions.map[(java.net.URI, RdfLens.DobjLens)]: definition =>
-				val writeContext = new java.net.URI(config.uriPrefix.toString + definition.label + "/")
-				definition.format -> RdfLens.dobjLens(writeContext, writeContext +: config.commonReadContexts)
-			envri -> lenses.toMap
-
-		RdfLenses(
-			metaInstances = Map.empty,
-			cpMetaInstances = Map.empty,
-			collections = configuredLenses(uploadConf.collectionServers, RdfLens.collLens),
-			documents = configuredLenses(uploadConf.documentServers, RdfLens.docLens),
-			dobjPerFormat = perFormat
-		)
-
 end CitationProvider
 
-/**
- * rdfStore-owned (task 24: derived-metadata ownership moved here from `rdf-common`, reversing
- * an earlier plan - task 11 - to share this class with `meta`; `meta` now reads citation/licence
- * data through the HTTP `DerivedMetadataClient` instead of constructing its own provider). The
- * companion object's `CpmetaConfig` overloads above are the only construction path in
- * practice; the `MetaCoreConfig`/`CitationConfig`/`RdfLenses`/`PidFactory` overloads exist mainly
- * so tests (`TestDb.scala`) can supply hand-built fixtures without a full `CpmetaConfig`.
- */
 class CitationProvider(
 	val repo: Repository,
 	citClientFactory: List[Doi] => CitationClient,
@@ -108,9 +70,6 @@ class CitationProvider(
 	repo.init()
 	log.info(s"$repositoryName initialized")
 
-	// Read-only throughout: this service never writes through the metadata layer, so it takes a
-	// plain connection rather than an InstanceServer, whose reason for existing is to administer
-	// named graphs.
 	private def access[T](read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
 		Rdf4jTriplestoreConnection.access(repo)(read)
 

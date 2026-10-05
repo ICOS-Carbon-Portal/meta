@@ -29,13 +29,3 @@ object RdfAssertion {
 		}
 	}
 }
-
-object RdfRetraction {
-	def unapply(update: RdfUpdate): Option[Statement] = {
-		if (!update.isAssertion) {
-			Some(update.statement)
-		} else {
-			None
-		}
-	}
-}

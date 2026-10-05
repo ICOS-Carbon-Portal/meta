@@ -4,7 +4,7 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 
-private object CitationProviderConfig:
+object CitationProviderConfig:
 	def pidFactory(conf: CpmetaConfig): PidFactory =
 		val handle = conf.dataUploadService.handle
 		new PidFactory(handle.baseUrl, handle.prefix)

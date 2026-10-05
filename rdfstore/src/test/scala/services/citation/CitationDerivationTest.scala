@@ -19,7 +19,7 @@ class CitationDerivationTest extends AsyncFunSpec:
 
 	describe("configured graph scopes"):
 
-		val lenses = CitationProvider.getLenses(conf.instanceServers, conf.dataUploadService)
+		val lenses = CitationProviderConfig.getLenses(conf)
 
 		val envris = (
 			conf.dataUploadService.collectionServers.keySet ++
@@ -58,8 +58,8 @@ class CitationDerivationTest extends AsyncFunSpec:
 			given ActorSystem = ActorSystem("CitationDerivationTest")
 			new CitationProvider(
 				db.repo, _ => CitationClientDummy, conf.core,
-				CitationProvider.getLenses(conf.instanceServers, conf.dataUploadService),
-				CitationProvider.pidFactory(conf)
+				CitationProviderConfig.getLenses(conf),
+				CitationProviderConfig.pidFactory(conf)
 			)
 
 		lazy val derived = DerivedMetadataService(citer)

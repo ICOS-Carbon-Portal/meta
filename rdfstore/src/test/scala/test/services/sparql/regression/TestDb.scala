@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderConfig, CitationStyle}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
@@ -137,8 +137,8 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 			val config = ConfigLoader.default
 			new CitationProvider(
 			base, _ => CitationClientDummy, config.core,
-			CitationProvider.getLenses(config.instanceServers, config.dataUploadService),
-			CitationProvider.pidFactory(config)
+			CitationProviderConfig.getLenses(config),
+			CitationProviderConfig.pidFactory(config)
 		)
 	}
 

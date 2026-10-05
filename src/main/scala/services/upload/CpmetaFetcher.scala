@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
 
 import java.net.URI
+import java.time.Instant
 
 trait CpmetaReader:
 	import StatementSource.*
@@ -241,12 +242,13 @@ trait CpmetaReader:
 			.filterNot(isUnderMoratorium)
 			.toIndexedSeq
 
+	// only the end of the submission matters here, not the submission (and its submitter) in full
 	private def isUnderMoratorium(item: IRI)(using ItemConn): Boolean =
 		getSingleUri(item, metaVocab.wasSubmittedBy)
-			.flatMap(getSubmission)
+			.flatMap(getOptionalInstant(_, metaVocab.prov.endedAtTime))
 			.result
-			.map(_.isUnderMoratorium)
-			.getOrElse(false)
+			.flatten
+			.exists(_.isAfter(Instant.now))
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
 		resourceHasType(item, metaVocab.plainCollectionClass)
@@ -382,13 +384,22 @@ trait CpmetaReader:
 
 		UriResource(instr.toJava, Some(label), comments)
 
-	def getInstrumentDeployment(iri: IRI, instrument: IRI): MetaConn ?=> Validated[InstrumentDeployment] =
-		getInstrumentLite(instrument).flatMap(getInstrumentDeployment(iri, _))
+	/** A deployment at a station that has been read already */
+	def getInstrumentDeployment(iri: IRI, instrument: IRI, station: Organization): MetaConn ?=> Validated[InstrumentDeployment] =
+		getInstrumentLite(instrument).flatMap: instr =>
+			readInstrumentDeployment(iri, instr): stationIri =>
+				if station.self.uri === stationIri then Validated.ok(station)
+				else Validated.error(s"Deployment $iri is at station $stationIri, not at ${station.self.uri}")
 
 	private def getInstrumentDeployment(iri: IRI, instrument: UriResource): MetaConn ?=> Validated[InstrumentDeployment] =
+		readInstrumentDeployment(iri, instrument)(getOrganization(_))
+
+	private def readInstrumentDeployment(iri: IRI, instrument: UriResource)(
+		getStation: IRI => Validated[Organization]
+	): MetaConn ?=> Validated[InstrumentDeployment] =
 		for
 			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
-			station <- getOrganization(stationIri)
+			station <- getStation(stationIri)
 			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
 			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)

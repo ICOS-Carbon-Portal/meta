@@ -21,25 +21,31 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 
 	def getAuthors(dobj: DataObject)(using MetaConn): Validated[Seq[Person]] = dobj.specificInfo.fold(
 		_ => Validated.ok(Nil),
-		l2 => getMemberships(l2.acquisition.station.org.self.uri).map(
-			_.filter(getTcSpecificFilter(dobj))
-			.filter(_.role.isRelevantFor(dobj))
-			.toIndexedSeq
-			.sorted
-			.map(_.person)
-			.distinct
-		)
+		l2 =>
+			val tcFilter = getTcSpecificFilter(dobj)
+			getMemberships(l2.acquisition.station.org.self.uri, role => tcFilter(role) && role.isRelevantFor(dobj)).map(
+				_.sorted
+				.map(_.person)
+				.distinct
+			)
 	)
 
 	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] =
+		getMemberships(org, _ => true)
+
+	/** The memberships at the organization, with the people read only for the roles that are kept */
+	private def getMemberships(org: URI, keepRole: RoleDetails => Boolean)(using MetaConn): Validated[IndexedSeq[Membership]] =
 		Validated.sequence:
-			for
-				memb <- getPropValueHolders(metaVocab.atOrganization, org.toRdf)
-				person <- getPropValueHolders(metaVocab.hasMembership, memb)
-			yield for
-				person <- getPerson(person)
-				role <- readRoleDetails(memb)
-			yield Membership(person, role)
+			getPropValueHolders(metaVocab.atOrganization, org.toRdf)
+				// instrument deployments are at organizations, too
+				.filter(resourceHasType(_, metaVocab.membershipClass))
+				.map: memb =>
+					readRoleDetails(memb).flatMap: role =>
+						if !keepRole(role) then Validated.ok(Nil)
+						else Validated.sequence:
+							getPropValueHolders(metaVocab.hasMembership, memb).map: person =>
+								getPerson(person).map(Membership(_, role))
+		.map(_.flatten)
 
 
 	def getPersonRoles(person: URI)(using MetaConn): Validated[IndexedSeq[PersonRole]] =
@@ -61,10 +67,10 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		yield
 			RoleDetails(role, start, stop, weight, extra)
 
-	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
-		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
+	private def getTcSpecificFilter(dobj: DataObject): RoleDetails => Boolean =
+		if(dobj.specification.theme.self.uri === vocab.atmoTheme) role => (role.weight.isDefined && {
 			val speciesOk = for(
-				extra <- memb.role.extra;
+				extra <- role.extra;
 				l2 <- dobj.specificInfo.toOption;
 				cols <- l2.columns
 			) yield{

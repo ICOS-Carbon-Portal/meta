@@ -23,7 +23,7 @@ class StateDiffApplier(
 
 	private val diffCalcV =
 		for
-			cpLens <- db.lenses.cpLens(flowConf.cpMetaInstanceServerId)
+			cpLens <- db.lenses.cpLens(flowConf)
 			envriLens <- db.lenses.metaInstanceLens
 			docLens <- db.lenses.documentLens
 		yield

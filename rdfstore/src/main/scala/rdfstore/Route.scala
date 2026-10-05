@@ -2,6 +2,10 @@ package se.lu.nateko.cp.meta.rdfstore
 
 import scala.language.unsafeNulls
 
+import se.lu.nateko.cp.meta.api.SparqlQuery
+
+import se.lu.nateko.cp.meta.routes.SparqlRoute
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
@@ -14,7 +18,7 @@ import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadataRequest, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import se.lu.nateko.cp.meta.utils.rdf4j.transact
-import se.lu.nateko.cp.meta.rdfstore.SparqlRoute.entityStrictifyTimeout
+import se.lu.nateko.cp.meta.routes.SparqlRoute.entityStrictifyTimeout
 
 import scala.util.{Failure, Success}
 
@@ -27,7 +31,7 @@ object Route:
 		derivedMetadata: DerivedMetadataService
 	)(using
 		ActorSystem,
-		ToResponseMarshaller[SparqlRequest]
+		ToResponseMarshaller[SparqlQuery]
 	): Route =
 		def datasetFromQueryParameters: Directive1[SparqlDataset] = extractRequest.map: request =>
 			val params = request.uri.query()
@@ -47,7 +51,7 @@ object Route:
 		val internalSparqlRoute: Route =
 			get:
 				datasetFromQueryParameters: dataset =>
-					parameter("query")(query => complete(SparqlRequest(query, Quota.Unlimited, dataset)))
+					parameter("query")(query => complete(SparqlQuery(query, Quota.Unlimited, dataset)))
 			~ post:
 				// Every alternative below consumes the request entity (the formField directives
 				// do it implicitly, via toStrictEntity), so the entity must be made strict once,
@@ -57,7 +61,7 @@ object Route:
 				toStrictEntity(entityStrictifyTimeout):
 					formFields("query", "default-graph-uri".repeated, "named-graph-uri".repeated):
 						(query, defaultGraphs, namedGraphs) =>
-							complete(SparqlRequest(
+							complete(SparqlQuery(
 								query,
 								Quota.Unlimited,
 								SparqlDataset(defaultGraphs.toSeq, namedGraphs.toSeq)
@@ -69,7 +73,7 @@ object Route:
 							entity(as[String]): body =>
 								if request.entity.contentType.mediaType.subType == "sparql-update"
 								then executeUnloggedUpdate(body)
-								else complete(SparqlRequest(body, Quota.Unlimited, dataset))
+								else complete(SparqlQuery(body, Quota.Unlimited, dataset))
 
 		SparqlRoute(sparqlConf)
 		~ path("internal" / "sparql"):

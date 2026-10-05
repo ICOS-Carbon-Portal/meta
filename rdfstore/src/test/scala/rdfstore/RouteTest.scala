@@ -2,6 +2,10 @@ package se.lu.nateko.cp.meta.rdfstore
 
 import scala.language.unsafeNulls
 
+import se.lu.nateko.cp.meta.api.SparqlQuery
+
+import se.lu.nateko.cp.meta.routes.SparqlRoute
+
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpHeader, HttpMethods, HttpRequest, StatusCodes}
@@ -49,7 +53,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
 
-	private given ToResponseMarshaller[SparqlRequest] = sparqlServer.marshaller
+	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
 	private val route = Route(
 		repo,
 		sparqlConf,
@@ -214,7 +218,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 			val slowConf = sparqlConf.copy(maxQueryRuntimeSec = 1)
 			val slowServer = new Rdf4jSparqlServer(repo, slowConf)
 			try
-				given ToResponseMarshaller[SparqlRequest] = slowServer.marshaller
+				given ToResponseMarshaller[SparqlQuery] = slowServer.marshaller
 				given RouteTestTimeout = RouteTestTimeout(20.seconds)
 				val slowRoute = Route(repo, slowConf, DerivedMetadataService.unavailable(vf))
 				val origin = "https://example.icos-cp.eu"

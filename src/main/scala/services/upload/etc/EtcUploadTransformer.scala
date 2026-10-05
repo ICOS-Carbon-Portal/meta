@@ -118,7 +118,7 @@ class EtcUploadTransformer(sparqler: SparqlRunner, config: EtcConfig, vocab: CpV
 			|}
 			|order by desc(?submEnd)
 			|limit 2""".stripMargin //limit 2 is to include potentially itself and the latest other upload of this filename
-			sparqler.evaluateTupleQuery(query)
+		sparqler.evaluateTupleQuery(query)
 			.map{bs =>
 				val hashSegm = bs.getValue("dobj").stringValue.split("/").last
 				Sha256Sum.fromBase64Url(hashSegm).toOption

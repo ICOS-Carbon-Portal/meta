@@ -9,13 +9,10 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.eclipse.rdf4j.model.{IRI, Statement}
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, transact}
 
-import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 
@@ -23,26 +20,12 @@ class AdminRouting(
 	repo: Repository,
 	servers: Map[String, InstanceServer],
 	authRouting: AuthenticationRouting,
-	makeMetaReadonly: String => Future[String],
-	conf: SparqlServerConfig
+	adminUsers: Seq[String]
 ) {
-	import AuthenticationRouting.optEnsureLocalRequest
-	private val permitAdmins = authRouting.allowUsers(conf.adminUsers) _
+	private val permitAdmins = authRouting.allowUsers(adminUsers) _
 	private val sparqler = new Rdf4jSparqlRunner(repo)
 
-	private val readonlyModeRoute = (post & withoutRequestTimeout){
-		val msg = "Metadata service is in read-only maintenance mode. Please try the write operation again later."
-		onComplete(makeMetaReadonly(msg)){
-			case Success(successMsg) => complete(StatusCodes.OK -> successMsg)
-			case Failure(err) => complete(StatusCodes.InternalServerError -> err.getMessage)
-		}
-	}
-
 	val route = pathPrefix("admin"){
-		path("switchToReadonlyMode"){
-			optEnsureLocalRequest{readonlyModeRoute} ~
-			permitAdmins{readonlyModeRoute}
-		} ~
 		permitAdmins{
 			pathPrefix("insert")(operationRoute(true)) ~
 			pathPrefix("delete")(operationRoute(false)) ~
@@ -68,7 +51,7 @@ class AdminRouting(
 			complete(StatusCodes.NotFound -> s"Instance server $server not found")
 		)(
 			instServ => entity(as[String]){query =>
-				val updates = sparqler.evaluateGraphQuery(SparqlQuery(query))
+				val updates = sparqler.evaluateGraphQuery(query)
 				applicationRoute(instServ.writeContextsView, updates, insert)
 			}
 		)

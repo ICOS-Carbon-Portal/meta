@@ -6,7 +6,7 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, ValueFactory}
 import se.lu.nateko.cp.meta.api.RdfLens.CollConn
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getStatements, getUriValues}
 import se.lu.nateko.cp.meta.instanceserver.{RdfUpdate, StatementSource, TriplestoreConnection}
@@ -102,7 +102,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 		val objUri = vocab.getStaticObject(hash)
 		if !conn.hasStatement(objUri, null, null) then Nil
 		else
-			val query = SparqlQuery(s"""construct{?s ?p ?o}
+			val query = s"""construct{?s ?p ?o}
 				|FROM <${conn.primaryContext}>
 				|where{
 				|{
@@ -132,7 +132,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 				|	}
 				|}
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
-				|}""".stripMargin)
+				|}""".stripMargin
 			
 			sp.evaluateGraphQuery(query).toIndexedSeq
 		end if
@@ -147,13 +147,8 @@ object MetadataUpdater{
 
 	type SubjPred = (Resource, IRI)
 
-	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] = {
-
-		val olds = dirtyOlds.map(s => factory.createStatement(s.getSubject, s.getPredicate, s.getObject))
-
-		olds.diff(news).map(RdfUpdate(_, false)) ++
-		news.diff(olds).map(RdfUpdate(_, true))
-	}
+	def diff(dirtyOlds: Seq[Statement], news: Seq[Statement], factory: ValueFactory): Seq[RdfUpdate] =
+		RdfUpdate.diff(dirtyOlds, news, factory)
 
 	private class BySubjPred(stats: Seq[Statement]){
 

@@ -2,9 +2,10 @@ package se.lu.nateko.cp.meta.test.services.linkeddata
 
 import scala.language.unsafeNulls
 
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.model.headers.Accept
-import akka.http.scaladsl.model.{ContentType, ContentTypes, MediaType, MediaTypes, StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpEntity, MediaType, MediaTypes, StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -12,18 +13,28 @@ import eu.icoscp.envri.Envri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.api.PidFactory
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, References}
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
+import se.lu.nateko.cp.meta.services.derived.{
+	DerivedMetadata,
+	DerivedMetadataClient,
+	DerivedMetadataRequest,
+	DerivedMetadataResponse,
+	DerivedMetadataResult
+}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
+import spray.json.*
 
+import java.net.URI
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.*
-import scala.util.Try
 
 /**
  * Characterizes the HTTP behavior of the URI serializer: content negotiation, status codes and the
@@ -56,7 +67,47 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	private val repo = Fixture.createRepo()
 
+	/**
+	 * Citations are derived by rdfStore, which is not running here. This stands in for its
+	 * derived-metadata endpoint, answering with canned titles for the objects whose citations used
+	 * to be computed locally, and with "notFound" for everything else, which leaves the page as read
+	 * from the RDF. The "unavailable" endpoint plays an rdfStore that fails.
+	 */
+	private val derivedTitles: Map[URI, String] = Map(
+		Fixture.timeSeriesObject -> "Test time series from Test station (50.0 m)",
+		Fixture.spatialObject -> "Test spatial data object"
+	).map((uri, title) => new URI(uri.toString) -> title)
+
+	private val rdfStoreStub = {
+		val route =
+			path("resolve") {
+				post {
+					entity(as[String]) { body =>
+						val request = body.parseJson.convertTo[DerivedMetadataRequest]
+						val results = request.resources.map { res =>
+							derivedTitles.get(res).fold(DerivedMetadataResult(res, "notFound", None)) { title =>
+								val refs = References.empty.copy(title = Some(title))
+								DerivedMetadataResult(res, "ready", Some(DerivedMetadata(res, refs, None, None)))
+							}
+						}
+						complete(HttpEntity(
+							ContentTypes.`application/json`,
+							DerivedMetadataResponse(version = 1, results).toJson.compactPrint
+						))
+					}
+				}
+			} ~
+			path("unavailable") {
+				complete(StatusCodes.ServiceUnavailable -> "rdfStore is down")
+			}
+		Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
+	}
+
+	private def rdfStoreEndpoint(endpointPath: String) =
+		new URI(s"http://127.0.0.1:${rdfStoreStub.localAddress.getPort}/$endpointPath")
+
 	override def afterAll(): Unit = {
+		Await.ready(rdfStoreStub.unbind(), 5.seconds)
 		repo.shutDown()
 		super.afterAll()
 	}
@@ -139,14 +190,16 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 56, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 55, existence = 0, sparql = 0))
 			assert(body.contains("test_data.csv"))
 		}
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 54, existence = 0, sparql = 0))
+			// the citation reads (keywords, licence) are no longer done here; rdfStore derives the references
+			assert(counts === QueryCounts(connections = 1, statements = 53, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
+			// the citation-derived title, as delivered by (the stand-in for) rdfStore
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -164,6 +217,17 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(propertyLink(page, "Instrument") === RenderedLink("Test instrument", "/resources/instruments/TST_1"))
 			assert(sectionHeadings(page).contains("Acquisition"))
 			assert(sectionHeadings(page).contains("Technical information"))
+		}
+
+		it("still renders the data object landing page when rdfStore cannot derive its metadata") {
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, rdfStorePath = "unavailable")
+			// without the derived references, the title falls back to the file name
+			assert(heading(page) === "test_data.csv")
+			assert(propertyText(page, "File name") === "test_data.csv")
+			assert(metadataErrors(page) match {
+				case Seq(error) => error.startsWith("Could not fetch derived metadata from rdfStore")
+				case _ => false
+			})
 		}
 
 		it("renders the previewable variables of the data object landing page") {
@@ -227,7 +291,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the version chain of a data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.versionedObject)
-			assert(counts === QueryCounts(connections = 1, statements = 63, existence = 0, sparql = 0))
+			// the citation reads (keywords, licence, attribution) are no longer done here; rdfStore derives the references
+			assert(counts === QueryCounts(connections = 1, statements = 58, existence = 0, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink(
 				"View previous version",
 				"/objects/BAQEBAQEBAQEBAQEBAQEBAQE"
@@ -668,20 +733,16 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private given Envri = Envri.ICOS
 	private given EnvriConfigs = config.core.envriConfigs
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val doiCiter = new PlainDoiCiter {
-		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
-	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
+	private def serialize(uri: Uri, rdfStorePath: String = "resolve"): (Route, () => QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
 		val serializer = new Rdf4jUriSerializer(
 			countingRepo,
 			CpVocab(countingRepo.getValueFactory),
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
-			doiCiter,
+			DerivedMetadataClient(rdfStoreEndpoint(rdfStorePath)),
 			config
 		)
 
@@ -694,9 +755,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
+		val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
+		val attribution = AttributionProvider(vocab, metaVocab)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution)
 		loader -> countingRepo
 	}
 
@@ -731,8 +792,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 	/** Renders the page as HTML. */
-	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
-		val (route, getCounts) = serialize(uri)
+	private def renderLandingPage(uri: Uri, rdfStorePath: String = "resolve"): (Document, QueryCounts) = {
+		val (route, getCounts) = serialize(uri, rdfStorePath)
 		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)

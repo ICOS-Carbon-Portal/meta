@@ -4,7 +4,6 @@ import scala.language.unsafeNulls
 
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.meta.core.data.TimeInterval
-import se.lu.nateko.cp.meta.services.citation.CitationClient
 import se.lu.nateko.cp.meta.upload.*
 import se.lu.nateko.cp.meta.upload.CpUploadClient.FileInfo
 import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, ObjectUploadDto, ReferencesDto, StaticCollectionDto, StationTimeSeriesDto}
@@ -26,9 +25,9 @@ object FluxdataUpload{
 	val atcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ATC")
 	val etcOrg = new URI("http://meta.icos-cp.eu/resources/organizations/ETC")
 
-	def atmoUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("atmos_data.csv", atmoSpec, citer)
-	def fluxHhUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_hh.csv", fluxnetHhSpec, citer)
-	def fluxUpload(citer: CitationClient)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_arch.csv", fluxnetArchiveSpec, citer)
+	def atmoUpload(citer: DoiCitationLookup)(implicit ctxt: ExecutionContext) = new FluxdataUpload("atmos_data.csv", atmoSpec, citer)
+	def fluxHhUpload(citer: DoiCitationLookup)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_hh.csv", fluxnetHhSpec, citer)
+	def fluxUpload(citer: DoiCitationLookup)(implicit ctxt: ExecutionContext) = new FluxdataUpload("winter_final_arch.csv", fluxnetArchiveSpec, citer)
 
 	val excludedUploadStations: Set[String] = Set(
 		//"CH-Cha"
@@ -40,7 +39,7 @@ object FluxdataUpload{
 
 class FluxdataUpload(
 	fileEntriesFile: String, spec: URI,
-	citer: CitationClient
+	citer: DoiCitationLookup
 )(implicit ctxt: ExecutionContext){
 
 	import FluxdataUpload.*

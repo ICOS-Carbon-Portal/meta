@@ -55,6 +55,14 @@ class InstanceServerTests extends AnyFunSpec{
 				val statements = server.getStatements(Some(makeUri("inst1")), Some(RDF.TYPE), Some(makeUri("class1"))).toIndexedSeq
 				assert(statements.size === 1)
 			}
+
+			it("exposes StatementSource results as context-free RDF statements"){
+				val server = new Rdf4jInstanceServer(repo, ctxt)
+				val statement: RdfStatement = server.access:
+					StatementSource.getStatements(makeUri("inst1"), RDF.TYPE, makeUri("class1")).next()
+
+				assert(statement === RdfStatement(makeUri("inst1"), RDF.TYPE, makeUri("class1")))
+			}
 		}
 	}
 

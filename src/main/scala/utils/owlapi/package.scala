@@ -4,7 +4,6 @@ import scala.language.unsafeNulls
 
 import org.semanticweb.owlapi.io.XMLUtils
 import org.semanticweb.owlapi.model.*
-import se.lu.nateko.cp.meta.CpmetaConfig
 
 import java.util.Optional
 import java.util.stream.Stream as JavaStream
@@ -19,10 +18,17 @@ extension [T <: AnyRef] (stream: JavaStream[T])
 	def toIndexedSeq(implicit ev: ClassTag[T]): IndexedSeq[T] = stream.iterator().asScala.toIndexedSeq
 
 
+// Anchor class for the OWL resources shipped in meta's own src/main/resources/owl/.
+// Resource paths passed in are absolute (leading '/'), so the anchor class only needs
+// to live on the same classpath, not necessarily next to the resources; using a class
+// that actually lives in `meta` (rather than the shared CpmetaConfig, which moved to
+// rdfCommon) keeps that assumption self-evidently true regardless of module layout.
+private object OwlResourceAnchor
+
 def getOntologyFromJarResourceFile(
 		resourcePath: String,
 		manager: OWLOntologyManager): OWLOntology = {
-	val stream = CpmetaConfig.getClass.getResourceAsStream(resourcePath)
+	val stream = OwlResourceAnchor.getClass.getResourceAsStream(resourcePath)
 	manager.loadOntologyFromOntologyDocument(stream)
 }
 

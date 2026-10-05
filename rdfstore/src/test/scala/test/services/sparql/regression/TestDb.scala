@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider,
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
-import se.lu.nateko.cp.meta.{ConfigLoader, LmdbConfig, RdfStorageConfig}
+import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig, RdfStoreConfigLoader}
 
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.Duration
@@ -140,7 +140,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	val idxFactories = Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = {
-			val config = ConfigLoader.default
+			val config = RdfStoreConfigLoader.citationStoreConfig
 			new CitationProvider(
 			base, _ => CitationClientDummy, config.core,
 			CitationProvider.getLenses(config.instanceServers, config.dataUploadService),

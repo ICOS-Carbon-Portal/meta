@@ -34,7 +34,7 @@ class StaticObjectReader(
 		getOptionalLong,
 		getOptionalString
 	}
-	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
+	import RdfLens.{DobjConn, DocConn, GlobConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -43,35 +43,28 @@ class StaticObjectReader(
 				docObj <- getExistingDocumentObject(objIri)
 			yield docObj
 		else for
-			given DobjConn <- getLensForDataObj(objIri)
-			dobj <- getExistingDataObject(objIri)
-		yield dobj
-
-	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
-		for
-			specIri <- getSingleUri(dobjIri, metaVocab.hasObjectSpec)
+			specIri <- getSingleUri(objIri, metaVocab.hasObjectSpec)
 			docLens <- lenses.documentLens
-			// the specification is read through the document lens, so its format is looked up there, too
-			objFormat <- getObjSpecFormat(specIri)(using docLens)
-			dobjLens <- lenses.dataObjectLens(objFormat.toJava)
-		yield dobjLens
+			docConn: DocConn = docLens
+			// the specification is read through the document lens, and determines the data object lens
+			spec <- getSpecification(specIri)(using docConn)
+			given DobjConn <- lenses.dataObjectLens(spec.format.self.uri)
+			dobj <- getExistingDataObject(objIri, spec, docConn)
+		yield dobj
 
 	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
 
-	def getExistingDataObject(dobj: IRI)(using envri: Envri, dobjConn: DobjConn): Validated[DataObject] =
+	/** @param docConn the connection through which the specification has been read */
+	private def getExistingDataObject(dobj: IRI, spec: DataObjectSpec, docConn: DocConn)(using Envri, DobjConn): Validated[DataObject] =
+		val valTypeLookupUri = spec.datasetSpec.map(ds => vocab.factory.createIRI(ds.self.uri.toString))
 		for
-			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
-			docLens <- lenses.documentLens
-			docConn: DocConn = docLens
-			spec <- getSpecification(specIri)(using docConn)
-			valTypeLookupUri = spec.datasetSpec.map(ds => vocab.factory.createIRI(ds.self.uri.toString))
 			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
 			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
 				case DatasetType.SpatioTemporal =>
-					getSpatioTempMeta(dobj, valTypeLookup, productionOpt)(using dobjConn, docConn).map(Left.apply)
+					getSpatioTempMeta(dobj, valTypeLookup, productionOpt, docConn).map(Left.apply)
 				case DatasetType.StationTimeSeries =>
 					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt, docConn).map(Right.apply)
 			hash <- getHashsum(dobj, metaVocab.hasSha256sum)
@@ -107,7 +100,7 @@ class StaticObjectReader(
 			init.copy(references = refs)
 	end getExistingDataObject
 
-	def getExistingDocumentObject(doc: IRI)(using Envri, DocConn): Validated[DocObject] =
+	def getExistingDocumentObject(doc: IRI)(using envri: Envri, docConn: DocConn): Validated[DocObject] =
 		for
 			hash <- getHashsum(doc, metaVocab.hasSha256sum)
 			fileName <- getSingleString(doc, metaVocab.hasName)
@@ -139,7 +132,7 @@ class StaticObjectReader(
 					authors = Option(authors.toSeq)
 				)
 			)
-			refs <- citer.getCitationInfo(init, summon[DocConn])
+			refs <- citer.getCitationInfo(init, docConn)
 		yield
 			init.copy(references = refs)
 

@@ -3,10 +3,9 @@ package se.lu.nateko.cp.meta.rdfstore.persistence.postgres
 import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
-import se.lu.nateko.cp.meta.RdflogConfig
+import se.lu.nateko.cp.meta.{DbCredentials, DbServer, RdflogConfig}
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer, Postgres}
 import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
 
 import java.sql.{Connection, ResultSet}

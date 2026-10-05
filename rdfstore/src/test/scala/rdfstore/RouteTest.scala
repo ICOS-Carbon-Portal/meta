@@ -20,7 +20,7 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import se.lu.nateko.cp.meta.{ConfigLoader, SparqlServerConfig}
+import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader, SparqlServerConfig}
 import se.lu.nateko.cp.meta.core.data.{Licence, References}
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.CpmetaVocab
@@ -47,8 +47,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 		maxParallelQueries = 2,
 		maxQueryQueue = 2,
 		banLength = 1,
-		maxCacheableQuerySize = 1024 * 1024,
-		adminUsers = Nil
+		maxCacheableQuerySize = 1024 * 1024
 	)
 	private val sparqlServer = new Rdf4jSparqlServer(repo, sparqlConf)
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
@@ -62,9 +61,32 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
 
 	"the standalone RDF store" should:
-		"find the RDF logs to restore in the shared cpmeta config" in:
-			val config = ConfigLoader.default
-			val logs = RdfLogManager.configuredLogs(config.instanceServers).map(c => c.name -> c).toMap
+		"load rdfStore's narrow view of the shared instance-server config" in:
+			val root = AppConfig.rootConfWithWorkingDirOverrides
+			root.hasPath("cpmeta.instanceServers") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.metaServers") shouldBe false
+			root.hasPath("cpmeta.dataUploadService.collectionServers") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.documentServers") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.handle") shouldBe true
+			root.hasPath("cpmeta.dataUploadService.handle.clientCertPemFilePath") shouldBe false
+			root.hasPath("cpmeta.instanceServers.metaFlow") shouldBe false
+			root.hasPath("cpmeta.instanceServers.specific.instances.ingestion") shouldBe false
+			root.hasPath("cpmeta.rdfLog") shouldBe true
+			root.hasPath("rdfStore.rdfLog") shouldBe false
+			root.hasPath("rdfStore.rdfLogs") shouldBe false
+			root.hasPath("rdfStore.rdfLogRestoreFromId") shouldBe false
+			val citationConf = RdfStoreConfigLoader.citationStoreConfig
+			RdfStoreConfigLoader.rdfLogConfig.server.host shouldBe root.getString("cpmeta.rdfLog.server.host")
+			RdfStoreConfigLoader.rdfLogConfig.credentials.db shouldBe root.getString("cpmeta.rdfLog.credentials.db")
+			citationConf.citations.doi.restEndpoint.toString shouldBe
+				root.getString("cpmeta.citations.doi.restEndpoint")
+			citationConf.dataUploadService.collectionServers.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			citationConf.dataUploadService.documentServers.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			citationConf.instanceServers.forDataObjects.keySet shouldBe
+				Set(eu.icoscp.envri.Envri.ICOS, eu.icoscp.envri.Envri.SITES)
+			val logs = RdfLogManager.configuredLogs(citationConf.instanceServers).map(c => c.name -> c).toMap
 			logs("instances").context.toString shouldBe
 				"http://meta.icos-cp.eu/resources/cpmeta/"
 			logs("wdcgg").context.toString shouldBe

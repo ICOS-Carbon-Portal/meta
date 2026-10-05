@@ -5,9 +5,10 @@ import scala.language.unsafeNulls
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.ValueFactory
 import org.eclipse.rdf4j.repository.Repository
-import se.lu.nateko.cp.meta.{InstanceServersConfig, RdflogConfig}
+import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
 import se.lu.nateko.cp.meta.rdfstore.persistence.postgres.PostgresRdfLogReader
+import se.lu.nateko.cp.meta.services.citation.StoreInstanceServersConfig
 
 import java.net.URI
 
@@ -69,7 +70,7 @@ object RdfLogManager:
 
 	final case class Binding(name: String, context: IRI, log: RdfLogReader, replay: ReplayPolicy)
 
-	def configuredLogs(instanceServers: InstanceServersConfig): Seq[LogConfig] =
+	def configuredLogs(instanceServers: StoreInstanceServersConfig): Seq[LogConfig] =
 		val specific = instanceServers.specific.values.flatMap: config =>
 			config.logName.map(LogConfig(
 				_, config.writeContext, config.logIngestionFromId, config.skipLogIngestionAtStart
@@ -89,7 +90,7 @@ object RdfLogManager:
 
 	def apply(
 		rdfLogConfig: RdflogConfig,
-		instanceServers: InstanceServersConfig,
+		instanceServers: StoreInstanceServersConfig,
 		factory: ValueFactory
 	): RdfLogManager =
 		val bindings = configuredLogs(instanceServers).map: config =>

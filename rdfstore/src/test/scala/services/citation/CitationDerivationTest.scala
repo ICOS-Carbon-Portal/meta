@@ -6,15 +6,15 @@ import akka.actor.ActorSystem
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.scalatest.funspec.AsyncFunSpec
-import se.lu.nateko.cp.meta.ConfigLoader
+import se.lu.nateko.cp.meta.RdfStoreConfigLoader
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.test.services.sparql.regression.{CitationClientDummy, TestDb}
 
 import scala.concurrent.Future
 
 /**
- * Guards the lens categories `CitationProvider` reads from the shared
- * `cpmeta.instanceServers` configuration.
+ * Guards the lens categories `CitationProvider` reads from the narrow rdfstore view of the
+ * shared `cpmeta.instanceServers` configuration.
  *
  * Note on ENVRI coverage: lens *resolution* is asserted for every configured ENVRI, but only ICOS
  * has collection and document fixtures in the regression corpus, so fixture-backed derivation is
@@ -24,7 +24,7 @@ import scala.concurrent.Future
 @tags.DbTest
 class CitationDerivationTest extends AsyncFunSpec:
 
-	private lazy val conf = ConfigLoader.default
+	private lazy val conf = RdfStoreConfigLoader.citationStoreConfig
 
 	describe("configured graph scopes"):
 

@@ -36,7 +36,7 @@ object SchemaOrg:
 	def optJs[T](opt: Option[T])(toJs: T => JsValue): JsValue = opt.fold(JsNull)(toJs)
 
 	def sparqlUriSeq(sparqler: SparqlRunner, query: String, varName: String): Seq[URI] = sparqler
-			.evaluateTupleQuery(query)
+		.evaluateTupleQuery(query)
 		.map(_.getValue(varName))
 		.collect{case iri: IRI => iri.toJava}
 		.toIndexedSeq
@@ -76,7 +76,7 @@ object SchemaOrg:
 		|	FILTER(STRSTARTS(str(?spec), "${envriConf.metaItemPrefix}"))
 		|}""".stripMargin
 
-			val specs: Iterator[String] = sparqler.evaluateTupleQuery(specsQuery).flatMap(b =>
+		val specs: Iterator[String] = sparqler.evaluateTupleQuery(specsQuery).flatMap(b =>
 			Option(b.getValue("spec")).map(_.stringValue)
 		)
 

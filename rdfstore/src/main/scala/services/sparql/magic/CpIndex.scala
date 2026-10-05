@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.io.Serializable
 import java.time.Instant
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
@@ -94,6 +95,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 	private val queue = new ArrayBlockingQueue[RdfUpdate](UpdateQueueSize)
 
 	def size: Int = objs.length
+	def serializableData: Serializable = data
 
 	def fetch(req: DataObjectFetch): Iterator[ObjInfo] = readLocked{
 		//val start = System.currentTimeMillis
@@ -158,4 +160,3 @@ end CpIndex
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
-

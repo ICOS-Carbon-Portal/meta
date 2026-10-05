@@ -31,6 +31,17 @@ object Ingestion:
 
 	type Statements = Future[CloseableIterator[Statement]]
 
+	/**
+	 * Ingester ids (as used in instance server ingestion config) of the OWL schema ontologies,
+	 * with their classpath resources. These are not covered by the RDF logs, so rdfStore ingests
+	 * them itself at startup, while meta leaves them alone.
+	 */
+	val schemaOntologyResources: Map[String, String] = Map(
+		"cpMetaOnto" -> "/owl/cpmeta.owl",
+		"otcMetaOnto" -> "/owl/otcmeta.owl",
+		"stationEntryOnto" -> "/owl/stationEntry.owl"
+	)
+
 	def ingest(
 		target: InstanceServer, ingester: Ingester, factory: ValueFactory
 	)(using ExecutionContext, BnodeStabilizers): Future[Int] =

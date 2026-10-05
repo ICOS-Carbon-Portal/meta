@@ -6,7 +6,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import org.eclipse.rdf4j.repository.sail.SailRepository
-import se.lu.nateko.cp.meta.{AppConfig, RdfStoreConfigLoader, SchemaOntologyConfig}
+import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
+import se.lu.nateko.cp.meta.{ConfigLoader, CpmetaConfig, IngestionMode}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -26,34 +27,32 @@ import scala.util.{Failure, Success}
  */
 object Main extends App:
 
-	private val appConfig = AppConfig.rootConfWithWorkingDirOverrides
-	private val citationStoreConfig = RdfStoreConfigLoader.citationStoreConfig
-	private val sparqlConfig = RdfStoreConfigLoader.sparqlConfig
-	private val storeConfig = RdfStoreConfigLoader.default
-	private val host = storeConfig.httpBindInterface
-	private val port = storeConfig.port
+	private val config: CpmetaConfig = ConfigLoader.default
+	private val sparqlConfig = config.sparql
+	private val host = config.rdfStore.httpBindInterface
+	private val port = config.rdfStore.port
 
 	private given system: ActorSystem = ActorSystem("cpmeta-rdf-store", appConfig)
 	private given ExecutionContext = system.dispatcher
-	private given EnvriConfigs = citationStoreConfig.core.envriConfigs
+	private given EnvriConfigs = config.core.envriConfigs
 
 	private val startup = {
-		val (isFreshInit, baseSail) = StorageSail(storeConfig.rdfStorage)
-		val citer = CitationProvider(baseSail, citationStoreConfig)
+		val (isFreshInit, baseSail) = StorageSail(config.rdfStorage)
+		val citer = CitationProvider(baseSail, config)
 		val derivedMetadata = DerivedMetadataService(citer)
 		val indexFactories =
-			if storeConfig.rdfStorage.disableCpIndex then None
+			if config.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		val sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
 		val logManager = RdfLogManager(
-			RdfStoreConfigLoader.rdfLogConfig,
-			citationStoreConfig.instanceServers,
+			config.rdfLog,
+			config.instanceServers,
 			baseSail.getValueFactory
 		)
 		val repo = SailRepository(sail)
 		repo.init()
 		logManager.restore(repo, isFreshInit)
-		val schemaOntologiesIngested = ingestSchemaOntologies(repo, storeConfig.schemaOntologies)
+		val schemaOntologiesIngested = ingestSchemaOntologies(repo, config)
 		for {
 			_ <- schemaOntologiesIngested
 			_ <- sail.initSparqlMagicIndex()
@@ -77,19 +76,25 @@ object Main extends App:
 			system.terminate()
 
 	/**
-	 * The store's OWL schema graphs (cpmeta, stationEntry, otcmeta, …). Unlike instance
+	 * The store's OWL schema graphs (cpmeta, stationEntry, otcmeta, …), i.e. the instance servers
+	 * configured with one of the `Ingestion.schemaOntologyResources` ingesters. Unlike instance
 	 * data, they are not covered by the rdf log, so rdfStore must (re)ingest them itself
 	 * from the classpath on every startup, before serving any SPARQL queries.
 	 */
 	private def ingestSchemaOntologies(
-		repo: SailRepository, configs: Seq[SchemaOntologyConfig]
+		repo: SailRepository, config: CpmetaConfig
 	)(using ExecutionContext): Future[Unit] =
 		given valueFactory: org.eclipse.rdf4j.model.ValueFactory = repo.getValueFactory
 		given BnodeStabilizers = new BnodeStabilizers
-		Future.sequence(configs.map{ conf =>
-			val writeContext = conf.writeContext.toRdf
+		val schemaOntologies = for
+			conf <- config.instanceServers.specific.values
+			ingestion <- conf.ingestion if ingestion.mode != IngestionMode.OFF
+			owlResource <- Ingestion.schemaOntologyResources.get(ingestion.ingesterId)
+		yield conf.writeContext -> owlResource
+		Future.sequence(schemaOntologies.map{ (writeContextUri, owlResource) =>
+			val writeContext = writeContextUri.toRdf
 			val target = new Rdf4jInstanceServer(repo, writeContext)
-			Ingestion.ingest(target, new RdfXmlFileIngester(conf.owlResource), valueFactory).andThen:
+			Ingestion.ingest(target, new RdfXmlFileIngester(owlResource), valueFactory).andThen:
 				case Success(_) => system.log.info("ingested schema ontology into {}", writeContext)
 				case Failure(err) => system.log.error(err, "failed to ingest schema ontology into {}", writeContext)
 		}).map(_ => ())

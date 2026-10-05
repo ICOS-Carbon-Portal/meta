@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
-import se.lu.nateko.cp.meta.{DbCredentials, DbServer, RdflogConfig}
+import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLog

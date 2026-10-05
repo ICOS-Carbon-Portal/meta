@@ -335,23 +335,23 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 	end addInstrDeplInfo
 
 	protected def getSpatioTempMeta(
-		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction]
-	)(using dobjConn: DobjConn, docConn: DocConn): Validated[SpatioTemporalMeta] =
+		dobj: IRI, vtLookup: VarMetaLookup, prodOpt: Option[DataProduction], docConn: DocConn
+	)(using DobjConn): Validated[SpatioTemporalMeta] =
 
 		val prodV = new Validated(prodOpt)
 
 		for
-			title <- getSingleString[DobjConn](dobj, metaVocab.dcterms.title)
-			description <- getOptionalString[DobjConn](dobj, metaVocab.dcterms.description)
-			covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)(using dobjConn)
-			coverage <- getCoverage[DobjConn](covIri)
+			title <- getSingleString(dobj, metaVocab.dcterms.title)
+			description <- getOptionalString(dobj, metaVocab.dcterms.description)
+			covIri <- getSingleUri(dobj, metaVocab.hasSpatialCoverage)
+			coverage <- getCoverage(covIri)
 			temporal <- getTemporalCoverage(dobj)
-			acqOpt <- getOptionalUri[DobjConn](dobj, metaVocab.wasAcquiredBy)
-			stationOpt <- acqOpt.map(getOptionalUri[DobjConn](_, metaVocab.prov.wasAssociatedWith)).sinkOption
-			station <- stationOpt.flatten.map(getStation).sinkOption
-			samplingHeightOpt <- acqOpt.map(getOptionalFloat[DobjConn](_, metaVocab.hasSamplingHeight)).sinkOption
+			acqOpt <- getOptionalUri(dobj, metaVocab.wasAcquiredBy)
+			stationOpt <- acqOpt.map(getOptionalUri(_, metaVocab.prov.wasAssociatedWith)).sinkOption
+			station <- stationOpt.flatten.map(getStation(_)(using docConn)).sinkOption
+			samplingHeightOpt <- acqOpt.map(getOptionalFloat(_, metaVocab.hasSamplingHeight)).sinkOption
 			prod <- prodV.require("Production info must be provided for a spatial data object")
-			variables <- Validated.sequence(getUriValues[DobjConn](dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup)))
+			variables <- Validated.sequence(getUriValues(dobj, metaVocab.hasActualVariable).map(getL3VarInfo(_, vtLookup)))
 		yield
 			SpatioTemporalMeta(
 				title = title,

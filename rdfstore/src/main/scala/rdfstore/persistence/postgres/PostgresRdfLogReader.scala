@@ -2,14 +2,14 @@ package se.lu.nateko.cp.meta.rdfstore.persistence.postgres
 
 import scala.language.unsafeNulls
 
-import org.eclipse.rdf4j.model.{IRI, Value, ValueFactory}
+import org.eclipse.rdf4j.model.ValueFactory
 import se.lu.nateko.cp.meta.RdflogConfig
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.instanceserver.RdfUpdate
-import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer, Postgres}
+import se.lu.nateko.cp.meta.persistence.postgres.{DbCredentials, DbServer, Postgres, RdfUpdateResultSetIterator}
 import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
 
-import java.sql.{Connection, ResultSet}
+import java.sql.Connection
 
 /**
  * Read-only view of a Postgres-backed RDF log. Table creation is meta's job (the writer,
@@ -29,7 +29,7 @@ class PostgresRdfLogReader(logName: String, serv: DbServer, creds: DbCredentials
 	def close(): Unit = {}
 
 	private def readIterator(query: String): CloseableIterator[RdfUpdate] =
-		if(tableExists()) new ResultSetIterator(getConnection, readRdfUpdate, query)
+		if(tableExists()) new RdfUpdateResultSetIterator(getConnection, factory, query).plain
 		else{
 			logger.warn(s"RDF log table '$logName' does not exist yet; nothing to restore from it")
 			CloseableIterator.empty
@@ -46,29 +46,6 @@ class PostgresRdfLogReader(logName: String, serv: DbServer, creds: DbCredentials
 		}finally{
 			conn.close()
 		}
-	}
-
-	private def readRdfUpdate(rs: ResultSet): RdfUpdate = {
-		def getUri(colName: String): IRI = factory.createIRI(rs.getString(colName))
-
-		val tripleType = rs.getShort("TYPE")
-		val objString = rs.getString("OBJECT")
-
-		val obj: Value = tripleType match{
-			case 0 => //object is a URI
-				factory.createIRI(objString)
-			case 1 => //object is a typed literal
-				val litDatatype = getUri("LITATTR")
-				factory.createLiteral(objString, litDatatype)
-			case 2 => //object is a language-tagged literal
-				val lang = rs.getString("LITATTR")
-				factory.createLiteral(objString, lang)
-		}
-
-		val statement = factory.createStatement(getUri("SUBJECT"), getUri("PREDICATE"), obj)
-		val isAssertion = rs.getBoolean("ASSERTION")
-
-		RdfUpdate(statement, isAssertion)
 	}
 
 	private def getConnection(): Connection = Postgres.getConnection(serv, creds).get

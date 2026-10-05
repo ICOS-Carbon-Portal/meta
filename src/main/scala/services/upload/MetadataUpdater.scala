@@ -135,7 +135,7 @@ class ObjMetadataUpdater(vocab: CpVocab, metaVocab: CpmetaVocab) extends Metadat
 				|	}
 				|}
 				|	FILTER(?p not in (<${metaVocab.hasBiblioInfo}>, <${metaVocab.hasCitationString}>))
-				|}""".stripMargin
+					|}""".stripMargin
 			
 			sp.evaluateGraphQuery(query).toIndexedSeq
 		end if

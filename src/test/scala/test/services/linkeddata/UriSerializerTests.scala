@@ -15,7 +15,7 @@ import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.PidFactory
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, References}
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.attribution.AttributionProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import se.lu.nateko.cp.meta.services.derived.{
 	DerivedMetadata,

@@ -24,7 +24,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 
 
-class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
+private[upload] class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => References) extends CpmetaReader:
 
 	import metaVocab.{dcterms => dct}
 

@@ -17,7 +17,7 @@ class StationLabelingService(
 	protected val onto: Onto,
 	protected val fileStorage: FileStorageService,
 	protected val metaVocab: CpmetaVocab,
-	protected val config: LabelingServiceConfig
+	protected val config: LabelingServiceConfig,
 )(using protected val executionContext: ExecutionContext)
 	extends UserInfoService with StationInfoService with FileService with LifecycleService:
 	import LabelingDb.{LblAppConn, ProvConn}
@@ -26,7 +26,7 @@ class StationLabelingService(
 	protected val db = LabelingDb(
 		provServer = instanceServers(config.provisionalInfoInstanceServerId),
 		lblServer = instanceServers(config.instanceServerId),
-		icosServer = instanceServers(config.icosMetaInstanceServerId)
+		icosServer = instanceServers(config.icosMetaInstanceServerId),
 	)
 	protected given factory: ValueFactory = metaVocab.factory
 	protected val vocab = new StationsVocab(factory)

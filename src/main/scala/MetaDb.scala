@@ -274,7 +274,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	/**
 	 * Includes support for dependencies when initializing InstanceServers.
 	 * Namely, ingestion can now wait until certain other InstanceServers have
-	 * been completely initialized by their configured ingesters.
+	 * been completely initialized from their RDF logs and other ingesters.
 	 */
 	private def makeInstanceServers(
 		repo: Repository,
@@ -305,7 +305,6 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			servConf.ingestion match{
 
-				//schema ontologies are ingested by rdfStore
 				case Some(IngestionConfig(ingesterId, waitFor, mode @ (EAGER | BACKGROUND)))
 					if !Ingestion.schemaOntologyResources.contains(ingesterId) =>
 

@@ -5,16 +5,6 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
-/**
- * Pure PID *naming*: prefix lookup per ENVRI, suffix derivation from an object hash, and
- * handle.net URL construction. No I/O.
- *
- * Kept in rdf-common, and deliberately separate from `HandleNetClient`, because both
- * applications need to name PIDs - `rdfStore`'s citation provider and the shared
- * `StaticObjectReader` - while only `meta` ever *mints* them against the handle.net API.
- * Splitting this out is what lets the client itself (with its akka-http and client-certificate
- * TLS machinery) live in `meta` alone.
- */
 class PidFactory(baseUrl: String, prefixes: Map[Envri, String]){
 	def prefix(using envri: Envri): String = prefixes.getOrElse(
 		envri,

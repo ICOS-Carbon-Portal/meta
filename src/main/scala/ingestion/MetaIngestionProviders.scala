@@ -10,11 +10,6 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import java.net.URI
 import scala.concurrent.ExecutionContext
 
-/**
- * meta-owned statement providers. Core ingestion machinery (`Ingester`, `Extractor`,
- * `Ingestion.ingest`, `BnodeStabilizers`, `RdfXmlFileIngester`, …) lives in rdf-common
- * so rdfStore can reuse it for its own (schema ontology) ingestion needs.
- */
 object MetaIngestionProviders:
 
 	def allProviders(using ActorSystem, ExecutionContext, Materializer, EnvriConfigs): Map[String, StatementProvider] =
@@ -40,10 +35,6 @@ object MetaIngestionProviders:
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
 				rdfGraph = new URI("http://meta.icos-cp.eu/resources/otcmeta/")
 			),
-//			"cpStationEntry" -> new RemoteRdfGraphIngester(
-//				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-//				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
-//			),
 			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeople_3.csv"),
 
 			"dcatdemo" -> new LocalSparqlConstructExtractor(

@@ -11,12 +11,6 @@ import se.lu.nateko.cp.meta.rdfstore.persistence.RdfLogReader
 
 import java.sql.Connection
 
-/**
- * Read-only view of a Postgres-backed RDF log. Table creation is meta's job (the writer,
- * via `persistence.postgres.PostgresRdfLog`); a log that has never been written to simply
- * has nothing to restore, so `updates`/`updatesFromId` degrade to an empty iterator instead
- * of failing, rather than issuing DDL from the read side.
- */
 class PostgresRdfLogReader(logName: String, serv: DbServer, creds: DbCredentials, factory: ValueFactory) extends RdfLogReader{
 
 	private val logger = org.slf4j.LoggerFactory.getLogger(getClass)

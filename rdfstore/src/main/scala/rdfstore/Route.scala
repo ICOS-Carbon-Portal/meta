@@ -22,7 +22,6 @@ import se.lu.nateko.cp.meta.routes.SparqlRoute.entityStrictifyTimeout
 
 import scala.util.{Failure, Success}
 
-/** SPARQL 1.1 query and update protocol surface owned by the RDF-store process. */
 object Route:
 
 	def apply(
@@ -53,11 +52,6 @@ object Route:
 				datasetFromQueryParameters: dataset =>
 					parameter("query")(query => complete(SparqlQuery(query, Quota.Unlimited, dataset)))
 			~ post:
-				// Every alternative below consumes the request entity (the formField directives
-				// do it implicitly, via toStrictEntity), so the entity must be made strict once,
-				// up front. Otherwise a rejected alternative leaves the (non-strict, for larger
-				// payloads) entity stream materialized, and the next one fails with
-				// "Substream Source(EntitySource) cannot be materialized more than once".
 				toStrictEntity(entityStrictifyTimeout):
 					formFields("query", "default-graph-uri".repeated, "named-graph-uri".repeated):
 						(query, defaultGraphs, namedGraphs) =>

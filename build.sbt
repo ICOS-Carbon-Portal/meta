@@ -113,13 +113,11 @@ lazy val rdfCommon = (project in file("rdf-common"))
 		version := "0.1.0",
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
-			// rdf-common uses akka.http.scaladsl.model.Uri, akka.Done and akka.actor.Scheduler --
-			// the model types and the actor/stream core, never the spray-json marshalling integration
 			"com.typesafe.akka"     %% "akka-http-core"                     % akkaHttpVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion, // generic in-memory Sail used by utils/rdf4j/Loading.scala; not the LMDB/NativeStore production backend
-			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion, // runtime parser for Loading.fromResource's RDFFormat.RDFXML default
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
@@ -152,7 +150,7 @@ lazy val meta = (project in file("."))
 			"io.sentry"              % "sentry-logback"                     % "8.37.1",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion, // used by meta's own tests (GcpUploadMetaGenerator, MetadataUpdaterTests), not the LMDB production backend
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
@@ -317,8 +315,6 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"commons-io"      % "commons-io"                        % "2.15.1" % Test
 		),
 			Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
-			// config is read from the JVM's working directory (cpauth ConfigLoader.appConfig),
-			// so point the forked reStart process at the root application.conf
 			reStart / baseDirectory := (ThisBuild / baseDirectory).value,
 
 			assembly / assemblyMergeStrategy := {

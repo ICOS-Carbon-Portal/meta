@@ -7,10 +7,6 @@ import se.lu.nateko.cp.meta.services.citation.CitationProvider
 
 import java.net.URI
 
-/**
- * Store-owned facade for values exposed as virtual RDF triples.  Both the SPARQL Sail adapter
- * and the HTTP route use this facade so there is exactly one derivation path and one DOI cache.
- */
 final class DerivedMetadataService private (
 	private val factory: ValueFactory,
 	private val resolveIri: IRI => DerivedMetadataResult,
@@ -50,7 +46,6 @@ object DerivedMetadataService:
 		, _ => false
 		)
 
-	/** Deterministic store-local implementation for route and virtual-triple regression tests. */
 	def fixed(factory: ValueFactory, values: Map[URI, DerivedMetadata]): DerivedMetadataService =
 		new DerivedMetadataService(factory, resource =>
 			val uri = new URI(resource.stringValue)

@@ -67,12 +67,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	private val repo = Fixture.createRepo()
 
-	/**
-	 * Citations are derived by rdfStore, which is not running here. This stands in for its
-	 * derived-metadata endpoint, answering with canned titles for the objects whose citations used
-	 * to be computed locally, and with "notFound" for everything else, which leaves the page as read
-	 * from the RDF. The "unavailable" endpoint plays an rdfStore that fails.
-	 */
 	private val derivedTitles: Map[URI, String] = Map(
 		Fixture.timeSeriesObject -> "Test time series from Test station (50.0 m)",
 		Fixture.spatialObject -> "Test spatial data object"
@@ -196,10 +190,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			// the citation reads (keywords, licence) are no longer done here; rdfStore derives the references
 			assert(counts === QueryCounts(connections = 1, statements = 53, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
-			// the citation-derived title, as delivered by (the stand-in for) rdfStore
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -221,7 +213,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("still renders the data object landing page when rdfStore cannot derive its metadata") {
 			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, rdfStorePath = "unavailable")
-			// without the derived references, the title falls back to the file name
 			assert(heading(page) === "test_data.csv")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(metadataErrors(page) match {
@@ -291,7 +282,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the version chain of a data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.versionedObject)
-			// the citation reads (keywords, licence, attribution) are no longer done here; rdfStore derives the references
 			assert(counts === QueryCounts(connections = 1, statements = 58, existence = 0, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink(
 				"View previous version",

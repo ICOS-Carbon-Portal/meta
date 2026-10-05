@@ -23,10 +23,6 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-/**
- * Standalone owner of the persistent RDF4J store, Carbon Portal indexes, and
- * SPARQL protocol endpoint. `meta` connects with RDF4J's SPARQLRepository.
- */
 object Main extends App:
 
 	private val config: CpmetaConfig = ConfigLoader.default
@@ -77,12 +73,6 @@ object Main extends App:
 			system.log.error(err, "Could not start RDF store")
 			system.terminate()
 
-	/**
-	 * The store's OWL schema graphs (cpmeta, stationEntry, otcmeta, …), i.e. the instance servers
-	 * configured with one of the `Ingestion.schemaOntologyResources` ingesters. Unlike instance
-	 * data, they are not covered by the rdf log, so rdfStore must (re)ingest them itself
-	 * from the classpath on every startup, before serving any SPARQL queries.
-	 */
 	private def ingestSchemaOntologies(
 		repo: SailRepository, config: CpmetaConfig
 	)(using ExecutionContext): Future[Unit] =

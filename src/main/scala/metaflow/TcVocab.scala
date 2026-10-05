@@ -7,12 +7,6 @@ import se.lu.nateko.cp.meta.core.etcupload.StationId as EtcStationId
 import se.lu.nateko.cp.meta.metaflow.icos.{ETC, EtcConf}
 import se.lu.nateko.cp.meta.services.CpVocab
 
-/**
- * TC-scoped URI minting, split out of `CpVocab` so that the core vocabulary can live
- * alongside `rdfStore`'s shared code without depending on the metaflow model. Every
- * member here mints or matches persistent URIs that already exist in the production
- * store, so string values must stay byte-identical to their pre-split form.
- */
 class TcVocab(vocab: CpVocab):
 	import TcVocab.*
 

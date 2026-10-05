@@ -13,13 +13,6 @@ import se.lu.nateko.cp.meta.services.CpVocab
 
 import java.net.URI
 
-/**
- * Baseline for the persistent-URI-minting members that task 08 of the rdfCommon split
- * relocated from `CpVocab` (rdfStore) to `TcVocab` (meta): `getMembership(orgId, role,
- * lastName)`, `getRole`, `etcStationUriId`, `getEtcInstrTcId` and `instrCpId`. Every string
- * asserted here must stay byte-identical to what `CpVocab` produced before the move, since
- * these URIs already exist in the production store.
- */
 class TcVocabTests extends AnyFunSpec:
 
 	given EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(

@@ -22,7 +22,6 @@ class IndexHandler(scheduler: Scheduler)(using ExecutionContext):
 		index: CpIndex,
 		geo: Future[(GeoIndex, GeoEventProducer)]
 	) = new SailConnectionListener:
-		//important that this is a val, not a def, otherwise throttle will work very wrongly
 		private val flushIndex: () => Unit = throttle(() => index.flush(), 1.second, scheduler)
 
 		def statementAdded(s: Statement): Unit =

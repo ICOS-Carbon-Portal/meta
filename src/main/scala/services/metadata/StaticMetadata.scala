@@ -11,7 +11,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
 
-/** Metadata formatting and selection rules that do not require DOI/citation I/O. */
 object StaticMetadata:
 	def defaultLicence(using envri: Envri): Licence = envri match
 		case Envri.ICOS | Envri.ICOSCities => Licence(

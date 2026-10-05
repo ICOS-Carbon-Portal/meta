@@ -204,9 +204,6 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				for i <- 1 to 300 do conn.add(vf.createIRI(s"urn:slow:s$i"), pred, vf.createLiteral(i), graph)
 			.isSuccess shouldBe true
 
-			// a three-way cross product, with a filter that cannot be pushed down to a single
-			// pattern and that matches nothing, so the query runs long without streaming anything
-			// out (a query that has begun streaming is allowed to run past the timeout)
 			val longRunningQuery = """
 				select ?a where {
 					?a ?p1 ?b .

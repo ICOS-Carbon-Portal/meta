@@ -110,12 +110,6 @@ private object TestRepo {
 	}
 }
 
-// Regression fixtures are loaded directly with RDF4J, instead of going through meta's
-// Ingestion/RdfXmlFileIngester/BnodeStabilizers pipeline (see task 17 in
-// docs/rdf-common-split): that pipeline lives in `meta`, and using it here would recreate a
-// meta -> rdfStore -> meta dependency cycle. Blank-node stabilization is not needed either:
-// none of the regression queries key off stable "bnode_N" identifiers, they only rely on the
-// RDF structure loaded from the fixtures.
 private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): Future[Unit] = Future {
 	val repo = SailRepository(makeSail(dir))
 	repo.init()

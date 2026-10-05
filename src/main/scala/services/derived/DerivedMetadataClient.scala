@@ -12,7 +12,6 @@ import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 
-/** Private client for rdfStore's derived-metadata boundary. */
 final class DerivedMetadataClient(endpoint: URI)(using system: ActorSystem, mat: Materializer):
 
 	private given ExecutionContext = system.dispatcher
@@ -34,11 +33,6 @@ final class DerivedMetadataClient(endpoint: URI)(using system: ActorSystem, mat:
 	def resolve(resource: URI): Future[DerivedMetadataResult] =
 		resolve(Seq(resource)).map(_.results.headOption.getOrElse(DerivedMetadataResult(resource, "notFound", None)))
 
-	/**
-	 * Replaces the reference fields calculated locally while parsing an item with rdfStore's
-	 * canonical derived values. A missing result deliberately leaves the parsed item intact:
-	 * callers can still render ordinary RDF metadata when a resource is not citable.
-	 */
 	def enrich(resource: URI, item: StaticObject): Future[StaticObject] =
 		resolve(resource).map:
 			case DerivedMetadataResult(_, "ready", Some(metadata)) => item match

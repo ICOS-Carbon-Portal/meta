@@ -31,15 +31,10 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-/**
- * The public SPARQL query endpoint, with per-client query quotas, response
- * caching and query-timeout handling. Owned by the RDF-store process.
- */
 object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
 
-	/** Time allowed for reading a (SPARQL query) request payload into memory */
 	val entityStrictifyTimeout: FiniteDuration = 10.seconds
 
 	val getClientIp: Directive1[String] = optionalHeaderValueByName(`X-Forwarded-For`.name).flatMap:
@@ -82,7 +77,6 @@ object SparqlRoute:
 				badRequestResponse
 			} ~
 			post{
-				//making the entity strict once, up front, as both alternatives below consume it
 				toStrictEntity(entityStrictifyTimeout){
 					formField("query")(makeResponse) ~
 					entity(as[String])(makeResponse) ~

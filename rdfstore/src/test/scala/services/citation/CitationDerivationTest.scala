@@ -12,15 +12,6 @@ import se.lu.nateko.cp.meta.test.services.sparql.regression.{CitationClientDummy
 
 import scala.concurrent.Future
 
-/**
- * Guards the lens categories `CitationProvider` reads from the shared
- * `cpmeta.instanceServers` configuration.
- *
- * Note on ENVRI coverage: lens *resolution* is asserted for every configured ENVRI, but only ICOS
- * has collection and document fixtures in the regression corpus, so fixture-backed derivation is
- * ICOS-only. SITES data objects are covered by the derivation of a discovered object per ENVRI
- * where fixtures allow.
- */
 @tags.DbTest
 class CitationDerivationTest extends AsyncFunSpec:
 
@@ -100,8 +91,6 @@ class CitationDerivationTest extends AsyncFunSpec:
 		it("derives references and a citation for a document object"):
 			assertCitable("DocumentObject")
 
-		// Not every fixture collection carries a DOI, and a collection's citation string comes from
-		// its DOI, so plain reference resolution and the citation path are asserted separately.
 		it("derives references for a collection"):
 			derive("Collection").map: (iri, metadata) =>
 				assert(metadata.references.title.isDefined, s"no title derived for $iri")

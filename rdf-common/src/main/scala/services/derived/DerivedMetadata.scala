@@ -7,11 +7,6 @@ import spray.json.*
 
 import java.net.URI
 
-/**
- * Versioned, RDF4J-free contract between meta and rdfStore for values that are derived from
- * metadata plus the DOI/citation cache. Keeping this small prevents the store implementation
- * from leaking back into rdf-common.
- */
 case class DerivedMetadataRequest(resources: Seq[URI])
 
 case class DerivedMetadata(

@@ -11,13 +11,6 @@ import se.lu.nateko.cp.meta.rdfstore.persistence.postgres.PostgresRdfLogReader
 
 import java.net.URI
 
-/**
- * Read-side owner of RDF-log restoration.
- *
- * Meta appends normal mutations to the logs through LoggingInstanceServer. rdfStore only
- * consumes those logs when it initializes a fresh store or when an operator requests a
- * configured partial replay.
- */
 final class RdfLogManager private (
 	private val bindings: Seq[RdfLogManager.Binding]
 ) extends AutoCloseable:
@@ -46,10 +39,6 @@ final class RdfLogManager private (
 end RdfLogManager
 
 object RdfLogManager:
-	/**
-	 * A selected replay invalidates the persisted indexes even if its log is currently empty:
-	 * rebuilding unnecessarily is safer than loading index data from before the replay.
-	 */
 	final case class RestoreResult(attemptedLogs: Int):
 		def invalidatesIndex: Boolean = attemptedLogs > 0
 

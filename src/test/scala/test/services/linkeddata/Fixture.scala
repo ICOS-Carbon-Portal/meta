@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
+import java.time.Instant
 import scala.util.Using
 
 /**
@@ -41,10 +42,17 @@ object Fixture {
 	val missingObjectHash = Sha256Sum.fromBytes(Array.fill(18)(0.toByte)).get
 	val missingObjectUri = Uri(s"https://meta.icos-cp.eu/objects/${missingObjectHash.id}")
 
+	//the hashes of the objects and collections, as the loader addresses them
+	private def hash(seed: Byte) = Sha256Sum.fromBytes(Array.fill(18)(seed)).get
+	val timeSeriesHash = hash(1)
+	val documentHash = hash(2)
+	val testCollectionHash = hash(3)
+
 	val timeSeriesObject = Uri("https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB")
 	val versionedObject = Uri("https://meta.icos-cp.eu/objects/BQUFBQUFBQUFBQUFBQUFBQUF")
 	val spatialObject = Uri("https://meta.icos-cp.eu/objects/EhISEhISEhISEhISEhISEhIS")
 	val documentObject = Uri("https://meta.icos-cp.eu/objects/AgICAgICAgICAgICAgICAgIC")
+	val specDocumentObject = Uri("https://meta.icos-cp.eu/objects/ERERERERERERERERERERERER")
 	val testCollection = Uri("https://meta.icos-cp.eu/collections/AwMDAwMDAwMDAwMDAwMDAwMD")
 	val nestedCollection = Uri("https://meta.icos-cp.eu/collections/DAwMDAwMDAwMDAwMDAwMDAwM")
 	val icosStation = Uri("http://meta.icos-cp.eu/resources/stations/TST")
@@ -56,4 +64,10 @@ object Fixture {
 	val person = Uri("http://meta.icos-cp.eu/resources/people/Test_Person")
 	val objectSpec = Uri("http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries")
 	val dataTheme = Uri("http://meta.icos-cp.eu/resources/themes/atmosphere")
+
+	//the acquisition interval of the time series object, and the submission times shared by several objects
+	val acquisitionStart = Instant.parse("2021-01-01T00:00:00Z")
+	val acquisitionStop = Instant.parse("2021-12-31T23:59:59Z")
+	val submissionStart = Instant.parse("2022-01-02T10:00:00Z")
+	val submissionStop = Instant.parse("2022-01-02T11:00:00Z")
 }

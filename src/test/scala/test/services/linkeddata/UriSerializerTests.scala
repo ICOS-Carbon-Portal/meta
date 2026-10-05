@@ -13,16 +13,37 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.{CitationStyle, PlainDoiCiter}
-import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, Rdf4jUriSerializer}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.{ConfigLoader, MetaDb}
+import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.MetaDb
+import se.lu.nateko.cp.meta.test.TestConfig
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
-/** Characterizes the HTTP behavior of the original, pre-LandingPageBuilder URI serializer. */
+/**
+ * Characterizes the HTTP behavior of the URI serializer: content negotiation, status codes and the
+ * choice of page, all of which it still owns after handing the reading of every page to the
+ * LandingPageLoader.
+ *
+ * Every landing-page test also builds the same page with the LandingPageLoader and puts the query
+ * counts of the two read paths next to each other. Both read the same fixture through a fresh
+ * counting view of it, which counts every statement lookup, existence check and SPARQL query made
+ * through it, so the two numbers are directly comparable. What the loader makes of the pages is not
+ * asserted here; that is [[LandingPageLoaderTests]]. A change in either count means a read path
+ * changed, and the new number has to be looked at (and only then written down here) rather than
+ * silently accepted.
+ *
+ * Every real landing page costs the serializer exactly what it costs the loader: those URIs are
+ * recognized by their shape alone, and the page is whatever the loader built. The URIs that have
+ * no page of their own are recognized by probing the store instead (see [[probeCounts]]), and
+ * their counts are stated as the sum of that probing and the read that follows it, so that
+ * nothing is left unaccounted for.
+ */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	// the statistics services are not running; with the default exponential backoff after each refused
@@ -72,6 +93,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the generic resource page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.resourceUri)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
+			//all the serializer adds to the loader is the probing it does to pick the page
+			assert(counts === probeCounts(Fixture.resourceUri) + loadGenericResource(Fixture.resourceUri))
 			assert(heading(page) === "Serializer test resource")
 			assert(propertyText(page, "URI") === Fixture.resource.stringValue)
 			assert(propertyText(page, "Label") === "Serializer test resource")
@@ -83,6 +106,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("returns its labeled-resource representation as JSON") {
 			val (body, counts) = renderJson(Fixture.resourceUri)
 			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === probeCounts(Fixture.resourceUri) + loadLandingPage(_.labeledResource(Fixture.resourceUri)))
 			assert(body.contains(Fixture.resource.stringValue))
 			assert(body.contains("Serializer test resource"))
 		}
@@ -122,6 +146,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
 			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
+			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
 			assert(propertyText(page, "File size") === "12 KB (12345 bytes)")
@@ -292,6 +317,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the document object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.documentObject)
 			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
+			assert(counts === loadLandingPage(_.staticObject(Fixture.documentHash)))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
 			assert(propertyText(page, "File size") === "53 KB (54321 bytes)")
@@ -318,6 +344,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the collection landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.testCollection)
 			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
+			assert(counts === loadLandingPage(_.staticCollection(Fixture.testCollectionHash)))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
 			assert(propertyLink(page, "Collection creator") === RenderedLink(
@@ -385,6 +412,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the station landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.icosStation)
 			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(counts === loadLandingPage(_.station(Fixture.icosStation)))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
 			assert(propertyText(page, "Country code") === "SE")
@@ -506,6 +534,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the organization landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.organization)
 			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
+			assert(counts === loadLandingPage(_.organization(Fixture.organization)))
 			assert(heading(page) === "Carbon Portal (CP)")
 			assert(propertyText(page, "Name") === "Carbon Portal")
 		}
@@ -515,6 +544,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the instrument landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.instrument)
 			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(counts === loadLandingPage(_.instrument(Fixture.instrument)))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
 			assert(propertyText(page, "Serial number") === "SN-1")
@@ -559,6 +589,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the person landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.person)
 			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
+			assert(counts === loadLandingPage(_.person(Fixture.person)))
 			assert(heading(page) === "Test Person")
 			assert(propertyText(page, "First name") === "Test")
 			assert(propertyText(page, "Last name") === "Person")
@@ -568,13 +599,15 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	/**
 	 * There is no Twirl page for an object specification, nor for a labeled resource. Both are
-	 * recognized by the serializer, but only so that their JSON can be served by dedicated readers;
-	 * in HTML both fall through to the generic resource page.
+	 * recognized by the serializer, but only so that their JSON can be served by the loader's
+	 * dedicated readers; in HTML both fall through to the generic resource page, which is why
+	 * neither test below reads anything the loader built for that resource kind.
 	 */
 	describe("URIs recognized by the serializer but rendered by the generic page") {
 		it("renders an object specification as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.objectSpec)
 			assert(counts === QueryCounts(connections = 2, statements = 0, existence = 1, sparql = 2))
+			assert(counts === probeCounts(Fixture.objectSpec) + loadGenericResource(Fixture.objectSpec))
 			assert(heading(page) === "Test time series")
 			assert(propertyText(page, "Label") === "Test time series")
 			//the properties are labeled by the ontology predicates, as on any generic page, rather
@@ -606,6 +639,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("serves the object specification as JSON") {
 			val (body, counts) = renderJson(Fixture.objectSpec)
 			assert(counts === QueryCounts(connections = 2, statements = 29, existence = 1, sparql = 0))
+			assert(counts === probeCounts(Fixture.objectSpec) + loadLandingPage(_.specification(Fixture.objectSpec)))
 			assert(body.contains("Test time series"))
 			assert(body.contains("Atmosphere"))
 		}
@@ -613,6 +647,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders a labeled resource as the generic resource page") {
 			val (page, counts) = renderLandingPage(Fixture.dataTheme)
 			assert(counts === QueryCounts(connections = 3, statements = 0, existence = 2, sparql = 2))
+			assert(counts === probeCounts(Fixture.dataTheme) + loadGenericResource(Fixture.dataTheme))
 			assert(heading(page) === "Atmosphere")
 			assert(propertyText(page, "Label") === "Atmosphere")
 			assert(
@@ -623,23 +658,24 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("serves the labeled resource as JSON") {
 			val (body, counts) = renderJson(Fixture.dataTheme)
 			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === probeCounts(Fixture.dataTheme) + loadLandingPage(_.labeledResource(Fixture.dataTheme)))
 			assert(body.contains("Atmosphere"))
 		}
 	}
 
 
+	private val config = TestConfig.metaConfig
+	private given Envri = Envri.ICOS
+	private given EnvriConfigs = config.core.envriConfigs
+	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
+	private val doiCiter = new PlainDoiCiter {
+		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
+		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+	}
+
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
-		val config = ConfigLoader.default
-		given Envri = Envri.ICOS
-		given EnvriConfigs = config.core.envriConfigs
-		val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-		val doiCiter = new PlainDoiCiter {
-			def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
-			def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
-		}
-
 		val serializer = new Rdf4jUriSerializer(
 			countingRepo,
 			CpVocab(countingRepo.getValueFactory),
@@ -651,6 +687,47 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller
 		get(complete(uri)) -> (() => countingRepo.counts)
+	}
+
+	/** The new read path, reading the fixture through a fresh counting view of it. */
+	private def loader(): (LandingPageLoader, CountingRepository) = {
+		val countingRepo = CountingRepository(repo)
+		val vocab = CpVocab(countingRepo.getValueFactory)
+		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
+		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
+		loader -> countingRepo
+	}
+
+	/**
+	 * Builds one page with the loader, requiring it to have been built without errors, and returns
+	 * the query counts of that build.
+	 */
+	private def loadLandingPage(page: LandingPageLoader => Validated[?]): QueryCounts = {
+		val (pageLoader, repo) = loader()
+		val built = page(pageLoader)
+		assert(built.errors === Nil)
+		assert(built.result.isDefined, "the page was not built at all")
+		repo.counts
+	}
+
+	private def loadGenericResource(uri: Uri): QueryCounts = {
+		val (pageLoader, repo) = loader()
+		val built = pageLoader.genericResource(uri)
+		assert(built.isSuccess, built)
+		repo.counts
+	}
+
+	/**
+	 * What the serializer's routing spends before it even knows which page a `/resources/...` URI
+	 * gets: an existence check for a data level, and, when that misses, one for a label. Pages
+	 * reached by URI shape alone (objects, collections, stations, ...) pay none of this.
+	 */
+	private def probeCounts(uri: Uri): QueryCounts = {
+		val (pageLoader, repo) = loader()
+		if (!pageLoader.isObjectSpecification(uri)) pageLoader.isLabeledResource(uri)
+		repo.counts
 	}
 
 	/** Renders the page as HTML. */

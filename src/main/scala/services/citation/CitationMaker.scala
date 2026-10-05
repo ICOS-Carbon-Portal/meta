@@ -55,7 +55,8 @@ class CitationMaker(
 		doi = getDoiMeta(item)
 	)
 
-	def getCitationInfo(sobj: StaticObject)(using Envri, DocConn | DobjConn): Validated[References] =
+	/** @param specConn the connection through which the specification of the object has been read */
+	def getCitationInfo(sobj: StaticObject, specConn: MetaConn)(using Envri, DocConn | DobjConn): Validated[References] =
 		for
 			citInfo <- sobj match
 				case doc:  DocObject  => Validated(getDocCitation(doc))
@@ -64,7 +65,7 @@ class CitationMaker(
 					case Envri.ICOS | Envri.ICOSCities => getIcosCitation(dobj)
 			dobj = vocab.getStaticObject(sobj.hash)
 			keywordsS <- getOptionalString(dobj, metaVocab.hasKeywords)
-			theLicence <- getLicence(dobj)
+			theLicence <- getLicence(dobj, specConn)
 		yield
 			val keywords = keywordsS.map(s => parseCommaSepList(s).toIndexedSeq)
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
@@ -90,24 +91,11 @@ class CitationMaker(
 	end getCitationInfo
 
 
-	def getLicence(dobj: IRI)(using Envri, DobjConn | DocConn): Validated[Licence] =
+	def getLicence(dobj: IRI)(using envri: Envri, conn: DobjConn | DocConn): Validated[Licence] =
+		getLicence(dobj, conn)
 
-		def getLic(licUri: IRI): Validated[Licence] = for
-			name <- getSingleString(licUri, RDFS.LABEL)
-			webpageOpt <- getOptionalUri(licUri, RDFS.SEEALSO)
-			baseLicence <- getOptionalUri(licUri, SKOS.EXACT_MATCH)
-		yield
-			val webpage = webpageOpt.getOrElse(licUri).toJava
-			Licence(licUri.toJava, name, webpage, baseLicence.map(_.toJava))
-
-		def getOptLic(res: IRI, licPred: IRI): Validated[Option[Licence]] =
-			for
-				optLicUri <- getOptionalUri(res, licPred)
-				optLic <- Validated.sinkOption(optLicUri.map(getLic))
-			yield optLic
-
-		inline def getImpliedLic(term: IRI) = getOptLic(term, metaVocab.impliesDefaultLicence)
-
+	/** @param specConn the connection to read the specification of the object, and its project, through */
+	def getLicence(dobj: IRI, specConn: MetaConn)(using Envri, DobjConn | DocConn): Validated[Licence] =
 		for
 			ownLicOpt <- getOptLic(dobj, metaVocab.dcterms.license)
 			lic <- ownLicOpt.getOrElseV:
@@ -115,19 +103,35 @@ class CitationMaker(
 					specIriOpt <- getOptionalUri(dobj, metaVocab.hasObjectSpec)(using RdfLens.global)
 					lic <- specIriOpt match
 						case None => Validated.ok(defaultLicence) //not a data object
-						case Some(specIri) =>
-							for
-								specLicOpt <- getImpliedLic(specIri)
-								lic <- specLicOpt.getOrElseV:
-									for
-										projIri <- getSingleUri(specIri, metaVocab.hasAssociatedProject)
-										projLicOpt <- getImpliedLic(projIri)
-									yield
-										projLicOpt.getOrElse(defaultLicence)
-							yield lic
+						case Some(specIri) => getSpecLicence(specIri)(using specConn)
 				yield lic
 		yield lic
 	end getLicence
+
+	private def getSpecLicence(spec: IRI)(using MetaConn)(using Envri): Validated[Licence] =
+		for
+			specLicOpt <- getOptLic(spec, metaVocab.impliesDefaultLicence)
+			lic <- specLicOpt.getOrElseV:
+				for
+					projIri <- getSingleUri(spec, metaVocab.hasAssociatedProject)
+					projLicOpt <- getOptLic(projIri, metaVocab.impliesDefaultLicence)
+				yield
+					projLicOpt.getOrElse(defaultLicence)
+		yield lic
+
+	private def getOptLic(res: IRI, licPred: IRI)(using MetaConn): Validated[Option[Licence]] =
+		for
+			optLicUri <- getOptionalUri(res, licPred)
+			optLic <- Validated.sinkOption(optLicUri.map(getLic))
+		yield optLic
+
+	private def getLic(licUri: IRI)(using MetaConn): Validated[Licence] = for
+		name <- getSingleString(licUri, RDFS.LABEL)
+		webpageOpt <- getOptionalUri(licUri, RDFS.SEEALSO)
+		baseLicence <- getOptionalUri(licUri, SKOS.EXACT_MATCH)
+	yield
+		val webpage = webpageOpt.getOrElse(licUri).toJava
+		Licence(licUri.toJava, name, webpage, baseLicence.map(_.toJava))
 
 	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
 		case None => "Fetching... try refreshing the page in a few seconds"

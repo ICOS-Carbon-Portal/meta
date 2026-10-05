@@ -80,7 +80,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticObject(Fixture.timeSeriesHash))
 
 		it("reads the object with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 54, existence = 0, sparql = 0))
 		}
 
 		it("has the file-level metadata of the object") {
@@ -144,7 +144,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticObject(Fixture.documentHash))
 
 		it("reads the document with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 11, existence = 0, sparql = 0))
 		}
 
 		it("is built into a document object with its title and authors") {
@@ -169,7 +169,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticCollection(Fixture.testCollectionHash))
 
 		it("reads the collection with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 10, existence = 0, sparql = 0))
 		}
 
 		it("is built into a collection with all of its members") {
@@ -194,7 +194,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.station(Fixture.icosStation))
 
 		it("reads the station and its memberships with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 19, existence = 0, sparql = 0))
 		}
 
 		it("is built into a station with its location and country") {
@@ -221,7 +221,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.organization(Fixture.organization))
 
 		it("reads the organization and its memberships with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
 		}
 
 		it("is built into an organization without staff of its own") {
@@ -238,7 +238,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.person(Fixture.person))
 
 		it("reads the person and their roles with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 4, existence = 0, sparql = 0))
 		}
 
 		it("is built into a person with their role at the station") {
@@ -255,7 +255,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.instrument(Fixture.instrument))
 
 		it("reads the instrument with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 9, existence = 0, sparql = 0))
 		}
 
 		it("is built into an instrument with its model, serial number, owner, vendor, parts and deployments") {
@@ -279,7 +279,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.specification(Fixture.objectSpec))
 
 		it("reads the specification with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
 		}
 
 		it("is built into a specification with project, theme, format and encoding") {
@@ -308,7 +308,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.labeledResource(Fixture.dataTheme))
 
 		it("reads the labeled resource with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 1, existence = 0, sparql = 0))
 		}
 
 		it("is built into the URI, label and comments of the resource") {

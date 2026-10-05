@@ -79,6 +79,7 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 			documentation <- documentationUriOpt.map(getPlainDocObject).sinkOption
 			coverage <- fetchCollCoverage(coll)
 		yield
+			val (nextVersion, latestVersion) = getNextAndLatestVersions(coll)(using collConn)
 			val init = StaticCollection(
 				res = coll.toJava,
 				hash = hash,
@@ -86,8 +87,8 @@ class CollectionReader(val metaVocab: CpmetaVocab, citer: CitableItem => Referen
 				creator = creator,
 				title = title,
 				description = description,
-				nextVersion = getNextVersionAsUri(coll)(using collConn),
-				latestVersion = getLatestVersion(coll)(using collConn),
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
 				previousVersion = getPreviousVersions(coll)(using collConn).headOption.map(_.toJava),
 				parentCollections = parentColls,
 				doi = doi,

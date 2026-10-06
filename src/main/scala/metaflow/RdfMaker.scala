@@ -26,6 +26,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 
+	private val tcVocab = new TcVocab(vocab)
 	private given factory: ValueFactory = vocab.factory
 	private type Triple = (IRI, IRI, Value)
 
@@ -43,7 +44,7 @@ class RdfMaker(vocab: CpVocab, val meta: CpmetaVocab)(using Envri) {
 			(uri, RDF.TYPE, meta.membershipClass) +:
 			(uri, RDFS.LABEL, vocab.lit(label)) +:
 			(uri, meta.atOrganization, getIri(org)) +:
-			(uri, meta.hasRole, vocab.getRole(role)) +:
+			(uri, meta.hasRole, tcVocab.getRole(role)) +:
 			(getIri(holder), meta.hasMembership, uri) +:
 			memb.start.map{inst =>
 				(uri, meta.hasStartTime, vocab.lit(inst))

@@ -13,13 +13,11 @@ import se.lu.nateko.cp.meta.{ConfigLoader, CpmetaConfig, IngestionMode}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,12 +34,12 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = config.core.envriConfigs
 
-	private val startup = readCitCache().zip(readDoiCache()).flatMap{ (citCache, doiCache) =>
+	private val startup = {
 		val (isFreshInit, baseSail) = StorageSail(config.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, doiCache, config)
+		val citer = CitationProvider(baseSail, config)
 		val derivedMetadata = DerivedMetadataService(citer)
 		val indexFactories =
-			if isFreshInit || config.rdfStorage.disableCpIndex then None
+			if config.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		val sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
 		val logManager = RdfLogManager(
@@ -51,23 +49,14 @@ object Main extends App:
 		)
 		val repo = SailRepository(sail)
 		repo.init()
-		val restoreResult = logManager.restore(repo, isFreshInit)
+		logManager.restore(repo, isFreshInit)
 		val schemaOntologiesIngested = ingestSchemaOntologies(repo, config)
 		for {
 			_ <- schemaOntologiesIngested
-			indexData <- restoreIndex(forceRecreate = isFreshInit || restoreResult.invalidatesIndex)
-			_ <- sail.initSparqlMagicIndex(indexData)
-			_ = if isFreshInit then sail.makeReadonly(
-				"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
-			)
+			_ <- sail.initSparqlMagicIndex()
 			queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
-			binding <- Http().newServerAt(host, port).bind(Route(
-				repo,
-				sparqlConfig,
-				derivedMetadata,
-				message => sail.makeReadonlyDumpIndexAndCaches(message)
-			))
+			binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
 		}
 		yield (binding, queryServer, repo, logManager)
 	}
@@ -101,13 +90,3 @@ object Main extends App:
 				case Success(_) => system.log.info("ingested schema ontology into {}", writeContext)
 				case Failure(err) => system.log.error(err, "failed to ingest schema ontology into {}", writeContext)
 		}).map(_ => ())
-
-	private def restoreIndex(forceRecreate: Boolean): Future[Option[IndexData]] =
-		val conf = config.rdfStorage
-		val recreate = forceRecreate || conf.recreateAtStartup || conf.recreateCpIndexAtStartup
-		if recreate then IndexHandler.dropStorage()
-		if recreate || conf.disableCpIndex then Future.successful(None)
-		else IndexHandler.restore().map(Some(_)).recover:
-			case err =>
-				system.log.warning("Failed to restore SPARQL index: {}", err.getMessage)
-				None

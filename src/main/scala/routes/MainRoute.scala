@@ -56,7 +56,7 @@ object MainRoute {
 		val sitemapRoute = SitemapRoute(sparqler)
 
 		val adminRoute = new AdminRouting(
-			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql
+			db.magicRepo, db.instanceServers, authRouting, config.sparql
 		).route
 
 		handleExceptions(exceptionHandler){

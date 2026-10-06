@@ -11,13 +11,12 @@ import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceRes
 import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
 import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.utils.async.ok
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
-import scala.util.{Failure, Success}
 
 import index.IndexData
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
@@ -38,7 +37,6 @@ class CpNotifyingSail(
 	private val enricher = StatementsEnricher(derivedMetadata, citer.metaVocab)
 	private var cpIndex: Option[CpIndex] = None
 	private var listener: Option[SailConnectionListener] = None
-	private var readonlyErrMessage: Option[String] = None
 
 	import citer.{metaVocab, metaReader}
 
@@ -46,51 +44,28 @@ class CpNotifyingSail(
 		val innerConn = inner.getConnection()
 		val enriched = CpNotifyingSailConnection(innerConn, enricher)
 		listener.foreach(enriched.addConnectionListener)
-		readonlyErrMessage.fold(enriched)(ReadonlyConnectionWrapper(enriched, _))
+		enriched
 
 	override def init(): Unit =
 		inner.init()
 		setupQueryEvaluation()
 
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] = indexFactories match
+	def initSparqlMagicIndex(): Future[Done] = indexFactories match
 		case None =>
 			log.info("Magic index is disabled")
 			ok
 		case Some((listenerFactory, geoFactory)) =>
-			if idxData.isEmpty then log.info("Initializing Carbon Portal index...")
+			log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
 			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
-			val idx = idxData.fold(new CpIndex(inner, geoFut))(idx => new CpIndex(inner, geoFut, idx))
+			val idx = CpIndex(inner, geoFut)
 			idx.flush()
 			listener = Some(listenerFactory.getListener(inner, metaVocab, idx, geoPromise.future))
 			geoPromise.completeWith(geoFactory.index(inner, idx, metaReader))
-			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
+			log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			cpIndex = Some(idx)
 			setupQueryEvaluation()
 			geoFut.map(_ => Done)(using ExecutionContext.parasitic)
-
-	def makeReadonly(errorMessage: String): Unit =
-		readonlyErrMessage = Some(errorMessage)
-
-	def makeReadonlyDumpIndexAndCaches(errorMessage: String)(using ExecutionContext): Future[String] =
-		if readonlyErrMessage.isDefined then
-			readonlyErrMessage = Some(errorMessage)
-			Future.successful("Triple store already in read-only mode")
-		else
-			readonlyErrMessage = Some(errorMessage)
-			val indexDump = cpIndex.fold(ok){idx =>
-				idx.flush()
-				IndexHandler.store(idx)
-			}
-			val citClient = citer.doiCiter
-			val citationsDump = CitationClient.writeCitCache(citClient)
-			val doiMetaDump = CitationClient.writeDoiCache(citClient)
-			Future.sequence(Seq(indexDump, citationsDump, doiMetaDump)).map(_ =>
-				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
-			).andThen{
-				case Success(msg) => log.info(msg)
-				case Failure(err) => log.error("Fail while dumping SPARQL index or citations cache to disk", err)
-			}
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:

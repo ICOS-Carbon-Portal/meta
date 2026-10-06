@@ -12,24 +12,26 @@ import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, Geo
 
 import java.net.URI
 import java.time.Instant
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 import UriSerializer.Hash
 
-class UploadDtoReader(uriSer: UriSerializer){
+class UploadDtoReader(uriSer: UriSerializer)(using ExecutionContext){
 	import UploadDtoReader.*
 
-	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
+	def readDto(uri: Uri): Future[Validated[UploadDto]] = uri.path match{
 		case Hash.Object(_) =>
-			for
-				obj <- uriSer.fetchStaticObject(uri)
-				landingPage <- uriSer.fetchCustomLandingPage(uri)
-			yield objToDto(obj, landingPage)
+			uriSer.fetchStaticObjectWithDerived(uri).map: objV =>
+				for
+					obj <- objV
+					landingPage <- uriSer.fetchCustomLandingPage(uri)
+				yield objToDto(obj, landingPage)
 
 		case Hash.Collection(_) =>
-			uriSer.fetchStaticCollection(uri).map(collToDto)
+			uriSer.fetchStaticCollectionWithDerived(uri).map(_.map(collToDto))
 
-		case _ => Validated.error(s"URI $uri looks like neither object nor collection")
+		case _ => Future.successful(Validated.error(s"URI $uri looks like neither object nor collection"))
 	}
 }
 

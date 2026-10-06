@@ -2,18 +2,13 @@ package se.lu.nateko.cp.meta.ingestion
 
 import scala.language.unsafeNulls
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import org.eclipse.rdf4j.model.vocabulary.LOCN
 import org.eclipse.rdf4j.model.{Statement, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.CloseableIterator
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.Ingestion.Statements
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, Rdf4jInstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 
-import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
@@ -36,53 +31,11 @@ object Ingestion:
 
 	type Statements = Future[CloseableIterator[Statement]]
 
-	def allProviders(using ActorSystem, ExecutionContext, Materializer, EnvriConfigs): Map[String, StatementProvider] =
-		Map(
-			"cpMetaOnto" -> new RdfXmlFileIngester("/owl/cpmeta.owl"),
-			"otcMetaOnto" -> new RdfXmlFileIngester("/owl/otcmeta.owl"),
-			"stationEntryOnto" -> new RdfXmlFileIngester("/owl/stationEntry.owl"),
-			"extraStations" -> new ExtraStationsIngester("/extraStations.csv"),
-			"cpMetaInstances" -> new RemoteRdfGraphIngester(
-				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-				rdfGraph = new URI("http://meta.icos-cp.eu/resources/cpmeta/")
-			),
-			"cpMetaCityInstances" -> new RemoteRdfGraphIngester(
-				endpoint = new URI("https://citymeta.icos-cp.eu/sparql"),
-				rdfGraph = new URI("https://citymeta.icos-cp.eu/resources/cpmeta/")
-			),
-			"icosInstances" -> new RemoteRdfGraphIngester(
-				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-				rdfGraph = new URI("http://meta.icos-cp.eu/resources/icos/")
-			),
-			"sitesMetaInstances" -> new RemoteRdfGraphIngester(
-				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-				rdfGraph = new URI("https://meta.fieldsites.se/resources/sites/")
-			),
-			"otcMetaEntry" -> new RemoteRdfGraphIngester(
-				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-				rdfGraph = new URI("http://meta.icos-cp.eu/resources/otcmeta/")
-			),
-//			"cpStationEntry" -> new RemoteRdfGraphIngester(
-//				endpoint = new URI("https://meta.icos-cp.eu/sparql"),
-//				rdfGraph = new URI("http://meta.icos-cp.eu/resources/stationentry/")
-//			),
-			"extraPeopleAndOrgs" -> new PeopleAndOrgsIngester("/extraPeople_3.csv"),
-
-			"dcatdemo" -> new LocalSparqlConstructExtractor(
-				"/sparql/cpL2ToDcat.rq", "/sparql/cpToEnvriSiteDocUseCase_1.rq", "/sparql/cpToEnvriSiteDocUseCase_2.rq"
-			).map{repo =>
-				val vf = repo.getValueFactory
-				val geoSparqlLitType = vf.createIRI("http://www.opengis.net/ont/geosparql/geoJSONLiteral")
-				st =>
-					val pred = st.getPredicate
-					if pred == LOCN.GEOMETRY_PROP then
-						val typedLit = vf.createLiteral(st.getObject.stringValue, geoSparqlLitType)
-						vf.createStatement(st.getSubject, pred, typedLit, st.getContext)
-					else st
-			},
-			"emptySource" -> EmptyIngester
-		)
-	end allProviders
+	val schemaOntologyResources: Map[String, String] = Map(
+		"cpMetaOnto" -> "/owl/cpmeta.owl",
+		"otcMetaOnto" -> "/owl/otcmeta.owl",
+		"stationEntryOnto" -> "/owl/stationEntry.owl"
+	)
 
 	def ingest(
 		target: InstanceServer, ingester: Ingester, factory: ValueFactory

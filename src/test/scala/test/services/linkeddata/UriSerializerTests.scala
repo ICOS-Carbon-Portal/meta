@@ -18,7 +18,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.api.{HandleNetClient, StatisticsProvider}
+import se.lu.nateko.cp.meta.api.{PidFactory, StatisticsProvider}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject, staticCollLandingPage, staticObjLandingPage}
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
@@ -796,7 +796,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
 		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
 		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
 		loader -> countingRepo

@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReferenceProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
@@ -41,7 +42,7 @@ class CitationMaker(
 	metaVocab: CpmetaVocab,
 	coreConf: MetaCoreConfig,
 	val externalObjs: ExternalObjFetcher
-):
+) extends StaticObjectReferenceProvider:
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
 	import Validated.getOrElseV

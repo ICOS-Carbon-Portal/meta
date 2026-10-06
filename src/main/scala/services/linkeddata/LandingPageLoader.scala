@@ -35,7 +35,7 @@ final class LandingPageLoader(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	pidFactory: HandleNetClient.PidFactory,
+	pidFactory: se.lu.nateko.cp.meta.api.PidFactory,
 	citer: CitationMaker
 ) {
 
@@ -45,7 +45,7 @@ final class LandingPageLoader(
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer))
 
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 

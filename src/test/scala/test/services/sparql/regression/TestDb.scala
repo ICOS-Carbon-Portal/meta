@@ -158,7 +158,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	else
 		Some(indexUpdaterFactory -> geoFactory)
 
-	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf)
+	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf.core, se.lu.nateko.cp.meta.services.citation.CitationProviderConfig.getLenses(metaConf), se.lu.nateko.cp.meta.services.citation.CitationProviderConfig.pidFactory(metaConf))
 	import TestRepo.given
 	CpNotifyingSail(base, idxFactories, citer)
 }

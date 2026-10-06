@@ -2,29 +2,29 @@ package se.lu.nateko.cp.meta.test.services.sparql.regression
 
 import scala.language.unsafeNulls
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import org.apache.commons.io.FileUtils
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.rio.RDFFormat
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.CloseableIterator
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
-import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationStyle}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderConfig, CitationStyle}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
-import se.lu.nateko.cp.meta.utils.async.executeSequentially
-import se.lu.nateko.cp.meta.{LmdbConfig, RdfStorageConfig}
+import se.lu.nateko.cp.meta.utils.rdf4j.Loading
+import se.lu.nateko.cp.meta.{ConfigLoader, LmdbConfig, RdfStorageConfig}
 
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+
 
 private val graphIriToFile = Seq(
 	"atmprodcsv",
@@ -47,7 +47,6 @@ private val graphIriToFile = Seq(
 	("http://meta.icos-cp.eu/collections/" -> "collections.rdf") +
 	("http://meta.icos-cp.eu/documents/" -> "icosdocs.rdf")
 
-private val metaConf = se.lu.nateko.cp.meta.test.TestConfig.metaConfig
 
 class TestDb {
 	TestRepo.checkout()
@@ -115,19 +114,13 @@ private object TestRepo {
 	}
 }
 
-private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): Future[Unit] = {
+private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): Future[Unit] = Future {
 	val repo = SailRepository(makeSail(dir))
-
-	val ingestion =
-		given BnodeStabilizers = new BnodeStabilizers
-		val factory = repo.getValueFactory
-		executeSequentially(graphIriToFile): (uriStr, filename) =>
-			val graphIri = factory.createIRI(uriStr)
-			val server = Rdf4jInstanceServer(repo, graphIri)
-			val ingester = new RdfXmlFileIngester(s"/rdf/sparqlDbInit/$filename")
-			Ingestion.ingest(server, ingester, factory).map(_ => Done)
-
-	ingestion.map(Done => repo.shutDown())
+	repo.init()
+	graphIriToFile.foreach { (uriStr, filename) =>
+		Loading.loadResource(repo, s"/rdf/sparqlDbInit/$filename", uriStr, RDFFormat.RDFXML).get
+	}
+	repo.shutDown()
 }
 
 private def createIndex(dir: Path)(using ActorSystem, ExecutionContext): Future[IndexData] = {
@@ -146,7 +139,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
 		recreateAtStartup = false,
-		indices = metaConf.rdfStorage.indices,
+		indices = "spoc,posc,opsc",
 		disableCpIndex = false,
 		recreateCpIndexAtStartup = true
 	)
@@ -158,9 +151,17 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	else
 		Some(indexUpdaterFactory -> geoFactory)
 
-	val citer = new CitationProvider(base, _ => CitationClientDummy, metaConf.core, se.lu.nateko.cp.meta.services.citation.CitationProviderConfig.getLenses(metaConf), se.lu.nateko.cp.meta.services.citation.CitationProviderConfig.pidFactory(metaConf))
+	val citer = {
+			val config = ConfigLoader.default
+			new CitationProvider(
+			base, _ => CitationClientDummy, config.core,
+			CitationProviderConfig.getLenses(config),
+			CitationProviderConfig.pidFactory(config)
+		)
+	}
+
 	import TestRepo.given
-	CpNotifyingSail(base, idxFactories, citer)
+	CpNotifyingSail(base, idxFactories, citer, DerivedMetadataService(citer))
 }
 
 object CitationClientDummy extends CitationClient {

@@ -1,6 +1,5 @@
 package se.lu.nateko.cp.meta.upload
 
-import akka.Done
 import se.lu.nateko.cp.doi.*
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.meta.StaticCollectionDto
@@ -17,22 +16,27 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 	import AtcCollMaker.*
 	import maker.sparqlHelper.sparql
 
-	def makeColls(): Future[Done] = for(
-		stationToColl <- sparql.select(stationCollsQuery("2024-06-25", "2024-06-30")).map(parseStationColls);
+	def makeColls(dryRun: Boolean = false): Future[Seq[AtcCollResult]] = for(
+		stationToColl <- sparql.select(stationCollsQuery(prevCollSubmittedFrom, prevCollSubmittedTo)).map(parseStationColls);
 		//_ = println(stationToColl);
-		stationToItems <- sparql.select(dobjStationQuery("2024-06-15")).map(parseStationObjs);
+		stationToItems <- sparql.select(dobjStationQuery(dobjSubmittedAfter)).map(parseStationObjs);
 		count = stationToItems.values.map(_.map.values.map(_.size)).flatten.sum;
 		_ = println(s"Total number of data objects: $count");
-		done <- executeSequentially(stationToItems){
-			(makeStationColl(stationToColl) _).tupled
-		}
-	) yield done
+		_ = if(dryRun) println("DRY RUN: no collections or DOIs will be created");
+		resultOpts <- traverseFut(stationToItems){
+			(makeStationColl(stationToColl, dryRun) _).tupled
+		};
+		results = resultOpts.flatten;
+		_ = printSummary(results, dryRun)
+	) yield results
 
-	def makeStationColl(prevColLookup: Map[URI, URI])(stationUri: URI, items: SpecDobjs): Future[Done] = {
+	def makeCollsDryRun(): Future[Seq[AtcCollResult]] = makeColls(dryRun = true)
+
+	def makeStationColl(prevColLookup: Map[URI, URI], dryRun: Boolean)(stationUri: URI, items: SpecDobjs): Future[Option[AtcCollResult]] = {
 		val sampleUris = items.map.values.map(_.head)
 		traverseFut(sampleUris)(uploader.fetchDataObject).flatMap{sampleDobjs =>
 			val dobjUris = items.map.values.flatten.toSeq
-			val doneFutOpt = for
+			val resultFutOpt = for
 				l2 <- sampleDobjs.head.specificInfo.toOption;
 				station = l2.acquisition.station;
 				//if Set("CBW", "IZO") contains station.id;
@@ -40,25 +44,60 @@ class AtcCollMaker(maker: DoiMaker, uploader: CpUploadClient)(implicit ctxt: Exe
 				prevCol = prevColLookup.get(station.org.self.uri)
 			yield
 				val doi = maker.client.doi(DoiMaker.coolDoi(hash))
+				val collection = new URI(s"https://meta.icos-cp.eu/collections/${hash.id}")
 				val dto = makeDto(l2.acquisition.station, dobjUris, doi, prevCol)
-				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(s"https://meta.icos-cp.eu/collections/${hash.id}"))
-				// println(dto)
-				// println(doiMeta)
-				// println(s"done for ${station.org.name}")
-				// ok
-				for
-					_ <- uploader.uploadSingleCollMeta(dto);
-					_ = println(s"collection created for $stationUri");
-					_ <- maker.client.putMetadata(doiMeta)
-				yield
-					println(s"minted DOI; done for $stationUri")
-					Done
-			doneFutOpt.getOrElse(ok)
+				val doiMeta = makeDoiMeta(dto, doi, sampleDobjs).copy(url = Some(collection.toString))
+				val result = AtcCollResult(stationUri, station.org.name, collection, doi, prevCol, dobjUris.size)
+				if dryRun then
+					printResult("DRY RUN", result)
+					println(dto)
+					println(doiMeta)
+					Future.successful(Some(result))
+				else
+					for
+						_ <- uploader.uploadSingleCollMeta(dto);
+						_ <- maker.client.putMetadata(doiMeta)
+					yield
+						printResult("CREATED", result)
+						Some(result)
+			resultFutOpt.getOrElse{
+				println(s"Skipping $stationUri: could not read station L2 metadata or compute collection hash")
+				Future.successful(None)
+			}
 		}
 	}
 }
 
 object AtcCollMaker{
+
+	// Update these variables for each ATC L2 release.
+	val release = "2026-1"
+	val publicationYear = 2026
+	val prevCollSubmittedFrom = "2025-07-01"
+	val prevCollSubmittedTo = "2025-07-02"
+	val dobjSubmittedAfter = "2025-06-15"
+
+	case class AtcCollResult(
+		stationUri: URI,
+		stationName: String,
+		collection: URI,
+		doi: Doi,
+		prevCollection: Option[URI],
+		memberCount: Int
+	)
+
+	def printResult(prefix: String, result: AtcCollResult): Unit =
+		println(
+			s"$prefix ${result.stationName} (${result.stationUri}): " +
+			s"collection=${result.collection}, doi=${result.doi}, " +
+			s"previous=${result.prevCollection.fold("<none>")(_.toString)}, members=${result.memberCount}"
+		)
+
+	def printSummary(results: Seq[AtcCollResult], dryRun: Boolean): Unit =
+		val action = if dryRun then "Would create" else "Created"
+		println(s"$action ${results.size} ATC L2 $release station collections")
+		results.foreach: result =>
+			println(s"${result.collection}\t${result.doi}\t${result.stationName}")
 
 	class SpecDobjs(val map: Map[URI, Seq[URI]]){
 		def this(spec: URI, dobj: URI) = this(Map(spec -> Seq(dobj)))
@@ -111,7 +150,7 @@ object AtcCollMaker{
 			creators = creators :+ icosRiCreator,
 			titles = Some(Seq(Title(dto.title, None, None))),
 			publisher = Some("ICOS ERIC -- Carbon Portal"),
-			publicationYear = Some(2025),
+			publicationYear = Some(publicationYear),
 			types = Some(ResourceType(Some("ZIP archives"), Some(ResourceTypeGeneral.Collection))),
 			subjects = Seq(
 				Subject("Biogeochemical cycles, processes, and modeling"),
@@ -134,11 +173,11 @@ object AtcCollMaker{
 	def makeDto(station: Station, items: Seq[URI], doi: Doi, prevColOpt: Option[URI]) = StaticCollectionDto(
 		submitterId = "CP",
 		members = items,
-		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release 2025-1",
+		title = s"ICOS Atmosphere Level 2 data, ${station.org.name}, release $release",
 		description = Some(
 			"ICOS Atmospheric Greenhouse Gas Mole Fractions of CO2, CH4, CO, 14C, N2O, meteorology, " +
-			"and flask samples analyzed for CO2, CH4, N2O, CO, H2, SF6, delta O2N2 and 14C" +
-			s"period up to March 2025, station ${station.org.name}, final quality controlled Level 2 data, release 2025-1"
+			"and flask samples analyzed for CO2, CH4, N2O, CO, H2, SF6, delta O2N2 and 14C " +
+			s"period up to March $publicationYear, station ${station.org.name}, final quality controlled Level 2 data, release $release"
 		),
 		isNextVersionOf = prevColOpt.flatMap(getHashSuff).map(Left(_)),
 		preExistingDoi = Some(doi),

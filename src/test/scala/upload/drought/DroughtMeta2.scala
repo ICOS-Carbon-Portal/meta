@@ -7,6 +7,7 @@ import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.TimeInterval
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationStyle}
 
 import java.io.{File, FileReader}
 import java.net.URI
@@ -55,13 +56,13 @@ class FileEntry(
 		case _ => FluxdataUpload.etcOrg
 	}
 
-	def comment(citer: DoiCitationLookup)(implicit ctxt: ExecutionContext): Future[Option[String]] = {
+	def comment(citer: CitationClient)(implicit ctxt: ExecutionContext): Future[Option[String]] = {
 		val papersComments: Future[Seq[String]] = if(papers.isEmpty)
 				Future.successful(Nil)
 			else
 				Future.sequence(
 					papers.map(
-						doi => citer.getHtmlCitation(doi).recover{
+						doi => citer.getCitation(doi, CitationStyle.HTML).recover{
 							case _: Throwable => s"https://doi.org/${doi.prefix}/${doi.suffix}"
 						}
 					)

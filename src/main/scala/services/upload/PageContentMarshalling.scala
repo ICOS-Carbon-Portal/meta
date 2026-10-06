@@ -15,7 +15,6 @@ import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObje
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
@@ -27,8 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class PageContentMarshalling(
 	handleProxies: HandleProxiesConfig,
 	statisticsClient: StatisticsProvider,
-	externalProviders: ExternalProviders,
-	citer: CitationMaker
+	externalProviders: ExternalProviders
 ):
 
 	import PageContentMarshalling.*
@@ -42,12 +40,7 @@ class PageContentMarshalling(
 				dlCount <- dlCountFut;
 				previewCount <- previewCountFut
 			) yield {
-				val extras = LandingPageExtras(
-					dlCount, previewCount, errors,
-					externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label),
-					remoteCitation = citer.remoteCitation(obj)
-				)
-				LandingPage(obj, extras, handleProxies)
+				LandingPage(obj, objectExtras(obj, dlCount, previewCount, errors), handleProxies)
 			}
 		makeMarshaller(template, messagePage("Data object not found", _))
 
@@ -57,14 +50,32 @@ class PageContentMarshalling(
 		val template: PageTemplate[StaticCollection] = (coll, errors) =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
 			yield {
-				val extras = LandingPageExtras(
-					dlCount, None, errors,
-					remoteCitation = citer.remoteCitation(coll)
-				)
-				CollectionLandingPage(coll, extras, handleProxies)
+				CollectionLandingPage(coll, LandingPageExtras(dlCount, None, errors), handleProxies)
 			}
 		makeMarshaller(template, messagePage("Collection not found", _))
 
+	def staticObjectAsyncMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[StaticObject]]] =
+		import statisticsClient.executionContext
+		val template: PageTemplate[StaticObject] = (obj, errors) =>
+			for
+				dlCount <- statisticsClient.getObjDownloadCount(obj)
+				previewCount <- statisticsClient.getPreviewCount(obj.hash)
+			yield LandingPage(obj, objectExtras(obj, dlCount, previewCount, errors), handleProxies)
+		makeAsyncMarshaller(template, messagePage("Data object not found", _))
+
+	def staticCollectionAsyncMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[StaticCollection]]] =
+		import statisticsClient.executionContext
+		val template: PageTemplate[StaticCollection] = (coll, errors) =>
+			statisticsClient.getCollDownloadCount(coll.res).map: dlCount =>
+				CollectionLandingPage(coll, LandingPageExtras(dlCount, None, errors), handleProxies)
+		makeAsyncMarshaller(template, messagePage("Collection not found", _))
+
+
+	private def objectExtras(obj: StaticObject, dlCount: Option[Int], previewCount: Option[Int], errors: ErrorList)(using Envri, EnvriConfig) =
+		LandingPageExtras(
+			dlCount, previewCount, errors,
+			externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label)
+		)
 
 	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
 	private def makeMarshaller[T: JsonWriter](
@@ -93,6 +104,28 @@ class PageContentMarshalling(
 			)
 		}
 	}
+
+	private def makeAsyncMarshaller[T: JsonWriter](
+		templateFetcher: (T, ErrorList) => Future[Html],
+		notFoundPage: ErrorList => Html,
+	): ToResponseMarshaller[() => Future[Validated[T]]] =
+		Marshaller { exeCtxt => producer =>
+			given ExecutionContext = exeCtxt
+			producer().flatMap: itemV =>
+				fetchHtmlMaker(itemV, templateFetcher, notFoundPage).map: htmlMaker =>
+					List(
+						WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
+						WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
+					)
+		}
+
+	private def fetchHtmlMaker[T](
+		itemV: Validated[T], templateFetcher: (T, ErrorList) => Future[Html], notFoundPage: ErrorList => Html
+	)(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match
+		case Some(item) => templateFetcher(item, itemV.errors).map: html =>
+			charset => HttpResponse(entity = getHtml(html, charset))
+		case None => Future.successful: charset =>
+			HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage(itemV.errors), charset))
 end PageContentMarshalling
 
 object PageContentMarshalling:

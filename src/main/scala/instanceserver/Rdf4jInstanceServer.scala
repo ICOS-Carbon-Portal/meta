@@ -89,6 +89,12 @@ class Rdf4jTriplestoreConnection(
 
 end Rdf4jTriplestoreConnection
 
+object Rdf4jTriplestoreConnection:
+
+	def access[T](repo: Repository)(read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
+		val conn = Rdf4jTriplestoreConnection(null, Nil, repo.getConnection())
+		try read(using conn) finally conn.close()
+
 class Rdf4jSailConnection(
 	val primaryContext: IRI, val readContexts: Seq[IRI], conn: SailConnection, val factory: ValueFactory
 ) extends TriplestoreConnection:

@@ -104,7 +104,10 @@ For the spatiotemporal data objects, the metadata package has the same general s
 	"forStation": "http://meta.icos-cp.eu/resources/stations/AS_SMR",
 	"samplingHeight": 50.5,
 	"customLandingPage": "http://www.bgc-jena.mpg.de/CarboScope/?ID=s99_v3.7",
-	"variables": ["co2flux_land", "co2flux_ocean"]
+	"variables": [
+		"https://meta.icos-cp.eu/resources/cpmeta/co2flux_land",
+		"https://meta.icos-cp.eu/resources/cpmeta/co2flux_ocean"
+	]
 }
 ```
 

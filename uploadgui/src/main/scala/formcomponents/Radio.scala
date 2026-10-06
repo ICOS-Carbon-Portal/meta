@@ -4,7 +4,7 @@ import se.lu.nateko.cp.meta.upload.Utils.*
 import org.scalajs.dom.html
 
 class Radio[T](elemId: String, cb: T => Unit, parser: String => Option[T], serializer: T => String) {
-	private val inputBlock: html.Element = getElementById[html.Element](elemId).get
+	private val inputBlock: html.Element = getElementById[html.Element](elemId)
 	private val inputs: Seq[html.Input] = querySelectorAll[html.Input](inputBlock, "input[type=radio]")
 
 	def value: Option[T] = selectedInput.flatMap(si => parser(si.value))

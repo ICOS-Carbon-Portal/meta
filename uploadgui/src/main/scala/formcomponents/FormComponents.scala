@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.core.data.OneOrSeq
 
 
 class FormElement(elemId: String) {
-	private val form = getElementById[html.Form](elemId).get
+	private val form = getElementById[html.Form](elemId)
 
 	def reset() = {
 		form.reset()
@@ -117,7 +117,7 @@ class DescriptionInput(elemId: String, cb: () => Unit) extends GenericOptionalIn
 class TextOptInput(elemId: String, cb: () => Unit) extends GenericOptionalInput[String](elemId, cb)(s => Try(Some(s)), _.toString())
 
 class Button(elemId: String, onClick: () => Unit){
-	private val button = getElementById[html.Button](elemId).get
+	private val button = getElementById[html.Button](elemId)
 	private var popover = initializeBootstrapPopover(button.parentElement)
 
 	def enable(): Unit =
@@ -173,7 +173,7 @@ class HtmlElements(selector: String) {
 }
 
 class TagCloud(elemId: String) {
-	private val div = getElementById[html.Div](elemId).get
+	private val div = getElementById[html.Div](elemId)
 
 	def setList(keywords: Seq[String]): Unit = {
 		div.innerHTML =
@@ -185,7 +185,7 @@ class TagCloud(elemId: String) {
 }
 
 class Modal(elemId: String) {
-	private val modal = getElementById[html.Div](elemId).get
+	private val modal = getElementById[html.Div](elemId)
 	private val title = querySelector[html.Heading](modal, ".modal-title").get
 	private val body = querySelector[html.Div](modal, ".modal-body").get
 
@@ -199,7 +199,7 @@ class Modal(elemId: String) {
 }
 
 class Checkbox(elemId: String, cb: (Boolean) => Unit) {
-	private val checkbox = getElementById[html.Input](elemId).get
+	private val checkbox = getElementById[html.Input](elemId)
 
 	def checked: Boolean = checkbox.checked
 	def check(): Unit = {
@@ -218,7 +218,7 @@ class Checkbox(elemId: String, cb: (Boolean) => Unit) {
 }
 
 class Text(elemId: String):
-	private val label = getElementById[html.Span](elemId).get
+	private val label = getElementById[html.Span](elemId)
 
 	def setText(text: String): Unit =
 		label.innerHTML = text

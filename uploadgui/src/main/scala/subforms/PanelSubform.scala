@@ -5,12 +5,14 @@ import se.lu.nateko.cp.meta.upload.*
 import eu.icoscp.envri.Envri
 
 import scala.concurrent.Future
+import java.net.URI
 
 abstract class PanelSubform(selector: String)(using bus: PubSubBus) {
 	protected val htmlElements = new HtmlElements(selector)
 	protected def notifyUpdate(): Unit = bus.publish(FormInputUpdated)
 	private type AgentList = IndexedSeq[NamedUri]
 	private var peepsOrgsFut: Option[Future[(AgentList, AgentList)]] = None
+	private var variablesFut: Option[Future[IndexedSeq[DatasetVar]]] = None
 
 
 	def resetForm(): Unit
@@ -23,4 +25,12 @@ abstract class PanelSubform(selector: String)(using bus: PubSubBus) {
 		result
 	else
 		peepsOrgsFut.get
+
+	protected def getVariables(dataset: URI) = if variablesFut.isEmpty then
+		val result = Backend.getDatasetVariables(dataset)
+		variablesFut = Some(result)
+		result
+	else
+		variablesFut.get
+
 }

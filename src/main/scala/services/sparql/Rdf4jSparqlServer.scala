@@ -11,12 +11,15 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.parser.{ParsedBooleanQuery, ParsedGraphQuery, ParsedTupleQuery, ParsedQuery}
-import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
+import org.eclipse.rdf4j.query.resultio.{BooleanQueryResultWriterFactory, TupleQueryResultWriterFactory}
+import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLBooleanJSONWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONWriterFactory
+import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLBooleanXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
-import org.eclipse.rdf4j.query.{GraphQuery, MalformedQueryException, Query, TupleQuery}
+import org.eclipse.rdf4j.query.impl.SimpleDataset
+import org.eclipse.rdf4j.query.{BooleanQuery, GraphQuery, MalformedQueryException, Query, TupleQuery}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
@@ -50,7 +53,7 @@ class Rdf4jSparqlServer(
 
 	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
 		exeCtxt => query => Future{
-			quoter.quotaExcess(query.clientId).fold{
+			quoter.quotaExcess(query.quota).fold{
 				getSparqlingMarshallings(query)
 			}{
 				plainResponse(StatusCodes.ServiceUnavailable, _)
@@ -68,7 +71,7 @@ class Rdf4jSparqlServer(
 					graphQueryProtocolOptions.map(getQueryMarshalling(query, _))
 
 				case _: ParsedBooleanQuery =>
-					plainResponse(StatusCodes.NotImplemented, "Boolean queries are not supported yet")
+					booleanQueryProtocolOptions.map(getQueryMarshalling(query, _))
 
 				case _: ParsedQuery =>
 					plainResponse(StatusCodes.NotImplemented, "Unsupported query")
@@ -86,14 +89,21 @@ class Rdf4jSparqlServer(
 		protocolOption.requestedResponseType,
 		() => {
 			val timeout = (config.maxQueryRuntimeSec + 1).seconds
-			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
+			val qquoter = quoter.getQueryQuotaManager(queryStr.quota)
 			val errPromise = Promise[ByteString]()
 			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
 
 				val conn = repo.getConnection()
 
 				val (closer, sparqlFut) = Try:
-						conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+						val query = conn.prepareQuery(queryStr.query).asInstanceOf[Q]
+						if !queryStr.dataset.isEmpty then
+							val dataset = SimpleDataset()
+							val factory = conn.getValueFactory
+							queryStr.dataset.defaultGraphs.foreach(uri => dataset.addDefaultGraph(factory.createIRI(uri)))
+							queryStr.dataset.namedGraphs.foreach(uri => dataset.addNamedGraph(factory.createIRI(uri)))
+							query.setDataset(dataset)
+						query
 					.flatMap: query =>
 						val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
 						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)
@@ -162,6 +172,8 @@ object Rdf4jSparqlServer:
 
 	private val jsonSparqlWriterFactory = new SPARQLResultsJSONWriterFactory()
 	private val xmlSparqlWriterFactory = new SPARQLResultsXMLWriterFactory()
+	private val jsonBooleanWriterFactory = new SPARQLBooleanJSONWriterFactory()
+	private val xmlBooleanWriterFactory = new SPARQLBooleanXMLWriterFactory()
 	private val csvSparqlWriterFactory = new SPARQLResultsCSVWriterFactory()
 	private val tsvSparqlWriterFactory = new SPARQLResultsTSVWriterFactory()
 	private val xmlRdfWriterFactory = new RDFXMLWriterFactory()
@@ -179,7 +191,17 @@ object Rdf4jSparqlServer:
 
 		def apply(rt: ContentType, rrt: ContentType, wf: RDFWriterFactory) =
 			new ProtocolOption(rt, rrt, new GraphQueryEvaluator(wf))
+
+		def apply(rt: ContentType, rrt: ContentType, wf: BooleanQueryResultWriterFactory) =
+			new ProtocolOption(rt, rrt, new BooleanQueryEvaluator(wf))
 	}
+
+	val booleanQueryProtocolOptions: List[ProtocolOption[BooleanQuery]] =
+		ProtocolOption(jsonSparql, jsonSparql, jsonBooleanWriterFactory) ::
+		ProtocolOption(jsonSparql, ContentTypes.`application/json`, jsonBooleanWriterFactory) ::
+		ProtocolOption(xmlSparql, xmlSparql, xmlBooleanWriterFactory) ::
+		ProtocolOption(xmlSparql, xml, xmlBooleanWriterFactory) ::
+		Nil
 
 	val tupleQueryProtocolOptions: List[ProtocolOption[TupleQuery]] =
 		ProtocolOption(jsonSparql, jsonSparql, jsonSparqlWriterFactory) ::
@@ -190,7 +212,8 @@ object Rdf4jSparqlServer:
 		ProtocolOption(tsvSparql, ContentTypes.`text/plain(UTF-8)`, tsvSparqlWriterFactory) ::
 		Nil
 
-	import se.lu.nateko.cp.meta.services.linkeddata.InstanceServerSerializer.{ turtleContType, xmlContType }
+	private val turtleContType = getSparqlContentType("text/turtle", ".ttl")
+	private val xmlContType = getSparqlContentType("application/rdf+xml", ".rdf")
 
 	val graphQueryProtocolOptions: List[ProtocolOption[GraphQuery]] =
 		ProtocolOption(xmlContType, xml, xmlRdfWriterFactory) ::

@@ -18,6 +18,7 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServe
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
@@ -151,7 +152,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config0)
 
 		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
+		val citer = CitationProviderConfig.citationProvider(baseSail, citCache, metaCache, config0)
 
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
 

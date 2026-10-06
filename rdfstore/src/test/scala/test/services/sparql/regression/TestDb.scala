@@ -16,6 +16,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider, CitationProviderConfig, CitationStyle}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
+import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.utils.rdf4j.Loading
 import se.lu.nateko.cp.meta.{ConfigLoader, LmdbConfig, RdfStorageConfig}
@@ -77,18 +78,21 @@ private object TestRepo {
 	private def initRepo(): Future[Repository] = {
 
 		/**
-		The repo is created twice:
+		The repo is created three times:
 			1) to ingest the test RDF file into a fresh new triplestore
-			2) to restart the triplestore and create the magic SPARQL index
+			2) to restart the triplestore to create the magic SPARQL index
+			3) to dump the SPARQL index to disk, re-start, read the index
+			data structure, and initialize the index from it
 		**/
 
 		log.info("Initializing")
 		val start = System.currentTimeMillis()
 		for
 			() <- ingestTriplestore(dir)
+			idxData <- createIndex(dir)
 			sail = makeSail(dir)
 			() = sail.init()
-			_ <- sail.initSparqlMagicIndex()
+			_ = sail.initSparqlMagicIndex(Some(idxData))
 			() = log.info(s"TestDb init: ${System.currentTimeMillis() - start} ms")
 		yield SailRepository(sail)
 	}
@@ -119,19 +123,33 @@ private def ingestTriplestore(dir: Path)(using ActorSystem, ExecutionContext): F
 	repo.shutDown()
 }
 
+private def createIndex(dir: Path)(using ActorSystem, ExecutionContext): Future[IndexData] = {
+	val sail = makeSail(dir)
+	sail.init()
+	for
+		_ <- sail.initSparqlMagicIndex(None)
+		_ <- sail.makeReadonlyDumpIndexAndCaches("Test")
+		_ = sail.shutDown()
+		idxData <- IndexHandler.restore()
+	yield idxData
+}
+
 private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSystem) = {
 	val rdfConf = RdfStorageConfig(
 		lmdb = Some(LmdbConfig(tripleDbSize = 1L << 32, valueDbSize = 1L << 32, valueCacheSize = 1 << 13)),
 		path = dir.toString,
 		recreateAtStartup = false,
 		indices = "spoc,posc,opsc",
-		disableCpIndex = false
+		disableCpIndex = false,
+		recreateCpIndexAtStartup = true
 	)
 
-	val (_, base) = StorageSail.apply(rdfConf)
+	val (freshInit, base) = StorageSail.apply(rdfConf)
 	val indexUpdaterFactory = IndexHandler(system.scheduler)
 	val geoFactory = GeoIndexProvider()
-	val idxFactories = Some(indexUpdaterFactory -> geoFactory)
+	val idxFactories = if freshInit then None
+	else
+		Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = {
 			val config = ConfigLoader.default

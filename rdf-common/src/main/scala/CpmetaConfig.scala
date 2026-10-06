@@ -155,7 +155,8 @@ case class RdfStorageConfig(
 	path: String,
 	recreateAtStartup: Boolean,
 	indices: String,
-	disableCpIndex: Boolean
+	disableCpIndex: Boolean,
+	recreateCpIndexAtStartup: Boolean
 )
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
@@ -165,6 +166,7 @@ case class RdfStoreConfig(httpBindInterface: String, port: Int)
 case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
 	updateEndpoint: URI,
+	adminEndpoint: URI,
 	derivedMetadataEndpoint: URI
 )
 
@@ -245,9 +247,9 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

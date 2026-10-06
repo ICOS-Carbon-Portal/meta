@@ -21,13 +21,15 @@ import se.lu.nateko.cp.meta.utils.rdf4j.transact
 import se.lu.nateko.cp.meta.routes.SparqlRoute.entityStrictifyTimeout
 
 import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 object Route:
 
 	def apply(
 		repo: Repository,
 		sparqlConf: SparqlServerConfig,
-		derivedMetadata: DerivedMetadataService
+		derivedMetadata: DerivedMetadataService,
+		makeReadonly: String => Future[String]
 	)(using
 		ActorSystem,
 		ToResponseMarshaller[SparqlQuery]
@@ -83,5 +85,8 @@ object Route:
 		~ path("health"):
 			get:
 				complete(StatusCodes.OK -> "ok")
+		~ path("admin" / "read-only"):
+			post:
+				entity(as[String]) { message => complete(makeReadonly(message)) }
 		~ pathEndOrSingleSlash:
 			complete(StatusCodes.NotFound)

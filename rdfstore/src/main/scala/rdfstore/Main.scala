@@ -19,7 +19,6 @@ import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
-import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,12 +50,11 @@ object Main extends App:
 		)
 		val repo = SailRepository(sail)
 		repo.init()
-		val restoreResult = logManager.restore(repo, isFreshInit)
+		logManager.restore(repo, isFreshInit)
 		val schemaOntologiesIngested = ingestSchemaOntologies(repo, config)
 		for {
 			_ <- schemaOntologiesIngested
-			indexData <- restoreIndex(forceRecreate = isFreshInit || restoreResult.invalidatesIndex)
-			_ <- sail.initSparqlMagicIndex(indexData)
+			_ <- sail.initSparqlMagicIndex()
 			_ = if isFreshInit then sail.makeReadonly(
 				"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
 			)
@@ -101,13 +99,3 @@ object Main extends App:
 				case Success(_) => system.log.info("ingested schema ontology into {}", writeContext)
 				case Failure(err) => system.log.error(err, "failed to ingest schema ontology into {}", writeContext)
 		}).map(_ => ())
-
-	private def restoreIndex(forceRecreate: Boolean): Future[Option[IndexData]] =
-		val conf = config.rdfStorage
-		val recreate = forceRecreate || conf.recreateAtStartup || conf.recreateCpIndexAtStartup
-		if recreate then IndexHandler.dropStorage()
-		if recreate || conf.disableCpIndex then Future.successful(None)
-		else IndexHandler.restore().map(Some(_)).recover:
-			case err =>
-				system.log.warning("Failed to restore SPARQL index: {}", err.getMessage)
-				None

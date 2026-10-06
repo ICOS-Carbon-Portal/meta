@@ -155,8 +155,7 @@ case class RdfStorageConfig(
 	path: String,
 	recreateAtStartup: Boolean,
 	indices: String,
-	disableCpIndex: Boolean,
-	recreateCpIndexAtStartup: Boolean
+	disableCpIndex: Boolean
 )
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
@@ -247,7 +246,7 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
-	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)

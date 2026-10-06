@@ -52,19 +52,19 @@ class CpNotifyingSail(
 		inner.init()
 		setupQueryEvaluation()
 
-	def initSparqlMagicIndex(idxData: Option[IndexData]): Future[Done] = indexFactories match
+	def initSparqlMagicIndex(): Future[Done] = indexFactories match
 		case None =>
 			log.info("Magic index is disabled")
 			ok
 		case Some((listenerFactory, geoFactory)) =>
-			if idxData.isEmpty then log.info("Initializing Carbon Portal index...")
+			log.info("Initializing Carbon Portal index...")
 			val geoPromise = Promise[(GeoIndex, GeoEventProducer)]()
 			val geoFut = geoPromise.future.map(_._1)(ExecutionContext.parasitic)
-			val idx = idxData.fold(new CpIndex(inner, geoFut))(idx => new CpIndex(inner, geoFut, idx))
+			val idx = CpIndex(inner, geoFut)
 			idx.flush()
 			listener = Some(listenerFactory.getListener(inner, metaVocab, idx, geoPromise.future))
 			geoPromise.completeWith(geoFactory.index(inner, idx, metaReader))
-			if(idxData.isEmpty) log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
+			log.info(s"Carbon Portal index initialized with info on ${idx.size} data objects")
 			cpIndex = Some(idx)
 			setupQueryEvaluation()
 			geoFut.map(_ => Done)(using ExecutionContext.parasitic)
@@ -78,18 +78,14 @@ class CpNotifyingSail(
 			Future.successful("Triple store already in read-only mode")
 		else
 			readonlyErrMessage = Some(errorMessage)
-			val indexDump = cpIndex.fold(ok){idx =>
-				idx.flush()
-				IndexHandler.store(idx)
-			}
 			val citClient = citer.doiCiter
 			val citationsDump = CitationClient.writeCitCache(citClient)
 			val doiMetaDump = CitationClient.writeDoiCache(citClient)
-			Future.sequence(Seq(indexDump, citationsDump, doiMetaDump)).map(_ =>
-				"Switched the triple store to read-only mode. SPARQL index and citations cache dumped to disk"
+			Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
+				"Switched the triple store to read-only mode. Citations cache dumped to disk"
 			).andThen{
 				case Success(msg) => log.info(msg)
-				case Failure(err) => log.error("Fail while dumping SPARQL index or citations cache to disk", err)
+				case Failure(err) => log.error("Fail while dumping citations cache to disk", err)
 			}
 
 	private def setupQueryEvaluation(): Unit =

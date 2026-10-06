@@ -12,11 +12,25 @@
 		<minimumBreadcrumbLevel>INFO</minimumBreadcrumbLevel>
 	</appender>
 
+	<appender name="SPARQL_QUERY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${SPARQL_QUERY_LOG_FILE:-sparql-query.log}</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${SPARQL_QUERY_LOG_FILE:-sparql-query.log}.%d{yyyy-MM-dd}.gz</fileNamePattern>
+			<maxHistory>14</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%date{ISO8601} %-5level [%logger] [%thread] - %msg%n</pattern>
+		</encoder>
+	</appender>
+
 	<root level="info">
 		<appender-ref ref="STDOUT" />
 		<appender-ref ref="SENTRY" />
 	</root>
 
 	<logger name="org.semanticweb.owlapi.rdf.rdfxml.parser.OWLRDFConsumer" level="WARN" />
+	<logger name="se.lu.nateko.cp.meta.sparql.queries" level="INFO" additivity="false">
+		<appender-ref ref="SPARQL_QUERY" />
+	</logger>
 
 </configuration>

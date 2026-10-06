@@ -13,7 +13,6 @@ import se.lu.nateko.cp.meta.{ConfigLoader, CpmetaConfig, IngestionMode}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Ingestion, RdfXmlFileIngester}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -35,9 +34,9 @@ object Main extends App:
 	private given ExecutionContext = system.dispatcher
 	private given EnvriConfigs = config.core.envriConfigs
 
-	private val startup = readCitCache().zip(readDoiCache()).flatMap{ (citCache, doiCache) =>
+	private val startup = {
 		val (isFreshInit, baseSail) = StorageSail(config.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, doiCache, config)
+		val citer = CitationProvider(baseSail, config)
 		val derivedMetadata = DerivedMetadataService(citer)
 		val indexFactories =
 			if isFreshInit || config.rdfStorage.disableCpIndex then None
@@ -64,7 +63,7 @@ object Main extends App:
 				repo,
 				sparqlConfig,
 				derivedMetadata,
-				message => sail.makeReadonlyDumpIndexAndCaches(message)
+				message => Future.successful(sail.switchToReadonly(message))
 			))
 		}
 		yield (binding, queryServer, repo, logManager)

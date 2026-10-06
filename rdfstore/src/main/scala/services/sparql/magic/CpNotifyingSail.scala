@@ -11,13 +11,12 @@ import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceRes
 import org.eclipse.rdf4j.sail.helpers.{NotifyingSailConnectionWrapper, NotifyingSailWrapper}
 import org.eclipse.rdf4j.sail.{NotifyingSail, NotifyingSailConnection, SailConnectionListener}
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataService
 import se.lu.nateko.cp.meta.utils.async.ok
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.Selectable.reflectiveSelectable
-import scala.util.{Failure, Success}
 
 import index.IndexData
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
@@ -72,21 +71,14 @@ class CpNotifyingSail(
 	def makeReadonly(errorMessage: String): Unit =
 		readonlyErrMessage = Some(errorMessage)
 
-	def makeReadonlyDumpIndexAndCaches(errorMessage: String)(using ExecutionContext): Future[String] =
-		if readonlyErrMessage.isDefined then
-			readonlyErrMessage = Some(errorMessage)
-			Future.successful("Triple store already in read-only mode")
+	def switchToReadonly(errorMessage: String): String =
+		val wasReadonly = readonlyErrMessage.isDefined
+		readonlyErrMessage = Some(errorMessage)
+		if wasReadonly then "Triple store already in read-only mode"
 		else
-			readonlyErrMessage = Some(errorMessage)
-			val citClient = citer.doiCiter
-			val citationsDump = CitationClient.writeCitCache(citClient)
-			val doiMetaDump = CitationClient.writeDoiCache(citClient)
-			Future.sequence(Seq(citationsDump, doiMetaDump)).map(_ =>
-				"Switched the triple store to read-only mode. Citations cache dumped to disk"
-			).andThen{
-				case Success(msg) => log.info(msg)
-				case Failure(err) => log.error("Fail while dumping citations cache to disk", err)
-			}
+			val msg = "Switched the triple store to read-only mode"
+			log.info(msg)
+			msg
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:

@@ -164,7 +164,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, se.lu.nateko.cp.meta.services.derived.DerivedMetadataService(citer))
 		val repo = new SailRepository(sail)
 		repo.init()
 

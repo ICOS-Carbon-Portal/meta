@@ -102,7 +102,7 @@ object SchemaOrg:
 		|order by desc(?submTime)""".stripMargin
 
 		sparqler
-			.evaluateTupleQuery(SparqlQuery(query))
+			.evaluateTupleQuery(query)
 			.collect:
 				case b if Option(b.getValue("seeAlso")).forall(sa => providers.lookup(URI(sa.stringValue)).isEmpty) =>
 					b.getValue("dobj")

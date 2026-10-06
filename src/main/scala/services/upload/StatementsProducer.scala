@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{GeoFeature, GeoJson, LatLonBox, Position, flattenToSeq}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, UploadUserErrorException}
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -75,7 +75,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			getContribStatements(metaVocab.dcterms.creator, doc.authors, objectUri, vocab.getDocContribList(doc.hashSum))
 		}
 		val licUri: Option[URI] = meta.references.flatMap(_.licence).filterNot{
-			_ === CitationMaker.defaultLicence.url
+			_ === StaticMetadata.defaultLicence.url
 		}
 		specificStatements ++ Seq(
 			makeSt(objectUri, metaVocab.hasName, vocab.lit(meta.fileName)),

@@ -55,8 +55,10 @@ class MetaDb (
 	def vanillaRepo: Repository = citer.repo
 	def vanillaGlob: InstanceServer = citer.server
 
+	val derivedMetadata = new se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient(config.remoteRdfRepository.derivedMetadataEndpoint)
+
 	val uriSerializer: UriSerializer =
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, config)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, config)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		magicRepo.getSail match

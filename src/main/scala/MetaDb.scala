@@ -14,7 +14,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLenses, SparqlServer, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
-import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, MetaIngestionProviders, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource, LoggingInstanceServer, Rdf4jInstanceServer, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
@@ -177,7 +177,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			*/
 			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
 
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
+			makeInstanceServers(repo, MetaIngestionProviders.allProviders, config).andThen:
 				case _ =>
 					log.info("instance servers created")
 					singleThreadExe.foreach(_.shutdown())

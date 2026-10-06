@@ -106,8 +106,30 @@ fetchGCMDKeywords := {
 	)
 }
 
+lazy val rdfCommon = (project in file("rdf-common"))
+	.dependsOn(metaCore)
+	.settings(
+		name := "meta-rdf-common",
+		version := "0.1.0",
+		scalacOptions ++= commonScalacOptions,
+		libraryDependencies ++= Seq(
+			"com.typesafe.akka"     %% "akka-http-core"                     % akkaHttpVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
+			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
+			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
+			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
+			"io.spray"              %% "spray-json"                         % "1.3.6",
+			"com.typesafe"           % "config"                             % "1.4.2",
+			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
+			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test",
+		)
+	)
+
 lazy val meta = (project in file("."))
-	.dependsOn(metaCore, metaCore % "test->test")
+	.dependsOn(metaCore, rdfCommon, metaCore % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -166,6 +188,7 @@ lazy val meta = (project in file("."))
 			uploadgui / clean,
 			clean,
 			metaCore / Test / test,
+			rdfCommon / Test / test,
 			Test / test,
 			frontendBuild,
 			fetchGCMDKeywords
@@ -250,7 +273,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 				"core/src/main/scala/data/Envri.scala",
 				"core/src/main/scala/data/GeoFeatures.scala",
 				"core/src/main/scala/data/package.scala",
-				"src/main/scala/OntoConstants.scala",
+				"rdf-common/src/main/scala/OntoConstants.scala",
 				"src/main/scala/UploadDtos.scala",
 			).map(path => new java.io.File(path).getAbsoluteFile)
 		}

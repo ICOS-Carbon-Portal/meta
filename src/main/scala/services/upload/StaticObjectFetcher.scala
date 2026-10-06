@@ -5,11 +5,10 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.RDFS
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -22,9 +21,9 @@ class StaticObjectReader(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	pidFactory: HandleNetClient.PidFactory,
-	citer: CitationMaker
-) extends CollectionReader(metaVocab, citer.getItemCitationInfo) with DobjMetaReader(vocab):
+	pidFactory: PidFactory,
+	citer: Option[StaticObjectReferenceProvider]
+) extends CollectionReader(metaVocab, item => citer.fold(item.references)(_.getItemCitationInfo(item))) with DobjMetaReader(vocab):
 	import StatementSource.{
 		resourceHasType,
 		getSingleUri,
@@ -105,7 +104,7 @@ class StaticObjectReader(
 				parentCollections = parendColls,
 				references = References.empty
 			)
-			refs <- citer.getCitationInfo(init, docConn)
+			refs <- citer.fold(Validated.ok(init.references))(_.getCitationInfo(init, docConn))
 		yield
 			init.copy(references = refs)
 	end getExistingDataObject
@@ -142,15 +141,19 @@ class StaticObjectReader(
 					authors = Option(authors.toSeq)
 				)
 			)
-			refs <- citer.getCitationInfo(init, docConn)
+			refs <- citer.fold(Validated.ok(init.references))(_.getCitationInfo(init, docConn))
 		yield
 			init.copy(references = refs)
 
 	private def getPid(hash: Sha256Sum, format: URI, accessUrl: Option[URI])(using Envri): Option[String] =
 		if metaVocab.wdcggFormat === format then None
-		else accessUrl.filter(url => citer.externalObjs.providers.lookup(url).isDefined) match
-			case Some(url) => citer.externalObjs.getPidEager(url)
-			case None => Some(pidFactory.getPid(hash))
+		else
+			val externalLookup = for
+				url <- accessUrl
+				extObjs <- citer.map(_.externalObjs)
+				if extObjs.providers.lookup(url).isDefined
+			yield extObjs.getPidEager(url)
+			externalLookup.getOrElse(Some(pidFactory.getPid(hash)))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =
 		if metaVocab.wdcggFormat === spec.format.self.uri then

@@ -2,6 +2,9 @@ package se.lu.nateko.cp.meta.routes
 
 import scala.language.unsafeNulls
 
+import se.lu.nateko.cp.meta.rdfstore.Quota
+import se.lu.nateko.cp.meta.api.SparqlQuery
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
@@ -12,20 +15,19 @@ import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.directives.CachingDirectives.*
-import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHandler, RequestContext, Route, RouteResult}
+import akka.http.scaladsl.server.{Directive, Directive0, Directive1, ExceptionHandler, RejectionHandler, RequestContext, Route, RouteResult}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.utils.getStackTrace
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
 import scala.collection.immutable.Queue
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -33,7 +35,11 @@ object SparqlRoute:
 
 	val X_Cache_Status = "X-Cache-Status"
 
-	val getClientIp: Directive1[Option[String]] = optionalHeaderValueByName(`X-Forwarded-For`.name)
+	val entityStrictifyTimeout: FiniteDuration = 10.seconds
+
+	val getClientIp: Directive1[String] = optionalHeaderValueByName(`X-Forwarded-For`.name).flatMap:
+		case Some(ip) if ip.trim.nonEmpty => provide(ip)
+		case _ => complete(StatusCodes.BadRequest -> "Public SPARQL requests must pass through the trusted reverse proxy.")
 
 	val withPermissiveCorsHeader: Directive0 = optionalHeaderValueByType(Origin).tflatMap{
 		case Tuple1(Some(orHeader)) =>
@@ -42,14 +48,20 @@ object SparqlRoute:
 		case Tuple1(None) => respondWithHeaders(`Access-Control-Allow-Origin`.*)
 	}
 
-	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], envriConfigs: EnvriConfigs, system: ActorSystem): Route =
+	val exceptionHandler = ExceptionHandler{
+		case err => complete(
+			StatusCodes.InternalServerError -> (err.getMessage + "\n" + getStackTrace(err))
+		)
+	}
+
+	def apply(conf: SparqlServerConfig)(using marsh: ToResponseMarshaller[SparqlQuery], system: ActorSystem): Route =
 
 		val makeResponse: String => Route = query =>
-			handleExceptions(MainRoute.exceptionHandler):
+			handleExceptions(exceptionHandler):
 				handleRejections(RejectionHandler.default):
 					getClientIp: ip =>
 						ensureNoEmptyOkResponseDueToTimeout:
-							complete(SparqlQuery(query, ip))
+							complete(SparqlQuery(query, Quota.PerClient(ip)))
 
 		val badRequestResponse: Route =
 			complete(StatusCodes.BadRequest -> (
@@ -65,9 +77,11 @@ object SparqlRoute:
 				badRequestResponse
 			} ~
 			post{
-				formField("query")(makeResponse) ~
-				entity(as[String])(makeResponse) ~
-				badRequestResponse
+				toStrictEntity(entityStrictifyTimeout){
+					formField("query")(makeResponse) ~
+					entity(as[String])(makeResponse) ~
+					badRequestResponse
+				}
 			}
 
 		val spCache = SparqlCache(conf.maxCacheableQuerySize)

@@ -188,8 +188,8 @@ lazy val meta = (project in file("."))
 			fetchGCMDKeywords
 		).value,
 		cpDeployPlaybook := "core.yml",
-		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-		cpDeployInfraBranch := "master",
+		cpDeployPermittedInventories := Some(Seq("test-fs4")),
+			cpDeployInfraBranch := "valter/meta-split-rdfstore",
 
 		assembly / fullClasspath := {
 			val cp = (assembly / fullClasspath).value
@@ -327,5 +327,18 @@ lazy val rdfStore = (project in file("rdfstore"))
 				case x => ((assembly / assemblyMergeStrategy).value)(x)
 			},
 
-			assembly / assemblyRepeatableBuild := false
+			assembly / assemblyRepeatableBuild := false,
+
+			cpDeployTarget := "cpmeta_rdfstore",
+			cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta.rdfstore",
+			cpDeployPreAssembly := Def.sequential(
+				metaCore / clean,
+				clean,
+				metaCore / Test / test,
+				rdfCommon / Test / test,
+				Test / test,
+			).value,
+			cpDeployPlaybook := "rdfstore.yml",
+			cpDeployPermittedInventories := Some(Seq("test-fs4")),
+			cpDeployInfraBranch := "valter/meta-split-rdfstore"
 		)

@@ -79,8 +79,6 @@ class CitationProvider(
 	repo.init()
 	log.info(s"$repositoryName initialized")
 
-	val server = new se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer(repo)
-
 	private def access[T](read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
 		Rdf4jTriplestoreConnection.access(repo)(read)
 

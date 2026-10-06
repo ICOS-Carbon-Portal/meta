@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import eu.icoscp.envri.Envri
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.HandleNetClient
+import se.lu.nateko.cp.meta.api.PidFactory
 import se.lu.nateko.cp.meta.core.data.{
 	AtcStationSpecifics,
 	DataObject,
@@ -50,7 +50,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val vocab = CpVocab(repo.getValueFactory)
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+	private val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
 	private val citer = {
 		val doiCiter = new PlainDoiCiter {
 			def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None

@@ -9,51 +9,86 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
 import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, SparqlRunner}
+import se.lu.nateko.cp.meta.{CitationConfig, CpmetaConfig}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
-import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
+import se.lu.nateko.cp.meta.instanceserver.{Rdf4jTriplestoreConnection, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
 
-
 object CitationProvider:
+
 	def apply(
 		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
 	)(using ActorSystem, Materializer): CitationProvider =
-		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		new CitationProvider(sail, citClientFactory, conf)
+		apply(sail, citCache, doiCache, conf.core, conf.citations, CitationProviderConfig.getLenses(conf), CitationProviderConfig.pidFactory(conf))
 
+	def apply(
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
+	)(using ActorSystem, Materializer): CitationProvider =
+		apply(repo, citCache, doiCache, conf.core, conf.citations, CitationProviderConfig.getLenses(conf), CitationProviderConfig.pidFactory(conf))
+
+	def apply(
+		sail: Sail, citCache: CitationCache, doiCache: DoiCache,
+		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
+	)(using ActorSystem, Materializer): CitationProvider =
+		val citClientFactory: List[Doi] => CitationClient =
+			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+		new CitationProvider(sail, citClientFactory, core, lenses, pidFactory)
+
+	def apply(
+		repo: Repository, citCache: CitationCache, doiCache: DoiCache,
+		core: MetaCoreConfig, citations: CitationConfig, lenses: RdfLenses, pidFactory: PidFactory
+	)(using ActorSystem, Materializer): CitationProvider =
+		val citClientFactory: List[Doi] => CitationClient =
+			dois => CitationClientImpl(dois, citations, citCache, doiCache)
+		new CitationProvider(repo, citClientFactory, core, lenses, pidFactory)
+
+end CitationProvider
 
 class CitationProvider(
-	sail: Sail,
+	val repo: Repository,
 	citClientFactory: List[Doi] => CitationClient,
-	conf: CpmetaConfig,
+	core: MetaCoreConfig,
+	val lenses: RdfLenses,
+	pidFactory: PidFactory,
 )(using system: ActorSystem):
+	def this(
+		sail: Sail,
+		citClientFactory: List[Doi] => CitationClient,
+		core: MetaCoreConfig,
+		lenses: RdfLenses,
+		pidFactory: PidFactory,
+	)(using ActorSystem) = this(new SailRepository(sail), citClientFactory, core, lenses, pidFactory)
+
 	private val log = Logging.getLogger(system, this)
 	import StatementSource.*
-	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
+	private given envriConfs: EnvriConfigs = core.envriConfigs
 
-	val repo = new SailRepository(sail)
-	private val sailName = sail.getClass.getSimpleName
-	log.info(s"Initializing $sailName SailRepository...")
+	private val repositoryName = repo.getClass.getSimpleName
+	log.info(s"Initializing $repositoryName...")
 	repo.init()
-	log.info(s"$sailName initialized")
+	log.info(s"$repositoryName initialized")
 
-	val server = new Rdf4jInstanceServer(repo)
+	val server = new se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer(repo)
+
+	private def access[T](read: (TriplestoreConnection & SparqlRunner) ?=> T): T =
+		Rdf4jTriplestoreConnection.access(repo)(read)
+
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)
 
 	val doiCiter: CitationClient =
-		val dois: List[Doi] = server.access:
+		val dois: List[Doi] = access:
 			getStatements(null, metaVocab.hasDoi, null)
 				.map(_.getObject.stringValue)
 				.toList.distinct.flatMap:
@@ -61,23 +96,19 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core)
 
-	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer))
 
-	val metaReader =
-		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
-		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
-
-	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
+	def getCitation(res: Resource): Option[String] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
 		getDoiCitation(res).orElse:
 			getCitableItem(res).flatMap(_.references.citationString)
 
-	def getReferences(res: Resource): Option[References] = server.access:
+	def getReferences(res: Resource): Option[References] = access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
 
-	def getLicence(res: Resource): Option[Licence] = server.access: conn ?=>
+	def getLicence(res: Resource): Option[Licence] = access: conn ?=>
 		for
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))

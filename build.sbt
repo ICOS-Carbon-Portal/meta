@@ -143,7 +143,6 @@ lazy val meta = (project in file("."))
 
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion excludeAll("io.spray") cross CrossVersion.for3Use2_13,
-			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
@@ -152,21 +151,15 @@ lazy val meta = (project in file("."))
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
-			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
 			//"org.eclipse.rdf4j"      % "rdf4j-queryalgebra-geosparql"       % rdf4jVersion,
-			"org.lwjgl"              % "lwjgl"                              % "3.3.4",
-			"org.lwjgl"              % "lwjgl-lmdb"                         % "3.3.4",
-			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"net.sourceforge.owlapi" % "org.semanticweb.hermit"             % "1.4.5.519" excludeAll(noOwlApiDistr, noGeronimo),
 			"net.sourceforge.owlapi" % "owlapi-apibinding"                  % owlApiVersion excludeAll(InclExclRule.everything),
 			"net.sourceforge.owlapi" % "owlapi-impl"                        % owlApiVersion,
 			"net.sourceforge.owlapi" % "owlapi-parsers"                     % owlApiVersion,
 			"com.sun.mail"           % "jakarta.mail"                       % "1.6.7",
-			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
 			"se.lu.nateko.cp"       %% "views-core"                         % "0.8.5",
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"com.github.workingDog" %% "scalakml"                           % "1.5"           % "test" exclude("org.scala-lang.modules", "scala-xml_2.13") cross CrossVersion.for3Use2_13,
@@ -177,6 +170,7 @@ lazy val meta = (project in file("."))
 			"org.scalacheck"        %% "scalacheck"                         % "1.18.0"        % "test",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
+			"org.postgresql"         % "postgresql"                         % "42.6.0",
 			"org.commonmark"        % "commonmark"                          % "0.24.0",
 			"org.commonmark"        % "commonmark-ext-autolink"             % "0.24.0"
 		),
@@ -290,3 +284,48 @@ lazy val tools = (project in file("tools"))
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
 		)
 	)
+
+lazy val rdfStore = (project in file("rdfstore"))
+		.dependsOn(metaCore, rdfCommon)
+		.enablePlugins(IcosCpSbtDeployPlugin)
+	.settings(
+		name := "meta-rdf-store",
+		version := "0.1.0",
+		scalacOptions ++= commonScalacOptions,
+		libraryDependencies ++= Seq(
+			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion excludeAll("io.spray") cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion cross CrossVersion.for3Use2_13,
+			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-sail-lmdb"                    % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-rio-rdfxml"                   % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-sparqljson"     % rdf4jVersion,
+			"org.eclipse.rdf4j"      % "rdf4j-queryresultio-text"           % rdf4jVersion,
+			"com.esotericsoftware"   % "kryo"                               % "5.6.0",
+			"org.postgresql"         % "postgresql"                         % "42.6.0",
+			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
+			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
+			"com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test cross CrossVersion.for3Use2_13,
+			"org.scalatest" %% "scalatest" % "3.2.11" % Test,
+			"commons-io"      % "commons-io"                        % "2.15.1" % Test
+		),
+			Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
+			reStart / baseDirectory := (ThisBuild / baseDirectory).value,
+
+			assembly / assemblyMergeStrategy := {
+				case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
+				case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
+				case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
+				case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
+				case "application.conf" => MergeStrategy.concat
+				case x => ((assembly / assemblyMergeStrategy).value)(x)
+			},
+
+			assembly / assemblyRepeatableBuild := false
+		)

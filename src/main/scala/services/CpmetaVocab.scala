@@ -248,6 +248,9 @@ object CpmetaVocab{
 	val icosMultiImageZipSuff = "multiImageZip"
 	val sitesMultiImageZipSuff = "image"
 
+	val defaultInstrModel = "N/A"
+	val defaultSerialNum = "N/A"
+
 	def icosMultiImageZipUri = new URI(MetaPrefix + icosMultiImageZipSuff)
 	def sitesMultiImageZipUri = new URI(SitesPrefix + sitesMultiImageZipSuff)
 }

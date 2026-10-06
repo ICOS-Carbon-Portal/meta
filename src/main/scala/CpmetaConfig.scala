@@ -7,6 +7,7 @@ import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.{appConfig, parseAs}
 import se.lu.nateko.cp.cpauth.core.{EmailConfig, PublicAuthConfig}
 import se.lu.nateko.cp.doi.core.{DoiEndpointConfig, DoiMemberConfig}
+import se.lu.nateko.cp.meta.core.CommonJsonSupport
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.TypeField
 import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
 import se.lu.nateko.cp.meta.core.{MetaCoreConfig, toTypedJson}
@@ -160,6 +161,15 @@ case class RdfStorageConfig(
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
+case class RdfStoreConfig(httpBindInterface: String, port: Int)
+
+case class RemoteRdfRepositoryConfig(
+	queryEndpoint: URI,
+	updateEndpoint: URI,
+	adminEndpoint: URI,
+	derivedMetadataEndpoint: URI
+)
+
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
 
@@ -180,6 +190,8 @@ case class CpmetaConfig(
 	rdfLog: RdflogConfig,
 	fileStoragePath: String,
 	rdfStorage: RdfStorageConfig,
+	rdfStore: RdfStoreConfig,
+	remoteRdfRepository: RemoteRdfRepositoryConfig,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -189,7 +201,7 @@ case class CpmetaConfig(
 	sentry: Option[SentryConfig]
 )
 
-object ConfigLoader extends CpmetaJsonProtocol:
+object ConfigLoader extends CommonJsonSupport:
 
 	import MetaCoreConfig.given
 	import DefaultJsonProtocol.*
@@ -236,6 +248,8 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
+	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
@@ -243,7 +257,7 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat15(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat17(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

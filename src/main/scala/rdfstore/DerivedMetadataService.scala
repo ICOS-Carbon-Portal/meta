@@ -1,0 +1,41 @@
+package se.lu.nateko.cp.meta.rdfstore
+
+import scala.language.unsafeNulls
+
+import org.eclipse.rdf4j.model.{IRI, ValueFactory}
+import se.lu.nateko.cp.meta.services.citation.CitationProvider
+
+import java.net.URI
+
+final class DerivedMetadataService private (
+	factory: ValueFactory,
+	resolveIri: IRI => DerivedMetadataResult,
+	dropCache: String => Boolean
+):
+
+	def resolve(resource: IRI): DerivedMetadataResult = resolveIri(resource)
+
+	private[rdfstore] def resolve(resources: Seq[URI]): DerivedMetadataResponse =
+		val results = resources.map: uri =>
+			try resolve(factory.createIRI(uri.toString))
+			catch case err: IllegalArgumentException =>
+				DerivedMetadataResult(uri, "invalid", None)
+		DerivedMetadataResponse(version = 1, results)
+
+	private[rdfstore] def dropDoiCache(doi: String): Boolean = dropCache(doi)
+
+object DerivedMetadataService:
+	def apply(citations: CitationProvider): DerivedMetadataService =
+		new DerivedMetadataService(citations.metaVocab.factory, resource =>
+			val uri = new URI(resource.stringValue)
+			citations.getReferences(resource) match
+				case None => DerivedMetadataResult(uri, "notFound", None)
+				case Some(references) =>
+					val citation = citations.getCitation(resource).orElse(references.citationString)
+					val licence = citations.getLicence(resource).orElse(references.licence)
+					DerivedMetadataResult(uri, "ready", Some(DerivedMetadata(uri, references, citation, licence)))
+		, doi =>
+			se.lu.nateko.cp.doi.Doi.parse(doi).toOption.exists: parsed =>
+				citations.doiCiter.dropCache(parsed)
+				true
+		)

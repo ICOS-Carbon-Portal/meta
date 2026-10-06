@@ -485,7 +485,7 @@ object EtcMetaSource{
 		}
 
 		TcStation[E](
-			cpId = CpVocab.etcStationUriId(etcStationId),
+			cpId = TcVocab.etcStationUriId(etcStationId),
 			tcId = makeId(tcIdStr),
 			core = Station(
 				org = Organization(
@@ -560,7 +560,7 @@ object EtcMetaSource{
 			sensorDict <- sensorsDictVal;
 			instr <- new Validated(sensorDict.get(makeId(sensorTcId))).require(s"Could not look up logger by sensor id $sensorTcId")
 		) yield
-			instr.copy(tcId = CpVocab.getEtcInstrTcId(stId, loggerId))
+			instr.copy(tcId = TcVocab.getEtcInstrTcId(stId, loggerId))
 	}
 
 	private def getSensor(

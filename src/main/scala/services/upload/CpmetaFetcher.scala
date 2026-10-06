@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, containsEither, parseCommaSepList}
 
 import java.net.URI
+import java.time.Instant
 
 trait CpmetaReader:
 	import StatementSource.*
@@ -87,11 +88,9 @@ trait CpmetaReader:
 			)
 
 	def getAgent(uri: IRI): MetaConn ?=> Validated[Agent] =
-		getOptionalString(uri, metaVocab.hasFirstName).flatMap: a =>
-			if a.isDefined then
-				getPerson(uri)
-			else
-				getOrganization(uri)
+		getOptionalString(uri, metaVocab.hasFirstName).flatMap:
+			case Some(firstName) => getPerson(uri, firstName)
+			case None => getOrganization(uri)
 
 	def getOrganization(org: IRI): MetaConn ?=> Validated[Organization] =
 		for
@@ -137,9 +136,11 @@ trait CpmetaReader:
 			)
 
 	def getPerson(pers: IRI): MetaConn ?=> Validated[Person] =
+		getSingleString(pers, metaVocab.hasFirstName).flatMap(getPerson(pers, _))
+
+	private def getPerson(pers: IRI, firstName: String): MetaConn ?=> Validated[Person] =
 		for
 			self <- getLabeledResource(pers)
-			firstName <- getSingleString(pers, metaVocab.hasFirstName)
 			lastName <- getSingleString(pers, metaVocab.hasLastName)
 			emailOpt <- getOptionalString(pers, metaVocab.hasEmail)
 			orcidOpt <- getOptionalString(pers, metaVocab.hasOrcidId)
@@ -241,12 +242,13 @@ trait CpmetaReader:
 			.filterNot(isUnderMoratorium)
 			.toIndexedSeq
 
+	// only the end of the submission matters here, not the submission (and its submitter) in full
 	private def isUnderMoratorium(item: IRI)(using ItemConn): Boolean =
 		getSingleUri(item, metaVocab.wasSubmittedBy)
-			.flatMap(getSubmission)
+			.flatMap(getOptionalInstant(_, metaVocab.prov.endedAtTime))
 			.result
-			.map(_.isUnderMoratorium)
-			.getOrElse(false)
+			.flatten
+			.exists(_.isAfter(Instant.now))
 
 	def isPlainCollection[C <: ItemConn](item: IRI): C ?=> Boolean =
 		resourceHasType(item, metaVocab.plainCollectionClass)
@@ -264,13 +266,21 @@ trait CpmetaReader:
 		)
 
 	def getLatestVersion(item: IRI)(using ItemConn): OneOrSeq[URI] =
-		def latest(item: IRI, seen: Set[IRI]): Seq[IRI] =
-			val nextVersions = getNextVersions(item).flatMap: next =>
+		getLatestVersion(item, getNextVersions(item))
+
+	/** The next and the latest versions of the item, with the next versions looked up only once */
+	def getNextAndLatestVersions(item: IRI)(using ItemConn): (OptionalOneOrSeq[URI], OneOrSeq[URI]) =
+		val nextVersions = getNextVersions(item)
+		OptionalOneOrSeq.fromSeq(nextVersions.map(_.toJava)) -> getLatestVersion(item, nextVersions)
+
+	private def getLatestVersion(item: IRI, nextVersions: IndexedSeq[IRI])(using ItemConn): OneOrSeq[URI] =
+		def latest(item: IRI, nextVersions: IndexedSeq[IRI], seen: Set[IRI]): Seq[IRI] =
+			val latestVersions = nextVersions.flatMap: next =>
 				if seen.contains(next)
 				then Nil
-				else latest(next, seen + next)
-			if nextVersions.isEmpty then Seq(item) else nextVersions
-		latest(item, Set.empty).map(_.toJava) match
+				else latest(next, getNextVersions(next), seen + next)
+			if latestVersions.isEmpty then Seq(item) else latestVersions
+		latest(item, nextVersions, Set.empty).map(_.toJava) match
 			case Seq(single) => Left(single)
 			case many => Right(many)
 
@@ -348,32 +358,48 @@ trait CpmetaReader:
 		)
 
 	def getInstrumentLite(instr: IRI): MetaConn ?=> Validated[UriResource] =
-		val modelValid = getOptionalString(instr, metaVocab.hasModel).map(model => model.filter(_ != TcMetaSource.defaultInstrModel))
-		val serialNumberValid = getOptionalString(instr, metaVocab.hasSerialNumber).map(serialNumber => serialNumber.filter(_ != TcMetaSource.defaultSerialNum))
-
 		for
-			model <- modelValid
-			serialNumber <- serialNumberValid
+			model <- getOptionalString(instr, metaVocab.hasModel)
+			serialNumber <- getOptionalString(instr, metaVocab.hasSerialNumber)
 			name <- getOptionalString(instr, metaVocab.hasName)
 		yield
-			val label = name.orElse:
-				(model, serialNumber) match
-					case (None, None) => None
-					case (None, nbr) => nbr
-					case (m, None) => m
-					case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
-			.getOrElse:
-				instr.getLocalName
+			getInstrumentLite(instr, model, serialNumber, name)
 
-			val comments = getStringValues(instr, RDFS.COMMENT)
+	private def getInstrumentLite(
+		instr: IRI, modelOpt: Option[String], serialNumberOpt: Option[String], name: Option[String]
+	): MetaConn ?=> UriResource =
+		val model = modelOpt.filter(_ != TcMetaSource.defaultInstrModel)
+		val serialNumber = serialNumberOpt.filter(_ != TcMetaSource.defaultSerialNum)
 
-			UriResource(instr.toJava, Some(label), comments)
+		val label = name.orElse:
+			(model, serialNumber) match
+				case (None, None) => None
+				case (None, nbr) => nbr
+				case (m, None) => m
+				case (Some(m), Some(nbr)) => Some(m + " (" + nbr + ")")
+		.getOrElse:
+			instr.getLocalName
 
-	def getInstrumentDeployment(iri: IRI, instrument: IRI): MetaConn ?=> Validated[InstrumentDeployment] =
+		val comments = getStringValues(instr, RDFS.COMMENT)
+
+		UriResource(instr.toJava, Some(label), comments)
+
+	/** A deployment at a station that has been read already */
+	def getInstrumentDeployment(iri: IRI, instrument: IRI, station: Organization): MetaConn ?=> Validated[InstrumentDeployment] =
+		getInstrumentLite(instrument).flatMap: instr =>
+			readInstrumentDeployment(iri, instr): stationIri =>
+				if station.self.uri === stationIri then Validated.ok(station)
+				else Validated.error(s"Deployment $iri is at station $stationIri, not at ${station.self.uri}")
+
+	private def getInstrumentDeployment(iri: IRI, instrument: UriResource): MetaConn ?=> Validated[InstrumentDeployment] =
+		readInstrumentDeployment(iri, instrument)(getOrganization(_))
+
+	private def readInstrumentDeployment(iri: IRI, instrument: UriResource)(
+		getStation: IRI => Validated[Organization]
+	): MetaConn ?=> Validated[InstrumentDeployment] =
 		for
 			stationIri <- getSingleUri(iri, metaVocab.atOrganization)
-			instrument <- getInstrumentLite(instrument)
-			station <- getOrganization(stationIri)
+			station <- getStation(stationIri)
 			pos <- getInstrumentPosition(iri).optional
 			variableNameOpt <- getOptionalString(iri, metaVocab.hasVariableName)
 			forPropertyOpt <- getOptionalUri(iri, metaVocab.ssn.forProperty)
@@ -394,10 +420,10 @@ trait CpmetaReader:
 	def getInstrument(instr: IRI): MetaConn ?=> Validated[Instrument] =
 		if resourceHasType(instr, metaVocab.instrumentClass) then
 			for
-				self <- getInstrumentLite(instr)
 				model <- getSingleString(instr, metaVocab.hasModel)
 				serialNumber <- getSingleString(instr, metaVocab.hasSerialNumber)
 				name <- getOptionalString(instr, metaVocab.hasName)
+				self = getInstrumentLite(instr, Some(model), Some(serialNumber), name)
 				vendor <- getOptionalUri(instr, metaVocab.hasVendor)
 				vendorOrg <- vendor.map(getOrganization).sinkOption
 				owner <- getOptionalUri(instr, metaVocab.hasInstrumentOwner)
@@ -405,7 +431,7 @@ trait CpmetaReader:
 				parts <- Validated.sequence(getUriValues(instr, metaVocab.hasInstrumentComponent).map(getInstrumentLite))
 				partOf <- getPropValueHolders(metaVocab.hasInstrumentComponent, instr)
 					.map(getInstrumentLite).headOption.sinkOption
-				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, instr)))
+				deployments <- Validated.sequence(getUriValues(instr, metaVocab.ssn.hasDeployment).map(getInstrumentDeployment(_, self)))
 			yield
 				Instrument(
 					self = self,

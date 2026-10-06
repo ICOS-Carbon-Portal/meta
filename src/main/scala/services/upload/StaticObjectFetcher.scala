@@ -34,7 +34,7 @@ class StaticObjectReader(
 		getOptionalLong,
 		getOptionalString
 	}
-	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
+	import RdfLens.{DobjConn, DocConn, GlobConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -43,30 +43,28 @@ class StaticObjectReader(
 				docObj <- getExistingDocumentObject(objIri)
 			yield docObj
 		else for
-			given DobjConn <- getLensForDataObj(objIri)
-			dobj <- getExistingDataObject(objIri)
+			specIri <- getSingleUri(objIri, metaVocab.hasObjectSpec)
+			docLens <- lenses.documentLens
+			docConn: DocConn = docLens
+			// the specification is read through the document lens, and determines the data object lens
+			spec <- getSpecification(specIri)(using docConn)
+			given DobjConn <- lenses.dataObjectLens(spec.format.self.uri)
+			dobj <- getExistingDataObject(objIri, spec, docConn)
 		yield dobj
-
-	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
-		getObjFormatForDobj(dobjIri).flatMap: objFormat =>
-			lenses.dataObjectLens(objFormat.toJava)
 
 	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)
 
-	def getExistingDataObject(dobj: IRI)(using envri: Envri, dobjConn: DobjConn): Validated[DataObject] =
+	/** @param docConn the connection through which the specification has been read */
+	private def getExistingDataObject(dobj: IRI, spec: DataObjectSpec, docConn: DocConn)(using Envri, DobjConn): Validated[DataObject] =
+		val valTypeLookupUri = spec.datasetSpec.map(ds => vocab.factory.createIRI(ds.self.uri.toString))
 		for
-			specIri <- getSingleUri(dobj, metaVocab.hasObjectSpec)
-			docLens <- lenses.documentLens
-			docConn: DocConn = docLens
-			spec <- getSpecification(specIri)(using docConn)
-			valTypeLookupUri <- getOptionalUri(specIri, metaVocab.containsDataset)
 			valTypeLookup <- valTypeLookupUri.fold(Validated(VarMetaLookup(Nil)))(getValTypeLookup)
 			productionUri <- getOptionalUri(dobj, metaVocab.wasProducedBy)
 			productionOpt <- productionUri.map(getDataProduction(dobj, _, docConn)).sinkOption
 			levelSpecificInfo <- spec.specificDatasetType match
 				case DatasetType.SpatioTemporal =>
-					getSpatioTempMeta(dobj, valTypeLookup, productionOpt)(using dobjConn, docConn).map(Left.apply)
+					getSpatioTempMeta(dobj, valTypeLookup, productionOpt, docConn).map(Left.apply)
 				case DatasetType.StationTimeSeries =>
 					getStationTimeSerMeta(dobj, valTypeLookup, productionOpt, docConn).map(Right.apply)
 			hash <- getHashsum(dobj, metaVocab.hasSha256sum)
@@ -79,6 +77,8 @@ class StaticObjectReader(
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(dobj)(using collectionLens)
 			hasBeenPublished = submission.stop.fold(false)(_.compareTo(Instant.now()) < 0)
+			// next and previous versions can have different format, so may be in an arbitrary RDF graph
+			(nextVersion, latestVersion) = getNextAndLatestVersions(dobj)(using RdfLens.global)
 			init = DataObject(
 				hash = hash,
 				accessUrl = if hasBeenPublished then accessUrl else None,
@@ -89,19 +89,18 @@ class StaticObjectReader(
 				submission = submission,
 				specification = spec,
 				specificInfo = levelSpecificInfo,
-				// next and previous versions can have different format, so may be in an arbitrary RDF graph
-				nextVersion = getNextVersionAsUri(dobj)(using RdfLens.global),
-				latestVersion = getLatestVersion(dobj)(using RdfLens.global),
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
 				previousVersion = getPreviousVersion(dobj)(using RdfLens.global).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.getCitationInfo(init, docConn)
 		yield
 			init.copy(references = refs)
 	end getExistingDataObject
 
-	def getExistingDocumentObject(doc: IRI)(using Envri, DocConn): Validated[DocObject] =
+	def getExistingDocumentObject(doc: IRI)(using envri: Envri, docConn: DocConn): Validated[DocObject] =
 		for
 			hash <- getHashsum(doc, metaVocab.hasSha256sum)
 			fileName <- getSingleString(doc, metaVocab.hasName)
@@ -114,6 +113,7 @@ class StaticObjectReader(
 			authors <- getContributors(doc, metaVocab.dcterms.creator)
 			collectionLens <- lenses.collectionLens
 			parendColls <- getParentCollections(doc)(using collectionLens)
+			(nextVersion, latestVersion) = getNextAndLatestVersions(doc)
 			init = DocObject(
 				hash = hash,
 				accessUrl = Some(vocab.getStaticObjectAccessUrl(hash)),
@@ -123,8 +123,8 @@ class StaticObjectReader(
 				doi = doiOpt,
 				description = descriptionOpt,
 				submission = submission,
-				nextVersion = getNextVersionAsUri(doc),
-				latestVersion = getLatestVersion(doc),
+				nextVersion = nextVersion,
+				latestVersion = latestVersion,
 				previousVersion = getPreviousVersion(doc).mapO3(_.toJava),
 				parentCollections = parendColls,
 				references = References.empty.copy(
@@ -132,7 +132,7 @@ class StaticObjectReader(
 					authors = Option(authors.toSeq)
 				)
 			)
-			refs <- citer.getCitationInfo(init)
+			refs <- citer.getCitationInfo(init, docConn)
 		yield
 			init.copy(references = refs)
 

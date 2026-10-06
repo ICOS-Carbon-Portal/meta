@@ -6,7 +6,7 @@ import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.SailConnection
-import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID
@@ -79,12 +79,12 @@ class Rdf4jTriplestoreConnection(
 
 	override def close(): Unit = conn.close()
 
-	override def evaluateGraphQuery(q: SparqlQuery): CloseableIterator[Statement] =
-		val rdf4jIter = conn.prepareGraphQuery(QueryLanguage.SPARQL, q.query).evaluate()
+	override def evaluateGraphQuery(query: String): CloseableIterator[Statement] =
+		val rdf4jIter = conn.prepareGraphQuery(QueryLanguage.SPARQL, query).evaluate()
 		Rdf4jIterationIterator(rdf4jIter)
 
-	override def evaluateTupleQuery(q: SparqlQuery): CloseableIterator[BindingSet] =
-		val rdf4jIter = conn.prepareTupleQuery(QueryLanguage.SPARQL, q.query).evaluate()
+	override def evaluateTupleQuery(query: String): CloseableIterator[BindingSet] =
+		val rdf4jIter = conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate()
 		Rdf4jIterationIterator(rdf4jIter)
 
 end Rdf4jTriplestoreConnection

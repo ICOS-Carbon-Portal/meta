@@ -37,7 +37,6 @@ class CpNotifyingSail(
 	private val enricher = StatementsEnricher(derivedMetadata, citer.metaVocab)
 	private var cpIndex: Option[CpIndex] = None
 	private var listener: Option[SailConnectionListener] = None
-	private var readonlyErrMessage: Option[String] = None
 
 	import citer.{metaVocab, metaReader}
 
@@ -45,7 +44,7 @@ class CpNotifyingSail(
 		val innerConn = inner.getConnection()
 		val enriched = CpNotifyingSailConnection(innerConn, enricher)
 		listener.foreach(enriched.addConnectionListener)
-		readonlyErrMessage.fold(enriched)(ReadonlyConnectionWrapper(enriched, _))
+		enriched
 
 	override def init(): Unit =
 		inner.init()
@@ -67,18 +66,6 @@ class CpNotifyingSail(
 			cpIndex = Some(idx)
 			setupQueryEvaluation()
 			geoFut.map(_ => Done)(using ExecutionContext.parasitic)
-
-	def makeReadonly(errorMessage: String): Unit =
-		readonlyErrMessage = Some(errorMessage)
-
-	def switchToReadonly(errorMessage: String): String =
-		val wasReadonly = readonlyErrMessage.isDefined
-		readonlyErrMessage = Some(errorMessage)
-		if wasReadonly then "Triple store already in read-only mode"
-		else
-			val msg = "Switched the triple store to read-only mode"
-			log.info(msg)
-			msg
 
 	private def setupQueryEvaluation(): Unit =
 		val magicIdx = cpIndex.getOrElse:

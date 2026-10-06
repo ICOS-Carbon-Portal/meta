@@ -165,7 +165,6 @@ case class RdfStoreConfig(httpBindInterface: String, port: Int)
 case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
 	updateEndpoint: URI,
-	adminEndpoint: URI,
 	derivedMetadataEndpoint: URI
 )
 
@@ -248,7 +247,7 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat5(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
+	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat3(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)

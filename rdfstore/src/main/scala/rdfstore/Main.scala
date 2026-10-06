@@ -39,7 +39,7 @@ object Main extends App:
 		val citer = CitationProvider(baseSail, config)
 		val derivedMetadata = DerivedMetadataService(citer)
 		val indexFactories =
-			if isFreshInit || config.rdfStorage.disableCpIndex then None
+			if config.rdfStorage.disableCpIndex then None
 			else Some(IndexHandler(system.scheduler) -> GeoIndexProvider(using ExecutionContext.global))
 		val sail = CpNotifyingSail(baseSail, indexFactories, citer, derivedMetadata)
 		val logManager = RdfLogManager(
@@ -54,17 +54,9 @@ object Main extends App:
 		for {
 			_ <- schemaOntologiesIngested
 			_ <- sail.initSparqlMagicIndex()
-			_ = if isFreshInit then sail.makeReadonly(
-				"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
-			)
 			queryServer = Rdf4jSparqlServer(repo, sparqlConfig)
 			given ToResponseMarshaller[SparqlQuery] = queryServer.marshaller
-			binding <- Http().newServerAt(host, port).bind(Route(
-				repo,
-				sparqlConfig,
-				derivedMetadata,
-				message => Future.successful(sail.switchToReadonly(message))
-			))
+			binding <- Http().newServerAt(host, port).bind(Route(repo, sparqlConfig, derivedMetadata))
 		}
 		yield (binding, queryServer, repo, logManager)
 	}

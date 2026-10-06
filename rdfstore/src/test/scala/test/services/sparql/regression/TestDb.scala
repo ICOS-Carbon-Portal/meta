@@ -128,12 +128,10 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 		disableCpIndex = false
 	)
 
-	val (freshInit, base) = StorageSail.apply(rdfConf)
+	val (_, base) = StorageSail.apply(rdfConf)
 	val indexUpdaterFactory = IndexHandler(system.scheduler)
 	val geoFactory = GeoIndexProvider()
-	val idxFactories = if freshInit then None
-	else
-		Some(indexUpdaterFactory -> geoFactory)
+	val idxFactories = Some(indexUpdaterFactory -> geoFactory)
 
 	val citer = {
 			val config = ConfigLoader.default

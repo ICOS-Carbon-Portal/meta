@@ -23,8 +23,8 @@ import scala.util.Using
 /**
  * Kinds of resources to synchronize. Instances of `rootClasses` (or of their subclasses, according to the
  * ontologies in the local store) are the roots; `depth` is how many links away from a root (within the same
- * named graph) the associated resources may be. Kinds that are not `batched` are few enough to be fetched,
- * together, with a single SPARQL query.
+ * named graph) the associated resources may be. Kinds that are not `batched` are few enough for all their
+ * resources to be fetched with a single SPARQL query.
  */
 enum SyncKind(val rootClasses: Seq[String], val depth: Int, val batched: Boolean):
 	// acquisition, production, submission, spatial coverage, variable info; contributor lists of productions
@@ -67,7 +67,7 @@ final case class BatchResult(roots: Int, missingRemotely: Int, added: Int, remov
 /**
  * Streams known (locally present) resources of the requested kinds, fetches all statements possibly associated
  * with them from a remote meta SPARQL endpoint, and updates the local repository accordingly.
- * Data objects and collections are fetched in batches; all other kinds are fetched together, with one query.
+ * Data objects and collections are fetched in batches; every other kind is fetched with one query.
  * Statements are only ever added, unless `prune` is set, in which case local statements about a subject are
  * removed if the remote endpoint reported that subject (in the same graph), but not the statement.
  * Blank nodes are ignored, as they cannot be matched between the repositories.
@@ -86,9 +86,8 @@ final class RemoteMetaSync(
 	private val fetchRemote: Fetch = query => Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq)
 
 	def run(kinds: Seq[SyncKind]): Source[SyncProgress, NotUsed] =
-		val (batched, together) = kinds.distinct.partition(_.batched)
-		val unbatched = if together.isEmpty then Source.empty else syncTogether(together)
-		unbatched.concat(Source(batched).flatMapConcat(syncInBatches))
+		Source(kinds.distinct).flatMapConcat: kind =>
+			if kind.batched then syncInBatches(kind) else syncAtOnce(kind)
 
 	private def syncInBatches(kind: SyncKind): Source[SyncProgress, NotUsed] =
 		rootsOf(kind)
@@ -100,15 +99,13 @@ final class RemoteMetaSync(
 				Future(blocking(applyBatch(batch, kind.depth, remoteStats)))
 			.scan(SyncProgress(kind))(_ + _)
 
-	private def syncTogether(kinds: Seq[SyncKind]): Source[SyncProgress, NotUsed] =
-		Source
-			.lazyFuture: () =>
-				for
-					query <- Future(blocking(entitiesQuery(kinds.map(kind => kind -> classesOf(kind)))))
-					remoteQuads <- withRetries(MaxAttempts)(fetchQuads(query, fetchRemote))
-					progress <- Future(blocking(applyTogether(kinds, query, remoteQuads)))
-				yield progress
-			.mapConcat(identity)
+	private def syncAtOnce(kind: SyncKind): Source[SyncProgress, NotUsed] =
+		Source.lazyFuture: () =>
+			for
+				query <- Future(blocking(entitiesQuery(classesOf(kind), kind.depth)))
+				remoteQuads <- withRetries(MaxAttempts)(fetchQuads(query, fetchRemote))
+				result <- Future(blocking(applyAtOnce(query, remoteQuads)))
+			yield SyncProgress(kind) + result
 
 	private def classesOf(kind: SyncKind): IndexedSeq[IRI] =
 		val query = s"""select distinct ?cls where{
@@ -134,25 +131,15 @@ final class RemoteMetaSync(
 			val knownRemotely = remoteStats.map(_.subj)
 			BatchResult(batch.size, batch.count(r => !knownRemotely.contains(r)), added.size, removed.size)
 
-	private def applyTogether(kinds: Seq[SyncKind], query: String, allRemoteQuads: Set[Quad]): Seq[SyncProgress] =
+	private def applyAtOnce(query: String, allRemoteQuads: Set[Quad]): BatchResult =
 		local.transactAndGet: conn =>
 			val localQuads = fetchQuads(query, fetchLocal(conn))
 			val knownRoots = localQuads.map(_.root)
+			// only the locally known resources are synchronized
 			val remoteQuads = allRemoteQuads.filter(q => knownRoots.contains(q.root))
 			val (added, removed) = applyDiff(conn, localQuads.map(_.stat), remoteQuads.map(_.stat))
-
-			// a statement may be associated with resources of several kinds; it is counted for the first one
-			val kindOf: Map[Stat, SyncKind] = (localQuads ++ remoteQuads).groupMapReduce(_.stat)(_.kind):
-				(k1, k2) => if k1.ordinal <= k2.ordinal then k1 else k2
 			val remoteRoots = remoteQuads.map(_.root)
-			kinds.map: kind =>
-				val roots = localQuads.collect{case q if q.kind == kind => q.root}
-				SyncProgress(kind) + BatchResult(
-					roots = roots.size,
-					missingRemotely = roots.count(r => !remoteRoots.contains(r)),
-					added = added.count(kindOf(_) == kind),
-					removed = removed.count(kindOf(_) == kind)
-				)
+			BatchResult(knownRoots.size, knownRoots.count(r => !remoteRoots.contains(r)), added.size, removed.size)
 
 	private def applyDiff(conn: RepositoryConnection, localStats: Set[Stat], remoteStats: Set[Stat]): (Set[Stat], Set[Stat]) =
 		val toAdd = remoteStats.diff(localStats)
@@ -182,7 +169,7 @@ object RemoteMetaSync:
 	type Fetch = String => IndexedSeq[BindingSet]
 
 	final case class Stat(graph: IRI, subj: IRI, pred: IRI, obj: Value)
-	final case class Quad(kind: SyncKind, root: IRI, stat: Stat)
+	final case class Quad(root: IRI, stat: Stat)
 
 	// links not to follow when looking for associated resources, as they point to independent resources
 	private val notTraversed: Set[String] = Set(
@@ -226,11 +213,11 @@ object RemoteMetaSync:
 			found ++= latest
 		onlyStored(found, fetch)
 
-	/** Fetches the statements of `entitiesQuery`, attributed to their roots and their kinds */
+	/** Fetches the statements of `entitiesQuery`, attributed to their roots */
 	def fetchQuads(query: String, fetch: Fetch): Set[Quad] =
 		val quads = fetch(query).flatMap: bs =>
-			(bs.getValue("kind"), bs.getValue("root"), statOf(bs)) match
-				case (kind, root: IRI, Some(stat)) => SyncKind.parse(kind.stringValue).map(Quad(_, root, stat))
+			(bs.getValue("root"), statOf(bs)) match
+				case (root: IRI, Some(stat)) => Some(Quad(root, stat))
 				case _ => None
 		.toSet
 		val stored = onlyStored(quads.map(_.stat), fetch)
@@ -261,33 +248,33 @@ object RemoteMetaSync:
 		|}""".stripMargin
 
 	/**
-	 * A single query for all statements associated with all instances of the given classes (per kind): the
-	 * statements about the instances themselves, and about the IRI resources up to the kind's depth of links away
-	 * from them within the same named graph.
+	 * A single query for all statements associated with all instances of the given classes: the statements about
+	 * the instances themselves, and about the IRI resources up to `depth` links away from them within the same
+	 * named graph.
 	 */
-	def entitiesQuery(kindClasses: Seq[(SyncKind, Seq[IRI])]): String =
+	def entitiesQuery(classes: Seq[IRI], depth: Int): String =
 		val notTraversedList = notTraversed.map(p => s"<$p>").mkString(", ")
-		val branches = for
-			(kind, classes) <- kindClasses if classes.nonEmpty
-			hops <- 0 to kind.depth
-		yield
+		val classValues = s"values ?cls { ${classes.map(c => s"<$c>").mkString(" ")} }"
+		val branches = (0 to depth).map: hops =>
 			val links = (1 to hops).map: i =>
 				val from = if i == 1 then "?root" else s"?n${i - 1}"
 				val to = if i == hops then "?s" else s"?n$i"
 				s"$from ?l$i $to . filter(isIRI($to) && ?l$i not in ($notTraversedList))"
-			val inGraph = if hops == 0 then "?root ?p ?o" else (links :+ "?s ?p ?o").mkString("\n\t\t\t\t")
+			val inGraph = if hops == 0 then "?root ?p ?o" else (links :+ "?s ?p ?o").mkString("\n\t\t\t\t\t")
 			val bindSubject = if hops == 0 then "bind(?root as ?s)" else ""
+			// a separate subquery for every depth, as rdf4j optimizes the union of plain groups poorly
 			s"""{
-				|		values ?cls { ${classes.map(c => s"<$c>").mkString(" ")} }
-				|		?root a ?cls .
-				|		graph ?g {
-				|			$inGraph
+				|		select ?root ?g ?s ?p ?o where{
+				|			$classValues
+				|			?root a ?cls .
+				|			graph ?g {
+				|				$inGraph
+				|			}
+				|			$bindSubject
 				|		}
-				|		$bindSubject
-				|		bind("$kind" as ?kind)
 				|	}""".stripMargin
 
-		s"""select distinct ?kind ?root ?g ?s ?p ?o where{
+		s"""select distinct ?root ?g ?s ?p ?o where{
 			|	${branches.mkString("\n\tunion\n\t")}
 			|	$derivedLiteralFilter
 			|}""".stripMargin

@@ -1,7 +1,35 @@
 defmodule LandingBench.Stats do
   @moduledoc "Summary statistics and CSV export of landing page timings."
 
-  import LandingBench, only: [fmt_ms: 1]
+  import LandingBench.Output, only: [fmt_ms: 1, match_label: 1]
+
+  @doc """
+  The result of a landing page `:object` event (see `LandingBench.Output`), as used
+  by the functions of this module: the primary response, with the secondary
+  response and the comparison result under `:secondary` and `:match` if there is one.
+  """
+  def result(%{type: :object, primary: primary, secondary: nil}), do: Map.delete(primary, :body)
+
+  def result(%{type: :object, primary: primary, secondary: secondary, match: match}) do
+    primary
+    |> Map.delete(:body)
+    |> Map.merge(%{secondary: Map.delete(secondary, :body), match: match})
+  end
+
+  @doc "Key figures of a run, for the index of stored runs."
+  def overview(results) do
+    timings = ok_timings(results) |> Enum.sort()
+
+    %{
+      requests: length(results),
+      ok: length(timings),
+      median_ms: if(timings != [], do: percentile(timings, 50)),
+      mismatches:
+        if(Enum.any?(results, &Map.has_key?(&1, :secondary)),
+          do: Enum.count(results, &LandingBench.Diff.mismatch?(&1[:match]))
+        )
+    }
+  end
 
   def print_summary(results) do
     case Enum.filter(results, &Map.has_key?(&1, :secondary)) do
@@ -27,10 +55,10 @@ defmodule LandingBench.Stats do
   end
 
   defp match_category({:different, _line}), do: "MISMATCH: body differs"
-  defp match_category(match), do: LandingBench.match_label(match)
+  defp match_category(match), do: match_label(match)
 
   defp print_timings(title, results) do
-    timings = for %{error: nil, status: 200, ms: ms} <- results, do: ms
+    timings = ok_timings(results)
     non_ok = Enum.count(results, &(&1.error == nil and &1.status != 200))
     errors = Enum.count(results, &(&1.error != nil))
 
@@ -61,6 +89,8 @@ defmodule LandingBench.Stats do
     end
   end
 
+  defp ok_timings(results), do: for(%{error: nil, status: 200, ms: ms} <- results, do: ms)
+
   # Nearest-rank percentile of an already sorted list
   defp percentile(sorted, p) do
     rank = max(ceil(p / 100 * length(sorted)), 1)
@@ -78,7 +108,7 @@ defmodule LandingBench.Stats do
         if with_secondary do
           Enum.join(
             csv_fields(r) ++
-              csv_fields(r.secondary) ++ [csv_escape(LandingBench.match_label(r.match))],
+              csv_fields(r.secondary) ++ [csv_escape(match_label(r.match))],
             ","
           )
         else

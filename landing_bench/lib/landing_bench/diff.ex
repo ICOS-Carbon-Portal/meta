@@ -1,5 +1,5 @@
 defmodule LandingBench.Diff do
-  @moduledoc "Line-based unified diff of two strings."
+  @moduledoc "Comparison of landing page responses and line-based unified diff of two strings."
 
   @context 3
 
@@ -16,6 +16,45 @@ defmodule LandingBench.Diff do
     |> hunk_ranges(context, length(edits))
     |> Enum.flat_map(fn {first, last} -> hunk(Enum.slice(edits, first..last)) end)
   end
+
+  @doc """
+  Compares two landing page responses (maps with `:status`, `:body` and `:error`).
+  If the bodies differ, they are compared again with known environment-specific
+  differences (see `ignore_known_differences/1`) removed.
+  """
+  def compare(%{error: nil} = a, %{error: nil} = b) do
+    cond do
+      a.status != b.status ->
+        :status_differs
+
+      a.body == b.body ->
+        :identical
+
+      true ->
+        body_a = ignore_known_differences(a.body)
+        body_b = ignore_known_differences(b.body)
+
+        if body_a == body_b,
+          do: :identical_ignoring_known,
+          else: {:different, first_differing_line(body_a, body_b)}
+    end
+  end
+
+  def compare(_a, _b), do: :fetch_error
+
+  defp first_differing_line(a, b) do
+    Enum.zip(String.split(a, "\n"), String.split(b, "\n"))
+    |> Enum.find_index(fn {la, lb} -> la != lb end)
+    |> case do
+      # one body is a prefix of the other, line-wise
+      nil -> min(length(String.split(a, "\n")), length(String.split(b, "\n"))) + 1
+      idx -> idx + 1
+    end
+  end
+
+  def mismatch?({:different, _line}), do: true
+  def mismatch?(:status_differs), do: true
+  def mismatch?(_match), do: false
 
   @doc """
   Removes known environment-specific differences (test host names, badges) from

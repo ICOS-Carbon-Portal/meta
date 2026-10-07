@@ -3,6 +3,7 @@ defmodule LandingBench.CLI do
 
   @usage """
   Usage: landing_bench HOST [options]
+         landing_bench view DIR [RUN] [view options]
 
   HOST is the data host where the portal runs, e.g. data.icos-cp.eu or
   https://datalocal.icos-cp.eu (https:// is assumed if no scheme is given).
@@ -20,8 +21,45 @@ defmodule LandingBench.CLI do
     -t, --timeout MS    per-request receive timeout in ms (default 60000)
     -k, --insecure      skip TLS certificate verification (local dev hosts)
         --csv PATH      also write per-request results to a CSV file
+        --store DIR     store the run in DIR (created if needed), to be viewed
+                        again later with `landing_bench view DIR`
     -h, --help          show this help
+
+  `landing_bench view DIR` lists the runs stored in DIR. With RUN (a run ID
+  from that list, or `latest`), the run is printed the way it was during the
+  live run, followed by its summary.
+
+  View options:
+        --diff          print a diff of the response bodies of each
+                        mismatching landing page
+        --recompare     compare the stored response bodies again, with the
+                        current list of known differences
+        --csv PATH      also write per-request results to a CSV file
   """
+
+  def main(["view" | argv]) do
+    {opts, args, invalid} =
+      OptionParser.parse(argv,
+        strict: [diff: :boolean, recompare: :boolean, csv: :string, help: :boolean],
+        aliases: [h: :help]
+      )
+
+    cond do
+      opts[:help] ->
+        IO.puts(@usage)
+
+      invalid != [] ->
+        usage_error()
+
+      true ->
+        case args do
+          [dir] -> LandingBench.Viewer.list(dir)
+          [dir, run] -> LandingBench.Viewer.show(dir, run, opts)
+          _ -> usage_error()
+        end
+        |> exit_on_error()
+    end
+  end
 
   def main(argv) do
     {opts, args, invalid} =
@@ -35,6 +73,7 @@ defmodule LandingBench.CLI do
           insecure: :boolean,
           csv: :string,
           diff: :boolean,
+          store: :string,
           help: :boolean
         ],
         aliases: [
@@ -53,8 +92,7 @@ defmodule LandingBench.CLI do
         IO.puts(@usage)
 
       invalid != [] or length(args) != 1 ->
-        IO.puts(:stderr, @usage)
-        System.halt(1)
+        usage_error()
 
       true ->
         [host] = args
@@ -68,21 +106,23 @@ defmodule LandingBench.CLI do
           timeout_ms: Keyword.get(opts, :timeout, 60_000),
           insecure: Keyword.get(opts, :insecure, false),
           csv: opts[:csv],
-          diff: Keyword.get(opts, :diff, false)
+          diff: Keyword.get(opts, :diff, false),
+          store: opts[:store]
         ]
 
-        case LandingBench.run(run_opts) do
-          :ok ->
-            :ok
-
-          {:error, err} ->
-            IO.puts(:stderr, "Error: #{format_error(err)}")
-            System.halt(1)
-        end
+        run_opts |> LandingBench.run() |> exit_on_error()
     end
   end
 
-  defp format_error(err) when is_binary(err), do: err
-  defp format_error(err) when is_exception(err), do: Exception.message(err)
-  defp format_error(err), do: inspect(err)
+  defp usage_error do
+    IO.puts(:stderr, @usage)
+    System.halt(1)
+  end
+
+  defp exit_on_error(:ok), do: :ok
+
+  defp exit_on_error({:error, err}) do
+    IO.puts(:stderr, "Error: #{LandingBench.Output.format_error(err)}")
+    System.halt(1)
+  end
 end

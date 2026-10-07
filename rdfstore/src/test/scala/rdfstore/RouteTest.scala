@@ -22,7 +22,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.{ConfigLoader, RemoteSyncConfig, SparqlServerConfig}
-import se.lu.nateko.cp.meta.core.data.{Licence, References}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Licence, References}
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
@@ -57,6 +57,7 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 	private val forwardedFor = RawHeader("X-Forwarded-For", "192.0.2.1")
 
 	private given ToResponseMarshaller[SparqlQuery] = sparqlServer.marshaller
+	private given EnvriConfigs = ConfigLoader.default.core.envriConfigs
 	private val route = Route(
 		repo,
 		sparqlConf,

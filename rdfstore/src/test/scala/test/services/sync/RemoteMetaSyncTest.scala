@@ -11,6 +11,8 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.sync.{RemoteMetaSync, SyncKind, SyncProgress}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
@@ -21,6 +23,7 @@ import scala.concurrent.duration.DurationInt
 class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 
 	private given system: ActorSystem = ActorSystem("RemoteMetaSyncTest")
+	private given EnvriConfigs = MetaCoreConfig.default.envriConfigs
 	override def afterAll(): Unit = system.terminate()
 
 	private val meta = CpmetaVocab(org.eclipse.rdf4j.model.impl.SimpleValueFactory.getInstance)
@@ -30,15 +33,18 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 	private val objGraph = res("atmcsv/")
 	private val cpGraph = res("cpmeta/")
 	private val icosGraph = res("icos/")
-	private val obj = res("obj")
+	private val hash = "XX3nZE3l0ODO9QA-T9gqI0GU"
+	private val obj = f.createIRI("https://meta.icos-cp.eu/objects/" + hash)
 	private val unknownObj = res("unknownObj")
-	private val acq = res("acq_obj")
-	private val prod = res("prod_obj")
-	private val contribs = res("prod_contribs_obj")
+	private val acq = res("acq_" + hash)
+	private val prod = res("prod_" + hash)
+	private val contribs = res("prod_contribs_" + hash)
 	private val spec = res("cpmeta/spec")
 	private val person = res("people/Some_Person")
 	private val memb = res("memberships/memb")
 	private val station = res("stations/ST")
+	private val nextVersColl = res("nextvcoll_" + hash)
+	private val newerObj = res("newerObj")
 
 	type Quad = (IRI, Value, Value, IRI)
 
@@ -70,10 +76,12 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 	private val personName: Quad = (person, meta.hasFirstName, f.createLiteral("Some"), icosGraph)
 	private val membLink: Quad = (person, meta.hasMembership, memb, icosGraph)
 	private val membRole: Quad = (memb, meta.hasRole, res("roles/PI"), icosGraph)
+	private val nextVersPart: Quad = (nextVersColl, meta.dcterms.hasPart, newerObj, objGraph)
+	private val nextVersOf: Quad = (nextVersColl, meta.isNextVersionOf, obj, objGraph)
 
 	private val remote = repoWith(
 		objType, newName, licence, acqLink, acqStation, prodLink, contribsLink, firstContrib, specLink, specName,
-		stationName, unknownObjType, personType, personName, membLink, membRole
+		stationName, unknownObjType, personType, personName, membLink, membRole, nextVersPart, nextVersOf
 	)
 
 	private def sync(prune: Boolean): (Repository, Seq[SyncProgress]) =
@@ -87,8 +95,12 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 
 		it("adds the remote statements associated with locally known resources"):
 			val (local, _) = sync(prune = false)
-			Seq(newName, licence, acqStation, prodLink, contribsLink, firstContrib, specLink, personName, membLink, membRole)
+			Seq(newName, acqStation, specLink, nextVersPart, nextVersOf, personName, membLink, membRole)
 				.foreach(q => assert(has(local, q), q))
+
+		it("only adds the statements of data objects with predicates indexed by the SPARQL magic index"):
+			val (local, _) = sync(prune = false)
+			Seq(licence, prodLink, contribsLink, firstContrib).foreach(q => assert(!has(local, q), q))
 
 		it("does not add statements of independent resources or of unknown objects"):
 			val (local, _) = sync(prune = false)
@@ -108,4 +120,4 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 
 		it("reports the progress of every kind"):
 			val (_, progress) = sync(prune = true)
-			assert(progress.map(_.toString).exists(_.startsWith("DataObjects: 1 roots in 1 batches, 0 missing remotely, 7 statements added, 2 statements removed")))
+			assert(progress.map(_.toString).exists(_.startsWith("DataObjects: 1 roots in 1 batches, 0 missing remotely, 5 statements added, 2 statements removed")))

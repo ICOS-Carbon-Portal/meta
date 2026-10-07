@@ -11,6 +11,8 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.sync.{RemoteMetaSync, SyncKind, SyncProgress}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
@@ -24,6 +26,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 class RemoteMetaSyncDbTest extends AnyFunSpec with BeforeAndAfterAll:
 
 	private given system: ActorSystem = ActorSystem("RemoteMetaSyncDbTest")
+	private given EnvriConfigs = MetaCoreConfig.default.envriConfigs
 	override def afterAll(): Unit = system.terminate()
 
 	private lazy val db = TestDb()
@@ -45,7 +48,7 @@ class RemoteMetaSyncDbTest extends AnyFunSpec with BeforeAndAfterAll:
 				assert(progress.roots > 0, kind)
 				assert(progress.added == 0 && progress.removed == 0 && progress.missingRemotely == 0, progress)
 
-		it("restores the metadata of data objects from the remote, given only their types and the ontology"):
+		it("restores the indexed metadata of data objects from the remote, given only their types and the ontology"):
 			val local = SailRepository(MemoryStore())
 			local.init()
 			val meta = CpmetaVocab(local.getValueFactory)
@@ -59,8 +62,16 @@ class RemoteMetaSyncDbTest extends AnyFunSpec with BeforeAndAfterAll:
 			val objects = statements(db.repo, null).collect:
 				case st if st.getPredicate == RDF.TYPE && st.getObject == meta.dataObjectClass => st.getSubject
 			assert(objects.nonEmpty)
+			val indexed = RemoteMetaSync.dataObjectPredicates.toSet
 			objects.take(20).foreach:
 				case obj: IRI =>
-					val expected = statements(db.repo, obj).filter(_.getContext != null).toSet
-					assert(statements(local, obj).toSet == expected, obj)
+					val acqAndSubm = statements(db.repo, obj).collect:
+						case st if st.getPredicate == meta.wasAcquiredBy || st.getPredicate == meta.wasSubmittedBy => st.getObject
+					(obj +: acqAndSubm).foreach:
+						case subj: IRI =>
+							val expected = statements(db.repo, subj)
+								.filter(st => st.getContext != null && indexed.contains(st.getPredicate.stringValue)).toSet
+							assert(expected.nonEmpty, subj)
+							assert(statements(local, subj).filter(_.getContext != null).toSet == expected, subj)
+						case _ =>
 				case _ =>

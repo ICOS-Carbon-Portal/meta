@@ -8,6 +8,7 @@ import akka.stream.scaladsl.Sink
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import se.lu.nateko.cp.meta.RemoteSyncConfig
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 import scala.concurrent.ExecutionContext
@@ -19,7 +20,7 @@ import scala.util.{Failure, Success}
  * until closed.
  */
 final class RemoteSyncWorker private (local: Repository, config: RemoteSyncConfig, kinds: Seq[SyncKind])(
-	using system: ActorSystem
+	using system: ActorSystem, envriConfigs: EnvriConfigs
 ) extends AutoCloseable:
 	import RemoteSyncWorker.LogEveryBatches
 	private given ExecutionContext = system.dispatcher
@@ -66,7 +67,7 @@ object RemoteSyncWorker:
 	private val LogEveryBatches = 200
 
 	/** Starts the worker if synchronization is enabled; fails on unknown kinds in the config */
-	def start(local: Repository, config: RemoteSyncConfig)(using ActorSystem): Option[RemoteSyncWorker] =
+	def start(local: Repository, config: RemoteSyncConfig)(using ActorSystem, EnvriConfigs): Option[RemoteSyncWorker] =
 		val kindNames = config.kinds.getOrElse(Nil)
 		val unknownKinds = kindNames.filter(SyncKind.parse(_).isEmpty)
 		require(

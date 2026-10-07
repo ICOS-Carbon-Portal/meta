@@ -6,15 +6,18 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.pattern.after
 import akka.stream.scaladsl.Source
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import org.eclipse.rdf4j.model.{BNode, IRI, Resource, Value}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import se.lu.nateko.cp.meta.OntoConstants.CpmetaPrefix
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
-import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, EnvriResolver}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
+import java.net.URI
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.jdk.CollectionConverters.*
@@ -27,8 +30,9 @@ import scala.util.Using
  * resources to be fetched with a single SPARQL query.
  */
 enum SyncKind(val rootClasses: Seq[String], val depth: Int, val batched: Boolean):
-	// acquisition, production, submission, spatial coverage, variable info; contributor lists of productions
-	case DataObjects extends SyncKind(SyncKind.cpmeta("StaticObject", "DataObject", "DocumentObject"), 2, true)
+	// only the predicates indexed by the SPARQL magic index (see RemoteMetaSync.dataObjectStatements), about the
+	// objects and their acquisitions, submissions and next-version collections (one link away)
+	case DataObjects extends SyncKind(SyncKind.cpmeta("StaticObject", "DataObject", "DocumentObject"), 1, true)
 	// spatial coverage, contributor lists
 	case Collections extends SyncKind(SyncKind.cpmeta("PlainCollection", "Collection"), 1, true)
 	// memberships
@@ -78,10 +82,12 @@ final class RemoteMetaSync(
 	remote: SparqlRunner,
 	prune: Boolean,
 	batchSize: Int = 50,
+	dataObjectBatchSize: Int = 500,
 	fetchParallelism: Int = 2
-)(using system: ActorSystem):
+)(using system: ActorSystem, envriConfigs: EnvriConfigs):
 	import RemoteMetaSync.*
 	private given ExecutionContext = system.dispatcher
+	private val vocab = CpVocab(local.getValueFactory)
 
 	private val fetchRemote: Fetch = query => Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq)
 
@@ -91,12 +97,12 @@ final class RemoteMetaSync(
 
 	private def syncInBatches(kind: SyncKind): Source[SyncProgress, NotUsed] =
 		rootsOf(kind)
-			.grouped(batchSize)
+			.grouped(if kind == SyncKind.DataObjects then dataObjectBatchSize else batchSize)
 			.mapAsync(fetchParallelism): batch =>
-				withRetries(MaxAttempts)(associatedStatements(batch, kind.depth, fetchRemote))
+				withRetries(MaxAttempts)(batchStatements(kind, batch, fetchRemote))
 					.map(batch -> _)
 			.mapAsync(1): (batch, remoteStats) =>
-				Future(blocking(applyBatch(batch, kind.depth, remoteStats)))
+				Future(blocking(applyBatch(kind, batch, remoteStats)))
 			.scan(SyncProgress(kind))(_ + _)
 
 	private def syncAtOnce(kind: SyncKind): Source[SyncProgress, NotUsed] =
@@ -124,9 +130,9 @@ final class RemoteMetaSync(
 				_.close()
 			)
 
-	private def applyBatch(batch: Seq[IRI], depth: Int, remoteStats: Set[Stat]): BatchResult =
+	private def applyBatch(kind: SyncKind, batch: Seq[IRI], remoteStats: Set[Stat]): BatchResult =
 		local.transactAndGet: conn =>
-			val localStats = associatedStatements(batch, depth, fetchLocal(conn))
+			val localStats = batchStatements(kind, batch, fetchLocal(conn))
 			val (added, removed) = applyDiff(conn, localStats, remoteStats)
 			val knownRemotely = remoteStats.map(_.subj)
 			BatchResult(batch.size, batch.count(r => !knownRemotely.contains(r)), added.size, removed.size)
@@ -152,6 +158,10 @@ final class RemoteMetaSync(
 		toRemove.foreach(st => conn.remove(st.subj, st.pred, st.obj, st.graph))
 		toAdd.foreach(st => conn.add(st.subj, st.pred, st.obj, st.graph))
 		toAdd -> toRemove
+
+	private def batchStatements(kind: SyncKind, batch: Seq[IRI], fetch: Fetch): Set[Stat] =
+		if kind == SyncKind.DataObjects then dataObjectStatements(batch, vocab, fetch)
+		else associatedStatements(batch, kind.depth, fetch)
 
 	private def withRetries[T](attempts: Int)(fetch: => T): Future[T] =
 		Future(blocking(fetch)).recoverWith:
@@ -181,6 +191,44 @@ object RemoteMetaSync:
 	// predicates whose values may be synthesized by the meta SPARQL endpoint (derived metadata)
 	private val derivedLiteral = Seq(CpmetaPrefix + "hasBiblioInfo", CpmetaPrefix + "hasCitationString")
 	private val derivedOrStored = Set(CpmetaVocab.DctermsPrefix + "license")
+
+	/**
+	 * The predicates indexed by the SPARQL magic index (see IndexData.processUpdate) for data objects and their
+	 * acquisitions, submissions and next-version collections; the only ones synchronized for data objects for now.
+	 * None of them carries derived metadata, so a meta SPARQL endpoint does not compute any when they are given.
+	 */
+	val dataObjectPredicates: Seq[String] =
+		import CpmetaVocab.{DctermsPrefix, ProvPrefix}
+		Seq(RDF.TYPE.stringValue, DctermsPrefix + "hasPart") ++
+		Seq("wasAssociatedWith", "startedAtTime", "endedAtTime").map(ProvPrefix + _) ++
+		Seq(
+			"hasObjectSpec", "hasName", "wasPerformedAt", "hasStartTime", "hasEndTime", "isNextVersionOf",
+			"hasSizeInBytes", "hasSamplingHeight", "hasActualColumnNames", "hasActualVariable", "hasKeywords"
+		).map(CpmetaPrefix + _)
+
+	/**
+	 * Fetches the statements with `dataObjectPredicates` about the data objects, their acquisitions and submissions,
+	 * and the next-version collections of them, with a single query. The latter are identified by the hash of the
+	 * object (as by the SPARQL magic index), not looked up by links, as such lookups are slow on meta SPARQL
+	 * endpoints (they get rewritten into data-object index scans).
+	 */
+	def dataObjectStatements(objects: Seq[IRI], vocab: CpVocab, fetch: Fetch)(using EnvriConfigs): Set[Stat] =
+		val subjects = objects.filter(isQueryable).flatMap(dataObjectSubjects(_, vocab))
+		if subjects.isEmpty then Set.empty else toStats(fetch(dataObjectsQuery(subjects))).toSet
+
+	private def dataObjectSubjects(obj: IRI, vocab: CpVocab)(using EnvriConfigs): Seq[IRI] = obj match
+		case CpVocab.DataObject(hash, _) =>
+			EnvriResolver.infer(URI(obj.stringValue)).fold(Seq(obj)): envri =>
+				given Envri = envri
+				Seq(obj, vocab.getAcquisition(hash), vocab.getSubmission(hash), vocab.getNextVersionColl(hash))
+		case _ => Seq(obj)
+
+	def dataObjectsQuery(subjects: Seq[IRI]): String =
+		s"""select ?g ?s ?p ?o where{
+			|	values ?s { ${subjects.map(s => s"<$s>").mkString(" ")} }
+			|	values ?p { ${dataObjectPredicates.map(p => s"<$p>").mkString(" ")} }
+			|	graph ?g { ?s ?p ?o }
+			|}""".stripMargin
 
 	private def fetchLocal(conn: RepositoryConnection): Fetch = query =>
 		Using.resource(conn.prepareTupleQuery(QueryLanguage.SPARQL, query).evaluate())(_.iterator.asScala.toIndexedSeq)

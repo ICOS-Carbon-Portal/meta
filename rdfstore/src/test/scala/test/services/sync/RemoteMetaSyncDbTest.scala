@@ -13,7 +13,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.sync.{RemoteMetaSync, SyncKind, SyncProgress}
+import se.lu.nateko.cp.meta.services.sync.{QueryThrottle, RemoteMetaSync, SyncKind, SyncProgress}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.test.services.sparql.regression.TestDb
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
@@ -36,7 +36,7 @@ class RemoteMetaSyncDbTest extends AnyFunSpec with BeforeAndAfterAll:
 		repo.accessEagerly(_.getStatements(subj, null, null, false).iterator.asScala.toIndexedSeq)
 
 	private def sync(local: Repository): Seq[SyncProgress] =
-		val progress = RemoteMetaSync(local, remote, prune = true).run(SyncKind.values.toSeq).runWith(Sink.seq)
+		val progress = RemoteMetaSync(local, remote, prune = true, QueryThrottle.none).run(SyncKind.values.toSeq).runWith(Sink.seq)
 		Await.result(progress, 2.minutes)
 
 	describe("RemoteMetaSync against a meta SPARQL repository with the magic index"):

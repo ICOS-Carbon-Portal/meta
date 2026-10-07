@@ -13,7 +13,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.sync.{RemoteMetaSync, SyncKind, SyncProgress}
+import se.lu.nateko.cp.meta.services.sync.{QueryThrottle, RemoteMetaSync, SyncKind, SyncProgress}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
@@ -86,7 +86,7 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 
 	private def sync(prune: Boolean): (Repository, Seq[SyncProgress]) =
 		val local = repoWith(objType, oldName, acqLink, staleAcqTime, personType)
-		val progress = RemoteMetaSync(local, Rdf4jSparqlRunner(remote), prune)
+		val progress = RemoteMetaSync(local, Rdf4jSparqlRunner(remote), prune, QueryThrottle.none)
 			.run(Seq(SyncKind.DataObjects, SyncKind.People))
 			.runWith(Sink.seq)
 		local -> Await.result(progress, 10.seconds)

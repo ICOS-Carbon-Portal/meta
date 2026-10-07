@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -81,15 +81,15 @@ final class RemoteMetaSync(
 	local: Repository,
 	remote: SparqlRunner,
 	prune: Boolean,
+	throttle: QueryThrottle,
 	batchSize: Int = 50,
-	dataObjectBatchSize: Int = 500,
-	fetchParallelism: Int = 2
+	dataObjectBatchSize: Int = 500
 )(using system: ActorSystem, envriConfigs: EnvriConfigs):
 	import RemoteMetaSync.*
 	private given ExecutionContext = system.dispatcher
 	private val vocab = CpVocab(local.getValueFactory)
 
-	private val fetchRemote: Fetch = query => Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq)
+	private val fetchRemote: Fetch = query => throttle(Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq))
 
 	def run(kinds: Seq[SyncKind]): Source[SyncProgress, NotUsed] =
 		Source(kinds.distinct).flatMapConcat: kind =>
@@ -98,8 +98,8 @@ final class RemoteMetaSync(
 	private def syncInBatches(kind: SyncKind): Source[SyncProgress, NotUsed] =
 		rootsOf(kind)
 			.grouped(if kind == SyncKind.DataObjects then dataObjectBatchSize else batchSize)
-			.mapAsync(fetchParallelism): batch =>
-				withRetries(MaxAttempts)(batchStatements(kind, batch, fetchRemote))
+			.mapAsync(1): batch =>
+				withRetries(RetryDelays)(batchStatements(kind, batch, fetchRemote))
 					.map(batch -> _)
 			.mapAsync(1): (batch, remoteStats) =>
 				Future(blocking(applyBatch(kind, batch, remoteStats)))
@@ -109,7 +109,7 @@ final class RemoteMetaSync(
 		Source.lazyFuture: () =>
 			for
 				query <- Future(blocking(entitiesQuery(classesOf(kind), kind.depth)))
-				remoteQuads <- withRetries(MaxAttempts)(fetchQuads(query, fetchRemote))
+				remoteQuads <- withRetries(RetryDelays)(fetchQuads(query, fetchRemote))
 				result <- Future(blocking(applyAtOnce(query, remoteQuads)))
 			yield SyncProgress(kind) + result
 
@@ -163,17 +163,17 @@ final class RemoteMetaSync(
 		if kind == SyncKind.DataObjects then dataObjectStatements(batch, vocab, fetch)
 		else associatedStatements(batch, kind.depth, fetch)
 
-	private def withRetries[T](attempts: Int)(fetch: => T): Future[T] =
+	private def withRetries[T](delays: Seq[FiniteDuration])(fetch: => T): Future[T] =
 		Future(blocking(fetch)).recoverWith:
-			case err if attempts > 1 =>
-				system.log.warning("Remote SPARQL fetch failed ({}), retrying", err.getMessage)
-				after(RetryDelay)(withRetries(attempts - 1)(fetch))
+			case err if delays.nonEmpty =>
+				system.log.warning("Remote SPARQL fetch failed ({}), retrying in {}", err.getMessage, delays.head)
+				after(delays.head)(withRetries(delays.tail)(fetch))
 
 end RemoteMetaSync
 
 object RemoteMetaSync:
-	private val MaxAttempts = 3
-	private val RetryDelay = 5.seconds
+	// long enough for a remote SPARQL endpoint to lift a temporary ban for overuse
+	private val RetryDelays = Seq(1.minute, 15.minutes)
 	private val MaxPairsPerQuery = 500
 
 	type Fetch = String => IndexedSeq[BindingSet]

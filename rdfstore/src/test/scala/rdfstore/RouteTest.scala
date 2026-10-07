@@ -207,7 +207,9 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 				endpoint = URI(s"$baseUrl/internal/sparql"),
 				kinds = Some(Seq("people")),
 				prune = false,
-				pauseBetweenRunsMinutes = 60
+				pauseBetweenRunsMinutes = 60,
+				queryPauseFactor = 0,
+				minQueryPauseMillis = 0
 			)
 			an[IllegalArgumentException] should be thrownBy
 				RemoteSyncWorker.start(local, syncConf.copy(kinds = Some(Seq("planets"))))

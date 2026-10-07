@@ -41,7 +41,8 @@ final class RemoteSyncWorker private (local: Repository, config: RemoteSyncConfi
 		remoteRepo.init()
 		var lastProgress: Option[SyncProgress] = None
 
-		RemoteMetaSync(local, Rdf4jSparqlRunner(remoteRepo), config.prune)
+		val throttle = QueryThrottle(config.queryPauseFactor, config.minQueryPauseMillis.millis)
+		RemoteMetaSync(local, Rdf4jSparqlRunner(remoteRepo), config.prune, throttle)
 			.run(kinds)
 			.via(killSwitch.flow)
 			.runWith(Sink.foreach: progress =>

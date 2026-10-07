@@ -104,7 +104,7 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 			assert(!has(local, oldName))
 			assert(!has(local, staleAcqTime))
 			assert(has(local, newName))
-			assert(progress.last.toString.contains("People: 1 roots"))
+			assert(progress.exists(_.toString == "People: 1 roots in 1 batches, 0 missing remotely, 3 statements added, 0 statements removed"))
 
 		it("reports the progress of every kind"):
 			val (_, progress) = sync(prune = true)

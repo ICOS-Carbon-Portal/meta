@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpNotifyingSail, GeoIndexProvider, IndexHandler, StorageSail}
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.meta.services.sync.RemoteSyncWorker
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,14 +69,17 @@ object Main extends App:
 				derivedMetadata,
 				message => sail.makeReadonlyDumpIndexAndCaches(message)
 			))
+			// a freshly initialized store is read-only until restarted
+			syncWorker = if isFreshInit then None else RemoteSyncWorker.start(repo, config.rdfStore.remoteSync)
 		}
-		yield (binding, queryServer, repo, logManager)
+		yield (binding, queryServer, repo, logManager, syncWorker)
 	}
 
 	startup.onComplete:
-		case Success((binding, queryServer, repo, logManager)) =>
+		case Success((binding, queryServer, repo, logManager, syncWorker)) =>
 			system.log.info("RDF store listening on {}", binding.localAddress)
 			sys.addShutdownHook:
+				syncWorker.foreach(_.close())
 				queryServer.shutdown()
 				repo.shutDown()
 				logManager.close()

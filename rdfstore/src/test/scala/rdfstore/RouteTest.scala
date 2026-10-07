@@ -14,19 +14,21 @@ import akka.util.ByteString
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.eclipse.rdf4j.common.iteration.EmptyIteration
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import se.lu.nateko.cp.meta.{ConfigLoader, SparqlServerConfig}
+import se.lu.nateko.cp.meta.{ConfigLoader, RemoteSyncConfig, SparqlServerConfig}
 import se.lu.nateko.cp.meta.core.data.{Licence, References}
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.StatementsEnricher
+import se.lu.nateko.cp.meta.services.sync.RemoteSyncWorker
 import se.lu.nateko.cp.meta.utils.rdf4j.{accessEagerly, transact}
 
 import scala.concurrent.Await
@@ -183,6 +185,40 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 					try statements.iterator().asScala.toSeq should contain only statement
 					finally statements.close()
 			finally remote.shutDown()
+
+		"serve as the remote endpoint for the synchronization worker of another RDF store" in:
+			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
+			val vf = repo.getValueFactory
+			val metaVocab = CpmetaVocab(vf)
+			val graph = vf.createIRI("urn:sync:graph")
+			val person = vf.createIRI("urn:sync:person")
+			val name = vf.createLiteral("Synced")
+			repo.transact: conn =>
+				conn.add(person, RDF.TYPE, metaVocab.personClass, graph)
+				conn.add(person, metaVocab.hasFirstName, name, graph)
+			.isSuccess shouldBe true
+
+			val local = new SailRepository(new MemoryStore)
+			local.init()
+			local.transact(_.add(person, RDF.TYPE, metaVocab.personClass, graph)).isSuccess shouldBe true
+			val syncConf = RemoteSyncConfig(
+				enabled = true,
+				endpoint = URI(s"$baseUrl/internal/sparql"),
+				kinds = Some(Seq("people")),
+				prune = false,
+				pauseBetweenRunsMinutes = 60
+			)
+			an[IllegalArgumentException] should be thrownBy
+				RemoteSyncWorker.start(local, syncConf.copy(kinds = Some(Seq("planets"))))
+			RemoteSyncWorker.start(local, syncConf.copy(enabled = false)) shouldBe None
+
+			val worker = RemoteSyncWorker.start(local, syncConf)
+			try
+				def synced = local.accessEagerly(_.hasStatement(person, metaVocab.hasFirstName, name, false, graph))
+				val deadline = 10.seconds.fromNow
+				while !synced && deadline.hasTimeLeft() do Thread.sleep(50)
+				synced shouldBe true
+			finally worker.foreach(_.close())
 
 		"accept a SPARQL query POSTed with a non-strict (chunked) request entity" in:
 			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"

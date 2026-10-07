@@ -161,7 +161,15 @@ case class RdfStorageConfig(
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
-case class RdfStoreConfig(httpBindInterface: String, port: Int)
+case class RemoteSyncConfig(
+	enabled: Boolean,
+	endpoint: URI,
+	kinds: Option[Seq[String]],
+	prune: Boolean,
+	pauseBetweenRunsMinutes: Int
+)
+
+case class RdfStoreConfig(httpBindInterface: String, port: Int, remoteSync: RemoteSyncConfig)
 
 case class RemoteRdfRepositoryConfig(
 	queryEndpoint: URI,
@@ -248,7 +256,8 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
-	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
+	given RootJsonFormat[RemoteSyncConfig] = jsonFormat5(RemoteSyncConfig.apply)
+	given RootJsonFormat[RdfStoreConfig] = jsonFormat3(RdfStoreConfig.apply)
 	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)

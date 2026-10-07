@@ -7,6 +7,8 @@ defmodule LandingBench do
   3. Fetches the landing page of each returned data object in turn, timing each request
      and pausing between requests, until `max` landing pages have been fetched or the
      result list is exhausted.
+  4. Optionally fetches each landing page from a secondary meta host as well, timing it
+     and comparing the response with the one from the primary meta host.
   """
 
   alias LandingBench.{Http, Portal, Sparql, Stats}
@@ -16,6 +18,7 @@ defmodule LandingBench do
 
   @type opts :: [
           host: String.t(),
+          secondary: String.t() | nil,
           max: pos_integer(),
           delay_ms: non_neg_integer(),
           jitter_ms: non_neg_integer(),
@@ -35,6 +38,9 @@ defmodule LandingBench do
       )
 
       meta_base = "https://" <> portal.meta_host
+      secondary_base = opts[:secondary] && base_url(opts[:secondary])
+
+      if secondary_base, do: IO.puts("Secondary meta host #{secondary_base}")
 
       results =
         objects_stream(meta_base <> "/sparql", portal.envri, req_opts)
@@ -42,7 +48,7 @@ defmodule LandingBench do
         |> Stream.with_index(1)
         |> Stream.map(fn {obj, i} ->
           if i > 1, do: pause(opts[:delay_ms], opts[:jitter_ms])
-          fetch_landing_page(obj, meta_base, i, req_opts)
+          fetch_object(obj, meta_base, secondary_base, i, req_opts)
         end)
         |> Enum.to_list()
 
@@ -85,22 +91,87 @@ defmodule LandingBench do
     )
   end
 
-  defp fetch_landing_page(obj, meta_base, i, req_opts) do
-    url = landing_page_url(obj.uri, meta_base)
+  defp fetch_object(obj, meta_base, nil, i, req_opts) do
+    result = fetch_landing_page(landing_page_url(obj.uri, meta_base), req_opts)
+    print_result(pad(i), result, "(#{obj.file_name})")
+    Map.delete(result, :body)
+  end
+
+  defp fetch_object(obj, meta_base, secondary_base, i, req_opts) do
+    primary = fetch_landing_page(landing_page_url(obj.uri, meta_base), req_opts)
+    print_result(pad(i), primary, "(#{obj.file_name})")
+
+    secondary = fetch_landing_page(landing_page_url(obj.uri, secondary_base), req_opts)
+    match = compare(primary, secondary, meta_base, secondary_base)
+    print_result(pad(""), secondary, "[#{match_label(match)}]")
+
+    primary
+    |> Map.delete(:body)
+    |> Map.merge(%{secondary: Map.delete(secondary, :body), match: match})
+  end
+
+  defp fetch_landing_page(url, req_opts) do
     opts = Keyword.put(req_opts, :headers, [{"accept", "text/html"}])
 
-    result =
-      case Http.timed_get(url, opts) do
-        {:ok, resp, ms} ->
-          %{url: url, status: resp.status, ms: ms, bytes: byte_size(resp.body), error: nil}
+    case Http.timed_get(url, opts) do
+      {:ok, resp, ms} ->
+        %{
+          url: url,
+          status: resp.status,
+          ms: ms,
+          bytes: byte_size(resp.body),
+          body: resp.body,
+          error: nil
+        }
 
-        {:error, err} ->
-          %{url: url, status: nil, ms: nil, bytes: 0, error: Exception.message(err)}
-      end
-
-    print_result(i, obj, result)
-    result
+      {:error, err} ->
+        %{url: url, status: nil, ms: nil, bytes: 0, body: nil, error: Exception.message(err)}
+    end
   end
+
+  # Landing pages may embed links to the meta host they were served from, so if the
+  # bodies differ, they are compared again with the host names replaced by a placeholder.
+  defp compare(%{error: nil} = a, %{error: nil} = b, base_a, base_b) do
+    cond do
+      a.status != b.status ->
+        :status_differs
+
+      a.body == b.body ->
+        :identical
+
+      normalize(a.body, base_a) == normalize(b.body, base_b) ->
+        :identical_modulo_host
+
+      true ->
+        {:different, first_differing_line(normalize(a.body, base_a), normalize(b.body, base_b))}
+    end
+  end
+
+  defp compare(_a, _b, _base_a, _base_b), do: :fetch_error
+
+  defp normalize(body, base) do
+    host = String.replace(base, ~r{^https?://}, "")
+
+    body
+    |> String.replace(base, "META_BASE")
+    |> String.replace(host, "META_HOST")
+  end
+
+  defp first_differing_line(a, b) do
+    Enum.zip(String.split(a, "\n"), String.split(b, "\n"))
+    |> Enum.find_index(fn {la, lb} -> la != lb end)
+    |> case do
+      # one body is a prefix of the other, line-wise
+      nil -> min(length(String.split(a, "\n")), length(String.split(b, "\n"))) + 1
+      idx -> idx + 1
+    end
+  end
+
+  def match_label(:identical), do: "match"
+  def match_label(:identical_modulo_host), do: "match (modulo host name)"
+  def match_label(:status_differs), do: "MISMATCH: HTTP status differs"
+  def match_label(:fetch_error), do: "not compared: fetch error"
+  def match_label({:different, line}), do: "MISMATCH: first difference at line #{line}"
 
   # Object URIs are canonical (e.g. https://meta.icos-cp.eu/objects/<hash>); point
   # them at the meta host the portal is configured with, so local setups work too.
@@ -114,15 +185,17 @@ defmodule LandingBench do
     Process.sleep(delay_ms + jitter)
   end
 
-  defp print_result(i, obj, %{error: nil} = r) do
+  defp print_result(prefix, %{error: nil} = r, suffix) do
     IO.puts(
-      "#{pad(i)} #{r.status} #{String.pad_leading(fmt_ms(r.ms), 11)} " <>
-        "#{String.pad_leading(Integer.to_string(r.bytes), 8)} B  #{r.url}  (#{obj.file_name})"
+      "#{prefix} #{r.status} #{String.pad_leading(fmt_ms(r.ms), 11)} " <>
+        "#{String.pad_leading(Integer.to_string(r.bytes), 8)} B  #{r.url}  #{suffix}"
     )
   end
 
-  defp print_result(i, _obj, r), do: IO.puts("#{pad(i)} ERR #{r.url}: #{r.error}")
+  defp print_result(prefix, r, suffix),
+    do: IO.puts("#{prefix} ERR #{r.url}: #{r.error}  #{suffix}")
 
+  defp pad(""), do: String.duplicate(" ", 5)
   defp pad(i), do: String.pad_leading("##{i}", 5)
 
   def fmt_ms(ms), do: :erlang.float_to_binary(ms, decimals: 1) <> " ms"

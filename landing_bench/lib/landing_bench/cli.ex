@@ -8,6 +8,10 @@ defmodule LandingBench.CLI do
   https://datalocal.icos-cp.eu (https:// is assumed if no scheme is given).
 
   Options:
+    -s, --secondary HOST
+                        also fetch each landing page from this meta host, e.g.
+                        meta.icos-cp.eu or http://localhost:9094, timing it and
+                        comparing the response with the primary meta host's
     -m, --max N         maximum number of landing pages to fetch (default 20)
     -d, --delay MS      pause between landing page fetches in ms (default 1000)
     -j, --jitter MS     add a random 0..MS ms to each pause (default 0)
@@ -21,6 +25,7 @@ defmodule LandingBench.CLI do
     {opts, args, invalid} =
       OptionParser.parse(argv,
         strict: [
+          secondary: :string,
           max: :integer,
           delay: :integer,
           jitter: :integer,
@@ -29,7 +34,15 @@ defmodule LandingBench.CLI do
           csv: :string,
           help: :boolean
         ],
-        aliases: [m: :max, d: :delay, j: :jitter, t: :timeout, k: :insecure, h: :help]
+        aliases: [
+          s: :secondary,
+          m: :max,
+          d: :delay,
+          j: :jitter,
+          t: :timeout,
+          k: :insecure,
+          h: :help
+        ]
       )
 
     cond do
@@ -45,6 +58,7 @@ defmodule LandingBench.CLI do
 
         run_opts = [
           host: host,
+          secondary: opts[:secondary],
           max: Keyword.get(opts, :max, 20),
           delay_ms: Keyword.get(opts, :delay, 1000),
           jitter_ms: Keyword.get(opts, :jitter, 0),

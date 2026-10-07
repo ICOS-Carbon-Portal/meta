@@ -77,8 +77,8 @@ defmodule LandingBench.Diff do
       {~r/<style>\s*\.env-border\b.*?<\/style>\n\n/s, ""},
       {~r/[ \t]*<div class="env-border"><\/div>\n[ \t]*\n/, ""},
       {~r/[ \t]*<div class="env-badge">[^<]*<\/div>\n[ \t]*\n/, ""},
-      # Download count, which differs between hosts with separate download logs
-      {~r/(<label class="fw-bold">Downloads<\/label><\/div>\n<div [^>]*>\n\s*)\d+/, "\\1"},
+      # Download and preview counts, which differ between hosts with separate logs
+      {~r/(<label class="fw-bold">(?:Downloads|Previews)<\/label><\/div>\n<div [^>]*>\n\s*)\d+/, "\\1"},
       # Website Carbon badge, absent on some hosts
       {~r/[ \t]*<div id="wcb"[^>]*><\/div>\n[ \t]*<script[^>]*website-carbon-badges[^>]*><\/script>\n[ \t]*\n/,
        ""}

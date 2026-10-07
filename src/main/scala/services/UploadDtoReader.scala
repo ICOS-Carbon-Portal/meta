@@ -3,7 +3,6 @@ package se.lu.nateko.cp.meta.services
 import scala.language.unsafeNulls
 
 import akka.http.scaladsl.model.Uri
-import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
@@ -18,12 +17,12 @@ import scala.util.Success
 
 import UriSerializer.Hash
 
-class UploadDtoReader(uriSer: UriSerializer)(using EnvriConfigs){
+class UploadDtoReader(uriSer: UriSerializer)(using envriConfs: EnvriConfigs){
 	import UploadDtoReader.*
 
 	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
 		case Hash.Object(_) =>
-			uriSer.fetchStaticObject(uri).map(objToDto(_)(using envriConfig(uri)))
+			uriSer.fetchStaticObject(uri).map(objToDto(_)(using envriConfs(UriSerializer.inferEnvri(uri))))
 
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
@@ -33,9 +32,6 @@ class UploadDtoReader(uriSer: UriSerializer)(using EnvriConfigs){
 }
 
 object UploadDtoReader{
-	private def envriConfig(uri: Uri)(using confs: EnvriConfigs): EnvriConfig =
-		confs(EnvriResolver.infer(new URI(uri.toString)).getOrElse(Envri.ICOS))
-
 	def objToDto(obj: StaticObject)(using EnvriConfig) = obj match {
 		case dobj: DataObject => DataObjectDto(
 			submitterId = "",

@@ -178,8 +178,7 @@ object RemoteMetaSync:
 		CpmetaVocab.DctermsPrefix + "hasPart"
 	)
 
-	// predicates whose values may be synthesized by older meta SPARQL endpoints (derived metadata) even in named
-	// graphs; the local store computes derived metadata itself, so it is never synchronized
+	// predicates whose values may be synthesized by the meta SPARQL endpoint (derived metadata)
 	private val derivedLiteral = Seq(CpmetaPrefix + "hasBiblioInfo", CpmetaPrefix + "hasCitationString")
 	private val derivedOrStored = Set(CpmetaVocab.DctermsPrefix + "license")
 
@@ -195,7 +194,7 @@ object RemoteMetaSync:
 	/**
 	 * Fetches all statements (in named graphs) about the roots, and about the IRI resources up to `depth` links
 	 * away from them within the same named graph. Every resource is looked up only once, as the lookups are
-	 * expensive on older meta SPARQL endpoints (derived metadata like citations get computed for every subject).
+	 * expensive on a meta SPARQL endpoint (derived metadata like citations get computed for every subject).
 	 */
 	def associatedStatements(roots: Seq[IRI], depth: Int, fetch: Fetch): Set[Stat] =
 		val rootSet = roots.toSet[Value] // already looked up in all graphs
@@ -225,8 +224,8 @@ object RemoteMetaSync:
 		quads.filter(q => stored.contains(q.stat))
 
 	/**
-	 * Statements whose predicate may carry derived metadata are re-checked to only keep the stored ones, as older
-	 * meta SPARQL endpoints add derived metadata to named-graph results too (but not when the object is given).
+	 * Statements whose predicate may carry derived metadata are re-checked to only keep the stored ones.
+	 * With the object given, the meta SPARQL endpoint does not add derived metadata to the stored statements.
 	 */
 	private def onlyStored(stats: Set[Stat], fetch: Fetch): Set[Stat] =
 		val (maybeDerived, stored) = stats.partition(st => derivedOrStored.contains(st.pred.stringValue))

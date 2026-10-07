@@ -8,7 +8,8 @@ defmodule LandingBench do
      and pausing between requests, until `max` landing pages have been fetched or the
      result list is exhausted.
   4. Optionally fetches each landing page from a secondary meta host as well, timing it
-     and comparing the response with the one from the primary meta host.
+     and comparing the response with the one from the primary meta host, optionally
+     printing a diff of the response bodies when they do not match.
   """
 
   alias LandingBench.{Http, Portal, Sparql, Stats}
@@ -24,7 +25,8 @@ defmodule LandingBench do
           jitter_ms: non_neg_integer(),
           insecure: boolean(),
           timeout_ms: pos_integer(),
-          csv: String.t() | nil
+          csv: String.t() | nil,
+          diff: boolean()
         ]
 
   @spec run(opts()) :: :ok | {:error, term()}
@@ -48,7 +50,7 @@ defmodule LandingBench do
         |> Stream.with_index(1)
         |> Stream.map(fn {obj, i} ->
           if i > 1, do: pause(opts[:delay_ms], opts[:jitter_ms])
-          fetch_object(obj, meta_base, secondary_base, i, req_opts)
+          fetch_object(obj, meta_base, secondary_base, i, req_opts, opts[:diff])
         end)
         |> Enum.to_list()
 
@@ -91,19 +93,22 @@ defmodule LandingBench do
     )
   end
 
-  defp fetch_object(obj, meta_base, nil, i, req_opts) do
+  defp fetch_object(obj, meta_base, nil, i, req_opts, _show_diff) do
     result = fetch_landing_page(landing_page_url(obj.uri, meta_base), req_opts)
     print_result(pad(i), result, "(#{obj.file_name})")
     Map.delete(result, :body)
   end
 
-  defp fetch_object(obj, meta_base, secondary_base, i, req_opts) do
+  defp fetch_object(obj, meta_base, secondary_base, i, req_opts, show_diff) do
     primary = fetch_landing_page(landing_page_url(obj.uri, meta_base), req_opts)
     print_result(pad(i), primary, "(#{obj.file_name})")
 
     secondary = fetch_landing_page(landing_page_url(obj.uri, secondary_base), req_opts)
     match = compare(primary, secondary, meta_base, secondary_base)
     print_result(pad(""), secondary, "[#{match_label(match)}]")
+
+    if show_diff and mismatch?(match),
+      do: print_diff(primary, secondary, meta_base, secondary_base)
 
     primary
     |> Map.delete(:body)
@@ -166,6 +171,25 @@ defmodule LandingBench do
       idx -> idx + 1
     end
   end
+
+  defp mismatch?({:different, _line}), do: true
+  defp mismatch?(:status_differs), do: true
+  defp mismatch?(_match), do: false
+
+  # Diffs the bodies with host names normalized, as in `compare/4`, so that only
+  # the differences that caused the mismatch are shown.
+  defp print_diff(primary, secondary, base_a, base_b) do
+    IO.puts(IO.ANSI.format([:red, "     --- #{primary.url}"]))
+    IO.puts(IO.ANSI.format([:green, "     +++ #{secondary.url}"]))
+
+    LandingBench.Diff.unified(normalize(primary.body, base_a), normalize(secondary.body, base_b))
+    |> Enum.each(fn line -> IO.puts(IO.ANSI.format([diff_color(line), "     ", line])) end)
+  end
+
+  defp diff_color("@@" <> _), do: :cyan
+  defp diff_color("-" <> _), do: :red
+  defp diff_color("+" <> _), do: :green
+  defp diff_color(_), do: :reset
 
   def match_label(:identical), do: "match"
   def match_label(:identical_modulo_host), do: "match (modulo host name)"

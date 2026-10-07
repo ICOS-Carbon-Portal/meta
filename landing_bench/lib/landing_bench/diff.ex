@@ -1,0 +1,63 @@
+defmodule LandingBench.Diff do
+  @moduledoc "Line-based unified diff of two strings."
+
+  @context 3
+
+  @doc """
+  Returns the unified diff hunks of `a` and `b` as a list of lines (without
+  file headers), with `context` unchanged lines around each change.
+  """
+  @spec unified(String.t(), String.t(), non_neg_integer()) :: [String.t()]
+  def unified(a, b, context \\ @context) do
+    edits = numbered_edits(String.split(a, "\n"), String.split(b, "\n"))
+    changed = for {{op, _, _, _}, i} <- Enum.with_index(edits), op != :eq, do: i
+
+    changed
+    |> hunk_ranges(context, length(edits))
+    |> Enum.flat_map(fn {first, last} -> hunk(Enum.slice(edits, first..last)) end)
+  end
+
+  # Flattens the Myers edit script into one entry per line, each tagged with
+  # the 1-based line numbers it has in `a` and `b` (or would have, if inserted).
+  defp numbered_edits(lines_a, lines_b) do
+    List.myers_difference(lines_a, lines_b)
+    |> Enum.flat_map(fn {op, lines} -> Enum.map(lines, &{op, &1}) end)
+    |> Enum.map_reduce({1, 1}, fn {op, line}, {ia, ib} ->
+      next =
+        case op do
+          :eq -> {ia + 1, ib + 1}
+          :del -> {ia + 1, ib}
+          :ins -> {ia, ib + 1}
+        end
+
+      {{op, line, ia, ib}, next}
+    end)
+    |> elem(0)
+  end
+
+  # Index ranges of the edit list to show, merging changes whose context overlaps
+  defp hunk_ranges(changed, context, n) do
+    changed
+    |> Enum.map(fn i -> {max(i - context, 0), min(i + context, n - 1)} end)
+    |> Enum.reduce([], fn
+      {first, last}, [{pfirst, plast} | rest] when first <= plast + 1 ->
+        [{pfirst, max(last, plast)} | rest]
+
+      range, acc ->
+        [range | acc]
+    end)
+    |> Enum.reverse()
+  end
+
+  defp hunk([{_, _, ia, ib} | _] = edits) do
+    len_a = Enum.count(edits, fn {op, _, _, _} -> op != :ins end)
+    len_b = Enum.count(edits, fn {op, _, _, _} -> op != :del end)
+
+    header = "@@ -#{ia},#{len_a} +#{ib},#{len_b} @@"
+    [header | Enum.map(edits, &edit_line/1)]
+  end
+
+  defp edit_line({:eq, line, _, _}), do: " " <> line
+  defp edit_line({:del, line, _, _}), do: "-" <> line
+  defp edit_line({:ins, line, _, _}), do: "+" <> line
+end

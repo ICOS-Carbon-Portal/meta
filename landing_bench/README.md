@@ -16,7 +16,9 @@ It:
 4. optionally (`--secondary HOST`), fetches each landing page from a second meta
    host right after the primary one, times it, and compares the two responses
    (HTTP status and body; host names of the respective meta hosts in the body are
-   ignored, since landing pages may link back to the host serving them).
+   ignored, since landing pages may link back to the host serving them);
+   with `--diff`, a unified diff of the (host-normalized) bodies is printed for
+   every mismatching landing page.
 
 ## Build
 
@@ -31,6 +33,7 @@ mix escript.build
 ./landing_bench data.icos-cp.eu --max 50 --delay 2000 --jitter 500
 ./landing_bench https://datalocal.icos-cp.eu --insecure --max 100 --csv results.csv
 ./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --csv compare.csv
+./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --diff
 ./landing_bench --help
 ```
 

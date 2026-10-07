@@ -12,6 +12,8 @@ defmodule LandingBench.CLI do
                         also fetch each landing page from this meta host, e.g.
                         meta.icos-cp.eu or http://localhost:9094, timing it and
                         comparing the response with the primary meta host's
+        --diff          with --secondary, print a diff of the response bodies
+                        of each mismatching landing page
     -m, --max N         maximum number of landing pages to fetch (default 20)
     -d, --delay MS      pause between landing page fetches in ms (default 1000)
     -j, --jitter MS     add a random 0..MS ms to each pause (default 0)
@@ -32,6 +34,7 @@ defmodule LandingBench.CLI do
           timeout: :integer,
           insecure: :boolean,
           csv: :string,
+          diff: :boolean,
           help: :boolean
         ],
         aliases: [
@@ -64,7 +67,8 @@ defmodule LandingBench.CLI do
           jitter_ms: Keyword.get(opts, :jitter, 0),
           timeout_ms: Keyword.get(opts, :timeout, 60_000),
           insecure: Keyword.get(opts, :insecure, false),
-          csv: opts[:csv]
+          csv: opts[:csv],
+          diff: Keyword.get(opts, :diff, false)
         ]
 
         case LandingBench.run(run_opts) do

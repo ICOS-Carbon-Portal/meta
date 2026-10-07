@@ -131,27 +131,21 @@ class CitationMaker(
 		yield lic
 	end getLicence
 
-	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
+	private def presentCitation(eagerRes: Option[Try[String]], source: String): String = eagerRes match
 		case None => "Fetching... try refreshing the page in a few seconds"
 		case Some(Success(cit)) => cit
-		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
-	}
-
-	private def presentExternalCitation(eagerRes: Option[Try[String]]): String = eagerRes match
-		case None => "Fetching... try refreshing the page in a few seconds"
-		case Some(Success(cit)) => cit
-		case Some(Failure(err)) => "Error fetching external citation: " + err.getMessage
+		case Some(Failure(err)) => s"Error fetching $source citation: " + err.getMessage
 
 	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[String] =
 		for
 			url <- sobj.accessUrl
 			provider <- externalObjs.providers.lookup(url)
 			if provider.citation == ExternalCitationStrategy.CPMETA_JSON
-		yield presentExternalCitation(externalObjs.getCitationEager(url, style))
+		yield presentCitation(externalObjs.getCitationEager(url, style), "external")
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
-			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
+			doi => presentCitation(doiCiter.getCitationEager(doi, style), "DOI")
 		)
 
 	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =

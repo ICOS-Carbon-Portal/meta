@@ -9,7 +9,6 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.services.{CpmetaVocab, FileStorageService, MetadataException, UnauthorizedStationUpdateException}
 
-
 class StationLabelingService(
 	instanceServers: Map[String, InstanceServer],
 	protected val onto: Onto,

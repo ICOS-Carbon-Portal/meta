@@ -15,10 +15,11 @@ It:
    paging further through the result list as needed until `--max` is reached;
 4. optionally (`--secondary HOST`), fetches each landing page from a second meta
    host right after the primary one, times it, and compares the two responses
-   (HTTP status and body; host names of the respective meta hosts in the body are
-   ignored, since landing pages may link back to the host serving them);
-   with `--diff`, a unified diff of the (host-normalized) bodies is printed for
-   every mismatching landing page.
+   (HTTP status and body; bodies are compared as served, except for a short list
+   of known environment-specific differences, such as test host names and
+   environment badges, listed in `lib/landing_bench/diff.ex`);
+   with `--diff`, a unified diff of the bodies is printed for every mismatching
+   landing page.
 
 ## Build
 

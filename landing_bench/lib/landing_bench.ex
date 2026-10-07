@@ -12,7 +12,7 @@ defmodule LandingBench do
      printing a diff of the response bodies when they do not match.
   """
 
-  alias LandingBench.{Http, Portal, Sparql, Stats}
+  alias LandingBench.{Diff, Http, Portal, Sparql, Stats}
 
   # Same page size as the portal (`stepsize` in config.ts)
   @page_size 20
@@ -104,11 +104,11 @@ defmodule LandingBench do
     print_result(pad(i), primary, "(#{obj.file_name})")
 
     secondary = fetch_landing_page(landing_page_url(obj.uri, secondary_base), req_opts)
-    match = compare(primary, secondary, meta_base, secondary_base)
+    match = compare(primary, secondary)
     print_result(pad(""), secondary, "[#{match_label(match)}]")
 
     if show_diff and mismatch?(match),
-      do: print_diff(primary, secondary, meta_base, secondary_base)
+      do: print_diff(primary, secondary)
 
     primary
     |> Map.delete(:body)
@@ -134,9 +134,9 @@ defmodule LandingBench do
     end
   end
 
-  # Landing pages may embed links to the meta host they were served from, so if the
-  # bodies differ, they are compared again with the host names replaced by a placeholder.
-  defp compare(%{error: nil} = a, %{error: nil} = b, base_a, base_b) do
+  # If the bodies differ, they are compared again with known environment-specific
+  # differences (see `LandingBench.Diff.ignore_known_differences/1`) removed.
+  defp compare(%{error: nil} = a, %{error: nil} = b) do
     cond do
       a.status != b.status ->
         :status_differs
@@ -144,23 +144,17 @@ defmodule LandingBench do
       a.body == b.body ->
         :identical
 
-      normalize(a.body, base_a) == normalize(b.body, base_b) ->
-        :identical_modulo_host
-
       true ->
-        {:different, first_differing_line(normalize(a.body, base_a), normalize(b.body, base_b))}
+        body_a = Diff.ignore_known_differences(a.body)
+        body_b = Diff.ignore_known_differences(b.body)
+
+        if body_a == body_b,
+          do: :identical_ignoring_known,
+          else: {:different, first_differing_line(body_a, body_b)}
     end
   end
 
-  defp compare(_a, _b, _base_a, _base_b), do: :fetch_error
-
-  defp normalize(body, base) do
-    host = String.replace(base, ~r{^https?://}, "")
-
-    body
-    |> String.replace(base, "META_BASE")
-    |> String.replace(host, "META_HOST")
-  end
+  defp compare(_a, _b), do: :fetch_error
 
   defp first_differing_line(a, b) do
     Enum.zip(String.split(a, "\n"), String.split(b, "\n"))
@@ -176,13 +170,16 @@ defmodule LandingBench do
   defp mismatch?(:status_differs), do: true
   defp mismatch?(_match), do: false
 
-  # Diffs the bodies with host names normalized, as in `compare/4`, so that only
-  # the differences that caused the mismatch are shown.
-  defp print_diff(primary, secondary, base_a, base_b) do
+  # Diffs the bodies with known differences removed, as in `compare/2`, so that
+  # only the differences that caused the mismatch are shown.
+  defp print_diff(primary, secondary) do
     IO.puts(IO.ANSI.format([:red, "     --- #{primary.url}"]))
     IO.puts(IO.ANSI.format([:green, "     +++ #{secondary.url}"]))
 
-    LandingBench.Diff.unified(normalize(primary.body, base_a), normalize(secondary.body, base_b))
+    Diff.unified(
+      Diff.ignore_known_differences(primary.body),
+      Diff.ignore_known_differences(secondary.body)
+    )
     |> Enum.each(fn line -> IO.puts(IO.ANSI.format([diff_color(line), "     ", line])) end)
   end
 
@@ -192,7 +189,7 @@ defmodule LandingBench do
   defp diff_color(_), do: :reset
 
   def match_label(:identical), do: "match"
-  def match_label(:identical_modulo_host), do: "match (modulo host name)"
+  def match_label(:identical_ignoring_known), do: "match (ignoring known differences)"
   def match_label(:status_differs), do: "MISMATCH: HTTP status differs"
   def match_label(:fetch_error), do: "not compared: fetch error"
   def match_label({:different, line}), do: "MISMATCH: first difference at line #{line}"

@@ -17,6 +17,33 @@ defmodule LandingBench.Diff do
     |> Enum.flat_map(fn {first, last} -> hunk(Enum.slice(edits, first..last)) end)
   end
 
+  @doc """
+  Removes known environment-specific differences (test host names, badges) from
+  `text`, leaving everything else untouched.
+  """
+  @spec ignore_known_differences(String.t()) :: String.t()
+  def ignore_known_differences(text) do
+    Enum.reduce(replacements(), text, fn {pattern, replacement}, acc ->
+      String.replace(acc, pattern, replacement)
+    end)
+  end
+
+  # {pattern, replacement} pairs applied by `ignore_known_differences/1`. A function
+  # rather than a module attribute, since compiled regexes cannot be stored in attributes.
+  defp replacements do
+    [
+      {"fs4vm.", ""},
+      # Test environment badge (e.g. on fs4vm): title prefix, styles and markup
+      {"<title>🚧 ", "<title>"},
+      {~r/<style>\s*\.env-border\b.*?<\/style>\n\n/s, ""},
+      {~r/[ \t]*<div class="env-border"><\/div>\n[ \t]*\n/, ""},
+      {~r/[ \t]*<div class="env-badge">[^<]*<\/div>\n[ \t]*\n/, ""},
+      # Website Carbon badge, absent on some hosts
+      {~r/[ \t]*<div id="wcb"[^>]*><\/div>\n[ \t]*<script[^>]*website-carbon-badges[^>]*><\/script>\n[ \t]*\n/,
+       ""}
+    ]
+  end
+
   # Flattens the Myers edit script into one entry per line, each tagged with
   # the 1-based line numbers it has in `a` and `b` (or would have, if inserted).
   defp numbered_edits(lines_a, lines_b) do

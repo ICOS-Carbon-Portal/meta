@@ -1,9 +1,12 @@
 defmodule LandingBench.CLI do
   @moduledoc false
 
+  # Where runs are stored with a bare `--store`, relative to the current directory
+  @default_store "landing_bench_runs"
+
   @usage """
   Usage: landing_bench HOST [options]
-         landing_bench view DIR [RUN] [view options]
+         landing_bench view [DIR] [RUN] [view options]
 
   HOST is the data host where the portal runs, e.g. data.icos-cp.eu or
   https://datalocal.icos-cp.eu (https:// is assumed if no scheme is given).
@@ -21,13 +24,15 @@ defmodule LandingBench.CLI do
     -t, --timeout MS    per-request receive timeout in ms (default 60000)
     -k, --insecure      skip TLS certificate verification (local dev hosts)
         --csv PATH      also write per-request results to a CSV file
-        --store DIR     store the run in DIR (created if needed), to be viewed
-                        again later with `landing_bench view DIR`
+        --store [DIR]   store the run in DIR (created if needed), to be viewed
+                        again later with `landing_bench view DIR`; without DIR,
+                        in ./#{@default_store}. Each run gets its own
+                        subdirectory, named after its start time (UTC)
     -h, --help          show this help
 
   `landing_bench view DIR` lists the runs stored in DIR. With RUN (a run ID
   from that list, or `latest`), the run is printed the way it was during the
-  live run, followed by its summary.
+  live run, followed by its summary. Without DIR, ./#{@default_store} is used.
 
   View options:
         --diff          print a diff of the response bodies of each
@@ -53,9 +58,20 @@ defmodule LandingBench.CLI do
 
       true ->
         case args do
-          [dir] -> LandingBench.Viewer.list(dir)
-          [dir, run] -> LandingBench.Viewer.show(dir, run, opts)
-          _ -> usage_error()
+          [] ->
+            LandingBench.Viewer.list(@default_store)
+
+          [dir, run] ->
+            LandingBench.Viewer.show(dir, run, opts)
+
+          # A single argument is a directory if there is one by that name, otherwise a run
+          [arg] ->
+            if File.dir?(arg),
+              do: LandingBench.Viewer.list(arg),
+              else: LandingBench.Viewer.show(@default_store, arg, opts)
+
+          _ ->
+            usage_error()
         end
         |> exit_on_error()
     end
@@ -63,7 +79,7 @@ defmodule LandingBench.CLI do
 
   def main(argv) do
     {opts, args, invalid} =
-      OptionParser.parse(argv,
+      OptionParser.parse(default_store(argv),
         strict: [
           secondary: :string,
           max: :integer,
@@ -113,6 +129,16 @@ defmodule LandingBench.CLI do
         run_opts |> LandingBench.run() |> exit_on_error()
     end
   end
+
+  # OptionParser has no options with optional values, so a `--store` without
+  # DIR (last, or followed by another option) is given the default directory.
+  defp default_store(["--store"]), do: ["--store=" <> @default_store]
+
+  defp default_store(["--store", "-" <> _ = next | rest]),
+    do: ["--store=" <> @default_store | default_store([next | rest])]
+
+  defp default_store([arg | rest]), do: [arg | default_store(rest)]
+  defp default_store([]), do: []
 
   defp usage_error do
     IO.puts(:stderr, @usage)

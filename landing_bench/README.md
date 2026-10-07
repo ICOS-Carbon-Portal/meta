@@ -37,6 +37,7 @@ mix escript.build
 ./landing_bench https://datalocal.icos-cp.eu --insecure --max 100 --csv results.csv
 ./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --csv compare.csv
 ./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --diff
+./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --store
 ./landing_bench data.icos-cp.eu --secondary http://localhost:9094 --store runs
 ./landing_bench --help
 ```
@@ -44,7 +45,9 @@ mix escript.build
 ## Stored runs
 
 With `--store DIR`, everything printed during the run is also recorded in `DIR`,
-which can hold any number of runs:
+which can hold any number of runs. A bare `--store` (last, or followed by another
+option) stores in `./landing_bench_runs`. Do not put a bare `--store` directly
+before HOST, as HOST would then be taken as the directory.
 
 ```
 DIR/index.json                     all runs: host, options, start/finish time, status, key figures
@@ -58,7 +61,9 @@ Run IDs are the UTC start time, e.g. `20261007-142355`. Since events are written
 as they happen, an interrupted run can be viewed too (it is listed as `unfinished`).
 
 ```sh
-./landing_bench view runs                   # list the stored runs
+./landing_bench view                        # list the runs in ./landing_bench_runs
+./landing_bench view latest --diff          # show a run from ./landing_bench_runs
+./landing_bench view runs                   # list the stored runs in runs/
 ./landing_bench view runs 20261007-142355   # print a run as it looked live, with its summary
 ./landing_bench view runs latest --diff     # ... with diffs of mismatching landing pages
 ./landing_bench view runs latest --recompare --diff

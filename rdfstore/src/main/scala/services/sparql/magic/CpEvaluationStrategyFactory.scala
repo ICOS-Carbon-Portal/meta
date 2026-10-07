@@ -8,12 +8,14 @@ import org.eclipse.rdf4j.model.Value
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.query.BindingSet
 import org.eclipse.rdf4j.query.Dataset
+import org.eclipse.rdf4j.query.algebra.StatementPattern
 import org.eclipse.rdf4j.query.algebra.TupleExpr
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryBindingSet
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
 import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolver
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.*
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps.StatementPatternQueryEvaluationStep
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.EnvriResolver
@@ -66,6 +68,11 @@ class CpEvaluationStrategyFactory(
 						Iterator.single(bs)
 					})
 				}
+
+				// derived metadata is not stored in any named graph, so GRAPH patterns are evaluated without it
+				// (which also spares computing it, e.g. for every subject looked up by statement-copying queries)
+				case sp: StatementPattern if sp.getScope == StatementPattern.Scope.NAMED_CONTEXTS =>
+					StatementPatternQueryEvaluationStep(sp, context, baseTripleSrc)
 
 				case _ => super.precompile(expr, context)
 

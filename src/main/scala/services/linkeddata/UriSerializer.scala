@@ -46,6 +46,10 @@ trait UriSerializer {
 }
 
 object UriSerializer{
+	def inferEnvri(uri: Uri)(using EnvriConfigs): Envri = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse(
+		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
+	)
+
 	object Hash {
 		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
 
@@ -106,10 +110,6 @@ class Rdf4jUriSerializer(
 		),
 		rdfMarshaller
 	)
-	private def inferEnvri(uri: Uri) = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse(
-		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
-	)
-
 	def fetchStaticObject(uri: Uri): Validated[StaticObject] = uri.path match
 		case Hash.Object(hash) =>
 			given Envri = inferEnvri(uri)

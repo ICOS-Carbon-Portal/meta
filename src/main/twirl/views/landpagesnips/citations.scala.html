@@ -1,12 +1,16 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.References
+@import se.lu.nateko.cp.meta.services.citation.RemoteCitation
 
-@(refs: References, citationPending: Boolean)
+@(refs: References, remote: RemoteCitation)
 @for(cit <- refs.citationString){
 	@htmlProperty{Citation}{@Html(cit)}
 }
-@if(citationPending){
-	@htmlProperty{Citation}{Fetching... try refreshing the page in a few seconds}
+@remote match {
+	case RemoteCitation.Expected(error) if refs.citationString.isEmpty => {
+		@htmlProperty{Citation}{@error.getOrElse("Fetching... try refreshing the page in a few seconds")}
+	}
+	case _ => {}
 }
 @for(cit <- refs.citationBibTex){
 	@citationCollapsible("BibTex", cit)

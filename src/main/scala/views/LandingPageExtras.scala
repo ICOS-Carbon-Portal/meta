@@ -4,5 +4,6 @@ case class LandingPageExtras (
 	downloadStats: Option[Int],
 	previewStats: Option[Int],
 	errors: Seq[String],
-	externalHostLabel: Option[String] = None
+	externalHostLabel: Option[String] = None,
+	citationPending: Boolean = false
 )

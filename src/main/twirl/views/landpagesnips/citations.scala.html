@@ -1,9 +1,12 @@
 @import se.lu.nateko.cp.meta.core.data._
 @import se.lu.nateko.cp.meta.core.data.References
 
-@(refs: References)
+@(refs: References, citationPending: Boolean)
 @for(cit <- refs.citationString){
 	@htmlProperty{Citation}{@Html(cit)}
+}
+@if(citationPending){
+	@htmlProperty{Citation}{Fetching... try refreshing the page in a few seconds}
 }
 @for(cit <- refs.citationBibTex){
 	@citationCollapsible("BibTex", cit)

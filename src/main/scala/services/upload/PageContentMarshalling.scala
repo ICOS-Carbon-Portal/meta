@@ -10,6 +10,7 @@ import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
+import se.lu.nateko.cp.meta.ExternalCitationStrategy
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.{CpVocab, ExternalProviders}
@@ -37,8 +38,13 @@ class PageContentMarshalling(
 				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield {
-				val externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label)
-				val extras = LandingPageExtras(dlCount, previewCount, errors, externalHostLabel)
+				val provider = externalLandingPage(obj).flatMap(externalProviders.lookup)
+				val expectsRemoteCitation = obj.doi.isDefined || provider.exists(_.citation == ExternalCitationStrategy.CPMETA_JSON)
+				val extras = LandingPageExtras(
+					dlCount, previewCount, errors,
+					externalHostLabel = provider.map(_.label),
+					citationPending = expectsRemoteCitation && obj.references.citationString.isEmpty
+				)
 				LandingPage(obj, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Data object not found", _))
@@ -49,7 +55,10 @@ class PageContentMarshalling(
 		val template: PageTemplate[StaticCollection] = (coll, errors) =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
 			yield {
-				val extras = LandingPageExtras(dlCount, None, errors)
+				val extras = LandingPageExtras(
+					dlCount, None, errors,
+					citationPending = coll.doi.isDefined && coll.references.citationString.isEmpty
+				)
 				CollectionLandingPage(coll, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Collection not found", _))

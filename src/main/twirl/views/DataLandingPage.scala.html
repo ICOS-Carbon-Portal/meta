@@ -59,7 +59,7 @@
 			@for(ack <- dobj.references.acknowledgements.toSeq.flatten){
 				@property("Acknowledgement", ack)
 			}
-			@citations(dobj.references)
+			@citations(dobj.references, extras.citationPending)
 			@if(dobj.previousVersion) {
 				@htmlProperty{Previous version}{
 					@previousVersionLink(dobj.previousVersion.flattenToSeq)

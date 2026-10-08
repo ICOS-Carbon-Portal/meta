@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Success}
 
 /**
@@ -36,31 +36,50 @@ final class RemoteSyncWorker private (local: Repository, config: RemoteSyncConfi
 		killSwitch.shutdown()
 
 	private def runPass(): Unit = if !closed then
-		log.info("Starting synchronization of {} from {}", kinds.mkString(", "), config.endpoint)
+		log.info(
+			"Starting synchronization of {} from {} (prune = {}, remote query pause factor {}, at least {} ms)",
+			Array[Any](kinds.mkString(", "), config.endpoint, config.prune, config.queryPauseFactor, config.minQueryPauseMillis)
+		)
 		val remoteRepo = SPARQLRepository(config.endpoint.toString)
 		remoteRepo.init()
+		val passStart = System.nanoTime
+		var kindStart = passStart
 		var lastProgress: Option[SyncProgress] = None
+		var lastProgressTime = passStart
+		def elapsed(since: Long) = Duration.fromNanos(System.nanoTime - since).toSeconds.toInt.seconds
 
 		val throttle = QueryThrottle(config.queryPauseFactor, config.minQueryPauseMillis.millis)
 		RemoteMetaSync(local, Rdf4jSparqlRunner(remoteRepo), config.prune, throttle)
 			.run(kinds)
 			.via(killSwitch.flow)
 			.runWith(Sink.foreach: progress =>
-				lastProgress.filter(_.kind != progress.kind).foreach(done => log.info("Synchronized {}", done))
+				if !lastProgress.exists(_.kind == progress.kind) then
+					// kinds are synchronized one after the other
+					lastProgress.foreach: done =>
+						log.info("Synchronized {} in {}", done, Duration.fromNanos(lastProgressTime - kindStart).toSeconds.toInt.seconds)
+						kindStart = lastProgressTime
 				lastProgress = Some(progress)
+				lastProgressTime = System.nanoTime
 				if progress.batches > 0 && progress.batches % LogEveryBatches == 0 then
-					log.info("Synchronization progress: {}", progress)
+					log.info("Synchronization progress after {}: {}", elapsed(kindStart), progress)
 			)
 			.onComplete: res =>
 				remoteRepo.shutDown()
 				res match
 					case Success(_) =>
-						if closed then log.info("Synchronization from {} stopped", config.endpoint)
-						else lastProgress.foreach(done => log.info("Synchronized {}", done))
+						if closed then log.info("Synchronization from {} stopped after {}", config.endpoint, elapsed(passStart))
+						else
+							lastProgress.foreach(done => log.info("Synchronized {} in {}", done, elapsed(kindStart)))
+							log.info("Synchronization from {} completed in {}", config.endpoint, elapsed(passStart))
 					case Failure(err) =>
-						log.error(err, "Synchronization from {} failed", config.endpoint)
+						log.error(
+							err, "Synchronization from {} failed after {}, at {}",
+							config.endpoint, elapsed(passStart), lastProgress.fold("start")(_.toString)
+						)
 				if !closed then
-					nextPass = Some(system.scheduler.scheduleOnce(config.pauseBetweenRunsMinutes.minutes)(runPass()))
+					val pause = config.pauseBetweenRunsMinutes.minutes
+					log.info("Next synchronization from {} in {}", config.endpoint, pause)
+					nextPass = Some(system.scheduler.scheduleOnce(pause)(runPass()))
 
 end RemoteSyncWorker
 

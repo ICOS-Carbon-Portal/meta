@@ -89,11 +89,23 @@ final class RemoteMetaSync(
 	private given ExecutionContext = system.dispatcher
 	private val vocab = CpVocab(local.getValueFactory)
 
-	private val fetchRemote: Fetch = query => throttle(Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq))
+	private val log = system.log
+
+	private val fetchRemote: Fetch = query => throttle:
+		val start = System.nanoTime
+		val rows = Using.resource(remote.evaluateTupleQuery(query))(_.toIndexedSeq)
+		val millis = (System.nanoTime - start) / 1000000
+		if millis > SlowQueryMillis then
+			log.warning("Slow remote SPARQL query: {} ms for {} rows, {} characters of query", millis, rows.size, query.length)
+		else log.debug("Remote SPARQL query: {} ms for {} rows", millis, rows.size)
+		rows
 
 	def run(kinds: Seq[SyncKind]): Source[SyncProgress, NotUsed] =
 		Source(kinds.distinct).flatMapConcat: kind =>
-			if kind.batched then syncInBatches(kind) else syncAtOnce(kind)
+			Source.lazySource: () =>
+				log.info("Synchronizing {}", kind)
+				if kind.batched then syncInBatches(kind) else syncAtOnce(kind)
+			.mapMaterializedValue(_ => NotUsed)
 
 	private def syncInBatches(kind: SyncKind): Source[SyncProgress, NotUsed] =
 		rootsOf(kind)
@@ -110,7 +122,7 @@ final class RemoteMetaSync(
 			for
 				query <- Future(blocking(entitiesQuery(classesOf(kind), kind.depth)))
 				remoteQuads <- withRetries(RetryDelays)(fetchQuads(query, fetchRemote))
-				result <- Future(blocking(applyAtOnce(query, remoteQuads)))
+				result <- Future(blocking(applyAtOnce(kind, query, remoteQuads)))
 			yield SyncProgress(kind) + result
 
 	private def classesOf(kind: SyncKind): IndexedSeq[IRI] =
@@ -131,21 +143,37 @@ final class RemoteMetaSync(
 			)
 
 	private def applyBatch(kind: SyncKind, batch: Seq[IRI], remoteStats: Set[Stat]): BatchResult =
-		local.transactAndGet: conn =>
-			val localStats = batchStatements(kind, batch, fetchLocal(conn))
-			val (added, removed) = applyDiff(conn, localStats, remoteStats)
-			val knownRemotely = remoteStats.map(_.subj)
-			BatchResult(batch.size, batch.count(r => !knownRemotely.contains(r)), added.size, removed.size)
+		val (added, removed) = local.transactAndGet: conn =>
+			applyDiff(conn, batchStatements(kind, batch, fetchLocal(conn)), remoteStats)
+		logChanges(kind, added, removed)
+		val knownRemotely = remoteStats.map(_.subj)
+		val missing = batch.filterNot(knownRemotely.contains)
+		logMissing(kind, missing)
+		BatchResult(batch.size, missing.size, added.size, removed.size)
 
-	private def applyAtOnce(query: String, allRemoteQuads: Set[Quad]): BatchResult =
-		local.transactAndGet: conn =>
+	private def applyAtOnce(kind: SyncKind, query: String, allRemoteQuads: Set[Quad]): BatchResult =
+		val (knownRoots, remoteRoots, added, removed) = local.transactAndGet: conn =>
 			val localQuads = fetchQuads(query, fetchLocal(conn))
 			val knownRoots = localQuads.map(_.root)
 			// only the locally known resources are synchronized
 			val remoteQuads = allRemoteQuads.filter(q => knownRoots.contains(q.root))
 			val (added, removed) = applyDiff(conn, localQuads.map(_.stat), remoteQuads.map(_.stat))
-			val remoteRoots = remoteQuads.map(_.root)
-			BatchResult(knownRoots.size, knownRoots.count(r => !remoteRoots.contains(r)), added.size, removed.size)
+			(knownRoots, remoteQuads.map(_.root), added, removed)
+		logChanges(kind, added, removed)
+		val missing = knownRoots.diff(remoteRoots)
+		logMissing(kind, missing)
+		BatchResult(knownRoots.size, missing.size, added.size, removed.size)
+
+	private def logMissing(kind: SyncKind, missing: Iterable[IRI]): Unit =
+		if missing.nonEmpty then log.info("{}: {} resources not found remotely, e.g. <{}>", kind, missing.size, missing.head)
+
+	private def logChanges(kind: SyncKind, added: Set[Stat], removed: Set[Stat]): Unit =
+		if added.nonEmpty || removed.nonEmpty then
+			val subjects = (added ++ removed).map(_.subj).size
+			log.info("{}: added {} and removed {} statements about {} resources", kind, added.size, removed.size, subjects)
+			if log.isDebugEnabled then
+				added.foreach(st => log.debug("{}: added {}", kind, st))
+				removed.foreach(st => log.debug("{}: removed {}", kind, st))
 
 	private def applyDiff(conn: RepositoryConnection, localStats: Set[Stat], remoteStats: Set[Stat]): (Set[Stat], Set[Stat]) =
 		val toAdd = remoteStats.diff(localStats)
@@ -166,7 +194,7 @@ final class RemoteMetaSync(
 	private def withRetries[T](delays: Seq[FiniteDuration])(fetch: => T): Future[T] =
 		Future(blocking(fetch)).recoverWith:
 			case err if delays.nonEmpty =>
-				system.log.warning("Remote SPARQL fetch failed ({}), retrying in {}", err.getMessage, delays.head)
+				log.warning("Remote SPARQL fetch failed ({}), retrying in {}", err.getMessage, delays.head)
 				after(delays.head)(withRetries(delays.tail)(fetch))
 
 end RemoteMetaSync
@@ -174,11 +202,18 @@ end RemoteMetaSync
 object RemoteMetaSync:
 	// long enough for a remote SPARQL endpoint to lift a temporary ban for overuse
 	private val RetryDelays = Seq(1.minute, 15.minutes)
+	// meta SPARQL endpoints stop queries after 9 seconds by default
+	private val SlowQueryMillis = 5000
 	private val MaxPairsPerQuery = 500
 
 	type Fetch = String => IndexedSeq[BindingSet]
 
-	final case class Stat(graph: IRI, subj: IRI, pred: IRI, obj: Value)
+	final case class Stat(graph: IRI, subj: IRI, pred: IRI, obj: Value):
+		override def toString =
+			val objStr = obj match
+				case iri: IRI => s"<$iri>"
+				case other => other.toString
+			s"<$subj> <$pred> $objStr (in <$graph>)"
 	final case class Quad(root: IRI, stat: Stat)
 
 	// links not to follow when looking for associated resources, as they point to independent resources

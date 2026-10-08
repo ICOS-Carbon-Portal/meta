@@ -43,6 +43,7 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]]
 }
 
 object UriSerializer{
@@ -120,6 +121,11 @@ class Rdf4jUriSerializer(
 			given Envri = inferEnvri(uri)
 			landingPageLoader.staticCollection(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]] = uri.path match
+		case Hash.Object(hash) =>
+			given Envri = inferEnvri(uri)
+			landingPageLoader.customLandingPage(hash)
+		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)

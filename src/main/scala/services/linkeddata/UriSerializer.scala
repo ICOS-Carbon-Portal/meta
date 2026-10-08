@@ -56,6 +56,7 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]]
 }
 
 object UriSerializer{
@@ -104,7 +105,7 @@ class Rdf4jUriSerializer(
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
-	import RdfLens.{MetaConn, GlobConn, DocConn}
+	import RdfLens.{MetaConn, GlobConn, DocConn, DobjConn}
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
@@ -140,6 +141,20 @@ class Rdf4jUriSerializer(
 			given Envri = inferEnvri(uri)
 			fetchStaticColl(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
+
+
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]] = uri.path match
+		case Hash.Object(hash) =>
+			given Envri = inferEnvri(uri)
+			server.access: conn ?=>
+				val objIri = vocab.getStaticObject(hash)
+				given GlobConn = RdfLens.global(using conn)
+				if !objReader.dataObjExists(objIri) then Validated(None)
+				else for
+					given DobjConn <- objReader.getLensForDataObj(objIri)
+					landingPage <- StatementSource.getOptionalUri(objIri, RDFS.SEEALSO)
+				yield landingPage.map(_.toJava)
+		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
 
 	private def fetchStaticObj(hash: Sha256Sum)(using Envri): Validated[StaticObject] =

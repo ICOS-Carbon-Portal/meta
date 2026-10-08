@@ -89,6 +89,7 @@ class CitationProvider(
 	private def getDoiCitation(res: Resource)(using GlobConn): Option[String] = toIRI(res).flatMap{iri =>
 		getStringValues(iri, metaVocab.hasDoi).headOption
 			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
+			.flatten
 	}
 
 	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>

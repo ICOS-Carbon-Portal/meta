@@ -21,7 +21,7 @@ import java.net.URI
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -51,9 +51,9 @@ class CitationMaker(
 	val attrProvider = new AttributionProvider(vocab, metaVocab)
 
 	def getItemCitationInfo(item: CitableItem): References = item.references.copy(
-		citationString = getDoiCitation(item, CitationStyle.HTML),
-		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
-		citationRis    = getDoiCitation(item, CitationStyle.ris),
+		citationString = getDoiCitation(item, CitationStyle.HTML).flatten,
+		citationBibTex = getDoiCitation(item, CitationStyle.bibtex).flatten,
+		citationRis    = getDoiCitation(item, CitationStyle.ris).flatten,
 		doi = getDoiMeta(item)
 	)
 
@@ -72,9 +72,9 @@ class CitationMaker(
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
 			val coreRefs = sobj.references.copy(
-				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(externalCitation(sobj, CitationStyle.HTML)).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(externalCitation(sobj, CitationStyle.bibtex)).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(externalCitation(sobj, CitationStyle.ris)).orElse(Some(structuredCitations.toRis)),
+				citationString = remoteCitation(sobj, CitationStyle.HTML).getOrElse(citInfo.citText),
+				citationBibTex = remoteCitation(sobj, CitationStyle.bibtex).getOrElse(Some(structuredCitations.toBibTex)),
+				citationRis = remoteCitation(sobj, CitationStyle.ris).getOrElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
@@ -131,24 +131,22 @@ class CitationMaker(
 		yield lic
 	end getLicence
 
-	private def presentCitation(eagerRes: Option[Try[String]], source: String): String = eagerRes match
-		case None => "Fetching... try refreshing the page in a few seconds"
-		case Some(Success(cit)) => cit
-		case Some(Failure(err)) => s"Error fetching $source citation: " + err.getMessage
+	private def remoteCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[String]] =
+		getDoiCitation(sobj, style).orElse(externalCitation(sobj, style))
 
-	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[String] =
+	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[String]] =
 		for
 			url <- sobj.accessUrl
 			provider <- externalObjs.providers.lookup(url)
 			if provider.citation == ExternalCitationStrategy.CPMETA_JSON
-		yield presentCitation(externalObjs.getCitationEager(url, style), "external")
+		yield externalObjs.getCitationEager(url, style).flatMap(_.toOption)
 
-	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
+	def extractDoiCitation(style: CitationStyle): PartialFunction[String, Option[String]] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
-			doi => presentCitation(doiCiter.getCitationEager(doi, style), "DOI")
+			doi => doiCiter.getCitationEager(doi, style).flatMap(_.toOption)
 		)
 
-	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
+	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[Option[String]] =
 		item.doi.collect{ extractDoiCitation(style) }
 
 	private def getDoiMeta(item: CitableItem): Option[DoiMeta] =

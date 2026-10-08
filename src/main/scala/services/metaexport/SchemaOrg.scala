@@ -10,6 +10,7 @@ import se.lu.nateko.cp.doi.meta.{GenericName, PersonalName}
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.services.ExternalProviders
 import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.services.citation.CitationMaker.getTemporalCoverageDisplay
 import se.lu.nateko.cp.meta.utils.*
@@ -67,7 +68,9 @@ object SchemaOrg:
 
 	end docObjs
 
-	def dataObjs(sparqler: SparqlRunner, countryCode: Option[CountryCode])(using envriConf: EnvriConfig): Seq[URI] =
+	def dataObjs(
+		sparqler: SparqlRunner, countryCode: Option[CountryCode], providers: ExternalProviders
+	)(using Envri)(using envriConf: EnvriConfig): Seq[URI] =
 		val specsQuery = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|select ?spec
 		|where{
@@ -88,17 +91,24 @@ object SchemaOrg:
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 		|prefix prov: <http://www.w3.org/ns/prov#>
 		|prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-		|select ?dobj where {
+		|select ?dobj ?seeAlso where {
 		|	VALUES ?spec {${specs.mkString("<", "> <", ">")}}
 		|	?dobj cpmeta:hasObjectSpec ?spec .
 		|	?dobj cpmeta:wasSubmittedBy/prov:endedAtTime ?submTime .
 		|	FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
 		|	${countryFilter}
-		|	FILTER NOT EXISTS {?dobj rdfs:seeAlso []}
+		|	OPTIONAL {?dobj rdfs:seeAlso ?seeAlso}
 		|}
 		|order by desc(?submTime)""".stripMargin
 
-		sparqlUriSeq(sparqler, query, "dobj")
+		sparqler
+			.evaluateTupleQuery(SparqlQuery(query))
+			.collect:
+				case b if Option(b.getValue("seeAlso")).forall(sa => providers.lookup(URI(sa.stringValue)).isEmpty) =>
+					b.getValue("dobj")
+			.collect{case iri: IRI => iri.toJava}
+			.toIndexedSeq
+			.distinct
 	end dataObjs
 end SchemaOrg
 

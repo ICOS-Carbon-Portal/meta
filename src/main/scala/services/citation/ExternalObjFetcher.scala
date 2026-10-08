@@ -34,14 +34,17 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 		.withUpdatedConnectionSettings(_.withConnectingTimeout(5.seconds).withIdleTimeout(10.seconds))
 
 	def getCitationEager(url: URI, style: CitationStyle): Option[Try[String]] =
-		fetchIfNeeded(url).value.map: cachedTry =>
-			cachedTry.flatMap: cached =>
-				styleField(cached.refs, style) match
+		fetchedEager(url).map: fetchedTry =>
+			fetchedTry.flatMap: fetched =>
+				styleField(fetched.refs, style) match
 					case Some(cit) => Success(cit)
 					case None      => Failure(Exception(s"No $style citation in object at $url"))
 
 	def getPidEager(url: URI): Option[String] =
-		fetchIfNeeded(url).value.flatMap(_.toOption).flatMap(_.pid)
+		fetchedEager(url).flatMap(_.toOption).flatMap(_.pid)
+
+	private def fetchedEager(url: URI): Option[Try[Fetched]] =
+		fetchIfNeeded(url).value.map(_.flatMap(_.result))
 
 	private def styleField(refs: References, style: CitationStyle): Option[String] = style match
 		case CitationStyle.bibtex => refs.citationBibTex
@@ -56,21 +59,16 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 				cache += url -> fut
 				fut
 			case Some(fut) =>
-				fut.value match
-					case Some(Success(cached)) =>
-						if isStale(cached.fetchedAt) then revalidate(url)
-						fut
-					case Some(Failure(_)) =>
-						val retry = doFetch(url)
-						cache += url -> retry
-						retry
-					case None => fut
+				fut.value.flatMap(_.toOption).foreach: cached =>
+					if cached.isStale then revalidate(url)
+				fut
 
 	private def evictIfFull(): Unit =
 		if cache.size >= maxEntries then
-			val completed = cache.toSeq.collect:
-				case (url, fut) if fut.isCompleted => url -> fut.value.flatMap(_.toOption).fold(Instant.MIN)(_.fetchedAt)
-			val toEvict = completed.sortBy(_._2).take(cache.size - maxEntries * 3 / 4)
+			val completed = cache.toSeq.flatMap((url, fut) => fut.value.flatMap(_.toOption).map(url -> _))
+			val toEvict = completed
+				.sortBy((_, cached) => (cached.result.isSuccess, cached.fetchedAt))
+				.take(cache.size - maxEntries * 3 / 4)
 			toEvict.foreach((url, _) => cache.remove(url))
 
 	private def revalidate(url: URI): Unit =
@@ -78,8 +76,6 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 			doFetch(url).onComplete: result =>
 				result.foreach(fresh => cache.replace(url, Future.successful(fresh)))
 				revalidating.remove(url)
-
-	private def isStale(fetchedAt: Instant): Boolean = Instant.now().isAfter(fetchedAt.plus(ttl))
 
 	private def doFetch(url: URI): Future[Cached] =
 		http.singleRequest(
@@ -91,11 +87,16 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 			else
 				resp.discardEntityBytes()
 				Future.failed(Exception(s"Got ${resp.status} from $url"))
-		.map(obj => Cached(obj.references, obj.pid, Instant.now()))
+		.map(obj => Fetched(obj.references, obj.pid))
 		.andThen:
 			case Failure(err) => log.warn(s"Failed to fetch external object metadata from $url: ${err.getMessage}")
+		.transform(result => Success(Cached(result, Instant.now())))
 
 object ExternalObjFetcher:
 	private val ttl: Duration = Duration.ofMinutes(5)
+	private val failureTtl: Duration = Duration.ofSeconds(30)
 	private val maxEntries = 10000
-	private case class Cached(refs: References, pid: Option[String], fetchedAt: Instant)
+	private case class Fetched(refs: References, pid: Option[String])
+	private case class Cached(result: Try[Fetched], fetchedAt: Instant):
+		def isStale: Boolean =
+			Instant.now().isAfter(fetchedAt.plus(if result.isSuccess then ttl else failureTtl))

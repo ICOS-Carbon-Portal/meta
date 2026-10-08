@@ -121,3 +121,7 @@ class RemoteMetaSyncTest extends AnyFunSpec with BeforeAndAfterAll:
 		it("reports the progress of every kind"):
 			val (_, progress) = sync(prune = true)
 			assert(progress.map(_.toString).exists(_.startsWith("DataObjects: 1 roots in 1 batches, 0 missing remotely, 5 statements added, 2 statements removed")))
+
+		it("synchronizes data objects last"):
+			val (_, progress) = sync(prune = false)
+			assert(progress.map(_.kind).distinct == Seq(SyncKind.People, SyncKind.DataObjects))

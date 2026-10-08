@@ -47,6 +47,9 @@ object SyncKind:
 
 	def parse(name: String): Option[SyncKind] = values.find(_.toString.equalsIgnoreCase(name.trim))
 
+	/** The order of synchronization: as given, but with data objects (by far the most numerous) last */
+	def syncOrder(kinds: Seq[SyncKind]): Seq[SyncKind] = kinds.distinct.sortBy(_ == DataObjects)
+
 final case class SyncProgress(
 	kind: SyncKind,
 	batches: Long = 0,
@@ -72,6 +75,7 @@ final case class BatchResult(roots: Int, missingRemotely: Int, added: Int, remov
  * Streams known (locally present) resources of the requested kinds, fetches all statements possibly associated
  * with them from a remote meta SPARQL endpoint, and updates the local repository accordingly.
  * Data objects and collections are fetched in batches; every other kind is fetched with one query.
+ * Kinds are synchronized one after the other, data objects last.
  * Statements are only ever added, unless `prune` is set, in which case local statements about a subject are
  * removed if the remote endpoint reported that subject (in the same graph), but not the statement.
  * Blank nodes are ignored, as they cannot be matched between the repositories.
@@ -101,7 +105,7 @@ final class RemoteMetaSync(
 		rows
 
 	def run(kinds: Seq[SyncKind]): Source[SyncProgress, NotUsed] =
-		Source(kinds.distinct).flatMapConcat: kind =>
+		Source(SyncKind.syncOrder(kinds)).flatMapConcat: kind =>
 			Source.lazySource: () =>
 				log.info("Synchronizing {}", kind)
 				if kind.batched then syncInBatches(kind) else syncAtOnce(kind)

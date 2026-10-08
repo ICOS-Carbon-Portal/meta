@@ -38,7 +38,7 @@ final class RemoteSyncWorker private (local: Repository, config: RemoteSyncConfi
 	private def runPass(): Unit = if !closed then
 		log.info(
 			"Starting synchronization of {} from {} (prune = {}, remote query pause factor {}, at least {} ms)",
-			Array[Any](kinds.mkString(", "), config.endpoint, config.prune, config.queryPauseFactor, config.minQueryPauseMillis)
+			Array[Any](SyncKind.syncOrder(kinds).mkString(", "), config.endpoint, config.prune, config.queryPauseFactor, config.minQueryPauseMillis)
 		)
 		val remoteRepo = SPARQLRepository(config.endpoint.toString)
 		remoteRepo.init()

@@ -11,6 +11,7 @@ import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.envriConf
+import se.lu.nateko.cp.meta.services.ExternalProviders
 import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 
 import java.net.URI
@@ -31,7 +32,7 @@ object SitemapRoute:
 				case _ => None
 			case None => Some(None)
 
-	def apply(sparqler: SparqlRunner)(using EnvriConfigs): Route =
+	def apply(sparqler: SparqlRunner, providers: ExternalProviders)(using EnvriConfigs): Route =
 
 		val extractEnvri = AuthenticationRouting.extractEnvriDirective
 
@@ -56,7 +57,7 @@ object SitemapRoute:
 				)
 			~
 			path(DataSiteMap): countryCodeOpt =>
-				renderSitemap(SchemaOrg.dataObjs(_, countryCodeOpt))
+				renderSitemap(SchemaOrg.dataObjs(_, countryCodeOpt, providers))
 			~
 			path(CollectionsSitemap):
 				renderSitemap(SchemaOrg.collObjs)

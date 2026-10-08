@@ -10,6 +10,7 @@ import se.lu.nateko.cp.doi.meta.{GenericName, PersonalName}
 import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.services.citation.CitationMaker.getTemporalCoverageDisplay
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.json.*
@@ -184,7 +185,7 @@ class SchemaOrg(handleProxies: HandleProxiesConfig)(using envri: Envri, envriCon
 
 		val contributor = asOptArray(dobj.production.map(_.contributors))(fromAgent)
 
-		val distribution= optJs(dobj.accessUrl){_ =>
+		val distribution= optJs(dobj.accessUrl.filter(_ => externalLandingPage(dobj).isEmpty)){_ =>
 			val contType = implicitly[ContentTypeResolver].apply(dobj.fileName)
 			val accessUrl = s"https://${envriConf.dataHost}/licence_accept?ids=%5B%22${dobj.hash.base64Url}%22%5D"
 			JsObject(

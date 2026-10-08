@@ -95,7 +95,7 @@ class Rdf4jUriSerializer(
 	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer, externalObjs)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new PageContentMarshalling(config.core.handleProxies, stats, externalObjs.providers)
+		new PageContentMarshalling(config.core.handleProxies, stats, externalObjs.providers, citer)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))

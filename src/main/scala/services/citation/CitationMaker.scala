@@ -21,7 +21,11 @@ import java.net.URI
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+
+enum RemoteCitation:
+	case NotApplicable
+	case Expected(error: Option[String])
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -51,9 +55,9 @@ class CitationMaker(
 	val attrProvider = new AttributionProvider(vocab, metaVocab)
 
 	def getItemCitationInfo(item: CitableItem): References = item.references.copy(
-		citationString = getDoiCitation(item, CitationStyle.HTML).flatten,
-		citationBibTex = getDoiCitation(item, CitationStyle.bibtex).flatten,
-		citationRis    = getDoiCitation(item, CitationStyle.ris).flatten,
+		citationString = doiEager(item, CitationStyle.HTML).flatten.flatMap(_.toOption),
+		citationBibTex = doiEager(item, CitationStyle.bibtex).flatten.flatMap(_.toOption),
+		citationRis    = doiEager(item, CitationStyle.ris).flatten.flatMap(_.toOption),
 		doi = getDoiMeta(item)
 	)
 
@@ -72,9 +76,9 @@ class CitationMaker(
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
 			val coreRefs = sobj.references.copy(
-				citationString = remoteCitation(sobj, CitationStyle.HTML).getOrElse(citInfo.citText),
-				citationBibTex = remoteCitation(sobj, CitationStyle.bibtex).getOrElse(Some(structuredCitations.toBibTex)),
-				citationRis = remoteCitation(sobj, CitationStyle.ris).getOrElse(Some(structuredCitations.toRis)),
+				citationString = remoteCitationText(sobj, CitationStyle.HTML).getOrElse(citInfo.citText),
+				citationBibTex = remoteCitationText(sobj, CitationStyle.bibtex).getOrElse(Some(structuredCitations.toBibTex)),
+				citationRis = remoteCitationText(sobj, CitationStyle.ris).getOrElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
@@ -131,23 +135,36 @@ class CitationMaker(
 		yield lic
 	end getLicence
 
-	private def remoteCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[String]] =
-		getDoiCitation(sobj, style).orElse(externalCitation(sobj, style))
+	def remoteCitation(item: CitableItem)(using Envri): RemoteCitation =
+		remoteEager(item, CitationStyle.HTML) match
+			case None => RemoteCitation.NotApplicable
+			case Some((source, Some(Failure(err)))) =>
+				RemoteCitation.Expected(Some(s"Error fetching $source citation: ${err.getMessage}"))
+			case Some(_) => RemoteCitation.Expected(None)
 
-	private def externalCitation(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[String]] =
+	private def remoteCitationText(item: CitableItem, style: CitationStyle)(using Envri): Option[Option[String]] =
+		remoteEager(item, style).map(_._2.flatMap(_.toOption))
+
+	private def remoteEager(item: CitableItem, style: CitationStyle)(using Envri): Option[(String, Option[Try[String]])] =
+		doiEager(item, style).map("DOI" -> _).orElse:
+			item match
+				case sobj: StaticObject => externalEager(sobj, style).map("external" -> _)
+				case _ => None
+
+	private def externalEager(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[Try[String]]] =
 		for
 			url <- sobj.accessUrl
 			provider <- externalObjs.providers.lookup(url)
 			if provider.citation == ExternalCitationStrategy.CPMETA_JSON
-		yield externalObjs.getCitationEager(url, style).flatMap(_.toOption)
+		yield externalObjs.getCitationEager(url, style)
+
+	private def doiEager(item: CitableItem, style: CitationStyle): Option[Option[Try[String]]] =
+		item.doi.flatMap(Doi.parse(_).toOption).map(doiCiter.getCitationEager(_, style))
 
 	def extractDoiCitation(style: CitationStyle): PartialFunction[String, Option[String]] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
 			doi => doiCiter.getCitationEager(doi, style).flatMap(_.toOption)
 		)
-
-	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[Option[String]] =
-		item.doi.collect{ extractDoiCitation(style) }
 
 	private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
 		for

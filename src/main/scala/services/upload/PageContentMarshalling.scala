@@ -10,11 +10,11 @@ import play.twirl.api.Html
 import se.lu.nateko.cp.meta.api.StatisticsClient
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
-import se.lu.nateko.cp.meta.ExternalCitationStrategy
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.{CpVocab, ExternalProviders}
 import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
@@ -26,7 +26,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class PageContentMarshalling(
 	handleProxies: HandleProxiesConfig,
 	statisticsClient: StatisticsClient,
-	externalProviders: ExternalProviders
+	externalProviders: ExternalProviders,
+	citer: CitationMaker
 ):
 
 	import PageContentMarshalling.*
@@ -38,12 +39,10 @@ class PageContentMarshalling(
 				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield {
-				val provider = externalLandingPage(obj).flatMap(externalProviders.lookup)
-				val expectsRemoteCitation = obj.doi.isDefined || provider.exists(_.citation == ExternalCitationStrategy.CPMETA_JSON)
 				val extras = LandingPageExtras(
 					dlCount, previewCount, errors,
-					externalHostLabel = provider.map(_.label),
-					citationPending = expectsRemoteCitation && obj.references.citationString.isEmpty
+					externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label),
+					remoteCitation = citer.remoteCitation(obj)
 				)
 				LandingPage(obj, extras, handleProxies)
 			}
@@ -57,7 +56,7 @@ class PageContentMarshalling(
 			yield {
 				val extras = LandingPageExtras(
 					dlCount, None, errors,
-					citationPending = coll.doi.isDefined && coll.references.citationString.isEmpty
+					remoteCitation = citer.remoteCitation(coll)
 				)
 				CollectionLandingPage(coll, extras, handleProxies)
 			}

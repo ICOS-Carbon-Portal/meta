@@ -32,7 +32,7 @@
 						@nextVersionLink(coll.nextVersion.flattenToSeq)
 					}
 				}
-				@citations(coll.references, extras.citationPending)
+				@citations(coll.references, extras.remoteCitation)
 
 				@for(doc <- coll.documentation){
 					@htmlProperty{Documentation}{

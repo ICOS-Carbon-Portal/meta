@@ -6,8 +6,7 @@ For every ICOS data object of the configured data types and stations, build a
 SITES-shaped DTO pointing back to the ICOS landing page, save it as JSON,
 register it on the SITES metadata service and upload the data file to the SITES
 data service. Objects already completed on SITES only get their metadata
-updated. Finally, the variable (column) names of the uploaded objects are
-replicated on the SITES side so the objects are filterable by variable.
+updated.
 
 Usage:
     conda run -n icoscp-pylibs python3 icos2sites.py [--meta-url URL] [--token COOKIE] [--dry-run] [--insecure]
@@ -27,7 +26,6 @@ import requests
 from icoscp_core.icos import data, meta
 from icoscp_core.metacore import DataObject, StationTimeSeriesMeta
 from icoscp_core.queries.dataobjlist import DataObjectLite
-from icoscp_core.sparql import as_uri, as_opt_str
 from typing import Any, TypeAlias
 
 
@@ -41,9 +39,8 @@ FeatureWithGeoJson: TypeAlias = dict[str, str | Geometry | GeoFeature | Feature]
 
 DEFAULT_SITES_META_URL = 'https://meta.fieldsites.se'
 
-# Hosts of the metadata object URIs. A replicated ICOS object keeps its hash id
+# Host of the metadata object URIs. A replicated ICOS object keeps its hash id
 # on the SITES side, so its stored URI differs only by host.
-ICOS_META_HOST = 'meta.icos-cp.eu'
 SITES_META_HOST = 'meta.fieldsites.se'
 
 # ICOS targets
@@ -129,16 +126,6 @@ class SitesClient:
         if not resp.ok:
             raise Exception(f'Data upload to {upload_url} failed: {resp.status_code} {resp.text}')
 
-    def insert_statements(self, construct: str) -> str:
-        resp = self._session.post(
-            f'{self.meta_url}/admin/insert/sitesmeta?dryRun=false',
-            headers={'Content-Type': 'text/plain'},
-            data=construct.encode('utf-8')
-        )
-        if not resp.ok:
-            raise Exception(f'Statement insert failed: {resp.status_code} {resp.text}')
-        return resp.text
-
 
 def list_icos_dobjs() -> list[DataObjectLite]:
     station_url_prefix = 'http://meta.icos-cp.eu/resources/stations/'
@@ -155,52 +142,6 @@ def list_icos_dobjs() -> list[DataObjectLite]:
         dobjs.extend(page)
         if len(page) < PAGE_SIZE:
             return dobjs
-
-
-def fetch_column_names(dobj_uris: list[str]) -> dict[str, str]:
-    """
-    Return, per ICOS data object URI, a JSON-array string of its variable
-    (column) names, to be replicated as cpmeta:hasActualColumnNames on the
-    SITES side so the objects become filterable by variable.
-
-    The object's own cpmeta:hasActualColumnNames is preferred when present;
-    otherwise the list is assembled from the object spec's dataset columns
-    (regex columns excluded). Objects with neither are omitted. No data file is
-    parsed - the names come from ICOS metadata only.
-    """
-    if not dobj_uris:
-        return {}
-
-    values = ' '.join(f'<{uri}>' for uri in dobj_uris)
-    query = '''
-        PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
-        SELECT ?dobj ?actualCols
-               (GROUP_CONCAT(DISTINCT ?colTitle; SEPARATOR="|") AS ?specCols)
-        WHERE {
-            VALUES ?dobj { __VALUES__ }
-            OPTIONAL { ?dobj cpmeta:hasActualColumnNames ?actualCols . }
-            OPTIONAL {
-                ?dobj cpmeta:hasObjectSpec/cpmeta:containsDataset/cpmeta:hasColumn ?col .
-                ?col cpmeta:hasColumnTitle ?colTitle .
-                FILTER NOT EXISTS { ?col cpmeta:isRegexColumn true }
-            }
-        }
-        GROUP BY ?dobj ?actualCols
-    '''.replace('__VALUES__', values)
-
-    cols_by_uri: dict[str, str] = {}
-    for binding in meta.sparql_select(query).bindings:
-        uri = as_uri('dobj', binding)
-        actual_cols = as_opt_str('actualCols', binding)
-        if actual_cols:
-            # Already a JSON array literal, e.g. ["TIMESTAMP","TA",...] - use as is.
-            cols_by_uri[uri] = actual_cols
-        else:
-            spec_cols = as_opt_str('specCols', binding) or ''
-            titles = [title for title in spec_cols.split('|') if title]
-            if titles:
-                cols_by_uri[uri] = json.dumps(titles)
-    return cols_by_uri
 
 
 def get_polygon_coordinates(area_uri: str) -> list[list[int]]:
@@ -306,31 +247,6 @@ def mirror_dobj(sites: SitesClient, dobj_lite: DataObjectLite, dto: dict[str, An
     print(f'  Uploaded {dobj_lite.filename} to {upload_url}')
 
 
-def insert_column_names(sites: SitesClient, cols_by_sites_uri: dict[str, str]) -> None:
-    """
-    Add cpmeta:hasActualColumnNames triples to already-uploaded SITES objects
-    via the admin insert route, so they become filterable by variable.
-
-    Must run AFTER the objects have been uploaded: the metadata index only
-    associates the triple with an object that already exists. The token's user
-    must be a SPARQL admin (config 'sparql.adminUsers').
-    """
-    if not cols_by_sites_uri:
-        return
-
-    # json.dumps turns the JSON-array string into a correctly-escaped SPARQL
-    # string literal, e.g. ["TA","RH"] -> "[\"TA\",\"RH\"]".
-    values = ' '.join(
-        f'(<{uri}> {json.dumps(cols)})' for uri, cols in cols_by_sites_uri.items()
-    )
-    construct = (
-        'PREFIX cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>\n'
-        'CONSTRUCT { ?obj cpmeta:hasActualColumnNames ?cols }\n'
-        f'WHERE {{ VALUES (?obj ?cols) {{ {values} }} }}'
-    )
-    print(f'Column names insert response: {sites.insert_statements(construct)}')
-
-
 def sites_token(token: str | None) -> str:
     if token is not None:
         return token
@@ -347,8 +263,6 @@ def main(meta_url: str, token: str | None, dry_run: bool, verify: bool) -> int:
     dobjs_all = list_icos_dobjs()
     print(f'Found {len(dobjs_all)} data object(s).')
 
-    cols_by_icos = fetch_column_names([dobj_lite.uri for dobj_lite in dobjs_all])
-    cols_by_sites: dict[str, str] = {}
     spatial_by_area: dict[str, FeatureWithGeoJson] = {}
     failures: list[str] = []
 
@@ -381,20 +295,9 @@ def main(meta_url: str, token: str | None, dry_run: bool, verify: bool) -> int:
 
             if sites is not None:
                 mirror_dobj(sites, dobj_lite, dto, completed)
-                cols = cols_by_icos.get(dobj_lite.uri)
-                if cols:
-                    sites_obj_uri = dobj_lite.uri.replace(ICOS_META_HOST, SITES_META_HOST)
-                    cols_by_sites[sites_obj_uri] = cols
         except Exception as err:
             print(f'  FAILED {dobj_lite.filename}: {err}')
             failures.append(dobj_lite.filename)
-
-    if sites is not None:
-        try:
-            insert_column_names(sites, cols_by_sites)
-        except Exception as err:
-            print(f'Column names insert FAILED: {err}')
-            failures.append('column names insert')
 
     if failures:
         print(f'{len(failures)} failure(s): {", ".join(failures)}')

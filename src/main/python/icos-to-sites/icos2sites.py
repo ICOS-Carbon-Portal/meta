@@ -45,7 +45,8 @@ SITES_META_HOST = 'meta.fieldsites.se'
 
 # ICOS targets
 DATATYPE_URIS = [
-    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo'
+    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo',
+    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes'
 ]
 
 # Station mapping: ICOS station ID to SITES constants
@@ -56,21 +57,24 @@ STATION_MAP = {
         'area_uri': 'https://meta.fieldsites.se/resources/areas/stordalen',
         'area_label': 'Stordalen'
     },
-    #'ES_SE-Deg': {
-    #    'sites_uri': 'https://meta.fieldsites.se/resources/stations/Svartberget',
-    #    'area_uri': 'https://meta.fieldsites.se/resources/areas/degero',
-    #    'area_label': 'Degerö'
-    #},
-    #'ES_SE-Svb': {
-    #    'sites_uri': 'https://meta.fieldsites.se/resources/stations/Svartberget',
-    #    'area_uri': 'https://meta.fieldsites.se/resources/areas/svartberget',
-    #    'area_label': 'Svartberget'
-    #},
-    #'ES_SE-Myc': {
-    #    'sites_uri': 'https://meta.fieldsites.se/resources/stations/Skogaryd',
-    #    'area_uri': 'https://meta.fieldsites.se/resources/areas/mycklemossen',
-    #    'area_label': 'Mycklemossen'
-    #}
+    'ES_SE-Deg': {
+        'sites_uri': 'https://meta.fieldsites.se/resources/stations/Svartberget',
+        'sites_site_uri': 'https://meta.fieldsites.se/resources/sites/degero-mire',
+        'area_uri': 'https://meta.fieldsites.se/resources/areas/degero',
+        'area_label': 'Degerö'
+    },
+    'ES_SE-Svb': {
+        'sites_uri': 'https://meta.fieldsites.se/resources/stations/Svartberget',
+        'sites_site_uri': 'https://meta.fieldsites.se/resources/sites/svartberget-forest',
+        'area_uri': 'https://meta.fieldsites.se/resources/areas/svartberget',
+        'area_label': 'Svartberget'
+    },
+    'ES_SE-Myc': {
+        'sites_uri': 'https://meta.fieldsites.se/resources/stations/Skogaryd',
+        'sites_site_uri': 'https://meta.fieldsites.se/resources/sites/mycklemossen-mire',
+        'area_uri': 'https://meta.fieldsites.se/resources/areas/mycklemossen',
+        'area_label': 'Mycklemossen'
+    }
 }
 
 # Fixed SITES fields

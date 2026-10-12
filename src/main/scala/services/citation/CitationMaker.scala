@@ -12,7 +12,6 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
-import se.lu.nateko.cp.meta.ExternalCitationStrategy
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
@@ -154,8 +153,7 @@ class CitationMaker(
 	private def externalEager(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[Try[String]]] =
 		for
 			url <- sobj.accessUrl
-			provider <- externalObjs.providers.lookup(url)
-			if provider.citation == ExternalCitationStrategy.CPMETA_JSON
+			if externalObjs.providers.lookup(url).isDefined
 		yield externalObjs.getCitationEager(url, style)
 
 	private def doiEager(item: CitableItem, style: CitationStyle): Option[Option[Try[String]]] =

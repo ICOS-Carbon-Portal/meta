@@ -9,7 +9,6 @@ import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.ExternalPidPolicy
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, ExternalObjFetcher}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
@@ -140,10 +139,9 @@ class StaticObjectReader(
 
 	private def getPid(hash: Sha256Sum, format: URI, accessUrl: Option[URI])(using Envri): Option[String] =
 		if metaVocab.wdcggFormat === format then None
-		else accessUrl.flatMap(url => externalObjs.providers.lookup(url).map(prov => (url, prov.pid))) match
-			case Some((url, ExternalPidPolicy.FROM_SOURCE)) => externalObjs.getPidEager(url)
-			case Some((_, ExternalPidPolicy.NONE)) => None
-			case _ => Some(pidFactory.getPid(hash))
+		else accessUrl.filter(url => externalObjs.providers.lookup(url).isDefined) match
+			case Some(url) => externalObjs.getPidEager(url)
+			case None => Some(pidFactory.getPid(hash))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =
 		if metaVocab.wdcggFormat === spec.format.self.uri then

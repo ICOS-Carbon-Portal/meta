@@ -151,8 +151,7 @@ class Form(
 			samplingHeight <- statTsPanel.samplingHeight;
 			instrumentUri <- statTsPanel.instrUri;
 			production <- prodPanel.dataProductionDtoOpt;
-			spatial <- statTsPanel.spatial;
-			customLandingPage <- statTsPanel.customLandingPage
+			spatial <- statTsPanel.spatial
 		) yield Right(
 			StationTimeSeriesDto(
 				station = station.namedUri.uri,
@@ -164,7 +163,7 @@ class Form(
 				nRows = nRows,
 				production = production,
 				spatial = spatial,
-				customLandingPage = customLandingPage
+				customLandingPage = None
 			)
 		)
 	}

@@ -144,8 +144,9 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config)
 		given EnvriConfigs = config.core.envriConfigs
 
-		val remote = config.remoteRdfRepository
-		val repo = SPARQLRepository(remote.queryEndpoint.toString, remote.updateEndpoint.toString)
+		val rdfStore = config.rdfStore
+		val sparqlEndpoint = rdfStore.sparqlEndpoint.toString
+		val repo = SPARQLRepository(sparqlEndpoint, sparqlEndpoint)
 		repo.enableQuadMode(true)
 		repo.init()
 		val vanillaGlob = new Rdf4jInstanceServer(repo)
@@ -188,7 +189,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			new MetaDb(
 				instanceServers, instOntos, uploadService, labelingService, fileService,
 				repo, vanillaGlob, vocab, metaVocab, lenses, metaReader,
-				remote.adminEndpoint, DerivedMetadataClient(remote.derivedMetadataEndpoint), config
+				rdfStore.adminEndpoint, DerivedMetadataClient(rdfStore.derivedMetadataEndpoint), config
 			)
 		end for
 	end apply

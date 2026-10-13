@@ -1,26 +1,27 @@
 defmodule LandingBench do
   @moduledoc """
-  Benchmarks data object landing pages of an ICOS/SITES data portal.
+  Benchmarks data object landing pages of an ICOS/SITES meta host.
 
-  1. Fetches the portal main page from the given data host and reads its ENVRI config.
-  2. Runs the portal's default search query (newest objects first) against the meta host's SPARQL endpoint.
-  3. Fetches the landing page of each returned data object in turn, timing each request
+  1. Runs the data portal's default search query (newest objects first) against the
+     primary meta host's SPARQL endpoint.
+  2. Fetches the landing page of each returned data object in turn, timing each request
      and pausing between requests, until `max` landing pages have been fetched or the
      result list is exhausted.
-  4. Optionally fetches each landing page from a secondary meta host as well, timing it
+  3. Optionally fetches each landing page from a secondary meta host as well, timing it
      and comparing the response with the one from the primary meta host, optionally
      printing a diff of the response bodies when they do not match.
-  5. Optionally stores the run in a local directory (see `LandingBench.Store`), so that
+  4. Optionally stores the run in a local directory (see `LandingBench.Store`), so that
      it can be viewed again later with `LandingBench.Viewer`.
   """
 
-  alias LandingBench.{Diff, Http, Output, Portal, Sparql, Stats, Store}
+  alias LandingBench.{Diff, Http, Output, Sparql, Stats, Store}
 
   # Same page size as the portal (`stepsize` in config.ts)
   @page_size 20
 
   @type opts :: [
           host: String.t(),
+          envri: String.t(),
           secondary: String.t() | nil,
           max: pos_integer(),
           delay_ms: non_neg_integer(),
@@ -59,35 +60,26 @@ defmodule LandingBench do
   defp bench(opts, emit) do
     req_opts = Http.base_opts(opts)
 
-    with {:ok, portal} <- Portal.fetch(base_url(opts[:host]), req_opts) do
-      emit.(%{
-        type: :portal,
-        portal_url: portal.portal_url,
-        fetch_ms: portal.fetch_ms,
-        envri: portal.envri,
-        meta_host: portal.meta_host
-      })
+    meta_base = base_url(opts[:host])
+    secondary_base = opts[:secondary] && base_url(opts[:secondary])
 
-      meta_base = "https://" <> portal.meta_host
-      secondary_base = opts[:secondary] && base_url(opts[:secondary])
+    emit.(%{type: :primary, base_url: meta_base, envri: opts[:envri]})
+    if secondary_base, do: emit.(%{type: :secondary, base_url: secondary_base})
 
-      if secondary_base, do: emit.(%{type: :secondary, base_url: secondary_base})
+    results =
+      objects_stream(meta_base <> "/sparql", opts[:envri], req_opts, emit)
+      |> Stream.take(opts[:max])
+      |> Stream.with_index(1)
+      |> Stream.map(fn {obj, i} ->
+        if i > 1, do: pause(opts[:delay_ms], opts[:jitter_ms])
 
-      results =
-        objects_stream(meta_base <> "/sparql", portal.envri, req_opts, emit)
-        |> Stream.take(opts[:max])
-        |> Stream.with_index(1)
-        |> Stream.map(fn {obj, i} ->
-          if i > 1, do: pause(opts[:delay_ms], opts[:jitter_ms])
+        fetch_object(obj, meta_base, secondary_base, i, req_opts)
+        |> emit.()
+        |> Stats.result()
+      end)
+      |> Enum.to_list()
 
-          fetch_object(obj, meta_base, secondary_base, i, req_opts)
-          |> emit.()
-          |> Stats.result()
-        end)
-        |> Enum.to_list()
-
-      {:ok, results}
-    end
+    {:ok, results}
   rescue
     err in RuntimeError -> {:error, err}
   end
@@ -165,7 +157,7 @@ defmodule LandingBench do
   end
 
   # Object URIs are canonical (e.g. https://meta.icos-cp.eu/objects/<hash>); point
-  # them at the meta host the portal is configured with, so local setups work too.
+  # them at the meta host being benchmarked, so local setups work too.
   defp landing_page_url(uri, meta_base) do
     hash = uri |> URI.parse() |> Map.fetch!(:path) |> Path.basename()
     meta_base <> "/objects/" <> hash

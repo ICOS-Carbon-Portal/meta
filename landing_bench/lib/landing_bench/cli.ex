@@ -5,18 +5,19 @@ defmodule LandingBench.CLI do
   @default_store "landing_bench_runs"
 
   @usage """
-  Usage: landing_bench HOST [options]
+  Usage: landing_bench PRIMARY [SECONDARY] [options]
          landing_bench view [DIR] [RUN] [view options]
 
-  HOST is the data host where the portal runs, e.g. data.icos-cp.eu or
-  https://datalocal.icos-cp.eu (https:// is assumed if no scheme is given).
+  PRIMARY is the meta host whose data objects are listed and whose landing
+  pages are fetched, e.g. meta.icos-cp.eu (https:// is assumed if no scheme is
+  given). SECONDARY, e.g. http://localhost:9094, is another meta host to fetch
+  each landing page from as well, timing it and comparing the response with
+  the primary meta host's.
 
   Options:
-    -s, --secondary HOST
-                        also fetch each landing page from this meta host, e.g.
-                        meta.icos-cp.eu or http://localhost:9094, timing it and
-                        comparing the response with the primary meta host's
-        --diff          with --secondary, print a diff of the response bodies
+    -e, --envri ENVRI   the ENVRI whose data objects are listed: #{Enum.join(LandingBench.Sparql.envris(), ", ")}
+                        (default ICOS)
+        --diff          with SECONDARY, print a diff of the response bodies
                         of each mismatching landing page
     -m, --max N         maximum number of landing pages to fetch (default 20)
     -d, --delay MS      pause between landing page fetches in ms (default 1000)
@@ -81,7 +82,7 @@ defmodule LandingBench.CLI do
     {opts, args, invalid} =
       OptionParser.parse(default_store(argv),
         strict: [
-          secondary: :string,
+          envri: :string,
           max: :integer,
           delay: :integer,
           jitter: :integer,
@@ -93,7 +94,7 @@ defmodule LandingBench.CLI do
           help: :boolean
         ],
         aliases: [
-          s: :secondary,
+          e: :envri,
           m: :max,
           d: :delay,
           j: :jitter,
@@ -103,19 +104,25 @@ defmodule LandingBench.CLI do
         ]
       )
 
+    envri = Keyword.get(opts, :envri, "ICOS")
+
     cond do
       opts[:help] ->
         IO.puts(@usage)
 
-      invalid != [] or length(args) != 1 ->
+      invalid != [] or length(args) not in 1..2 ->
         usage_error()
 
+      envri not in LandingBench.Sparql.envris() ->
+        exit_on_error({:error, "unknown ENVRI #{envri}"})
+
       true ->
-        [host] = args
+        [host | secondary] = args
 
         run_opts = [
           host: host,
-          secondary: opts[:secondary],
+          envri: envri,
+          secondary: List.first(secondary),
           max: Keyword.get(opts, :max, 20),
           delay_ms: Keyword.get(opts, :delay, 1000),
           jitter_ms: Keyword.get(opts, :jitter, 0),

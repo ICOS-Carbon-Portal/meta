@@ -33,7 +33,8 @@ defmodule LandingBench.Store do
       finished_at: nil,
       host: opts[:host],
       secondary: opts[:secondary],
-      options: Map.new(Keyword.take(opts, [:max, :delay_ms, :jitter_ms, :timeout_ms, :insecure])),
+      options:
+        Map.new(Keyword.take(opts, [:envri, :max, :delay_ms, :jitter_ms, :timeout_ms, :insecure])),
       overview: nil
     }
 
@@ -215,6 +216,9 @@ defmodule LandingBench.Store do
   defp encode_match(nil), do: %{match: nil}
   defp encode_match({:different, line}), do: %{match: "different", first_diff_line: line}
   defp encode_match(match), do: %{match: Atom.to_string(match)}
+
+  defp decode_event(%{"type" => "primary"} = e),
+    do: %{type: :primary, base_url: e["base_url"], envri: e["envri"]}
 
   defp decode_event(%{"type" => "portal"} = e) do
     %{

@@ -20,6 +20,10 @@ defmodule LandingBench.Sparql do
     ]
   }
 
+  @doc "The ENVRIs whose metadata graphs are known."
+  @spec envris() :: [String.t()]
+  def envris, do: Map.keys(@envri_graphs)
+
   @spec default_list_query(String.t(), non_neg_integer(), pos_integer()) :: String.t()
   def default_list_query(envri, offset, limit) do
     from_clauses =

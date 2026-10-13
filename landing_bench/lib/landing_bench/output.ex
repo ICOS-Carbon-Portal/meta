@@ -6,7 +6,9 @@ defmodule LandingBench.Output do
 
   Events are maps with a `:type`:
 
-    * `:portal` - the portal page was fetched (`:portal_url`, `:fetch_ms`, `:envri`, `:meta_host`)
+    * `:primary` - the primary meta host (`:base_url`) and the ENVRI whose objects are listed (`:envri`)
+    * `:portal` - the portal page was fetched (`:portal_url`, `:fetch_ms`, `:envri`, `:meta_host`);
+      only in runs stored before the meta hosts were given directly
     * `:secondary` - a secondary meta host is used (`:base_url`)
     * `:sparql_page` - a page of the search result list was fetched (`:offset`, `:count`, `:ms`)
     * `:object` - a landing page was fetched (`:index`, `:file_name`, `:uri`, `:primary`,
@@ -19,6 +21,9 @@ defmodule LandingBench.Output do
   Prints `event`. With `show_diff`, a diff of the response bodies is printed for
   mismatching landing pages; this needs the `:body` of both responses.
   """
+  def print(%{type: :primary} = e, _show_diff),
+    do: IO.puts("Primary meta host #{e.base_url} (envri #{e.envri})")
+
   def print(%{type: :portal} = e, _show_diff) do
     IO.puts(
       "Portal page #{e.portal_url} fetched in #{fmt_ms(e.fetch_ms)} " <>

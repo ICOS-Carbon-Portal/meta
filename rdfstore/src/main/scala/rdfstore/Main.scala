@@ -56,7 +56,7 @@ object Main extends App:
 		for {
 			_ <- schemaOntologiesIngested
 			indexData <- restoreIndex(forceRecreate = isFreshInit || restoreResult.invalidatesIndex)
-			_ <- sail.initSparqlMagicIndex(indexData)
+			_ = sail.initSparqlMagicIndex(indexData)
 			_ = if isFreshInit then sail.makeReadonly(
 				"Fresh RDF-log restoration is complete; restart rdfStore for normal indexed operation"
 			)

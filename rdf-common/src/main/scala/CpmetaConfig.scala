@@ -167,14 +167,12 @@ case class RdfStorageConfig(
 
 case class LmdbConfig(tripleDbSize: Long, valueDbSize: Long, valueCacheSize: Int)
 
-case class RdfStoreConfig(httpBindInterface: String, port: Int)
-
-case class RemoteRdfRepositoryConfig(
-	queryEndpoint: URI,
-	updateEndpoint: URI,
-	adminEndpoint: URI,
-	derivedMetadataEndpoint: URI
-)
+/** Where rdfStore listens; the meta service derives its rdfStore endpoints from it */
+case class RdfStoreConfig(httpBindInterface: String, port: Int):
+	def baseUrl: URI = new URI(s"http://$httpBindInterface:$port")
+	def sparqlEndpoint: URI = baseUrl.resolve("/internal/sparql")
+	def adminEndpoint: URI = baseUrl.resolve("/admin/read-only")
+	def derivedMetadataEndpoint: URI = baseUrl.resolve("/internal/derived/v1/resolve")
 
 case class CitationConfig(style: String, eagerWarmUp: Boolean, timeoutSec: Int, doi: DoiConfig)
 case class DoiConfig(restEndpoint: URI, envries: Map[Envri, DoiMemberConfig]) extends DoiEndpointConfig
@@ -197,7 +195,6 @@ case class CpmetaConfig(
 	fileStoragePath: String,
 	rdfStorage: RdfStorageConfig,
 	rdfStore: RdfStoreConfig,
-	remoteRdfRepository: RemoteRdfRepositoryConfig,
 	onto: OntoConfig,
 	auth: Map[Envri, PublicAuthConfig],
 	core: MetaCoreConfig,
@@ -257,7 +254,6 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[LmdbConfig] = jsonFormat3(LmdbConfig.apply)
 	given RootJsonFormat[RdfStorageConfig] = jsonFormat6(RdfStorageConfig.apply)
 	given RootJsonFormat[RdfStoreConfig] = jsonFormat2(RdfStoreConfig.apply)
-	given RootJsonFormat[RemoteRdfRepositoryConfig] = jsonFormat4(RemoteRdfRepositoryConfig.apply)
 	given RootJsonFormat[DoiMemberConfig] = jsonFormat3(DoiMemberConfig.apply)
 	given RootJsonFormat[DoiConfig] = jsonFormat2(DoiConfig.apply)
 	given RootJsonFormat[CitationConfig] = jsonFormat4(CitationConfig.apply)
@@ -265,7 +261,7 @@ object ConfigLoader extends CommonJsonSupport:
 	given RootJsonFormat[StatsClientConfig] = jsonFormat2(StatsClientConfig.apply)
 	given RootJsonFormat[SentryConfig] = jsonFormat1(SentryConfig.apply)
 
-	given RootJsonFormat[CpmetaConfig] = jsonFormat17(CpmetaConfig.apply)
+	given RootJsonFormat[CpmetaConfig] = jsonFormat16(CpmetaConfig.apply)
 
 	lazy val default: CpmetaConfig = appConfig.getValue("cpmeta").parseAs[CpmetaConfig]
 

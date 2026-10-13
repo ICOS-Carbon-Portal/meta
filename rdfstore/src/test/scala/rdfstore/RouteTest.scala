@@ -14,6 +14,8 @@ import akka.util.ByteString
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Origin`, Accept, HttpOrigin, Origin, RawHeader}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.eclipse.rdf4j.common.iteration.EmptyIteration
+import org.eclipse.rdf4j.model.vocabulary.RDFS
+import org.eclipse.rdf4j.repository.RepositoryException
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
@@ -22,6 +24,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import se.lu.nateko.cp.meta.{ConfigLoader, SparqlServerConfig}
 import se.lu.nateko.cp.meta.core.data.{Licence, References}
+import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.persistence.RdfLogManager
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataJsonProtocol, DerivedMetadataRequest, DerivedMetadataResponse, DerivedMetadataService}
@@ -182,6 +185,22 @@ class RouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with B
 					val statements = conn.getStatements(null, null, null, false, graph)
 					try statements.iterator().asScala.toSeq should contain only statement
 					finally statements.close()
+			finally remote.shutDown()
+
+		"report the statement pattern when a remote lookup fails on an IRI not representable in SPARQL" in:
+			val baseUrl = s"http://127.0.0.1:${binding.localAddress.getPort}"
+			val remote = new SPARQLRepository(s"$baseUrl/internal/sparql", s"$baseUrl/internal/sparql")
+			remote.enableQuadMode(true)
+			remote.init()
+			try
+				val vf = remote.getValueFactory
+				val badIri = vf.createIRI(" http://example.org/leading-space")
+				val server = new Rdf4jInstanceServer(remote, vf.createIRI("urn:remote:graph"))
+				val err = the [RepositoryException] thrownBy server.access:
+					StatementSource.hasStatement(vf.createIRI("urn:remote:s"), RDFS.SEEALSO, badIri)
+				err.getMessage should include ("< http://example.org/leading-space>")
+				err.getMessage should include ("not representable in SPARQL")
+				err.getMessage should include ("<urn:remote:graph>")
 			finally remote.shutDown()
 
 		"accept a SPARQL query POSTed with a non-strict (chunked) request entity" in:

@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services
+package se.lu.nateko.cp.meta.services.external
 
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticObject, staticObjAccessUrl}

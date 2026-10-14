@@ -1,10 +1,10 @@
-package se.lu.nateko.cp.meta.test.services
+package se.lu.nateko.cp.meta.test.services.external
 
 import eu.icoscp.envri.Envri
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
-import se.lu.nateko.cp.meta.services.ExternalProviders
-import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
+import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
 
 import java.net.URI
 

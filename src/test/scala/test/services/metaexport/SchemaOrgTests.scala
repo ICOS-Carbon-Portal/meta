@@ -10,13 +10,14 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
-import se.lu.nateko.cp.meta.services.{CpmetaVocab, ExternalProviders, Rdf4jSparqlRunner}
+import se.lu.nateko.cp.meta.services.{CpmetaVocab, Rdf4jSparqlRunner}
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
 import java.time.Instant
 
-import se.lu.nateko.cp.meta.test.services.ExternalTestObjects.*
+import se.lu.nateko.cp.meta.test.services.external.ExternalTestObjects.*
 
 class SchemaOrgTests extends AnyFunSpec:
 

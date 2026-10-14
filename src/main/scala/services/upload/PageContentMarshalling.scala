@@ -12,8 +12,9 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
-import se.lu.nateko.cp.meta.services.{CpVocab, ExternalProviders}
-import se.lu.nateko.cp.meta.services.ExternalProviders.externalLandingPage
+import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
+import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras

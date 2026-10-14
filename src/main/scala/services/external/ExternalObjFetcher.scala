@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.services.citation
+package se.lu.nateko.cp.meta.services.external
 
 import scala.language.unsafeNulls
 
@@ -12,7 +12,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.meta.core.data.{References, StaticObject}
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.services.ExternalProviders
+import se.lu.nateko.cp.meta.services.citation.CitationStyle
 
 import java.net.URI
 import java.time.{Duration, Instant}

@@ -21,9 +21,10 @@ import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.{HandleNetClient, StatisticsProvider}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject, staticCollLandingPage, staticObjLandingPage}
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, ExternalObjFetcher, PlainDoiCiter}
+import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, ExternalProviders}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig

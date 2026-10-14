@@ -11,7 +11,7 @@ import se.lu.nateko.cp.meta.core.data.CountryCode
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.envriConf
-import se.lu.nateko.cp.meta.services.ExternalProviders
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.metaexport.SchemaOrg
 
 import java.net.URI

@@ -19,14 +19,16 @@ import scala.util.Using
  */
 object Fixture {
 
-	/** A new in-memory repository with the sample metadata; the caller must shut it down. */
-	def createRepo(): Repository = {
+	/**
+	 * A new in-memory repository with the sample metadata; the caller must shut it down.
+	 */
+	def createRepo(): Repository = createRepoWith("/linkeddata/linked-data-fixture.trig")
+
+	/** A new in-memory repository loaded from a TriG resource; the caller must shut it down. */
+	def createRepoWith(resource: String): Repository = {
 		val repo = SailRepository(MemoryStore())
 		repo.init()
-		Using.resources(
-			getClass.getResourceAsStream("/linkeddata/linked-data-fixture.trig"),
-			repo.getConnection()
-		) { (stream, conn) =>
+		Using.resources(getClass.getResourceAsStream(resource), repo.getConnection()) { (stream, conn) =>
 			conn.add(stream, "", RDFFormat.TRIG)
 		}
 		repo

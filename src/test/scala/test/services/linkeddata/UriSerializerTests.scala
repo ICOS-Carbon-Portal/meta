@@ -684,7 +684,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			lenses,
 			doiCiter,
 			config,
-			Some(statisticsProvider)
+			statisticsProvider
 		)
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller

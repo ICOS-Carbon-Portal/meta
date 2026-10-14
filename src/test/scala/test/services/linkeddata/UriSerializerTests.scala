@@ -313,15 +313,15 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(!body.contains("unknown_var"))
 		}
 
-		it("renders warning a warning when duplicate metadata entries exist") {
-			val duplicateEmailRepo = Fixture.createRepo(Fixture.duplicateEmailStaff)
+		it("renders a warning when duplicate metadata entries exist") {
+			val duplicateEmailRepo = Fixture.createRepoWith("/linkeddata/duplicate-email-staff.trig")
 			try {
 				// the staff member is read only for the authors of the object's citation, which is a part of its landing page
 				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
-				assert(heading(page) === "sest time series from Test station (50.0 m)")
+				assert(heading(page) === "Test time series from Test station")
 				assert(metadataErrors(page).distinct === Seq(
-					s"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
-						s"for resource ${Fixture.duplicateEmailPerson.stringValue}, but got 2"
+					"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
+						"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
 				))
 			} finally {
 				// Make sure we close the repo even on test failure

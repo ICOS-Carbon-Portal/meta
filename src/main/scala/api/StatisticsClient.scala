@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.pattern.after
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.headers.Host
@@ -19,6 +20,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
+import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 
@@ -51,14 +53,22 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
 		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
+		// the default exponential backoff (up to 2 min) after failed connects makes queued requests,
+		// and thus landing pages, wait for ever longer when a stats service is down
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
+			.withBaseConnectionBackoff(10.millis)
+			.withMaxConnectionBackoff(500.millis)
 	}
 
-	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] = http
-		.singleRequest(
+	private val statsTimeout = 1.second
+
+	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] =
+		val request = http.singleRequest(
 			HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
 			settings = connPoolSetts
 		)
+		val timeout = after(statsTimeout)(Future.failed(TimeoutException(s"no response within $statsTimeout")))
+		Future.firstCompletedOf(Seq(request, timeout))
 		.flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>

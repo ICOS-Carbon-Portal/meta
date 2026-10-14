@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.citation
+package se.lu.nateko.cp.meta.test.services.external
 
 import scala.language.unsafeNulls
 
@@ -13,8 +13,8 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.time.{Millis, Seconds, Span}
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{References, StaticObject}
-import se.lu.nateko.cp.meta.services.ExternalProviders
-import se.lu.nateko.cp.meta.services.citation.{CitationStyle, ExternalObjFetcher}
+import se.lu.nateko.cp.meta.services.citation.CitationStyle
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import spray.json.*
 
 import java.net.URI
@@ -24,7 +24,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
-import se.lu.nateko.cp.meta.test.services.ExternalTestObjects.*
+import ExternalTestObjects.*
 
 class ExternalObjFetcherTests extends AnyFunSpec with BeforeAndAfterAll with Eventually:
 

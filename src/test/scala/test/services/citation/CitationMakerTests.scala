@@ -18,7 +18,8 @@ import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, Person, References, StaticObject, UriResource}
 import se.lu.nateko.cp.meta.services.citation.*
-import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, ExternalProviders}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import spray.json.*
 
 import java.net.URI
@@ -27,7 +28,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
-import se.lu.nateko.cp.meta.test.services.ExternalTestObjects.*
+import se.lu.nateko.cp.meta.test.services.external.ExternalTestObjects.*
 
 class CitationMakerTests extends AnyFunSpec with BeforeAndAfterAll with Eventually:
 

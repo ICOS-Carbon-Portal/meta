@@ -17,7 +17,8 @@ import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
 import se.lu.nateko.cp.meta.services.upload.completion.{Report, UploadCompleter}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.validation.UploadValidator
-import se.lu.nateko.cp.meta.services.{ExternalProviders, MetadataException, UploadUserErrorException}
+import se.lu.nateko.cp.meta.services.{MetadataException, UploadUserErrorException}
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{ConfigLoader, DataObjectDto, DocObjectDto, ObjectUploadDto, StaticCollectionDto, SubmitterProfile, UploadServiceConfig}

@@ -56,11 +56,9 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}"""
 
 	private val repo = Fixture.createRepo()
-	private val duplicateEmailRepo = Fixture.createRepo(Fixture.duplicateEmailStaff)
 
 	override def afterAll(): Unit = {
 		repo.shutDown()
-		duplicateEmailRepo.shutDown()
 		super.afterAll()
 	}
 
@@ -313,6 +311,22 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val body = json.replaceAll("\\s", "")
 			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 			assert(!body.contains("unknown_var"))
+		}
+
+		it("renders warning a warning when duplicate metadata entries exist") {
+			val duplicateEmailRepo = Fixture.createRepo(Fixture.duplicateEmailStaff)
+			try {
+				// the staff member is read only for the authors of the object's citation, which is a part of its landing page
+				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
+				assert(heading(page) === "sest time series from Test station (50.0 m)")
+				assert(metadataErrors(page).distinct === Seq(
+					s"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
+						s"for resource ${Fixture.duplicateEmailPerson.stringValue}, but got 2"
+				))
+			} finally {
+				// Make sure we close the repo even on test failure
+				duplicateEmailRepo.shutDown()
+			}
 		}
 	}
 
@@ -663,18 +677,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
 			assert(counts === probeCounts(Fixture.dataTheme) + loadLandingPage(_.labeledResource(Fixture.dataTheme)))
 			assert(body.contains("Atmosphere"))
-		}
-	}
-
-	describe("a data object whose station staff has inconsistent metadata") {
-		it("renders the data object landing page with a warning about the staff member") {
-			// the staff member is read only for the authors of the object's citation, which is a part of its landing page
-			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
-			assert(heading(page) === "Test time series from Test station (50.0 m)")
-			assert(metadataErrors(page).distinct === Seq(
-				s"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
-					s"for resource ${Fixture.duplicateEmailPerson.stringValue}, but got 2"
-			))
 		}
 	}
 

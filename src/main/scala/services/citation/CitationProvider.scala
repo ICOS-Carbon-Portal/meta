@@ -68,7 +68,7 @@ class CitationProvider(
 
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
-		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer, externalObjs)
+		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 
 	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)

@@ -9,7 +9,7 @@ import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, ExternalObjFetcher}
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -23,8 +23,7 @@ class StaticObjectReader(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	pidFactory: HandleNetClient.PidFactory,
-	citer: CitationMaker,
-	externalObjs: ExternalObjFetcher
+	citer: CitationMaker
 ) extends CollectionReader(metaVocab, citer.getItemCitationInfo) with DobjMetaReader(vocab):
 	import StatementSource.{
 		resourceHasType,
@@ -139,8 +138,8 @@ class StaticObjectReader(
 
 	private def getPid(hash: Sha256Sum, format: URI, accessUrl: Option[URI])(using Envri): Option[String] =
 		if metaVocab.wdcggFormat === format then None
-		else accessUrl.filter(url => externalObjs.providers.lookup(url).isDefined) match
-			case Some(url) => externalObjs.getPidEager(url)
+		else accessUrl.filter(url => citer.externalObjs.providers.lookup(url).isDefined) match
+			case Some(url) => citer.externalObjs.getPidEager(url)
 			case None => Some(pidFactory.getPid(hash))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =

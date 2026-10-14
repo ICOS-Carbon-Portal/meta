@@ -67,7 +67,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citer, externalObjs)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citer)
 		val result = read(loader)
 		result -> countingRepo.counts
 	}

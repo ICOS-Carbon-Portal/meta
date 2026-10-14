@@ -93,7 +93,7 @@ class Rdf4jUriSerializer(
 	import UriSerializer.*
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
-	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer, externalObjs)
+	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
 		new PageContentMarshalling(config.core.handleProxies, stats, externalObjs.providers, citer)

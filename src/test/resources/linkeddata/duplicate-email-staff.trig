@@ -1,0 +1,22 @@
+@prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#an addition to linked-data-fixture.trig: a member of the station staff with two e-mail addresses,
+#who is not an agent of any data production, so only the citation of the station's data reads them
+<http://meta.icos-cp.eu/resources/icos/> {
+	<http://meta.icos-cp.eu/resources/people/Twomail_Person>
+		a cpmeta:Person ;
+		rdfs:label "Twomail Person" ;
+		cpmeta:hasFirstName "Twomail" ;
+		cpmeta:hasLastName "Person" ;
+		cpmeta:hasEmail "twomail@example.org" ;
+		cpmeta:hasEmail "twomail@example.com" ;
+		cpmeta:hasMembership <http://meta.icos-cp.eu/resources/memberships/TST_PI_Twomail> .
+
+	<http://meta.icos-cp.eu/resources/memberships/TST_PI_Twomail>
+		a cpmeta:Membership ;
+		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> ;
+		cpmeta:hasStartTime "2021-01-01T00:00:00Z"^^xsd:dateTime .
+}

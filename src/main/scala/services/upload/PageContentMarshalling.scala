@@ -7,7 +7,7 @@ import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToEntityMarshall
 import akka.http.scaladsl.model.*
 import eu.icoscp.envri.Envri
 import play.twirl.api.Html
-import se.lu.nateko.cp.meta.api.StatisticsClient
+import se.lu.nateko.cp.meta.api.StatisticsProvider
 import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
@@ -21,7 +21,7 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
+class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsProvider):
 
 	import PageContentMarshalling.*
 

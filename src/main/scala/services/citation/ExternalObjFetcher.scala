@@ -21,7 +21,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
-class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSystem):
+class ExternalObjFetcher(
+	val providers: ExternalProviders,
+	ttl: Duration = ExternalObjFetcher.defaultTtl,
+	failureTtl: Duration = ExternalObjFetcher.defaultFailureTtl,
+	maxEntries: Int = ExternalObjFetcher.defaultMaxEntries
+)(using system: ActorSystem):
 	import system.dispatcher
 	import ExternalObjFetcher.*
 	private val log = LoggerFactory.getLogger(getClass)
@@ -60,7 +65,7 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 				fut
 			case Some(fut) =>
 				fut.value.flatMap(_.toOption).foreach: cached =>
-					if cached.isStale then revalidate(url)
+					if isStale(cached) then revalidate(url)
 				fut
 
 	private def evictIfFull(): Unit =
@@ -70,6 +75,9 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 				.sortBy((_, cached) => (cached.result.isSuccess, cached.fetchedAt))
 				.take(cache.size - maxEntries * 3 / 4)
 			toEvict.foreach((url, _) => cache.remove(url))
+
+	private def isStale(cached: Cached): Boolean =
+		Instant.now().isAfter(cached.fetchedAt.plus(if cached.result.isSuccess then ttl else failureTtl))
 
 	private def revalidate(url: URI): Unit =
 		if revalidating.putIfAbsent(url, ()).isEmpty then
@@ -93,10 +101,8 @@ class ExternalObjFetcher(val providers: ExternalProviders)(using system: ActorSy
 		.transform(result => Success(Cached(result, Instant.now())))
 
 object ExternalObjFetcher:
-	private val ttl: Duration = Duration.ofMinutes(5)
-	private val failureTtl: Duration = Duration.ofSeconds(30)
-	private val maxEntries = 10000
+	val defaultTtl: Duration = Duration.ofMinutes(5)
+	val defaultFailureTtl: Duration = Duration.ofSeconds(30)
+	val defaultMaxEntries = 10000
 	private case class Fetched(refs: References, pid: Option[String])
-	private case class Cached(result: Try[Fetched], fetchedAt: Instant):
-		def isStale: Boolean =
-			Instant.now().isAfter(fetchedAt.plus(if result.isSuccess then ttl else failureTtl))
+	private case class Cached(result: Try[Fetched], fetchedAt: Instant)

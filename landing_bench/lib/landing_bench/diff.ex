@@ -71,17 +71,17 @@ defmodule LandingBench.Diff do
   # rather than a module attribute, since compiled regexes cannot be stored in attributes.
   defp replacements do
     [
-      {"fs4vm.", ""},
-      # Test environment badge (e.g. on fs4vm): title prefix, styles and markup
-      {"<title>🚧 ", "<title>"},
-      {~r/<style>\s*\.env-border\b.*?<\/style>\n\n/s, ""},
-      {~r/[ \t]*<div class="env-border"><\/div>\n[ \t]*\n/, ""},
-      {~r/[ \t]*<div class="env-badge">[^<]*<\/div>\n[ \t]*\n/, ""},
-      # Download and preview counts, which differ between hosts with separate logs
-      {~r/(<label class="fw-bold">(?:Downloads|Previews)<\/label><\/div>\n<div [^>]*>\n\s*)\d+/, "\\1"},
-      # Website Carbon badge, absent on some hosts
-      {~r/[ \t]*<div id="wcb"[^>]*><\/div>\n[ \t]*<script[^>]*website-carbon-badges[^>]*><\/script>\n[ \t]*\n/,
-       ""}
+      # {"fs4vm.", ""},
+      # # Test environment badge (e.g. on fs4vm): title prefix, styles and markup
+      # {"<title>🚧 ", "<title>"},
+      # {~r/<style>\s*\.env-border\b.*?<\/style>\n\n/s, ""},
+      # {~r/[ \t]*<div class="env-border"><\/div>\n[ \t]*\n/, ""},
+      # {~r/[ \t]*<div class="env-badge">[^<]*<\/div>\n[ \t]*\n/, ""},
+      # # Download and preview counts, which differ between hosts with separate logs
+      # {~r/(<label class="fw-bold">(?:Downloads|Previews)<\/label><\/div>\n<div [^>]*>\n\s*)\d+/, "\\1"},
+      # # Website Carbon badge, absent on some hosts
+      # {~r/[ \t]*<div id="wcb"[^>]*><\/div>\n[ \t]*<script[^>]*website-carbon-badges[^>]*><\/script>\n[ \t]*\n/,
+      #  ""}
     ]
   end
 

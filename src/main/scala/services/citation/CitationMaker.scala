@@ -40,7 +40,7 @@ class CitationMaker(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	coreConf: MetaCoreConfig,
-	externalObjs: ExternalObjFetcher
+	val externalObjs: ExternalObjFetcher
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*

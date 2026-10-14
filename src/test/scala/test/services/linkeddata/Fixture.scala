@@ -20,25 +20,21 @@ import scala.util.Using
 object Fixture {
 
 	/**
-	 * A new in-memory repository with the sample metadata, plus that of the given additional TriG
-	 * resources; the caller must shut it down.
+	 * A new in-memory repository with the sample metadata; the caller must shut it down.
 	 */
-	def createRepo(additions: String*): Repository = {
+	def createRepo(): Repository = createRepoWith("/linkeddata/linked-data-fixture.trig")
+
+	/** A new in-memory repository loaded from a TriG resource; the caller must shut it down. */
+	def createRepoWith(resource: String): Repository = {
 		val repo = SailRepository(MemoryStore())
 		repo.init()
-		("/linkeddata/linked-data-fixture.trig" +: additions).foreach { resource =>
-			Using.resources(getClass.getResourceAsStream(resource), repo.getConnection()) { (stream, conn) =>
-				conn.add(stream, "", RDFFormat.TRIG)
-			}
+		Using.resources(getClass.getResourceAsStream(resource), repo.getConnection()) { (stream, conn) =>
+			conn.add(stream, "", RDFFormat.TRIG)
 		}
 		repo
 	}
 
 	private val factory = SimpleValueFactory.getInstance()
-
-	/** Adds a member of the staff of [[icosStation]] who has two e-mail addresses. */
-	val duplicateEmailStaff = "/linkeddata/duplicate-email-staff.trig"
-	val duplicateEmailPerson = factory.createIRI("http://meta.icos-cp.eu/resources/people/Twomail_Person")
 
 	val resource = factory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test")
 	val referringResource = factory.createIRI("http://meta.icos-cp.eu/resources/test/serializer_test_referrer")

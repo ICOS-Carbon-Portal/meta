@@ -23,29 +23,24 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		_ => Validated.ok(Nil),
 		l2 =>
 			val tcFilter = getTcSpecificFilter(dobj)
-			getMemberships(l2.acquisition.station.org.self.uri, role => tcFilter(role) && role.isRelevantFor(dobj)).map(
-				_.sorted
+			getMemberships(l2.acquisition.station.org.self.uri).map(
+				_.filter(memb => tcFilter(memb.role) && memb.role.isRelevantFor(dobj))
+				.sorted
 				.map(_.person)
 				.distinct
 			)
 	)
 
+	// every person is read, even the ones that get filtered out, so that problems with their metadata are reported
 	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] =
-		getMemberships(org, _ => true)
-
-	/** The memberships at the organization, with the people read only for the roles that are kept */
-	private def getMemberships(org: URI, keepRole: RoleDetails => Boolean)(using MetaConn): Validated[IndexedSeq[Membership]] =
 		Validated.sequence:
-			getPropValueHolders(metaVocab.atOrganization, org.toRdf)
-				// instrument deployments are at organizations, too
-				.filter(resourceHasType(_, metaVocab.membershipClass))
-				.map: memb =>
-					readRoleDetails(memb).flatMap: role =>
-						if !keepRole(role) then Validated.ok(Nil)
-						else Validated.sequence:
-							getPropValueHolders(metaVocab.hasMembership, memb).map: person =>
-								getPerson(person).map(Membership(_, role))
-		.map(_.flatten)
+			for
+				memb <- getPropValueHolders(metaVocab.atOrganization, org.toRdf)
+				person <- getPropValueHolders(metaVocab.hasMembership, memb)
+			yield for
+				person <- getPerson(person)
+				role <- readRoleDetails(memb)
+			yield Membership(person, role)
 
 
 	def getPersonRoles(person: URI)(using MetaConn): Validated[IndexedSeq[PersonRole]] =

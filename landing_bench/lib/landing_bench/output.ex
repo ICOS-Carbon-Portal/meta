@@ -12,7 +12,8 @@ defmodule LandingBench.Output do
     * `:secondary` - a secondary meta host is used (`:base_url`)
     * `:sparql_page` - a page of the search result list was fetched (`:offset`, `:count`, `:ms`)
     * `:object` - a landing page was fetched (`:index`, `:file_name`, `:uri`, `:primary`,
-      `:secondary` and `:match`, the latter two `nil` without a secondary meta host)
+      `:secondary` and `:match`, the latter two `nil` without a secondary meta host;
+      `:file_name` is `nil` for an object given with `--object`)
   """
 
   alias LandingBench.Diff
@@ -38,25 +39,30 @@ defmodule LandingBench.Output do
     do: IO.puts("SPARQL page at offset #{e.offset}: #{e.count} objects in #{fmt_ms(e.ms)}")
 
   def print(%{type: :object, secondary: nil} = e, _show_diff),
-    do: print_result(pad(e.index), e.primary, "(#{e.file_name})")
+    do: print_result(pad(e.index), e.primary, file_name_label(e.file_name))
 
   def print(%{type: :object} = e, show_diff) do
-    print_result(pad(e.index), e.primary, "(#{e.file_name})")
+    print_result(pad(e.index), e.primary, file_name_label(e.file_name))
     print_result(pad(""), e.secondary, "[#{match_label(e.match)}]")
 
     if show_diff and Diff.mismatch?(e.match),
       do: print_diff(e.primary, e.secondary)
   end
 
+  defp file_name_label(nil), do: ""
+  defp file_name_label(file_name), do: "(#{file_name})"
+
   defp print_result(prefix, %{error: nil} = r, suffix) do
     IO.puts(
       "#{prefix} #{r.status} #{String.pad_leading(fmt_ms(r.ms), 11)} " <>
-        "#{String.pad_leading(Integer.to_string(r.bytes), 8)} B  #{r.url}  #{suffix}"
+        String.trim_trailing(
+          "#{String.pad_leading(Integer.to_string(r.bytes), 8)} B  #{r.url}  #{suffix}"
+        )
     )
   end
 
   defp print_result(prefix, r, suffix),
-    do: IO.puts("#{prefix} ERR #{r.url}: #{r.error}  #{suffix}")
+    do: IO.puts(String.trim_trailing("#{prefix} ERR #{r.url}: #{r.error}  #{suffix}"))
 
   # Diffs the bodies with known differences removed, as in `Diff.compare/2`, so
   # that only the differences that caused the mismatch are shown.

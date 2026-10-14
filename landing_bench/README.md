@@ -11,7 +11,10 @@ It:
    (default `ICOS`);
 2. fetches the landing page `https://PRIMARY/objects/<hash>` of each returned
    object, one at a time, timing each request and pausing between requests,
-   paging further through the result list as needed until `--max` is reached;
+   paging further through the result list as needed until `--max` is reached
+   (with `--object ID`, only the landing page of that one data object, given by
+   its hash or its URI / landing page URL, is fetched instead, and no SPARQL
+   query is made);
 3. optionally (with a second meta host, SECONDARY), fetches each landing page
    from SECONDARY right after PRIMARY, times it, and compares the two responses
    (HTTP status and body; bodies are compared as served, except for a short list
@@ -37,6 +40,7 @@ mix escript.build
 ./landing_bench meta.fieldsites.se --envri SITES
 ./landing_bench meta.icos-cp.eu http://localhost:9094 --csv compare.csv
 ./landing_bench meta.icos-cp.eu http://localhost:9094 --diff
+./landing_bench meta.icos-cp.eu http://localhost:9094 --object https://meta.icos-cp.eu/objects/<hash> --diff
 ./landing_bench meta.icos-cp.eu http://localhost:9094 --store
 ./landing_bench meta.icos-cp.eu http://localhost:9094 --store runs
 ./landing_bench --help

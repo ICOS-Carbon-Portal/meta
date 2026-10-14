@@ -6,7 +6,8 @@ defmodule LandingBench do
      primary meta host's SPARQL endpoint.
   2. Fetches the landing page of each returned data object in turn, timing each request
      and pausing between requests, until `max` landing pages have been fetched or the
-     result list is exhausted.
+     result list is exhausted. With `object`, only the landing page of that data object
+     is fetched instead, without any SPARQL query.
   3. Optionally fetches each landing page from a secondary meta host as well, timing it
      and comparing the response with the one from the primary meta host, optionally
      printing a diff of the response bodies when they do not match.
@@ -23,6 +24,7 @@ defmodule LandingBench do
           host: String.t(),
           envri: String.t(),
           secondary: String.t() | nil,
+          object: String.t() | nil,
           max: pos_integer(),
           delay_ms: non_neg_integer(),
           jitter_ms: non_neg_integer(),
@@ -66,8 +68,13 @@ defmodule LandingBench do
     emit.(%{type: :primary, base_url: meta_base, envri: opts[:envri]})
     if secondary_base, do: emit.(%{type: :secondary, base_url: secondary_base})
 
+    objects =
+      if object = opts[:object],
+        do: [%{uri: object, file_name: nil}],
+        else: objects_stream(meta_base <> "/sparql", opts[:envri], req_opts, emit)
+
     results =
-      objects_stream(meta_base <> "/sparql", opts[:envri], req_opts, emit)
+      objects
       |> Stream.take(opts[:max])
       |> Stream.with_index(1)
       |> Stream.map(fn {obj, i} ->
@@ -157,7 +164,8 @@ defmodule LandingBench do
   end
 
   # Object URIs are canonical (e.g. https://meta.icos-cp.eu/objects/<hash>); point
-  # them at the meta host being benchmarked, so local setups work too.
+  # them at the meta host being benchmarked, so local setups work too. A bare hash
+  # (as given with `object`) works as well.
   defp landing_page_url(uri, meta_base) do
     hash = uri |> URI.parse() |> Map.fetch!(:path) |> Path.basename()
     meta_base <> "/objects/" <> hash

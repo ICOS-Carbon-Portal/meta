@@ -34,7 +34,17 @@ defmodule LandingBench.Store do
       host: opts[:host],
       secondary: opts[:secondary],
       options:
-        Map.new(Keyword.take(opts, [:envri, :max, :delay_ms, :jitter_ms, :timeout_ms, :insecure])),
+        Map.new(
+          Keyword.take(opts, [
+            :envri,
+            :object,
+            :max,
+            :delay_ms,
+            :jitter_ms,
+            :timeout_ms,
+            :insecure
+          ])
+        ),
       overview: nil
     }
 

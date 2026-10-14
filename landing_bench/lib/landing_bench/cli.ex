@@ -19,6 +19,9 @@ defmodule LandingBench.CLI do
                         (default ICOS)
         --diff          with SECONDARY, print a diff of the response bodies
                         of each mismatching landing page
+    -o, --object ID     fetch (and, with SECONDARY, compare) only the landing
+                        page of this data object, given by its hash or its
+                        URI / landing page URL, instead of listing objects
     -m, --max N         maximum number of landing pages to fetch (default 20)
     -d, --delay MS      pause between landing page fetches in ms (default 1000)
     -j, --jitter MS     add a random 0..MS ms to each pause (default 0)
@@ -83,6 +86,7 @@ defmodule LandingBench.CLI do
       OptionParser.parse(default_store(argv),
         strict: [
           envri: :string,
+          object: :string,
           max: :integer,
           delay: :integer,
           jitter: :integer,
@@ -95,6 +99,7 @@ defmodule LandingBench.CLI do
         ],
         aliases: [
           e: :envri,
+          o: :object,
           m: :max,
           d: :delay,
           j: :jitter,
@@ -123,6 +128,7 @@ defmodule LandingBench.CLI do
           host: host,
           envri: envri,
           secondary: List.first(secondary),
+          object: opts[:object],
           max: Keyword.get(opts, :max, 20),
           delay_ms: Keyword.get(opts, :delay, 1000),
           jitter_ms: Keyword.get(opts, :jitter, 0),

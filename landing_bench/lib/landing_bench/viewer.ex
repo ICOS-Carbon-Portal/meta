@@ -92,7 +92,8 @@ defmodule LandingBench.Viewer do
       "Host #{meta["host"]}" <>
         if(meta["secondary"], do: ", secondary #{meta["secondary"]}", else: "") <>
         if(o["envri"], do: ", envri #{o["envri"]}", else: "") <>
-        ", max #{o["max"]}, delay #{o["delay_ms"]} ms, jitter #{o["jitter_ms"]} ms, " <>
+        if(o["object"], do: ", object #{o["object"]}", else: ", max #{o["max"]}") <>
+        ", delay #{o["delay_ms"]} ms, jitter #{o["jitter_ms"]} ms, " <>
         "timeout #{o["timeout_ms"]} ms" <> if(o["insecure"], do: ", insecure", else: "")
     )
 

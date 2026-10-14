@@ -306,6 +306,7 @@ end CitationMaker
 object CitationMaker:
 
 	private[meta] def formatPersonName(person: Person): String =
+		require(person.firstName.replaceAll("(?U)\\s", "").nonEmpty, "Citation author must have a non-blank given name")
 		val initials = person.firstName.split("(?U)\\s+").iterator.map: name =>
 			name.split("-").iterator.filter(_.nonEmpty).map(part => s"${part.head}.").mkString("-")
 		val givenInitials = initials.mkString

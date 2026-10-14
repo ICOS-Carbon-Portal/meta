@@ -26,9 +26,14 @@ class CitationMakerTests extends AnyFunSuite:
 		assert(format("Jean-Pierre", "Dupont") == "Dupont, J.-P.")
 		assert(format("Hans Peter-Paul") == "Schmid, H.P.-P.")
 
-	test("empty or whitespace-only given names use only the surname"):
-		assert(format("") == "Schmid")
-		assert(format(" \t\n ") == "Schmid")
+	test("empty given names remain invalid so broken objects do not produce biblioinfo"):
+		intercept[IllegalArgumentException]:
+			format("")
+
+	test("whitespace-only given names are invalid, including Unicode whitespace"):
+		Seq(" ", " \t\n ", "\u00a0", "\u2003").foreach: name =>
+			intercept[IllegalArgumentException]:
+				format(name)
 
 	test("ignores empty hyphenated components and preserves accented initials"):
 		assert(format("-Hans--Peter-") == "Schmid, H.-P.")

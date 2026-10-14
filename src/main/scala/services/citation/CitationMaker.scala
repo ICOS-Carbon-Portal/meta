@@ -219,7 +219,7 @@ class CitationMaker(
 				year <- yearOpt
 			) yield {
 				val authorsStr = authors.map{
-					case p: Person => s"${p.lastName}, ${p.firstName.head}."
+					case p: Person => formatPersonName(p)
 					case o: Organization => o.name
 				}.mkString(", ")
 				s"${authorsStr} ($year). $title, $time, $project $pidUrl"
@@ -282,7 +282,7 @@ class CitationMaker(
 		val zoneId = ZoneId.of(defaultTimezoneId)
 		val yearOpt = doc.submission.stop.map(getYear(zoneId))
 		val authors: Seq[String] = refs.authors.fold(Seq())(_.distinct.collect{
-			case p: Person => s"${p.lastName}, ${p.firstName.head}."
+			case p: Person => formatPersonName(p)
 			case o: Organization => o.name
 		})
 
@@ -304,6 +304,12 @@ class CitationMaker(
 end CitationMaker
 
 object CitationMaker:
+
+	private[meta] def formatPersonName(person: Person): String =
+		val initials = person.firstName.split("(?U)\\s+").iterator.map: name =>
+			name.split("-").iterator.filter(_.nonEmpty).map(part => s"${part.head}.").mkString("-")
+		val givenInitials = initials.mkString
+		if givenInitials.isEmpty then person.lastName else s"${person.lastName}, $givenInitials"
 
 	def defaultLicence(using envri: Envri): Licence = envri match
 		case Envri.ICOS | Envri.ICOSCities => Licence(

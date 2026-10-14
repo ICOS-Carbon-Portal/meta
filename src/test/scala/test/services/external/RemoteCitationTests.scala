@@ -4,8 +4,9 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
+import akka.pattern.after
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.scalatest.BeforeAndAfterAll
@@ -21,7 +22,8 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, ExternalProviders}
 import spray.json.*
 
 import java.net.URI
-import scala.concurrent.Await
+import java.time.Duration as JavaDuration
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
@@ -45,7 +47,10 @@ class RemoteCitationTests extends AnyFunSpec with BeforeAndAfterAll with Eventua
 	private val route =
 		path("objects" / "cited")(complete(jsonEntity(References.empty.copy(citationString = Some(remoteCitation))))) ~
 		path("objects" / "uncited")(complete(jsonEntity(References.empty))) ~
-		path("objects" / "broken")(complete(StatusCodes.InternalServerError -> "remote failure"))
+		path("objects" / "broken")(complete(StatusCodes.InternalServerError -> "remote failure")) ~
+		path("objects" / "slowBroken")(complete(
+			after(500.millis)(Future.successful(HttpResponse(StatusCodes.InternalServerError, entity = "remote failure")))
+		))
 
 	private val binding = Await.result(Http().newServerAt("localhost", 0).bind(route), 10.seconds)
 	private val port = binding.localAddress.getPort
@@ -59,13 +64,15 @@ class RemoteCitationTests extends AnyFunSpec with BeforeAndAfterAll with Eventua
 			case _         => None
 		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
 
-	private val fetcher = ExternalObjFetcher(ExternalProviders(Map(
-		Envri.SITES -> Seq(provider("localhost"))
-	)))
+	private val providers = ExternalProviders(Map(Envri.SITES -> Seq(provider("localhost"))))
 
-	private val citer =
+	private val fetcher = ExternalObjFetcher(providers)
+
+	private def citerWith(fetcher: ExternalObjFetcher) =
 		val factory = SimpleValueFactory.getInstance
 		CitationMaker(doiCiter, CpVocab(factory), CpmetaVocab(factory), MetaCoreConfig.default, fetcher)
+
+	private val citer = citerWith(fetcher)
 
 	override def afterAll(): Unit =
 		Await.ready(binding.unbind(), 10.seconds)
@@ -111,12 +118,16 @@ class RemoteCitationTests extends AnyFunSpec with BeforeAndAfterAll with Eventua
 						assert(err.startsWith("Error fetching external citation: Got 500"))
 					case other => fail(s"Unexpected $other")
 
-		it("keeps reporting the error on repeated requests"):
-			val obj = docObject(Some(remoteUrl("broken")))
-			eventually:
-				assert(citer.remoteCitation(obj) != RemoteCitation.Expected(None))
+		it("keeps reporting the error while retrying the fetch"):
+			val retryingCiter = citerWith(ExternalObjFetcher(providers, failureTtl = JavaDuration.ofMillis(300)))
+			val obj = docObject(Some(remoteUrl("slowBroken")))
+			val error = eventually:
+				retryingCiter.remoteCitation(obj) match
+					case err @ RemoteCitation.Expected(Some(_)) => err
+					case other => fail(s"Unexpected $other")
+			Thread.sleep(400)
 			(1 to 5).foreach: _ =>
-				assert(citer.remoteCitation(obj) != RemoteCitation.Expected(None))
+				assert(retryingCiter.remoteCitation(obj) === error)
 
 		it("reports an error when the external object has no citation"):
 			val obj = docObject(Some(remoteUrl("uncited")))

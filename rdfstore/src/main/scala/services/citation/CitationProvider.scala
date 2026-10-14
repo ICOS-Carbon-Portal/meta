@@ -20,6 +20,7 @@ import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver,
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jTriplestoreConnection, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import CitationClient.CitationCache
@@ -101,9 +102,10 @@ class CitationProvider(
 	def getCitation(res: Resource): Option[String] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
 		getDoiCitation(res).orElse:
-			getCitableItem(res).flatMap(_.references.citationString)
+			getCitableItem(res).result.flatMap(_.references.citationString)
 
-	def getReferences(res: Resource): Option[References] = access:
+	/** Empty result without errors if `res` is not a citable item; may have errors either way. */
+	def getReferences(res: Resource): Validated[References] = access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
 
 	def getLicence(res: Resource): Option[Licence] = access: conn ?=>
@@ -119,7 +121,7 @@ class CitationProvider(
 			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
 	}
 
-	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
+	private def getCitableItem(res: Resource)(using GlobConn): Validated[CitableItem] = toIRI(res).fold(notFound): iri =>
 		if
 			hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 			hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
@@ -127,19 +129,21 @@ class CitationProvider(
 		else if
 			hasStatement(iri, RDF.TYPE, metaVocab.collectionClass)
 		then getStaticColl(iri)
-		else None
+		else notFound
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
-		given Envri <- inferObjectEnvri(maybeDobj)
-		obj <- metaReader.fetchStaticObject(maybeDobj).result
-	yield obj
+	private def notFound: Validated[Nothing] = new Validated(None)
 
-	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] = for
-		given Envri <- inferCollEnvri(maybeColl)
-		coll <- metaReader.fetchStaticColl(maybeColl, None).result
-	yield coll
+	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Validated[StaticObject] =
+		inferObjectEnvri(maybeDobj).fold(notFound): envri =>
+			given Envri = envri
+			metaReader.fetchStaticObject(maybeDobj)
+
+	private def getStaticColl(maybeColl: IRI)(using GlobConn): Validated[StaticCollection] =
+		inferCollEnvri(maybeColl).fold(notFound): envri =>
+			given Envri = envri
+			metaReader.fetchStaticColl(maybeColl, None)
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{
 		envri => obj.stringValue.startsWith(objectPrefix(using envriConfs(envri)))

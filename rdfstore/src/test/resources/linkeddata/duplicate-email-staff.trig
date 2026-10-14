@@ -5,6 +5,7 @@
 
 # Only the fields needed to render the data object and reach the duplicate-email warning.
 # The citation reads the staff member through the station membership.
+# rdfStore derives citations only for resources typed as data objects.
 <http://meta.icos-cp.eu/resources/icos/> {
 	<http://meta.icos-cp.eu/resources/people/Twomail_Person>
 		cpmeta:hasFirstName "Twomail" ;
@@ -42,6 +43,7 @@
 
 <http://meta.icos-cp.eu/resources/tscsv/> {
 	<https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataObject ;
 		cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries> ;
 		cpmeta:hasSha256sum "AQEBAQEBAQEBAQEBAQEBAQEB"^^xsd:base64Binary ;
 		cpmeta:hasName "test_data.csv" ;

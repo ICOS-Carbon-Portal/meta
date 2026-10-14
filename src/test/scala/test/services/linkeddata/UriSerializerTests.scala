@@ -73,25 +73,31 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		Fixture.spatialObject -> "Test spatial data object"
 	).map((uri, title) => new URI(uri.toString) -> title)
 
+	// what rdfStore reports when the citation of an object reads a person with two emails
+	private val duplicateEmailWarning =
+		"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
+			"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
+
 	private val rdfStoreStub = {
-		val route =
-			path("resolve") {
-				post {
-					entity(as[String]) { body =>
-						val request = body.parseJson.convertTo[DerivedMetadataRequest]
-						val results = request.resources.map { res =>
-							derivedTitles.get(res).fold(DerivedMetadataResult(res, "notFound", None)) { title =>
-								val refs = References.empty.copy(title = Some(title))
-								DerivedMetadataResult(res, "ready", Some(DerivedMetadata(res, refs, None, None)))
-							}
+		def resolve(warnings: Seq[String]) =
+			post {
+				entity(as[String]) { body =>
+					val request = body.parseJson.convertTo[DerivedMetadataRequest]
+					val results = request.resources.map { res =>
+						derivedTitles.get(res).fold(DerivedMetadataResult(res, "notFound", None)) { title =>
+							val refs = References.empty.copy(title = Some(title))
+							DerivedMetadataResult(res, "ready", Some(DerivedMetadata(res, refs, None, None, warnings)))
 						}
-						complete(HttpEntity(
-							ContentTypes.`application/json`,
-							DerivedMetadataResponse(version = 1, results).toJson.compactPrint
-						))
 					}
+					complete(HttpEntity(
+						ContentTypes.`application/json`,
+						DerivedMetadataResponse(version = 1, results).toJson.compactPrint
+					))
 				}
-			} ~
+			}
+		val route =
+			path("resolve")(resolve(Nil)) ~
+			path("duplicate-email")(resolve(Seq(duplicateEmailWarning))) ~
 			path("unavailable") {
 				complete(StatusCodes.ServiceUnavailable -> "rdfStore is down")
 			}
@@ -368,20 +374,11 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			assert(!body.contains("unknown_var"))
 		}
 
-		it("renders a warning when duplicate metadata entries exist") {
-			val duplicateEmailRepo = Fixture.createRepoWith("/linkeddata/duplicate-email-staff.trig")
-			try {
-				// the staff member is read only for the authors of the object's citation, which is a part of its landing page
-				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
-				assert(heading(page) === "Test time series from Test station (50.0 m)")
-				assert(metadataErrors(page).distinct === Seq(
-					"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
-						"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
-				))
-			} finally {
-				// Make sure we close the repo even on test failure
-				duplicateEmailRepo.shutDown()
-			}
+		it("renders the warnings that rdfStore reports with the derived metadata") {
+			// the duplicate entries are found by rdfStore, when it reads the authors for the object's citation
+			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, rdfStorePath = "duplicate-email")
+			assert(heading(page) === "Test time series from Test station (50.0 m)")
+			assert(metadataErrors(page) === Seq(duplicateEmailWarning))
 		}
 	}
 

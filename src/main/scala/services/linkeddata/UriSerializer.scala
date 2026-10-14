@@ -124,10 +124,10 @@ class Rdf4jUriSerializer(
 			landingPageLoader.staticCollection(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
 
-	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[Validated[T]]): Future[Validated[T]] =
 		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
 			fetch(item)
-				.map(enriched => new Validated(Some(enriched), parsed.errors))
+				.map(enriched => parsed.flatMap(_ => enriched))
 				.recover { case err =>
 					parsed.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")
 				}

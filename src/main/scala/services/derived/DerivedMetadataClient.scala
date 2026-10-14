@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequ
 import akka.stream.Materializer
 import se.lu.nateko.cp.meta.core.data.{DataObject, DocObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
+import se.lu.nateko.cp.meta.utils.Validated
 import spray.json.*
 
 import java.net.URI
@@ -33,17 +34,21 @@ final class DerivedMetadataClient(endpoint: URI)(using system: ActorSystem, mat:
 	def resolve(resource: URI): Future[DerivedMetadataResult] =
 		resolve(Seq(resource)).map(_.results.headOption.getOrElse(DerivedMetadataResult(resource, "notFound", None)))
 
-	def enrich(resource: URI, item: StaticObject): Future[StaticObject] =
+	/** The warnings of the derived metadata become the errors of the result */
+	def enrich(resource: URI, item: StaticObject): Future[Validated[StaticObject]] =
 		resolve(resource).map:
-			case DerivedMetadataResult(_, "ready", Some(metadata)) => item match
-				case data: DataObject => data.copy(references = metadata.references)
-				case doc: DocObject => doc.copy(references = metadata.references)
-			case _ => item
+			case DerivedMetadataResult(_, "ready", Some(metadata)) =>
+				val enriched = item match
+					case data: DataObject => data.copy(references = metadata.references)
+					case doc: DocObject => doc.copy(references = metadata.references)
+				new Validated(Some(enriched), metadata.warnings)
+			case _ => Validated.ok(item)
 
-	def enrich(resource: URI, item: StaticCollection): Future[StaticCollection] =
+	def enrich(resource: URI, item: StaticCollection): Future[Validated[StaticCollection]] =
 		resolve(resource).map:
-			case DerivedMetadataResult(_, "ready", Some(metadata)) => item.copy(references = metadata.references)
-			case _ => item
+			case DerivedMetadataResult(_, "ready", Some(metadata)) =>
+				new Validated(Some(item.copy(references = metadata.references)), metadata.warnings)
+			case _ => Validated.ok(item)
 
 	def dropDoiCache(doi: String): Future[Unit] =
 		val request = HttpRequest(

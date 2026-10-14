@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.external
+package se.lu.nateko.cp.meta.test.services
 
 import scala.language.unsafeNulls
 

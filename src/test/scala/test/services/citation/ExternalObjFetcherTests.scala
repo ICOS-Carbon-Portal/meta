@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.external
+package se.lu.nateko.cp.meta.test.services.citation
 
 import scala.language.unsafeNulls
 
@@ -24,7 +24,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
-import ExternalTestObjects.*
+import se.lu.nateko.cp.meta.test.services.ExternalTestObjects.*
 
 class ExternalObjFetcherTests extends AnyFunSpec with BeforeAndAfterAll with Eventually:
 

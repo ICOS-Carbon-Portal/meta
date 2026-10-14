@@ -1,4 +1,4 @@
-package se.lu.nateko.cp.meta.test.services.external
+package se.lu.nateko.cp.meta.test.services.metaexport
 
 import scala.language.unsafeNulls
 
@@ -16,9 +16,9 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 import java.net.URI
 import java.time.Instant
 
-import ExternalTestObjects.*
+import se.lu.nateko.cp.meta.test.services.ExternalTestObjects.*
 
-class SitemapExternalObjectsTests extends AnyFunSpec:
+class SchemaOrgTests extends AnyFunSpec:
 
 	private given Envri = Envri.SITES
 	private given EnvriConfig = sitesConf
@@ -56,7 +56,7 @@ class SitemapExternalObjectsTests extends AnyFunSpec:
 	private def sitemapObjs(providers: ExternalProviders): Seq[URI] =
 		SchemaOrg.dataObjs(sparqler, None, providers)
 
-	describe("data objects sitemap"):
+	describe("dataObjs"):
 
 		it("excludes objects mirrored from a configured provider"):
 			val providers = ExternalProviders(Map(Envri.SITES -> Seq(provider("meta.icos-cp.eu"))))

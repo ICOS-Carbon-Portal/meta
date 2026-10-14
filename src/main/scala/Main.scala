@@ -12,6 +12,7 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
+import se.lu.nateko.cp.viewscore.MenuProvider
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -24,6 +25,9 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 	initSentry(config)
+	// MenuProvider fetches the CMS menus in the background upon first access; trigger it now,
+	// otherwise the first page rendered after startup comes out without the menu
+	MenuProvider.cpMenu
 	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 

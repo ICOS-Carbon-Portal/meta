@@ -25,7 +25,7 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 			_.filter(getTcSpecificFilter(dobj))
 			.filter(_.role.isRelevantFor(dobj))
 			.toIndexedSeq
-			.sorted
+			.sorted(getTcSpecificOrdering(dobj))
 			.map(_.person)
 			.distinct
 		)
@@ -60,6 +60,10 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 			extra <- getOptionalString(memb, metaVocab.hasExtraRoleInfo)
 		yield
 			RoleDetails(role, start, stop, weight, extra)
+
+	private def getTcSpecificOrdering(dobj: DataObject): Ordering[Membership] =
+		if dobj.specification.theme.self.uri === vocab.ecoTheme then ecoMembershipOrdering
+		else AttributionProvider.membershipOrdering
 
 	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
 		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
@@ -114,6 +118,14 @@ object AttributionProvider:
 
 	given membershipOrdering: Ordering[Membership] = Ordering
 		.by((m: Membership) => m.role.weight)
+		.reverse
+		.orElseBy(_.person)
+
+	// ETC: explicitly ranked memberships with equal author order are listed most recent first.
+	// Missing start dates sort after known dates; unranked authors remain alphabetical.
+	val ecoMembershipOrdering: Ordering[Membership] = Ordering
+		.by((m: Membership) => m.role.weight)
+		.orElseBy(m => m.role.weight.flatMap(_ => m.role.start))
 		.reverse
 		.orElseBy(_.person)
 

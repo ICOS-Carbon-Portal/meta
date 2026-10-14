@@ -1,0 +1,59 @@
+@prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Only the fields needed to render the data object and reach the duplicate-email warning.
+# The citation reads the staff member through the station membership.
+# rdfStore derives citations only for resources typed as data objects.
+<http://meta.icos-cp.eu/resources/icos/> {
+	<http://meta.icos-cp.eu/resources/people/Twomail_Person>
+		cpmeta:hasFirstName "Twomail" ;
+		cpmeta:hasLastName "Person" ;
+		cpmeta:hasEmail "twomail@example.org" ;
+		cpmeta:hasEmail "twomail@example.com" ;
+		cpmeta:hasMembership <http://meta.icos-cp.eu/resources/memberships/TST_PI_Twomail> .
+
+	<http://meta.icos-cp.eu/resources/memberships/TST_PI_Twomail>
+		cpmeta:atOrganization <http://meta.icos-cp.eu/resources/stations/TST> ;
+		cpmeta:hasRole <http://meta.icos-cp.eu/resources/roles/PI> .
+
+	<http://meta.icos-cp.eu/resources/stations/TST>
+		a cpmeta:AS ;
+		cpmeta:hasName "Test station" ;
+		cpmeta:hasStationId "TST" .
+}
+
+<http://meta.icos-cp.eu/resources/cpmeta/> {
+	<http://meta.icos-cp.eu/resources/themes/atmosphere>
+		cpmeta:hasIcon "https://static.icos-cp.eu/atmosphere.svg"^^xsd:anyURI .
+
+	<http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries>
+		rdfs:label "Test time series" ;
+		cpmeta:hasAssociatedProject <http://meta.icos-cp.eu/resources/projects/icos> ;
+		cpmeta:hasDataTheme <http://meta.icos-cp.eu/resources/themes/atmosphere> ;
+		cpmeta:hasFormat cpmeta:csvWithIso8601tsFirstCol ;
+		cpmeta:hasEncoding cpmeta:asciiEncoding ;
+		cpmeta:hasSpecificDatasetType cpmeta:stationTimeSeriesDataset ;
+		cpmeta:hasDataLevel "2"^^xsd:integer .
+
+	<http://meta.icos-cp.eu/resources/organizations/CP>
+		cpmeta:hasName "Carbon Portal" .
+}
+
+<http://meta.icos-cp.eu/resources/tscsv/> {
+	<https://meta.icos-cp.eu/objects/AQEBAQEBAQEBAQEBAQEBAQEB>
+		a cpmeta:DataObject ;
+		cpmeta:hasObjectSpec <http://meta.icos-cp.eu/resources/cpmeta/testTimeSeries> ;
+		cpmeta:hasSha256sum "AQEBAQEBAQEBAQEBAQEBAQEB"^^xsd:base64Binary ;
+		cpmeta:hasName "test_data.csv" ;
+		cpmeta:wasSubmittedBy <http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB> ;
+		cpmeta:wasAcquiredBy <http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB> .
+
+	<http://meta.icos-cp.eu/resources/subm_AQEBAQEBAQEBAQEBAQEBAQEB>
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/organizations/CP> ;
+		prov:startedAtTime "2022-01-02T10:00:00Z"^^xsd:dateTime .
+
+	<http://meta.icos-cp.eu/resources/acq_AQEBAQEBAQEBAQEBAQEBAQEB>
+		prov:wasAssociatedWith <http://meta.icos-cp.eu/resources/stations/TST> .
+}

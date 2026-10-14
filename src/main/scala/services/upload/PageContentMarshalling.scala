@@ -48,6 +48,22 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 			}
 		makeMarshaller(template, messagePage("Collection not found", _))
 
+	def staticObjectAsyncMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[StaticObject]]] =
+		import statisticsClient.executionContext
+		val template: PageTemplate[StaticObject] = (obj, errors) =>
+			for
+				dlCount <- statisticsClient.getObjDownloadCount(obj)
+				previewCount <- statisticsClient.getPreviewCount(obj.hash)
+			yield LandingPage(obj, LandingPageExtras(dlCount, previewCount, errors), handleProxies)
+		makeAsyncMarshaller(template, messagePage("Data object not found", _))
+
+	def staticCollectionAsyncMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[StaticCollection]]] =
+		import statisticsClient.executionContext
+		val template: PageTemplate[StaticCollection] = (coll, errors) =>
+			statisticsClient.getCollDownloadCount(coll.res).map: dlCount =>
+				CollectionLandingPage(coll, LandingPageExtras(dlCount, None, errors), handleProxies)
+		makeAsyncMarshaller(template, messagePage("Collection not found", _))
+
 
 	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
 	private def makeMarshaller[T: JsonWriter](
@@ -76,6 +92,28 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 			)
 		}
 	}
+
+	private def makeAsyncMarshaller[T: JsonWriter](
+		templateFetcher: (T, ErrorList) => Future[Html],
+		notFoundPage: ErrorList => Html,
+	): ToResponseMarshaller[() => Future[Validated[T]]] =
+		Marshaller { exeCtxt => producer =>
+			given ExecutionContext = exeCtxt
+			producer().flatMap: itemV =>
+				fetchHtmlMaker(itemV, templateFetcher, notFoundPage).map: htmlMaker =>
+					List(
+						WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
+						WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
+					)
+		}
+
+	private def fetchHtmlMaker[T](
+		itemV: Validated[T], templateFetcher: (T, ErrorList) => Future[Html], notFoundPage: ErrorList => Html
+	)(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match
+		case Some(item) => templateFetcher(item, itemV.errors).map: html =>
+			charset => HttpResponse(entity = getHtml(html, charset))
+		case None => Future.successful: charset =>
+			HttpResponse(StatusCodes.NotFound, entity = getHtml(notFoundPage(itemV.errors), charset))
 end PageContentMarshalling
 
 object PageContentMarshalling:

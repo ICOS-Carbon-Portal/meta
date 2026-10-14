@@ -25,25 +25,21 @@ It:
 4. optionally (`--store DIR`), stores the run in a local directory, so that it
    can be viewed again later (see below).
 
-## Build
+## Run
+
+Run from this directory, as a Mix task (it is compiled as needed):
 
 ```sh
 mix deps.get
-mix escript.build
-```
-
-## Run
-
-```sh
-./landing_bench meta.icos-cp.eu --max 50 --delay 2000 --jitter 500
-./landing_bench https://metalocal.icos-cp.eu --insecure --max 100 --csv results.csv
-./landing_bench meta.fieldsites.se --envri SITES
-./landing_bench meta.icos-cp.eu http://localhost:9094 --csv compare.csv
-./landing_bench meta.icos-cp.eu http://localhost:9094 --diff
-./landing_bench meta.icos-cp.eu http://localhost:9094 --object https://meta.icos-cp.eu/objects/<hash> --diff
-./landing_bench meta.icos-cp.eu http://localhost:9094 --store
-./landing_bench meta.icos-cp.eu http://localhost:9094 --store runs
-./landing_bench --help
+mix bench meta.icos-cp.eu --max 50 --delay 2000 --jitter 500
+mix bench https://metalocal.icos-cp.eu --insecure --max 100 --csv results.csv
+mix bench meta.fieldsites.se --envri SITES
+mix bench meta.icos-cp.eu http://localhost:9094 --csv compare.csv
+mix bench meta.icos-cp.eu http://localhost:9094 --diff
+mix bench meta.icos-cp.eu http://localhost:9094 --object https://meta.icos-cp.eu/objects/<hash> --diff
+mix bench meta.icos-cp.eu http://localhost:9094 --store
+mix bench meta.icos-cp.eu http://localhost:9094 --store runs
+mix bench --help
 ```
 
 ## Stored runs
@@ -65,12 +61,12 @@ Run IDs are the UTC start time, e.g. `20261007-142355`. Since events are written
 as they happen, an interrupted run can be viewed too (it is listed as `unfinished`).
 
 ```sh
-./landing_bench view                        # list the runs in ./landing_bench_runs
-./landing_bench view latest --diff          # show a run from ./landing_bench_runs
-./landing_bench view runs                   # list the stored runs in runs/
-./landing_bench view runs 20261007-142355   # print a run as it looked live, with its summary
-./landing_bench view runs latest --diff     # ... with diffs of mismatching landing pages
-./landing_bench view runs latest --recompare --diff
+mix bench view                        # list the runs in ./landing_bench_runs
+mix bench view latest --diff          # show a run from ./landing_bench_runs
+mix bench view runs                   # list the stored runs in runs/
+mix bench view runs 20261007-142355   # print a run as it looked live, with its summary
+mix bench view runs latest --diff     # ... with diffs of mismatching landing pages
+mix bench view runs latest --recompare --diff
 ```
 
 `--recompare` compares the stored bodies again using the current list of known

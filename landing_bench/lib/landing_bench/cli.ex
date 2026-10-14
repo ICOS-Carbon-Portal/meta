@@ -5,8 +5,8 @@ defmodule LandingBench.CLI do
   @default_store "landing_bench_runs"
 
   @usage """
-  Usage: landing_bench PRIMARY [SECONDARY] [options]
-         landing_bench view [DIR] [RUN] [view options]
+  Usage: mix bench PRIMARY [SECONDARY] [options]
+         mix bench view [DIR] [RUN] [view options]
 
   PRIMARY is the meta host whose data objects are listed and whose landing
   pages are fetched, e.g. meta.icos-cp.eu (https:// is assumed if no scheme is
@@ -29,12 +29,12 @@ defmodule LandingBench.CLI do
     -k, --insecure      skip TLS certificate verification (local dev hosts)
         --csv PATH      also write per-request results to a CSV file
         --store [DIR]   store the run in DIR (created if needed), to be viewed
-                        again later with `landing_bench view DIR`; without DIR,
-                        in ./#{@default_store}. Each run gets its own
-                        subdirectory, named after its start time (UTC)
+                        again later with `mix bench view DIR`;
+                        without DIR, in ./#{@default_store}. Each run gets
+                        its own subdirectory, named after its start time (UTC)
     -h, --help          show this help
 
-  `landing_bench view DIR` lists the runs stored in DIR. With RUN (a run ID
+  `mix bench view DIR` lists the runs stored in DIR. With RUN (a run ID
   from that list, or `latest`), the run is printed the way it was during the
   live run, followed by its summary. Without DIR, ./#{@default_store} is used.
 

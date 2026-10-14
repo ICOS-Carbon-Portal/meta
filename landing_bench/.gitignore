@@ -22,9 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 landing_bench-*.tar
 
-
-# The escript binary
-/landing_bench
-
 # Runs stored with a bare --store
 /landing_bench_runs/

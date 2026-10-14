@@ -13,8 +13,9 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
-import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.api.{HandleNetClient, StatisticsProvider}
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -22,6 +23,8 @@ import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
 
+import java.net.URI
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
@@ -45,14 +48,6 @@ import scala.util.Try
  * nothing is left unaccounted for.
  */
 class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
-
-	// the statistics services are not running; with the default exponential backoff after each refused
-	// connection, every page rendered later in the suite would get slower and eventually time out
-	override def testConfigSource =
-		"""akka.http.host-connection-pool {
-			base-connection-backoff = 10ms
-			max-connection-backoff = 20ms
-		}"""
 
 	private val repo = Fixture.createRepo()
 
@@ -672,6 +667,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
 		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
 	}
+	private val statisticsProvider = new StatisticsProvider {
+		implicit val executionContext = system.dispatcher
+		def getPreviewCount(dobjHash: Sha256Sum)(using Envri): Future[Option[Int]] = Future.successful(None)
+		def getObjDownloadCount(obj: StaticObject)(using Envri): Future[Option[Int]] = Future.successful(None)
+		def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]] = Future.successful(None)
+	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
 	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
@@ -682,7 +683,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
 			doiCiter,
-			config
+			config,
+			Some(statisticsProvider)
 		)
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller

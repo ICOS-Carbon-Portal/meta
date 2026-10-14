@@ -78,7 +78,8 @@ class Rdf4jUriSerializer(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	doiCiter: PlainDoiCiter,
-	config: CpmetaConfig
+	config: CpmetaConfig,
+	statisticsProvider: Option[StatisticsProvider] = None
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
 	import InstanceServerSerializer.statementIterMarshaller
@@ -88,7 +89,7 @@ class Rdf4jUriSerializer(
 	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
 	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer)
 	private val pageContentMarshalling =
-		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
+		val stats = statisticsProvider.getOrElse(new StatisticsClient(config.statsClient, config.core.envriConfigs))
 		new PageContentMarshalling(config.core.handleProxies, stats)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller

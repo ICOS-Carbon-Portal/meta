@@ -1,0 +1,126 @@
+package se.lu.nateko.cp.meta.test.services.external
+
+import scala.language.unsafeNulls
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server.Directives.*
+import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.Eventually
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.time.{Millis, Seconds, Span}
+import se.lu.nateko.cp.doi.{Doi, DoiMeta}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, References, StaticObject}
+import se.lu.nateko.cp.meta.services.citation.*
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, ExternalProviders}
+import spray.json.*
+
+import java.net.URI
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+import scala.util.{Failure, Success, Try}
+
+import ExternalTestObjects.*
+
+class RemoteCitationTests extends AnyFunSpec with BeforeAndAfterAll with Eventually:
+
+	override given patienceConfig: PatienceConfig = PatienceConfig(Span(5, Seconds), Span(50, Millis))
+
+	private given system: ActorSystem = ActorSystem("RemoteCitationTests")
+	private given EnvriConfigs = envriConfigs
+	private given Envri = Envri.SITES
+
+	private val remoteCitation = "Remote ICOS citation"
+
+	private def objJson(refs: References): String =
+		(docObject(None, references = refs): StaticObject).toJson.compactPrint
+
+	private def jsonEntity(refs: References) = HttpEntity(ContentTypes.`application/json`, objJson(refs))
+
+	private val route =
+		path("objects" / "cited")(complete(jsonEntity(References.empty.copy(citationString = Some(remoteCitation))))) ~
+		path("objects" / "uncited")(complete(jsonEntity(References.empty))) ~
+		path("objects" / "broken")(complete(StatusCodes.InternalServerError -> "remote failure"))
+
+	private val binding = Await.result(Http().newServerAt("localhost", 0).bind(route), 10.seconds)
+	private val port = binding.localAddress.getPort
+
+	private def remoteUrl(name: String) = URI(s"http://localhost:$port/objects/$name")
+
+	private val doiCiter = new PlainDoiCiter:
+		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = doi.suffix.toLowerCase match
+			case "cited"   => Some(Success("DOI citation"))
+			case "broken"  => Some(Failure(Exception("DOI service down")))
+			case _         => None
+		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+
+	private val fetcher = ExternalObjFetcher(ExternalProviders(Map(
+		Envri.SITES -> Seq(provider("localhost"))
+	)))
+
+	private val citer =
+		val factory = SimpleValueFactory.getInstance
+		CitationMaker(doiCiter, CpVocab(factory), CpmetaVocab(factory), MetaCoreConfig.default, fetcher)
+
+	override def afterAll(): Unit =
+		Await.ready(binding.unbind(), 10.seconds)
+		Await.ready(system.terminate(), 10.seconds)
+
+	describe("remoteCitation"):
+
+		it("is not applicable to local objects without DOI"):
+			assert(citer.remoteCitation(docObject(Some(localAccessUrl(using sitesConf)))) === RemoteCitation.NotApplicable)
+
+		it("is not applicable to external objects from unknown hosts"):
+			val obj = docObject(Some(URI("https://unknown.example.org/objects/x")))
+			assert(citer.remoteCitation(obj) === RemoteCitation.NotApplicable)
+
+		it("is expected without error while the DOI citation is pending"):
+			assert(citer.remoteCitation(docObject(None, doi = Some("10.1234/pending"))) === RemoteCitation.Expected(None))
+
+		it("is expected without error once the DOI citation is available"):
+			assert(citer.remoteCitation(docObject(None, doi = Some("10.1234/cited"))) === RemoteCitation.Expected(None))
+
+		it("reports the DOI citation error"):
+			assert(
+				citer.remoteCitation(docObject(None, doi = Some("10.1234/broken"))) ===
+				RemoteCitation.Expected(Some("Error fetching DOI citation: DOI service down"))
+			)
+
+		it("prefers the DOI citation over the external one"):
+			val obj = docObject(Some(remoteUrl("cited")), doi = Some("10.1234/broken"))
+			assert(citer.remoteCitation(obj) === RemoteCitation.Expected(Some("Error fetching DOI citation: DOI service down")))
+
+		it("is expected for external objects without DOI, and the citation arrives"):
+			val obj = docObject(Some(remoteUrl("cited")))
+			assert(citer.remoteCitation(obj) === RemoteCitation.Expected(None))
+			eventually:
+				assert(fetcher.getCitationEager(remoteUrl("cited"), CitationStyle.HTML) === Some(Success(remoteCitation)))
+			assert(citer.remoteCitation(obj) === RemoteCitation.Expected(None))
+
+		it("reports an error when the external object cannot be fetched"):
+			val obj = docObject(Some(remoteUrl("broken")))
+			eventually:
+				citer.remoteCitation(obj) match
+					case RemoteCitation.Expected(Some(err)) =>
+						assert(err.startsWith("Error fetching external citation: Got 500"))
+					case other => fail(s"Unexpected $other")
+
+		it("keeps reporting the error on repeated requests"):
+			val obj = docObject(Some(remoteUrl("broken")))
+			eventually:
+				assert(citer.remoteCitation(obj) != RemoteCitation.Expected(None))
+			(1 to 5).foreach: _ =>
+				assert(citer.remoteCitation(obj) != RemoteCitation.Expected(None))
+
+		it("reports an error when the external object has no citation"):
+			val obj = docObject(Some(remoteUrl("uncited")))
+			eventually:
+				citer.remoteCitation(obj) match
+					case RemoteCitation.Expected(Some(err)) => assert(err.contains("No HTML citation"))
+					case other => fail(s"Unexpected $other")

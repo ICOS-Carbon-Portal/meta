@@ -8,8 +8,10 @@ register it on the SITES metadata service and upload the data file to the SITES
 data service. Objects already completed on SITES only get their metadata
 updated.
 
+Requires Python 3.10+ with the icoscp_core and requests packages installed.
+
 Usage:
-    conda run -n icoscp-pylibs python3 icos2sites.py [--meta-url URL] [--token COOKIE] [--dry-run] [--insecure]
+    python3 icos2sites.py [--meta-url URL] [--token COOKIE] [--dry-run] [--insecure]
 
 Authentication on SITES uses the cookie given with --token (for example
 'fieldsitesToken=...') or, if omitted, the icoscp_core password file for SITES.

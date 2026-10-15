@@ -43,11 +43,10 @@ DEFAULT_SITES_META_URL = 'https://meta.fieldsites.se'
 # on the SITES side, so its stored URI differs only by host.
 SITES_META_HOST = 'meta.fieldsites.se'
 
-# ICOS targets
-DATATYPE_URIS = [
-    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo',
-    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes'
-]
+OBJECT_SPEC_MAP = {
+    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Meteo': 'https://meta.fieldsites.se/resources/objspecs/icos-etc-meteo',
+    'http://meta.icos-cp.eu/resources/cpmeta/etcL2Fluxes': 'https://meta.fieldsites.se/resources/objspecs/icos-etc-fluxes'
+}
 
 # Station mapping: ICOS station ID to SITES constants
 STATION_MAP = {
@@ -78,7 +77,6 @@ STATION_MAP = {
 }
 
 # Fixed SITES fields
-OBJECT_SPEC = 'https://meta.fieldsites.se/resources/objspecs/icos'
 LICENCE     = 'http://meta.icos-cp.eu/ontologies/cpmeta/icosLicence'
 SUBMITTER   = 'SITES'
 KEYWORDS    = ['ICOS']
@@ -137,7 +135,7 @@ def list_icos_dobjs() -> list[DataObjectLite]:
     dobjs: list[DataObjectLite] = []
     while True:
         page = meta.list_data_objects(
-            datatype=DATATYPE_URIS,
+            datatype=list(OBJECT_SPEC_MAP.keys()),
             station=stations,
             include_deprecated=False,
             limit=PAGE_SIZE,
@@ -227,7 +225,7 @@ def build_dto(
         'fileName': dobj.fileName,
         'hashSum': dobj.hash,
         'isNextVersionOf': previous_versions,
-        'objectSpecification': OBJECT_SPEC,
+        'objectSpecification': OBJECT_SPEC_MAP[dobj_lite.datatype_uri],
         'references': {
             'keywords': KEYWORDS,
             'licence': LICENCE,

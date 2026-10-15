@@ -13,6 +13,9 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
+import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
@@ -21,7 +24,12 @@ import views.html.{CollectionLandingPage, LandingPage, MessagePage}
 import java.util.concurrent.ExecutionException
 import scala.concurrent.{ExecutionContext, Future}
 
-class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClient: StatisticsClient):
+class PageContentMarshalling(
+	handleProxies: HandleProxiesConfig,
+	statisticsClient: StatisticsClient,
+	externalProviders: ExternalProviders,
+	citer: CitationMaker
+):
 
 	import PageContentMarshalling.*
 
@@ -32,7 +40,11 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 				dlCount <- statisticsClient.getObjDownloadCount(obj);
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
 			) yield {
-				val extras = LandingPageExtras(dlCount, previewCount, errors)
+				val extras = LandingPageExtras(
+					dlCount, previewCount, errors,
+					externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label),
+					remoteCitation = citer.remoteCitation(obj)
+				)
 				LandingPage(obj, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Data object not found", _))
@@ -43,7 +55,10 @@ class PageContentMarshalling(handleProxies: HandleProxiesConfig, statisticsClien
 		val template: PageTemplate[StaticCollection] = (coll, errors) =>
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
 			yield {
-				val extras = LandingPageExtras(dlCount, None, errors)
+				val extras = LandingPageExtras(
+					dlCount, None, errors,
+					remoteCitation = citer.remoteCitation(coll)
+				)
 				CollectionLandingPage(coll, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Collection not found", _))

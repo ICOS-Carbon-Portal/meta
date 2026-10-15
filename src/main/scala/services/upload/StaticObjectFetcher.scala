@@ -84,7 +84,7 @@ class StaticObjectReader(
 				accessUrl = if hasBeenPublished then accessUrl else None,
 				fileName = fileName,
 				size = sizeOpt,
-				pid = if(sizeOpt.isDefined) getPid(hash, spec.format.self.uri) else None,
+				pid = if(sizeOpt.isDefined) getPid(hash, spec.format.self.uri, accessUrl) else None,
 				doi = doiOpt,
 				submission = submission,
 				specification = spec,
@@ -136,8 +136,11 @@ class StaticObjectReader(
 		yield
 			init.copy(references = refs)
 
-	private def getPid(hash: Sha256Sum, format: URI)(using Envri): Option[String] =
-		if(metaVocab.wdcggFormat === format) None else Some(pidFactory.getPid(hash))
+	private def getPid(hash: Sha256Sum, format: URI, accessUrl: Option[URI])(using Envri): Option[String] =
+		if metaVocab.wdcggFormat === format then None
+		else accessUrl.filter(url => citer.externalObjs.providers.lookup(url).isDefined) match
+			case Some(url) => citer.externalObjs.getPidEager(url)
+			case None => Some(pidFactory.getPid(hash))
 
 	private def getAccessUrl(hash: Sha256Sum, spec: DataObjectSpec)(using Envri, DobjConn): Validated[Option[URI]] =
 		if metaVocab.wdcggFormat === spec.format.self.uri then

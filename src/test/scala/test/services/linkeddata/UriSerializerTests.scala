@@ -9,21 +9,28 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
+import org.eclipse.rdf4j.model.{IRI, Resource, Value}
+import org.eclipse.rdf4j.repository.sail.SailRepository
+import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.doi.{Doi, DoiMeta}
 import se.lu.nateko.cp.meta.api.HandleNetClient
-import se.lu.nateko.cp.meta.core.data.EnvriConfigs
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
+import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, staticCollLandingPage, staticObjLandingPage}
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, LandingPageLoader, Rdf4jUriSerializer}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
 
+import java.net.URI
 import scala.jdk.CollectionConverters.*
-import scala.util.Try
+import scala.util.{Try, Using}
 
 /**
  * Characterizes the HTTP behavior of the URI serializer: content negotiation, status codes and the
@@ -58,6 +65,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	override def afterAll(): Unit = {
 		repo.shutDown()
+		sitesRepo.shutDown()
 		super.afterAll()
 	}
 
@@ -663,6 +671,27 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		}
 	}
 
+	describe("fetchCustomLandingPage") {
+		it("reads the landing page of a data object that has not been published") {
+			assert(customLandingPageOf(sitesObject(mirroredHash)).result === Some(Some(icosLandingPage)))
+		}
+
+		it("is empty for data objects without a custom landing page") {
+			assert(customLandingPageOf(sitesObject(plainHash)).result === Some(None))
+		}
+
+		it("is empty for document objects") {
+			assert(customLandingPageOf(sitesObject(sitesDocHash)).result === Some(None))
+		}
+
+		it("rejects URIs that are not object landing pages") {
+			val collUri = staticCollLandingPage(plainHash)(using sitesConf)
+			val res = customLandingPageOf(collUri)
+			assert(res.result === None)
+			assert(res.errors === Seq(s"URI $collUri does not have the shape of a data/document object URI"))
+		}
+	}
+
 
 	private val config = TestConfig.metaConfig
 	private given Envri = Envri.ICOS
@@ -671,6 +700,59 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private val doiCiter = new PlainDoiCiter {
 		def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]] = None
 		def getDoiEager(doi: Doi): Option[Try[DoiMeta]] = None
+	}
+	private lazy val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
+
+	private val sitesConf = config.core.envriConfigs(Envri.SITES)
+	private val mirroredHash = Sha256Sum.fromBase64Url("mir_vJN69j6rRPKxTbJZckEa").get
+	private val plainHash = Sha256Sum.fromBase64Url("pln_vJN69j6rRPKxTbJZckEa").get
+	private val sitesDocHash = Sha256Sum.fromBase64Url("doc_vJN69j6rRPKxTbJZckEa").get
+	private val icosLandingPage = URI("https://meta.icos-cp.eu/objects/abc")
+
+	private def sitesObject(hash: Sha256Sum): URI = staticObjLandingPage(hash)(using sitesConf)
+
+	/**
+	 * A separate in-memory SITES store for the custom landing page tests: an unpublished data object
+	 * mirrored from ICOS, a data object without a custom landing page, and a document object.
+	 */
+	private val sitesRepo = {
+		val sitesRepo = SailRepository(MemoryStore())
+		val factory = sitesRepo.getValueFactory
+		val metaVocab = CpmetaVocab(factory)
+		def obj(hash: Sha256Sum) = factory.createIRI(sitesObject(hash).toString)
+		val zipGraph = factory.createIRI("https://meta.fieldsites.se/resources/siteszip/")
+		val docGraph = factory.createIRI("https://meta.fieldsites.se/documents/")
+		val spec = factory.createIRI("https://meta.fieldsites.se/resources/objspecs/testSpec")
+		val zipFormat = factory.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
+		val seeAlso = factory.createIRI(icosLandingPage.toString)
+		val triples = Seq[(Resource, IRI, Value, IRI)](
+			(spec, metaVocab.hasFormat, zipFormat, zipGraph),
+			(obj(mirroredHash), RDF.TYPE, metaVocab.dataObjectClass, zipGraph),
+			(obj(mirroredHash), metaVocab.hasObjectSpec, spec, zipGraph),
+			(obj(mirroredHash), RDFS.SEEALSO, seeAlso, zipGraph),
+			(obj(plainHash), RDF.TYPE, metaVocab.dataObjectClass, zipGraph),
+			(obj(plainHash), metaVocab.hasObjectSpec, spec, zipGraph),
+			(obj(sitesDocHash), RDF.TYPE, metaVocab.docObjectClass, docGraph),
+			(obj(sitesDocHash), RDFS.SEEALSO, seeAlso, docGraph)
+		)
+		Using.resource(sitesRepo.getConnection()) { conn =>
+			triples.foreach((s, p, o, g) => conn.add(s, p, o, g))
+		}
+		sitesRepo
+	}
+
+	/** Reads the custom landing page of the object at the URI through a serializer of the SITES store. */
+	private def customLandingPageOf(uri: URI): Validated[Option[URI]] = {
+		val serializer = new Rdf4jUriSerializer(
+			sitesRepo,
+			CpVocab(sitesRepo.getValueFactory),
+			CpmetaVocab(sitesRepo.getValueFactory),
+			lenses,
+			doiCiter,
+			externalObjs,
+			config
+		)
+		serializer.fetchCustomLandingPage(Uri(uri.toString))
 	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
@@ -682,6 +764,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			CpmetaVocab(countingRepo.getValueFactory),
 			lenses,
 			doiCiter,
+			externalObjs,
 			config
 		)
 
@@ -695,7 +778,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
 		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core)
+		val citationMaker = CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
 		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citationMaker)
 		loader -> countingRepo
 	}

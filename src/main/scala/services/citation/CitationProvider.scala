@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver,
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
 
@@ -61,7 +62,8 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core)
+	val externalObjs = new ExternalObjFetcher(ExternalProviders(conf.dataUploadService.externalProviders))
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, externalObjs)
 
 	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 
@@ -88,6 +90,7 @@ class CitationProvider(
 	private def getDoiCitation(res: Resource)(using GlobConn): Option[String] = toIRI(res).flatMap{iri =>
 		getStringValues(iri, metaVocab.hasDoi).headOption
 			.collect{ citer.extractDoiCitation(CitationStyle.HTML) }
+			.flatten
 	}
 
 	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>

@@ -108,12 +108,18 @@ case class EtcConfig(
 	ingestFileMeta: Boolean
 )
 
+case class ExternalProviderConfig(
+	host: String,
+	label: String
+)
+
 case class UploadServiceConfig(
 	metaServers: Map[Envri, String],
 	collectionServers: Map[Envri, String],
 	documentServers: Map[Envri, String],
 	handle: HandleNetClientConfig,
-	etc: EtcConfig
+	etc: EtcConfig,
+	externalProviders: Map[Envri, Seq[ExternalProviderConfig]]
 )
 
 case class LabelingServiceConfig(
@@ -230,7 +236,9 @@ object ConfigLoader extends CpmetaJsonProtocol:
 	given RootJsonFormat[EtcConfig] = jsonFormat7(EtcConfig.apply)
 	given RootJsonFormat[HandleNetClientConfig] = jsonFormat6(HandleNetClientConfig.apply)
 
-	given RootJsonFormat[UploadServiceConfig] = jsonFormat5(UploadServiceConfig.apply)
+	given RootJsonFormat[ExternalProviderConfig] = jsonFormat2(ExternalProviderConfig.apply)
+
+	given RootJsonFormat[UploadServiceConfig] = jsonFormat6(UploadServiceConfig.apply)
 	import se.lu.nateko.cp.cpauth.core.JsonSupport.given RootJsonFormat[EmailConfig]
 	given RootJsonFormat[LabelingServiceConfig] = jsonFormat10(LabelingServiceConfig.apply)
 	given RootJsonFormat[SparqlServerConfig] = jsonFormat8(SparqlServerConfig.apply)

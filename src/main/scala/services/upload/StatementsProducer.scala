@@ -227,6 +227,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 		makeSt(aquisitionUri, metaVocab.hasSamplingHeight, meta.samplingHeight.map(vocab.lit)) ++
 		meta.instruments.map(instr => makeSt(aquisitionUri, metaVocab.wasPerformedWith, instr.toRdf)) ++
 		meta.production.map(getProductionStatements(hash, _)).getOrElse(Seq.empty) ++
+		makeSt(objectUri, RDFS.SEEALSO, meta.customLandingPage.map(_.toRdf)) ++
 		meta.spatial.toSeq.flatMap(getSpatialCoverageStatements(objectUri, _))
 	}
 

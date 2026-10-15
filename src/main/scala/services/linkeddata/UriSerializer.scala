@@ -27,6 +27,7 @@ import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -42,9 +43,14 @@ trait UriSerializer {
 	def marshaller: ToResponseMarshaller[Uri]
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]]
 }
 
 object UriSerializer{
+	def inferEnvri(uri: Uri)(using EnvriConfigs): Envri = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse(
+		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
+	)
+
 	object Hash {
 		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
 
@@ -78,6 +84,7 @@ class Rdf4jUriSerializer(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	doiCiter: PlainDoiCiter,
+	externalObjs: ExternalObjFetcher,
 	config: CpmetaConfig
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
 
@@ -85,11 +92,11 @@ class Rdf4jUriSerializer(
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
 	private val pidFactory = new api.HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core)
+	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
 	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer)
 	private val pageContentMarshalling =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
-		new PageContentMarshalling(config.core.handleProxies, stats)
+		new PageContentMarshalling(config.core.handleProxies, stats, externalObjs.providers, citer)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -104,10 +111,6 @@ class Rdf4jUriSerializer(
 		),
 		rdfMarshaller
 	)
-	private def inferEnvri(uri: Uri) = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse(
-		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
-	)
-
 	def fetchStaticObject(uri: Uri): Validated[StaticObject] = uri.path match
 		case Hash.Object(hash) =>
 			given Envri = inferEnvri(uri)
@@ -118,6 +121,11 @@ class Rdf4jUriSerializer(
 			given Envri = inferEnvri(uri)
 			landingPageLoader.staticCollection(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a collection URI")
+	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]] = uri.path match
+		case Hash.Object(hash) =>
+			given Envri = inferEnvri(uri)
+			landingPageLoader.customLandingPage(hash)
+		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)

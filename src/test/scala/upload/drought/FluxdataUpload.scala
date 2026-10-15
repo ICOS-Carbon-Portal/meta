@@ -120,7 +120,8 @@ class FluxdataUpload(
 			acquisitionInterval = timeIntervalOpt(meta),
 			nRows = meta.nPoints,
 			production = Some(productionDto),
-			spatial = None
+			spatial = None,
+			customLandingPage = None
 		)
 
 		DataObjectDto(

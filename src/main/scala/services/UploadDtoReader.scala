@@ -21,7 +21,10 @@ class UploadDtoReader(uriSer: UriSerializer){
 
 	def readDto(uri: Uri): Validated[UploadDto] = uri.path match{
 		case Hash.Object(_) =>
-			uriSer.fetchStaticObject(uri).map(objToDto)
+			for
+				obj <- uriSer.fetchStaticObject(uri)
+				landingPage <- uriSer.fetchCustomLandingPage(uri)
+			yield objToDto(obj, landingPage)
 
 		case Hash.Collection(_) =>
 			uriSer.fetchStaticCollection(uri).map(collToDto)
@@ -31,7 +34,7 @@ class UploadDtoReader(uriSer: UriSerializer){
 }
 
 object UploadDtoReader{
-	def objToDto(obj: StaticObject) = obj match {
+	def objToDto(obj: StaticObject, customLandingPage: Option[URI]) = obj match {
 		case dobj: DataObject => DataObjectDto(
 			submitterId = "",
 			hashSum = dobj.hash,
@@ -46,7 +49,7 @@ object UploadDtoReader{
 					forStation = l3.station.map(_.org.self.uri),
 					samplingHeight = l3.samplingHeight,
 					production = dataProductionToDto(l3.productionInfo),
-					customLandingPage = dobj.accessUrl.filterNot(uri => uri.getPath.endsWith(dobj.hash.id)),
+					customLandingPage = customLandingPage,
 					variables = l3.variables.map(_.map(_.label))
 				))
 				case Right(l2) => Right(StationTimeSeriesDto(
@@ -58,7 +61,8 @@ object UploadDtoReader{
 					acquisitionInterval = l2.acquisition.interval,
 					nRows = l2.nRows,
 					production = l2.productionInfo.map(dataProductionToDto(_)),
-					spatial = l2.coverage.map(readCoverage)
+					spatial = l2.coverage.map(readCoverage),
+					customLandingPage = customLandingPage
 				))
 			},
 			isNextVersionOf = Option(Right(dobj.previousVersion.flattenToSeq.flatMap{uri =>

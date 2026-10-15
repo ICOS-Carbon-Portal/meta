@@ -145,6 +145,47 @@ class ExternalObjFetcherTests extends AnyFunSpec with BeforeAndAfterAll with Eve
 			eventually(assert(citation(f, "stale") === Some(Success("New citation"))))
 			assert(hitsOf("stale") === 2)
 
+		it("keeps a stale citation when re-fetching it fails"):
+			serve("outage", cited("Old citation"))
+			val f = fetcher(ttl = JavaDuration.ofMillis(300))
+			assert(fetched(f, "outage") === Success("Old citation"))
+			Thread.sleep(400)
+			serveFailure("outage")
+			assert(citation(f, "outage") === Some(Success("Old citation")))
+			eventually(assert(hitsOf("outage") === 2))
+			Thread.sleep(200)
+			(1 to 5).foreach(_ => assert(citation(f, "outage") === Some(Success("Old citation"))))
+			assert(hitsOf("outage") === 2)
+
+		it("retries a failed re-fetch only after the failure TTL"):
+			serve("retried", cited("Old citation"))
+			val f = fetcher(ttl = JavaDuration.ofMillis(300), failureTtl = JavaDuration.ofMillis(600))
+			assert(fetched(f, "retried") === Success("Old citation"))
+			Thread.sleep(400)
+			serveFailure("retried")
+			citation(f, "retried")
+			eventually(assert(hitsOf("retried") === 2))
+			Thread.sleep(200)
+			serve("retried", cited("New citation"))
+			assert(citation(f, "retried") === Some(Success("Old citation")))
+			assert(hitsOf("retried") === 2)
+			Thread.sleep(600)
+			assert(citation(f, "retried") === Some(Success("Old citation")))
+			eventually(assert(citation(f, "retried") === Some(Success("New citation"))))
+			assert(hitsOf("retried") === 3)
+
+		it("replaces a stale citation when the object is no longer found"):
+			serve("gone", cited("Old citation"))
+			val f = fetcher(ttl = JavaDuration.ofMillis(300))
+			assert(fetched(f, "gone") === Success("Old citation"))
+			Thread.sleep(400)
+			respond("gone", HttpResponse(StatusCodes.NotFound), 0.seconds)
+			assert(citation(f, "gone") === Some(Success("Old citation")))
+			eventually:
+				citation(f, "gone") match
+					case Some(Failure(err)) => assert(err.getMessage === s"Got 404 Not Found from ${url("gone")}")
+					case other => fail(s"Unexpected $other")
+
 		it("keeps reporting a failure while retrying the fetch"):
 			serveFailure("flaky")
 			val f = fetcher(failureTtl = JavaDuration.ofMillis(300))

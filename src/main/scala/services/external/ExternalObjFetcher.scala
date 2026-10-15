@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import akka.http.scaladsl.model.{HttpRequest, MediaTypes}
+import akka.http.scaladsl.model.{HttpRequest, MediaTypes, StatusCodes}
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -65,7 +65,7 @@ class ExternalObjFetcher(
 				fut
 			case Some(fut) =>
 				fut.value.flatMap(_.toOption).foreach: cached =>
-					if isStale(cached) then revalidate(url)
+					if Instant.now().isAfter(cached.staleAt) then revalidate(url, cached)
 				fut
 
 	private def evictIfFull(): Unit =
@@ -76,14 +76,16 @@ class ExternalObjFetcher(
 				.take(cache.size - maxEntries * 3 / 4)
 			toEvict.foreach((url, _) => cache.remove(url))
 
-	private def isStale(cached: Cached): Boolean =
-		Instant.now().isAfter(cached.fetchedAt.plus(if cached.result.isSuccess then ttl else failureTtl))
-
-	private def revalidate(url: URI): Unit =
+	private def revalidate(url: URI, stale: Cached): Unit =
 		if revalidating.putIfAbsent(url, ()).isEmpty then
 			doFetch(url).onComplete: result =>
-				result.foreach(fresh => cache.replace(url, Future.successful(fresh)))
+				result.foreach(fresh => cache.replace(url, Future.successful(keepOrReplace(stale, fresh))))
 				revalidating.remove(url)
+
+	private def keepOrReplace(stale: Cached, fresh: Cached): Cached = fresh.result match
+		case Failure(_: RejectedByRemote) => fresh
+		case Failure(_) if stale.result.isSuccess => stale.copy(staleAt = Instant.now().plus(failureTtl))
+		case _ => fresh
 
 	private def doFetch(url: URI): Future[Cached] =
 		http.singleRequest(
@@ -94,15 +96,22 @@ class ExternalObjFetcher(
 				resp.entity.toStrict(10.seconds).flatMap(Unmarshal(_).to[StaticObject])
 			else
 				resp.discardEntityBytes()
-				Future.failed(Exception(s"Got ${resp.status} from $url"))
+				val msg = s"Got ${resp.status} from $url"
+				Future.failed(resp.status match
+					case _: StatusCodes.ClientError => RejectedByRemote(msg)
+					case _ => Exception(msg)
+				)
 		.map(obj => Fetched(obj.references, obj.pid))
 		.andThen:
 			case Failure(err) => log.warn(s"Failed to fetch external object metadata from $url: ${err.getMessage}")
-		.transform(result => Success(Cached(result, Instant.now())))
+		.transform: result =>
+			val now = Instant.now()
+			Success(Cached(result, now, now.plus(if result.isSuccess then ttl else failureTtl)))
 
 object ExternalObjFetcher:
 	val defaultTtl: Duration = Duration.ofMinutes(5)
 	val defaultFailureTtl: Duration = Duration.ofSeconds(30)
 	val defaultMaxEntries = 10000
 	private case class Fetched(refs: References, pid: Option[String])
-	private case class Cached(result: Try[Fetched], fetchedAt: Instant)
+	private case class Cached(result: Try[Fetched], fetchedAt: Instant, staleAt: Instant)
+	private class RejectedByRemote(msg: String) extends Exception(msg)

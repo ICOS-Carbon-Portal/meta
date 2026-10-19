@@ -7,10 +7,11 @@ import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
 import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.sail.SailConnection
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.util.UUID
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writeContext: IRI) extends InstanceServer:
 
@@ -44,13 +45,15 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 				readContexts*)
 		)
 
-	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = repo.transact(conn =>
-		updates.foreach(update => {
-			if(update.isAssertion) conn.add(update.statement, writeContext)
-			else conn.remove(update.statement, writeContext)
-		})
-		cotransact
-	)
+	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] =
+		SparqlIris.rejectUnrepresentableAssertions(updates).flatMap: _ =>
+			repo.transact(conn =>
+				updates.foreach(update => {
+					if(update.isAssertion) conn.add(update.statement, writeContext)
+					else conn.remove(update.statement, writeContext)
+				})
+				cotransact
+			)
 
 	override def withContexts(read: Seq[IRI], write: IRI) = new Rdf4jInstanceServer(repo, read, write)
 
@@ -105,3 +108,40 @@ class Rdf4jSailConnection(
 	override def close(): Unit = conn.close()
 
 end Rdf4jSailConnection
+
+
+/** A local store accepts any string as an IRI, but SPARQL has no way of expressing some of them
+  * (not even with \u escapes, which are expanded before parsing). Once such an IRI is stored,
+  * every SPARQL-over-HTTP lookup or update that mentions it fails.
+  */
+object SparqlIris:
+
+	// characters that are not allowed inside a SPARQL IRIREF
+	private val invalidIriChars = "[\\x00-\\x20<>\"{}|^`\\\\]".r
+
+	def isRepresentable(iri: IRI): Boolean = invalidIriChars.findFirstIn(iri.stringValue).isEmpty
+
+	/** Retractions are let through, so that statements stored before this check can still be cleaned up */
+	def rejectUnrepresentableAssertions(updates: Seq[RdfUpdate]): Try[Unit] =
+		val bad = updates.filter: upd =>
+			upd.isAssertion && statementIris(upd.statement).exists(!isRepresentable(_))
+		if bad.isEmpty then Success(())
+		else
+			val shown = bad.take(5).map: upd =>
+				val st = upd.statement
+				Seq(st.getSubject, st.getPredicate, st.getObject).map(render).mkString("(", " ", ")")
+			val more = if bad.size > shown.size then s" and ${bad.size - shown.size} more" else ""
+			Failure(MetadataException(
+				s"Refusing to write ${bad.size} statement(s) with IRIs not representable in SPARQL " +
+				s"(whitespace or one of <>\"{}|^`\\): ${shown.mkString(", ")}$more"
+			))
+
+	private def statementIris(st: Statement): Seq[IRI] =
+		Seq(st.getSubject, st.getPredicate, st.getObject).collect:
+			case iri: IRI => iri
+
+	private def render(v: Value): String = v match
+		case iri: IRI => s"<${iri.stringValue}>"
+		case other => other.toString
+
+end SparqlIris

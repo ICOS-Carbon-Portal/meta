@@ -20,7 +20,7 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ ExecutionContextExecutor, Future }
+import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 
 
 object StatisticsClient extends DefaultJsonProtocol {
@@ -30,7 +30,14 @@ object StatisticsClient extends DefaultJsonProtocol {
 	given RootJsonFormat[RestHeartCount] = jsonFormat1(RestHeartCount.apply)
 }
 
-class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) {
+trait StatisticsProvider {
+	implicit def executionContext: ExecutionContext
+	def getPreviewCount(dobjHash: Sha256Sum)(using Envri): Future[Option[Int]]
+	def getObjDownloadCount(obj: StaticObject)(using Envri): Future[Option[Int]]
+	def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]]
+}
+
+class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
 	import StatisticsClient.*
 	private val http = Http()
 	private val log = Logging.getLogger(system, this)

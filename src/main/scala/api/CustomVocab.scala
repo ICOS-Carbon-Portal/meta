@@ -38,10 +38,18 @@ object CustomVocab{
 }
 
 case class UriId(urlSafeString: String){
+	require(
+		UriId.isUrlSafe(urlSafeString),
+		s"'$urlSafeString' is not a URL-safe path segment; use UriId.escaped to encode it"
+	)
 	override def toString = urlSafeString
 }
 
 object UriId{
+	// RFC 3986 path-segment characters (pchar), which is what CustomVocab.urlEncode produces
+	private val urlSafe = "([A-Za-z0-9._~!$&'()*+,;=:@-]|%[0-9A-Fa-f]{2})*".r
+	def isUrlSafe(s: String): Boolean = urlSafe.matches(s)
+
 	// raw path, as decoding would turn e.g. %20 back into a space, which is not URL-safe
 	def apply(uri: URI): UriId = UriId(uri.getRawPath.split('/').last)
 	def apply(iri: IRI): UriId = UriId(iri.getLocalName)

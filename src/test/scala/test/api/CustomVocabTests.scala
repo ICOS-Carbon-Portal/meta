@@ -30,6 +30,24 @@ class CustomVocabTests extends AnyFunSpec{
 		}
 	}
 
+	describe("UriId"){
+
+		it("accepts escaped strings"){
+			val id = UriId.escaped("107_Grant agreement ID: 637519 (Mölder/NE)")
+			assert(id.urlSafeString === Vocab.encode("107_Grant agreement ID: 637519 (Mölder/NE)"))
+		}
+
+		it("rejects strings that are not URL-safe"){
+			for bad <- Seq("WITH SPACE", "a/b", "Mölder", "50%", "a#b", "a?b", "<a>") do
+				assertThrows[IllegalArgumentException](UriId(bad))
+		}
+
+		it("keeps the percent-encoding of a java.net.URI path"){
+			val uri = new java.net.URI("http://test.icos-cp.eu/fundings/107_Grant%20agreement%20ID:%20637519")
+			assert(UriId(uri).urlSafeString === "107_Grant%20agreement%20ID:%20637519")
+		}
+	}
+
 	describe("equality of URIs"){
 
 		it("Works as expected even for CustomVocabs with different ValueFactories"){

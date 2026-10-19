@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.repository.Repository
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
@@ -310,6 +311,22 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val body = json.replaceAll("\\s", "")
 			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 			assert(!body.contains("unknown_var"))
+		}
+
+		it("renders a warning when duplicate metadata entries exist") {
+			val duplicateEmailRepo = Fixture.createRepoWith("/linkeddata/duplicate-email-staff.trig")
+			try {
+				// the staff member is read only for the authors of the object's citation, which is a part of its landing page
+				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
+				assert(heading(page) === "Test time series from Test station")
+				assert(metadataErrors(page).distinct === Seq(
+					"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
+						"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
+				))
+			} finally {
+				// Make sure we close the repo even on test failure
+				duplicateEmailRepo.shutDown()
+			}
 		}
 	}
 
@@ -674,8 +691,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 	/** Serves the URI from a fresh counting view of the fixture, so the counts cover this route only. */
-	private def serialize(uri: Uri): (Route, () => QueryCounts) = {
-		val countingRepo = CountingRepository(repo)
+	private def serialize(uri: Uri, store: Repository = repo): (Route, () => QueryCounts) = {
+		val countingRepo = CountingRepository(store)
 		val serializer = new Rdf4jUriSerializer(
 			countingRepo,
 			CpVocab(countingRepo.getValueFactory),
@@ -731,8 +748,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	}
 
 	/** Renders the page as HTML. */
-	private def renderLandingPage(uri: Uri): (Document, QueryCounts) = {
-		val (route, getCounts) = serialize(uri)
+	private def renderLandingPage(uri: Uri, store: Repository = repo): (Document, QueryCounts) = {
+		val (route, getCounts) = serialize(uri, store)
 		val page = Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
 			val body = responseAs[String]
 			assert(status === StatusCodes.OK, body)

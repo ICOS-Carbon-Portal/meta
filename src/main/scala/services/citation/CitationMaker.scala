@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
@@ -21,6 +22,10 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
 import scala.util.{Failure, Success, Try}
+
+enum RemoteCitation:
+	case NotApplicable
+	case Expected(error: Option[String])
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -35,7 +40,8 @@ class CitationMaker(
 	doiCiter: PlainDoiCiter,
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
-	coreConf: MetaCoreConfig
+	coreConf: MetaCoreConfig,
+	val externalObjs: ExternalObjFetcher
 ):
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
@@ -49,9 +55,9 @@ class CitationMaker(
 	val attrProvider = new AttributionProvider(vocab, metaVocab)
 
 	def getItemCitationInfo(item: CitableItem): References = item.references.copy(
-		citationString = getDoiCitation(item, CitationStyle.HTML),
-		citationBibTex = getDoiCitation(item, CitationStyle.bibtex),
-		citationRis    = getDoiCitation(item, CitationStyle.ris),
+		citationString = doiEager(item, CitationStyle.HTML).flatten.flatMap(_.toOption),
+		citationBibTex = doiEager(item, CitationStyle.bibtex).flatten.flatMap(_.toOption),
+		citationRis    = doiEager(item, CitationStyle.ris).flatten.flatMap(_.toOption),
 		doi = getDoiMeta(item)
 	)
 
@@ -70,9 +76,9 @@ class CitationMaker(
 			val structuredCitations = new StructuredCitations(sobj, citInfo, keywords, theLicence)
 
 			val coreRefs = sobj.references.copy(
-				citationString = getDoiCitation(sobj, CitationStyle.HTML).orElse(citInfo.citText),
-				citationBibTex = getDoiCitation(sobj, CitationStyle.bibtex).orElse(Some(structuredCitations.toBibTex)),
-				citationRis = getDoiCitation(sobj, CitationStyle.ris).orElse(Some(structuredCitations.toRis)),
+				citationString = remoteCitationText(sobj, CitationStyle.HTML).getOrElse(citInfo.citText),
+				citationBibTex = remoteCitationText(sobj, CitationStyle.bibtex).getOrElse(Some(structuredCitations.toBibTex)),
+				citationRis = remoteCitationText(sobj, CitationStyle.ris).getOrElse(Some(structuredCitations.toRis)),
 				doi = getDoiMeta(sobj),
 				authors = citInfo.authors,
 				title = citInfo.title,
@@ -129,19 +135,35 @@ class CitationMaker(
 		yield lic
 	end getLicence
 
-	def presentDoiCitation(eagerRes: Option[Try[String]]): String = eagerRes match{
-		case None => "Fetching... try refreshing the page in a few seconds"
-		case Some(Success(cit)) => cit
-		case Some(Failure(err)) => "Error fetching DOI citation: " + err.getMessage
-	}
+	def remoteCitation(item: CitableItem)(using Envri): RemoteCitation =
+		remoteEager(item, CitationStyle.HTML) match
+			case None => RemoteCitation.NotApplicable
+			case Some((source, Some(Failure(err)))) =>
+				RemoteCitation.Expected(Some(s"Error fetching $source citation: ${err.getMessage}"))
+			case Some(_) => RemoteCitation.Expected(None)
 
-	def extractDoiCitation(style: CitationStyle): PartialFunction[String, String] =
+	private def remoteCitationText(item: CitableItem, style: CitationStyle)(using Envri): Option[Option[String]] =
+		remoteEager(item, style).map(_._2.flatMap(_.toOption))
+
+	private def remoteEager(item: CitableItem, style: CitationStyle)(using Envri): Option[(String, Option[Try[String]])] =
+		doiEager(item, style).map("DOI" -> _).orElse:
+			item match
+				case sobj: StaticObject => externalEager(sobj, style).map("external" -> _)
+				case _ => None
+
+	private def externalEager(sobj: StaticObject, style: CitationStyle)(using Envri): Option[Option[Try[String]]] =
+		for
+			url <- sobj.accessUrl
+			if externalObjs.providers.lookup(url).isDefined
+		yield externalObjs.getCitationEager(url, style)
+
+	private def doiEager(item: CitableItem, style: CitationStyle): Option[Option[Try[String]]] =
+		item.doi.flatMap(Doi.parse(_).toOption).map(doiCiter.getCitationEager(_, style))
+
+	def extractDoiCitation(style: CitationStyle): PartialFunction[String, Option[String]] =
 		Function.unlift((s: String) => Doi.parse(s).toOption).andThen(
-			doi => presentDoiCitation(doiCiter.getCitationEager(doi, style))
+			doi => doiCiter.getCitationEager(doi, style).flatMap(_.toOption)
 		)
-
-	private def getDoiCitation(item: CitableItem, style: CitationStyle): Option[String] =
-		item.doi.collect{ extractDoiCitation(style) }
 
 	private def getDoiMeta(item: CitableItem): Option[DoiMeta] =
 		for

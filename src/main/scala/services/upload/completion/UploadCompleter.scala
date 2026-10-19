@@ -3,12 +3,14 @@ package se.lu.nateko.cp.meta.services.upload.completion
 import scala.language.unsafeNulls
 
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import se.lu.nateko.cp.meta.api.RdfLens.DobjLens
 import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{NetCdfExtract, SpatialTimeSeriesExtract, TimeSeriesExtract, UploadCompletionInfo}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate}
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.upload.DataObjectInstanceServers
 import se.lu.nateko.cp.meta.utils.rdf4j.toJava
 
@@ -17,9 +19,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 
 
-class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClient)(using ExecutionContext):
+class UploadCompleter(
+	servers: DataObjectInstanceServers,
+	handles: HandleNetClient,
+	externalProviders: ExternalProviders
+)(using ExecutionContext):
 	import servers.{ metaVocab, vocab }
-	import StatementSource.hasStatement
+	import StatementSource.{getUriValues, hasStatement}
 
 	def completeUpload(hash: Sha256Sum, info: UploadCompletionInfo)(using Envri): Future[Report] =
 		for
@@ -35,7 +41,12 @@ class UploadCompleter(servers: DataObjectInstanceServers, handles: HandleNetClie
 			updates = server.access:
 				completer.getUpdates(hash) ++ getUploadStopTimeUpdates(hash) ++ getBytesSizeUpdates(hash, info.bytes)
 
-			report <- completer.finalize(hash)
+			mintPid = server.access:
+				externalProviders.mintsLocalPid(
+					getUriValues(vocab.getStaticObject(hash), RDFS.SEEALSO).headOption.map(_.toJava)
+				)
+
+			report <- completer.finalize(hash, mintPid)
 
 			_ <- Future.fromTry(server.applyAll(updates)())
 

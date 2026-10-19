@@ -162,7 +162,8 @@ class Form(
 				acquisitionInterval = acqInterval,
 				nRows = nRows,
 				production = production,
-				spatial = spatial
+				spatial = spatial,
+				customLandingPage = None
 			)
 		)
 	}

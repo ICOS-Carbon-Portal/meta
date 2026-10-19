@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
-import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, TriplestoreConnection}
+import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -39,7 +39,7 @@ final class LandingPageLoader(
 ) {
 
 	import LandingPageLoader.*
-	import RdfLens.{DocConn, GlobConn, MetaConn}
+	import RdfLens.{DobjConn, DocConn, GlobConn, MetaConn}
 	import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getLabeledResource, hasStatement}
 
 	private given ValueFactory = repo.getValueFactory
@@ -49,6 +49,16 @@ final class LandingPageLoader(
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 
 	def staticCollection(hash: Sha256Sum)(using Envri): Validated[StaticCollection] = readStaticCollection(hash)
+
+	def customLandingPage(hash: Sha256Sum)(using Envri): Validated[Option[JavaUri]] = server.access { conn ?=>
+		val objectIri = vocab.getStaticObject(hash)
+		given GlobConn = RdfLens.global(using conn)
+		if !objectReader.dataObjExists(objectIri) then Validated(None)
+		else for {
+			given DobjConn <- objectReader.getLensForDataObj(objectIri)
+			landingPage <- StatementSource.getOptionalUri(objectIri, RDFS.SEEALSO)
+		} yield landingPage.map(_.toJava)
+	}
 
 	def station(uri: Uri)(using Envri): Validated[OrganizationExtra[Station]] = accessMeta {
 		for {

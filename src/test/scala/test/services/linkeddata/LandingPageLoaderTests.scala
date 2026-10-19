@@ -2,6 +2,8 @@
 
 import scala.language.unsafeNulls
 
+import akka.actor.ActorSystem
+
 import eu.icoscp.envri.Envri
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
@@ -20,12 +22,15 @@ import se.lu.nateko.cp.meta.core.data.{
 import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
 
 import java.net.URI
 import java.time.Instant
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
 /**
  * Guards what the loader reads, and the number of RDF-store round trips it takes to read it.
@@ -42,6 +47,8 @@ import java.time.Instant
  */
 class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val repo = Fixture.createRepo()
+	private given system: ActorSystem = ActorSystem("LandingPageLoaderTests")
+	private val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
 
 	private given Envri = Envri.ICOS
 	private val config = TestConfig.metaConfig
@@ -56,7 +63,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 			def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None
 			def getDoiEager(doi: se.lu.nateko.cp.doi.Doi) = None
 		}
-		CitationMaker(doiCiter, vocab, metaVocab, config.core)
+		CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
 	}
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {
@@ -74,6 +81,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 
 	override def afterAll(): Unit = {
 		repo.shutDown()
+		Await.ready(system.terminate(), 10.seconds)
 	}
 
 	describe("data object landing page") {

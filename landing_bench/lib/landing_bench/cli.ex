@@ -18,7 +18,8 @@ defmodule LandingBench.CLI do
     -e, --envri ENVRI   the ENVRI whose data objects are listed: #{Enum.join(LandingBench.Sparql.envris(), ", ")}
                         (default ICOS)
         --diff          with SECONDARY, print a diff of the response bodies
-                        of each mismatching landing page
+                        of each mismatching landing page (not when the
+                        HTTP status differs)
     -o, --object ID     fetch (and, with SECONDARY, compare) only the landing
                         page of this data object, given by its hash or its
                         URI / landing page URL, instead of listing objects
@@ -40,7 +41,8 @@ defmodule LandingBench.CLI do
 
   View options:
         --diff          print a diff of the response bodies of each
-                        mismatching landing page
+                        mismatching landing page (not when the HTTP status
+                        differs)
         --recompare     compare the stored response bodies again, with the
                         current list of known differences
         --csv PATH      also write per-request results to a CSV file

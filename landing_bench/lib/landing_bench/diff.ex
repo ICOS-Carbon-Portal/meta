@@ -56,6 +56,10 @@ defmodule LandingBench.Diff do
   def mismatch?(:status_differs), do: true
   def mismatch?(_match), do: false
 
+  @doc "Whether the responses have the same HTTP status but different bodies, so are worth diffing."
+  def body_differs?({:different, _line}), do: true
+  def body_differs?(_match), do: false
+
   @doc """
   Removes known environment-specific differences (test host names, badges) from
   `text`, leaving everything else untouched.

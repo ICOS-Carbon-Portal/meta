@@ -20,7 +20,8 @@ defmodule LandingBench.Output do
 
   @doc """
   Prints `event`. With `show_diff`, a diff of the response bodies is printed for
-  mismatching landing pages; this needs the `:body` of both responses.
+  landing pages whose bodies differ (but not when the HTTP status differs); this
+  needs the `:body` of both responses.
   """
   def print(%{type: :primary} = e, _show_diff),
     do: IO.puts("Primary meta host #{e.base_url} (envri #{e.envri})")
@@ -45,7 +46,7 @@ defmodule LandingBench.Output do
     print_result(pad(e.index), e.primary, file_name_label(e.file_name))
     print_result(pad(""), e.secondary, "[#{match_label(e.match)}]")
 
-    if show_diff and Diff.mismatch?(e.match),
+    if show_diff and Diff.body_differs?(e.match),
       do: print_diff(e.primary, e.secondary)
   end
 

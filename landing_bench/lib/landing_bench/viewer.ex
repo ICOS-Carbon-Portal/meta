@@ -117,7 +117,7 @@ defmodule LandingBench.Viewer do
   # recompares the responses if asked to.
   defp prepare(%{type: :object, secondary: secondary} = e, run_dir, opts) when secondary != nil do
     e =
-      if opts[:recompare] or (opts[:diff] and Diff.mismatch?(e.match)),
+      if opts[:recompare] or (opts[:diff] and Diff.body_differs?(e.match)),
         do: %{
           e
           | primary: load_body(e.primary, run_dir),

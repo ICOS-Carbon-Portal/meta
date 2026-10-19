@@ -42,7 +42,8 @@ case class UriId(urlSafeString: String){
 }
 
 object UriId{
-	def apply(uri: URI): UriId = UriId(uri.getPath.split('/').last)
+	// raw path, as decoding would turn e.g. %20 back into a space, which is not URL-safe
+	def apply(uri: URI): UriId = UriId(uri.getRawPath.split('/').last)
 	def apply(iri: IRI): UriId = UriId(iri.getLocalName)
 	def escaped(str: String) = UriId(CustomVocab.urlEncode(str))
 }

@@ -114,6 +114,8 @@ lazy val rdfCommon = (project in file("rdf-common"))
 		scalacOptions ++= commonScalacOptions,
 		libraryDependencies ++= Seq(
 			"com.typesafe.akka"     %% "akka-http-core"                     % akkaHttpVersion cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-http-spray-json"               % akkaHttpVersion excludeAll("io.spray") cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
@@ -129,7 +131,7 @@ lazy val rdfCommon = (project in file("rdf-common"))
 	)
 
 lazy val meta = (project in file("."))
-	.dependsOn(metaCore, rdfCommon, metaCore % "test->test")
+	.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
 	.enablePlugins(SbtTwirl,IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta",
@@ -286,7 +288,7 @@ lazy val tools = (project in file("tools"))
 	)
 
 lazy val rdfStore = (project in file("rdfstore"))
-		.dependsOn(metaCore, rdfCommon)
+		.dependsOn(metaCore, rdfCommon, rdfCommon % "test->test")
 		.enablePlugins(IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta-rdf-store",

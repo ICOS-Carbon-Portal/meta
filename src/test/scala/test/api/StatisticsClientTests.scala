@@ -4,8 +4,8 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.*
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.pattern.after
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -16,8 +16,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import se.lu.nateko.cp.meta.{RestheartConfig, StatsClientConfig}
 import se.lu.nateko.cp.meta.api.StatisticsClient
+import se.lu.nateko.cp.meta.utils.akkahttp.HttpClient
 
-import java.net.URI
+import java.net.{ConnectException, URI}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.*
 
@@ -27,33 +28,44 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll:
 	private given Envri = Envri.ICOS
 	private given scala.concurrent.ExecutionContext = system.dispatcher
 
-	private def withServer(response: HttpRequest => Future[HttpResponse])(test: StatisticsClient => Unit): Unit =
-		val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(response), 10.seconds)
-		val base = s"http://127.0.0.1:${binding.localAddress.getPort}"
-		val client = StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty)
-		try test(client)
-		finally Await.result(binding.terminate(3.seconds), 5.seconds)
+	private val base = "http://statistics.test"
+
+	private def clientWith(response: (HttpRequest, ConnectionPoolSettings) => Future[HttpResponse]): StatisticsClient =
+		val http = new HttpClient:
+			def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
+				response(request, settings)
+		new StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty, http)
+
+	private def withResponse(response: HttpRequest => Future[HttpResponse])(test: StatisticsClient => Unit): Unit =
+		test(clientWith((request, _) => response(request)))
+
+	private def unavailableClient(): StatisticsClient =
+		clientWith((_, _) => Future.failed(ConnectException("Connection refused")))
 
 	private def count(client: StatisticsClient): Future[Option[Int]] =
 		client.getCollDownloadCount(URI("https://example.org/collections/test"))
 
 	test("healthy statistics are still returned"):
-		withServer(_ => Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """[{"downloadCount":2},{"downloadCount":3}]""")))): client =>
+		withResponse(_ => Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """[{"downloadCount":2},{"downloadCount":3}]""")))): client =>
 			assert(Await.result(count(client), 3.seconds).contains(5))
 
-	test("repeated refused connections do not accumulate backoff delays"):
-		val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(_ => Future.successful(HttpResponse())), 10.seconds)
-		val base = s"http://127.0.0.1:${binding.localAddress.getPort}"
-		Await.result(binding.unbind(), 5.seconds)
-		val client = StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty)
+	test("requests disable retries and bound connection backoff"):
+		var requests = 0
+		val client = clientWith: (request, settings) =>
+			requests += 1
+			assert(request.method == HttpMethods.GET)
+			assert(request.uri == Uri(s"$base?hashId=test"))
+			assert(settings.maxRetries == 0)
+			assert(settings.baseConnectionBackoff == 10.millis)
+			assert(settings.maxConnectionBackoff == 500.millis)
+			assert(settings.connectionSettings.connectingTimeout == 20.millis)
+			Future.failed(ConnectException("Connection refused"))
 		for _ <- 1 to 12 do
 			assert(Await.result(count(client), 2.seconds).isEmpty)
+		assert(requests == 12)
 
 	test("an unavailable statistics server logs the failure and request URL"):
-		val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(_ => Future.successful(HttpResponse())), 10.seconds)
-		val base = s"http://127.0.0.1:${binding.localAddress.getPort}"
-		Await.result(binding.unbind(), 5.seconds)
-		val client = StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty)
+		val client = unavailableClient()
 		val logs = TestProbe()
 		system.eventStream.subscribe(logs.ref, classOf[Logging.Warning])
 		try
@@ -67,9 +79,9 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll:
 					assert(message.endsWith(s"\nfrom: $base?hashId=test"))
 		finally system.eventStream.unsubscribe(logs.ref)
 
-	test("slow headers fall back to no statistics and late responses leave the pool usable"):
+	test("slow HTTP responses fall back to no statistics and later requests succeed"):
 		val fast = new java.util.concurrent.atomic.AtomicBoolean(false)
-		withServer(_ => after(if fast.get() then Duration.Zero else 1500.millis)(
+		withResponse(_ => after(if fast.get() then Duration.Zero else 1500.millis)(
 			Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """[{"downloadCount":5}]""")))
 		)): client =>
 			for _ <- 1 to 6 do
@@ -78,13 +90,12 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll:
 			assert(Await.result(count(client), 3.seconds).contains(5))
 
 	test("the deadline also covers a slow response body"):
-		withServer(_ => Future.successful(HttpResponse(entity = HttpEntity.Chunked.fromData(
+		withResponse(_ => Future.successful(HttpResponse(entity = HttpEntity.Chunked.fromData(
 			ContentTypes.`application/json`,
 			Source.single(ByteString("""[{"downloadCount":5}]""")).delay(1500.millis)
 		)))): client =>
 			assert(Await.result(count(client), 1400.millis).isEmpty)
 
 	override def afterAll(): Unit =
-		Await.result(Http().shutdownAllConnectionPools(), 10.seconds)
 		Await.result(system.terminate(), 10.seconds)
 		super.afterAll()

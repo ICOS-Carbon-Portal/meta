@@ -5,7 +5,6 @@ import scala.language.unsafeNulls
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.pattern.after
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
@@ -17,6 +16,7 @@ import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils.akkahttp.HttpClient
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
@@ -39,9 +39,12 @@ trait StatisticsProvider {
 	def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]]
 }
 
-class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
+class StatisticsClient(
+	val config: StatsClientConfig,
+	envriConfs: EnvriConfigs,
+	http: HttpClient
+)(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
 	import StatisticsClient.*
-	private val http = Http()
 	private val log = Logging.getLogger(system, this)
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
@@ -68,8 +71,7 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 			settings = connPoolSetts
 		)
 		val timeout = after(statsTimeout)(Future.failed(TimeoutException(s"no response within $statsTimeout")))
-		Future.firstCompletedOf(Seq(request, timeout))
-		.flatMap { res =>
+		val statistic = request.flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>
 					Unmarshal(res.entity).to[T].map(Option(_))
@@ -78,7 +80,9 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 						errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
 					)
 			}
-		}.recover{
+		}
+		// Keep consuming late responses so timed-out requests release their pool slots.
+		Future.firstCompletedOf(Seq(statistic, timeout)).recover{
 			case err: Throwable =>
 				log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None

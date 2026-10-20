@@ -3,11 +3,13 @@ package se.lu.nateko.cp.meta.test.api
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.*
 import akka.pattern.after
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import akka.testkit.TestProbe
 import akka.util.ByteString
 import eu.icoscp.envri.Envri
 import org.scalatest.BeforeAndAfterAll
@@ -46,6 +48,24 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll:
 		val client = StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty)
 		for _ <- 1 to 12 do
 			assert(Await.result(count(client), 2.seconds).isEmpty)
+
+	test("an unavailable statistics server logs the failure and request URL"):
+		val binding = Await.result(Http().newServerAt("127.0.0.1", 0).bind(_ => Future.successful(HttpResponse())), 10.seconds)
+		val base = s"http://127.0.0.1:${binding.localAddress.getPort}"
+		Await.result(binding.unbind(), 5.seconds)
+		val client = StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty)
+		val logs = TestProbe()
+		system.eventStream.subscribe(logs.ref, classOf[Logging.Warning])
+		try
+			assert(Await.result(count(client), 2.seconds).isEmpty)
+			logs.expectMsgPF(3.seconds):
+				case warning: Logging.Warning =>
+					assert(warning.logClass == classOf[StatisticsClient])
+					val message = warning.message.toString
+					assert(message.startsWith("Problem fetching statistics ("))
+					assert(message.contains("Connection refused"))
+					assert(message.endsWith(s"\nfrom: $base?hashId=test"))
+		finally system.eventStream.unsubscribe(logs.ref)
 
 	test("slow headers fall back to no statistics and late responses leave the pool usable"):
 		val fast = new java.util.concurrent.atomic.AtomicBoolean(false)

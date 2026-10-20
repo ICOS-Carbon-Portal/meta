@@ -78,7 +78,14 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	private val remoteCitations: Map[String, Option[RemoteCitation]] = Map(
 		"resolve" -> None,
 		"remote-pending" -> Some(RemoteCitation.Expected(None)),
-		"remote-failed" -> Some(RemoteCitation.Expected(Some(remoteCitationError)))
+		"remote-failed" -> Some(RemoteCitation.Expected(Some(remoteCitationError))),
+		"citation-warnings" -> None
+	)
+
+	/** The errors of making the citation, as reported by the rdfStore stub on the "citation-warnings" and "citation-failed" endpoints */
+	private val citationErrors = Seq(
+		"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
+			"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
 	)
 
 	private val rdfStoreStub = {
@@ -92,9 +99,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 						val request = body.parseJson.convertTo[DerivedMetadataRequest]
 						val results = request.resources.map { res =>
 							derivedTitles.get(res).fold(DerivedMetadataResult(res, "notFound", None)) { title =>
-								val refs = References.empty.copy(title = Some(title))
-								val metadata = DerivedMetadata(res, refs, None, None, remoteCitation = remoteCitations(endpoint))
-								DerivedMetadataResult(res, "ready", Some(metadata))
+								if endpoint == "citation-failed" then DerivedMetadataResult(res, "failed", None, citationErrors)
+								else
+									val refs = References.empty.copy(title = Some(title))
+									val warnings = if endpoint == "citation-warnings" then citationErrors else Nil
+									val metadata = DerivedMetadata(res, refs, None, None, warnings, remoteCitations(endpoint))
+									DerivedMetadataResult(res, "ready", Some(metadata))
 							}
 						}
 						complete(HttpEntity(
@@ -240,6 +250,18 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the error of fetching the remote citation reported by rdfStore") {
 			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, rdfStorePath = "remote-failed")
 			assert(propertyText(page, "Citation") === remoteCitationError)
+		}
+
+		it("renders the not-found page with all the errors when rdfStore fails to make the citation") {
+			val (route, _) = serialize(Fixture.timeSeriesObject, repo, "citation-failed")
+			Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
+				assert(status === StatusCodes.NotFound)
+				val page = Jsoup.parse(responseAs[String])
+				assert(heading(page) === "Data object not found")
+				// the page template has paragraphs of its own, so look for the errors among them
+				val paragraphs = page.select("p").asScala.map(_.text).toSeq
+				assert(paragraphs.containsSlice(citationErrors))
+			}
 		}
 
 		it("renders the previewable variables of the data object landing page") {
@@ -391,13 +413,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders a warning when duplicate metadata entries exist") {
 			val duplicateEmailRepo = Fixture.createRepoWith("/linkeddata/duplicate-email-staff.trig")
 			try {
-				// the staff member is read only for the authors of the object's citation, which is a part of its landing page
-				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo)
+				// the staff member is read only for the authors of the object's citation, which rdfStore makes and reports the errors of
+				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo, rdfStorePath = "citation-warnings")
 				assert(heading(page) === "Test time series from Test station (50.0 m)")
-				assert(metadataErrors(page).distinct === Seq(
-					"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
-						"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
-				))
+				assert(metadataErrors(page) === citationErrors)
 			} finally {
 				// Make sure we close the repo even on test failure
 				duplicateEmailRepo.shutDown()

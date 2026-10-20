@@ -240,6 +240,69 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 		}
 	}
 
+	describe("ETC station funding whose id contains spaces") {
+		type E = ETC.type
+		val testState: TestState = init(Nil, _ => Nil)
+
+		// ETC grant ids look like this; EtcMetaSource percent-encodes them into the funding IRI
+		val fundingId = UriId.escaped("107_Grant agreement ID: 637519")
+		val funder = TcFunder[E](
+			cpId = UriId("EU"),
+			tcIdOpt = Some(EtcConf.makeId("EU")),
+			core = Funder(
+				Organization(UriResource(new URI("http://dummy"), Some("EU"), Nil), "European Union", None, None, None),
+				None
+			)
+		)
+		val funding = TcFunding[E](
+			cpId = fundingId,
+			funder = funder,
+			core = Funding(
+				self = UriResource(new URI("http://dummy"), None, Nil),
+				funder = funder.core,
+				awardTitle = None,
+				awardNumber = Some("637519"),
+				awardUrl = None,
+				start = None,
+				stop = None
+			)
+		)
+		val station = make[TcStation[E]].copy(funding = Seq(funding))
+		val snapshot = new TcState[E](stations = Seq(station), networks = Nil, roles = Nil, instruments = Nil)
+
+		testState.tcServer.applyAll(testState.calc.calcDiff(snapshot).result.get)()
+
+		def readStation: TcStation[E] =
+			val Seq(st) = testState.reader.getCurrentState[E].result.get.stations
+			st
+
+		it("is stored under a percent-encoded IRI") {
+			val fundingIri = new CpVocab(testState.tcServer.factory).getFunding(fundingId)(using Envri.ICOS)
+			assert(fundingIri.stringValue === "http://test.icos.eu/resources/fundings/107_Grant%20agreement%20ID:%20637519")
+			val stored = testState.tcServer.getStatements(None, Some(testState.maker.meta.hasFunding), Some(fundingIri))
+			try assert(stored.hasNext) finally stored.close()
+		}
+
+		it("is read back with the same, still encoded, id") {
+			assert(readStation.funding.map(_.cpId) === Seq(fundingId))
+		}
+
+		it("is described with IRIs that a remote (SPARQL-over-HTTP) store can look up") {
+			// RdfDiffCalc.keepMeaningful looks up the statements of the current state in the store;
+			// with rdfStore behind a SPARQLRepository, an IRI with spaces fails the whole diff
+			val iris = testState.maker.getStatements(readStation)
+				.flatMap(s => Seq(s.getSubject, s.getPredicate, s.getObject))
+				.collect { case iri: org.eclipse.rdf4j.model.IRI => iri.stringValue }
+			assert(iris.filter(_.exists(_.isWhitespace)) === Nil)
+		}
+
+		it("is unaffected by an unchanged snapshot") {
+			val diff = testState.calc.calcDiff(snapshot)
+			assert(diff.errors.isEmpty)
+			assert(diff.result.get.isEmpty)
+		}
+	}
+
 	describe("PI change") {
 
 		Given("starting with a single station with single PI and no own CP statements")

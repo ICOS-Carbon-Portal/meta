@@ -99,7 +99,7 @@ class CitationProvider(
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core, externalObjs)
 
-	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer))
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer), Some(externalObjs))
 
 	def getCitation(res: Resource): Option[String] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
@@ -108,6 +108,15 @@ class CitationProvider(
 
 	def getReferences(res: Resource): Option[References] = access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
+
+	/** References together with the status of the citation fetched from a DOI or an external repository */
+	def getReferencesWithRemoteCitation(res: Resource): Option[(References, RemoteCitation)] = access: conn ?=>
+		given GlobConn = RdfLens.global(using conn)
+		for
+			iri <- toIRI(res)
+			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+			item <- getCitableItem(iri)
+		yield item.references -> citer.remoteCitation(item)
 
 	def getLicence(res: Resource): Option[Licence] = access: conn ?=>
 		for

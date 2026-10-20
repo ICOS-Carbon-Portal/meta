@@ -13,6 +13,8 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.citation.RemoteCitation
+import se.lu.nateko.cp.meta.services.derived.WithRemoteCitation
 import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
@@ -54,27 +56,34 @@ class PageContentMarshalling(
 			}
 		makeMarshaller(template, messagePage("Collection not found", _))
 
-	def staticObjectAsyncMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[StaticObject]]] =
+	def staticObjectAsyncMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[StaticObject]]]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticObject] = (obj, errors) =>
+		val template: PageTemplate[WithRemoteCitation[StaticObject]] = (page, errors) =>
+			val obj = page.item
 			for
 				dlCount <- statisticsClient.getObjDownloadCount(obj)
 				previewCount <- statisticsClient.getPreviewCount(obj.hash)
-			yield LandingPage(obj, objectExtras(obj, dlCount, previewCount, errors), handleProxies)
+			yield LandingPage(obj, objectExtras(obj, dlCount, previewCount, errors, page.remoteCitation), handleProxies)
 		makeAsyncMarshaller(template, messagePage("Data object not found", _))
 
-	def staticCollectionAsyncMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[StaticCollection]]] =
+	def staticCollectionAsyncMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[StaticCollection]]]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticCollection] = (coll, errors) =>
+		val template: PageTemplate[WithRemoteCitation[StaticCollection]] = (page, errors) =>
+			val coll = page.item
 			statisticsClient.getCollDownloadCount(coll.res).map: dlCount =>
-				CollectionLandingPage(coll, LandingPageExtras(dlCount, None, errors), handleProxies)
+				val extras = LandingPageExtras(dlCount, None, errors, remoteCitation = page.remoteCitation)
+				CollectionLandingPage(coll, extras, handleProxies)
 		makeAsyncMarshaller(template, messagePage("Collection not found", _))
 
 
-	private def objectExtras(obj: StaticObject, dlCount: Option[Int], previewCount: Option[Int], errors: ErrorList)(using Envri, EnvriConfig) =
+	private def objectExtras(
+		obj: StaticObject, dlCount: Option[Int], previewCount: Option[Int], errors: ErrorList,
+		remoteCitation: RemoteCitation = RemoteCitation.NotApplicable
+	)(using Envri, EnvriConfig) =
 		LandingPageExtras(
 			dlCount, previewCount, errors,
-			externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label)
+			externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label),
+			remoteCitation = remoteCitation
 		)
 
 	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
@@ -106,16 +115,16 @@ class PageContentMarshalling(
 	}
 
 	private def makeAsyncMarshaller[T: JsonWriter](
-		templateFetcher: (T, ErrorList) => Future[Html],
+		templateFetcher: (WithRemoteCitation[T], ErrorList) => Future[Html],
 		notFoundPage: ErrorList => Html,
-	): ToResponseMarshaller[() => Future[Validated[T]]] =
+	): ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[T]]]] =
 		Marshaller { exeCtxt => producer =>
 			given ExecutionContext = exeCtxt
-			producer().flatMap: itemV =>
-				fetchHtmlMaker(itemV, templateFetcher, notFoundPage).map: htmlMaker =>
+			producer().flatMap: pageV =>
+				fetchHtmlMaker(pageV, templateFetcher, notFoundPage).map: htmlMaker =>
 					List(
 						WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
-						WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
+						WithFixedContentType(ContentTypes.`application/json`, () => getJson(pageV.map(_.item)))
 					)
 		}
 

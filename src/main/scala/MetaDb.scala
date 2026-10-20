@@ -19,6 +19,7 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServe
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
@@ -54,9 +55,11 @@ class MetaDb (
 	private given ExecutionContext = system.dispatcher
 	def vanillaRepo: Repository = magicRepo
 
+	val externalObjs = new ExternalObjFetcher(ExternalProviders(config.dataUploadService.externalProviders))
+
 	val uriSerializer: UriSerializer =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs, new AkkaHttpClient)
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, config, stats)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, externalObjs, config, stats)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		Http().singleRequest(HttpRequest(
@@ -159,7 +162,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			val handleConf = config.dataUploadService.handle
 			new PidFactory(handleConf.baseUrl, handleConf.prefix)
 		}
-		val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None)
+		val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None, None)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")

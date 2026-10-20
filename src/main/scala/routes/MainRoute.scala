@@ -11,7 +11,6 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
 import se.lu.nateko.cp.meta.services.Rdf4jSparqlRunner
-import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.upload.DoiService
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling.errorMarshaller
 import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
@@ -54,7 +53,7 @@ object MainRoute {
 		val filesRoute = FilesRoute(db.fileService)
 
 		val dtoDlRoute = DtoDownloadRoute(db.uriSerializer)
-		val sitemapRoute = SitemapRoute(sparqler, ExternalProviders(config.dataUploadService.externalProviders))
+		val sitemapRoute = SitemapRoute(sparqler, db.externalObjs.providers)
 
 		val adminRoute = new AdminRouting(
 			db.magicRepo, db.instanceServers, authRouting, db.makeReadonlyDumpIndexAndCaches, config.sparql

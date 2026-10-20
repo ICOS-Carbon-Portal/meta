@@ -25,8 +25,9 @@ import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider
-import se.lu.nateko.cp.meta.services.derived.DerivedMetadataClient
-import se.lu.nateko.cp.meta.services.external.ExternalProviders
+import se.lu.nateko.cp.meta.services.citation.RemoteCitation
+import se.lu.nateko.cp.meta.services.derived.{DerivedMetadataClient, WithRemoteCitation}
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -85,6 +86,7 @@ class Rdf4jUriSerializer(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	derivedMetadata: DerivedMetadataClient,
+	externalObjs: ExternalObjFetcher,
 	config: CpmetaConfig,
 	statisticsProvider: StatisticsProvider
 )(using envries: EnvriConfigs, system: ActorSystem, mat: Materializer) extends UriSerializer:
@@ -98,10 +100,9 @@ class Rdf4jUriSerializer(
 		val handleConf = config.dataUploadService.handle
 		new PidFactory(handleConf.baseUrl, handleConf.prefix)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
-	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, attribution)
-	private val pageContentMarshalling = new PageContentMarshalling(
-		config.core.handleProxies, statisticsProvider, ExternalProviders(config.dataUploadService.externalProviders)
-	)
+	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, attribution, externalObjs)
+	private val pageContentMarshalling =
+		new PageContentMarshalling(config.core.handleProxies, statisticsProvider, externalObjs.providers)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -132,19 +133,26 @@ class Rdf4jUriSerializer(
 			landingPageLoader.customLandingPage(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
-	private def enrich[T](parsed: Validated[T])(fetch: T => Future[T]): Future[Validated[T]] =
-		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[WithRemoteCitation[T]]): Future[Validated[WithRemoteCitation[T]]] =
+		parsed.result.fold(Future.successful(new Validated(None, parsed.errors))): item =>
 			fetch(item)
 				.map(enriched => new Validated(Some(enriched), parsed.errors))
 				.recover { case err =>
-					parsed.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")
+					parsed.map(WithRemoteCitation(_, RemoteCitation.NotApplicable))
+						.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")
 				}
 
+	private def fetchStaticObjectPage(uri: Uri): Future[Validated[WithRemoteCitation[StaticObject]]] =
+		enrich(fetchStaticObject(uri))(derivedMetadata.enrichWithRemoteCitation(new JavaUri(uri.toString), _))
+
+	private def fetchStaticCollectionPage(uri: Uri): Future[Validated[WithRemoteCitation[StaticCollection]]] =
+		enrich(fetchStaticCollection(uri))(derivedMetadata.enrichWithRemoteCitation(new JavaUri(uri.toString), _))
+
 	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]] =
-		enrich(fetchStaticObject(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
+		fetchStaticObjectPage(uri).map(_.map(_.item))
 
 	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]] =
-		enrich(fetchStaticCollection(uri))(derivedMetadata.enrich(new JavaUri(uri.toString), _))
+		fetchStaticCollectionPage(uri).map(_.map(_.item))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
@@ -199,10 +207,10 @@ class Rdf4jUriSerializer(
 		uri.path match
 			case Hash.Object(hash) =>
 				given CpVocab = vocab
-				pageContentMarshalling.staticObjectAsyncMarshaller(() => fetchStaticObjectWithDerived(uri))
+				pageContentMarshalling.staticObjectAsyncMarshaller(() => fetchStaticObjectPage(uri))
 
 			case Hash.Collection(hash) =>
-				pageContentMarshalling.staticCollectionAsyncMarshaller(() => fetchStaticCollectionWithDerived(uri))
+				pageContentMarshalling.staticCollectionAsyncMarshaller(() => fetchStaticCollectionPage(uri))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", landingPageLoader.station,

@@ -738,11 +738,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		def obj(hash: Sha256Sum) = factory.createIRI(sitesObject(hash).toString)
 		val zipGraph = factory.createIRI("https://meta.fieldsites.se/resources/siteszip/")
 		val docGraph = factory.createIRI("https://meta.fieldsites.se/documents/")
+		val metaGraph = factory.createIRI("https://meta.fieldsites.se/resources/sites/")
 		val spec = factory.createIRI("https://meta.fieldsites.se/resources/objspecs/testSpec")
 		val zipFormat = factory.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
 		val seeAlso = factory.createIRI(icosLandingPage.toString)
 		val triples = Seq[(Resource, IRI, Value, IRI)](
-			(spec, metaVocab.hasFormat, zipFormat, zipGraph),
+			(spec, metaVocab.hasFormat, zipFormat, metaGraph),
 			(obj(mirroredHash), RDF.TYPE, metaVocab.dataObjectClass, zipGraph),
 			(obj(mirroredHash), metaVocab.hasObjectSpec, spec, zipGraph),
 			(obj(mirroredHash), RDFS.SEEALSO, seeAlso, zipGraph),

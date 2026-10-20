@@ -34,7 +34,7 @@ class StaticObjectReader(
 		getOptionalLong,
 		getOptionalString
 	}
-	import RdfLens.{DobjConn, DocConn, GlobConn}
+	import RdfLens.{DobjConn, DobjLens, DocConn, GlobConn}
 
 	def fetchStaticObject(objIri: IRI)(using Envri, GlobConn): Validated[StaticObject] =
 		if docObjExists(objIri) then
@@ -51,6 +51,16 @@ class StaticObjectReader(
 			given DobjConn <- lenses.dataObjectLens(spec.format.self.uri)
 			dobj <- getExistingDataObject(objIri, spec, docConn)
 		yield dobj
+
+
+	def getLensForDataObj(dobjIri: IRI)(using Envri, GlobConn): Validated[DobjLens] =
+		for
+			specIri <- getSingleUri(dobjIri, metaVocab.hasObjectSpec)
+			docLens <- lenses.documentLens
+			// Read the format through the same lens used for the specification.
+			objFormat <- getObjSpecFormat(specIri)(using docLens)
+			dobjLens <- lenses.dataObjectLens(objFormat.toJava)
+		yield dobjLens
 
 	def dataObjExists(dobj: IRI)(using GlobConn): Boolean = resourceHasType(dobj, metaVocab.dataObjectClass)
 	def docObjExists(dobj: IRI)(using DocConn): Boolean = resourceHasType(dobj, metaVocab.docObjectClass)

@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.instanceserver.{Rdf4jTriplestoreConnection, Statemen
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import CitationClient.CitationCache
@@ -109,14 +110,20 @@ class CitationProvider(
 	def getReferences(res: Resource): Option[References] = access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
 
-	/** References together with the status of the citation fetched from a DOI or an external repository */
-	def getReferencesWithRemoteCitation(res: Resource): Option[(References, RemoteCitation)] = access: conn ?=>
+	/** References together with the status of the citation fetched from a DOI or an external repository.
+	  * The errors are those of making the citation info, which meta cannot observe when reading the object itself.
+	  * No result and no errors means that the resource is not a citable item.
+	  */
+	def getReferencesWithRemoteCitation(res: Resource): Validated[(References, RemoteCitation)] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
-		for
+		val recorder = CitationErrorRecorder(citer)
+		val reader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(recorder), Some(externalObjs))
+		val found = for
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
-			item <- getCitableItem(iri)
+			item <- getCitableItem(iri, reader)
 		yield item.references -> citer.remoteCitation(item)
+		new Validated(found, recorder.errors)
 
 	def getLicence(res: Resource): Option[Licence] = access: conn ?=>
 		for
@@ -132,26 +139,26 @@ class CitationProvider(
 			.flatten
 	}
 
-	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
+	private def getCitableItem(res: Resource, reader: StaticObjectReader = metaReader)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
 		if
 			hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 			hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
-		then getStaticObject(iri)
+		then getStaticObject(iri, reader)
 		else if
 			hasStatement(iri, RDF.TYPE, metaVocab.collectionClass)
-		then getStaticColl(iri)
+		then getStaticColl(iri, reader)
 		else None
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
+	private def getStaticObject(maybeDobj: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticObject] = for
 		given Envri <- inferObjectEnvri(maybeDobj)
-		obj <- metaReader.fetchStaticObject(maybeDobj).result
+		obj <- reader.fetchStaticObject(maybeDobj).result
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] = for
+	private def getStaticColl(maybeColl: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticCollection] = for
 		given Envri <- inferCollEnvri(maybeColl)
-		coll <- metaReader.fetchStaticColl(maybeColl, None).result
+		coll <- reader.fetchStaticColl(maybeColl, None).result
 	yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{

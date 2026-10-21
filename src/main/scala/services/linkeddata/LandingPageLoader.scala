@@ -45,7 +45,7 @@ final class LandingPageLoader(
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer))
+	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer), Some(citer.externalObjs))
 
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 

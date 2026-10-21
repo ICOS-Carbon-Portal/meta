@@ -29,6 +29,7 @@ import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
 import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.async.ok
+import se.lu.nateko.cp.meta.utils.akkahttp.AkkaHttpClient
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
 import java.net.URI
@@ -56,7 +57,7 @@ class MetaDb (
 	def vanillaGlob: InstanceServer = citer.server
 
 	val uriSerializer: UriSerializer =
-		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs)
+		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs, new AkkaHttpClient)
 		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, citer.externalObjs, config, stats)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =

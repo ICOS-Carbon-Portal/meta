@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.Http
+import akka.pattern.after
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.{ HttpRequest, StatusCodes, Uri }
@@ -16,10 +16,12 @@ import se.lu.nateko.cp.meta.StatsClientConfig
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, StaticObject}
 import se.lu.nateko.cp.meta.services.MetadataException
+import se.lu.nateko.cp.meta.utils.akkahttp.HttpClient
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
-import scala.concurrent.duration.DurationInt
+import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 
 
@@ -37,9 +39,13 @@ trait StatisticsProvider {
 	def getCollDownloadCount(uri: URI)(using Envri): Future[Option[Int]]
 }
 
-class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
+class StatisticsClient(
+	val config: StatsClientConfig,
+	envriConfs: EnvriConfigs,
+	http: HttpClient,
+	statsTimeout: FiniteDuration = 1.second
+)(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
 	import StatisticsClient.*
-	private val http = Http()
 	private val log = Logging.getLogger(system, this)
 	implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
@@ -51,15 +57,20 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
 		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
+		// the default exponential backoff (up to 2 min) after failed connects makes queued requests,
+		// and thus landing pages, wait for ever longer when a stats service is down
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
+			.withBaseConnectionBackoff(10.millis)
+			.withMaxConnectionBackoff(500.millis)
 	}
 
-	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] = http
-		.singleRequest(
+	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] =
+		val request = http.singleRequest(
 			HttpRequest(uri = uri, headers = dataHost.toSeq.map(Host.apply)),
 			settings = connPoolSetts
 		)
-		.flatMap { res =>
+		val timeout = after(statsTimeout)(Future.failed(TimeoutException(s"no response within $statsTimeout")))
+		val statistic = request.flatMap { res =>
 			res.status match {
 				case StatusCodes.OK =>
 					Unmarshal(res.entity).to[T].map(Option(_))
@@ -68,7 +79,9 @@ class StatisticsClient(val config: StatsClientConfig, envriConfs: EnvriConfigs)(
 						errMsg => Future.failed(new MetadataException(s"$s ($errMsg)"))
 					)
 			}
-		}.recover{
+		}
+		// Keep consuming late responses so timed-out requests release their pool slots.
+		Future.firstCompletedOf(Seq(statistic, timeout)).recover{
 			case err: Throwable =>
 				log.warning(s"Problem fetching statistics (${err.getMessage})\nfrom: $uri")
 				None

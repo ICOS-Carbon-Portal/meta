@@ -36,9 +36,11 @@ class PageContentMarshalling(
 	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
 		import statisticsClient.executionContext
 		val template: PageTemplate[StaticObject] = (obj, errors) =>
+			val dlCountFut = statisticsClient.getObjDownloadCount(obj)
+			val previewCountFut = statisticsClient.getPreviewCount(obj.hash)
 			for(
-				dlCount <- statisticsClient.getObjDownloadCount(obj);
-				previewCount <- statisticsClient.getPreviewCount(obj.hash)
+				dlCount <- dlCountFut;
+				previewCount <- previewCountFut
 			) yield {
 				val extras = LandingPageExtras(
 					dlCount, previewCount, errors,

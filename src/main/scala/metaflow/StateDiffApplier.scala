@@ -35,9 +35,10 @@ class StateDiffApplier(
 		val diffV = diffCalcV.flatMap(_.calcDiff(state))
 		inline def tip = tcconf.tcPrefix
 		if diffV.errors.nonEmpty then
+			val nUpdates = diffV.result.fold(0)(_.size)
 			val errors = diffV.errors.distinct.mkString("\n")
-			log.warn(s"Error(s) calculating RDF diff for $tip metadata, not applying it:\n$errors")
-		else for updates <- diffV do
+			log.warn(s"Error(s) calculating RDF diff (got $nUpdates updates) for $tip metadata:\n$errors")
+		for updates <- diffV do
 			envriServer.applyAll(updates)().fold(
 				err => log.error(s"Problem applying $tip station-metadata diff", err),
 				_ => log.info(s"Calculated and applied $tip station-metadata diff (${updates.size} RDF changes)")

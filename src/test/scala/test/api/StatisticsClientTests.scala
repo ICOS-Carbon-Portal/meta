@@ -29,104 +29,117 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll {
 	private given scala.concurrent.ExecutionContext = system.dispatcher
 
 	private val base = "http://statistics.test"
+	private val requestUrl = s"$base?hashId=test"
 
 	override def afterAll(): Unit = {
 		Await.result(system.terminate(), 10.seconds)
 		super.afterAll()
 	}
 
-	test("healthy statistics are still returned") {
-		withResponse(_ => Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """[{"downloadCount":2},{"downloadCount":3}]""")))) { client =>
-			assert(Await.result(count(client), 3.seconds).contains(5))
-		}
-	}
-
-	test("response times do not build up upon repeated connection errors") {
+	test("repeated connection errors are logged and response times do not build up") {
+		val pool = UnreachablePool()
 		var requests = 0
-		var failedConnects = 0
-		val client = clientWith { (request, settings) =>
+		val client = clientWith() { (request, settings) =>
 			requests += 1
 			assert(request.method == HttpMethods.GET)
-			assert(request.uri == Uri(s"$base?hashId=test"))
-			// emulate the connection pool's exponential backoff between consecutive failed connects
-			def attempt(retriesLeft: Int): Future[HttpResponse] = {
-				val backoffMs = math.min(
-					settings.baseConnectionBackoff.toMillis * math.pow(2, failedConnects),
-					settings.maxConnectionBackoff.toMillis.toDouble
-				).toLong
-				failedConnects += 1
-				after(backoffMs.millis)(Future.failed(ConnectException("Connection refused")))
+			assert(request.uri == Uri(requestUrl))
+			pool.request(settings)
+		}
+		withWarningLogs { logs =>
+			val responseTimes = (1 to 8).map(_ => timed(assert(awaitCount(client, 3.seconds).isEmpty)))
+			val timesClue = s"response times: ${responseTimes.map(_.toMillis)} ms"
+
+			assert(requests == 8)
+			// with unbounded backoff, later requests would only be answered by the stats timeout
+			assert(responseTimes.forall(_ < 900.millis), timesClue)
+			// once the backoff is saturated, response times must stop growing
+			assert(responseTimes.last < responseTimes(6) + 200.millis, timesClue)
+			// every failure is logged with its cause and request URL
+			logs.receiveN(8, 3.seconds).foreach(assertConnectionRefusedWarning)
+		}
+	}
+
+	test("slow HTTP responses or bodies fall back to no statistics and later healthy requests succeed") {
+		// slower than the stats timeout, but well within the await, so only the timeout can produce the fallback
+		val tooSlow = 1.minute
+		var headersDelay: FiniteDuration = tooSlow
+		var bodyDelay: FiniteDuration = Duration.Zero
+		val client = clientWith(statsTimeout = 50.millis) { (_, _) =>
+			jsonResponse("""[{"downloadCount":2},{"downloadCount":3}]""", headersDelay, bodyDelay)
+		}
+
+		// slow headers
+		assert(awaitCount(client, 3.seconds).isEmpty)
+
+		// slow body
+		headersDelay = Duration.Zero
+		bodyDelay = tooSlow
+		assert(awaitCount(client, 3.seconds).isEmpty)
+
+		// healthy again
+		bodyDelay = Duration.Zero
+		assert(awaitCount(client, 3.seconds).contains(5))
+	}
+
+	/** Emulates a connection pool to an unreachable server: every connect is refused,
+	  * after a backoff that doubles with each consecutive failed connect, up to the configured maximum. */
+	private class UnreachablePool {
+		private var failedConnects = 0
+
+		def request(settings: ConnectionPoolSettings): Future[HttpResponse] = {
+			def attempt(retriesLeft: Int): Future[HttpResponse] =
+				after(nextBackoff(settings))(Future.failed(ConnectException("Connection refused")))
 					.recoverWith { case _ if retriesLeft > 0 => attempt(retriesLeft - 1) }
-			}
 			attempt(settings.maxRetries)
 		}
-		val responseTimes = (1 to 8).map { _ =>
-			val start = System.nanoTime()
-			assert(Await.result(count(client), 3.seconds).isEmpty)
-			(System.nanoTime() - start).nanos
+
+		private def nextBackoff(settings: ConnectionPoolSettings): FiniteDuration = {
+			val backoffMs = math.min(
+				settings.baseConnectionBackoff.toMillis * math.pow(2, failedConnects),
+				settings.maxConnectionBackoff.toMillis.toDouble
+			)
+			failedConnects += 1
+			backoffMs.toLong.millis
 		}
-		assert(requests == 8)
-		// with unbounded backoff, later requests would only be answered by the stats timeout
-		assert(responseTimes.forall(_ < 900.millis), s"response times: ${responseTimes.map(_.toMillis)} ms")
-		// once the backoff is saturated, response times must stop growing
-		assert(responseTimes.last < responseTimes(6) + 200.millis, s"response times: ${responseTimes.map(_.toMillis)} ms")
 	}
 
-	test("an unavailable statistics server logs the failure and request URL") {
-		val client = unavailableClient()
+	private def jsonResponse(json: String, headersDelay: FiniteDuration, bodyDelay: FiniteDuration): Future[HttpResponse] = {
+		val body = Source.future(after(bodyDelay)(Future.successful(ByteString(json))))
+		after(headersDelay)(Future.successful(HttpResponse(entity = HttpEntity.Chunked.fromData(ContentTypes.`application/json`, body))))
+	}
+
+	private def assertConnectionRefusedWarning(msg: AnyRef): Unit = msg match {
+		case warning: Logging.Warning =>
+			assert(warning.logClass == classOf[StatisticsClient])
+			val message = warning.message.toString
+			assert(message.startsWith("Problem fetching statistics ("))
+			assert(message.contains("Connection refused"))
+			assert(message.endsWith(s"\nfrom: $requestUrl"))
+		case other => fail(s"unexpected message: $other")
+	}
+
+	private def withWarningLogs(test: TestProbe => Unit): Unit = {
 		val logs = TestProbe()
 		system.eventStream.subscribe(logs.ref, classOf[Logging.Warning])
-		try {
-			assert(Await.result(count(client), 2.seconds).isEmpty)
-			logs.expectMsgPF(3.seconds) {
-				case warning: Logging.Warning =>
-					assert(warning.logClass == classOf[StatisticsClient])
-					val message = warning.message.toString
-					assert(message.startsWith("Problem fetching statistics ("))
-					assert(message.contains("Connection refused"))
-					assert(message.endsWith(s"\nfrom: $base?hashId=test"))
-			}
-		} finally {
-			system.eventStream.unsubscribe(logs.ref)
-		}
+		try test(logs) finally system.eventStream.unsubscribe(logs.ref)
 	}
 
-	test("slow HTTP responses fall back to no statistics and later requests succeed") {
-		val fast = new java.util.concurrent.atomic.AtomicBoolean(false)
-		withResponse(_ => after(if (fast.get()) Duration.Zero else 1500.millis)(
-			Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """[{"downloadCount":5}]""")))
-		)) { client =>
-			for (_ <- 1 to 6) {
-				assert(Await.result(count(client), 1400.millis).isEmpty)
-			}
-			fast.set(true)
-			assert(Await.result(count(client), 3.seconds).contains(5))
-		}
+	private def timed(action: => Unit): FiniteDuration = {
+		val start = System.nanoTime()
+		action
+		(System.nanoTime() - start).nanos
 	}
 
-	test("the deadline also covers a slow response body") {
-		withResponse(_ => Future.successful(HttpResponse(entity = HttpEntity.Chunked.fromData(
-			ContentTypes.`application/json`,
-			Source.single(ByteString("""[{"downloadCount":5}]""")).delay(1500.millis)
-		)))) { client =>
-			assert(Await.result(count(client), 1400.millis).isEmpty)
-		}
-	}
-
-	private def clientWith(response: (HttpRequest, ConnectionPoolSettings) => Future[HttpResponse]): StatisticsClient = {
+	private def clientWith(statsTimeout: FiniteDuration = 1.second)(
+		response: (HttpRequest, ConnectionPoolSettings) => Future[HttpResponse]
+	): StatisticsClient = {
 		val http = new HttpClient {
 			def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
 				response(request, settings)
 		}
-		new StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty, http)
+		new StatisticsClient(StatsClientConfig(base, RestheartConfig(base, Map(Envri.ICOS -> "test"))), Map.empty, http, statsTimeout)
 	}
 
-	private def withResponse(response: HttpRequest => Future[HttpResponse])(test: StatisticsClient => Unit): Unit =
-		test(clientWith((request, _) => response(request)))
-
-	private def unavailableClient(): StatisticsClient =
-		clientWith((_, _) => Future.failed(ConnectException("Connection refused")))
-
-	private def count(client: StatisticsClient): Future[Option[Int]] =
-		client.getCollDownloadCount(URI("https://example.org/collections/test"))
+	private def awaitCount(client: StatisticsClient, timeout: FiniteDuration): Option[Int] =
+		Await.result(client.getCollDownloadCount(URI("https://example.org/collections/test")), timeout)
 }

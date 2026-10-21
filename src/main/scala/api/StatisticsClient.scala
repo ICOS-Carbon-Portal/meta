@@ -21,7 +21,7 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import java.net.URI
 import java.util.concurrent.TimeoutException
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 
 
@@ -42,7 +42,8 @@ trait StatisticsProvider {
 class StatisticsClient(
 	val config: StatsClientConfig,
 	envriConfs: EnvriConfigs,
-	http: HttpClient
+	http: HttpClient,
+	statsTimeout: FiniteDuration = 1.second
 )(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
 	import StatisticsClient.*
 	private val log = Logging.getLogger(system, this)
@@ -62,8 +63,6 @@ class StatisticsClient(
 			.withBaseConnectionBackoff(10.millis)
 			.withMaxConnectionBackoff(500.millis)
 	}
-
-	private val statsTimeout = 1.second
 
 	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] =
 		val request = http.singleRequest(

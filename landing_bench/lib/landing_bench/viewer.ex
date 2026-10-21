@@ -59,25 +59,38 @@ defmodule LandingBench.Viewer do
     * `:recompare` - compare the stored response bodies again, with the current
       list of known differences, instead of showing the stored comparison results
     * `:csv` - also write the results to this CSV file
+    * `:mismatches` - print only the hashes of the mismatching data objects, one per line
   """
   def show(dir, id, opts) do
-    opts = Keyword.merge([diff: false, recompare: false], opts)
+    opts = Keyword.merge([diff: false, recompare: false, mismatches: false], opts)
 
     with {:ok, meta, run_dir, events} <- Store.load(dir, id) do
-      print_header(meta, opts)
-
-      results =
-        Enum.flat_map(events, fn event ->
-          event = prepare(event, run_dir, opts)
-          Output.print(event, opts[:diff])
-          if event.type == :object, do: [Stats.result(event)], else: []
-        end)
-
-      Stats.print_summary(results)
-      if path = opts[:csv], do: Stats.write_csv(results, path)
-      print_footer(meta)
-      :ok
+      if opts[:mismatches],
+        do: print_mismatches(events, run_dir, opts),
+        else: print_run(meta, run_dir, events, opts)
     end
+  end
+
+  defp print_mismatches(events, run_dir, opts) do
+    for(%{type: :object} = e <- events, do: e |> prepare(run_dir, opts) |> Stats.result())
+    |> Stats.mismatching_ids()
+    |> Enum.each(&IO.puts/1)
+  end
+
+  defp print_run(meta, run_dir, events, opts) do
+    print_header(meta, opts)
+
+    results =
+      Enum.flat_map(events, fn event ->
+        event = prepare(event, run_dir, opts)
+        Output.print(event, opts[:diff])
+        if event.type == :object, do: [Stats.result(event)], else: []
+      end)
+
+    Stats.print_summary(results)
+    if path = opts[:csv], do: Stats.write_csv(results, path)
+    print_footer(meta)
+    :ok
   end
 
   defp print_header(meta, opts) do

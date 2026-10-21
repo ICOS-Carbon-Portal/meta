@@ -56,15 +56,19 @@ defmodule LandingBench.Stats do
       IO.puts("#{String.pad_leading(Integer.to_string(n), 5)}  #{label}")
     end)
 
-    case Enum.filter(results, &LandingBench.Diff.mismatch?(&1.match)) do
+    case mismatching_ids(results) do
       [] ->
         :ok
 
-      mismatched ->
+      ids ->
         IO.puts("\n--- Mismatching objects ---")
-        Enum.each(mismatched, &IO.puts(&1.id))
+        Enum.each(ids, &IO.puts/1)
     end
   end
+
+  @doc "The hashes of the data objects whose responses mismatch."
+  def mismatching_ids(results),
+    do: for(r <- results, LandingBench.Diff.mismatch?(r[:match]), do: r.id)
 
   defp match_category({:different, _line}), do: "MISMATCH: body differs"
   defp match_category(match), do: match_label(match)

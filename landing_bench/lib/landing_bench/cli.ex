@@ -46,12 +46,20 @@ defmodule LandingBench.CLI do
         --recompare     compare the stored response bodies again, with the
                         current list of known differences
         --csv PATH      also write per-request results to a CSV file
+        --mismatches    print only the hashes of the data objects whose
+                        responses mismatch, one per line
   """
 
   def main(["view" | argv]) do
     {opts, args, invalid} =
       OptionParser.parse(argv,
-        strict: [diff: :boolean, recompare: :boolean, csv: :string, help: :boolean],
+        strict: [
+          diff: :boolean,
+          recompare: :boolean,
+          csv: :string,
+          mismatches: :boolean,
+          help: :boolean
+        ],
         aliases: [h: :help]
       )
 

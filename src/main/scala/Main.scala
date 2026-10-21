@@ -32,7 +32,7 @@ object Main extends App with CpmetaJsonProtocol{
 			"readonly mode; restart the server for proper operation");
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
 		_ <- store.initSparqlMagicIndex();
-		route = MainRoute(db, metaflow, config);
+		route = MainRoute(db, metaflow, store.sparqlServer, config);
 		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
 		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
 	) yield {

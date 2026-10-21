@@ -55,7 +55,8 @@ class CitationProvider(
 	repo.init()
 	log.info(s"$repositoryName initialized")
 
-	val server = new Rdf4jInstanceServer(repo)
+	private val server = new Rdf4jInstanceServer(repo)
+
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)
 

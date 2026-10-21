@@ -4,7 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Statement, Value, ValueFactory}
 import org.eclipse.rdf4j.query.{BindingSet, QueryLanguage}
-import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection, RepositoryException}
 import org.eclipse.rdf4j.sail.SailConnection
 import se.lu.nateko.cp.meta.api.{CloseableIterator, SparqlRunner}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -25,24 +25,26 @@ class Rdf4jInstanceServer(repo: Repository, val readContexts: Seq[IRI], val writ
 		factory.createIRI(prefix.stringValue.stripSuffix("/") + "/", UUID.randomUUID.toString)
 
 	def getStatements(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): CloseableIterator[Statement] =
-		repo.access(conn => 
-			conn.getStatements(
-				subject.getOrElse(null),
-				predicate.getOrElse(null),
-				obj.getOrElse(null),
-				false,
-				readContexts*)
-		)
+		StatementPatternErrors.describe(subject.orNull, predicate.orNull, obj.orNull, readContexts):
+			repo.access(conn =>
+				conn.getStatements(
+					subject.getOrElse(null),
+					predicate.getOrElse(null),
+					obj.getOrElse(null),
+					false,
+					readContexts*)
+			)
 
 	def hasStatement(subject: Option[IRI], predicate: Option[IRI], obj: Option[Value]): Boolean =
-		repo.accessEagerly(conn =>
-			conn.hasStatement(
-				subject.getOrElse(null),
-				predicate.getOrElse(null),
-				obj.getOrElse(null),
-				false,
-				readContexts*)
-		)
+		StatementPatternErrors.describe(subject.orNull, predicate.orNull, obj.orNull, readContexts):
+			repo.accessEagerly(conn =>
+				conn.hasStatement(
+					subject.getOrElse(null),
+					predicate.getOrElse(null),
+					obj.getOrElse(null),
+					false,
+					readContexts*)
+			)
 
 	def applyAll(updates: Seq[RdfUpdate])(cotransact: => Unit = ()): Try[Unit] = repo.transact(conn =>
 		updates.foreach(update => {
@@ -67,10 +69,12 @@ class Rdf4jTriplestoreConnection(
 ) extends TriplestoreConnection with SparqlRunner:
 
 	override def getStatements(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): CloseableIterator[Statement] =
-		Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
+		StatementPatternErrors.describe(subject, predicate, obj, readContexts):
+			Rdf4jIterationIterator(conn.getStatements(subject, predicate, obj, false, readContexts*))
 
 	override def hasStatement(subject: IRI | Null, predicate: IRI | Null, obj: Value | Null): Boolean =
-		conn.hasStatement(subject, predicate, obj, false, readContexts*)
+		StatementPatternErrors.describe(subject, predicate, obj, readContexts):
+			conn.hasStatement(subject, predicate, obj, false, readContexts*)
 
 	override def withContexts(primary: IRI, read: Seq[IRI]): TriplestoreConnection =
 		Rdf4jTriplestoreConnection(primary, read, conn)
@@ -111,3 +115,34 @@ class Rdf4jSailConnection(
 	override def close(): Unit = conn.close()
 
 end Rdf4jSailConnection
+
+
+/** Adds the requested statement pattern to repository errors. Remote (SPARQL-over-HTTP)
+  * repositories paste the pattern's values into a query string, so a value that is not
+  * representable in SPARQL (e.g. an IRI with a space) yields an opaque parse error.
+  */
+private object StatementPatternErrors:
+
+	// characters that are not allowed inside a SPARQL IRIREF
+	private val invalidIriChars = "[\\x00-\\x20<>\"{}|^`\\\\]".r
+
+	def describe[T](subject: IRI | Null, predicate: IRI | Null, obj: Value | Null, contexts: Seq[IRI])(body: => T): T =
+		try body catch case err: RepositoryException =>
+			val pattern = Seq(subject, predicate, obj).map(render).mkString(" ")
+			val ctxs = if contexts.isEmpty then "all contexts" else contexts.map(render).mkString(", ")
+			val badIris = Seq(subject, predicate, obj).collect:
+				case iri: IRI if invalidIriChars.findFirstIn(iri.stringValue).isDefined => render(iri)
+			val hint =
+				if badIris.isEmpty then ""
+				else s" Pattern contains IRI(s) not representable in SPARQL: ${badIris.mkString(", ")}."
+			throw RepositoryException(
+				s"Failed to look up statement pattern ($pattern) in $ctxs.$hint Cause: ${err.getMessage}",
+				err
+			)
+
+	private def render(v: Value | Null): String = v match
+		case null => "?"
+		case iri: IRI => s"<${iri.stringValue}>"
+		case other: Value => other.toString
+
+end StatementPatternErrors

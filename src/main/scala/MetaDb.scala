@@ -8,22 +8,20 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer, StatisticsClient}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, MetaIngestionProviders, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.rdfstore.{DerivedMetadataClient, LocalDerivedMetadataSource, RdfStore}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
-import se.lu.nateko.cp.meta.services.sparql.magic.CpNotifyingSail
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.{DataObjectInstanceServers, StaticObjectReader, UploadService}
-import se.lu.nateko.cp.meta.services.{FileStorageService, Rdf4jSparqlRunner, ServiceException}
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab, FileStorageService, Rdf4jSparqlRunner, ServiceException}
 import se.lu.nateko.cp.meta.utils.akkahttp.AkkaHttpClient
 import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
 
@@ -39,29 +37,25 @@ class MetaDb (
 	val uploadService: UploadService,
 	val labelingService: Option[StationLabelingService],
 	val fileService: FileStorageService,
-	val sparql: SparqlServer,
-	val magicRepo: SailRepository,
-	val citer: CitationProvider,
+	/** The repository with the SPARQL magic index and derived metadata */
+	val magicRepo: Repository,
+	/** The repository with only the stored statements */
+	val vanillaRepo: Repository,
+	val vanillaGlob: InstanceServer,
+	val vocab: CpVocab,
+	val metaVocab: CpmetaVocab,
+	val lenses: RdfLenses,
+	val metaReader: StaticObjectReader,
+	val externalObjs: ExternalObjFetcher,
 	val derivedMetadata: DerivedMetadataClient,
+	/** Switches the RDF store to read-only mode, dumping the SPARQL magic index and citation caches to disk */
+	val makeReadonlyDumpIndexAndCaches: String => Future[String],
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
-	export uploadService.servers.{vocab, metaVocab, lenses}
-	private val log = Logging.getLogger(system, this)
-	def metaReader: StaticObjectReader = citer.metaReader
-	def vanillaRepo: Repository = citer.repo
-	def vanillaGlob: InstanceServer = citer.server
-
 	val uriSerializer: UriSerializer =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs, new AkkaHttpClient)
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, citer.externalObjs, config, stats)
-
-	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
-		magicRepo.getSail match
-			case cp: CpNotifyingSail =>
-				val exe = summon[ActorSystem].dispatcher
-				cp.makeReadonlyDumpIndexAndCaches(msg)(using exe)
-			case _ => Future.successful("Not a Carbon Portal's \"magic\" repository, cannot switch to read-only mode")
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, externalObjs, config, stats)
 
 
 	/** Shuts down the instance servers; the RDF store is closed separately */
@@ -139,9 +133,16 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config)
 		given EnvriConfigs = config.core.envriConfigs
 
-		val citer = store.citer
 		val repo = store.repo
 		val isFreshInit = store.isFreshInit
+		val vanillaGlob = new Rdf4jInstanceServer(store.vanillaRepo)
+		val vocab = new CpVocab(store.vanillaRepo.getValueFactory)
+		val metaVocab = new CpmetaVocab(store.vanillaRepo.getValueFactory)
+		val lenses = getLenses(config.instanceServers, config.dataUploadService)
+		val pidFactory =
+			val handleConf = config.dataUploadService.handle
+			new PidFactory(handleConf.baseUrl, handleConf.prefix)
+		val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None, None)
 
 		val ontosFut = Future{makeOntos(config.onto.ontologies)}.andThen:
 			case _ => log.info("ontology servers created")
@@ -178,31 +179,39 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 					(servId, new InstOnto(instServer, onto))
 			}
 
-			val uploadService = makeUploadService(citer, instanceServers, config)
+			val uploadService = makeUploadService(
+				store.vanillaRepo, vanillaGlob, vocab, metaVocab, metaReader, lenses, instanceServers, config
+			)
 
 			val fileService = new FileStorageService(new java.io.File(config.fileStoragePath))
 
 			val labelingService = config.stationLabelingService.map{ conf =>
 				val onto = ontos(conf.ontoId)
-				val metaVocab = citer.metaVocab
 				new StationLabelingService(instanceServers, onto, fileService, metaVocab, conf)
 			}
 
 			new MetaDb(
-				instanceServers, instOntos, uploadService, labelingService, fileService, store.sparqlServer, repo, citer,
-				DerivedMetadataClient(LocalDerivedMetadataSource(store.derivedMetadata)), config
+				instanceServers, instOntos, uploadService, labelingService, fileService,
+				repo, store.vanillaRepo, vanillaGlob, vocab, metaVocab, lenses, metaReader,
+				new ExternalObjFetcher(ExternalProviders(config.dataUploadService.externalProviders)),
+				DerivedMetadataClient(LocalDerivedMetadataSource(store.derivedMetadata)),
+				store.makeReadonlyDumpIndexAndCaches, config
 			)
 		end for
 	end apply
 
 	private def makeUploadService(
-		citationProvider: CitationProvider,
+		vanillaRepo: Repository,
+		vanillaGlob: InstanceServer,
+		vocab: CpVocab,
+		metaVocab: CpmetaVocab,
+		metaReader: StaticObjectReader,
+		lenses: RdfLenses,
 		instanceServers: Map[String, InstanceServer],
 		config: CpmetaConfig
 	): UploadService = {
 		val metaServers = config.dataUploadService.metaServers.view.mapValues(instanceServers.apply).toMap
 		val collectionServers = config.dataUploadService.collectionServers.view.mapValues(instanceServers.apply).toMap
-		val vanillaGlob: InstanceServer = citationProvider.server
 		given factory: ValueFactory = vanillaGlob.factory
 		given EnvriConfigs = config.core.envriConfigs
 
@@ -218,10 +227,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val uploadConf = config.dataUploadService
 
-		val vanillaRepo = citationProvider.repo
 		val sparqlRunner = new Rdf4jSparqlRunner(vanillaRepo)
 
-		val dataObjServers = new DataObjectInstanceServers(vanillaGlob, citationProvider, metaServers, collectionServers, docInstServs, perFormatServers)
+		val dataObjServers = new DataObjectInstanceServers(
+			vanillaGlob, vocab, metaVocab, metaReader, lenses,
+			metaServers, collectionServers, docInstServs, perFormatServers
+		)
 		val etcHelper = new EtcUploadTransformer(sparqlRunner, uploadConf.etc, dataObjServers.vocab)
 
 		new UploadService(dataObjServers, etcHelper, uploadConf)

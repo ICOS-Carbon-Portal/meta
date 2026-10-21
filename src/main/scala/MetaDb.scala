@@ -8,6 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.Materializer
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
@@ -136,6 +137,12 @@ object MetaDb:
 			dobjPerFormat = perFormat
 		)
 	end getLenses
+
+	/** Makes IRIs from namespace and local name the way the LMDB and native stores do, by joining them, so that
+	  * getLocalName (and hence UriId) of e.g. vocab.getStation is the same as when meta had the store in-process
+	  */
+	object StoreLikeValueFactory extends SimpleValueFactory:
+		override def createIRI(namespace: String, localName: String): IRI = createIRI(namespace + localName)
 end MetaDb
 
 class MetaDbFactory(using system: ActorSystem, mat: Materializer):
@@ -151,7 +158,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val rdfStore = config.rdfStore
 		val sparqlEndpoint = rdfStore.sparqlEndpoint.toString
-		val repo = SPARQLRepository(sparqlEndpoint, sparqlEndpoint)
+		val repo = new SPARQLRepository(sparqlEndpoint, sparqlEndpoint):
+			override def getValueFactory: ValueFactory = MetaDb.StoreLikeValueFactory
 		repo.enableQuadMode(true)
 		repo.init()
 		val vanillaGlob = new Rdf4jInstanceServer(repo)

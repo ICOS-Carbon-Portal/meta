@@ -41,18 +41,35 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll {
 		}
 	}
 
-	test("requests disable retries and bound connection backoff") {
+	test("response times do not build up upon repeated connection errors") {
 		var requests = 0
+		var failedConnects = 0
 		val client = clientWith { (request, settings) =>
 			requests += 1
 			assert(request.method == HttpMethods.GET)
 			assert(request.uri == Uri(s"$base?hashId=test"))
-			Future.failed(ConnectException("Connection refused"))
+			// emulate the connection pool's exponential backoff between consecutive failed connects
+			def attempt(retriesLeft: Int): Future[HttpResponse] = {
+				val backoffMs = math.min(
+					settings.baseConnectionBackoff.toMillis * math.pow(2, failedConnects),
+					settings.maxConnectionBackoff.toMillis.toDouble
+				).toLong
+				failedConnects += 1
+				after(backoffMs.millis)(Future.failed(ConnectException("Connection refused")))
+					.recoverWith { case _ if retriesLeft > 0 => attempt(retriesLeft - 1) }
+			}
+			attempt(settings.maxRetries)
 		}
-		for (_ <- 1 to 12) {
-			assert(Await.result(count(client), 2.seconds).isEmpty)
+		val responseTimes = (1 to 8).map { _ =>
+			val start = System.nanoTime()
+			assert(Await.result(count(client), 3.seconds).isEmpty)
+			(System.nanoTime() - start).nanos
 		}
-		assert(requests == 12)
+		assert(requests == 8)
+		// with unbounded backoff, later requests would only be answered by the stats timeout
+		assert(responseTimes.forall(_ < 900.millis), s"response times: ${responseTimes.map(_.toMillis)} ms")
+		// once the backoff is saturated, response times must stop growing
+		assert(responseTimes.last < responseTimes(6) + 200.millis, s"response times: ${responseTimes.map(_.toMillis)} ms")
 	}
 
 	test("an unavailable statistics server logs the failure and request URL") {

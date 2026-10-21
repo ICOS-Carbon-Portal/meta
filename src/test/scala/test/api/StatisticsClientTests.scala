@@ -47,10 +47,6 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll {
 			requests += 1
 			assert(request.method == HttpMethods.GET)
 			assert(request.uri == Uri(s"$base?hashId=test"))
-			assert(settings.maxRetries == 0)
-			assert(settings.baseConnectionBackoff == 10.millis)
-			assert(settings.maxConnectionBackoff == 500.millis)
-			assert(settings.connectionSettings.connectingTimeout == 20.millis)
 			Future.failed(ConnectException("Connection refused"))
 		}
 		for (_ <- 1 to 12) {

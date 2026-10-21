@@ -23,10 +23,6 @@ import java.time.temporal.ChronoUnit
 import java.time.{Duration, Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
 import scala.util.{Failure, Success, Try}
 
-enum RemoteCitation:
-	case NotApplicable
-	case Expected(error: Option[String])
-
 private class CitationInfo(
 	val pidUrl: Option[String],
 	val authors: Option[Seq[Agent]],

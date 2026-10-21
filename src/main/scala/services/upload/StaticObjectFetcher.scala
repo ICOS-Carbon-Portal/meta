@@ -9,6 +9,7 @@ import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -22,7 +23,8 @@ class StaticObjectReader(
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
 	pidFactory: PidFactory,
-	citer: Option[StaticObjectReferenceProvider]
+	citer: Option[StaticObjectReferenceProvider],
+	externalObjs: Option[ExternalObjFetcher]
 ) extends CollectionReader(metaVocab, item => citer.fold(item.references)(_.getItemCitationInfo(item))) with DobjMetaReader(vocab):
 	import StatementSource.{
 		resourceHasType,
@@ -150,7 +152,7 @@ class StaticObjectReader(
 		else
 			val externalLookup = for
 				url <- accessUrl
-				extObjs <- citer.map(_.externalObjs)
+				extObjs <- externalObjs
 				if extObjs.providers.lookup(url).isDefined
 			yield extObjs.getPidEager(url)
 			externalLookup.getOrElse(Some(pidFactory.getPid(hash)))

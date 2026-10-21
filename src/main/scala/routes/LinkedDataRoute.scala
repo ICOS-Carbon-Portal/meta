@@ -23,6 +23,8 @@ import akka.http.scaladsl.server.RejectionHandler
 import se.lu.nateko.cp.meta.core.data.EnvriConfig
 import se.lu.nateko.cp.meta.services.MetadataException
 
+import scala.concurrent.ExecutionContext
+
 object LinkedDataRoute {
 	private given ToResponseMarshaller[InstanceServer] = InstanceServerSerializer.marshaller
 
@@ -31,7 +33,7 @@ object LinkedDataRoute {
 		uriSerializer: UriSerializer,
 		instanceServers: Map[String, InstanceServer],
 		vocab: CpVocab
-	)(using envriConfs: EnvriConfigs, logBus : LoggingBus): Route = {
+	)(using envriConfs: EnvriConfigs, logBus : LoggingBus, ec: ExecutionContext): Route = {
 
 		val log = Logging.getLogger(logBus, this)
 		val instServerConfs = MetaDb.getAllInstanceServerConfigs(config)
@@ -107,22 +109,21 @@ object LinkedDataRoute {
 						case fileName if InspireXmlFilename.matches(fileName) =>
 							(extractUri & extractEnvri){(uri, envri) =>
 								val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
-								val objV = uriSerializer.fetchStaticObject(canonUri)
-								objV.result match
-									case Some(dobj: DataObject) =>
-										if objV.errors.nonEmpty then
-											log.warning(s"Problems while reading data object $canonUri\n${objV.errors.mkString("\n")}")
+								onSuccess(uriSerializer.fetchStaticObjectWithDerived(canonUri)): objV =>
+									objV.result match
+										case Some(dobj: DataObject) =>
+											if objV.errors.nonEmpty then
+												log.warning(s"Problems while reading data object $canonUri\n${objV.errors.mkString("\n")}")
 
-										val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
-										val printer = new scala.xml.PrettyPrinter(120, 3)
-										val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-											printer.format(scala.xml.XML.loadString(xml.body))
-										val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
-										respondWithHeader(attachmentHeader(fileName)){
-											complete(HttpEntity(contentType, fineXml))
-										}
-									case _ =>
-										reject
+											val xml = views.xml.InspireDobjMeta(Inspire(dobj, vocab), envri, envriConfs(envri))
+											val printer = new scala.xml.PrettyPrinter(120, 3)
+											val fineXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+												printer.format(scala.xml.XML.loadString(xml.body))
+											val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
+											respondWithHeader(attachmentHeader(fileName)){
+												complete(HttpEntity(contentType, fineXml))
+											}
+										case _ => reject
 							}
 
 						case fileName @ FileNameWithExtension(_, ext) =>

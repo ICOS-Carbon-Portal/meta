@@ -28,12 +28,14 @@ object DerivedMetadataService:
 	def apply(citations: CitationProvider): DerivedMetadataService =
 		new DerivedMetadataService(citations.metaVocab.factory, resource =>
 			val uri = new URI(resource.stringValue)
-			citations.getReferences(resource) match
+			val found = citations.getReferencesWithRemoteCitation(resource)
+			found.result match
 				case None => DerivedMetadataResult(uri, "notFound", None)
-				case Some(references) =>
+				case Some((references, remoteCitation)) =>
 					val citation = citations.getCitation(resource).orElse(references.citationString)
 					val licence = citations.getLicence(resource).orElse(references.licence)
-					DerivedMetadataResult(uri, "ready", Some(DerivedMetadata(uri, references, citation, licence)))
+					val metadata = DerivedMetadata(uri, references, citation, licence, found.errors, Some(remoteCitation))
+					DerivedMetadataResult(uri, "ready", Some(metadata))
 		, doi =>
 			se.lu.nateko.cp.doi.Doi.parse(doi).toOption.exists: parsed =>
 				citations.doiCiter.dropCache(parsed)

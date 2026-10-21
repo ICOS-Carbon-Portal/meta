@@ -11,21 +11,17 @@ import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
+import se.lu.nateko.cp.meta.services.upload.StaticObjectReferenceProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
 import java.net.URI
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
+import java.time.{Duration, Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset, ZonedDateTime}
 import scala.util.{Failure, Success, Try}
-
-enum RemoteCitation:
-	case NotApplicable
-	case Expected(error: Option[String])
 
 private class CitationInfo(
 	val pidUrl: Option[String],
@@ -42,7 +38,7 @@ class CitationMaker(
 	metaVocab: CpmetaVocab,
 	coreConf: MetaCoreConfig,
 	val externalObjs: ExternalObjFetcher
-):
+) extends StaticObjectReferenceProvider:
 	private val log = LoggerFactory.getLogger(getClass())
 	import CitationMaker.*
 	import Validated.getOrElseV
@@ -366,6 +362,9 @@ object CitationMaker:
 				}
 			}
 		case _ => Seq.empty
+
+	private def toCETnoon(date: LocalDate): Instant =
+		LocalDateTime.of(date, LocalTime.NOON).atOffset(ZoneOffset.ofHours(1)).toInstant
 
 	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
 		spatioTemp => Some(getTimeFromInterval(spatioTemp.temporal.interval, zoneId)),

@@ -13,7 +13,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
 import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
-import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
+import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, MetaIngestionProviders, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
@@ -166,7 +166,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, se.lu.nateko.cp.meta.services.derived.DerivedMetadataService(citer))
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -190,7 +190,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			*/
 			given ExecutionContext = singleThreadExe.getOrElse(ExecutionContext.global)
 
-			makeInstanceServers(repo, Ingestion.allProviders, config).andThen:
+			makeInstanceServers(repo, MetaIngestionProviders.allProviders, config).andThen:
 				case _ =>
 					log.info("instance servers created")
 					singleThreadExe.foreach(_.shutdown())

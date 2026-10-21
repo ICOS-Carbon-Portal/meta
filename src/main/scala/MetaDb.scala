@@ -18,7 +18,7 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServe
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.rdfstore.{CitationProviderConfig, DerivedMetadataService}
+import se.lu.nateko.cp.meta.rdfstore.{CitationProviderConfig, DerivedMetadataClient, DerivedMetadataService, LocalDerivedMetadataSource}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.CitationProvider
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
@@ -48,6 +48,7 @@ class MetaDb (
 	val sparql: SparqlServer,
 	val magicRepo: SailRepository,
 	val citer: CitationProvider,
+	val derivedMetadata: DerivedMetadataClient,
 	val config: CpmetaConfig
 )(using Materializer, EnvriConfigs)(using system: ActorSystem) extends AutoCloseable:
 
@@ -59,7 +60,7 @@ class MetaDb (
 
 	val uriSerializer: UriSerializer =
 		val stats = new StatisticsClient(config.statsClient, config.core.envriConfigs, new AkkaHttpClient)
-		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, citer.doiCiter, citer.externalObjs, config, stats)
+		new Rdf4jUriSerializer(vanillaRepo, vocab, metaVocab, lenses, derivedMetadata, citer.externalObjs, config, stats)
 
 	def makeReadonlyDumpIndexAndCaches(msg: String): Future[String] =
 		magicRepo.getSail match
@@ -167,7 +168,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer, DerivedMetadataService(citer))
+		val derivedService = DerivedMetadataService(citer)
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, derivedService)
 		val repo = new SailRepository(sail)
 		repo.init()
 
@@ -218,7 +220,10 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
 
-			val db = new MetaDb(instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer, config)
+			val db = new MetaDb(
+				instanceServers, instOntos, uploadService, labelingService, fileService, sparqlServer, repo, citer,
+				DerivedMetadataClient(LocalDerivedMetadataSource(derivedService)), config
+			)
 			if isFreshInit then sail.makeReadonly("This was a fresh RDF store initialization, running in " +
 				"readonly mode; restart the server for proper operation")
 			db

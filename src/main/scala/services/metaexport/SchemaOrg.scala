@@ -7,12 +7,12 @@ import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import se.lu.nateko.cp.doi.meta as doi
 import se.lu.nateko.cp.doi.meta.{GenericName, PersonalName}
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlRunner}
+import se.lu.nateko.cp.meta.api.SparqlRunner
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
-import se.lu.nateko.cp.meta.services.citation.CitationMaker.getTemporalCoverageDisplay
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata.getTemporalCoverageDisplay
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -38,7 +38,7 @@ object SchemaOrg:
 	def optJs[T](opt: Option[T])(toJs: T => JsValue): JsValue = opt.fold(JsNull)(toJs)
 
 	def sparqlUriSeq(sparqler: SparqlRunner, query: String, varName: String): Seq[URI] = sparqler
-		.evaluateTupleQuery(SparqlQuery(query))
+		.evaluateTupleQuery(query)
 		.map(_.getValue(varName))
 		.collect{case iri: IRI => iri.toJava}
 		.toIndexedSeq
@@ -80,7 +80,7 @@ object SchemaOrg:
 		|	FILTER(STRSTARTS(str(?spec), "${envriConf.metaItemPrefix}"))
 		|}""".stripMargin
 
-		val specs: Iterator[String] = sparqler.evaluateTupleQuery(SparqlQuery(specsQuery)).flatMap(b =>
+		val specs: Iterator[String] = sparqler.evaluateTupleQuery(specsQuery).flatMap(b =>
 			Option(b.getValue("spec")).map(_.stringValue)
 		)
 
@@ -102,7 +102,7 @@ object SchemaOrg:
 		|order by desc(?submTime)""".stripMargin
 
 		sparqler
-			.evaluateTupleQuery(SparqlQuery(query))
+			.evaluateTupleQuery(query)
 			.collect:
 				case b if Option(b.getValue("seeAlso")).forall(sa => providers.lookup(URI(sa.stringValue)).isEmpty) =>
 					b.getValue("dobj")

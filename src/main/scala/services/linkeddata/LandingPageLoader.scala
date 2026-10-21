@@ -13,7 +13,8 @@ import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource, TriplestoreConnection}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -35,8 +36,9 @@ final class LandingPageLoader(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	pidFactory: HandleNetClient.PidFactory,
-	citer: CitationMaker
+	pidFactory: PidFactory,
+	attribution: AttributionProvider,
+	externalObjs: ExternalObjFetcher
 ) {
 
 	import LandingPageLoader.*
@@ -45,7 +47,7 @@ final class LandingPageLoader(
 
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
-	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None, Some(externalObjs))
 
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 
@@ -65,14 +67,14 @@ final class LandingPageLoader(
 		for {
 			given DocConn <- lenses.documentLens
 			station <- objectReader.getStation(uri.toRdf)
-			memberships <- citer.attrProvider.getMemberships(station.org.self.uri)
+			memberships <- attribution.getMemberships(station.org.self.uri)
 		} yield OrganizationExtra(station, memberships)
 	}
 
 	def organization(uri: Uri)(using Envri): Validated[OrganizationExtra[Organization]] = accessMeta {
 		for {
 			organization <- objectReader.getOrganization(uri.toRdf)
-			memberships <- citer.attrProvider.getMemberships(organization.self.uri)
+			memberships <- attribution.getMemberships(organization.self.uri)
 		} yield OrganizationExtra(organization, memberships)
 	}
 
@@ -82,7 +84,7 @@ final class LandingPageLoader(
 	def person(uri: Uri)(using Envri): Validated[PersonExtra] = accessMeta {
 		for {
 			person <- objectReader.getPerson(uri.toRdf)
-			roles <- citer.attrProvider.getPersonRoles(person.self.uri)
+			roles <- attribution.getPersonRoles(person.self.uri)
 		} yield PersonExtra(person, roles)
 	}
 

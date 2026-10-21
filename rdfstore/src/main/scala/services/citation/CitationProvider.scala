@@ -12,13 +12,13 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
+import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DocConn, GlobConn, MetaConn}
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses, SparqlRunner}
 import se.lu.nateko.cp.meta.{CitationConfig, CpmetaConfig}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jTriplestoreConnection, StatementSource, TriplestoreConnection}
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.{StaticObjectReader, StaticObjectReferenceProvider}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.utils.Validated
@@ -111,19 +111,24 @@ class CitationProvider(
 		getCitableItem(res)(using RdfLens.global).map(_.references)
 
 	/** References together with the status of the citation fetched from a DOI or an external repository.
-	  * The errors are those of making the citation info, which meta cannot observe when reading the object itself.
-	  * No result and no errors means that the resource is not a citable item.
+	  * The errors are only those of making the citation info, as meta reports the errors of reading the object itself.
 	  */
 	def getReferencesWithRemoteCitation(res: Resource): Validated[(References, RemoteCitation)] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
-		val recorder = CitationErrorRecorder(citer)
-		val reader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(recorder), Some(externalObjs))
+		val citationErrors = Seq.newBuilder[String]
+		val recordingCiter = new StaticObjectReferenceProvider:
+			def getItemCitationInfo(item: CitableItem): References = citer.getItemCitationInfo(item)
+			def getCitationInfo(item: StaticObject, specConn: MetaConn)(using Envri, DocConn | DobjConn): Validated[References] =
+				val refs = citer.getCitationInfo(item, specConn)
+				citationErrors ++= refs.errors
+				refs
+		val reader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(recordingCiter), Some(externalObjs))
 		val found = for
 			iri <- toIRI(res)
 			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
 			item <- getCitableItem(iri, reader)
 		yield item.references -> citer.remoteCitation(item)
-		new Validated(found, recorder.errors)
+		new Validated(found, citationErrors.result())
 
 	def getLicence(res: Resource): Option[Licence] = access: conn ?=>
 		for

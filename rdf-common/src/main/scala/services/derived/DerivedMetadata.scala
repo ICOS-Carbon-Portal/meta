@@ -20,8 +20,7 @@ case class DerivedMetadata(
 	remoteCitation: Option[RemoteCitation] = None
 )
 
-/** @param errors the errors that made the derivation fail, when the status is "failed" */
-case class DerivedMetadataResult(resource: URI, status: String, metadata: Option[DerivedMetadata], errors: Seq[String] = Nil)
+case class DerivedMetadataResult(resource: URI, status: String, metadata: Option[DerivedMetadata])
 case class DerivedMetadataResponse(version: Int, results: Seq[DerivedMetadataResult])
 
 object DerivedMetadataJsonProtocol extends CommonJsonSupport:
@@ -40,11 +39,5 @@ object DerivedMetadataJsonProtocol extends CommonJsonSupport:
 			case _ => deserializationError(s"Expected remote citation status, got $js")
 
 	given RootJsonFormat[DerivedMetadata] = jsonFormat6(DerivedMetadata.apply)
-	given RootJsonFormat[DerivedMetadataResult] with
-		private val base = jsonFormat4(DerivedMetadataResult.apply)
-		def write(res: DerivedMetadataResult): JsValue = base.write(res)
-		// rdfStores that predate the errors field do not report it
-		def read(js: JsValue): DerivedMetadataResult = js match
-			case JsObject(fields) if !fields.contains("errors") => base.read(JsObject(fields + ("errors" -> JsArray())))
-			case _ => base.read(js)
+	given RootJsonFormat[DerivedMetadataResult] = jsonFormat3(DerivedMetadataResult.apply)
 	given RootJsonFormat[DerivedMetadataResponse] = jsonFormat2(DerivedMetadataResponse.apply)

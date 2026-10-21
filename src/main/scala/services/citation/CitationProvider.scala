@@ -101,7 +101,7 @@ class CitationProvider(
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core, externalObjs)
 
-	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer))
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, Some(citer), Some(externalObjs))
 
 	def getCitation(res: Resource): Option[String] = access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)

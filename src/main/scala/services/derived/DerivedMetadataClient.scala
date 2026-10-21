@@ -7,15 +7,16 @@ import akka.stream.Materializer
 import se.lu.nateko.cp.meta.core.data.{DataObject, DocObject, StaticCollection, StaticObject}
 import se.lu.nateko.cp.meta.services.citation.RemoteCitation
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
-import se.lu.nateko.cp.meta.utils.Validated
 import spray.json.*
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 
-/** An item enriched with derived metadata, and the status of its citation from a DOI or an external repository */
-case class WithRemoteCitation[+T](item: T, remoteCitation: RemoteCitation)
+/** An item enriched with derived metadata, the status of its citation from a DOI or an external repository,
+  * and the warnings from making the citation
+  */
+case class WithRemoteCitation[+T](item: T, remoteCitation: RemoteCitation, warnings: Seq[String] = Nil)
 
 final class DerivedMetadataClient(endpoint: URI)(using system: ActorSystem, mat: Materializer):
 
@@ -38,29 +39,26 @@ final class DerivedMetadataClient(endpoint: URI)(using system: ActorSystem, mat:
 	def resolve(resource: URI): Future[DerivedMetadataResult] =
 		resolve(Seq(resource)).map(_.results.headOption.getOrElse(DerivedMetadataResult(resource, "notFound", None)))
 
-	def enrich(resource: URI, item: StaticObject): Future[Validated[StaticObject]] =
-		enrichWithRemoteCitation(resource, item).map(_.map(_.item))
+	def enrich(resource: URI, item: StaticObject): Future[StaticObject] =
+		enrichWithRemoteCitation(resource, item).map(_.item)
 
-	def enrich(resource: URI, item: StaticCollection): Future[Validated[StaticCollection]] =
-		enrichWithRemoteCitation(resource, item).map(_.map(_.item))
+	def enrich(resource: URI, item: StaticCollection): Future[StaticCollection] =
+		enrichWithRemoteCitation(resource, item).map(_.item)
 
-	def enrichWithRemoteCitation(resource: URI, item: StaticObject): Future[Validated[WithRemoteCitation[StaticObject]]] =
+	def enrichWithRemoteCitation(resource: URI, item: StaticObject): Future[WithRemoteCitation[StaticObject]] =
 		enrichWith(resource, item): metadata =>
 			item match
 				case data: DataObject => data.copy(references = metadata.references)
 				case doc: DocObject => doc.copy(references = metadata.references)
 
-	def enrichWithRemoteCitation(resource: URI, item: StaticCollection): Future[Validated[WithRemoteCitation[StaticCollection]]] =
+	def enrichWithRemoteCitation(resource: URI, item: StaticCollection): Future[WithRemoteCitation[StaticCollection]] =
 		enrichWith(resource, item)(metadata => item.copy(references = metadata.references))
 
-	/** The errors are those of deriving the metadata, to be reported after the errors of reading the item itself */
-	private def enrichWith[T](resource: URI, item: T)(enrich: DerivedMetadata => T): Future[Validated[WithRemoteCitation[T]]] =
+	private def enrichWith[T](resource: URI, item: T)(enrich: DerivedMetadata => T): Future[WithRemoteCitation[T]] =
 		resolve(resource).map:
-			case DerivedMetadataResult(_, "ready", Some(metadata), _) =>
-				val enriched = WithRemoteCitation(enrich(metadata), metadata.remoteCitation.getOrElse(RemoteCitation.NotApplicable))
-				new Validated(Some(enriched), metadata.warnings)
-			case DerivedMetadataResult(_, "failed", _, errors) => new Validated(None, errors)
-			case _ => Validated.ok(WithRemoteCitation(item, RemoteCitation.NotApplicable))
+			case DerivedMetadataResult(_, "ready", Some(metadata)) =>
+				WithRemoteCitation(enrich(metadata), metadata.remoteCitation.getOrElse(RemoteCitation.NotApplicable), metadata.warnings)
+			case _ => WithRemoteCitation(item, RemoteCitation.NotApplicable)
 
 	def dropDoiCache(doi: String): Future[Unit] =
 		val request = HttpRequest(

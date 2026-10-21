@@ -82,7 +82,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		"citation-warnings" -> None
 	)
 
-	/** The errors of making the citation, as reported by the rdfStore stub on the "citation-warnings" and "citation-failed" endpoints */
+	/** The errors of making the citation, as reported by the rdfStore stub on the "citation-warnings" endpoint */
 	private val citationErrors = Seq(
 		"Expected at most one values of property http://meta.icos-cp.eu/ontologies/cpmeta/hasEmail " +
 			"for resource http://meta.icos-cp.eu/resources/people/Twomail_Person, but got 2"
@@ -99,12 +99,10 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 						val request = body.parseJson.convertTo[DerivedMetadataRequest]
 						val results = request.resources.map { res =>
 							derivedTitles.get(res).fold(DerivedMetadataResult(res, "notFound", None)) { title =>
-								if endpoint == "citation-failed" then DerivedMetadataResult(res, "failed", None, citationErrors)
-								else
-									val refs = References.empty.copy(title = Some(title))
-									val warnings = if endpoint == "citation-warnings" then citationErrors else Nil
-									val metadata = DerivedMetadata(res, refs, None, None, warnings, remoteCitations(endpoint))
-									DerivedMetadataResult(res, "ready", Some(metadata))
+								val refs = References.empty.copy(title = Some(title))
+								val warnings = if endpoint == "citation-warnings" then citationErrors else Nil
+								val metadata = DerivedMetadata(res, refs, None, None, warnings, remoteCitations(endpoint))
+								DerivedMetadataResult(res, "ready", Some(metadata))
 							}
 						}
 						complete(HttpEntity(
@@ -250,18 +248,6 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the error of fetching the remote citation reported by rdfStore") {
 			val (page, _) = renderLandingPage(Fixture.timeSeriesObject, rdfStorePath = "remote-failed")
 			assert(propertyText(page, "Citation") === remoteCitationError)
-		}
-
-		it("renders the not-found page with all the errors when rdfStore fails to make the citation") {
-			val (route, _) = serialize(Fixture.timeSeriesObject, repo, "citation-failed")
-			Get() ~> Accept(MediaTypes.`text/html`) ~> route ~> check {
-				assert(status === StatusCodes.NotFound)
-				val page = Jsoup.parse(responseAs[String])
-				assert(heading(page) === "Data object not found")
-				// the page template has paragraphs of its own, so look for the errors among them
-				val paragraphs = page.select("p").asScala.map(_.text).toSeq
-				assert(paragraphs.containsSlice(citationErrors))
-			}
 		}
 
 		it("renders the previewable variables of the data object landing page") {

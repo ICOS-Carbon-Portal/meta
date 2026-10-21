@@ -30,14 +30,11 @@ object DerivedMetadataService:
 			val uri = new URI(resource.stringValue)
 			val found = citations.getReferencesWithRemoteCitation(resource)
 			found.result match
-				case None if found.errors.isEmpty => DerivedMetadataResult(uri, "notFound", None)
-				case None => DerivedMetadataResult(uri, "failed", None, found.errors)
+				case None => DerivedMetadataResult(uri, "notFound", None)
 				case Some((references, remoteCitation)) =>
 					val citation = citations.getCitation(resource).orElse(references.citationString)
 					val licence = citations.getLicence(resource).orElse(references.licence)
-					val metadata = DerivedMetadata(
-						uri, references, citation, licence, warnings = found.errors, remoteCitation = Some(remoteCitation)
-					)
+					val metadata = DerivedMetadata(uri, references, citation, licence, found.errors, Some(remoteCitation))
 					DerivedMetadataResult(uri, "ready", Some(metadata))
 		, doi =>
 			se.lu.nateko.cp.doi.Doi.parse(doi).toOption.exists: parsed =>

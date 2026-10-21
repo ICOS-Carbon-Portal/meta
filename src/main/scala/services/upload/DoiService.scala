@@ -20,9 +20,9 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer, derivedMetadata: De
 
 	private def saveDoi(meta: DoiMeta)(using Envri): Future[Unit] = client.putMetadata(meta)
 
-	private def enrich[T](parsed: Validated[T])(enricher: T => Future[Validated[T]]): Future[Validated[T]] =
+	private def enrich[T](parsed: Validated[T])(enricher: T => Future[T]): Future[Validated[T]] =
 		parsed.result.fold(Future.successful(new Validated[T](None, parsed.errors))): item =>
-			enricher(item).map(enriched => new Validated(enriched.result, parsed.errors ++ enriched.errors))
+			enricher(item).map(enriched => new Validated(Some(enriched), parsed.errors))
 
 	private def fetchCollObjectsRecursively(coll: StaticCollection): Future[Validated[Seq[StaticObject]]] =
 		Future.sequence:

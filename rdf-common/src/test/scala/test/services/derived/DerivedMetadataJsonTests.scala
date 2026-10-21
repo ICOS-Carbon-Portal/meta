@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.test.services.derived
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.core.data.References
 import se.lu.nateko.cp.meta.services.citation.RemoteCitation
-import se.lu.nateko.cp.meta.services.derived.{DerivedMetadata, DerivedMetadataResult}
+import se.lu.nateko.cp.meta.services.derived.DerivedMetadata
 import se.lu.nateko.cp.meta.services.derived.DerivedMetadataJsonProtocol.given
 import spray.json.*
 
@@ -32,13 +32,3 @@ class DerivedMetadataJsonTests extends AnyFunSpec:
 			val js = metadata(None).toJson.asJsObject
 			assert(!js.fields.contains("remoteCitation"))
 			assert(js.convertTo[DerivedMetadata].remoteCitation === None)
-
-	describe("derivation errors"):
-
-		it("survive a JSON round trip"):
-			val result = DerivedMetadataResult(resource, "failed", None, Seq("Expected exactly one value"))
-			assert(result.toJson.compactPrint.parseJson.convertTo[DerivedMetadataResult] === result)
-
-		it("are empty in results from rdfStores that do not report them"):
-			val js = JsObject("resource" -> JsString(resource.toString), "status" -> JsString("notFound"))
-			assert(js.convertTo[DerivedMetadataResult] === DerivedMetadataResult(resource, "notFound", None))

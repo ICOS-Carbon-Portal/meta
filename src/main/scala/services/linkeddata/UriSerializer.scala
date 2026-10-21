@@ -133,10 +133,10 @@ class Rdf4jUriSerializer(
 			landingPageLoader.customLandingPage(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
 
-	private def enrich[T](parsed: Validated[T])(fetch: T => Future[Validated[WithRemoteCitation[T]]]): Future[Validated[WithRemoteCitation[T]]] =
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[WithRemoteCitation[T]]): Future[Validated[WithRemoteCitation[T]]] =
 		parsed.result.fold(Future.successful(new Validated(None, parsed.errors))): item =>
 			fetch(item)
-				.map(enriched => new Validated(enriched.result, parsed.errors ++ enriched.errors))
+				.map(enriched => new Validated(Some(enriched), parsed.errors ++ enriched.warnings))
 				.recover { case err =>
 					parsed.map(WithRemoteCitation(_, RemoteCitation.NotApplicable))
 						.withExtraError(s"Could not fetch derived metadata from rdfStore: ${err.getMessage}")

@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.repository.RepositoryException
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
@@ -54,6 +55,23 @@ class InstanceServerTests extends AnyFunSpec{
 				val server = new Rdf4jInstanceServer(repo, Nil, ctxt)
 				val statements = server.getStatements(Some(makeUri("inst1")), Some(RDF.TYPE), Some(makeUri("class1"))).toIndexedSeq
 				assert(statements.size === 1)
+			}
+		}
+
+		describe("Failed lookups"){
+			val repo = new SailRepository(new MemoryStore){
+				override def getConnection() = throw RepositoryException("simulated failure")
+			}
+			repo.init()
+			val server = new Rdf4jInstanceServer(repo, Nil, ctxt)
+
+			it("reports the statement pattern, the read contexts and IRIs not representable in SPARQL"){
+				val badIri = factory.createIRI(" http://example.org/leading-space")
+				val err = intercept[RepositoryException]:
+					server.hasStatement(Some(makeUri("inst1")), Some(RDF.TYPE), Some(badIri))
+				assert(err.getMessage.contains(s"(<${makeUri("inst1").stringValue}> <${RDF.TYPE.stringValue}> < http://example.org/leading-space>)"))
+				assert(err.getMessage.contains("not representable in SPARQL"))
+				assert(err.getMessage.contains("simulated failure"))
 			}
 		}
 	}

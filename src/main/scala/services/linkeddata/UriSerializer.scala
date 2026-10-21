@@ -18,15 +18,15 @@ import org.eclipse.rdf4j.model.Statement
 import play.twirl.api.Html
 import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.CpmetaConfig
-import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.MetadataException
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
-import se.lu.nateko.cp.meta.services.citation.PlainDoiCiter
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.citation.RemoteCitation
+import se.lu.nateko.cp.meta.rdfstore.{DerivedMetadataClient, WithRemoteCitation}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.services.upload.PageContentMarshalling
 import se.lu.nateko.cp.meta.utils.Validated
@@ -44,6 +44,8 @@ trait UriSerializer {
 	def fetchStaticObject(uri: Uri): Validated[StaticObject]
 	def fetchStaticCollection(uri: Uri): Validated[StaticCollection]
 	def fetchCustomLandingPage(uri: Uri): Validated[Option[JavaUri]]
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]]
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]]
 }
 
 object UriSerializer{
@@ -83,7 +85,7 @@ class Rdf4jUriSerializer(
 	vocab: CpVocab,
 	metaVocab: CpmetaVocab,
 	lenses: RdfLenses,
-	doiCiter: PlainDoiCiter,
+	derivedMetadata: DerivedMetadataClient,
 	externalObjs: ExternalObjFetcher,
 	config: CpmetaConfig,
 	statisticsProvider: StatisticsProvider
@@ -92,11 +94,15 @@ class Rdf4jUriSerializer(
 	import InstanceServerSerializer.statementIterMarshaller
 	import Rdf4jUriSerializer.*
 	import UriSerializer.*
-	private val pidFactory = new api.PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
-	private val citer = new CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
-	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, citer)
+	private given ExecutionContext = system.dispatcher
+
+	private val pidFactory =
+		val handleConf = config.dataUploadService.handle
+		new PidFactory(handleConf.baseUrl, handleConf.prefix)
+	private val attribution = new AttributionProvider(vocab, metaVocab)
+	private val landingPageLoader = new LandingPageLoader(repo, vocab, metaVocab, lenses, pidFactory, attribution, externalObjs)
 	private val pageContentMarshalling =
-		new PageContentMarshalling(config.core.handleProxies, statisticsProvider, externalObjs.providers, citer)
+		new PageContentMarshalling(config.core.handleProxies, statisticsProvider, externalObjs.providers)
 
 	private val rdfMarshaller: ToResponseMarshaller[Uri] = statementIterMarshaller
 		.compose(uri => () => getStatementsIter(uri, repo))
@@ -126,6 +132,27 @@ class Rdf4jUriSerializer(
 			given Envri = inferEnvri(uri)
 			landingPageLoader.customLandingPage(hash)
 		case _ => Validated.error(s"URI $uri does not have the shape of a data/document object URI")
+
+	private def enrich[T](parsed: Validated[T])(fetch: T => Future[WithRemoteCitation[T]]): Future[Validated[WithRemoteCitation[T]]] =
+		parsed.result.fold(Future.successful(new Validated(None, parsed.errors))): item =>
+			fetch(item)
+				.map(enriched => new Validated(Some(enriched), parsed.errors ++ enriched.warnings))
+				.recover { case err =>
+					parsed.map(WithRemoteCitation(_, RemoteCitation.NotApplicable))
+						.withExtraError(s"Could not fetch derived metadata from the RDF store: ${err.getMessage}")
+				}
+
+	private def fetchStaticObjectPage(uri: Uri): Future[Validated[WithRemoteCitation[StaticObject]]] =
+		enrich(fetchStaticObject(uri))(derivedMetadata.enrichWithRemoteCitation(new JavaUri(uri.toString), _))
+
+	private def fetchStaticCollectionPage(uri: Uri): Future[Validated[WithRemoteCitation[StaticCollection]]] =
+		enrich(fetchStaticCollection(uri))(derivedMetadata.enrichWithRemoteCitation(new JavaUri(uri.toString), _))
+
+	def fetchStaticObjectWithDerived(uri: Uri): Future[Validated[StaticObject]] =
+		fetchStaticObjectPage(uri).map(_.map(_.item))
+
+	def fetchStaticCollectionWithDerived(uri: Uri): Future[Validated[StaticCollection]] =
+		fetchStaticCollectionPage(uri).map(_.map(_.item))
 
 	private def getDefaultHtml(uri: Uri)(charset: HttpCharset): HttpResponse =
 		given envri: Envri = inferEnvri(uri)
@@ -178,12 +205,12 @@ class Rdf4jUriSerializer(
 			)
 
 		uri.path match
-			case Hash.Object(hash) =>
+			case Hash.Object(_) =>
 				given CpVocab = vocab
-				pageContentMarshalling.staticObjectMarshaller(() => landingPageLoader.staticObject(hash))
+				pageContentMarshalling.staticObjectMarshaller(() => fetchStaticObjectPage(uri))
 
-			case Hash.Collection(hash) =>
-				pageContentMarshalling.staticCollectionMarshaller(() => landingPageLoader.staticCollection(hash))
+			case Hash.Collection(_) =>
+				pageContentMarshalling.staticCollectionMarshaller(() => fetchStaticCollectionPage(uri))
 
 			case UriPath("resources", "stations", stId) => resourceMarshallings(
 				stId, "station", landingPageLoader.station,

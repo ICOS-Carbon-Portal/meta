@@ -12,7 +12,6 @@ import se.lu.nateko.cp.meta.routes.MainRoute
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{readCitCache, readDoiCache}
 import se.lu.nateko.cp.meta.services.sparql.magic.IndexHandler
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
-import se.lu.nateko.cp.viewscore.MenuProvider
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -25,7 +24,6 @@ object Main extends App with CpmetaJsonProtocol{
 
 	val config: CpmetaConfig = ConfigLoader.default
 	initSentry(config)
-	warmMenus()
 	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 
@@ -79,15 +77,6 @@ object Main extends App with CpmetaJsonProtocol{
 		log.error(err, "Could not start meta service")
 		system.terminate()
 	}
-}
-
-private def warmMenus() = {
-	// MenuProvider fetches the CMS menus in the background upon first access; trigger it now,
-	// otherwise the first page rendered after startup comes out without the menu
-	// TODO: Would be more suitable in viewscore.
-	MenuProvider.cpMenu
-	MenuProvider.citiesMenu
-	MenuProvider.sitesMenu
 }
 
 private def initSentry(config: CpmetaConfig): Unit =

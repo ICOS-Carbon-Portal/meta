@@ -5,7 +5,9 @@ meta host, optionally comparing them with those of a second meta host.
 
 It:
 
-1. runs the same SPARQL query the data portal uses for its default search result
+1. fetches `/buildInfo` from PRIMARY (and SECONDARY, if given), and prints and
+   records the response, so that a run shows which versions of meta it ran against;
+2. runs the same SPARQL query the data portal uses for its default search result
    list (no filters, deprecated objects hidden, newest submissions first, pages of
    20) against `https://PRIMARY/sparql`, for the ENVRI given with `--envri`
    (default `ICOS`);
@@ -15,14 +17,14 @@ It:
    (with `--object ID`, only the landing page of that one data object, given by
    its hash or its URI / landing page URL, is fetched instead, and no SPARQL
    query is made);
-3. optionally (with a second meta host, SECONDARY), fetches each landing page
+4. optionally (with a second meta host, SECONDARY), fetches each landing page
    from SECONDARY right after PRIMARY, times it, and compares the two responses
    (HTTP status and body; bodies are compared as served, except for a short list
    of known environment-specific differences, such as test host names and
    environment badges, listed in `lib/landing_bench/diff.ex`);
    with `--diff`, a unified diff of the bodies is printed for every mismatching
    landing page;
-4. optionally (`--store DIR`), stores the run in a local directory, so that it
+5. optionally (`--store DIR`), stores the run in a local directory, so that it
    can be viewed again later (see below).
 
 ## Run

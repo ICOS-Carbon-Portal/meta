@@ -11,6 +11,9 @@ defmodule LandingBench do
   3. Optionally fetches each landing page from a secondary meta host as well, timing it
      and comparing the response with the one from the primary meta host, optionally
      printing a diff of the response bodies when they do not match.
+
+  Before any landing page is fetched, the `/buildInfo` of each meta host is fetched
+  and recorded, so that a run shows which versions of meta were compared.
   4. Optionally stores the run in a local directory (see `LandingBench.Store`), so that
      it can be viewed again later with `LandingBench.Viewer`.
   """
@@ -66,7 +69,12 @@ defmodule LandingBench do
     secondary_base = opts[:secondary] && base_url(opts[:secondary])
 
     emit.(%{type: :primary, base_url: meta_base, envri: opts[:envri]})
-    if secondary_base, do: emit.(%{type: :secondary, base_url: secondary_base})
+    emit.(fetch_build_info(meta_base, req_opts))
+
+    if secondary_base do
+      emit.(%{type: :secondary, base_url: secondary_base})
+      emit.(fetch_build_info(secondary_base, req_opts))
+    end
 
     objects =
       if object = opts[:object],
@@ -161,6 +169,18 @@ defmodule LandingBench do
       {:error, err} ->
         %{url: url, status: nil, ms: nil, bytes: 0, body: nil, error: Exception.message(err)}
     end
+  end
+
+  # Records which version of meta a host runs. A failure is noted, not fatal.
+  defp fetch_build_info(base_url, req_opts) do
+    info =
+      case Http.timed_get(base_url <> "/buildInfo", req_opts) do
+        {:ok, %{status: 200} = resp, _ms} -> %{info: String.trim(resp.body), error: nil}
+        {:ok, resp, _ms} -> %{info: nil, error: "HTTP status #{resp.status}"}
+        {:error, err} -> %{info: nil, error: Exception.message(err)}
+      end
+
+    Map.merge(%{type: :build_info, base_url: base_url}, info)
   end
 
   # Object URIs are canonical (e.g. https://meta.icos-cp.eu/objects/<hash>); point

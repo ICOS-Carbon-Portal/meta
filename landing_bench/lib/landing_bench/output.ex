@@ -10,6 +10,8 @@ defmodule LandingBench.Output do
     * `:portal` - the portal page was fetched (`:portal_url`, `:fetch_ms`, `:envri`, `:meta_host`);
       only in runs stored before the meta hosts were given directly
     * `:secondary` - a secondary meta host is used (`:base_url`)
+    * `:build_info` - the response of a meta host's `/buildInfo` (`:base_url`, `:info`,
+      or `:error` if it could not be fetched); not in runs stored before it was added
     * `:sparql_page` - a page of the search result list was fetched (`:offset`, `:count`, `:ms`)
     * `:object` - a landing page was fetched (`:index`, `:file_name`, `:uri`, `:primary`,
       `:secondary` and `:match`, the latter two `nil` without a secondary meta host;
@@ -35,6 +37,12 @@ defmodule LandingBench.Output do
 
   def print(%{type: :secondary} = e, _show_diff),
     do: IO.puts("Secondary meta host #{e.base_url}")
+
+  def print(%{type: :build_info, error: nil} = e, _show_diff),
+    do: IO.puts("  Build info: #{e.info}")
+
+  def print(%{type: :build_info} = e, _show_diff),
+    do: IO.puts("  Build info not available: #{e.error}")
 
   def print(%{type: :sparql_page} = e, _show_diff),
     do: IO.puts("SPARQL page at offset #{e.offset}: #{e.count} objects in #{fmt_ms(e.ms)}")

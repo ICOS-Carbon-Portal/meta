@@ -243,6 +243,9 @@ defmodule LandingBench.Store do
   defp decode_event(%{"type" => "secondary"} = e),
     do: %{type: :secondary, base_url: e["base_url"]}
 
+  defp decode_event(%{"type" => "build_info"} = e),
+    do: %{type: :build_info, base_url: e["base_url"], info: e["info"], error: e["error"]}
+
   defp decode_event(%{"type" => "sparql_page"} = e),
     do: %{type: :sparql_page, offset: e["offset"], count: e["count"], ms: e["ms"]}
 

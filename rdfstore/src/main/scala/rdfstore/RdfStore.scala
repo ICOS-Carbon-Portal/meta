@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.Materializer
 import org.eclipse.rdf4j.model.ValueFactory
+import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import se.lu.nateko.cp.meta.{CpmetaConfig, IngestionMode}
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
@@ -37,6 +38,9 @@ final class RdfStore private (
 )(using ExecutionContext) extends AutoCloseable:
 
 	/** Completes when the index is initialized; the geo index keeps building in the background */
+	/** The repository with only the stored statements, without the SPARQL magic index or derived metadata */
+	def vanillaRepo: Repository = citer.repo
+
 	def initSparqlMagicIndex(): Future[Unit] = indexData.map(idx => sail.initSparqlMagicIndex(idx): Unit)
 
 	def makeReadonly(errorMessage: String): Unit = sail.makeReadonly(errorMessage)

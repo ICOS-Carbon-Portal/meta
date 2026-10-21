@@ -22,11 +22,17 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 	private val multivaluePredicates = Set(rdfMaker.meta.hasMembership)
 	private val retractablePredicates = Set(rdfMaker.meta.hasAssociatedNetwork)
 
-	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
+	/** Results in no updates if any errors were encountered, to avoid acting on an ambiguous or incomplete current state */
+	def calcDiff[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] =
+		val diffV = calcDiffDespiteErrors(newSnapshot)
+		if diffV.errors.isEmpty then diffV else new Validated(Some(Nil), diffV.errors)
+
+	private def calcDiffDespiteErrors[T <: TC : TcConf](newSnapshot: TcState[T]): Validated[Seq[RdfUpdate]] = for(
 		current <- rdfReader.getCurrentState[T].require("problem reading current state");
 		cpOwnOrgs <- rdfReader.getCpOwnOrgs[T].require("problem reading CP own orgs");
-		cpOwnPeople <- rdfReader.getCpOwnPeople[T].require("problem reading CP own people")
-	) yield {
+		cpOwnPeople <- rdfReader.getCpOwnPeople[T].require("problem reading CP own people");
+		peopleTcIds <- rdfReader.getPeopleTcIds[T].require("problem reading TC ids of people");
+		updates <- {
 
 		def plainOrgs(s: TcState[T]): Seq[TcPlainOrg[T]] = uniqBestId(
 			(
@@ -73,7 +79,7 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 		val instrDiff = diff[T, TcInstrument[T]](current.instruments, tcInstrs, Nil)
 
 		val toPeople = uniqBestId(newSnapshot.roles.map(_.role.holder))
-		val fromPeople = uniqBestId(current.roles.map(_.role.holder))
+		val fromPeople = current.roles.map(_.role.holder).distinct //not uniqBestId, to detect people sharing a TC id
 		val peopleDiff = diff[T, TcPerson[T]](fromPeople, toPeople, cpOwnPeople)
 
 		def updateRole(role: AssumedRole[T]) = new AssumedRole[T](
@@ -90,10 +96,12 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		val networksDiff = diff[T, TcNetwork[T]](current.networks, newSnapshot.networks, Nil)
 
-		rdfReader.keepMeaningful(
-			orgsDiff.rdfDiff ++ instrDiff.rdfDiff ++ peopleDiff.rdfDiff ++ rolesRdfDiff ++ networksDiff.rdfDiff
-		)
-	}
+		val diffs = Seq(orgsDiff, instrDiff, peopleDiff, rolesRdfDiff.toSeqDiff[T], networksDiff)
+		val errors = tcIdAmbiguities("person", peopleTcIds, cpOwnPeople.map(_.cpId).toSet) ++ diffs.flatMap(_.errors)
+
+		if errors.isEmpty then Validated.ok(rdfReader.keepMeaningful(diffs.flatMap(_.rdfDiff)))
+		else new Validated(Some(Nil), errors)
+	}) yield updates
 
 	private def isMissingNetworkAssociation(update: RdfUpdate): Boolean = {
 		update match {
@@ -133,7 +141,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 	def diff[T <: TC : TcConf, E <: Entity[T] : CpIdSwapper](from: Seq[E], to: Seq[E], cpOwn: Seq[E]): SequenceDiff[T] =
 
-		val Seq(fromMap, toMap, cpMap) = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
+		val tcIdMaps = Seq(from, to, cpOwn).map(toTcIdMap[T, E])
+		//entities sharing a TC id are left out of the diff
+		val Seq(fromMap, toMap, cpMap) = tcIdMaps.map(_.unique)
 		val Seq(fromKeys, toKeys, cpKeys) = Seq(fromMap, toMap, cpMap).map(_.keySet)
 
 		//TODO This looks like it can be replaced by simply `cpMap.mapValues(_.cpId)` for all inputs
@@ -234,7 +244,9 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 		end existingAppearedInCp
 
-		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp).join
+		val ambiguousTcIds = new SequenceDiff[T](Nil, Map.empty, tcIdMaps.flatMap(_.ambiguityErrors).distinct)
+
+		Seq(newOriginalAdded, oldOriginalRemoved, existingChangedTcOnly, presentInCp, existingAppearedInCp, ambiguousTcIds).join
 
 	end diff
 
@@ -263,19 +275,52 @@ class RdfDiffCalc(rdfMaker: RdfMaker, rdfReader: RdfReader) {
 
 object RdfDiffCalc{
 
-	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): Map[TcId[T], E] = ents.flatMap(e => e.tcIdOpt.map(_ -> e)).toMap
+	def toTcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]): TcIdMap[T, E] = new TcIdMap(ents)
+
+	/** Errors about entities with several TC ids, and about TC ids shared by several entities.
+	  * An `exempt` entity may share its TC id with another one (happens when CP takes over the description of a TC entity)
+	  */
+	def tcIdAmbiguities[T <: TC](kind: String, ids: Seq[(UriId, TcId[T])], exempt: Set[UriId]): Seq[String] =
+		val uniqIds = ids.distinct
+		val severalTcIds = uniqIds.groupMap(_._1)(_._2).toSeq.collect:
+			case (cpId, tcIds) if tcIds.size > 1 =>
+				s"$kind ${cpId.urlSafeString} has several TC ids: ${tcIds.map(_.id).sorted.mkString(", ")}"
+		val sharedTcIds = uniqIds.filterNot(p => exempt.contains(p._1)).groupMap(_._2)(_._1).toSeq.collect:
+			case (tcId, cpIds) if cpIds.size > 1 =>
+				s"TC id ${tcId.id} is shared by several entities of type $kind: ${cpIds.map(_.urlSafeString).sorted.mkString(", ")}"
+		(severalTcIds ++ sharedTcIds).sorted
 
 	def uniqBestId[E <: Entity[_]](ents: Seq[E]): Seq[E] = ents.groupBy(_.bestId).map(_._2.head).toSeq
 }
 
-final case class SequenceDiff[T <: TC](val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId]){
+/** Entities indexed by TC id. Entities sharing a TC id are all kept, and are not resolved to one of them */
+final class TcIdMap[T <: TC, E <: Entity[T]](ents: Seq[E]):
+	private val byTcId: Map[TcId[T], Seq[E]] = ents.distinct.flatMap(e => e.tcIdOpt.map(_ -> e)).groupMap(_._1)(_._2)
+
+	/** Entities whose TC id is not shared with other entities */
+	val unique: Map[TcId[T], E] = byTcId.collect:
+		case (tcId, Seq(ent)) => tcId -> ent
+
+	val ambiguous: Map[TcId[T], Seq[E]] = byTcId.filter(_._2.size > 1)
+
+	/** Number of entities with a TC id */
+	def size: Int = byTcId.valuesIterator.map(_.size).sum
+
+	def ambiguityErrors: Seq[String] = ambiguous.toSeq.map: (tcId, ents) =>
+		s"TC id ${tcId.id} is shared by several entities: ${ents.map(_.cpId.urlSafeString).sorted.mkString(", ")}"
+end TcIdMap
+
+final case class SequenceDiff[T <: TC](
+	val rdfDiff: Seq[RdfUpdate], private val cpIdLookup: Map[TcId[T], UriId], val errors: Seq[String] = Nil
+){
 
 	def ensureIdPreservation[E <: Entity[T] : CpIdSwapper](entity: E): E =
 		entity.tcIdOpt.flatMap(cpIdLookup.get).fold(entity)(entity.withCpId)
 
 	def concat(other: SequenceDiff[T]) = new SequenceDiff[T](
 		rdfDiff ++ other.rdfDiff,
-		cpIdLookup ++ other.cpIdLookup
+		cpIdLookup ++ other.cpIdLookup,
+		errors ++ other.errors
 	)
 
 	def modifyUpdates(modifier: (Seq[RdfUpdate] => Seq[RdfUpdate])): SequenceDiff[T] = {
@@ -291,7 +336,7 @@ object SequenceDiff:
 		def join: SequenceDiff[T] = {
 			val rdfDiff = seq.flatMap(_.rdfDiff)
 			val lookup = Map(seq.flatMap(_.cpIdLookup)*)
-			new SequenceDiff(rdfDiff, lookup)
+			new SequenceDiff(rdfDiff, lookup, seq.flatMap(_.errors))
 		}
 
 	extension (rdfupd: Seq[RdfUpdate])

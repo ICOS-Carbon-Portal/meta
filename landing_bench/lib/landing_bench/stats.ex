@@ -10,11 +10,14 @@ defmodule LandingBench.Stats do
   """
   def result(%{type: :object, primary: primary, secondary: nil}), do: Map.delete(primary, :body)
 
-  def result(%{type: :object, primary: primary, secondary: secondary, match: match}) do
+  def result(%{type: :object, uri: uri, primary: primary, secondary: secondary, match: match}) do
     primary
     |> Map.delete(:body)
-    |> Map.merge(%{secondary: Map.delete(secondary, :body), match: match})
+    |> Map.merge(%{id: object_id(uri), secondary: Map.delete(secondary, :body), match: match})
   end
+
+  # The hash of a data object, from its URI (or a bare hash, as given with `--object`)
+  defp object_id(uri), do: uri |> URI.parse() |> Map.fetch!(:path) |> Path.basename()
 
   @doc "Key figures of a run, for the index of stored runs."
   def overview(results) do
@@ -52,6 +55,15 @@ defmodule LandingBench.Stats do
     |> Enum.each(fn {label, n} ->
       IO.puts("#{String.pad_leading(Integer.to_string(n), 5)}  #{label}")
     end)
+
+    case Enum.filter(results, &LandingBench.Diff.mismatch?(&1.match)) do
+      [] ->
+        :ok
+
+      mismatched ->
+        IO.puts("\n--- Mismatching objects ---")
+        Enum.each(mismatched, &IO.puts(&1.id))
+    end
   end
 
   defp match_category({:different, _line}), do: "MISMATCH: body differs"

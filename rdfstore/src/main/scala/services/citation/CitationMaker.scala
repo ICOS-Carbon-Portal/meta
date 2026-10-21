@@ -22,10 +22,6 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 import scala.util.{Failure, Success, Try}
 
-enum RemoteCitation:
-	case NotApplicable
-	case Expected(error: Option[String])
-
 private class CitationInfo(
 	val pidUrl: Option[String],
 	val authors: Option[Seq[Agent]],

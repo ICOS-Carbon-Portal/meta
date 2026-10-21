@@ -42,9 +42,6 @@ import akka.event.Logging
 import org.slf4j.LoggerFactory
 
 
-enum CitationStyle:
-	case HTML, bibtex, ris, TEXT
-
 trait PlainDoiCiter:
 	def getCitationEager(doi: Doi, style: CitationStyle): Option[Try[String]]
 	def getDoiEager(doi: Doi): Option[Try[DoiMeta]]

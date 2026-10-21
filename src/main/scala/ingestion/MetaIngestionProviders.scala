@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 object MetaIngestionProviders:
 
 	def allProviders(using ActorSystem, ExecutionContext, Materializer, EnvriConfigs): Map[String, StatementProvider] =
-		Ingestion.schemaOntologyResources.map((id, resource) => id -> new RdfXmlFileIngester(resource)) ++ Map(
+		Map(
 			"extraStations" -> new ExtraStationsIngester("/extraStations.csv"),
 			"cpMetaInstances" -> new RemoteRdfGraphIngester(
 				endpoint = new URI("https://meta.icos-cp.eu/sparql"),

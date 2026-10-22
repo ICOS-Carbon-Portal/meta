@@ -117,7 +117,7 @@ object CpVocab{
 	val KnownEcoVarFamilies = Set(
 		"SWC", "TS", "LW_IN", "LW_OUT", "SW_IN", "SW_OUT", "TA", "RH", "PPFD_IN", "PPFD_OUT",
 		"PPFD_BC_IN", "PPFD_BC_OUT", "PPFD_DIF", "SW_DIF", "G", "WTD", "PA", "P", "D_SNOW", "P_SNOW",
-		"WS", "WD"
+		"WS", "WD", "DBH"
 	)
 
 	object Acquisition{

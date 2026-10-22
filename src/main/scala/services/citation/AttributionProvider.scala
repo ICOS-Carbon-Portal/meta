@@ -21,16 +21,17 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 
 	def getAuthors(dobj: DataObject)(using MetaConn): Validated[Seq[Person]] = dobj.specificInfo.fold(
 		_ => Validated.ok(Nil),
-		l2 => getMemberships(l2.acquisition.station.org.self.uri).map(
-			_.filter(getTcSpecificFilter(dobj))
-			.filter(_.role.isRelevantFor(dobj))
-			.toIndexedSeq
-			.sorted(getTcSpecificOrdering(dobj))
-			.map(_.person)
-			.distinct
-		)
+		l2 =>
+			val tcFilter = getTcSpecificFilter(dobj)
+			getMemberships(l2.acquisition.station.org.self.uri).map(
+				_.filter(memb => tcFilter(memb.role) && memb.role.isRelevantFor(dobj))
+				.sorted(getTcSpecificOrdering(dobj))
+				.map(_.person)
+				.distinct
+			)
 	)
 
+	// every person is read, even the ones that get filtered out, so that problems with their metadata are reported
 	def getMemberships(org: URI)(using MetaConn): Validated[IndexedSeq[Membership]] =
 		Validated.sequence:
 			for
@@ -65,10 +66,10 @@ final class AttributionProvider(vocab: CpVocab, val metaVocab: CpmetaVocab) exte
 		if dobj.specification.theme.self.uri === vocab.ecoTheme then ecoMembershipOrdering
 		else AttributionProvider.membershipOrdering
 
-	private def getTcSpecificFilter(dobj: DataObject): Membership => Boolean =
-		if(dobj.specification.theme.self.uri === vocab.atmoTheme) memb => (memb.role.weight.isDefined && {
+	private def getTcSpecificFilter(dobj: DataObject): RoleDetails => Boolean =
+		if(dobj.specification.theme.self.uri === vocab.atmoTheme) role => (role.weight.isDefined && {
 			val speciesOk = for(
-				extra <- memb.role.extra;
+				extra <- role.extra;
 				l2 <- dobj.specificInfo.toOption;
 				cols <- l2.columns
 			) yield{

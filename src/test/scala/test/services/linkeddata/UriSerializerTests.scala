@@ -86,7 +86,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.missingObjectUri, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the failed static object fetch, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 3, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 3, existence = 0, sparql = 0))
 			assert(body.linesIterator.map(_.trim).forall(line => line.isEmpty || line.startsWith("@prefix")), body)
 		}
 	}
@@ -107,7 +107,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("returns its labeled-resource representation as JSON") {
 			val (body, counts) = renderJson(Fixture.resourceUri)
-			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 1, existence = 2, sparql = 0))
 			assert(counts === probeCounts(Fixture.resourceUri) + loadLandingPage(_.labeledResource(Fixture.resourceUri)))
 			assert(body.contains(Fixture.resource.stringValue))
 			assert(body.contains("Serializer test resource"))
@@ -141,13 +141,13 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 			val (body, counts) =
 				renderRdf(Fixture.timeSeriesObject, MediaTypes.`text/plain`, InstanceServerSerializer.turtleContType)
 			// includes the full static object fetch for the landing page, which runs before the RDF fallback is chosen
-			assert(counts === QueryCounts(connections = 3, statements = 312, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 59, existence = 0, sparql = 0))
 			assert(body.contains("test_data.csv"))
 		}
 
 		it("renders the data object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.timeSeriesObject)
-			assert(counts === QueryCounts(connections = 1, statements = 310, existence = 11, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 57, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
 			assert(heading(page) === "Test time series from Test station (50.0 m)")
 			assert(propertyText(page, "File name") === "test_data.csv")
@@ -229,7 +229,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the version chain of a data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.versionedObject)
-			assert(counts === QueryCounts(connections = 1, statements = 291, existence = 24, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 65, existence = 0, sparql = 0))
 			assert(propertyLink(page, "Previous version") === RenderedLink(
 				"View previous version",
 				"/objects/BAQEBAQEBAQEBAQEBAQEBAQE"
@@ -283,7 +283,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the spatiotemporal data object landing page") {
 			val (page, counts) = renderLandingPage(Fixture.spatialObject)
-			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 0, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "Test spatial data object")
 			assert(propertyText(page, "Description") === "Gridded test data")
@@ -308,7 +308,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("returns the variable value ranges of the spatiotemporal data object as JSON") {
 			val (json, counts) = renderJson(Fixture.spatialObject)
-			assert(counts === QueryCounts(connections = 1, statements = 124, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 0, sparql = 0))
 			val body = json.replaceAll("\\s", "")
 			assert(body.contains(""""minMax":[250.5,310.25]"""), body)
 			assert(!body.contains("unknown_var"))
@@ -334,7 +334,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("document landing pages") {
 		it("renders the document object landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.documentObject)
-			assert(counts === QueryCounts(connections = 1, statements = 42, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 11, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticObject(Fixture.documentHash)))
 			assert(heading(page) === "Test document")
 			assert(propertyText(page, "File name") === "test_doc.pdf")
@@ -361,7 +361,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("collection landing pages") {
 		it("renders the collection landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.testCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 26, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 10, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.staticCollection(Fixture.testCollectionHash)))
 			assert(heading(page) === "Test collection")
 			assert(propertyText(page, "Description") === "A collection of test items")
@@ -403,7 +403,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the nested collection landing page") {
 			val (page, counts) = renderLandingPage(Fixture.nestedCollection)
-			assert(counts === QueryCounts(connections = 1, statements = 29, existence = 6, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 10, existence = 0, sparql = 0))
 			assert(heading(page) === "Nested collection")
 			assert(propertyLinks(page, "Part of") === Seq(RenderedLink(
 				"Test collection",
@@ -429,7 +429,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("station landing pages") {
 		it("renders the station landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.icosStation)
-			assert(counts === QueryCounts(connections = 1, statements = 96, existence = 4, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 19, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.station(Fixture.icosStation)))
 			assert(heading(page) === "Test station")
 			assert(propertyText(page, "Station ID") === "TST")
@@ -484,7 +484,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the ecosystem station landing page with webpage elements") {
 			val (page, counts) = renderLandingPage(Fixture.ecosystemStation)
-			assert(counts === QueryCounts(connections = 1, statements = 48, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 9, existence = 0, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "ICOS STATION Test ecosystem station")
 			assert(page.selectFirst(".wide-cover-image").attr("style").contains("https://static.icos-cp.eu/images/stations/ES_TST_cover.jpg"))
@@ -519,7 +519,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the SITES station landing page") {
 			val (page, counts) = renderLandingPage(Fixture.sitesStation)
-			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 10, existence = 0, sparql = 0))
 			assert(metadataErrors(page) === Nil)
 			assert(heading(page) === "Testsjön Research Station")
 			assert(propertyText(page, "Station ID") === "TSJ")
@@ -541,7 +541,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("returns the sites of the SITES station, with their ecosystems and coverages, as JSON") {
 			val (body, counts) = renderJson(Fixture.sitesStation)
-			assert(counts === QueryCounts(connections = 1, statements = 55, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 10, existence = 0, sparql = 0))
 			Seq("Testsjön forest", "Forest mast", "Testsjön lake", "Lake outline", "Polygon").foreach { expected =>
 				assert(body.contains(expected), s"'$expected' missing in $body")
 			}
@@ -551,7 +551,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("organization landing pages") {
 		it("renders the organization landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.organization)
-			assert(counts === QueryCounts(connections = 1, statements = 7, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 2, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.organization(Fixture.organization)))
 			assert(heading(page) === "Carbon Portal (CP)")
 			assert(propertyText(page, "Name") === "Carbon Portal")
@@ -561,7 +561,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("instrument landing pages") {
 		it("renders the instrument landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.instrument)
-			assert(counts === QueryCounts(connections = 1, statements = 66, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 9, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.instrument(Fixture.instrument)))
 			assert(heading(page) === "Test instrument")
 			assert(propertyText(page, "Model") === "Picarro G2401")
@@ -593,7 +593,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("renders the instrument component landing page") {
 			val (page, counts) = renderLandingPage(Fixture.instrumentComponent)
-			assert(counts === QueryCounts(connections = 1, statements = 16, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 3, existence = 0, sparql = 0))
 			assert(heading(page) === "Nafion dryer (SN-2)")
 			assert(propertyLinks(page, "Is part of") === Seq(RenderedLink(
 				"Test instrument",
@@ -606,7 +606,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	describe("person landing pages") {
 		it("renders the person landing page as HTML") {
 			val (page, counts) = renderLandingPage(Fixture.person)
-			assert(counts === QueryCounts(connections = 1, statements = 17, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 4, existence = 0, sparql = 0))
 			assert(counts === loadLandingPage(_.person(Fixture.person)))
 			assert(heading(page) === "Test Person")
 			assert(propertyText(page, "First name") === "Test")
@@ -656,7 +656,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("serves the object specification as JSON") {
 			val (body, counts) = renderJson(Fixture.objectSpec)
-			assert(counts === QueryCounts(connections = 2, statements = 29, existence = 1, sparql = 0))
+			assert(counts === QueryCounts(connections = 2, statements = 7, existence = 1, sparql = 0))
 			assert(counts === probeCounts(Fixture.objectSpec) + loadLandingPage(_.specification(Fixture.objectSpec)))
 			assert(body.contains("Test time series"))
 			assert(body.contains("Atmosphere"))
@@ -675,7 +675,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		it("serves the labeled resource as JSON") {
 			val (body, counts) = renderJson(Fixture.dataTheme)
-			assert(counts === QueryCounts(connections = 3, statements = 2, existence = 2, sparql = 0))
+			assert(counts === QueryCounts(connections = 3, statements = 1, existence = 2, sparql = 0))
 			assert(counts === probeCounts(Fixture.dataTheme) + loadLandingPage(_.labeledResource(Fixture.dataTheme)))
 			assert(body.contains("Atmosphere"))
 		}
@@ -738,11 +738,12 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		def obj(hash: Sha256Sum) = factory.createIRI(sitesObject(hash).toString)
 		val zipGraph = factory.createIRI("https://meta.fieldsites.se/resources/siteszip/")
 		val docGraph = factory.createIRI("https://meta.fieldsites.se/documents/")
+		val metaGraph = factory.createIRI("https://meta.fieldsites.se/resources/sites/")
 		val spec = factory.createIRI("https://meta.fieldsites.se/resources/objspecs/testSpec")
 		val zipFormat = factory.createIRI("http://meta.icos-cp.eu/ontologies/cpmeta/zipArchive")
 		val seeAlso = factory.createIRI(icosLandingPage.toString)
 		val triples = Seq[(Resource, IRI, Value, IRI)](
-			(spec, metaVocab.hasFormat, zipFormat, zipGraph),
+			(spec, metaVocab.hasFormat, zipFormat, metaGraph),
 			(obj(mirroredHash), RDF.TYPE, metaVocab.dataObjectClass, zipGraph),
 			(obj(mirroredHash), metaVocab.hasObjectSpec, spec, zipGraph),
 			(obj(mirroredHash), RDFS.SEEALSO, seeAlso, zipGraph),

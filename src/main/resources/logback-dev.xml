@@ -11,5 +11,6 @@
 	</root>
 
 	<logger name="org.semanticweb.owlapi.rdf.rdfxml.parser.OWLRDFConsumer" level="WARN" />
+	<logger name="se.lu.nateko.cp.meta.sparql.queries" level="INFO" additivity="false" />
 
 </configuration>

@@ -39,7 +39,8 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll {
 	test("repeated connection errors are logged and response times do not build up") {
 		val pool = UnreachablePool()
 		var requests = 0
-		val client = clientWith() { (request, settings) =>
+		// the stats timeout must exceed the max connection backoff, for connection errors to be reported as such
+		val client = clientWith(statsTimeout = 2.seconds) { (request, settings) =>
 			requests += 1
 			assert(request.method == HttpMethods.GET)
 			assert(request.uri == Uri(requestUrl))
@@ -51,7 +52,7 @@ class StatisticsClientTests extends AnyFunSuite with BeforeAndAfterAll {
 
 			assert(requests == 8)
 			// with unbounded backoff, later requests would only be answered by the stats timeout
-			assert(responseTimes.forall(_ < 900.millis), timesClue)
+			assert(responseTimes.forall(_ < 1500.millis), timesClue)
 			// once the backoff is saturated, response times must stop growing
 			assert(responseTimes.last < responseTimes(6) + 200.millis, timesClue)
 			// every failure is logged with its cause and request URL

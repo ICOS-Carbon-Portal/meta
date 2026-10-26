@@ -43,7 +43,7 @@ class StatisticsClient(
 	val config: StatsClientConfig,
 	envriConfs: EnvriConfigs,
 	http: HttpClient,
-	statsTimeout: FiniteDuration = 1.second
+	statsTimeout: FiniteDuration = 10.second
 )(implicit system: ActorSystem, mat: Materializer) extends StatisticsProvider {
 	import StatisticsClient.*
 	private val log = Logging.getLogger(system, this)
@@ -56,12 +56,12 @@ class StatisticsClient(
 
 	private val connPoolSetts = {
 		val defPoolSet = ConnectionPoolSettings(system)
-		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(20.millis)
+		val connSet = defPoolSet.connectionSettings.withConnectingTimeout(100.millis)
 		// the default exponential backoff (up to 2 min) after failed connects makes queued requests,
 		// and thus landing pages, wait for ever longer when a stats service is down
 		defPoolSet.withConnectionSettings(connSet).withMaxRetries(0)
-			.withBaseConnectionBackoff(10.millis)
-			.withMaxConnectionBackoff(500.millis)
+			.withBaseConnectionBackoff(100.millis)
+			.withMaxConnectionBackoff(1000.millis)
 	}
 
 	private def getStatistic[T : FromEntityUnmarshaller](uri: Uri, dataHost: Option[String] = None): Future[Option[T]] =

@@ -3,8 +3,8 @@ package se.lu.nateko.cp.meta.services.sparql
 import scala.language.unsafeNulls
 
 import akka.Done
-import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
-import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryResults, TupleQuery}
+import org.eclipse.rdf4j.query.resultio.{BooleanQueryResultWriterFactory, TupleQueryResultWriterFactory}
+import org.eclipse.rdf4j.query.{BooleanQuery, GraphQuery, Query, QueryResults, TupleQuery}
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 
 import java.io.OutputStream
@@ -35,4 +35,15 @@ class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuer
 			val graphRes = query.evaluate()
 			graphRes -> Future:
 				QueryResults.report(graphRes, resultWriter)
+				Done
+
+
+class BooleanQueryEvaluator(wf: BooleanQueryResultWriterFactory) extends QueryEvaluator[BooleanQuery]:
+
+	override def evaluate(query: BooleanQuery, os: OutputStream)(using ExecutionContext): Try[(AutoCloseable, Future[Done])] =
+		Try:
+			val noOpCloser = new AutoCloseable:
+				override def close(): Unit = ()
+			noOpCloser -> Future:
+				wf.getWriter(os).handleBoolean(query.evaluate())
 				Done

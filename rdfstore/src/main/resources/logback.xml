@@ -1,0 +1,13 @@
+<configuration>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%date{ISO8601} %-5level [%logger{0}] [%thread] %X{akkaSource} - %msg %replace(%kvp{}){'(.+)', '[$1]'}%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="info">
+		<appender-ref ref="STDOUT" />
+	</root>
+
+</configuration>

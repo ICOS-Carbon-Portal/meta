@@ -130,6 +130,7 @@ lazy val rdfCommon = (project in file("rdf-common"))
 
 lazy val rdfStore = (project in file("rdfstore"))
 	.dependsOn(metaCore, rdfCommon, metaCore % "test->test", rdfCommon % "test->test")
+	.enablePlugins(IcosCpSbtDeployPlugin)
 	.settings(
 		name := "meta-rdfstore",
 		version := "0.1.0",
@@ -161,6 +162,31 @@ lazy val rdfStore = (project in file("rdfstore"))
 
 		Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
 		reStart / baseDirectory := (ThisBuild / baseDirectory).value,
+
+		cpDeployTarget := "cpmeta_rdfstore",
+		cpDeployBuildInfoPackage := "se.lu.nateko.cp.meta.rdfstore",
+		cpDeployPreAssembly := Def.sequential(
+			metaCore / clean,
+			rdfCommon / clean,
+			clean,
+			metaCore / Test / test,
+			rdfCommon / Test / test,
+			Test / test
+		).value,
+		cpDeployPlaybook := "rdfstore.yml",
+		cpDeployPermittedInventories := Some(Seq("test-fs4")),
+		cpDeployInfraBranch := "valter/meta-split-rdfstore",
+
+		assembly / assemblyMergeStrategy := {
+			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.properties") => MergeStrategy.first
+			case PathList("META-INF", "maven", "com.google.guava", "guava", "pom.xml") => MergeStrategy.first
+			case PathList("org", "apache", "commons", "logging", _*) => MergeStrategy.first
+			case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
+			case "application.conf" => MergeStrategy.concat
+			case x => ((assembly / assemblyMergeStrategy).value)(x)
+		},
+
+		assembly / assemblyRepeatableBuild := false,
 	)
 
 lazy val meta = (project in file("."))
@@ -224,8 +250,9 @@ lazy val meta = (project in file("."))
 			fetchGCMDKeywords
 		).value,
 		cpDeployPlaybook := "core.yml",
-		cpDeployPermittedInventories := Some(Seq("production", "staging", "cities")),
-		cpDeployInfraBranch := "master",
+		// meta needs a deployed rdfStore, so it is only deployed where rdfStore is
+		cpDeployPermittedInventories := Some(Seq("test-fs4")),
+		cpDeployInfraBranch := "valter/meta-split-rdfstore",
 
 		assembly / fullClasspath := {
 			val cp = (assembly / fullClasspath).value

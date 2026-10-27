@@ -41,3 +41,20 @@ object DerivedMetadataService:
 				citations.doiCiter.dropCache(parsed)
 				true
 		)
+
+	/** Derived metadata is not available for any resource */
+	def unavailable(factory: ValueFactory): DerivedMetadataService =
+		new DerivedMetadataService(factory, resource =>
+			DerivedMetadataResult(new URI(resource.stringValue), "unavailable", None)
+		, _ => false
+		)
+
+	/** Derived metadata is ready for the given resources only */
+	def fixed(factory: ValueFactory, values: Map[URI, DerivedMetadata]): DerivedMetadataService =
+		new DerivedMetadataService(factory, resource =>
+			val uri = new URI(resource.stringValue)
+			values.get(uri) match
+				case Some(metadata) => DerivedMetadataResult(uri, "ready", Some(metadata))
+				case None => DerivedMetadataResult(uri, "notFound", None)
+		, _ => false
+		)

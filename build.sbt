@@ -140,6 +140,7 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"com.typesafe.akka"     %% "akka-http-caching"                  % akkaHttpVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-stream"                        % akkaVersion cross CrossVersion.for3Use2_13,
 			"com.typesafe.akka"     %% "akka-slf4j"                         % akkaVersion cross CrossVersion.for3Use2_13,
+			"ch.qos.logback"         % "logback-classic"                    % "1.4.14",
 			"org.eclipse.rdf4j"      % "rdf4j-repository-sail"              % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-memory"                  % rdf4jVersion,
 			"org.eclipse.rdf4j"      % "rdf4j-sail-nativerdf"               % rdf4jVersion,
@@ -152,8 +153,14 @@ lazy val rdfStore = (project in file("rdfstore"))
 			"se.lu.nateko.cp"       %% "doi-core"                           % "0.4.5",
 			"org.locationtech.jts"   % "jts-core"                           % "1.19.0",
 			"org.locationtech.jts.io" % "jts-io-common"                     % "1.19.0",
+			"com.typesafe.akka"     %% "akka-http-testkit"                  % akkaHttpVersion % "test" excludeAll("io.spray") cross CrossVersion.for3Use2_13,
+			"com.typesafe.akka"     %% "akka-stream-testkit"                % akkaVersion     % "test" cross CrossVersion.for3Use2_13,
+			"org.eclipse.rdf4j"      % "rdf4j-repository-sparql"            % rdf4jVersion    % "test",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11"        % "test",
-		)
+		),
+
+		Compile / mainClass := Some("se.lu.nateko.cp.meta.rdfstore.Main"),
+		reStart / baseDirectory := (ThisBuild / baseDirectory).value,
 	)
 
 lazy val meta = (project in file("."))

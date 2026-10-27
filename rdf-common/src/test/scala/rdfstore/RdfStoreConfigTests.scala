@@ -22,5 +22,8 @@ class RdfStoreConfigTests extends AnyFunSpec:
 
 			val rdfStore = config.rdfStore
 			assert(rdfStore.sparqlEndpoint.toString === "http://10.0.0.7:19095/internal/sparql")
+			assert(rdfStore.vanillaSparqlEndpoint.toString === "http://10.0.0.7:19095/internal/vanilla/sparql")
 			assert(rdfStore.adminEndpoint.toString === "http://10.0.0.7:19095/admin/read-only")
 			assert(rdfStore.derivedMetadataEndpoint.toString === "http://10.0.0.7:19095/internal/derived/v1/resolve")
+			assert(rdfStore.dropDoiCacheEndpoint("10.18160/ABCD-1234").toString ===
+				"http://10.0.0.7:19095/internal/derived/v1/drop-cache/10.18160/ABCD-1234")

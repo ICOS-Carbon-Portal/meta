@@ -114,6 +114,14 @@ lazy val meta = (project in file("."))
 		version := "0.11.0",
 		scalacOptions ++= (commonScalacOptions ++ Seq("-Wconf:src=.*(html|xml):s")),
 
+		// rdf-common and rdfstore are compiled as part of meta until they become sbt projects of their own
+		Compile / unmanagedSourceDirectories ++= Seq("rdf-common", "rdfstore").flatMap{dir =>
+			Seq(baseDirectory.value / dir / "src/main/scala", baseDirectory.value / dir / "src/main/java")
+		},
+		Compile / unmanagedResourceDirectories ++= Seq("rdf-common", "rdfstore").map(dir => baseDirectory.value / dir / "src/main/resources"),
+		Test / unmanagedSourceDirectories ++= Seq("rdf-common", "rdfstore").map(dir => baseDirectory.value / dir / "src/test/scala"),
+		Test / unmanagedResourceDirectories ++= Seq("rdf-common", "rdfstore").map(dir => baseDirectory.value / dir / "src/test/resources"),
+
 		excludeDependencies ++= Seq(
 			ExclusionRule("com.github.jsonld-java", "jsonld-java"),
 			ExclusionRule("jakarta.activation", "jakarta.activation-api"),
@@ -249,7 +257,7 @@ lazy val uploadgui = (project in file("uploadgui"))
 				"core/src/main/scala/data/Envri.scala",
 				"core/src/main/scala/data/GeoFeatures.scala",
 				"core/src/main/scala/data/package.scala",
-				"src/main/scala/OntoConstants.scala",
+				"rdf-common/src/main/scala/OntoConstants.scala",
 				"src/main/scala/UploadDtos.scala",
 			).map(path => new java.io.File(path).getAbsoluteFile)
 		}

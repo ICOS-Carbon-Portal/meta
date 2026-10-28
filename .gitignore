@@ -5,6 +5,8 @@ npm-debug.log
 # sbt specific
 /target/
 /core/target/
+/rdfstore/target/
+/rdf-common/target/
 /views/target/
 /uploadgui/target/
 /lib/

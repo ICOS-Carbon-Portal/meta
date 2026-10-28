@@ -3,11 +3,17 @@
 import scala.language.unsafeNulls
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.server.Directives.*
 
 import eu.icoscp.envri.Envri
+import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.HandleNetClient
+import org.scalatest.time.{Millis, Seconds, Span}
+import se.lu.nateko.cp.meta.api.PidFactory
 import se.lu.nateko.cp.meta.core.data.{
 	AtcStationSpecifics,
 	DataObject,
@@ -19,13 +25,16 @@ import se.lu.nateko.cp.meta.core.data.{
 	TimeInterval,
 	UriResource
 }
-import se.lu.nateko.cp.meta.services.citation.{CitationMaker, CitationStyle, PlainDoiCiter}
+import se.lu.nateko.cp.meta.core.data.JsonSupport.given
+import se.lu.nateko.cp.meta.services.citation.AttributionProvider
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.MetaDb
 import se.lu.nateko.cp.meta.test.TestConfig
+import se.lu.nateko.cp.meta.test.services.external.ExternalTestObjects
+import spray.json.*
 
 import java.net.URI
 import java.time.Instant
@@ -45,10 +54,9 @@ import scala.concurrent.duration.DurationInt
  * labeled resource do not: they have no Twirl page, and the serializer serves them as JSON only,
  * falling back to the generic resource page for HTML.
  */
-class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
+class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll with Eventually {
 	private val repo = Fixture.createRepo()
 	private given system: ActorSystem = ActorSystem("LandingPageLoaderTests")
-	private val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
 
 	private given Envri = Envri.ICOS
 	private val config = TestConfig.metaConfig
@@ -57,18 +65,13 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 	private val vocab = CpVocab(repo.getValueFactory)
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
-	private val citer = {
-		val doiCiter = new PlainDoiCiter {
-			def getCitationEager(doi: se.lu.nateko.cp.doi.Doi, style: CitationStyle) = None
-			def getDoiEager(doi: se.lu.nateko.cp.doi.Doi) = None
-		}
-		CitationMaker(doiCiter, vocab, metaVocab, config.core, externalObjs)
-	}
+	private val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
+	private val attribution = AttributionProvider(vocab, metaVocab)
+	private val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, citer)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution, externalObjs)
 		val result = read(loader)
 		result -> countingRepo.counts
 	}
@@ -88,7 +91,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 		lazy val (page, counts) = buildValidated(_.staticObject(Fixture.timeSeriesHash))
 
 		it("reads the object with the expected number of RDF-store queries") {
-			assert(counts === QueryCounts(connections = 1, statements = 57, existence = 0, sparql = 0))
+			assert(counts === QueryCounts(connections = 1, statements = 53, existence = 0, sparql = 0))
 		}
 
 		it("has the file-level metadata of the object") {
@@ -357,6 +360,45 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll {
 					metaVocab.prov.wasAssociatedWith.stringValue
 			))
 			assert(usages.exists((_, prop) => prop == metaVocab.atOrganization.stringValue))
+		}
+	}
+
+	describe("data object mirrored from an external repository") {
+		val externalPid = "11676/external-pid"
+
+		lazy val externalMeta = {
+			val json = (ExternalTestObjects.docObject(None, pid = Some(externalPid)): StaticObject).toJson.compactPrint
+			val route = path("objects" / Segment) { _ =>
+				complete(HttpEntity(ContentTypes.`application/json`, json))
+			}
+			Await.result(Http().newServerAt("127.0.0.1", 0).bind(route), 5.seconds)
+		}
+
+		it("gets the PID of the object from the external repository") {
+			val mirrorRepo = Fixture.createRepo()
+			try {
+				val obj = mirrorRepo.getValueFactory.createIRI(Fixture.timeSeriesObject.toString)
+				val externalUrl = mirrorRepo.getValueFactory.createIRI(
+					s"http://127.0.0.1:${externalMeta.localAddress.getPort}/objects/mirrored"
+				)
+				val conn = mirrorRepo.getConnection()
+				try {
+					val graph = conn.getStatements(obj, metaVocab.hasObjectSpec, null).stream().findFirst().get().getContext
+					conn.add(obj, RDFS.SEEALSO, externalUrl, graph)
+				} finally conn.close()
+
+				val providers = ExternalProviders(Map(Envri.ICOS -> Seq(ExternalTestObjects.provider("127.0.0.1"))))
+				val loader = LandingPageLoader(
+					mirrorRepo, vocab, metaVocab, lenses, pidFactory, attribution, ExternalObjFetcher(providers)
+				)
+				given PatienceConfig = PatienceConfig(Span(5, Seconds), Span(50, Millis))
+				eventually {
+					assert(loader.staticObject(Fixture.timeSeriesHash).result.flatMap(_.pid) === Some(externalPid))
+				}
+			} finally {
+				mirrorRepo.shutDown()
+				Await.ready(externalMeta.unbind(), 5.seconds)
+			}
 		}
 	}
 

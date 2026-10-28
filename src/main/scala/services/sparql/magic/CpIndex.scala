@@ -54,7 +54,7 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 	private val log = LoggerFactory.getLogger(getClass())
 	private val filtering = Filtering(data, geo)
 
-	import data.{contMap, stats, objs, initOk, idLookup}
+	import data.{contMap, stats, objs, initOk}
 	def this(sail: Sail, geo: Future[GeoIndex], nObjects: Int = 10000)(using EnvriConfigs) = {
 		this(sail, geo, IndexData(nObjects)())
 		//Mass-import of the statistics data
@@ -134,8 +134,6 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 		val objectIds = filtering(req.filter).fold(initOk)(BufferFastAggregation.and(_, initOk))
 		data.getObjectKeywords(objectIds)
 	}
-
-	def lookupObject(hash: Sha256Sum): Option[ObjInfo] = idLookup.get(hash).map(objs.apply)
 
 	def getObjEntry: Sha256Sum => ObjInfo =
 		data.getObjInfo

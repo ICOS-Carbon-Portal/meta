@@ -6,7 +6,8 @@ meta host, optionally comparing them with those of a second meta host.
 It:
 
 1. fetches `/buildInfo` from PRIMARY (and SECONDARY, if given), and prints and
-   records the response, so that a run shows which versions of meta it ran against;
+   records the response (also in the summary), so that a run shows which versions
+   of meta it ran against;
 2. runs the same SPARQL query the data portal uses for its default search result
    list (no filters, deprecated objects hidden, newest submissions first, pages of
    20) against `https://PRIMARY/sparql`, for the ENVRI given with `--envri`

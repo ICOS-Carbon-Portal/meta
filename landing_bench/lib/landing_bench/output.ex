@@ -38,11 +38,8 @@ defmodule LandingBench.Output do
   def print(%{type: :secondary} = e, _show_diff),
     do: IO.puts("Secondary meta host #{e.base_url}")
 
-  def print(%{type: :build_info, error: nil} = e, _show_diff),
-    do: IO.puts("  Build info: #{e.info}")
-
   def print(%{type: :build_info} = e, _show_diff),
-    do: IO.puts("  Build info not available: #{e.error}")
+    do: IO.puts("  " <> build_info_label(e))
 
   def print(%{type: :sparql_page} = e, _show_diff),
     do: IO.puts("SPARQL page at offset #{e.offset}: #{e.count} objects in #{fmt_ms(e.ms)}")
@@ -94,6 +91,9 @@ defmodule LandingBench.Output do
   defp diff_color("-" <> _), do: :red
   defp diff_color("+" <> _), do: :green
   defp diff_color(_), do: :reset
+
+  def build_info_label(%{error: nil} = e), do: "Build info: #{e.info}"
+  def build_info_label(e), do: "Build info not available: #{e.error}"
 
   def match_label(:identical), do: "match"
   def match_label(:identical_ignoring_known), do: "match (ignoring known differences)"

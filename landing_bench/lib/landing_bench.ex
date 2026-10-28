@@ -50,10 +50,10 @@ defmodule LandingBench do
     end
 
     case bench(opts, emit) do
-      {:ok, results} = outcome ->
-        Stats.print_summary(results)
+      {:ok, results, build_infos} ->
+        Stats.print_summary(results, build_infos)
         if path = opts[:csv], do: Stats.write_csv(results, path)
-        if store, do: Store.finish(store, outcome)
+        if store, do: Store.finish(store, {:ok, results})
         :ok
 
       {:error, _err} = outcome ->
@@ -69,12 +69,13 @@ defmodule LandingBench do
     secondary_base = opts[:secondary] && base_url(opts[:secondary])
 
     emit.(%{type: :primary, base_url: meta_base, envri: opts[:envri]})
-    emit.(fetch_build_info(meta_base, req_opts))
+    primary_info = emit.(fetch_build_info(meta_base, req_opts))
 
-    if secondary_base do
-      emit.(%{type: :secondary, base_url: secondary_base})
-      emit.(fetch_build_info(secondary_base, req_opts))
-    end
+    secondary_info =
+      if secondary_base do
+        emit.(%{type: :secondary, base_url: secondary_base})
+        emit.(fetch_build_info(secondary_base, req_opts))
+      end
 
     objects =
       if object = opts[:object],
@@ -94,7 +95,7 @@ defmodule LandingBench do
       end)
       |> Enum.to_list()
 
-    {:ok, results}
+    {:ok, results, Enum.reject([primary_info, secondary_info], &is_nil/1)}
   rescue
     err in RuntimeError -> {:error, err}
   end

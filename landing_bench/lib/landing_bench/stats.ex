@@ -1,7 +1,7 @@
 defmodule LandingBench.Stats do
   @moduledoc "Summary statistics and CSV export of landing page timings."
 
-  import LandingBench.Output, only: [fmt_ms: 1, match_label: 1]
+  import LandingBench.Output, only: [build_info_label: 1, fmt_ms: 1, match_label: 1]
 
   @doc """
   The result of a landing page `:object` event (see `LandingBench.Output`), as used
@@ -34,14 +34,27 @@ defmodule LandingBench.Stats do
     }
   end
 
-  def print_summary(results) do
+  @doc """
+  Prints the summary of `results`, with the `:build_info` events (see
+  `LandingBench.Output`) of the primary and, if any, secondary meta host, in that
+  order; runs stored before build info was recorded have none.
+  """
+  def print_summary(results, build_infos) do
+    [primary_info, secondary_info] = Enum.take(build_infos ++ [nil, nil], 2)
+
     case Enum.filter(results, &Map.has_key?(&1, :secondary)) do
       [] ->
-        print_timings("Summary", results)
+        print_timings("Summary", results, primary_info)
 
       with_secondary ->
-        print_timings("Summary, primary meta host", results)
-        print_timings("Summary, secondary meta host", Enum.map(with_secondary, & &1.secondary))
+        print_timings("Summary, primary meta host", results, primary_info)
+
+        print_timings(
+          "Summary, secondary meta host",
+          Enum.map(with_secondary, & &1.secondary),
+          secondary_info
+        )
+
         print_comparison(with_secondary)
     end
   end
@@ -73,12 +86,13 @@ defmodule LandingBench.Stats do
   defp match_category({:different, _line}), do: "MISMATCH: body differs"
   defp match_category(match), do: match_label(match)
 
-  defp print_timings(title, results) do
+  defp print_timings(title, results, build_info) do
     timings = ok_timings(results)
     non_ok = Enum.count(results, &(&1.error == nil and &1.status != 200))
     errors = Enum.count(results, &(&1.error != nil))
 
     IO.puts("\n--- #{title} ---")
+    if build_info, do: IO.puts(build_info_label(build_info))
 
     IO.puts(
       "Requests: #{length(results)}  OK: #{length(timings)}  non-200: #{non_ok}  errors: #{errors}"

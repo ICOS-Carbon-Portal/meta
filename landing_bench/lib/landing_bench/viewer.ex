@@ -87,7 +87,7 @@ defmodule LandingBench.Viewer do
         if event.type == :object, do: [Stats.result(event)], else: []
       end)
 
-    Stats.print_summary(results)
+    Stats.print_summary(results, for(%{type: :build_info} = e <- events, do: e))
     if path = opts[:csv], do: Stats.write_csv(results, path)
     print_footer(meta)
     :ok

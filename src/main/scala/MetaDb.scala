@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, In
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.rdfstore.{DerivedMetadataClient, LocalDerivedMetadataSource, RdfStore}
+import se.lu.nateko.cp.meta.rdfstore.{DerivedMetadataClient, RemoteRdfStore}
 import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
@@ -128,13 +128,12 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 	private val log = Logging.getLogger(system, this)
 	private given ExecutionContext = system.dispatcher
 
-	def apply(store: RdfStore, config: CpmetaConfig): Future[MetaDb] =
+	def apply(store: RemoteRdfStore, config: CpmetaConfig): Future[MetaDb] =
 
 		validateConfig(config)
 		given EnvriConfigs = config.core.envriConfigs
 
 		val repo = store.repo
-		val isFreshInit = store.isFreshInit
 		val vanillaGlob = new Rdf4jInstanceServer(store.vanillaRepo)
 		val vocab = new CpVocab(store.vanillaRepo.getValueFactory)
 		val metaVocab = new CpmetaVocab(store.vanillaRepo.getValueFactory)
@@ -149,7 +148,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val serversFut =
 			//NativeStore crashes under unrestrained parallel write conditions
-			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty || isFreshInit then
+			val singleThreadExe = if config.rdfStorage.lmdb.isEmpty then
 				val ctxt = Executors.newSingleThreadExecutor()
 				Some(ExecutionContext.fromExecutorService(ctxt))
 			else None
@@ -157,7 +156,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 			/*
 			 LMDB seems to work fine under fully parallel write conditions,
 			 with the exception of full re-building of the triplestore database from rdflog
-			 (done by RdfStore, but the ingestion here follows it on a fresh init).
+			 (done by the RDF store, which stays read-only after a fresh init).
 			 Multi-threaded initialization can be beneficial for startup time, because some
 			 of RDF-graph-init jobs are expensive and are best run as background even after the
 			 server starts up (see `enum IngestionMode` in CpmetaConfig.scala)
@@ -194,7 +193,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 				instanceServers, instOntos, uploadService, labelingService, fileService,
 				repo, store.vanillaRepo, vanillaGlob, vocab, metaVocab, lenses, metaReader,
 				new ExternalObjFetcher(ExternalProviders(config.dataUploadService.externalProviders)),
-				DerivedMetadataClient(LocalDerivedMetadataSource(store.derivedMetadata)),
+				DerivedMetadataClient(store.derivedMetadata),
 				store.makeReadonlyDumpIndexAndCaches, config
 			)
 		end for
@@ -329,7 +328,7 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 			servConf.ingestion match{
 
-				//the schema ontologies are ingested by RdfStore
+				//the schema ontologies are ingested by the RDF store
 				case Some(IngestionConfig(ingesterId, waitFor, mode @ (EAGER | BACKGROUND)))
 					if !Ingestion.schemaOntologyResources.contains(ingesterId) =>
 

@@ -188,7 +188,10 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 }
 
 object IndexDataSerializer extends Serializer[IndexData]:
+	val FormatVersion = -1
+
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
+		output.writeInt(FormatVersion)
 		output.writeInt(data.objs.size)
 
 		registerIriSerializer(kryo, IriSerializer)
@@ -214,6 +217,10 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		kryo.writeObject(output, data.initOk)
 
 	override def read(kryo: Kryo, input: Input, tpe: Class[? <: IndexData]): IndexData =
+		val version = input.readInt()
+		if version != FormatVersion then throw IllegalStateException(
+			s"Unsupported SPARQL magic index format version $version, expected $FormatVersion"
+		)
 		val nObjs = input.readInt()
 
 		def readObj[T](cls: Class[T]): T = kryo.readObject[T](input, cls)

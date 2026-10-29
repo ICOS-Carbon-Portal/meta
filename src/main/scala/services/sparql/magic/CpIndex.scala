@@ -17,6 +17,7 @@ import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.services.sparql.magic.index.StatEntry
+import se.lu.nateko.cp.meta.services.sparql.magic.index.inferEnvri
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.async.ReadWriteLocking
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -135,8 +136,8 @@ class CpIndex(sail: Sail, geo: Future[GeoIndex], data: IndexData)(using EnvriCon
 		data.getObjectKeywords(objectIds)
 	}
 
-	def getObjEntry: Sha256Sum => ObjInfo =
-		data.getObjInfo
+	def getObjEntry(dobj: IRI, hash: Sha256Sum): Option[ObjInfo] =
+		inferEnvri(dobj).map(data.getObjInfo(_, hash))
 
 	def put(st: RdfUpdate): Unit = {
 		queue.put(st)

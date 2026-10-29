@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.services.sparql.magic.index
 
 import scala.language.unsafeNulls
 
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Literal
 import org.eclipse.rdf4j.model.Statement
@@ -57,7 +58,7 @@ final class IndexData(nObjects: Int)(
 	// These members are public only because of serialization, and should not be accessed directly.
 
 	val objs: ArrayBuffer[ObjEntry] = new ArrayBuffer(nObjects),
-	val idLookup: AnyRefMap[Sha256Sum, Int] = new AnyRefMap(nObjects * 2),
+	val idLookup: AnyRefMap[Envri, AnyRefMap[Sha256Sum, Int]] = AnyRefMap.empty,
 	val keywordsToSpecs: AnyRefMap[String, Set[IRI]] = AnyRefMap.empty,
 	val boolMap: AnyRefMap[BoolProperty, MutableRoaringBitmap] = AnyRefMap.empty,
 	val categMaps: AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]] = AnyRefMap.empty,
@@ -161,8 +162,7 @@ final class IndexData(nObjects: Int)(
 					case spec: IRI => {
 						getDataObject(subj).foreach { oe =>
 							updateCategSet(Spec, spec, oe.idx, isAssertion)
-							if (filterByEnvri) EnvriResolver.infer(subj.toJava).foreach: envri =>
-								updateCategSet(EnvriProp, envri, oe.idx, isAssertion)
+							if (filterByEnvri) updateCategSet(EnvriProp, oe.envri, oe.idx, isAssertion)
 							if (isAssertion) {
 								if (oe.spec != null) removeStat(oe, initOk)
 								oe.spec = spec
@@ -191,16 +191,14 @@ final class IndexData(nObjects: Int)(
 
 			case `wasAssociatedWith` =>
 				subj match {
-					case CpVocab.Submission(hash) =>
-						val oe = getObjEntry(hash)
+					case CpVocab.Submission(hash) => getObjEntry(subj, hash).foreach: oe =>
 						removeStat(oe, initOk)
 						oe.submitter = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
 						obj match
 							case subm: IRI => updateCategSet(Submitter, subm, oe.idx, isAssertion)
 
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
+					case CpVocab.Acquisition(hash) => getObjEntry(subj, hash).foreach: oe =>
 						removeStat(oe, initOk)
 						oe.station = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
@@ -211,8 +209,7 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `wasPerformedAt` => subj match {
-					case CpVocab.Acquisition(hash) =>
-						val oe = getObjEntry(hash)
+					case CpVocab.Acquisition(hash) => getObjEntry(subj, hash).foreach: oe =>
 						removeStat(oe, initOk)
 						oe.site = targetUri(obj, isAssertion)
 						if (isAssertion) addStat(oe, initOk)
@@ -241,12 +238,10 @@ final class IndexData(nObjects: Int)(
 			case `startedAtTime` =>
 				ifDateTime(obj) { dt =>
 					subj match {
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
+						case CpVocab.Acquisition(hash) => getObjEntry(subj, hash).foreach: oe =>
 							oe.dataStart = dt
 							handleContinuousPropUpdate(DataStart, dt, oe.idx, isAssertion)
-						case CpVocab.Submission(hash) =>
-							val oe = getObjEntry(hash)
+						case CpVocab.Submission(hash) => getObjEntry(subj, hash).foreach: oe =>
 							oe.submissionStart = dt
 							handleContinuousPropUpdate(SubmissionStart, dt, oe.idx, isAssertion)
 						case _ =>
@@ -256,12 +251,10 @@ final class IndexData(nObjects: Int)(
 			case `endedAtTime` =>
 				ifDateTime(obj) { dt =>
 					subj match
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
+						case CpVocab.Acquisition(hash) => getObjEntry(subj, hash).foreach: oe =>
 							oe.dataEnd = dt
 							handleContinuousPropUpdate(DataEnd, dt, oe.idx, isAssertion)
-						case CpVocab.Submission(hash) =>
-							val oe = getObjEntry(hash)
+						case CpVocab.Submission(hash) => getObjEntry(subj, hash).foreach: oe =>
 							oe.submissionEnd = dt
 							handleContinuousPropUpdate(SubmissionEnd, dt, oe.idx, isAssertion)
 						case _ =>
@@ -332,15 +325,14 @@ final class IndexData(nObjects: Int)(
 					subj match
 						case CpVocab.NextVersColl(hashOfOld) => getDataObject(obj).foreach { oe =>
 								oe.isNextVersion = true
-								if oe.size > -1 then
-									boolMap(DeprecationFlag).add(getObjEntry(hashOfOld).idx)
+								if oe.size > -1 then getObjEntry(subj, hashOfOld).foreach: old =>
+									boolMap(DeprecationFlag).add(old.idx)
 							}
 						case _ =>
 
 			case `hasSamplingHeight` => ifFloat(obj) { height =>
 					subj match {
-						case CpVocab.Acquisition(hash) =>
-							val oe = getObjEntry(hash)
+						case CpVocab.Acquisition(hash) => getObjEntry(subj, hash).foreach: oe =>
 							if (isAssertion) oe.samplingHeight = height
 							else if (oe.samplingHeight == height) oe.samplingHeight = Float.NaN
 							handleContinuousPropUpdate(SamplingHeight, height, oe.idx, isAssertion)
@@ -358,8 +350,7 @@ final class IndexData(nObjects: Int)(
 				}
 
 			case `hasActualVariable` => obj match {
-					case CpVocab.VarInfo(hash, varName) =>
-						val oe = getObjEntry(hash)
+					case varInfo @ CpVocab.VarInfo(hash, varName) => getObjEntry(varInfo, hash).foreach: oe =>
 						updateCategSet(VariableName, varName, oe.idx, isAssertion)
 						updateHasVarList(oe.idx, isAssertion)
 					case _ =>
@@ -482,20 +473,29 @@ final class IndexData(nObjects: Int)(
 
 	// Retrieves or creates an ObjEntry,
 	// and returns immutable view of it through ObjInfo interface.
-	def getObjInfo(hash: Sha256Sum): ObjInfo = {
-		getObjEntry(hash)
+	def getObjInfo(envri: Envri, hash: Sha256Sum): ObjInfo = {
+		getObjEntry(envri, hash)
 	}
 
+	def lookupIdx(dobj: IRI)(using EnvriConfigs): Option[Int] = dobj match
+		case CpVocab.DataObject(hash, _) =>
+			inferEnvri(dobj).flatMap(idLookup.get).flatMap(_.get(hash))
+		case _ => None
+
 	// Retrieves or creates a mutable ObjEntry
-	private def getObjEntry(hash: Sha256Sum): ObjEntry = {
-		idLookup.get(hash).fold {
+	private def getObjEntry(envri: Envri, hash: Sha256Sum): ObjEntry = {
+		val envriLookup = idLookup.getOrElseUpdate(envri, AnyRefMap.empty)
+		envriLookup.get(hash).fold {
 			val canonicalHash = hash.truncate
-			val oe = new ObjEntry(canonicalHash, objs.length, "")
+			val oe = new ObjEntry(canonicalHash, objs.length, "", envri)
 			objs += oe
-			idLookup += canonicalHash -> oe.idx
+			envriLookup += canonicalHash -> oe.idx
 			oe
 		}(objs.apply)
 	}
+
+	private def getObjEntry(iri: IRI, hash: Sha256Sum)(using EnvriConfigs): Option[ObjEntry] =
+		inferEnvri(iri).map(getObjEntry(_, hash))
 
 	private def handleContinuousPropUpdate(
 		prop: ContProp,
@@ -521,7 +521,7 @@ final class IndexData(nObjects: Int)(
 		if (isAssertion) hasVarsBm.add(idx) else hasVarsBm.remove(idx)
 	}
 
-	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using StatementSource): Boolean =
+	private def nextVersCollIsComplete(obj: IRI, vocab: CpmetaVocab)(using StatementSource, EnvriConfigs): Boolean =
 		StatementSource.getStatements(obj, vocab.dcterms.hasPart, null)
 			.collect:
 				case Rdf4jStatement(_, _, member: IRI) => getDataObject(member).map: oe =>
@@ -531,19 +531,20 @@ final class IndexData(nObjects: Int)(
 			.toIndexedSeq
 			.exists(identity)
 
-	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using StatementSource): Option[Int] =
+	private def getIdxsOfPrevVersThroughColl(deprecator: IRI, vocab: CpmetaVocab)(using StatementSource, EnvriConfigs): Option[Int] =
 		StatementSource.getStatements(null, vocab.dcterms.hasPart, deprecator)
-			.collect { case Rdf4jStatement(CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(oldHash).idx }
+			.collect { case Rdf4jStatement(coll @ CpVocab.NextVersColl(oldHash), _, _) => getObjEntry(coll, oldHash).map(_.idx) }
+			.flatten
 			.toIndexedSeq
 			.headOption
 
-	private def getDataObject(dobj: Value): Option[ObjEntry] = dobj match
-		case CpVocab.DataObject(hash, prefix) =>
-			val entry = getObjEntry(hash)
-			if (entry.prefix == "") {
-				entry.prefix = prefix.intern()
-			}
-			Some(entry)
+	private def getDataObject(dobj: Value)(using EnvriConfigs): Option[ObjEntry] = dobj match
+		case iri @ CpVocab.DataObject(hash, prefix) =>
+			getObjEntry(iri, hash).map: entry =>
+				if (entry.prefix == "") {
+					entry.prefix = prefix.intern()
+				}
+				entry
 
 		case _ => None
 
@@ -569,6 +570,10 @@ final class IndexData(nObjects: Int)(
 	}
 
 end IndexData
+
+def inferEnvri(iri: IRI)(using configs: EnvriConfigs): Option[Envri] =
+	EnvriResolver.infer(iri.toJava).orElse:
+		if configs.size == 1 then configs.keys.headOption else None
 
 private def targetUri(obj: Value, isAssertion: Boolean) =
 	if isAssertion && obj.isInstanceOf[IRI]

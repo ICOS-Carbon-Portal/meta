@@ -2,6 +2,7 @@ package se.lu.nateko.cp.meta.test.services.sparql.index
 
 import scala.language.unsafeNulls
 
+import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.Resource
 import org.eclipse.rdf4j.model.Statement
@@ -18,6 +19,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.sparql.index.EnvriProp
 import se.lu.nateko.cp.meta.services.sparql.index.Keyword
 import se.lu.nateko.cp.meta.services.sparql.magic.index.IndexData
 import se.lu.nateko.cp.meta.utils.rdf4j.Rdf4jStatement
@@ -58,12 +60,60 @@ class IndexDataTest extends AnyFunSpec {
 		// Insert hasName triple
 		data.processUpdate(statement, true, vocab)
 		assert(data.objs.length == 1)
-		assert(data.getObjInfo(hash).fileName === Some("test name"))
+		assert(data.getObjInfo(Envri.ICOS, hash).fileName === Some("test name"))
 
 		// Remove it
 		data.processUpdate(statement, false, vocab)
-		assert(data.getObjInfo(hash).fileName === None)
+		assert(data.getObjInfo(Envri.ICOS, hash).fileName === None)
 		assert(data.objs.length == 1)
+	}
+
+	test("Objects with the same hash in different ENVRIs get separate entries") {
+		val hashStr = "rRVNSjaB259uB34FTgCapxZL"
+		val icosObj = factory.createIRI(s"https://meta.icos-cp.eu/objects/$hashStr")
+		val sitesObj = factory.createIRI(s"https://meta.fieldsites.se/objects/$hashStr")
+		val icosAcq = factory.createIRI(s"http://meta.icos-cp.eu/resources/acq_$hashStr")
+		val sitesAcq = factory.createIRI(s"https://meta.fieldsites.se/resources/acq_$hashStr")
+		val icosSpec = specIRI("etcL2Meteo")
+		val sitesSpec = factory.createIRI("https://meta.fieldsites.se/resources/objspecs/icos-etc-meteo")
+		val icosStation = factory.createIRI("http://meta.icos-cp.eu/resources/stations/ES_SE-Svb")
+		val sitesStation = factory.createIRI("https://meta.fieldsites.se/resources/stations/Svartberget")
+		val CpVocab.DataObject(hash, _) = icosObj: @unchecked
+
+		val statements = Random.shuffle(Seq(
+			Rdf4jStatement(icosObj, hasObjectSpec, icosSpec),
+			Rdf4jStatement(sitesObj, hasObjectSpec, sitesSpec),
+			Rdf4jStatement(icosObj, hasName, factory.createLiteral("icos.zip")),
+			Rdf4jStatement(sitesObj, hasName, factory.createLiteral("sites.zip")),
+			Rdf4jStatement(icosAcq, vocab.prov.wasAssociatedWith, icosStation),
+			Rdf4jStatement(sitesAcq, vocab.prov.wasAssociatedWith, sitesStation)
+		))
+
+		val data = IndexData(2)()
+		given StatementSource = StaticStatementSource(statements)
+		statements.foreach(data.processUpdate(_, true, vocab))
+
+		assert(data.objs.length == 2)
+
+		val icos = data.getObjInfo(Envri.ICOS, hash)
+		val sites = data.getObjInfo(Envri.SITES, hash)
+		assert(icos.idx != sites.idx)
+
+		assert(icos.uri(factory) == icosObj)
+		assert(icos.spec == icosSpec)
+		assert(icos.fileName === Some("icos.zip"))
+		assert(icos.station == icosStation)
+
+		assert(sites.uri(factory) == sitesObj)
+		assert(sites.spec == sitesSpec)
+		assert(sites.fileName === Some("sites.zip"))
+		assert(sites.station == sitesStation)
+
+		assert(data.categoryBitmap(EnvriProp, Seq(Envri.ICOS)) == MutableRoaringBitmap.bitmapOf(icos.idx))
+		assert(data.categoryBitmap(EnvriProp, Seq(Envri.SITES)) == MutableRoaringBitmap.bitmapOf(sites.idx))
+
+		assert(data.lookupIdx(icosObj) === Some(icos.idx))
+		assert(data.lookupIdx(sitesObj) === Some(sites.idx))
 	}
 
 	test("Data object keywords indexing includes keywords from associated spec and project") {

@@ -4,15 +4,16 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.IRI
 import org.roaringbitmap.buffer.{BufferFastAggregation, ImmutableRoaringBitmap, MutableRoaringBitmap}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.magic.index.{IndexData, emptyBitmap}
-import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
+import se.lu.nateko.cp.meta.services.MetadataException
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-class Filtering(data: IndexData, geo: Future[GeoIndex]) {
-	import data.{objs, idLookup}
+class Filtering(data: IndexData, geo: Future[GeoIndex])(using EnvriConfigs) {
+	import data.objs
 
 	def apply(filter: Filter): Option[ImmutableRoaringBitmap] = filter match {
 		case And(filters) =>
@@ -51,8 +52,7 @@ class Filtering(data: IndexData, geo: Future[GeoIndex]) {
 		case CategFilter(DobjUri , values) =>
 			val objIndices: Seq[Int] = values
 				.collect { case iri: IRI => iri }
-				.collect { case CpVocab.DataObject(hash, _) => idLookup.get(hash) }
-				.flatten
+				.flatMap(data.lookupIdx)
 			Some(ImmutableRoaringBitmap.bitmapOf(objIndices*))
 
 		case CategFilter(category, values) =>

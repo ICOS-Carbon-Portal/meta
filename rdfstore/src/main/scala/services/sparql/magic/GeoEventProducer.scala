@@ -10,13 +10,16 @@ import se.lu.nateko.cp.meta.core.data.DatasetType
 import se.lu.nateko.cp.meta.instanceserver.StatementSource.{getSingleUri, getSingleDouble, getHashsum, getSingleString}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.Validated
+import se.lu.nateko.cp.meta.utils.Validated.getOrElseV
 
 class GeoEventProducer(cpIndex: CpIndex, metaVocab: CpmetaVocab, geoLookup: GeoLookup):
 	private val geoJsonReader = GeoJsonReader()
 
 	def getDobjEvents(dobj: IRI)(using GlobConn): Validated[Seq[GeoEvent]] =
 		getHashsum(dobj, metaVocab.hasSha256sum).flatMap: objHash =>
-			val idx = cpIndex.getObjEntry(objHash).idx
+			cpIndex.getObjEntry(dobj, objHash).getOrElseV(Validated.error(s"Could not infer ENVRI of $dobj"))
+		.flatMap: objInfo =>
+			val idx = objInfo.idx
 			val stationClusterId = getStationClusterId(dobj)
 
 			getSingleUri(dobj, metaVocab.hasSpatialCoverage).flatMap: cov =>

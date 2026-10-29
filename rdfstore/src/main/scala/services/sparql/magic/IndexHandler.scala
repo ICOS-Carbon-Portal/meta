@@ -188,7 +188,7 @@ object Sha256HashSerializer extends Serializer[Sha256Sum] {
 }
 
 object IndexDataSerializer extends Serializer[IndexData]:
-	val FormatVersion = -1
+	val FormatVersion = -2
 
 	override def write(kryo: Kryo, output: Output, data: IndexData): Unit =
 		output.writeInt(FormatVersion)
@@ -245,7 +245,10 @@ object IndexDataSerializer extends Serializer[IndexData]:
 		IndexData(nObjs)(
 			objs = objs,
 			keywordsToSpecs = keywordsToSpecs,
-			idLookup = AnyRefMap.from(objs.indices.iterator.map(oidx => objs(oidx).hash -> oidx)),
+			idLookup = AnyRefMap.from(
+				objs.groupBy(_.envri).map: (envri, envriObjs) =>
+					envri -> AnyRefMap.from(envriObjs.iterator.map(oe => oe.hash -> oe.idx))
+			),
 			stats = readObj(classOf[AnyRefMap[StatKey, MutableRoaringBitmap]]),
 			boolMap = readObj(classOf[AnyRefMap[BoolProperty, MutableRoaringBitmap]]),
 			categMaps = readObj(classOf[AnyRefMap[CategProp, AnyRefMap[?, MutableRoaringBitmap]]]),
@@ -286,6 +289,7 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		output.writeInt(obj.idx)
 
 		output.writeInt(prefixIndex.indexOf(obj.prefix))
+		output.writeInt(obj.envri.ordinal)
 
 		kryo.writeObjectOrNull(output, obj.spec, classOf[IRI])
 		kryo.writeObjectOrNull(output, obj.submitter, classOf[IRI])
@@ -305,7 +309,8 @@ class ObjEntrySerializer(prefixIndex: IndexedSeq[String]) extends Serializer[Obj
 		val objEntry = ObjEntry(
 			hash = kryo.readObject[Sha256Sum](input, classOf[Sha256Sum]),
 			idx = input.readInt(),
-			prefix = prefixIndex(input.readInt())
+			prefix = prefixIndex(input.readInt()),
+			envri = Envri.fromOrdinal(input.readInt())
 		)
 
 		objEntry.spec = kryo.readObjectOrNull(input, classOf[IRI])

@@ -16,6 +16,7 @@ import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHa
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{Materializer, SinkShape}
 import akka.util.ByteString
+import org.eclipse.rdf4j.query.QueryInterruptedException
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -131,7 +132,7 @@ object SparqlRoute:
 				}
 				resp.withEntity(HttpEntity(resp.entity.contentType, data))
 			.recover:
-				case _: CancellationException =>
+				case _: CancellationException | _: QueryInterruptedException =>
 					HttpResponse(StatusCodes.BadRequest, entity = "SPARQL execution timeout")
 				case err: Throwable =>
 					HttpResponse(StatusCodes.InternalServerError, entity = err.getMessage + "\n" + getStackTrace(err))

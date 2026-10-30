@@ -14,6 +14,17 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@@1.8.0/dist/leaflet.css" crossorigin=""/>
 	<script src="https://unpkg.com/leaflet@@1.8.0/dist/leaflet.js" crossorigin=""></script>
 	<style>
+		.leaflet-control-attribution {
+			max-width: calc(100vw - 20px);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.leaflet-control-attribution:hover {
+			white-space: normal;
+		}
+
 		.leaflet-control-layers-button-hidden {
 			display: none;
 		}

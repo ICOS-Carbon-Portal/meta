@@ -22,7 +22,7 @@ import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
+import se.lu.nateko.cp.meta.api.{SparqlRequest, SparqlServer}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 import java.time.Instant
@@ -48,7 +48,7 @@ class Rdf4jSparqlServer(
 		sparqlExe.shutdown()
 	}
 
-	def marshaller: ToResponseMarshaller[SparqlQuery] = Marshaller(
+	def marshaller: ToResponseMarshaller[SparqlRequest] = Marshaller(
 		exeCtxt => query => Future{
 			quoter.quotaExcess(query.clientId).fold{
 				getSparqlingMarshallings(query)
@@ -59,7 +59,7 @@ class Rdf4jSparqlServer(
 		           //(that is, everything except the actual SPARQL query evaluation, which is done by sparqlExe thread pool)
 	)
 
-	private def getSparqlingMarshallings(query: SparqlQuery): List[Marshalling[HttpResponse]] = try{
+	private def getSparqlingMarshallings(query: SparqlRequest): List[Marshalling[HttpResponse]] = try{
 			new SPARQLParser().parseQuery(query.query, CpmetaVocab.MetaPrefix) match {
 				case _: ParsedTupleQuery =>
 					tupleQueryProtocolOptions.map(getQueryMarshalling(query, _))
@@ -80,7 +80,7 @@ class Rdf4jSparqlServer(
 		}
 
 	private def getQueryMarshalling[Q <: Query](
-		queryStr: SparqlQuery,
+		queryStr: SparqlRequest,
 		protocolOption: ProtocolOption[Q]
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,

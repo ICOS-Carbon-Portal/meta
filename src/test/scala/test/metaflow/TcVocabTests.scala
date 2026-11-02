@@ -15,7 +15,7 @@ import java.net.URI
 
 class TcVocabTests extends AnyFunSpec:
 
-	given EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
+	private given EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu",
 		dataHost = "data.icos-cp.eu",
 		metaHost = "meta.icos-cp.eu",
@@ -26,14 +26,18 @@ class TcVocabTests extends AnyFunSpec:
 
 	given Envri = Envri.ICOS
 
-	val factory = SimpleValueFactory.getInstance()
-	val vocab = new CpVocab(factory)
-	val tcVocab = new TcVocab(vocab)
+	private val tcVocab = {
+		val factory = SimpleValueFactory.getInstance()
+		val vocab = new CpVocab(factory)
+		new TcVocab(vocab)
+	}
 
-	def htm: EtcStationId = "SE-Htm" match
-		case EtcStationId(s) => s
+	private def hyltemossa: EtcStationId = {
+		"SE-Htm" match
+			case EtcStationId(s) => s
+	}
 
-	describe("getMembership(orgId, role, lastName)"):
+	describe("getMembership"):
 		it("mints the same URI shape as the pre-split CpVocab implementation"):
 			val uri = tcVocab.getMembership(UriId("ATC"), Researcher, "Doe")
 			assert(uri.stringValue === "http://meta.icos-cp.eu/resources/memberships/ATC_Researcher_Doe")
@@ -45,7 +49,7 @@ class TcVocabTests extends AnyFunSpec:
 
 	describe("etcStationUriId"):
 		it("prefixes the escaped ETC station id with the ETC station prefix"):
-			assert(TcVocab.etcStationUriId(htm) === UriId("ES_SE-Htm"))
+			assert(TcVocab.etcStationUriId(hyltemossa) === UriId("ES_SE-Htm"))
 
 	describe("getEtcInstrTcId"):
 		it("combines station and logger id into the ETC TcId format"):
@@ -58,7 +62,7 @@ class TcVocabTests extends AnyFunSpec:
 
 	describe("getEcosystemStation"):
 		it("mints the same station URI as CpVocab.getStation(etcStationUriId(id)) used to"):
-			val uri = tcVocab.getEcosystemStation(htm)
+			val uri = tcVocab.getEcosystemStation(hyltemossa)
 			assert(uri.stringValue === "http://meta.icos-cp.eu/resources/stations/ES_SE-Htm")
 
 	describe("getEtcInstrument"):

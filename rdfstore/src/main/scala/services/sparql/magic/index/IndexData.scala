@@ -21,6 +21,7 @@ import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
+import se.lu.nateko.cp.meta.services.linkeddata.Hash
 import se.lu.nateko.cp.meta.services.sparql.index.*
 import se.lu.nateko.cp.meta.services.sparql.index.StringHierarchicalBitmap.StringGeo
 import se.lu.nateko.cp.meta.services.sparql.magic.ObjInfo
@@ -282,7 +283,7 @@ final class IndexData(nObjects: Int)(
 							}.isDefined
 							if !subjIsDobj then
 								subj.toJava match
-									case StaticCollectionUri(_) =>
+									case Hash.Collection(_) =>
 										// proper collections are always fully uploaded
 										deprecated.add(oe.idx)
 									case _ => subj match

@@ -8,7 +8,6 @@ import akka.http.scaladsl.marshalling.Marshalling
 import akka.http.scaladsl.marshalling.Marshalling.WithFixedContentType
 import akka.http.scaladsl.marshalling.Marshalling.WithOpenCharset
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.model.Uri.Path.Empty
 import akka.http.scaladsl.model.Uri.Path.Segment
 import akka.http.scaladsl.model.Uri.Path.Slash
 import akka.http.scaladsl.model.*
@@ -20,7 +19,6 @@ import org.eclipse.rdf4j.repository.Repository
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api
 import se.lu.nateko.cp.meta.api.*
-import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -50,24 +48,6 @@ object UriSerializer{
 	def inferEnvri(uri: Uri)(using EnvriConfigs): Envri = EnvriResolver.infer(new JavaUri(uri.toString)).getOrElse(
 		throw new MetadataException("Could not infer ENVRI from URL " + uri.toString)
 	)
-
-	object Hash {
-		def unapply(arg: String): Option[Sha256Sum] = Sha256Sum.fromString(arg).toOption
-
-		object Object extends HashExtractor(objectPathPrefix.stripSuffix("/"))
-		object Collection extends HashExtractor(collectionPathPrefix.stripSuffix("/"))
-
-		abstract class HashExtractor(segment: String) {
-			def unapply(arg: Uri.Path): Option[Sha256Sum] = arg match {
-				case Slash(Segment(`segment`, Slash(Segment(Hash(hash), Empty)))) => Some(hash)
-				case _ => None
-			}
-			def unapply(uri: JavaUri): Option[Sha256Sum] =
-				val path = uri.getRawPath.stripPrefix("/")
-				if !path.startsWith(segment) then None
-				else Hash.unapply(path.stripPrefix(segment).stripPrefix("/"))
-		}
-	}
 
 	object UriPath{
 		def unapplySeq(path: Uri.Path): Seq[String] = path match {

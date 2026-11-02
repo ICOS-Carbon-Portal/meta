@@ -181,7 +181,3 @@ trait TcMetaSource[T <: TC : TcConf]:
 	type State = TcState[T]
 	def state: Source[State, () => Unit]
 	def stationId(baseId: UriId) = TcConf.stationId[T](baseId)
-
-object TcMetaSource:
-	val defaultInstrModel = "N/A"
-	val defaultSerialNum = "N/A"

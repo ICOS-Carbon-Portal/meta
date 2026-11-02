@@ -31,10 +31,6 @@ class CpVocab (val factory: ValueFactory)(using envriConfigs: EnvriConfigs) exte
 	def getPerson(firstName: String, lastName: String)(using Envri): IRI = getPerson(getPersonCpId(firstName, lastName))
 	def getPerson(cpId: UriId)(using Envri): IRI = getRelativeRaw("people/" + cpId)
 
-//	def getEtcMembership(station: EtcStationId, roleId: String, lastName: String) = getRelative(
-//		"memberships/", s"ES_${station.id}_${roleId}_$lastName"
-//	)(icosBup)
-
 	def getInstrDeployment(deplId: UriId)(using Envri): IRI = getRelative("deployments/", deplId)
 	def getMembership(membId: UriId)(using Envri): IRI = getRelative("memberships/", membId)
 

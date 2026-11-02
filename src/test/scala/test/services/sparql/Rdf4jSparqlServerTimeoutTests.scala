@@ -15,7 +15,7 @@ import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlRequest
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpEnrichedTripleSource, StatementsEnricher}
 
@@ -147,7 +147,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 	private def runTimingOutQuery(server: Rdf4jSparqlServer) = Await.ready(startQuery(server), 10.seconds)
 
 	private def startQuery(server: Rdf4jSparqlServer) = {
-		val query = SparqlQuery("select * where {?s ?p ?o}", Some("124.243.154.220"))
+		val query = SparqlRequest("select * where {?s ?p ?o}", Some("124.243.154.220"))
 		val marshallings = Await.result(server.marshaller(query)(system.dispatcher), 5.seconds)
 		val response = marshallings.collectFirst {
 			case m: Marshalling.WithFixedContentType[HttpResponse @unchecked] => m.marshal()

@@ -160,3 +160,4 @@ end CpIndex
 
 object CpIndex:
 	val UpdateQueueSize = 1 << 13
+

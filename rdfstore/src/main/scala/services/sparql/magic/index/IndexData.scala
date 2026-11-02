@@ -16,7 +16,7 @@ import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap
 import se.lu.nateko.cp.meta.core.algo.DatetimeHierarchicalBitmap.DateTimeGeo
 import se.lu.nateko.cp.meta.core.algo.HierarchicalBitmap
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, collectionPathPrefix}
+import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.EnvriResolver
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
 import se.lu.nateko.cp.meta.services.CpVocab
@@ -282,11 +282,7 @@ final class IndexData(nObjects: Int)(
 							}.isDefined
 							if !subjIsDobj then
 								subj.toJava match
-									case uri if {
-										val path = uri.getRawPath.stripPrefix("/")
-										path.startsWith(collectionPathPrefix) &&
-											Sha256Sum.fromString(path.stripPrefix(collectionPathPrefix)).isSuccess
-									} =>
+									case StaticCollectionUri(_) =>
 										// proper collections are always fully uploaded
 										deprecated.add(oe.idx)
 									case _ => subj match

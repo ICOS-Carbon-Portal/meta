@@ -10,6 +10,7 @@ import scala.util.Using
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, ReferencesDto, StationTimeSeriesDto}
+import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
@@ -18,7 +19,7 @@ import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import java.net.URI
 
 /** Each test owns its store; tests never depend on mutations made by another test. */
-object UploadTestFixture:
+object UploadTestFixture{
 	given Envri = Envri.ICOS
 	given EnvriConfigs = Map(Envri.ICOS -> EnvriConfig(
 		authHost = "cpauth.icos-cp.eu", dataHost = "data.icos-cp.eu", metaHost = "meta.icos-cp.eu",
@@ -38,7 +39,7 @@ object UploadTestFixture:
 		None, None, None
 	)
 
-	class Store extends AutoCloseable:
+	class Store extends AutoCloseable{
 		val repo = new SailRepository(new MemoryStore)
 		repo.init()
 		val factory = repo.getValueFactory
@@ -46,24 +47,40 @@ object UploadTestFixture:
 		val meta = CpmetaVocab(factory)
 		val server = Rdf4jInstanceServer(repo, "https://meta.icos-cp.eu/tests/upload/")
 		/** Scenario graph names select fixtures; the server supplies the actual write context. */
-		def fixture(file: String, scenario: String): Set[Statement] =
+		def fixture(file: String, scenario: String): Set[Statement] = {
 			val resource = s"/upload/$file.trig"
-			val stream = Option(getClass.getResourceAsStream(resource)).getOrElse:
+			val stream = Option(getClass.getResourceAsStream(resource)).getOrElse{
 				throw new IllegalArgumentException(s"Missing fixture $resource")
-			Using.resource(stream): input =>
+			}
+			Using.resource(stream){ input =>
 				val model = Rio.parse(input, "", RDFFormat.TRIG)
 				val graph = factory.createIRI(s"urn:upload-test:$scenario")
-				val statements = model.filter(null, null, null, graph).asScala.map: st =>
+				val statements = model.filter(null, null, null, graph).asScala.map{ st =>
 					factory.createStatement(st.getSubject, st.getPredicate, st.getObject)
-				.toSet
+				}.toSet
 				require(statements.nonEmpty, s"Missing or empty scenario $scenario in $resource")
 				statements
+			}
+		}
 
 		def loadFixture(file: String, scenario: String): Unit =
 			server.addAll(fixture(file, scenario).toSeq).get
-		def close(): Unit = repo.shutDown()
 
-	def withStore[T](test: Store => T): T =
+		def accessGlobal[T](reader: RdfLens.GlobConn ?=> T): T = server.access{ conn ?=>
+			reader(using RdfLens.global(using conn))
+		}
+
+		def dobjLens: RdfLens.DobjLens = {
+			val ctxt = URI(server.writeContext.stringValue)
+			RdfLens.dobjLens(ctxt, Seq(ctxt))
+		}
+
+		def close(): Unit = repo.shutDown()
+	}
+
+	def withStore[T](test: Store => T): T = {
 		val store = new Store
 		try test(store)
 		finally store.close()
+	}
+}

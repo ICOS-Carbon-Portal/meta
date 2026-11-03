@@ -22,11 +22,6 @@ test:filename-unfinished {
     obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" .
 }
 
-test:filename-deprecated {
-    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" ; cp:hasSizeInBytes 100 .
-    obj:AwMDAwMDAwMDAwMDAwMDAwMD a cp:DocumentObject ; cp:hasSizeInBytes 100 ; cp:isNextVersionOf obj:AgICAgICAgICAgICAgICAgIC .
-}
-
 test:previous-unfinished {
     obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject .
 }

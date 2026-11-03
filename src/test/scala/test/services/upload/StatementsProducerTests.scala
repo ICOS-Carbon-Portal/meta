@@ -7,9 +7,9 @@ import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.services.upload.StatementsProducer
 import UploadTestFixture.{given, *}
 
-class StatementsProducerTests extends AnyFunSpec:
-	it("generates document metadata and submission provenance, preserving author order"):
-		withStore: s =>
+class StatementsProducerTests extends AnyFunSpec{
+	it("generates document metadata and submission provenance, preserving author order"){
+		withStore{ s =>
 			import s.*
 			val authors = Seq(organization, java.net.URI("https://example.org/second-author"))
 			val dto = document.copy(title = Some("Report"), description = Some("Description"), authors = authors)
@@ -26,24 +26,23 @@ class StatementsProducerTests extends AnyFunSpec:
 			assert(!started.isBefore(before) && !started.isAfter(after))
 			assert(statements.filterNot(timestamps.contains).toSet == expected)
 			assert(statements.size == expected.size + 1)
+		}
+	}
 
-	it("uses direct contributor links for zero or one author and ordered sequences for several"):
-		withStore: s =>
+	// Several authors (ordered sequence) are covered by the document fixture above.
+	it("uses direct contributor links without a sequence for zero or one author"){
+		withStore{ s =>
 			val producer = StatementsProducer(s.vocab, s.meta)
 			val obj = s.vocab.getStaticObject(hash)
-			for count <- 0 to 2 do
-				val authors = Seq(organization, java.net.URI("https://example.org/author")).take(count)
-				var sequenceRequested = false
-				val result = producer.getContribStatements(s.meta.dcterms.creator, authors, obj, {
-					sequenceRequested = true
-					s.vocab.getDocContribList(hash)
-				}).toSeq
-				assert(sequenceRequested == (count > 1))
-				assert(result.size == (if count > 1 then count + 2 else count))
-				if count == 1 then assert(result.head.getObject == s.factory.createIRI(organization.toString))
+			for (authors <- Seq(Nil, Seq(organization))) {
+				val result = producer.getContribStatements(s.meta.dcterms.creator, authors, obj, fail("sequence requested")).toSeq
+				assert(result.map(_.getObject) == authors.map(a => s.factory.createIRI(a.toString)))
+			}
+		}
+	}
 
-	it("links full replacements directly and partial replacements through a shared collection"):
-		withStore: s =>
+	it("links full replacements directly and partial replacements through a shared collection"){
+		withStore{ s =>
 			import s.*
 			val producer = StatementsProducer(vocab, meta)
 			val coll = vocab.getNextVersionColl(previous)
@@ -57,28 +56,34 @@ class StatementsProducerTests extends AnyFunSpec:
 			loadFixture("statements", "partial-existing")
 			val subsequent = server.access(producer.getObjStatements(partial, organization))
 			assert(subsequent.filter(_.getSubject == coll).toSet == fixture("statements", "partial-subsequent"))
-			intercept[UploadUserErrorException]:
+			intercept[UploadUserErrorException]{
 				server.access(producer.getObjStatements(partial.copy(isNextVersionOf = Some(Right(Seq(previous, other)))), organization))
+			}
+		}
+	}
 
-	it("generates station acquisition metadata, trims keywords, and includes only future moratoria"):
-		withStore: s =>
+	it("generates station acquisition metadata, trims keywords, and includes only future moratoria"){
+		withStore{ s =>
 			import s.*
 			val producer = StatementsProducer(vocab, meta)
 			val future = java.time.Instant.now().plusSeconds(86400)
-			for (keywords, moratorium, expectedKeywords, hasMoratorium) <- Seq(
+			for ((keywords, moratorium, expectedKeywords, hasMoratorium) <- Seq(
 				(Some(Seq(" CO2 ", "", "  ", "temperature")), Some(future), Some("CO2,temperature"), true),
 				(Some(Seq("", "  ")), Some(java.time.Instant.EPOCH), None, false),
 				(None, None, None, false)
-			) do
+			)) {
 				val dto = dataObject.copy(references = Some(references.copy(keywords = keywords, moratorium = moratorium)))
 				val statements = server.access(producer.getObjStatements(dto, organization))
 				assert(fixture("statements", "station-acquisition").subsetOf(statements.toSet))
 				assert(statements.filter(_.getPredicate == meta.hasKeywords).map(_.getObject.stringValue) == expectedKeywords.toSeq)
 				val embargo = statements.filter(_.getPredicate == meta.prov.endedAtTime)
 				assert(embargo == (if hasMoratorium then Seq(factory.createStatement(vocab.getSubmission(hash), meta.prov.endedAtTime, vocab.lit(future))) else Nil))
+			}
+		}
+	}
 
-	it("generates collection membership, provenance, and previous-version links"):
-		withStore: s =>
+	it("generates collection membership, provenance, and previous-version links"){
+		withStore{ s =>
 			import s.*
 			val coll = vocab.getCollection(hash)
 			val member = java.net.URI(vocab.getStaticObject(other).stringValue)
@@ -88,3 +93,6 @@ class StatementsProducerTests extends AnyFunSpec:
 			val expected = fixture("statements", "collection")
 			assert(statements.toSet == expected)
 			assert(statements.size == expected.size)
+		}
+	}
+}

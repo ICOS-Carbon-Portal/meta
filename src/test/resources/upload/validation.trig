@@ -1,0 +1,56 @@
+# Named graphs identify independent test scenarios, not production RDF contexts.
+@prefix test: <urn:upload-test:> .
+@prefix cp: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix obj: <https://meta.icos-cp.eu/objects/> .
+@prefix res: <https://meta.icos-cp.eu/resources/> .
+@prefix coll: <https://meta.icos-cp.eu/collections/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+test:filename-taken {
+    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" ; cp:hasSizeInBytes 100 .
+}
+
+test:filename-self {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB a cp:DocumentObject ; cp:hasName "report.pdf" ; cp:hasSizeInBytes 100 .
+}
+
+test:filename-unfinished {
+    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" .
+}
+
+test:filename-deprecated {
+    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" ; cp:hasSizeInBytes 100 .
+    obj:AwMDAwMDAwMDAwMDAwMDAwMD a cp:DocumentObject ; cp:hasSizeInBytes 100 ; cp:isNextVersionOf obj:AgICAgICAgICAgICAgICAgIC .
+}
+
+test:previous-unfinished {
+    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject .
+}
+
+test:previous-completed {
+    obj:AgICAgICAgICAgICAgICAgIC cp:hasSizeInBytes 100 .
+}
+
+test:previous-deprecated {
+    obj:AwMDAwMDAwMDAwMDAwMDAwMD a cp:DocumentObject ; cp:hasSizeInBytes 100 ; cp:isNextVersionOf obj:AgICAgICAgICAgICAgICAgIC .
+}
+
+test:registered-licence {
+    <https://example.org/licence> a dct:LicenseDocument .
+}
+
+# A distant fixed date keeps the stored embargo in the future without runtime substitutions.
+test:embargoed {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasSizeInBytes 100 .
+    res:subm_AQEBAQEBAQEBAQEBAQEBAQEB prov:endedAtTime "9999-01-01T00:00:00Z"^^xsd:dateTime .
+}
+
+test:published {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasSizeInBytes 100 .
+    res:subm_AQEBAQEBAQEBAQEBAQEBAQEB prov:endedAtTime "1970-01-01T00:00:00Z"^^xsd:dateTime .
+}
+

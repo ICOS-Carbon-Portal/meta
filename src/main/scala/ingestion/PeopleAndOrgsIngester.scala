@@ -13,6 +13,7 @@ import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.core.data.Orcid
 import se.lu.nateko.cp.meta.metaflow.Researcher
+import se.lu.nateko.cp.meta.metaflow.TcVocab
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -38,6 +39,7 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(using EnvriConfigs, Execution
 		given ValueFactory = factory
 		given Envri = Envri.ICOS
 		val vocab = new CpVocab(factory)
+		val tcVocab = new TcVocab(vocab)
 		val metaVocab = new CpmetaVocab(factory)
 		val role = Researcher
 
@@ -90,12 +92,12 @@ class PeopleAndOrgsIngester(pathToTextRes: String)(using EnvriConfigs, Execution
 			case Info(lname, fname, _, Some(OrgInfo(_, orgId)), _) =>
 				val org = vocab.getOrganization(orgId)
 				val person = vocab.getPerson(fname, lname)
-				val membership = vocab.getMembership(orgId, role, lname)
+				val membership = tcVocab.getMembership(orgId, role, lname)
 				Seq[(IRI, IRI, Value)](
 					(person, metaVocab.hasMembership, membership),
 					(membership, RDF.TYPE, metaVocab.membershipClass),
 					(membership, RDFS.LABEL, s"$lname as ${role.name} at $orgId".toRdf),
-					(membership, metaVocab.hasRole, vocab.getRole(role)),
+					(membership, metaVocab.hasRole, tcVocab.getRole(role)),
 					(membership, metaVocab.atOrganization, org)
 				)
 		}.flatten

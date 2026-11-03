@@ -7,7 +7,7 @@ import se.lu.nateko.cp.meta.MetaUploadConf
 import se.lu.nateko.cp.meta.api.UriId
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.metaflow.*
-import se.lu.nateko.cp.meta.services.CpVocab
+import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.io.{BufferedInputStream, FileInputStream, InputStreamReader}
@@ -318,7 +318,7 @@ object AtcMetaSource{
 			for(
 				id <- demand(InstrIdCol).map(makeId);
 				nameOpt <- lookUp(InstrNameCol).optional;
-				serial <- lookUp(InstrSerialCol).orElse(TcMetaSource.defaultSerialNum);
+				serial <- lookUp(InstrSerialCol).orElse(CpmetaVocab.defaultSerialNum);
 				vendorId <- demand(InstrVendorIdCol).map(makeOrgId);
 				ownerId <- demand(InstrOwnerIdCol).map(makeOrgId);
 				model <- demand(InstrModelCol);

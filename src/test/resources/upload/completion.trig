@@ -1,0 +1,40 @@
+# Named graphs identify independent test scenarios, not production RDF contexts.
+@prefix test: <urn:upload-test:> .
+@prefix cp: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix obj: <https://meta.icos-cp.eu/objects/> .
+@prefix res: <https://meta.icos-cp.eu/resources/> .
+@prefix coll: <https://meta.icos-cp.eu/collections/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+test:time-series-before {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasActualColumnNames '["old"]' ; cp:hasNumberOfRows 10 .
+    res:acq_AQEBAQEBAQEBAQEBAQEBAQEB prov:startedAtTime "1970-01-01T00:00:00Z"^^xsd:dateTime ;
+        prov:endedAtTime "1970-01-01T00:00:00Z"^^xsd:dateTime .
+}
+
+test:time-series-without-rows {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasActualColumnNames '["CO2", "time"]' ; cp:hasNumberOfRows 10 .
+    res:acq_AQEBAQEBAQEBAQEBAQEBAQEB prov:startedAtTime "2020-01-01T00:00:00Z"^^xsd:dateTime ;
+        prov:endedAtTime "2020-01-02T00:00:00Z"^^xsd:dateTime .
+}
+
+test:time-series-with-rows {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasActualColumnNames '["CO2", "time"]' ; cp:hasNumberOfRows 42 .
+    res:acq_AQEBAQEBAQEBAQEBAQEBAQEB prov:startedAtTime "2020-01-01T00:00:00Z"^^xsd:dateTime ;
+        prov:endedAtTime "2020-01-02T00:00:00Z"^^xsd:dateTime .
+}
+
+test:netcdf-before {
+    res:varinfo_CO2_AQEBAQEBAQEBAQEBAQEBAQEB cp:hasMinValue "-1.0"^^xsd:double ; cp:hasMaxValue "1.0"^^xsd:double .
+    res:varinfo_temperature_AQEBAQEBAQEBAQEBAQEBAQEB cp:hasMinValue "100.0"^^xsd:double .
+}
+
+test:netcdf-after {
+    res:varinfo_CO2_AQEBAQEBAQEBAQEBAQEBAQEB cp:hasMinValue "350.0"^^xsd:double ; cp:hasMaxValue "450.0"^^xsd:double .
+    res:varinfo_temperature_AQEBAQEBAQEBAQEBAQEBAQEB cp:hasMinValue "100.0"^^xsd:double .
+}
+

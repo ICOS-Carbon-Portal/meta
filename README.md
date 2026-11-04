@@ -392,7 +392,7 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 ### Getting started with the back-end part
 
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure?tab=readme-ov-file#rdflog))
-- Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
+- Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. **Make sure that the "password" is the same you put in `passwords.yml` in the infrastructure project**. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run `sbt ~reStart ~copyResources` (~reStart is for continuous local rebuilds and server restarts. ~copyResources if the development is done only in the front end part, running it is sufficient but much faster.)
 
 

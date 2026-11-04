@@ -387,7 +387,8 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - Clone this repository: `git clone git@github.com:ICOS-Carbon-Portal/meta.git`
 - `cd meta`
 - Install Node.js dependencies: `npm install`
-- Now you can run [Gulp](https://gulpjs.com/) tasks: `npm run <task>` (run `npm run` or see `package.json` for the list of defined tasks)
+- Now to build the frontend, simply run `npm run gulp -- --target=target/scala-3.3.4/classes`
+- You can also run [Gulp](https://gulpjs.com/) tasks: `npm run <task>` (run `npm run` or see `package.json` for the list of defined tasks)
 
 ### Getting started with the back-end part
 

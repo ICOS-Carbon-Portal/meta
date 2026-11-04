@@ -387,14 +387,19 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - Clone this repository: `git clone git@github.com:ICOS-Carbon-Portal/meta.git`
 - `cd meta`
 - Install Node.js dependencies: `npm install`
-- Now to build the frontend, simply run `npm run gulp -- --target=target/scala-3.3.4/classes`
-- You can also run [Gulp](https://gulpjs.com/) tasks: `npm run <task>` (run `npm run` or see `package.json` for the list of defined tasks)
+- Now to build all front-end bundles into the SBT classpath directory, simply run `npm run gulp -- --target=target/scala-3.3.4/classes`
+
+*You can also run other [Gulp](https://gulpjs.com/) tasks: `npm run <task> -- --target=target/scala-3.3.4/classes` (run `npm run` or see `package.json` for the list of defined tasks)*
 
 ### Getting started with the back-end part
 
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure?tab=readme-ov-file#rdflog))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. **Make sure that the "password" is the same you put in `passwords.yml` in the infrastructure project**. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - Run `sbt ~reStart ~copyResources` (~reStart is for continuous local rebuilds and server restarts. ~copyResources if the development is done only in the front end part, running it is sufficient but much faster.)
+
+When starting meta for the first time without an existing rdfStorage directory, the service initializes from the RDF logs in "fresh init" mode (without RDF4J/CP indices), which can take a long time. Once finished, restart the service once so indices are built.
+
+Once `[INFO] Main$ ServerBinding(/127.0.0.1:9094)` is logged, **the service and web apps are accessible at http://localhost:9094/**, with correct suffixes.
 
 
 ### Setting up authentication/authorization for the Handle.net client HandleNetClient

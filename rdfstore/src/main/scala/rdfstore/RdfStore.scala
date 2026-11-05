@@ -30,6 +30,8 @@ final class RdfStore private (
 	val citer: CitationProvider,
 	val derivedMetadata: DerivedMetadataService,
 	val sparqlServer: Rdf4jSparqlServer,
+	/** The SPARQL endpoint of the repository with only the stored statements */
+	val vanillaSparqlServer: Rdf4jSparqlServer,
 	/** The storage was created from scratch at this startup, and has been restored from the RDF logs */
 	val isFreshInit: Boolean,
 	sail: CpNotifyingSail,
@@ -50,6 +52,7 @@ final class RdfStore private (
 
 	override def close(): Unit =
 		sparqlServer.shutdown()
+		vanillaSparqlServer.shutdown()
 		repo.shutDown()
 		logManager.close()
 
@@ -94,7 +97,10 @@ object RdfStore:
 
 			written.map: _ =>
 				val sparqlServer = new Rdf4jSparqlServer(repo, config.sparql)
-				new RdfStore(repo, citer, derivedMetadata, sparqlServer, isFreshInit, sail, indexData, logManager)
+				val vanillaSparqlServer = new Rdf4jSparqlServer(citer.repo, config.sparql)
+				new RdfStore(
+					repo, citer, derivedMetadata, sparqlServer, vanillaSparqlServer, isFreshInit, sail, indexData, logManager
+				)
 	end start
 
 	private def restoreIndex(config: CpmetaConfig, log: akka.event.LoggingAdapter)(using ExecutionContext): Future[Option[IndexData]] =

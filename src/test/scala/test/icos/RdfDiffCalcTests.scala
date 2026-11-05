@@ -4,6 +4,7 @@ import scala.language.unsafeNulls
 
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.{Statement, ValueFactory}
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.scalatest.GivenWhenThen
 import org.scalatest.funspec.AnyFunSpec
 import se.lu.nateko.cp.meta.api.{RdfLens, UriId}
@@ -422,6 +423,114 @@ class RdfDiffCalcTests extends AnyFunSpec with GivenWhenThen:
 			assert(theUpdate.isAssertion)
 			assert(theUpdate.statement.getObject.stringValue.endsWith(orcidStr))
 
+
+	describe("people with ambiguous TC ids"){
+
+		val janeIdB = "pers_0b"
+		val janeDup = jane.copy(cpId = UriId("jane_doe"), fname = "jane", lname = "doe")
+
+		def researcher(person: TcPerson[A]) =
+			Membership[A](UriId(s"${person.cpId}_memb"), new AssumedRole[A](Researcher, person, airCpStation, None, None), None, None)
+
+		def snapshot(holder: TcPerson[A]) =
+			new TcState[A](Seq(airCpStation), Nil, Seq(researcher(holder).copy(cpId = UriId(""))), Nil)
+
+		/** Initial state with a membership for each of `holders`, and statements about `others` */
+		def initState(holders: Seq[TcPerson[A]], others: Seq[TcPerson[A]] = Nil): TestState = {
+			val state = init(Seq(new TcState[A](Seq(airCpStation), Nil, holders.map(researcher), Nil)), _ => Nil)
+			state.tcServer.addAll(others.flatMap(state.maker.getStatements[A]))
+			state
+		}
+
+		def addTcId(state: TestState, person: TcPerson[A], tcId: String): Unit = {
+			val f = state.tcServer.factory
+			val tcIdPred = AtcConf.tcIdPredicate(state.maker.meta)
+			state.tcServer.add(f.createStatement(state.maker.getIri(person), tcIdPred, f.createLiteral(tcId)))
+		}
+
+		def countMemberships(state: TestState): Int = {
+			val stats = state.tcServer.getStatements(None, Some(RDF.TYPE), Some(state.maker.meta.membershipClass))
+			try stats.size finally stats.close()
+		}
+
+		/** Calculates and applies the diff `n` times, returns the number of memberships after each time */
+		def applyRepeatedly(state: TestState, snap: TcState[A], n: Int): Seq[Int] = (1 to n).map{_ =>
+			state.tcServer.applyAll(state.calc.calcDiff(snap).result.get)()
+			countMemberships(state)
+		}
+
+		describe("a person with two TC ids"){
+
+			Given("Jane holds a membership and has TC ids pers_0 and pers_0b")
+
+			def twoIdsState: TestState = {
+				val state = initState(Seq(jane))
+				addTcId(state, jane, janeIdB)
+				state
+			}
+
+			val snapWithIdB = snapshot(jane.copy(tcIdOpt = Some(aId(janeIdB))))
+
+			it("is reported as an error when reading the current state"){
+				val stateV = twoIdsState.reader.getCurrentState[A]
+				assert(stateV.errors.exists(_.contains("Expected at most one")))
+			}
+
+			it("results in no diff, since reading the current state reported errors"){
+				val diffV = twoIdsState.calc.calcDiff(snapWithIdB)
+				assert(diffV.errors.nonEmpty)
+				assert(diffV.result.forall(_.isEmpty))
+			}
+
+			it("does not get duplicated (person and membership) when the TC lists the role under the id that was not picked"){
+				val state = twoIdsState
+				assert(applyRepeatedly(state, snapWithIdB, 3) === Seq(1, 1, 1))
+				val janeCopy = state.maker.getIri(jane.copy(cpId = UriId("Jane_Doe_2")))
+				val copyStats = state.tcServer.getStatements(Some(janeCopy), None, None)
+				try assert(!copyStats.hasNext, "a duplicate person Jane_Doe_2 was created") finally copyStats.close()
+			}
+		}
+
+		describe("a TC id shared by two people"){
+
+			Given("Jane_Doe and jane_doe both have TC id pers_0")
+
+			it("is not silently resolved to one of the people when building the TC-id lookup"){
+				val lookup = RdfDiffCalc.toTcIdMap[A, TcPerson[A]](Seq(jane, janeDup))
+				assert(lookup.size === 2, "one of the two people sharing a TC id was silently dropped")
+			}
+
+			it("is reported as an error by the diff calculation"){
+				val diffV = initState(Seq(jane, janeDup)).calc.calcDiff(snapshot(jane))
+				assert(diffV.errors.nonEmpty)
+			}
+		}
+
+		describe("a membership whose holder shares a TC id with a person who has a second TC id"){
+
+			Given("jane_doe holds a membership and has TC id pers_0; Jane_Doe has TC ids pers_0 and pers_0b")
+
+			def sharedIdState: TestState = {
+				val state = initState(Seq(janeDup), others = Seq(jane))
+				addTcId(state, jane, janeIdB)
+				state
+			}
+
+			val snapWithIdB = snapshot(jane.copy(tcIdOpt = Some(aId(janeIdB))))
+
+			it("does not get a new copy every time the diff is applied, when the TC lists the role under pers_0b"){
+				val state = sharedIdState
+				assert(countMemberships(state) === 1)
+				assert(applyRepeatedly(state, snapWithIdB, 5) === Seq(1, 1, 1, 1, 1))
+			}
+
+			it("is reported as an error by the diff calculation"){
+				// Jane_Doe holds no membership, so her two TC ids are never read, and nothing is reported
+				val diffV = sharedIdState.calc.calcDiff(snapWithIdB)
+				assert(diffV.errors.nonEmpty)
+			}
+		}
+	}
 
 	def init(initTcState: Seq[TcState[_ <: TC]], cpOwn: RdfMaker => Seq[Statement]): TestState = {
 		val repo = Loading.emptyInMemory

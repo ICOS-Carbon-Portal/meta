@@ -1,0 +1,49 @@
+# Named graphs identify independent test scenarios, not production RDF contexts.
+@prefix test: <urn:upload-test:> .
+@prefix cp: <http://meta.icos-cp.eu/ontologies/cpmeta/> .
+@prefix obj: <https://meta.icos-cp.eu/objects/> .
+@prefix res: <https://meta.icos-cp.eu/resources/> .
+@prefix coll: <https://meta.icos-cp.eu/collections/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# The generated submission timestamp is checked separately in Scala.
+test:document {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB a cp:DocumentObject ; dct:title "Report" ; dct:description "Description" ;
+        cp:hasName "report.pdf" ; cp:hasSha256sum "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"^^xsd:base64Binary ;
+        cp:wasSubmittedBy res:subm_AQEBAQEBAQEBAQEBAQEBAQEB ; dct:creator res:contribs_AQEBAQEBAQEBAQEBAQEBAQEB .
+    res:subm_AQEBAQEBAQEBAQEBAQEBAQEB a cp:DataSubmission ; prov:wasAssociatedWith <https://meta.icos-cp.eu/organizations/test> .
+    res:contribs_AQEBAQEBAQEBAQEBAQEBAQEB a rdf:Seq ; rdf:_1 <https://meta.icos-cp.eu/organizations/test> ;
+        rdf:_2 <https://example.org/second-author> .
+}
+
+test:direct-replacement {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:isNextVersionOf obj:AgICAgICAgICAgICAgICAgIC .
+}
+
+test:partial-first {
+    res:nextvcoll_AgICAgICAgICAgICAgICAgIC a cp:PlainCollection ; cp:isNextVersionOf obj:AgICAgICAgICAgICAgICAgIC ; dct:hasPart obj:AQEBAQEBAQEBAQEBAQEBAQEB .
+}
+
+test:partial-existing {
+    res:nextvcoll_AgICAgICAgICAgICAgICAgIC dct:hasPart obj:AwMDAwMDAwMDAwMDAwMDAwMD .
+}
+
+test:partial-subsequent {
+    res:nextvcoll_AgICAgICAgICAgICAgICAgIC dct:hasPart obj:AQEBAQEBAQEBAQEBAQEBAQEB .
+}
+
+test:station-acquisition {
+    obj:AQEBAQEBAQEBAQEBAQEBAQEB a cp:DataObject ; cp:hasObjectSpec <https://example.org/spec> ; cp:wasAcquiredBy res:acq_AQEBAQEBAQEBAQEBAQEBAQEB .
+    res:acq_AQEBAQEBAQEBAQEBAQEBAQEB a cp:DataAcquisition ; prov:wasAssociatedWith <https://meta.icos-cp.eu/organizations/test> .
+}
+
+test:collection {
+    coll:AQEBAQEBAQEBAQEBAQEBAQEB a cp:Collection ; dct:title "Collection" ; dct:description "Description" ;
+        dct:creator <https://meta.icos-cp.eu/organizations/test> ; dct:hasPart obj:AwMDAwMDAwMDAwMDAwMDAwMD ;
+        cp:isNextVersionOf coll:AgICAgICAgICAgICAgICAgIC ; rdfs:seeAlso obj:AwMDAwMDAwMDAwMDAwMDAwMD .
+}
+

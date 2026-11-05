@@ -37,7 +37,7 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer, derivedMetadata: De
 		.map(Validated.sequence(_).map(_.flatten))
 
 	def createDraftDoi(dataItemLandingPage: URI)(using Envri): Future[Validated[Doi]] =
-		import UriSerializer.Hash
+		import se.lu.nateko.cp.meta.services.linkeddata.Hash
 		val uri = Uri(dataItemLandingPage.toString)
 		val dataCite = DataCite(s => client.doi(s))
 

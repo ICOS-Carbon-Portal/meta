@@ -396,7 +396,9 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure?tab=readme-ov-file#rdflog))
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. **Make sure that the "password" is the same you put in `passwords.yml` in the infrastructure project**. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
 - To be able to upload data, put a `submitters.conf` file in the project root (the JVM's working directory). It lists the data submitters and which users can upload on their behalf; ask the team for an example.
-- Run `sbt ~reStart` (~reStart is for continuous local rebuilds and server restarts. You can also run ~copyResources if the development is done only in the front end part, running it is sufficient but much faster.)
+- Run the `sbt` console 
+- For the first time you run meta, you will need to fetch the GCMD keywords list by running `fetchGCMDKeywords`
+- Then run `reStart` to actually build the fast development bundle ("reStart" is for continuous local rebuilds and server restarts. You can also run "copyResources" if the development is done only in the front end part, running it is sufficient but much faster.)
 
 When starting meta for the first time without an existing rdfStorage directory, the service initializes from the RDF logs in "fresh init" mode (without RDF4J/CP indices), which can take a long time. Once finished, restart the service once so indices are built.
 The first time you run meta, keep `cpmeta.rdfStorage.recreateAtStartup: true` in your root `application.conf`, then **set it to `false` afterwards**.

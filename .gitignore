@@ -16,6 +16,9 @@ npm-debug.log
 /jobAd/target
 /jobAd/src/main/js
 
+# Crash logs
+hs_err_pid*.log
+
 # Scala-IDE specific
 .project
 .settings/

@@ -5,7 +5,7 @@ import scala.language.unsafeNulls
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, StaticCollection, StaticObject}
-import se.lu.nateko.cp.meta.services.metadata.StaticMetadata
+import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.time.{Instant, Year}
@@ -64,7 +64,7 @@ class DataCite(
 				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
 			geoLocations = dobj.coverage.map(DoiGeoCovConverter.fromGeoFeature),
 			fundingReferences = Option(
-				StaticMetadata.getFundingObjects(dobj).map(toFundingReference)
+				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
 		)
 	}
@@ -113,7 +113,7 @@ class DataCite(
 			.map(keyword => Subject(keyword))
 
 		val funders = dataObjs
-			.flatMap(StaticMetadata.getFundingObjects)
+			.flatMap(CitationMaker.getFundingObjects)
 			.distinct
 			.map(toFundingReference)
 

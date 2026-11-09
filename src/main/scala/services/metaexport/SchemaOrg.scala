@@ -12,7 +12,7 @@ import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
-import se.lu.nateko.cp.meta.services.citation.CitationMaker.getTemporalCoverageDisplay
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata.getTemporalCoverageDisplay
 import se.lu.nateko.cp.meta.utils.*
 import se.lu.nateko.cp.meta.utils.json.*
 import se.lu.nateko.cp.meta.utils.rdf4j.*

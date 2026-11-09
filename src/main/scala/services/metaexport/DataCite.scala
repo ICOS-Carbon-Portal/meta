@@ -5,13 +5,17 @@ import scala.language.unsafeNulls
 import se.lu.nateko.cp.doi.meta.*
 import se.lu.nateko.cp.doi.{CoolDoi, Doi, DoiMeta}
 import se.lu.nateko.cp.meta.core.data.{Agent, DataObject, DocObject, FunderIdType, Funding, Organization, Person, StaticCollection, StaticObject}
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata
 import se.lu.nateko.cp.meta.utils.Validated
 
 import java.time.{Instant, Year}
+import scala.concurrent.{ExecutionContext, Future}
 
 
-class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticCollection => Validated[Seq[StaticObject]]):
+class DataCite(
+	doiMaker: String => Doi,
+	fetchCollObjectsRecursively: StaticCollection => Future[Validated[Seq[StaticObject]]]
+)(using ExecutionContext):
 	import DataCite.{*, given}
 
 	private val ccby4 = Rights(rights = "Creative Commons Attribution 4.0 International", rightsUri = Some("https://creativecommons.org/licenses/by/4.0"), rightsIdentifier = Some("CC-BY-4.0"))
@@ -60,7 +64,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 				dobj.specification.self.comments.map(comm => Description(comm, DescriptionType.Other, None)),
 			geoLocations = dobj.coverage.map(DoiGeoCovConverter.fromGeoFeature),
 			fundingReferences = Option(
-				CitationMaker.getFundingObjects(dobj).map(toFundingReference)
+				StaticMetadata.getFundingObjects(dobj).map(toFundingReference)
 			).filterNot(_.isEmpty)
 		)
 	}
@@ -92,7 +96,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 		rightsList = Some(Seq(cc0)),
 	)
 
-	def makeCollectionDoi(coll: StaticCollection): Validated[DoiMeta] = fetchCollObjectsRecursively(coll).map: collObjects =>
+	def makeCollectionDoi(coll: StaticCollection): Future[Validated[DoiMeta]] = fetchCollObjectsRecursively(coll).map(_.map: collObjects =>
 
 		val dataObjs = collObjects
 			.collect{ case dobj: DataObject => dobj}
@@ -109,7 +113,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			.map(keyword => Subject(keyword))
 
 		val funders = dataObjs
-			.flatMap(CitationMaker.getFundingObjects)
+			.flatMap(StaticMetadata.getFundingObjects)
 			.distinct
 			.map(toFundingReference)
 
@@ -132,6 +136,7 @@ class DataCite(doiMaker: String => Doi, fetchCollObjectsRecursively: StaticColle
 			fundingReferences = Option(funders).filterNot(_.isEmpty),
 			geoLocations = geoLocations.filterNot(_.isEmpty)
 		)
+	)
 	end makeCollectionDoi
 
 	def toFundingReference(funding: Funding) = {

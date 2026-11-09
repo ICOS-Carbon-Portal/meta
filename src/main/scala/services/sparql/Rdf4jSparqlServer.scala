@@ -99,7 +99,7 @@ class Rdf4jSparqlServer(
 						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)
 					.fold(
 						err =>
-							QueryCloser.NoOp -> Future.failed[Done](err)
+							QueryCancellation() -> Future.failed[Done](err)
 						,
 						(closer, doneFut) =>
 							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
@@ -109,7 +109,7 @@ class Rdf4jSparqlServer(
 									else
 										log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
 										errPromise.tryFailure(CancellationException())
-										closer.signalClose()
+										closer.cancel()
 							closer -> doneFut
 					)
 
@@ -131,7 +131,7 @@ class Rdf4jSparqlServer(
 				)
 			.watchTermination(): (closer, doneFut) =>
 				doneFut.onComplete(doneTry =>
-					closer.signalClose()
+					closer.cancel()
 				)
 				NotUsed
 
@@ -172,10 +172,10 @@ object Rdf4jSparqlServer:
 
 	object ProtocolOption{
 		def apply(rt: ContentType, rrt: ContentType, wf: TupleQueryResultWriterFactory) =
-			new ProtocolOption(rt, rrt, new TupleQueryEvaluator(wf))
+			new ProtocolOption(rt, rrt, QueryEvaluator(wf))
 
 		def apply(rt: ContentType, rrt: ContentType, wf: RDFWriterFactory) =
-			new ProtocolOption(rt, rrt, new GraphQueryEvaluator(wf))
+			new ProtocolOption(rt, rrt, QueryEvaluator(wf))
 	}
 
 	val tupleQueryProtocolOptions: List[ProtocolOption[TupleQuery]] =

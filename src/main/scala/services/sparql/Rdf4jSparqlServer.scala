@@ -99,7 +99,10 @@ class Rdf4jSparqlServer(
 						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)
 					.fold(
 						err =>
-							QueryCancellation() -> Future.failed[Done](err)
+							val nopCloser = new AutoCloseable:
+								def close(): Unit = ()
+
+							nopCloser -> Future.failed[Done](err)
 						,
 						(closer, doneFut) =>
 							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
@@ -109,7 +112,7 @@ class Rdf4jSparqlServer(
 									else
 										log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
 										errPromise.tryFailure(CancellationException())
-										closer.cancel()
+										closer.close()
 							closer -> doneFut
 					)
 
@@ -131,7 +134,7 @@ class Rdf4jSparqlServer(
 				)
 			.watchTermination(): (closer, doneFut) =>
 				doneFut.onComplete(doneTry =>
-					closer.cancel()
+					closer.close()
 				)
 				NotUsed
 

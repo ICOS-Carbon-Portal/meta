@@ -10,6 +10,7 @@ import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryInterruptedException, Qu
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 
 import java.io.OutputStream
+import java.lang.AutoCloseable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -21,7 +22,7 @@ class QueryEvaluator[Q <: Query](start: (Q, OutputStream) => () => Unit) {
 	 * Starts evaluating the query, writing the results to `os` asynchronously.
 	 * The query result is always closed by the thread that iterates it, never by the caller.
 	 */
-	def evaluate(query: Q, os: OutputStream)(using ExecutionContext): Try[(QueryCancellation, Future[Done])] =
+	def evaluate(query: Q, os: OutputStream)(using ExecutionContext): Try[(AutoCloseable, Future[Done])] =
 		Try:
 			val report = start(query, os)
 			val cancellation = QueryCancellation()
@@ -57,11 +58,11 @@ private[sparql] object QueryEvaluator {
  * minutes (e.g. ORDER BY materializing all solutions). So while the iterating thread drives the query,
  * the flag is published to it as `current`, and the triple source checks it on every statement step.
  */
-class QueryCancellation {
+class QueryCancellation extends AutoCloseable {
 	@volatile private var cancelled = false
 
 	/** Asks the evaluating thread to stop and close the query result; returns immediately. */
-	def cancel(): Unit = cancelled = true
+	override def close(): Unit = cancelled = true
 
 	private def check(): Unit = {
 		if (cancelled) throw QueryInterruptedException("SPARQL query evaluation was cancelled")

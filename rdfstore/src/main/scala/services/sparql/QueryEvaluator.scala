@@ -6,11 +6,12 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, ByteStringBuilder}
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory
-import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryInterruptedException, TupleQuery}
+import org.eclipse.rdf4j.query.{GraphQuery, Query, QueryInterruptedException, QueryResult, TupleQuery}
 import org.eclipse.rdf4j.repository.RepositoryConnection
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 
 import java.io.OutputStream
+import java.lang.AutoCloseable
 
 /**
  * Evaluates SPARQL queries as Akka Streams sources of serialized query results.
@@ -25,7 +26,7 @@ trait QueryEvaluator[Q <: Query] {
 	import QueryEvaluator.*
 
 	/** Evaluates the query and starts writing the results (lazily) to `os` */
-	protected def startWriting(query: Q, os: OutputStream): ResultWriting
+	def evaluate(query: Q, os: OutputStream): ResultWriting[?]
 
 	/**
 	 * A source that (upon materialization) opens a connection, evaluates the query and streams the serialized results.
@@ -39,26 +40,20 @@ trait QueryEvaluator[Q <: Query] {
 		cancellation: QueryCancellation,
 		onFinish: () => Unit
 	): Source[ByteString, NotUsed] = Source.unfoldResource[ByteString, QuerySession](
-		create = () => {
-			try {
-				QueryCancellation.within(cancellation) {
-					val conn = getConnection()
-					try {
-						val buf = ByteStringBuilder()
-						val query = conn.prepareQuery(queryStr).asInstanceOf[Q]
-						QuerySession(conn, buf, startWriting(query, buf.asOutputStream), onFinish)
-					} catch {
-						case err: Throwable =>
-							conn.close()
-							throw err
-					}
-				}
-			} catch {
-				case err: Throwable =>
-					onFinish()
+		create = () =>
+			try QueryCancellation.within(cancellation):
+				val conn = getConnection()
+				try
+					val buf = ByteStringBuilder()
+					val query = conn.prepareQuery(queryStr).asInstanceOf[Q]
+					QuerySession(conn, buf, evaluate(query, buf.asOutputStream), onFinish)
+				catch case err: Throwable =>
+					conn.close()
 					throw err
-			}
-		},
+			catch case err: Throwable =>
+				onFinish()
+				throw err
+		,
 		read = sess => QueryCancellation.within(cancellation)(sess.readChunk()),
 		close = _.close()
 	)
@@ -72,35 +67,40 @@ object QueryEvaluator {
 	 */
 	private val ChunkSize = 1 << 16
 
-	trait ResultWriting {
-		/** Writes the next query result, or finishes the document if there are none; returns false in the latter case */
-		def writeNext(): Boolean
-		def close(): Unit
-	}
+	/** Writes the query results one by one; `start` is run immediately, closing the result if it fails */
+	class ResultWriting[T](res: QueryResult[T], start: => Unit, handle: T => Unit, end: () => Unit):
+		try start catch case err: Throwable =>
+			res.close()
+			throw err
 
-	private class QuerySession(conn: RepositoryConnection, buf: ByteStringBuilder, writing: ResultWriting, onFinish: () => Unit) {
+		/** Writes the next query result, or finishes the document if there are none; returns false in the latter case */
+		def writeNext(): Boolean =
+			if res.hasNext() then
+				handle(res.next())
+				true
+			else
+				end()
+				false
+
+		def close(): Unit = res.close()
+
+	private class QuerySession(conn: RepositoryConnection, buf: ByteStringBuilder, writing: ResultWriting[?], onFinish: () => Unit):
 		private var finished = false
 
-		def readChunk(): Option[ByteString] = {
-			if (finished) None
-			else {
-				while (!finished && buf.length < ChunkSize) {
+		def readChunk(): Option[ByteString] =
+			if finished then None
+			else
+				while !finished && buf.length < ChunkSize do
 					finished = !writing.writeNext()
-				}
 				val chunk = buf.result()
 				buf.clear()
 				Some(chunk)
-			}
-		}
 
-		def close(): Unit = {
+		def close(): Unit =
 			try writing.close()
-			finally {
+			finally
 				try conn.close()
 				finally onFinish()
-			}
-		}
-	}
 }
 
 
@@ -130,11 +130,11 @@ object QueryCancellation {
 	}
 }
 
-class QueryCancellation {
+class QueryCancellation extends AutoCloseable {
 	@volatile private var cancelled = false
 
 	/** Makes the query fail on the thread evaluating it; returns immediately */
-	def cancel(): Unit = cancelled = true
+	override def close(): Unit = cancelled = true
 
 	def check(): Unit = {
 		if (cancelled) throw QueryInterruptedException("SPARQL query evaluation was cancelled")
@@ -142,62 +142,25 @@ class QueryCancellation {
 }
 
 
-class TupleQueryEvaluator(wf: TupleQueryResultWriterFactory) extends QueryEvaluator[TupleQuery] {
+class TupleQueryEvaluator(wf: TupleQueryResultWriterFactory) extends QueryEvaluator[TupleQuery]:
 
-	override protected def startWriting(query: TupleQuery, os: OutputStream): QueryEvaluator.ResultWriting = {
-		val writer = wf.getWriter(os)
-		val res = query.evaluate()
-		try {
-			writer.startQueryResult(res.getBindingNames())
-		} catch {
-			case err: Throwable =>
-				res.close()
-				throw err
-		}
-
-		new QueryEvaluator.ResultWriting {
-			def writeNext(): Boolean = {
-				if (res.hasNext()) {
-					writer.handleSolution(res.next())
-					true
-				} else {
-					writer.endQueryResult()
-					false
-				}
-			}
-
-			def close(): Unit = res.close()
-		}
-	}
-}
+	override def evaluate(query: TupleQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] =
+		val resultWriter = wf.getWriter(os)
+		val tupleRes = query.evaluate()
+		QueryEvaluator.ResultWriting(tupleRes, resultWriter.startQueryResult(tupleRes.getBindingNames()), resultWriter.handleSolution, resultWriter.endQueryResult)
 
 
-class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuery] {
+class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuery]:
 
-	override protected def startWriting(query: GraphQuery, os: OutputStream): QueryEvaluator.ResultWriting = {
-		val writer = wf.getWriter(os)
-		val res = query.evaluate()
-		try {
-			writer.startRDF()
-			res.getNamespaces().forEach(writer.handleNamespace)
-		} catch {
-			case err: Throwable =>
-				res.close()
-				throw err
-		}
-
-		new QueryEvaluator.ResultWriting {
-			def writeNext(): Boolean = {
-				if (res.hasNext()) {
-					writer.handleStatement(res.next())
-					true
-				} else {
-					writer.endRDF()
-					false
-				}
-			}
-
-			def close(): Unit = res.close()
-		}
-	}
-}
+	override def evaluate(query: GraphQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] =
+		val resultWriter = wf.getWriter(os)
+		val graphRes = query.evaluate()
+		QueryEvaluator.ResultWriting(
+			graphRes,
+			{
+				resultWriter.startRDF()
+				graphRes.getNamespaces().forEach(resultWriter.handleNamespace)
+			},
+			resultWriter.handleStatement,
+			resultWriter.endRDF
+		)

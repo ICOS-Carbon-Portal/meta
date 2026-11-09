@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes, StatusCode, StatusCodes}
-import akka.stream.KillSwitches
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
@@ -87,65 +86,51 @@ class Rdf4jSparqlServer(
 		protocolOption.requestedResponseType,
 		() => {
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
-
-			// Stopping a query takes both of the following, as neither can do the other's job.
-			// `cancellation` stops the reading of the store: the query source runs in its own async island
+			val errPromise = Promise[ByteString]()
+			// Stopping a query takes both `closer` and `errPromise`, as neither can do the other's job.
+			// `closer` (a QueryCancellation) stops the reading of the store: the query source runs in its own async island
 			// and only reacts to stream cancellation between reads, but a single read can take minutes
 			// (e.g. ORDER BY materializing all solutions). The flag makes such a read fail promptly,
 			// after which the source closes the query result on its own thread.
-			// `killSwitch` ends the response by the deadline: the flag only takes effect where it is checked,
+			// `errPromise` ends the response by the deadline: the flag only takes effect where it is checked,
 			// so it can't end a query still waiting for admission (possibly forever, if the quota manager
 			// drops it from the queue), or one busy in code that doesn't check the flag.
-			val cancellation = QueryCancellation()
-			val killSwitch = KillSwitches.shared(s"sparql-query-${qquoter.qid}")
-
+			val closer = QueryCancellation()
 			val run = QueryRun(qquoter)
+			val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
 
-			val entityBytes: Source[ByteString, NotUsed] = Source
-				.lazyFuture(() => admission(qquoter))
-				.flatMapConcat { _ =>
-					protocolOption.evaluator
-						.source(() => run.open(repo), queryStr.query, cancellation, run.finish)
-						.async(QueryDispatcher)
-				}
-				.via(killSwitch.flow)
-				.wireTap(
-					Sink.head[ByteString].mapMaterializedValue(
-						_.foreach(_ => qquoter.logQueryStreamingStart())
-					)
+			//the query is admitted to run by the per-client quota manager
+			val sparqlEntityBytes: Source[ByteString, NotUsed] = Source.lazyFuture(() => Future(Done)(using sparqlCtxt)).flatMapConcat: _ =>
+				protocolOption.evaluator
+					.source(() => run.open(repo), queryStr.query, closer, run.finish)
+					.async(QueryDispatcher)
+			.wireTap:
+				Sink.head[ByteString].mapMaterializedValue(
+					_.foreach(_ => qquoter.logQueryStreamingStart())
 				)
-				.watchTermination() { (_, doneFut) =>
-					val timer = system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds) {
-						if (qquoter.keepRunningIndefinitely) {
+			.watchTermination(): (_, doneFut) =>
+				system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
+					if !doneFut.isCompleted then
+						if qquoter.keepRunningIndefinitely then
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						} else {
+						else
 							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
-							// the flag stops the store reads, the kill switch fails the response right away
-							cancellation.cancel()
-							killSwitch.abort(CancellationException())
-						}
-					}
-					doneFut.onComplete { _ =>
-						timer.cancel()
-						// in case the stream was cancelled by the client while the query source is stuck in a long read
-						cancellation.cancel()
-						// otherwise, the query is finished when the query source has closed it
-						run.finishIfNeverOpened()
-					}
-					NotUsed
-				}
+							errPromise.tryFailure(CancellationException())
+							closer.close()
+				doneFut.onComplete(doneTry =>
+					errPromise.tryComplete(doneTry.map(_ => ByteString.empty))
+					// in case the stream was cancelled by the client while the query source is stuck in a long read
+					closer.close()
+					// otherwise, the query is finished when the query source has closed it
+					run.finishIfNeverOpened()
+				)
+				NotUsed
+
+			val entityBytes = sparqlEntityBytes.merge(Source.future(errPromise.future))
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}
 	)
-
-	/** Completes when the per-client quota allows the query to start running */
-	private def admission(qquoter: QuotaManager.QueryQuotaManager): Future[Done] = {
-		val admitted = Promise[Done]()
-		qquoter.execute(() => admitted.trySuccess(Done))
-		admitted.future
-	}
-
 end Rdf4jSparqlServer
 
 /**

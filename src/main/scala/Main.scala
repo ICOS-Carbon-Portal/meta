@@ -8,7 +8,7 @@ import io.sentry.Sentry
 import se.lu.nateko.cp.cpauth.core.ConfigLoader.appConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
 import se.lu.nateko.cp.meta.metaflow.MetaFlow
-import se.lu.nateko.cp.meta.rdfstore.RdfStore
+import se.lu.nateko.cp.meta.rdfstore.RemoteRdfStore
 import se.lu.nateko.cp.meta.routes.MainRoute
 
 import scala.concurrent.duration.DurationInt
@@ -25,15 +25,12 @@ object Main extends App with CpmetaJsonProtocol{
 	given EnvriConfigs = config.core.envriConfigs
 	val metaFactory = new MetaDbFactory
 
+	val store = new RemoteRdfStore(config.rdfStore)
+
 	val startup = for(
-		store <- RdfStore.start(config);
 		db <- metaFactory(store, config);
-		_ = if store.isFreshInit then store.makeReadonly("This was a fresh RDF store initialization, running in " +
-			"readonly mode; restart the server for proper operation");
 		metaflow <- Future.fromTry(MetaFlow.initiate(db, config));
-		_ <- store.initSparqlMagicIndex();
-		route = MainRoute(db, metaflow, store.sparqlServer, config);
-		//_ = log.info("SPARQL magic index initialized, starting the HTTP server...");
+		route = MainRoute(db, metaflow, config);
 		binding <- Http().newServerAt(config.httpBindInterface, config.port).bind(route)
 	) yield {
 		sys.addShutdownHook {

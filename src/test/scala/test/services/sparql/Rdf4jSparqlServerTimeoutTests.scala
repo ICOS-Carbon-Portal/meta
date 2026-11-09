@@ -20,7 +20,7 @@ import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
 import se.lu.nateko.cp.meta.services.sparql.magic.{CpEnrichedTripleSource, StatementsEnricher}
 
 import java.lang.reflect.Proxy
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -51,7 +51,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 
 		it("does not close the query result while a worker thread is still reading from it") {
 			val result = FakeLmdbResult(() => Thread.sleep(3000))
-			val server = Rdf4jSparqlServer(mockRepo(result), config)
+			val server = Rdf4jSparqlServer(mockRepo(FakeConnection(result)), config)
 
 			try {
 				val streamDone = runTimingOutQuery(server)
@@ -80,7 +80,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 					statements.close()
 				}
 			})
-			val server = Rdf4jSparqlServer(mockRepo(result), config)
+			val server = Rdf4jSparqlServer(mockRepo(FakeConnection(result)), config)
 
 			try {
 				val streamDone = runTimingOutQuery(server)
@@ -95,17 +95,63 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 				server.shutdown()
 			}
 		}
+
+		/*
+		 * When a client's queue overflows, QuotaManager bans the client and silently drops the queued
+		 * evaluations. Their query results are already open (holding LMDB read transactions), but as
+		 * the worker never runs, nothing closes them or their repository connections.
+		 */
+		it("closes query results and connections of queued queries dropped by the quota manager") {
+			val queueingConfig = config.copy(maxParallelQueries = 1, maxQueryQueue = 1)
+			val running = FakeConnection(FakeLmdbResult(() => Thread.sleep(3000)))
+			val queued = FakeConnection(FakeLmdbResult(() => ()))
+			val overflowing = FakeConnection(FakeLmdbResult(() => ()))
+			val conns = Seq(running, queued, overflowing)
+			val server = Rdf4jSparqlServer(mockRepo(conns*), queueingConfig)
+
+			try {
+				val streamsDone = conns.map{conn =>
+					val streamDone = startQuery(server)
+					assert(conn.evaluated.await(5, TimeUnit.SECONDS), "query was never evaluated")
+					streamDone
+				}
+				streamsDone.foreach(Await.ready(_, 10.seconds))
+				assert(running.result.readerFinished.await(10, TimeUnit.SECONDS), "worker never finished the simulated cursor scan")
+
+				eventually {
+					for (conn, name) <- conns.zip(Seq("running", "queued", "overflowing")) do
+						assert(conn.result.closed.get, s"the $name query's result was never closed")
+						assert(conn.closed.get, s"the $name query's connection was never closed")
+				}
+			} finally {
+				server.shutdown()
+			}
+		}
 	}
 
-	private def runTimingOutQuery(server: Rdf4jSparqlServer) = {
+	private def eventually(assertion: => Unit): Unit = {
+		val deadline = 10.seconds.fromNow
+		var passed = false
+		while !passed do
+			try {
+				assertion
+				passed = true
+			} catch {
+				case _: org.scalatest.exceptions.TestFailedException if deadline.hasTimeLeft() =>
+					Thread.sleep(100)
+			}
+	}
+
+	private def runTimingOutQuery(server: Rdf4jSparqlServer) = Await.ready(startQuery(server), 10.seconds)
+
+	private def startQuery(server: Rdf4jSparqlServer) = {
 		val query = SparqlQuery("select * where {?s ?p ?o}", Some("124.243.154.220"))
 		val marshallings = Await.result(server.marshaller(query)(system.dispatcher), 5.seconds)
 		val response = marshallings.collectFirst {
 			case m: Marshalling.WithFixedContentType[HttpResponse @unchecked] => m.marshal()
 		}.get
 
-		val streamDone = response.entity.dataBytes.runWith(Sink.ignore)
-		Await.ready(streamDone, 10.seconds)
+		response.entity.dataBytes.runWith(Sink.ignore)
 	}
 
 	/**
@@ -117,6 +163,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 		private val reader = AtomicReference[Thread](null)
 		val unsafeClose = AtomicReference[Option[String]](None)
 		val readerFinished = CountDownLatch(1)
+		val closed = AtomicBoolean(false)
 
 		override def getBindingNames(): java.util.List[String] = java.util.List.of("s", "p", "o")
 
@@ -136,6 +183,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 		override def remove(): Unit = throw UnsupportedOperationException()
 
 		override def close(): Unit = {
+			closed.set(true)
 			val readerThread = reader.get()
 			val closingThread = Thread.currentThread()
 			if (readerThread != null && readerThread != closingThread) {
@@ -168,17 +216,29 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 			}
 	}
 
-	private def mockRepo(result: TupleQueryResult): Repository = {
-		val query = mock(classOf[TupleQuery]) {
-			case ("evaluate", Array()) => result
+	private class FakeConnection(val result: FakeLmdbResult) {
+		val evaluated = CountDownLatch(1)
+		val closed = AtomicBoolean(false)
+
+		private val query = mock(classOf[TupleQuery]) {
+			case ("evaluate", Array()) =>
+				evaluated.countDown()
+				result
 		}
 
 		val conn = mock(classOf[RepositoryConnection]) {
 			case ("prepareQuery", _) => query
+			case ("close", _) =>
+				closed.set(true)
+				null
 		}
+	}
 
+	/** Hands out the given connections in order, one per query */
+	private def mockRepo(conns: FakeConnection*): Repository = {
+		val nextConn = AtomicInteger(0)
 		mock(classOf[Repository]) {
-			case ("getConnection", _) => conn
+			case ("getConnection", _) => conns(nextConn.getAndIncrement()).conn
 		}
 	}
 

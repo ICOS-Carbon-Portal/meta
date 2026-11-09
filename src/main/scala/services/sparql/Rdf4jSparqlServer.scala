@@ -175,10 +175,10 @@ object Rdf4jSparqlServer:
 
 	object ProtocolOption{
 		def apply(rt: ContentType, rrt: ContentType, wf: TupleQueryResultWriterFactory) =
-			new ProtocolOption(rt, rrt, QueryEvaluator(wf))
+			new ProtocolOption(rt, rrt, new TupleQueryEvaluator(wf))
 
 		def apply(rt: ContentType, rrt: ContentType, wf: RDFWriterFactory) =
-			new ProtocolOption(rt, rrt, QueryEvaluator(wf))
+			new ProtocolOption(rt, rrt, new GraphQueryEvaluator(wf))
 	}
 
 	val tupleQueryProtocolOptions: List[ProtocolOption[TupleQuery]] =

@@ -6,7 +6,8 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.marshalling.{Marshaller, Marshalling, ToResponseMarshaller}
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharsets, HttpEntity, HttpResponse, MediaType, MediaTypes, StatusCode, StatusCodes}
-import akka.stream.scaladsl.{Sink, Source, StreamConverters}
+import akka.stream.KillSwitches
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
@@ -17,7 +18,7 @@ import org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVWriterFactory
 import org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVWriterFactory
 import org.eclipse.rdf4j.query.{GraphQuery, MalformedQueryException, Query, TupleQuery}
-import org.eclipse.rdf4j.repository.Repository
+import org.eclipse.rdf4j.repository.{Repository, RepositoryConnection}
 import org.eclipse.rdf4j.rio.RDFWriterFactory
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriterFactory
 import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory
@@ -26,10 +27,10 @@ import se.lu.nateko.cp.meta.api.{SparqlQuery, SparqlServer}
 import se.lu.nateko.cp.meta.services.CpmetaVocab
 
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{CancellationException, Executors}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Try
 
 
 class Rdf4jSparqlServer(
@@ -85,67 +86,78 @@ class Rdf4jSparqlServer(
 	): Marshalling[HttpResponse] = Marshalling.WithFixedContentType(
 		protocolOption.requestedResponseType,
 		() => {
-			val timeout = (config.maxQueryRuntimeSec + 1).seconds
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
-			val errPromise = Promise[ByteString]()
-			val sparqlEntityBytes: Source[ByteString, NotUsed] = StreamConverters.asOutputStream(timeout).mapMaterializedValue{ outStr =>
+			val cancellation = QueryCancellation()
+			val killSwitch = KillSwitches.shared(s"sparql-query-${qquoter.qid}")
+			val run = QueryRun(qquoter)
 
-				val conn = repo.getConnection()
-
-				val (closer, sparqlFut) = Try:
-						conn.prepareQuery(queryStr.query).asInstanceOf[Q]
-					.flatMap: query =>
-						val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
-						protocolOption.evaluator.evaluate(query, outStr)(using sparqlCtxt)
-					.fold(
-						err =>
-							val nopCloser = new AutoCloseable:
-								def close(): Unit = ()
-
-							nopCloser -> Future.failed[Done](err)
-						,
-						(closer, doneFut) =>
-							system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
-								if !doneFut.isCompleted then
-									if qquoter.keepRunningIndefinitely then
-										log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-									else
-										log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
-										errPromise.tryFailure(CancellationException())
-										closer.close()
-							closer -> doneFut
+			val entityBytes: Source[ByteString, NotUsed] = Source
+				.lazyFuture(() => admission(qquoter))
+				.flatMapConcat: _ =>
+					protocolOption.evaluator
+						.source(() => run.open(repo), queryStr.query, cancellation, run.finish)
+						.async(QueryDispatcher)
+				.via(killSwitch.flow)
+				.wireTap:
+					Sink.head[ByteString].mapMaterializedValue(
+						_.foreach(_ => qquoter.logQueryStreamingStart())
 					)
-
-				sparqlFut.onComplete: tryDone =>
-					errPromise.tryComplete(tryDone.map(_ => ByteString.empty))
-					try
-						outStr.flush()
-						outStr.close()
-					catch case _: Throwable =>
-						log.debug("SPARQL stream was closed/detached")
-					finally
-						qquoter.logQueryFinish()
-						conn.close()
-
-				closer
-			}.wireTap:
-				Sink.head[ByteString].mapMaterializedValue(
-					_.foreach(_ => qquoter.logQueryStreamingStart())
-				)
-			.watchTermination(): (closer, doneFut) =>
-				doneFut.onComplete(doneTry =>
-					closer.close()
-				)
-				NotUsed
-
-			val entityBytes = sparqlEntityBytes.merge(Source.future(errPromise.future))
+				.watchTermination(): (_, doneFut) =>
+					val timer = system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
+						if qquoter.keepRunningIndefinitely then
+							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
+						else
+							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+							cancellation.cancel()
+							killSwitch.abort(CancellationException())
+					doneFut.onComplete: _ =>
+						timer.cancel()
+						// in case the stream was cancelled by the client while the query source is stuck in a long read
+						cancellation.cancel()
+						// otherwise, the query is finished when the query source has closed it
+						run.finishIfNeverOpened()
+					NotUsed
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}
 	)
+
+	/** Completes when the per-client quota allows the query to start running */
+	private def admission(qquoter: QuotaManager.QueryQuotaManager): Future[Done] =
+		val admitted = Promise[Done]()
+		qquoter.execute(() => admitted.trySuccess(Done))
+		admitted.future
+
 end Rdf4jSparqlServer
 
+/**
+ * Makes sure the query run is logged as finished exactly once: by the query source after it has closed
+ * the query (so that its quota slot is not freed while it still reads the store), or upon stream
+ * termination if the query never started (e.g. dropped from the queue by the quota manager).
+ */
+private class QueryRun(qquoter: QuotaManager.QueryQuotaManager):
+	import QueryRun.*
+	private val state = AtomicInteger(Pending)
+
+	def open(repo: Repository): RepositoryConnection =
+		if state.compareAndSet(Pending, Opened) then repo.getConnection()
+		else throw CancellationException("SPARQL query was cancelled before it started")
+
+	def finish(): Unit =
+		if state.getAndSet(Finished) != Finished then qquoter.logQueryFinish()
+
+	def finishIfNeverOpened(): Unit =
+		if state.compareAndSet(Pending, Finished) then qquoter.logQueryFinish()
+
+private object QueryRun:
+	private val Pending = 0
+	private val Opened = 1
+	private val Finished = 2
+
 object Rdf4jSparqlServer:
+
+	/** Dispatcher for the blocking evaluation of SPARQL queries, configured in application.conf */
+	val QueryDispatcher = "cpmeta-sparql-query-dispatcher"
 
 	private val utf8 = HttpCharsets.`UTF-8`
 	private val xml = ContentType(MediaTypes.`application/xml`, utf8)

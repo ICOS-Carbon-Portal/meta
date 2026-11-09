@@ -98,8 +98,8 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 
 		/*
 		 * When a client's queue overflows, QuotaManager bans the client and silently drops the queued
-		 * evaluations. Their query results are already open (holding LMDB read transactions), but as
-		 * the worker never runs, nothing closes them or their repository connections.
+		 * evaluations. Any query result or repository connection opened for them must still get closed
+		 * (ideally, queued queries are not evaluated at all until they are let to run).
 		 */
 		it("closes query results and connections of queued queries dropped by the quota manager") {
 			val queueingConfig = config.copy(maxParallelQueries = 1, maxQueryQueue = 1)
@@ -110,16 +110,16 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 			val server = Rdf4jSparqlServer(mockRepo(conns*), queueingConfig)
 
 			try {
-				val streamsDone = conns.map{conn =>
-					val streamDone = startQuery(server)
-					assert(conn.evaluated.await(5, TimeUnit.SECONDS), "query was never evaluated")
-					streamDone
-				}
+				val runningDone = startQuery(server)
+				assert(running.evaluated.await(5, TimeUnit.SECONDS), "the running query was never evaluated")
+				//both queued at once while the first query occupies the only slot, overflowing the queue
+				val streamsDone = runningDone +: Seq.fill(2)(startQuery(server))
+
 				streamsDone.foreach(Await.ready(_, 10.seconds))
 				assert(running.result.readerFinished.await(10, TimeUnit.SECONDS), "worker never finished the simulated cursor scan")
 
 				eventually {
-					for (conn, name) <- conns.zip(Seq("running", "queued", "overflowing")) do
+					for (conn, name) <- conns.zip(Seq("running", "queued", "overflowing")) if conn.evaluated.getCount == 0 do
 						assert(conn.result.closed.get, s"the $name query's result was never closed")
 						assert(conn.closed.get, s"the $name query's connection was never closed")
 				}

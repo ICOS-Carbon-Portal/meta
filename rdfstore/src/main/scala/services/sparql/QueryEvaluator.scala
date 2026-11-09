@@ -40,20 +40,26 @@ trait QueryEvaluator[Q <: Query] {
 		cancellation: QueryCancellation,
 		onFinish: () => Unit
 	): Source[ByteString, NotUsed] = Source.unfoldResource[ByteString, QuerySession](
-		create = () =>
-			try QueryCancellation.within(cancellation):
-				val conn = getConnection()
-				try
-					val buf = ByteStringBuilder()
-					val query = conn.prepareQuery(queryStr).asInstanceOf[Q]
-					QuerySession(conn, buf, evaluate(query, buf.asOutputStream), onFinish)
-				catch case err: Throwable =>
-					conn.close()
+		create = () => {
+			try {
+				QueryCancellation.within(cancellation) {
+					val conn = getConnection()
+					try {
+						val buf = ByteStringBuilder()
+						val query = conn.prepareQuery(queryStr).asInstanceOf[Q]
+						QuerySession(conn, buf, evaluate(query, buf.asOutputStream), onFinish)
+					} catch {
+						case err: Throwable =>
+							conn.close()
+							throw err
+					}
+				}
+			} catch {
+				case err: Throwable =>
+					onFinish()
 					throw err
-			catch case err: Throwable =>
-				onFinish()
-				throw err
-		,
+			}
+		},
 		read = sess => QueryCancellation.within(cancellation)(sess.readChunk()),
 		close = _.close()
 	)
@@ -68,39 +74,52 @@ object QueryEvaluator {
 	private val ChunkSize = 1 << 16
 
 	/** Writes the query results one by one; `start` is run immediately, closing the result if it fails */
-	class ResultWriting[T](res: QueryResult[T], start: => Unit, handle: T => Unit, end: () => Unit):
-		try start catch case err: Throwable =>
-			res.close()
-			throw err
+	class ResultWriting[T](res: QueryResult[T], start: => Unit, handle: T => Unit, end: () => Unit) {
+		try {
+			start
+		} catch {
+			case err: Throwable =>
+				res.close()
+				throw err
+		}
 
 		/** Writes the next query result, or finishes the document if there are none; returns false in the latter case */
-		def writeNext(): Boolean =
-			if res.hasNext() then
+		def writeNext(): Boolean = {
+			if (res.hasNext()) {
 				handle(res.next())
 				true
-			else
+			} else {
 				end()
 				false
+			}
+		}
 
 		def close(): Unit = res.close()
+	}
 
-	private class QuerySession(conn: RepositoryConnection, buf: ByteStringBuilder, writing: ResultWriting[?], onFinish: () => Unit):
+	private class QuerySession(conn: RepositoryConnection, buf: ByteStringBuilder, writing: ResultWriting[?], onFinish: () => Unit) {
 		private var finished = false
 
-		def readChunk(): Option[ByteString] =
-			if finished then None
-			else
-				while !finished && buf.length < ChunkSize do
+		def readChunk(): Option[ByteString] = {
+			if (finished) None
+			else {
+				while (!finished && buf.length < ChunkSize) {
 					finished = !writing.writeNext()
+				}
 				val chunk = buf.result()
 				buf.clear()
 				Some(chunk)
+			}
+		}
 
-		def close(): Unit =
+		def close(): Unit = {
 			try writing.close()
-			finally
+			finally {
 				try conn.close()
 				finally onFinish()
+			}
+		}
+	}
 }
 
 
@@ -142,17 +161,19 @@ class QueryCancellation extends AutoCloseable {
 }
 
 
-class TupleQueryEvaluator(wf: TupleQueryResultWriterFactory) extends QueryEvaluator[TupleQuery]:
+class TupleQueryEvaluator(wf: TupleQueryResultWriterFactory) extends QueryEvaluator[TupleQuery] {
 
-	override def evaluate(query: TupleQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] =
+	override def evaluate(query: TupleQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] = {
 		val resultWriter = wf.getWriter(os)
 		val tupleRes = query.evaluate()
 		QueryEvaluator.ResultWriting(tupleRes, resultWriter.startQueryResult(tupleRes.getBindingNames()), resultWriter.handleSolution, resultWriter.endQueryResult)
+	}
+}
 
 
-class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuery]:
+class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuery] {
 
-	override def evaluate(query: GraphQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] =
+	override def evaluate(query: GraphQuery, os: OutputStream): QueryEvaluator.ResultWriting[?] = {
 		val resultWriter = wf.getWriter(os)
 		val graphRes = query.evaluate()
 		QueryEvaluator.ResultWriting(
@@ -164,3 +185,5 @@ class GraphQueryEvaluator(wf: RDFWriterFactory) extends QueryEvaluator[GraphQuer
 			resultWriter.handleStatement,
 			resultWriter.endRDF
 		)
+	}
+}

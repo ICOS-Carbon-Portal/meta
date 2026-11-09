@@ -100,31 +100,39 @@ class Rdf4jSparqlServer(
 			val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
 
 			//the query is admitted to run by the per-client quota manager
-			val sparqlEntityBytes: Source[ByteString, NotUsed] = Source.lazyFuture(() => Future(Done)(using sparqlCtxt)).flatMapConcat: _ =>
-				protocolOption.evaluator
-					.source(() => run.open(repo), queryStr.query, closer, run.finish)
-					.async(QueryDispatcher)
-			.wireTap:
-				Sink.head[ByteString].mapMaterializedValue(
-					_.foreach(_ => qquoter.logQueryStreamingStart())
-				)
-			.watchTermination(): (_, doneFut) =>
-				system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
-					if !doneFut.isCompleted then
-						if qquoter.keepRunningIndefinitely then
-							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						else
-							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
-							errPromise.tryFailure(CancellationException())
-							closer.close()
-				doneFut.onComplete(doneTry =>
-					errPromise.tryComplete(doneTry.map(_ => ByteString.empty))
-					// in case the stream was cancelled by the client while the query source is stuck in a long read
-					closer.close()
-					// otherwise, the query is finished when the query source has closed it
-					run.finishIfNeverOpened()
-				)
-				NotUsed
+			val sparqlEntityBytes: Source[ByteString, NotUsed] = Source
+				.lazyFuture(() => Future(Done)(using sparqlCtxt))
+				.flatMapConcat { _ =>
+					protocolOption.evaluator
+						.source(() => run.open(repo), queryStr.query, closer, run.finish)
+						.async(QueryDispatcher)
+				}
+				.wireTap {
+					Sink.head[ByteString].mapMaterializedValue(
+						_.foreach(_ => qquoter.logQueryStreamingStart())
+					)
+				}
+				.watchTermination() { (_, doneFut) =>
+					system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds) {
+						if (!doneFut.isCompleted) {
+							if (qquoter.keepRunningIndefinitely) {
+								log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
+							} else {
+								log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+								errPromise.tryFailure(CancellationException())
+								closer.close()
+							}
+						}
+					}
+					doneFut.onComplete { doneTry =>
+						errPromise.tryComplete(doneTry.map(_ => ByteString.empty))
+						// in case the stream was cancelled by the client while the query source is stuck in a long read
+						closer.close()
+						// otherwise, the query is finished when the query source has closed it
+						run.finishIfNeverOpened()
+					}
+					NotUsed
+				}
 
 			val entityBytes = sparqlEntityBytes.merge(Source.future(errPromise.future))
 

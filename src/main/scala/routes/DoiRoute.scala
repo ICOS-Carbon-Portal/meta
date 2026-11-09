@@ -33,7 +33,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 							onSuccess(service.createDraftDoi(uri)): doiV =>
 								doiV.result match
 									case None =>
-										val msg = s"Resource with landing page $uri not found, no DOI created\n${doiV.errors.mkString("\n")}"
+										val msg = s"No DOI created for resource with landing page $uri\n${doiV.errors.mkString("\n")}"
 										complete(StatusCodes.NotFound -> msg)
 									case Some(doi) =>
 										log.warning(s"Problems reading metadata for $uri:\n${doiV.errors.mkString("\n")}")

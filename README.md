@@ -17,6 +17,8 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 
 ---
 
+*(To set up a local development environment, see the [Information for developers](https://github.com/ICOS-Carbon-Portal/meta/tree/master#information-for-developers) section)*
+
 ## Upload instructions (manual)
 
 Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app. For files larger than 1 GB, scripting-based upload is recommended.

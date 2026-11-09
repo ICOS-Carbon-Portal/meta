@@ -1,29 +1,16 @@
 package se.lu.nateko.cp.meta.rdfstore
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaConfig
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
-import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationClientImpl, CitationProvider}
+import se.lu.nateko.cp.meta.services.citation.{CitationClient, CitationProvider}
 import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 
 /** Makes the RDF store's citation provider from the service configuration */
 object CitationProviderConfig:
-
-	def citationProvider(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
-	)(using ActorSystem, Materializer): CitationProvider =
-		citationProvider(
-			new SailRepository(sail),
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache),
-			conf
-		)
 
 	def citationProvider(
 		repo: Repository, citClientFactory: List[Doi] => CitationClient, conf: CpmetaConfig

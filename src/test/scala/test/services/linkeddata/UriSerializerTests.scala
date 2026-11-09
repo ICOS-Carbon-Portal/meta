@@ -17,10 +17,10 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.api.{PidFactory, StatisticsProvider}
+import se.lu.nateko.cp.meta.api.{HandleNetClient, PidFactory, StatisticsProvider}
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, References, StaticObject, staticCollLandingPage, staticObjLandingPage}
-import se.lu.nateko.cp.meta.services.citation.{AttributionProvider, CitationProvider, RemoteCitation}
+import se.lu.nateko.cp.meta.services.citation.{CitationProvider, RemoteCitation}
 import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.rdfstore.{
 	DerivedMetadata,
@@ -880,9 +880,8 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		val countingRepo = CountingRepository(repo)
 		val vocab = CpVocab(countingRepo.getValueFactory)
 		val metaVocab = CpmetaVocab(countingRepo.getValueFactory)
-		val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
-		val attribution = AttributionProvider(vocab, metaVocab)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution, externalObjs)
+		val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, externalObjs)
 		loader -> countingRepo
 	}
 

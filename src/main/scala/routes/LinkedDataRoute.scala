@@ -109,7 +109,7 @@ object LinkedDataRoute {
 						case fileName if InspireXmlFilename.matches(fileName) =>
 							(extractUri & extractEnvri){(uri, envri) =>
 								val canonUri = canonicalize(objMetaFormatUriToObjUri(uri), envri)
-								onSuccess(uriSerializer.fetchStaticObjectWithDerived(canonUri)): objV =>
+								onSuccess(uriSerializer.fetchStaticObject(canonUri)): objV =>
 									objV.result match
 										case Some(dobj: DataObject) =>
 											if objV.errors.nonEmpty then

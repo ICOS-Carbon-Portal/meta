@@ -15,7 +15,7 @@ import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.services.upload.{StaticObjectReader, StaticObjectReferenceProvider}
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.views.ResourceViewInfo
@@ -47,7 +47,7 @@ final class LandingPageLoader(
 	private given ValueFactory = repo.getValueFactory
 	private val server = new Rdf4jInstanceServer(repo)
 	private val attribution = new AttributionProvider(vocab, metaVocab)
-	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, None, Some(externalObjs))
+	private val objectReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, StaticObjectReferenceProvider.withoutCitations(externalObjs))
 
 	def staticObject(hash: Sha256Sum)(using Envri): Validated[StaticObject] = readStaticObject(hash)
 

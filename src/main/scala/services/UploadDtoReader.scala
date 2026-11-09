@@ -22,14 +22,14 @@ class UploadDtoReader(uriSer: UriSerializer)(using ExecutionContext){
 
 	def readDto(uri: Uri): Future[Validated[UploadDto]] = uri.path match{
 		case Hash.Object(_) =>
-			uriSer.fetchStaticObjectWithDerived(uri).map: objV =>
+			uriSer.fetchStaticObject(uri).map: objV =>
 				for
 					obj <- objV
 					landingPage <- uriSer.fetchCustomLandingPage(uri)
 				yield objToDto(obj, landingPage)
 
 		case Hash.Collection(_) =>
-			uriSer.fetchStaticCollectionWithDerived(uri).map(_.map(collToDto))
+			uriSer.fetchStaticCollection(uri).map(_.map(collToDto))
 
 		case _ => Future.successful(Validated.error(s"URI $uri looks like neither object nor collection"))
 	}

@@ -13,7 +13,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.time.{Millis, Seconds, Span}
-import se.lu.nateko.cp.meta.api.PidFactory
+import se.lu.nateko.cp.meta.api.HandleNetClient
 import se.lu.nateko.cp.meta.core.data.{
 	AtcStationSpecifics,
 	DataObject,
@@ -26,7 +26,6 @@ import se.lu.nateko.cp.meta.core.data.{
 	UriResource
 }
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
-import se.lu.nateko.cp.meta.services.citation.AttributionProvider
 import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.linkeddata.LandingPageLoader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
@@ -65,13 +64,12 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll with Even
 	private val vocab = CpVocab(repo.getValueFactory)
 
 	private val lenses = MetaDb.getLenses(config.instanceServers, config.dataUploadService)
-	private val pidFactory = PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix)
-	private val attribution = AttributionProvider(vocab, metaVocab)
+	private val pidFactory = HandleNetClient.PidFactory(config.dataUploadService.handle)
 	private val externalObjs = ExternalObjFetcher(ExternalProviders(Map.empty))
 
 	private def build[T](read: LandingPageLoader => T): (T, QueryCounts) = {
 		val countingRepo = CountingRepository(repo)
-		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, attribution, externalObjs)
+		val loader = LandingPageLoader(countingRepo, vocab, metaVocab, lenses, pidFactory, externalObjs)
 		val result = read(loader)
 		result -> countingRepo.counts
 	}
@@ -389,7 +387,7 @@ class LandingPageLoaderTests extends AnyFunSpec with BeforeAndAfterAll with Even
 
 				val providers = ExternalProviders(Map(Envri.ICOS -> Seq(ExternalTestObjects.provider("127.0.0.1"))))
 				val loader = LandingPageLoader(
-					mirrorRepo, vocab, metaVocab, lenses, pidFactory, attribution, ExternalObjFetcher(providers)
+					mirrorRepo, vocab, metaVocab, lenses, pidFactory, ExternalObjFetcher(providers)
 				)
 				given PatienceConfig = PatienceConfig(Span(5, Seconds), Span(50, Millis))
 				eventually {

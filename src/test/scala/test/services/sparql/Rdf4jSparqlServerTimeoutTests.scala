@@ -119,9 +119,10 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 				assert(running.result.readerFinished.await(10, TimeUnit.SECONDS), "worker never finished the simulated cursor scan")
 
 				eventually {
-					for (conn, name) <- conns.zip(Seq("running", "queued", "overflowing")) if conn.evaluated.getCount == 0 do
+					for ((conn, name) <- conns.zip(Seq("running", "queued", "overflowing")) if conn.evaluated.getCount == 0) {
 						assert(conn.result.closed.get, s"the $name query's result was never closed")
 						assert(conn.closed.get, s"the $name query's connection was never closed")
+					}
 				}
 			} finally {
 				server.shutdown()
@@ -132,7 +133,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 	private def eventually(assertion: => Unit): Unit = {
 		val deadline = 10.seconds.fromNow
 		var passed = false
-		while !passed do
+		while (!passed) {
 			try {
 				assertion
 				passed = true
@@ -140,6 +141,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 				case _: org.scalatest.exceptions.TestFailedException if deadline.hasTimeLeft() =>
 					Thread.sleep(100)
 			}
+		}
 	}
 
 	private def runTimingOutQuery(server: Rdf4jSparqlServer) = Await.ready(startQuery(server), 10.seconds)

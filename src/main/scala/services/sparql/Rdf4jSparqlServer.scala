@@ -87,46 +87,62 @@ class Rdf4jSparqlServer(
 		protocolOption.requestedResponseType,
 		() => {
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
+			// Stopping a query takes both of the following, as neither can do the other's job.
+			// `cancellation` stops the reading of the store: the query source runs in its own async island
+			// and only reacts to stream cancellation between reads, but a single read can take minutes
+			// (e.g. ORDER BY materializing all solutions). The flag makes such a read fail promptly,
+			// after which the source closes the query result on its own thread.
 			val cancellation = QueryCancellation()
+			// `killSwitch` ends the response by the deadline: the flag only takes effect where it is checked,
+			// so it can't end a query still waiting for admission (possibly forever, if the quota manager
+			// drops it from the queue), or one busy in code that doesn't check the flag.
 			val killSwitch = KillSwitches.shared(s"sparql-query-${qquoter.qid}")
 			val run = QueryRun(qquoter)
 
 			val entityBytes: Source[ByteString, NotUsed] = Source
 				.lazyFuture(() => admission(qquoter))
-				.flatMapConcat: _ =>
+				.flatMapConcat { _ =>
 					protocolOption.evaluator
 						.source(() => run.open(repo), queryStr.query, cancellation, run.finish)
 						.async(QueryDispatcher)
+				}
 				.via(killSwitch.flow)
-				.wireTap:
+				.wireTap(
 					Sink.head[ByteString].mapMaterializedValue(
 						_.foreach(_ => qquoter.logQueryStreamingStart())
 					)
-				.watchTermination(): (_, doneFut) =>
-					val timer = system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds):
-						if qquoter.keepRunningIndefinitely then
+				)
+				.watchTermination() { (_, doneFut) =>
+					val timer = system.scheduler.scheduleOnce(config.maxQueryRuntimeSec.seconds) {
+						if (qquoter.keepRunningIndefinitely) {
 							log.info(s"Permitting long-running query ${qquoter.qid} from client ${qquoter.cid}")
-						else
+						} else {
 							log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
+							// the flag stops the store reads, the kill switch fails the response right away
 							cancellation.cancel()
 							killSwitch.abort(CancellationException())
-					doneFut.onComplete: _ =>
+						}
+					}
+					doneFut.onComplete { _ =>
 						timer.cancel()
 						// in case the stream was cancelled by the client while the query source is stuck in a long read
 						cancellation.cancel()
 						// otherwise, the query is finished when the query source has closed it
 						run.finishIfNeverOpened()
+					}
 					NotUsed
+				}
 
 			HttpResponse(entity = HttpEntity(protocolOption.responseType, entityBytes))
 		}
 	)
 
 	/** Completes when the per-client quota allows the query to start running */
-	private def admission(qquoter: QuotaManager.QueryQuotaManager): Future[Done] =
+	private def admission(qquoter: QuotaManager.QueryQuotaManager): Future[Done] = {
 		val admitted = Promise[Done]()
 		qquoter.execute(() => admitted.trySuccess(Done))
 		admitted.future
+	}
 
 end Rdf4jSparqlServer
 
@@ -135,24 +151,29 @@ end Rdf4jSparqlServer
  * the query (so that its quota slot is not freed while it still reads the store), or upon stream
  * termination if the query never started (e.g. dropped from the queue by the quota manager).
  */
-private class QueryRun(qquoter: QuotaManager.QueryQuotaManager):
+private class QueryRun(qquoter: QuotaManager.QueryQuotaManager) {
 	import QueryRun.*
 	private val state = AtomicInteger(Pending)
 
-	def open(repo: Repository): RepositoryConnection =
-		if state.compareAndSet(Pending, Opened) then repo.getConnection()
+	def open(repo: Repository): RepositoryConnection = {
+		if (state.compareAndSet(Pending, Opened)) repo.getConnection()
 		else throw CancellationException("SPARQL query was cancelled before it started")
+	}
 
-	def finish(): Unit =
-		if state.getAndSet(Finished) != Finished then qquoter.logQueryFinish()
+	def finish(): Unit = {
+		if (state.getAndSet(Finished) != Finished) qquoter.logQueryFinish()
+	}
 
-	def finishIfNeverOpened(): Unit =
-		if state.compareAndSet(Pending, Finished) then qquoter.logQueryFinish()
+	def finishIfNeverOpened(): Unit = {
+		if (state.compareAndSet(Pending, Finished)) qquoter.logQueryFinish()
+	}
+}
 
-private object QueryRun:
+private object QueryRun {
 	private val Pending = 0
 	private val Opened = 1
 	private val Finished = 2
+}
 
 object Rdf4jSparqlServer:
 

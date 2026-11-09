@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.core.data.{UploadCompletionInfo, FeatureCollection, 
 import se.lu.nateko.cp.meta.core.etcupload.EtcUploadMetadata
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.metaflow.TcVocab
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.linkeddata.Hash
 import se.lu.nateko.cp.meta.services.upload.completion.{Report, UploadCompleter}
 import se.lu.nateko.cp.meta.services.upload.etc.EtcUploadTransformer
 import se.lu.nateko.cp.meta.services.upload.validation.UploadValidator

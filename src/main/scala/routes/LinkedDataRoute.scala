@@ -13,7 +13,7 @@ import se.lu.nateko.cp.meta.core.data.{DataObject, EnvriConfigs, EnvriResolver}
 import se.lu.nateko.cp.meta.instanceserver.InstanceServer
 import se.lu.nateko.cp.meta.routes.FilesRoute.Sha256Segment
 import se.lu.nateko.cp.meta.services.CpVocab
-import se.lu.nateko.cp.meta.services.linkeddata.UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.linkeddata.Hash
 import se.lu.nateko.cp.meta.services.linkeddata.{InstanceServerSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.metaexport.Inspire
 import se.lu.nateko.cp.meta.{InstanceServersConfig, MetaDb}

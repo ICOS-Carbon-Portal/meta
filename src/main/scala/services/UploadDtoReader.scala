@@ -15,7 +15,7 @@ import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-import UriSerializer.Hash
+import se.lu.nateko.cp.meta.services.linkeddata.Hash
 
 class UploadDtoReader(uriSer: UriSerializer)(using ExecutionContext){
 	import UploadDtoReader.*

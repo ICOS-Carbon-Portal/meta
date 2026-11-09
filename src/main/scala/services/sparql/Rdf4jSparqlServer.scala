@@ -87,16 +87,18 @@ class Rdf4jSparqlServer(
 		protocolOption.requestedResponseType,
 		() => {
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
+
 			// Stopping a query takes both of the following, as neither can do the other's job.
 			// `cancellation` stops the reading of the store: the query source runs in its own async island
 			// and only reacts to stream cancellation between reads, but a single read can take minutes
 			// (e.g. ORDER BY materializing all solutions). The flag makes such a read fail promptly,
 			// after which the source closes the query result on its own thread.
-			val cancellation = QueryCancellation()
 			// `killSwitch` ends the response by the deadline: the flag only takes effect where it is checked,
 			// so it can't end a query still waiting for admission (possibly forever, if the quota manager
 			// drops it from the queue), or one busy in code that doesn't check the flag.
+			val cancellation = QueryCancellation()
 			val killSwitch = KillSwitches.shared(s"sparql-query-${qquoter.qid}")
+
 			val run = QueryRun(qquoter)
 
 			val entityBytes: Source[ByteString, NotUsed] = Source

@@ -65,6 +65,11 @@ trait QueryEvaluator[Q <: Query] {
 }
 
 object QueryEvaluator {
+	/**
+	 * Approximate size (64 KiB) of the serialized results emitted per stream element. Each `read` keeps writing
+	 * results until the buffer reaches this size, so a chunk can overshoot by up to one result. Bigger chunks
+	 * mean less per-element stream overhead, but more memory per query.
+	 */
 	private val ChunkSize = 1 << 16
 
 	trait ResultWriting {

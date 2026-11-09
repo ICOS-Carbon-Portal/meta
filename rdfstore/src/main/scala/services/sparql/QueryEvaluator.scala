@@ -21,9 +21,9 @@ trait QueryEvaluator[Q <: Query] {
 	def source(
 		getConnection: () => RepositoryConnection,
 		queryStr: String,
-		cancellation: QueryCancellation,
+		dispatcher: String,
 		onFinish: () => Unit
-	): Source[ByteString, NotUsed] = QueryStreaming.source(this, getConnection, queryStr, cancellation, onFinish)
+	): Source[ByteString, NotUsed] = QueryStreaming.source(this, getConnection, queryStr, dispatcher, onFinish)
 }
 
 class TupleQueryEvaluator(wf: TupleQueryResultWriterFactory) extends QueryEvaluator[TupleQuery] {

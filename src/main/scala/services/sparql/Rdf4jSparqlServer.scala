@@ -87,15 +87,9 @@ class Rdf4jSparqlServer(
 		() => {
 			val qquoter = quoter.getQueryQuotaManager(queryStr.clientId)
 			val errPromise = Promise[ByteString]()
-			// Stopping a query takes both `closer` and `errPromise`, as neither can do the other's job.
-			// `closer` (a QueryCancellation) stops the reading of the store: the query source runs in its own async island
-			// and only reacts to stream cancellation between reads, but a single read can take minutes
-			// (e.g. ORDER BY materializing all solutions). The flag makes such a read fail promptly,
-			// after which the source closes the query result on its own thread.
-			// `errPromise` ends the response by the deadline: the flag only takes effect where it is checked,
-			// so it can't end a query still waiting for admission (possibly forever, if the quota manager
-			// drops it from the queue), or one busy in code that doesn't check the flag.
-			val closer = QueryCancellation()
+			// `errPromise` ends the response by the deadline, even for a query still waiting for admission
+			// (possibly forever, if the quota manager drops it from the queue). Ending the response cancels
+			// the query source, which then stops reading the store promptly (see QueryStreaming).
 			val run = QueryRun(qquoter)
 			val sparqlCtxt = ExecutionContext.fromExecutor(qquoter)
 
@@ -104,8 +98,7 @@ class Rdf4jSparqlServer(
 				.lazyFuture(() => Future(Done)(using sparqlCtxt))
 				.flatMapConcat { _ =>
 					protocolOption.evaluator
-						.source(() => run.open(repo), queryStr.query, closer, run.finish)
-						.async(QueryDispatcher)
+						.source(() => run.open(repo), queryStr.query, QueryDispatcher, run.finish)
 				}
 				.wireTap {
 					Sink.head[ByteString].mapMaterializedValue(
@@ -120,15 +113,12 @@ class Rdf4jSparqlServer(
 							} else {
 								log.info(s"Terminating long-running query ${qquoter.qid} from client ${qquoter.cid}")
 								errPromise.tryFailure(CancellationException())
-								closer.close()
 							}
 						}
 					}
 					doneFut.onComplete { doneTry =>
 						errPromise.tryComplete(doneTry.map(_ => ByteString.empty))
-						// in case the stream was cancelled by the client while the query source is stuck in a long read
-						closer.close()
-						// otherwise, the query is finished when the query source has closed it
+						// if the query was opened, it is finished when the query source has closed it
 						run.finishIfNeverOpened()
 					}
 					NotUsed

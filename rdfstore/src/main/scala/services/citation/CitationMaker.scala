@@ -11,17 +11,15 @@ import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.*
 import se.lu.nateko.cp.meta.instanceserver.StatementSource
-import se.lu.nateko.cp.meta.metaflow.icos.EtcMetaSource.toCETnoon
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
+import se.lu.nateko.cp.meta.services.metadata.StaticMetadata
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReferenceProvider
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 import se.lu.nateko.cp.meta.utils.{Validated, parseCommaSepList}
 
-import java.net.URI
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.{Duration, Instant, ZoneId, ZonedDateTime}
+import java.time.{Instant, ZoneId}
 import scala.util.{Failure, Success, Try}
 
 enum RemoteCitation:
@@ -340,62 +338,12 @@ object CitationMaker:
 		val givenInitials = initials.mkString
 		if givenInitials.isEmpty then person.lastName else s"${person.lastName}, $givenInitials"
 
-	def defaultLicence(using envri: Envri): Licence = envri match
-		case Envri.ICOS | Envri.ICOSCities => Licence(
-			new URI(CpmetaVocab.MetaPrefix + "icosLicence"),
-			"ICOS CCBY4 Data Licence",
-			new URI("https://data.icos-cp.eu/licence"),
-			Some(CpVocab.CCBY4)
-		)
-		case Envri.SITES => Licence(
-			new URI(CpmetaVocab.SitesPrefix + "sitesLicence"),
-			"SITES CCBY4 Data Licence",
-			new URI("https://data.fieldsites.se/licence"),
-			Some(CpVocab.CCBY4)
-		)
+	def defaultLicence(using Envri): Licence = StaticMetadata.defaultLicence
 
+	def getFundingObjects(dobj: DataObject): Seq[Funding] = StaticMetadata.getFundingObjects(dobj)
 
-	def getFundingObjects(dobj: DataObject): Seq[Funding] =  dobj.specificInfo match
-		case Right(stationTs) =>
-			val acq = stationTs.acquisition
-			acq.station.funding.toSeq.flatten.filter{funding =>
-				funding.start.fold(true){
-					fstart => acq.interval.fold(true)(_.stop.compareTo(toCETnoon(fstart)) > 0)
-				} &&
-				funding.stop.fold(true){
-					fstop => acq.interval.fold(true)(_.start.compareTo(toCETnoon(fstop)) < 0)
-				}
-			}
-		case _ => Seq.empty
-
-	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] = dobj.specificInfo.fold(
-		spatioTemp => Some(getTimeFromInterval(spatioTemp.temporal.interval, zoneId)),
-		stationTs => stationTs.acquisition.interval.map(getTimeFromInterval(_, zoneId))
-	)
-
-	private def getTimeFromInterval(interval: TimeInterval, zoneId: ZoneId): String = {
-		val duration = Duration.between(interval.start, interval.stop)
-		val startZonedDateTime = ZonedDateTime.ofInstant(interval.start, zoneId)
-		val stopZonedDateTime = ZonedDateTime.ofInstant(interval.stop, zoneId)
-		if (duration.getSeconds < 24 * 3601) { //daily data object
-			val middle = Instant.ofEpochMilli((interval.start.toEpochMilli + interval.stop.toEpochMilli) / 2)
-			formatDate(middle, zoneId)
-		} else if (startZonedDateTime.getDayOfYear == 1 && stopZonedDateTime.getDayOfYear == 1) {
-			if (startZonedDateTime.getYear == stopZonedDateTime.getYear - 1) {
-				s"${startZonedDateTime.getYear}"
-			} else {
-				s"${startZonedDateTime.getYear}–${stopZonedDateTime.getYear - 1}"
-			}
-		} else if (isMidnight(startZonedDateTime) && isMidnight(stopZonedDateTime)) {
-			val from = formatDate(interval.start, zoneId)
-			val to = formatDate(interval.stop.minus(1, ChronoUnit.DAYS), zoneId)
-			s"$from–$to"
-		} else {
-			val from = formatDate(interval.start, zoneId)
-			val to = formatDate(interval.stop, zoneId)
-			s"$from–$to"
-		}
-	}
+	def getTemporalCoverageDisplay(dobj: DataObject, zoneId: ZoneId): Option[String] =
+		StaticMetadata.getTemporalCoverageDisplay(dobj, zoneId)
 
 	private def getYear(zoneId: ZoneId)(prodInst: Instant): String = formatDate(prodInst, zoneId).take(4)
 
@@ -405,7 +353,5 @@ object CitationMaker:
 		dobj.production.map(_.dateTime).orElse{
 			dobj.specificInfo.toOption.flatMap(_.acquisition.interval).map(_.stop)
 		}
-
-	private def isMidnight(dateTime: ZonedDateTime): Boolean = dateTime.format(DateTimeFormatter.ISO_LOCAL_TIME) == "00:00:00"
 
 end CitationMaker

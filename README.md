@@ -395,24 +395,30 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 
 ### Getting started with the back-end part
 
-- Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure?tab=readme-ov-file#rdflog))
+- See the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure) and follow the instructions to set up a Docker container with PostgreSQL for RDF log
 - Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. **Make sure that the "password" is the same you put in `passwords.yml` in the infrastructure project**. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
-- To be able to upload data, put a `submitters.conf` file in the project root (the JVM's working directory). It lists the data submitters and which users can upload on their behalf; ask the team for an example.
+- To be able to upload data, duplicate `example.submitters.conf` and rename it `submitters.conf` in the project root. It lists the data submitters and which users can upload on their behalf. Replace "your.email@example.com" by your actual organization email.
 - Run the `sbt` console 
 - For the first time you run meta, you will need to fetch the GCMD keywords list by running `fetchGCMDKeywords`
-- Then run `reStart` to actually build the fast development bundle ("reStart" is for continuous local rebuilds and server restarts. You can also run "copyResources" if the development is done only in the front end part, running it is sufficient but much faster.)
+- Then run `~reStart` to actually build the fast development bundle ("reStart" is for continuous local rebuilds and server restarts. You can also run "copyResources" if the development is done only in the front end part, running it is sufficient but much faster.)
 
-When starting meta for the first time without an existing rdfStorage directory, the service initializes from the RDF logs in "fresh init" mode (without RDF4J/CP indices), which can take a long time. Once finished, restart the service once so indices are built.
-The first time you run meta, keep `cpmeta.rdfStorage.recreateAtStartup: true` in your root `application.conf`, then **set it to `false` afterwards**.
+The first time you run meta, keep `cpmeta.rdfStorage.recreateAtStartup: true` in your `application.conf`, then **set it to `false` afterwards** for all future runs.
 
-To dump the metadata index to disk and switch the service to read-only mode, run `curl -X POST http://127.0.0.1:9094/admin/switchToReadonlyMode`. Restart the service to leave read-only mode.
+(When starting meta for the first time without an existing rdfStorage directory, the service initialization can take a long time.)
 
 Once `[INFO] Main$ ServerBinding(/127.0.0.1:9094)` is logged, **the service and web apps are accessible at http://127.0.0.1:9094/**.
 
-You should land on a page that says "Page not found", that's normal. See the top of this README to see all available routes.
+You should land on a page that says "Page not found", that's normal. Go to the [top of this README](https://github.com/ICOS-Carbon-Portal/meta#icos-carbon-portal-metadata-service) to see all available routes.
+
+If you want to speed up the next restart, run `curl -X POST http://127.0.0.1:9094/admin/switchToReadonlyMode` just before restarting. It dumps the metadata index to disk so it doesn't have to be rebuilt at startup, and switches the service to read-only mode so the dump stays up to date. Don't use it if the service still needs to accept writes, or if you're about to restart with `recreateAtStartup: true`.
 
 
 ### Setting up authentication/authorization for the Handle.net client HandleNetClient
+
+`HandleNetClient` is what meta uses to mint persistent identifiers (PIDs) for data objects on a [Handle.net](https://www.handle.net/) server when an upload completes.
+
+**It is not needed for local development.**
+
 Handle.net servers use two-way TLS.
 
 #### Client side

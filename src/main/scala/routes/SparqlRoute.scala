@@ -14,8 +14,9 @@ import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.http.scaladsl.server.directives.CachingDirectives.*
 import akka.http.scaladsl.server.{Directive, Directive0, Directive1, RejectionHandler, RequestContext, Route, RouteResult}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{Materializer, SinkShape}
-import akka.util.ByteString
+import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, SinkShape}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import akka.util.{ByteString, ByteStringBuilder}
 import se.lu.nateko.cp.meta.SparqlServerConfig
 import se.lu.nateko.cp.meta.api.SparqlQuery
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
@@ -25,7 +26,6 @@ import se.lu.nateko.cp.meta.utils.getStackTrace
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
-import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -199,11 +199,9 @@ class SparqlCache(maxCacheableQuerySize: Int)(using system: ActorSystem):
 				val cacheingEntity = response.entity match
 					case se: Strict => se
 					case ent =>
-						val cacheingPayload = ent.dataBytes.alsoTo:
-							cacheUpdatingSink: cache =>
-								val builder = ByteString.newBuilder
-								cache.foreach(builder.addAll)
-								val entity = HttpEntity.Strict(ent.contentType, builder.result())
+						val cacheingPayload = ent.dataBytes.via:
+							cacheUpdatingFlow: cache =>
+								val entity = HttpEntity.Strict(ent.contentType, cache)
 								val rRes = completeResult(entity)
 								inner.put(key, Future.successful(rRes))
 
@@ -218,19 +216,33 @@ class SparqlCache(maxCacheableQuerySize: Int)(using system: ActorSystem):
 				cachedRr
 	end makeCached
 
-	private type MaybeCache = Option[Seq[ByteString]]
+	private def cacheUpdatingFlow(callback: ByteString => Unit): Flow[ByteString, ByteString, NotUsed] =
+		Flow.fromGraph(new GraphStage[FlowShape[ByteString, ByteString]]:
+			private val in = Inlet[ByteString]("SparqlCache.in")
+			private val out = Outlet[ByteString]("SparqlCache.out")
+			override val shape = FlowShape(in, out)
 
-	private def cacheUpdatingSink(callback: Seq[ByteString] => Unit): Sink[ByteString, NotUsed] =
-		cacheBuildingSink.mapMaterializedValue: fut =>
-			fut.foreach(_.foreach(callback))
-			NotUsed
+			override def createLogic(attributes: Attributes): GraphStageLogic =
+				new GraphStageLogic(shape) with InHandler with OutHandler:
+					// None once the response has grown too large to be cached
+					private var cache: Option[ByteStringBuilder] = Some(ByteString.newBuilder)
 
-	private val cacheBuildingSink: Sink[ByteString, Future[MaybeCache]] =
-		val aux = Sink.fold[Option[(Queue[ByteString], Int)], ByteString](Some(Queue.empty -> 0)): (acc, elem) =>
-			acc.flatMap: (cache, cost) =>
-				val newCost = cost + elem.length
-				if newCost > maxCacheableQuerySize then None
-				else Some((cache :+ elem, newCost))
-		aux.mapMaterializedValue(_.map(_.map(_._1)))
+					override def onPull(): Unit = pull(in)
+
+					override def onPush(): Unit =
+						val chunk = grab(in)
+						cache.foreach: bytes =>
+							if bytes.length + chunk.length > maxCacheableQuerySize then cache = None
+							else bytes.append(chunk)
+						push(out, chunk)
+
+					// Not called on downstream cancellation or upstream failure,
+					// so only complete responses get cached
+					override def onUpstreamFinish(): Unit =
+						cache.foreach(bytes => callback(bytes.result()))
+						completeStage()
+
+					setHandlers(in, out, this)
+		)
 
 end SparqlCache

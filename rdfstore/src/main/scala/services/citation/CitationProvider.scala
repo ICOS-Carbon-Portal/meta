@@ -8,18 +8,22 @@ import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
+import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
-import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
+import se.lu.nateko.cp.meta.api.RdfLens.{DobjConn, DocConn, GlobConn, MetaConn}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
+import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
-import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
+import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
+import se.lu.nateko.cp.meta.services.upload.{StaticObjectReader, StaticObjectReferenceProvider}
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
+import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.{CpmetaConfig, MetaDb}
+import se.lu.nateko.cp.meta.CpmetaConfig
 
 import CitationClient.CitationCache
 import CitationClient.DoiCache
@@ -31,23 +35,25 @@ object CitationProvider:
 	)(using ActorSystem, Materializer): CitationProvider =
 		val citClientFactory: List[Doi] => CitationClient =
 			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		new CitationProvider(sail, citClientFactory, conf)
+		CitationProviderConfig.citationProvider(new SailRepository(sail), citClientFactory, conf)
 
 
 class CitationProvider(
-	sail: Sail,
+	val repo: Repository,
 	citClientFactory: List[Doi] => CitationClient,
-	conf: CpmetaConfig,
+	core: MetaCoreConfig,
+	val lenses: RdfLenses,
+	pidFactory: PidFactory,
+	val externalObjs: ExternalObjFetcher,
 )(using system: ActorSystem):
 	private val log = Logging.getLogger(system, this)
 	import StatementSource.*
-	private given envriConfs: EnvriConfigs = conf.core.envriConfigs
+	private given envriConfs: EnvriConfigs = core.envriConfigs
 
-	val repo = new SailRepository(sail)
-	private val sailName = sail.getClass.getSimpleName
-	log.info(s"Initializing $sailName SailRepository...")
+	private val repositoryName = repo.getClass.getSimpleName
+	log.info(s"Initializing $repositoryName...")
 	repo.init()
-	log.info(s"$sailName initialized")
+	log.info(s"$repositoryName initialized")
 
 	val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
@@ -62,14 +68,9 @@ class CitationProvider(
 
 		citClientFactory(dois)
 
-	val externalObjs = new ExternalObjFetcher(ExternalProviders(conf.dataUploadService.externalProviders))
-	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, externalObjs)
+	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core, externalObjs)
 
-	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
-
-	val metaReader =
-		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)
-		StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
+	val metaReader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, citer)
 
 	def getCitation(res: Resource): Option[String] = server.access: conn ?=>
 		given GlobConn = RdfLens.global(using conn)
@@ -78,6 +79,27 @@ class CitationProvider(
 
 	def getReferences(res: Resource): Option[References] = server.access:
 		getCitableItem(res)(using RdfLens.global).map(_.references)
+
+	/** References together with the status of the citation fetched from a DOI or an external repository.
+	  * The errors are only those of making the citation info, as meta reports the errors of reading the object itself.
+	  */
+	def getReferencesWithRemoteCitation(res: Resource): Validated[(References, RemoteCitation)] = server.access: conn ?=>
+		given GlobConn = RdfLens.global(using conn)
+		val citationErrors = Seq.newBuilder[String]
+		val recordingCiter = new StaticObjectReferenceProvider:
+			def externalObjs = citer.externalObjs
+			def getItemCitationInfo(item: CitableItem): References = citer.getItemCitationInfo(item)
+			def getCitationInfo(item: StaticObject, specConn: MetaConn)(using Envri, DocConn | DobjConn): Validated[References] =
+				val refs = citer.getCitationInfo(item, specConn)
+				citationErrors ++= refs.errors
+				refs
+		val reader = StaticObjectReader(vocab, metaVocab, lenses, pidFactory, recordingCiter)
+		val found = for
+			iri <- toIRI(res)
+			given Envri <- inferObjectEnvri(iri).orElse(inferCollEnvri(iri))
+			item <- getCitableItem(iri, reader)
+		yield item.references -> citer.remoteCitation(item)
+		new Validated(found, citationErrors.result())
 
 	def getLicence(res: Resource): Option[Licence] = server.access: conn ?=>
 		for
@@ -93,26 +115,26 @@ class CitationProvider(
 			.flatten
 	}
 
-	private def getCitableItem(res: Resource)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
+	private def getCitableItem(res: Resource, reader: StaticObjectReader = metaReader)(using GlobConn): Option[CitableItem] = toIRI(res).flatMap: iri =>
 		if
 			hasStatement(iri, RDF.TYPE, metaVocab.dataObjectClass) ||
 			hasStatement(iri, RDF.TYPE, metaVocab.docObjectClass)
-		then getStaticObject(iri)
+		then getStaticObject(iri, reader)
 		else if
 			hasStatement(iri, RDF.TYPE, metaVocab.collectionClass)
-		then getStaticColl(iri)
+		then getStaticColl(iri, reader)
 		else None
 
 	private def toIRI(res: Resource): Option[IRI] = Option(res).collect{case iri: IRI => iri}
 
-	private def getStaticObject(maybeDobj: IRI)(using GlobConn): Option[StaticObject] = for
+	private def getStaticObject(maybeDobj: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticObject] = for
 		given Envri <- inferObjectEnvri(maybeDobj)
-		obj <- metaReader.fetchStaticObject(maybeDobj).result
+		obj <- reader.fetchStaticObject(maybeDobj).result
 	yield obj
 
-	private def getStaticColl(maybeColl: IRI)(using GlobConn): Option[StaticCollection] = for
+	private def getStaticColl(maybeColl: IRI, reader: StaticObjectReader)(using GlobConn): Option[StaticCollection] = for
 		given Envri <- inferCollEnvri(maybeColl)
-		coll <- metaReader.fetchStaticColl(maybeColl, None).result
+		coll <- reader.fetchStaticColl(maybeColl, None).result
 	yield coll
 
 	private def inferObjectEnvri(obj: IRI): Option[Envri] = EnvriResolver.infer(obj.toJava).filter{

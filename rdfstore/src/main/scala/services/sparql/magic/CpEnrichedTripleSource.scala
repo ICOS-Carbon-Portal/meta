@@ -4,13 +4,14 @@ import scala.language.unsafeNulls
 
 import org.eclipse.rdf4j.model.{IRI, Resource, Value, ValueFactory}
 import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource
+import se.lu.nateko.cp.meta.services.sparql.QueryStreaming
 
 import StatementsEnricher.StatIter
 
 class CpEnrichedTripleSource(base: TripleSource, enricher: StatementsEnricher) extends TripleSource{
 
 	override def getStatements(subj: Resource, pred: IRI, obj: Value, ctxts: Resource*): StatIter =
-		enricher.enrich(base.getStatements(subj, pred, obj, ctxts*), subj, pred, obj)
+		QueryStreaming.cancellable(enricher.enrich(base.getStatements(subj, pred, obj, ctxts*), subj, pred, obj))
 
 
 	override def getValueFactory(): ValueFactory = base.getValueFactory

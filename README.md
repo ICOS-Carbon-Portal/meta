@@ -17,6 +17,8 @@ It is deployed to **https://meta.icos-cp.eu/** with different services accessibl
 
 ---
 
+*(To set up a local development environment, see the [Information for developers](https://github.com/ICOS-Carbon-Portal/meta/tree/master#information-for-developers) section)*
+
 ## Upload instructions (manual)
 
 Manual uploads of data/document objects and collection creation can be performed using [UploadGUI](https://meta.icos-cp.eu/uploadgui/) web app. Users need permissions and prior design of data object specifications in collaboration with the CP. Metadata of existing objects and collections can be updated later, using the same app. For files larger than 1 GB, scripting-based upload is recommended.
@@ -387,17 +389,36 @@ The output will show the resulting changes. If `dryRun` is `true`, no actual cha
 - Clone this repository: `git clone git@github.com:ICOS-Carbon-Portal/meta.git`
 - `cd meta`
 - Install Node.js dependencies: `npm install`
-- Now you can run Gulp tasks: `npm run <task>` (see `package.json` for the list of defined tasks)
+- Now to build all front-end bundles into the SBT classpath directory, simply run `npm run gulp -- --target=target/scala-3.3.4/classes`
+
+*You can also run other [Gulp](https://gulpjs.com/) tasks: `npm run <task> -- --target=target/scala-3.3.4/classes` (run `npm run` or see `package.json` for the list of defined tasks)*
 
 ### Getting started with the back-end part
 
-- Set up a Docker container with PostgreSQL for RDF log (see the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure?tab=readme-ov-file#rdflog))
-- Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
-- Run sbt
-- In the sbt console, run `~reStart` for continuous local rebuilds and server restarts. Alternatively, if the development is done only in the front end part, running `~copyResources` is sufficient but much faster.
+- See the [infrastructure project](https://github.com/ICOS-Carbon-Portal/infrastructure) and follow the instructions to set up a Docker container with PostgreSQL for RDF log
+- Make a copy of `example.application.conf` file in the project root named `application.conf` and edit it to suit your environment. **Make sure that the "password" is the same you put in `passwords.yml` in the infrastructure project**. For some default config values, see `application.conf` in `src/main/resources/`. For deployment, make sure there is a relevant `application.conf` in the JVM's working directory.
+- To be able to upload data, duplicate `example.submitters.conf` and rename it `submitters.conf` in the project root. It lists the data submitters and which users can upload on their behalf. Replace "your.email@example.com" by your actual organization email.
+- Run the `sbt` console 
+- For the first time you run meta, you will need to fetch the GCMD keywords list by running `fetchGCMDKeywords`
+- Then run `~reStart` to actually build the fast development bundle ("reStart" is for continuous local rebuilds and server restarts. You can also run "copyResources" if the development is done only in the front end part, running it is sufficient but much faster.)
+
+The first time you run meta, keep `cpmeta.rdfStorage.recreateAtStartup: true` in your `application.conf`, then **set it to `false` afterwards** for all future runs.
+
+(When starting meta for the first time without an existing rdfStorage directory, the service initialization can take a long time.)
+
+Once `[INFO] Main$ ServerBinding(/127.0.0.1:9094)` is logged, **the service and web apps are accessible at http://127.0.0.1:9094/**.
+
+You should land on a page that says "Page not found", that's normal. Go to the [top of this README](https://github.com/ICOS-Carbon-Portal/meta#icos-carbon-portal-metadata-service) to see all available routes.
+
+If you want to speed up the next restart, run `curl -X POST http://127.0.0.1:9094/admin/switchToReadonlyMode` just before restarting. It dumps the metadata index to disk so it doesn't have to be rebuilt at startup, and switches the service to read-only mode so the dump stays up to date. Don't use it if the service still needs to accept writes, or if you're about to restart with `recreateAtStartup: true`.
 
 
 ### Setting up authentication/authorization for the Handle.net client HandleNetClient
+
+`HandleNetClient` is what meta uses to mint persistent identifiers (PIDs) for data objects on a [Handle.net](https://www.handle.net/) server when an upload completes.
+
+**It is not needed for local development.**
+
 Handle.net servers use two-way TLS.
 
 #### Client side

@@ -194,6 +194,36 @@
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/ofStation</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty2"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <Literal>: </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty3"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasEventDescription</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty4"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <Literal> from </Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty5"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasStartTime</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/StationEvent</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Variable</IRI>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
     </AnnotationAssertion>

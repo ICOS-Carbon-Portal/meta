@@ -24,7 +24,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment <- commentInput.value.withErrorContext("Comment");
 			creationDate <- creationDateInput.value.withErrorContext("Creation date");
 			sources <- sourcesInput.value.withErrorContext("Sources");
-			doc <- docInput.value
+			docs <- docsInput.value.withErrorContext("Documentations")
 		) yield DataProductionDto(
 			creator = creator.uri,
 			contributors = contributors.map(_.uri),
@@ -32,7 +32,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment = comment,
 			sources = sources,
 			creationDate = creationDate,
-			documentation = doc
+			documentations = docs
 		)
 
 	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
@@ -46,7 +46,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
-	private val docInput = new HashOptInput("proddoc", notifyUpdate)
+	private val docsInput = new HashOptListInput("proddoc", notifyUpdate)
 	private val agentAgg = new AgentAggregator
 
 	def resetForm(): Unit = {
@@ -121,7 +121,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 					commentInput.value = production.comment
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
-					docInput.value = production.documentation
+					docsInput.value = production.documentations
 					productionSwitch.check()
 					super.show()
 				}

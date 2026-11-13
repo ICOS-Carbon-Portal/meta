@@ -247,12 +247,15 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			makeSt(productionUri, metaVocab.hasEndTime, vocab.lit(prod.creationDate))
 		) ++
 		makeSt(productionUri, RDFS.COMMENT, prod.comment.map(vocab.lit)) ++
-		makeSt(productionUri, RDFS.SEEALSO, prod.documentation.map(vocab.getStaticObject)) ++
 		makeSt(productionUri, metaVocab.wasHostedBy, prod.hostOrganization.map(_.toRdf)) ++
 		contribStatements ++
 		prod.sources.getOrElse(Nil).map{srcHash =>
 			val src = vocab.getStaticObject(srcHash)
 			makeSt(objectUri, metaVocab.prov.hadPrimarySource, src)
+		} ++
+		prod.documentations.getOrElse(Nil).map{docHash =>
+			val doc = vocab.getStaticObject(docHash)
+			makeSt(productionUri, RDFS.SEEALSO, doc)
 		}
 	}
 

@@ -173,9 +173,19 @@
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
     </AnnotationAssertion>
     <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasSerialNumber</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>
         <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_Instance</IRI>
         <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#boolean">true</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/displayProperty1"/>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/Sensor_new</IRI>
+        <IRI>http://meta.icos-cp.eu/ontologies/otcmeta/hasName</IRI>
     </AnnotationAssertion>
     <AnnotationAssertion>
         <AnnotationProperty IRI="http://meta.icos-cp.eu/ontologies/uiannotations/isExposedToUsers"/>

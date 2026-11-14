@@ -10,7 +10,9 @@ from <http://meta.icos-cp.eu/resources/icos/>
 where{
 	?icosI a cpmeta:Instrument ; cpmeta:hasOtcId ?otcInstrId .
 	bind(iri(concat("http://meta.icos-cp.eu/resources/otcmeta/", ?otcInstrId)) as ?otcI)
-	?deployment otc:ofInstrument ?otcI ; otc:toPlatform ?otcPlatf .
+	{?deployment otc:ofInstrument ?otcI ; otc:toPlatform ?otcPlatf .}
+	union
+	{?deployment a otc:SensorDeployment ; otc:ofSensor ?otcI ; otc:toInstrument ?otcPlatf .}
 	?platfDepl otc:ofPlatform ?otcPlatf ; otc:toStation ?otcS .
 	bind(replace(str(?otcS), "http://meta.icos-cp.eu/resources/otcmeta/", "") as ?otcStationId)
 	?icosS a cpmeta:OS ; cpmeta:hasOtcId ?otcStationId .

@@ -8,7 +8,7 @@ import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Literal, Value, ValueFactory}
 import org.eclipse.rdf4j.query.BindingSet
 import se.lu.nateko.cp.meta.api.{CustomVocab, SparqlQuery, SparqlRunner, UriId}
-import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.{InstrumentDeployment as _, *}
 import se.lu.nateko.cp.meta.instanceserver.WriteNotifyingInstanceServer
 import se.lu.nateko.cp.meta.metaflow.*
 import se.lu.nateko.cp.meta.services.{CpVocab, MetadataException}
@@ -38,7 +38,8 @@ class OtcMetaSource(
 		orgs = stations ++ otherOrgs;
 		membs <- getMemberships(orgs, people);
 		sensorLookup <- getSensorDeployment;
-		instruments <- getInstruments(orgs, sensorLookup)
+		instrumentDeployments <- getInstrumentDeployments(stations);
+		instruments <- getInstruments(orgs, sensorLookup, instrumentDeployments)
 	) yield new TcState(stations.values.toSeq, Nil, membs, instruments)
 
 	private def getStations(orgs: OrgMap, comments: Map[IRI, Seq[String]]): Validated[Map[IRI, TcStation[O]]] = {
@@ -55,7 +56,13 @@ class OtcMetaSource(
 			|		}
 			|		group by ?st
 			|	}
-			|	?st otc:hasStationId ?id ; otc:hasName ?name .
+			|	?st otc:hasName ?name .
+			|	optional {?st otc:hasStationId ?stationId }
+			|	optional {?st otc:EDIOS_ID ?ediosId }
+			|	optional {?st otc:OceanSITES_ID ?oceanSitesId }
+			|	optional {?st otc:WIGOS_ID ?wigosId }
+			|	bind(coalesce(?stationId, ?oceanSitesId, ?ediosId, ?wigosId) as ?id)
+			|	filter(bound(?id))
 			|	bind(if(isIri(?di), ?di, iri(substr(?di, 11))) as ?depl)
 			|	?depl otc:ofPlatform ?plat .
 			|	optional {?plat otc:hasLatitude ?lat ; otc:hasLongitude ?lon }
@@ -141,9 +148,10 @@ class OtcMetaSource(
 	private def getCompsAndInsts: Validated[Map[IRI, TcGenericOrg[O]]] = {
 		val q = """prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
 		|select distinct ?org ?name ?label where{
-		|	values ?orgClass {otc:CommercialCompany otc:AcademicInstitution}
+		|	values ?orgClass {otc:Organization otc:CommercialCompany otc:AcademicInstitution otc:Funder}
 		|	?org a ?orgClass .
 		|	?org otc:hasName ?name .
+		|	filter not exists {?org a otc:Station}
 		|	optional{?org rdfs:label ?label }
 		|}""".stripMargin
 
@@ -251,35 +259,89 @@ class OtcMetaSource(
 
 	private def getInstruments(
 		orgLookup: Map[IRI, TcOrg[O]],
-		sensorLookup: Map[OtcId, Seq[UriId]]
+		sensorLookup: Map[OtcId, Seq[UriId]],
+		deploymentLookup: Map[OtcId, Seq[InstrumentDeployment[O]]]
 	): Validated[IndexedSeq[TcInstrument[O]]] = {
 		val q = """
 			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
-			|select ?instr ?model ?serNum ?name ?vendor where{
-			|	values ?kind {otc:Instrument otc:Sensor}
-			|	?instr a ?kind ; otc:device ?device .
-			|	?device otc:hasModelName ?model ; otc:hasManufacturer ?vendor .
+			|select distinct ?instr ?model ?deviceName ?serNum ?name ?vendor ?owner where{
+			|	{
+			|		values ?kind {otc:Instrument otc:Sensor}
+			|		?instr a ?kind ; otc:device ?device .
+			|	} union {
+			|		?instr a otc:Sensor_Instance ; otc:is_an_instance_of_sensor ?device .
+			|	}
+			|	optional{ ?device otc:hasModelName ?model }
+			|	optional{ ?device otc:hasName ?deviceName }
+			|	optional{ ?device otc:hasManufacturer ?vendor }
+			|	optional{ ?instr otc:hasOwner ?owner }
 			|	optional{ ?instr otc:hasSerialNumber ?serNum }
 			|	optional{ ?instr otc:hasName ?name }
 			|}
 		|""".stripMargin
 		getLookupV(q, "instr"){(b, tcId) =>
 			for(
-				model <- qresValue(b, "model").flatMap(parseString).orElse(TcMetaSource.defaultInstrModel);
+				modelOpt <- qresValue(b, "model").flatMap(parseString).optional;
+				deviceNameOpt <- qresValue(b, "deviceName").flatMap(parseString).optional;
+				model <- (modelOpt.orElse(deviceNameOpt) match
+					case Some(label) => Validated.ok(label)
+					case None => Validated.ok(TcMetaSource.defaultInstrModel)
+				);
 				sn <- qresValue(b, "serNum").flatMap(parseString).orElse(TcMetaSource.defaultSerialNum);
 				nameOpt <- qresValue(b, "name").flatMap(parseString).optional;
-				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional
+				vendorOpt <- qresValue(b, "vendor").collect{case iri: IRI => iri}.optional;
+				ownerOpt <- qresValue(b, "owner").collect{case iri: IRI => iri}.optional
 			) yield
 				TcInstrument[O](
 					tcId = tcId,
 					model = model,
 					sn = sn,
-					name = nameOpt,
+					name = nameOpt.orElse(deviceNameOpt),
 					partsCpIds = sensorLookup.getOrElse(tcId, Nil),
 					vendor = vendorOpt.flatMap(orgLookup.get),
-					deployments = Nil
+					owner = ownerOpt.flatMap(orgLookup.get),
+					deployments = deploymentLookup.getOrElse(tcId, Nil)
 				)
 		}.map(_.map(_._2))
+	}
+
+	private def getInstrumentDeployments(
+		stationLookup: Map[IRI, TcStation[O]]
+	): Validated[Map[OtcId, Seq[InstrumentDeployment[O]]]] = {
+		val q = """
+			|prefix otc: <http://meta.icos-cp.eu/ontologies/otcmeta/>
+			|select distinct ?depl ?instr ?st ?start ?end where{
+			|	{
+			|		?depl a otc:InstrumentDeployment ;
+			|			otc:ofInstrument ?instr ;
+			|			otc:toPlatform ?plat .
+			|	} union {
+			|		?depl a otc:SensorDeployment ;
+			|			otc:ofSensor ?instr ;
+			|			otc:toInstrument ?plat .
+			|	}
+			|	?platDepl otc:ofPlatform ?plat ; otc:toStation ?st .
+			|	filter not exists {?platDepl otc:hasEndTime ?platformDeploymentEnd}
+			|	optional{ ?depl otc:hasStartTime ?start }
+			|	optional{ ?depl otc:hasEndTime ?end }
+			|}
+		|""".stripMargin
+
+		getLookupV(q, "depl"){(b, tcId) =>
+			for(
+				instr <- qresValueReq(b, "instr").flatMap(ensureIriValue);
+				st <- qresValueReq(b, "st").flatMap(ensureIriValue);
+				station <- new Validated(stationLookup.get(st)).require(s"Station $st not found for OTC instrument deployment $tcId")
+			) yield TcConf.makeId[O](instr.getLocalName) -> InstrumentDeployment[O](
+				cpId = UriId(tcId.id),
+				stationTcId = station.tcId,
+				stationUriId = station.cpId,
+				pos = None,
+				variable = None,
+				start = parseDate(b.getValue("start")),
+				stop = parseDate(b.getValue("end"))
+			)
+		}.map(_.map(_._2).groupMap(_._1)(_._2))
 	}
 
 	private def getSensorDeployment: Validated[Map[OtcId, Seq[UriId]]] = {

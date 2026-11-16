@@ -2,14 +2,20 @@ package se.lu.nateko.cp.meta.test.instanceserver
 
 import scala.language.unsafeNulls
 
+import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.instanceserver.{LoggingInstanceServer, Rdf4jInstanceServer}
-import se.lu.nateko.cp.meta.persistence.{InMemoryRdfLog, RdfUpdateLogIngester}
+import se.lu.nateko.cp.meta.api.CloseableIterator
+import se.lu.nateko.cp.meta.instanceserver.{LoggingInstanceServer, Rdf4jInstanceServer, RdfUpdate}
+import se.lu.nateko.cp.meta.persistence.{InMemoryRdfLog, RdfUpdateLog, RdfUpdateLogIngester}
 import se.lu.nateko.cp.meta.utils.rdf4j.*
+
+import java.time.Instant
+import scala.collection.mutable.ArrayBuffer
 
 class InstanceServerTests extends AnyFunSpec{
 
@@ -58,6 +64,56 @@ class InstanceServerTests extends AnyFunSpec{
 				val conn = rdf4jRepo.getConnection
 				def repRes = conn.getStatements(null, null, null, false, ctxt)
 				repRes.asPlainScalaIterator.toArray
+			}
+		}
+
+		describe("when the RDF log fails to register the updates"){
+
+			val logError = new RuntimeException("RDF log failure")
+
+			// RDF log that can be made to fail on demand; records every batch it was asked to append
+			class FlakyRdfLog extends RdfUpdateLog{
+				var failing = false
+				val attempted = ArrayBuffer.empty[Seq[RdfUpdate]]
+				private val accepted = new InMemoryRdfLog()
+
+				def appendAll(updates: IterableOnce[RdfUpdate]): Unit = {
+					val batch = updates.iterator.toIndexedSeq
+					attempted += batch
+					if(failing) throw logError
+					accepted.appendAll(batch)
+				}
+				def updates: CloseableIterator[RdfUpdate] = accepted.updates
+				def timedUpdates: CloseableIterator[(Instant, RdfUpdate)] = CloseableIterator.empty
+				def close(): Unit = {}
+			}
+
+			def triples(repo: Repository): Set[(Resource, IRI, Value)] =
+				repo.access(conn => conn.getStatements(null, null, null, false))
+					.map(st => (st.getSubject, st.getPredicate, st.getObject)).toSet
+
+			it("rolls back all triples of a failed insert, keeping the repository consistent with the log"){
+				val repo = new SailRepository(new MemoryStore)
+				repo.init()
+				val log = new FlakyRdfLog
+				val server = new LoggingInstanceServer(new Rdf4jInstanceServer(repo, ctxt), log)
+
+				val existing = factory.createStatement(makeUri("inst0"), RDF.TYPE, makeUri("class0"))
+				val batch = Seq(
+					factory.createStatement(makeUri("inst1"), RDF.TYPE, makeUri("class1")),
+					factory.createStatement(makeUri("inst1"), makeUri("hasName"), factory.createLiteral("John")),
+					factory.createStatement(makeUri("inst2"), RDF.TYPE, makeUri("class1"))
+				)
+				assert(server.add(existing).isSuccess)
+
+				log.failing = true
+				val result = server.addAll(batch)
+
+				assert(result.failed.toOption === Some(logError))
+				// the log was reached, i.e. the triples had been staged in the transaction before it failed
+				assert(log.attempted.last === batch.map(RdfUpdate(_, true)))
+				assert(triples(repo) === Set((existing.getSubject, existing.getPredicate, existing.getObject)))
+				assert(triples(repo) === triples(RdfUpdateLogIngester.ingestIntoMemory(log.updates, ctxt)))
 			}
 		}
 

@@ -14,7 +14,7 @@ import se.lu.nateko.cp.meta.services.MetadataException
 import se.lu.nateko.cp.meta.services.upload.DobjMetaReader
 import se.lu.nateko.cp.meta.utils.Validated
 import se.lu.nateko.cp.meta.utils.Validated.{CardinalityExpectation, validateSize}
-import se.lu.nateko.cp.meta.utils.rdf4j.toRdf
+import se.lu.nateko.cp.meta.utils.rdf4j.{Rdf4jStatement, toRdf}
 
 
 class MetaflowLenses(val cpLens: CpLens, val envriLens: MetaLens, val docLens: DocLens)
@@ -29,6 +29,11 @@ class RdfReader(metaReader: DobjMetaReader, glob: InstanceServer, lenses: Metafl
 	def getCpOwnPeople[T <: TC : TcConf]: Validated[Seq[TcPerson[T]]] = glob.access:
 		given CpLens = lenses.cpLens
 		fetcher.getPeople[T]
+
+	/** (person, TC id) pairs for all people with TC ids, in the ENVRI metadata including the CP's own */
+	def getPeopleTcIds[T <: TC : TcConf]: Validated[IndexedSeq[(UriId, TcId[T])]] = glob.access:
+		given MetaLens = lenses.envriLens
+		fetcher.getPeopleTcIds[T]
 
 	def getCurrentState[T <: TC : TcConf]: Validated[TcState[T]] = glob.access:
 		given MetaLens = lenses.envriLens
@@ -227,6 +232,14 @@ private class IcosMetaInstancesFetcher(metaReader: DobjMetaReader)(using EnvriCo
 
 
 	def getPeople[T <: TC : TcConf](using MetaConn): Validated[Seq[TcPerson[T]]] = getEntities[T, TcPerson[T]](metaVocab.personClass)(getPerson)
+
+
+	def getPeopleTcIds[T <: TC](using tcConf: TcConf[T], conn: MetaConn): Validated[IndexedSeq[(UriId, TcId[T])]] = Validated:
+		getStatements(null, tcConf.tcIdPredicate(metaVocab), null)
+			.collect:
+				case Rdf4jStatement(subj, _, tcId) if resourceHasType(subj, metaVocab.personClass) =>
+					UriId(subj) -> tcConf.makeId(tcId.stringValue)
+			.toIndexedSeq
 
 
 	def getPlainOrgs[T <: TC : TcConf](using MetaConn): Validated[Seq[TcPlainOrg[T]]] = for(

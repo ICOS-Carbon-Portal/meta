@@ -81,6 +81,22 @@ class ScopedValidatorTests extends AnyFunSpec{
 		}
 	}
 
+	it("rejects documentation references that are not registered document objects"){
+		withStore{ s =>
+			import s.*
+			val validator = ScopedValidator(vocab, meta)
+			loadFixture("validation", "documentation")
+			accessGlobal{
+				assert(validator.validateDocumentations(Nil).isSuccess)
+				assert(validator.validateDocumentations(Seq(previous)).isSuccess)
+				assertUserError(validator.validateDocumentations(Seq(previous, other)),
+					s"Resources passed as document(s) are not document objects: ${other.id}")
+				assertUserError(validator.validateDocumentations(Seq(hash)),
+					s"Resources passed as document(s) are not document objects: ${hash.id}")
+			}
+		}
+	}
+
 	it("requires a future moratorium and prevents adding one after publication"){
 		for ((completed, existingEmbargo, requestedFuture, accepted) <- Seq(
 			(false, false, true, true), (false, false, false, false),

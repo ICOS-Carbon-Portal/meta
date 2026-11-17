@@ -60,6 +60,15 @@ private class ScopedValidator(vocab: CpVocab, val metaVocab: CpmetaVocab) extend
 			else userFail(s"Unknown licence $licUri")
 		}
 
+	def validateDocumentations(docs: Seq[Sha256Sum])(using Envri, DocConn): Try[NotUsed] =
+		val notDocObjects = docs.filterNot: hash =>
+			resourceHasType(vocab.getStaticObject(hash), metaVocab.docObjectClass)
+		if notDocObjects.isEmpty then ok
+		else userFail(
+			s"Resources passed as document(s) are not document objects: ${notDocObjects.map(_.id).mkString(", ")}. " +
+			"Documentations must refer to previously uploaded document objects."
+		)
+
 	def hasNoOtherDeprecators(item: IRI, except: IRI, amongCompleted: Boolean, partialUpload: Boolean)(using ItemConn): Try[NotUsed] =
 
 		val allowedPlainColl: Option[IRI] =

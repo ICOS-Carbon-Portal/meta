@@ -38,6 +38,10 @@ test:registered-licence {
     <https://example.org/licence> a dct:LicenseDocument .
 }
 
+test:documentation {
+    obj:AgICAgICAgICAgICAgICAgIC a cp:DocumentObject ; cp:hasName "report.pdf" ; cp:hasSizeInBytes 100 .
+}
+
 # A distant fixed date keeps the stored embargo in the future without runtime substitutions.
 test:embargoed {
     obj:AQEBAQEBAQEBAQEBAQEBAQEB cp:hasSizeInBytes 100 .

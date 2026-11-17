@@ -1,5 +1,5 @@
 
-addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
 
 addSbtPlugin("com.typesafe.play" % "sbt-twirl" % "1.6.7")
 

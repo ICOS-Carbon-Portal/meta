@@ -22,7 +22,7 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 
 	private val documentTitle = new TextOptInput("document-title", notifyUpdate)
 	private val documentDescription = new DescriptionInput("document-description", notifyUpdate)
-	private val agentList = new DataList[NamedUri]("agent-list", _.name)
+	private val agentList = new NamedUriDataList("agent-list")
 	private val documentAuthors = new DataListForm("document-authors", agentList, notifyUpdate)
 	private val agentAgg = new AgentAggregator
 	private val licenceUrl = new UriOptInput("doclicenceselect", notifyUpdate)
@@ -46,6 +46,7 @@ class DocumentPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".d
 		case GotUploadDto(dto) => handleDto(dto)
 		case GotStationsList(stations) => {
 			agentAgg.stations = stations.map(_.namedUri)
+			agentList.setStationIds(stations)
 			agentList.values = agentAgg.agents
 		}
 	}

@@ -3,6 +3,7 @@ package se.lu.nateko.cp.meta.upload.formcomponents
 import scala.language.unsafeNulls
 
 import org.scalajs.dom.{html, document, DragEvent, DataTransferEffectAllowedKind}
+import se.lu.nateko.cp.meta.upload.{NamedUri, Station}
 import se.lu.nateko.cp.meta.upload.Utils.*
 import scala.util.Success
 import scala.util.Try
@@ -42,6 +43,33 @@ class DataList[T](elemId: String, val labeller: T => String) {
 			list.appendChild(opt)
 		}
 	}
+}
+
+class NamedUriDataList(elemId: String) extends DataList[NamedUri](elemId, _.name) {
+	import NamedUriDataList.uriKey
+	private val uriLookup = mutable.Map.empty[String, NamedUri]
+	private var stationIdLookup = Map.empty[String, String] // lower-case id -> uri key
+
+	override def values_=(values: IndexedSeq[NamedUri]): Unit = {
+		super.values_=(values)
+		uriLookup.clear()
+		values.foreach(v => uriLookup.addOne(uriKey(v.uri.toString), v))
+	}
+
+	/** Ids shared by several stations are left out, so they never resolve to an arbitrary one. */
+	def setStationIds(stations: Seq[Station]): Unit =
+		stationIdLookup = stations
+			.groupMap(_.id.trim.toLowerCase)(s => uriKey(s.namedUri.uri.toString))
+			.collect{ case (id, uris) if uris.distinct.size == 1 => id -> uris.head }
+
+	override def lookupValue(label: String): Option[NamedUri] =
+		super.lookupValue(label)
+			.orElse(uriLookup.get(uriKey(label)))
+			.orElse(stationIdLookup.get(label.trim.toLowerCase).flatMap(uriLookup.get))
+}
+
+object NamedUriDataList {
+	def uriKey(s: String): String = s.trim.replaceFirst("^https?://", "").stripSuffix("/")
 }
 
 class KeywordDataList(elemId: String) extends DataList[String](elemId, identity) {

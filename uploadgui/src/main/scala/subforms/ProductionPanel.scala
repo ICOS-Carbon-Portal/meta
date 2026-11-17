@@ -56,6 +56,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 		commentInput.reset()
 		creationDateInput.reset()
 		sourcesInput.reset()
+		docsInput.reset()
 	}
 
 	override def show(): Unit = {

@@ -38,10 +38,10 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
 	private val productionCover =  new HtmlElements("#production-cover")
 
-	private val agentList = new DataList[NamedUri]("agent-list", _.name)
+	private val agentList = new NamedUriDataList("agent-list")
 	private val creatorInput = new DataListInput("creatoruri", agentList, notifyUpdate)
 	private val contributorsInput = new DataListForm("contributors", agentList, notifyUpdate)
-	private val organizationList = new DataList[NamedUri]("organization-list", _.name)
+	private val organizationList = new NamedUriDataList("organization-list")
 	private val hostOrganizationInput = new DataListInput("hostorganisation", organizationList, notifyUpdate)
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
@@ -69,6 +69,8 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 		case LevelSelected(_) => hide()
 		case GotStationsList(stations) => {
 			agentAgg.stations = stations.map(_.namedUri)
+			agentList.setStationIds(stations)
+			organizationList.setStationIds(stations)
 			agentList.values = agentAgg.agents
 			organizationList.values = agentAgg.orgs
 		}

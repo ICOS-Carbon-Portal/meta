@@ -17,6 +17,15 @@ import scala.util.{Failure, Try}
 
 import StatementSource.{getPropValueHolders, getStatements, getTypes}
 
+import com.ibm.icu.text.Transliterator
+
+/**
+ * Transliterates a string to 7-bit ASCII using ICU4J.
+ * For example "åöéüñ" -> "aoueun"
+ */
+def toAsciiEquivalent(str: String): String =
+  Transliterator.getInstance("Any-Latin; Latin-ASCII").transliterate(str)
+
 class InstOnto (instServer: InstanceServer, val onto: Onto):
 
 	private given factory: ValueFactory = instServer.factory
@@ -172,7 +181,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
 		else Try{
-			val uri = factory.createIRI(uriStr.replace(" ", "-"))
+			val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "-")))
 			val typeUri = factory.createIRI(typeUriStr)
 			instServer.addInstance(uri, typeUri)
 		}.flatten

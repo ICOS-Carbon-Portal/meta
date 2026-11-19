@@ -86,7 +86,7 @@ export default function(Backend, selectTypeAction, selectTypeByPathAction, check
 
 			if(!uri || uri.length == 0){
 				var uriBase = this.state.types[this.state.selectedIdx].newInstanceBaseUri;
-				var uri = uriBase + encodeURIComponent(uriOrSuffix.trim().replace(/ /g, '_'))
+				uri = uriBase + encodeURIComponent(uriOrSuffix.trim())
 			}
 
 			_.extend(this.state, {candidateUri: uri, uriAvailable: undefined})

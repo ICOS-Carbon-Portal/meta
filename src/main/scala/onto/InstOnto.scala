@@ -181,7 +181,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
 		else Try{
-			val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "-")))
+			val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 			val typeUri = factory.createIRI(typeUriStr)
 			instServer.addInstance(uri, typeUri)
 		}.flatten

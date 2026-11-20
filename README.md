@@ -69,7 +69,7 @@ The first step of the 2-step upload workflow is preparing and uploading a metada
 			"comment": "free text",
 			"creationDate": "2017-12-01T12:00:00.000Z",
 			"sources": ["utw3ah9Fo7_Sp7BN5i8z2vbK"],
-			"documentation": "_Vb_c34v0nfTA_fG0kiIAmXM"
+			"documentation": ["_Vb_c34v0nfTA_fG0kiIAmXM"]
 		}
 	},
 	"objectSpecification": "http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtDataObject",
@@ -125,7 +125,7 @@ Clarifications:
 		- `comment` is an optional free text.
 		- `creationDate` is an ISO 8601 time stamp.
 		- `sources` (optional) is an array of source data objects, that the current one was produced from, referred to as hashsums. Both hex- and base64url representations are accepted, in either complete (32-byte) or shortened (18-byte) versions.
-		- `documentation` (optional) hashsum of a document object containing information specific to production of this data object.
+		- `documentation` (optional) is an array of hashsums of document objects containing information specific to production of this data object. The document objects must be uploaded beforehand.
 	- `nRows` is the number of data rows (the total number of rows minus the number of header rows) and is required for some specifications where the files will be parsed and ingested for preview.
 	- `spatial` (optional) &mdash; same as for spatiotemporal objects (see below)
 - `specificInfo` for spatiotemporal objects

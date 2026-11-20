@@ -24,7 +24,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment <- commentInput.value.withErrorContext("Comment");
 			creationDate <- creationDateInput.value.withErrorContext("Creation date");
 			sources <- sourcesInput.value.withErrorContext("Sources");
-			doc <- docInput.value
+			doc <- docInput.value.withErrorContext("Documentation")
 		) yield DataProductionDto(
 			creator = creator.uri,
 			contributors = contributors.map(_.uri),
@@ -46,7 +46,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
-	private val docInput = new HashOptInput("proddoc", notifyUpdate)
+	private val docInput = new HashOptListInput("proddoc", notifyUpdate)
 	private val agentAgg = new AgentAggregator
 
 	def resetForm(): Unit = {
@@ -56,6 +56,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 		commentInput.reset()
 		creationDateInput.reset()
 		sourcesInput.reset()
+		docInput.reset()
 	}
 
 	override def show(): Unit = {

@@ -76,7 +76,7 @@ case class DataProduction(
 	host: Option[Organization],
 	comment: Option[String],
 	sources: Seq[PlainStaticObject],
-	documentation: Option[PlainStaticObject],
+	documentation: Seq[PlainStaticObject],
 	dateTime: Instant
 )
 case class DataSubmission(submitter: Organization, start: Instant, stop: Option[Instant])
@@ -213,7 +213,7 @@ case class DataObject(
 		Seq.concat(
 			specification.documentation,
 			acquisitionDocs,
-			production.flatMap(_.documentation)
+			production.fold(Seq.empty)(_.documentation)
 		)
 	end documentation
 }

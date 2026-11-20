@@ -390,8 +390,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			comment <- getOptionalString(prod, RDFS.COMMENT)
 			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource)
 				.map(getPlainDataObject(_)(using RdfLens.global(using docConn))))
-			documentationUri <- getOptionalUri(prod, RDFS.SEEALSO)
-			documentation <- documentationUri.map(getPlainDocObject(_)(using docConn)).sinkOption
+			documentation <- Validated.sequence(getUriValues(prod, RDFS.SEEALSO)
+				.map(getPlainDocObject(_)(using docConn)))
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
 			DataProduction(

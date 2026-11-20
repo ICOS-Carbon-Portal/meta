@@ -253,7 +253,7 @@ class StatementsProducer(vocab: CpVocab, metaVocab: CpmetaVocab) {
 			val src = vocab.getStaticObject(srcHash)
 			makeSt(objectUri, metaVocab.prov.hadPrimarySource, src)
 		} ++
-		prod.documentations.getOrElse(Nil).map{docHash =>
+		prod.documentation.getOrElse(Nil).map{docHash =>
 			val doc = vocab.getStaticObject(docHash)
 			makeSt(productionUri, RDFS.SEEALSO, doc)
 		}

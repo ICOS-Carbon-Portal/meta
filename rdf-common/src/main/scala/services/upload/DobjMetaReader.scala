@@ -390,7 +390,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			comment <- getOptionalString(prod, RDFS.COMMENT)
 			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource)
 				.map(getPlainDataObject(_)(using RdfLens.global(using docConn))))
-			documentations <- Validated.sequence(getUriValues(prod, RDFS.SEEALSO)
+			documentation <- Validated.sequence(getUriValues(prod, RDFS.SEEALSO)
 				.map(getPlainDocObject(_)(using docConn)))
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
@@ -400,7 +400,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				host = host,
 				comment = comment,
 				sources = sources,
-				documentations = documentations,
+				documentation = documentation,
 				dateTime = dateTime
 			)
 

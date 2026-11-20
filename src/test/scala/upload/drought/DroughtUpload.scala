@@ -69,7 +69,7 @@ object DroughtUpload{
 			hostOrganization = None,
 			creationDate = meta.creationDate,
 			sources = None,
-			documentations = None,
+			documentation = None,
 			comment = meta.comment
 		)
 		val stationMeta = StationTimeSeriesDto(

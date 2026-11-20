@@ -96,7 +96,7 @@ case class DataProductionDto(
 	hostOrganization: Option[URI],
 	comment: Option[String],
 	sources: Option[Seq[Sha256Sum]],
-	documentations: Option[Seq[Sha256Sum]],
+	documentation: Option[Seq[Sha256Sum]],
 	creationDate: Instant
 )
 

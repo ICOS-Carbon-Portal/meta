@@ -87,11 +87,11 @@ class ScopedValidatorTests extends AnyFunSpec{
 			val validator = ScopedValidator(vocab, meta)
 			loadFixture("validation", "documentation")
 			accessGlobal{
-				assert(validator.validateDocumentations(Nil).isSuccess)
-				assert(validator.validateDocumentations(Seq(previous)).isSuccess)
-				assertUserError(validator.validateDocumentations(Seq(previous, other)),
+				assert(validator.validateDocumentation(Nil).isSuccess)
+				assert(validator.validateDocumentation(Seq(previous)).isSuccess)
+				assertUserError(validator.validateDocumentation(Seq(previous, other)),
 					s"Resources passed as document(s) are not document objects: ${other.id}")
-				assertUserError(validator.validateDocumentations(Seq(hash)),
+				assertUserError(validator.validateDocumentation(Seq(hash)),
 					s"Resources passed as document(s) are not document objects: ${hash.id}")
 			}
 		}

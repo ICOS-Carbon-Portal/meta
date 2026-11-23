@@ -37,22 +37,16 @@ class CitationProviderTests extends AsyncFunSpec {
 		Seq("DataObject", "DocumentObject", "Collection").foreach{className =>
 			it(s"$className"){
 				allOfClass(className).map{iris =>
-					val mismatches = iris.flatMap{iri =>
-						citer.getReferences(iri).toSeq.flatMap{refs =>
+					assert(iris.nonEmpty, s"no cpmeta:$className in the regression fixtures")
+					iris.foreach{iri =>
+						citer.getReferences(iri).foreach{refs =>
 							val citation = citer.getCitation(iri).orElse(refs.citationString)
 							val licence = citer.getLicence(iri).orElse(refs.licence)
-							Option.when(citation != refs.citationString)(
-								s"$iri citation: getCitation $citation, references ${refs.citationString}"
-							) ++ Option.when(licence != refs.licence)(
-								s"$iri licence: getLicence ${licence.map(_.url)}, references ${refs.licence.map(_.url)}"
-							)
+							assert(citation === refs.citationString, s"citation of $iri")
+							assert(licence === refs.licence, s"licence of $iri")
 						}
 					}
-					assert(iris.nonEmpty, s"no cpmeta:$className in the regression fixtures")
-					assert(
-						mismatches.isEmpty,
-						mismatches.take(20).mkString("\n", "\n", s"\n(${mismatches.size} mismatches in total)")
-					)
+					succeed
 				}
 			}
 		}

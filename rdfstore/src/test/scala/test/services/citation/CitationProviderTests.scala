@@ -15,15 +15,15 @@ import scala.concurrent.Future
 @tags.DbTest
 class CitationProviderTests extends AsyncFunSpec {
 
-	lazy val db = TestDb()
+	private lazy val db = TestDb()
 
-	lazy val citer = {
+	private lazy val citer = {
 		given ActorSystem = ActorSystem("CitationProviderTests")
 		val sail = db.repo.asInstanceOf[SailRepository].getSail
 		new CitationProvider(sail, _ => CitationClientDummy, TestConfig.metaConfig)
 	}
 
-	def allOfClass(className: String): Future[Seq[IRI]] = {
+	private def allOfClass(className: String): Future[Seq[IRI]] = {
 		val query = s"""prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
 			select ?s where{ ?s a cpmeta:$className } order by ?s"""
 		db.runSparql(query).map(_.toIndexedSeq.map(_.getValue("s").asInstanceOf[IRI]))

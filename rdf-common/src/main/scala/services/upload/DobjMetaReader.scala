@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq.fromSeq
 import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -400,7 +401,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				host = host,
 				comment = comment,
 				sources = sources,
-				documentation = documentation,
+				documentation = fromSeq(documentation),
 				dateTime = dateTime
 			)
 

@@ -9,6 +9,8 @@ import formcomponents.*
 import Utils.*
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.upload.UploadApp.whenDone
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq.fromSeq
+import se.lu.nateko.cp.meta.core.data.flattenToOptionSeq
 
 
 class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".production-section"){
@@ -32,7 +34,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment = comment,
 			sources = sources,
 			creationDate = creationDate,
-			documentation = doc
+			documentation = fromSeq(doc.toSeq.flatten.toIndexedSeq)
 		)
 
 	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
@@ -122,7 +124,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 					commentInput.value = production.comment
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
-					docInput.value = production.documentation
+					docInput.value = production.documentation.flattenToOptionSeq
 					productionSwitch.check()
 					super.show()
 				}

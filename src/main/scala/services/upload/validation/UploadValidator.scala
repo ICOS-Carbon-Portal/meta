@@ -79,8 +79,8 @@ class UploadValidator(servers: DataObjectInstanceServers):
 
 	private def documentationOf(meta: DataObjectDto): Seq[Sha256Sum] =
 		meta.specificInfo.fold(
-			spatioTemporal => spatioTemporal.production.documentation.getOrElse(Nil),
-			stationTimeSeries => stationTimeSeries.production.flatMap(_.documentation).getOrElse(Nil)
+			spatioTemporal => spatioTemporal.production.documentation.flattenToSeq,
+			stationTimeSeries => stationTimeSeries.production.flatMap(_.documentation).flattenToSeq
 		)
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri, DocConn): Try[DocObjectDto] =

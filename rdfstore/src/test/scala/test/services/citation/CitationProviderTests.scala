@@ -33,9 +33,9 @@ class CitationProviderTests extends AsyncFunSpec {
 	  * are served by CitationProvider.getCitation and getLicence, while cpmeta:hasBiblioInfo and the landing
 	  * pages use the citation and licence in the references. These should agree.
 	  */
-	describe("citation and licence"){
+	describe("citation and licence resolves the same citation and licence as the references for every "){
 		Seq("DataObject", "DocumentObject", "Collection").foreach{className =>
-			it(s"resolves the same citation and licence as the references of every $className"){
+			it(s"$className"){
 				allOfClass(className).map{iris =>
 					val mismatches = iris.flatMap{iri =>
 						citer.getReferences(iri).toSeq.flatMap{refs =>

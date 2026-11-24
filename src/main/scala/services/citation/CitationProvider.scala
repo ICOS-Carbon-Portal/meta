@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.Sail
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
-import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens}
+import se.lu.nateko.cp.meta.api.{HandleNetClient, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
@@ -65,7 +65,7 @@ class CitationProvider(
 	val externalObjs = new ExternalObjFetcher(ExternalProviders(conf.dataUploadService.externalProviders))
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, conf.core, externalObjs)
 
-	val lenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
+	val lenses: RdfLenses = MetaDb.getLenses(conf.instanceServers, conf.dataUploadService)
 
 	val metaReader =
 		val pidFactory = new HandleNetClient.PidFactory(conf.dataUploadService.handle)

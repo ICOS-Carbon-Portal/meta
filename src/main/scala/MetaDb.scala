@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.{RdfLenses, SparqlServer, StatisticsClient}
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLenses, SparqlServer, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
 import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
@@ -20,7 +20,8 @@ import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
 import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.citation.{CitationClientImpl, CitationProvider}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -118,7 +119,15 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config0)
 
 		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
+		val upload = config0.dataUploadService
+		val citer = new CitationProvider(
+			new SailRepository(baseSail),
+			dois => CitationClientImpl(dois, config0.citations, citCache, metaCache),
+			config0.core,
+			getLenses(config0.instanceServers, upload),
+			new PidFactory(upload.handle.baseUrl, upload.handle.prefix),
+			new ExternalObjFetcher(ExternalProviders(upload.externalProviders))
+		)
 
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
 

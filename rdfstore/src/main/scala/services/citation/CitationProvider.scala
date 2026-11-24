@@ -2,47 +2,21 @@ package se.lu.nateko.cp.meta.services.citation
 
 import scala.language.unsafeNulls
 
-import akka.actor.ActorSystem
-import akka.event.Logging
-import akka.stream.Materializer
 import eu.icoscp.envri.Envri
 import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
 import org.eclipse.rdf4j.repository.Repository
-import org.eclipse.rdf4j.repository.sail.SailRepository
-import org.eclipse.rdf4j.sail.Sail
+import org.slf4j.LoggerFactory
 import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.{CitableItem, EnvriConfigs, EnvriResolver, Licence, References, StaticCollection, StaticObject, collectionPrefix, objectPrefix}
 import se.lu.nateko.cp.meta.instanceserver.{Rdf4jInstanceServer, StatementSource}
-import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
 import se.lu.nateko.cp.meta.services.upload.StaticObjectReader
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
-import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
+import se.lu.nateko.cp.meta.services.external.ExternalObjFetcher
 import se.lu.nateko.cp.meta.utils.rdf4j.*
-import se.lu.nateko.cp.meta.CpmetaConfig
-
-import CitationClient.CitationCache
-import CitationClient.DoiCache
-
-
-object CitationProvider:
-	def apply(
-		sail: Sail, citCache: CitationCache, doiCache: DoiCache, conf: CpmetaConfig
-	)(using ActorSystem, Materializer): CitationProvider =
-		val citClientFactory: List[Doi] => CitationClient =
-			dois => CitationClientImpl(dois, conf.citations, citCache, doiCache)
-		val upload = conf.dataUploadService
-		new CitationProvider(
-			new SailRepository(sail),
-			citClientFactory,
-			conf.core,
-			CitationProviderConfig.getLenses(conf.instanceServers, upload),
-			new PidFactory(upload.handle.baseUrl, upload.handle.prefix),
-			new ExternalObjFetcher(ExternalProviders(upload.externalProviders))
-		)
 
 
 class CitationProvider(
@@ -52,8 +26,8 @@ class CitationProvider(
 	val lenses: RdfLenses,
 	pidFactory: PidFactory,
 	val externalObjs: ExternalObjFetcher,
-)(using system: ActorSystem):
-	private val log = Logging.getLogger(system, this)
+):
+	private val log = LoggerFactory.getLogger(getClass())
 	import StatementSource.*
 	private given envriConfs: EnvriConfigs = core.envriConfigs
 

@@ -4,11 +4,10 @@ import akka.event.{Logging, LoggingBus}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
-import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.CpmetaJsonProtocol
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
 import se.lu.nateko.cp.meta.core.data.EnvriConfigs
-import se.lu.nateko.cp.meta.services.citation.CitationClient
+import se.lu.nateko.cp.meta.rdfstore.DerivedMetadataClient
 import se.lu.nateko.cp.meta.services.upload.*
 
 import java.net.URI
@@ -18,7 +17,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 	def apply(
 		service: DoiService,
 		authRouting: AuthenticationRouting,
-		doiCitClient: CitationClient,
+		derivedMetadata: DerivedMetadataClient,
 		coreConf: MetaCoreConfig
 	)(using logBus : LoggingBus): Route = {
 
@@ -34,7 +33,7 @@ object DoiRoute extends CpmetaJsonProtocol{
 							onSuccess(service.createDraftDoi(uri)): doiV =>
 								doiV.result match
 									case None =>
-										val msg = s"Resource with landing page $uri not found, no DOI created\n${doiV.errors.mkString("\n")}"
+										val msg = s"No DOI created for resource with landing page $uri\n${doiV.errors.mkString("\n")}"
 										complete(StatusCodes.NotFound -> msg)
 									case Some(doi) =>
 										log.warning(s"Problems reading metadata for $uri:\n${doiV.errors.mkString("\n")}")
@@ -49,8 +48,8 @@ object DoiRoute extends CpmetaJsonProtocol{
 		pathPrefix("dois" / "dropCache"){
 			post{
 				path(Remaining){maybeDoi =>
-					doiCitClient.dropCache(Doi.parse(maybeDoi).get)
-					complete(StatusCodes.OK)
+					onSuccess(derivedMetadata.dropDoiCache(maybeDoi)):
+						complete(StatusCodes.OK)
 				}
 			} ~
 			requirePost

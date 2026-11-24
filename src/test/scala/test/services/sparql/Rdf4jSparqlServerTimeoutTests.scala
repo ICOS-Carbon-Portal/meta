@@ -71,7 +71,7 @@ class Rdf4jSparqlServerTimeoutTests extends AnyFunSpec with BeforeAndAfterAll {
 		 * the store is shut down underneath it (seen in the test suite as a SIGSEGV on exit).
 		 */
 		it("stops a cancelled query in the middle of a long triple store scan") {
-			val tripleSrc = CpEnrichedTripleSource(SlowTripleSource(nStatements = 10000), StatementsEnricher(null))
+			val tripleSrc = CpEnrichedTripleSource(SlowTripleSource(nStatements = 10000), StatementsEnricher(null, null))
 			val result = FakeLmdbResult(() => {
 				val statements = tripleSrc.getStatements(null, null, null)
 				try {

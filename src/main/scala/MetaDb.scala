@@ -19,7 +19,7 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource, Log
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
-import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
+import se.lu.nateko.cp.meta.rdfstore.{CitationProviderConfig, DerivedMetadataService}
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
 import se.lu.nateko.cp.meta.services.citation.{CitationClientImpl, CitationProvider}
 import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
@@ -151,7 +151,8 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		given EnvriConfigs = config.core.envriConfigs
 
-		val sail = CpNotifyingSail(baseSail, idxFactories, citer)
+		val derivedService = DerivedMetadataService(citer)
+		val sail = CpNotifyingSail(baseSail, idxFactories, citer, derivedService)
 		val repo = new SailRepository(sail)
 		repo.init()
 

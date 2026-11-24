@@ -65,7 +65,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			amended <- for
 				_ <- scoped.validatePrevVers(meta)
 				_ <- scoped.validateLicence(meta)
-				_ <- scoped.validateDocumentation(documentationOf(meta))
+				_ <- scoped.validateDocumentation(meta)
 				_ <- scoped.growingIsGrowing(meta, spec, submConf)
 				_ <- validateActors(meta)
 				_ <- validateTemporalCoverage(meta, spec)
@@ -76,12 +76,6 @@ class UploadValidator(servers: DataObjectInstanceServers):
 				_ <- scoped.validateMoratorium(amended)
 			yield amended
 		yield amended
-
-	private def documentationOf(meta: DataObjectDto): Seq[Sha256Sum] =
-		meta.specificInfo.fold(
-			spatioTemporal => spatioTemporal.production.documentation.flattenToSeq,
-			stationTimeSeries => stationTimeSeries.production.flatMap(_.documentation).flattenToSeq
-		)
 
 	private def validateDoc(meta: DocObjectDto, uploader: UserId)(using Envri, DocConn): Try[DocObjectDto] =
 		for

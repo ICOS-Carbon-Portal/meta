@@ -14,7 +14,7 @@ import eu.icoscp.envri.Envri
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import se.lu.nateko.cp.meta.SparqlServerConfig
-import se.lu.nateko.cp.meta.api.SparqlQuery
+import se.lu.nateko.cp.meta.api.SparqlRequest
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
 import se.lu.nateko.cp.meta.routes.SparqlRoute
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -49,7 +49,7 @@ class SparqlRouteTests extends AsyncFunSpec with ScalatestRouteTest:
 	lazy val sparqlRoute: Future[Route] =
 		Future.apply {
 			val rdf4jServer = Rdf4jSparqlServer(db.repo, sparqlConfig)
-			given ToResponseMarshaller[SparqlQuery] = rdf4jServer.marshaller
+			given ToResponseMarshaller[SparqlRequest] = rdf4jServer.marshaller
 			given EnvriConfigs = Map(
 				Envri.ICOS -> EnvriConfig(null, null, null, null, new URI("http://test.icos.eu/resources/"), null)
 			)

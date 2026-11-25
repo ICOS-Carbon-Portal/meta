@@ -66,6 +66,16 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 	private val repo = Fixture.createRepo()
 
+	/** The fixture with the objects and the collection typed, for the RDF store to derive their metadata */
+	private lazy val typedRepo = {
+		val store = Fixture.createRepo()
+		typeAs(store, Fixture.timeSeriesObject, _.dataObjectClass)
+		typeAs(store, Fixture.versionedObject, _.dataObjectClass)
+		typeAs(store, Fixture.documentObject, _.docObjectClass)
+		typeAs(store, Fixture.testCollection, _.collectionClass)
+		store
+	}
+
 	private val derivedTitles: Map[URI, String] = Map(
 		Fixture.timeSeriesObject -> "Test time series from Test station (50.0 m)",
 		Fixture.spatialObject -> "Test spatial data object"
@@ -108,6 +118,7 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 	override def afterAll(): Unit = {
 		repo.shutDown()
 		sitesRepo.shutDown()
+		typedRepo.shutDown()
 		super.afterAll()
 	}
 
@@ -398,23 +409,82 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 		it("renders the warnings of making the citation in the RDF store of the same process") {
 			val duplicateEmailRepo = Fixture.createRepoWith("/linkeddata/duplicate-email-staff.trig")
 			try {
-				// the RDF store only derives metadata for resources typed as data objects, unlike the landing page reads
-				Using.resource(duplicateEmailRepo.getConnection()) { conn =>
-					val obj = conn.getValueFactory.createIRI(Fixture.timeSeriesObject.toString)
-					val graph = conn.getStatements(obj, null, null).stream().findFirst().get().getContext
-					conn.add(obj, RDF.TYPE, CpmetaVocab(conn.getValueFactory).dataObjectClass, graph)
-				}
-				val citations = new CitationProvider(
-					duplicateEmailRepo, CitationClientDummy, config.core, lenses,
-					PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix), externalObjs
-				)
-				val derived = DerivedMetadataClient(LocalDerivedMetadataSource(DerivedMetadataService(citations)))
+				typeAs(duplicateEmailRepo, Fixture.timeSeriesObject, _.dataObjectClass)
+				val (derived, _) = localDerivedMetadata(duplicateEmailRepo)
 				val (page, _) = renderLandingPage(Fixture.timeSeriesObject, duplicateEmailRepo, derived)
 				assert(heading(page) === "Test time series from Test station")
 				assert(metadataErrors(page).distinct === citationErrors)
 			} finally {
 				duplicateEmailRepo.shutDown()
 			}
+		}
+	}
+
+	/**
+	 * The landing page reads only what it shows from the object itself; the citation, title, authors, licence and
+	 * the other references are derived by the RDF store, through a repository of its own. Here the RDF store runs in
+	 * the same process, over the same fixture, and the reads of the two are counted separately.
+	 */
+	describe("metadata derived by the RDF store for landing pages") {
+		/** Renders the page with the metadata derived from the store, returning the counts of the page and the derivation. */
+		def renderDerived(uri: Uri): (Document, QueryCounts, QueryCounts) = {
+			val (derived, derivationRepo) = localDerivedMetadata(typedRepo)
+			val (page, pageCounts) = renderLandingPage(uri, typedRepo, derived)
+			(page, pageCounts, derivationRepo.counts)
+		}
+
+		/** The reads of each of the steps of deriving the metadata of the resource, in the order DerivedMetadataService makes them. */
+		def derivationSteps(uri: Uri): Seq[QueryCounts] = {
+			val resource = typedRepo.getValueFactory.createIRI(uri.toString)
+			def step(read: CitationProvider => Any): QueryCounts = {
+				val (citations, countingRepo) = citationProvider(typedRepo)
+				read(citations)
+				countingRepo.counts
+			}
+			Seq(
+				step(_.getReferencesWithRemoteCitation(resource)),
+				step(_.getCitation(resource)),
+				step(_.getLicence(resource))
+			)
+		}
+
+		it("derives the metadata of a time series data object in reads of its own") {
+			val (page, pageCounts, derivationCounts) = renderDerived(Fixture.timeSeriesObject)
+			assert(heading(page) === "Test time series from Test station (50.0 m)")
+			assert(pageCounts === loadLandingPage(_.staticObject(Fixture.timeSeriesHash)))
+			assert(derivationCounts === QueryCounts(connections = 3, statements = 564, existence = 18, sparql = 0))
+			assert(derivationCounts === derivationSteps(Fixture.timeSeriesObject).reduce(_ + _))
+		}
+
+		it("derives the references, the citation and the licence of a data object in separate reads") {
+			assert(derivationSteps(Fixture.timeSeriesObject) === Seq(
+				QueryCounts(connections = 1, statements = 279, existence = 9, sparql = 0),
+				QueryCounts(connections = 1, statements = 280, existence = 9, sparql = 0),
+				QueryCounts(connections = 1, statements = 5, existence = 0, sparql = 0)
+			))
+		}
+
+		it("derives the metadata of a versioned data object in reads of its own") {
+			val (_, pageCounts, derivationCounts) = renderDerived(Fixture.versionedObject)
+			assert(pageCounts === QueryCounts(connections = 1, statements = 58, existence = 0, sparql = 0))
+			assert(derivationCounts === QueryCounts(connections = 3, statements = 488, existence = 32, sparql = 0))
+			assert(derivationCounts === derivationSteps(Fixture.versionedObject).reduce(_ + _))
+		}
+
+		it("derives the metadata of a document object in reads of its own") {
+			val (page, pageCounts, derivationCounts) = renderDerived(Fixture.documentObject)
+			assert(heading(page) === "Test document")
+			assert(pageCounts === loadLandingPage(_.staticObject(Fixture.documentHash)))
+			assert(derivationCounts === QueryCounts(connections = 3, statements = 81, existence = 8, sparql = 0))
+			assert(derivationCounts === derivationSteps(Fixture.documentObject).reduce(_ + _))
+		}
+
+		it("derives the metadata of a collection in reads of its own") {
+			val (page, pageCounts, derivationCounts) = renderDerived(Fixture.testCollection)
+			assert(heading(page) === "Test collection")
+			assert(pageCounts === loadLandingPage(_.staticCollection(Fixture.testCollectionHash)))
+			assert(derivationCounts === QueryCounts(connections = 3, statements = 53, existence = 14, sparql = 0))
+			assert(derivationCounts === derivationSteps(Fixture.testCollection).reduce(_ + _))
 		}
 	}
 
@@ -873,6 +943,30 @@ class UriSerializerTests extends AnyFunSpec with ScalatestRouteTest {
 
 		given ToResponseMarshaller[Uri] = serializer.marshaller
 		get(complete(uri)) -> (() => countingRepo.counts)
+	}
+
+	/** Types the resource in its graph, as the RDF store only derives metadata for resources typed as objects or collections */
+	private def typeAs(store: Repository, uri: Uri, cls: CpmetaVocab => IRI): Unit =
+		Using.resource(store.getConnection()) { conn =>
+			val res = conn.getValueFactory.createIRI(uri.toString)
+			val graph = conn.getStatements(res, null, null).stream().findFirst().get().getContext
+			conn.add(res, RDF.TYPE, cls(CpmetaVocab(conn.getValueFactory)), graph)
+		}
+
+	/** A citation provider of the RDF store reading the store through a fresh counting view of it */
+	private def citationProvider(store: Repository): (CitationProvider, CountingRepository) = {
+		val countingRepo = CountingRepository(store)
+		val citations = new CitationProvider(
+			countingRepo, CitationClientDummy, config.core, lenses,
+			PidFactory(config.dataUploadService.handle.baseUrl, config.dataUploadService.handle.prefix), externalObjs
+		)
+		citations -> countingRepo
+	}
+
+	/** Derived metadata from an RDF store in the same process, counting the reads the store makes to derive it */
+	private def localDerivedMetadata(store: Repository): (DerivedMetadataClient, CountingRepository) = {
+		val (citations, countingRepo) = citationProvider(store)
+		DerivedMetadataClient(LocalDerivedMetadataSource(DerivedMetadataService(citations))) -> countingRepo
 	}
 
 	/** The new read path, reading the fixture through a fresh counting view of it. */

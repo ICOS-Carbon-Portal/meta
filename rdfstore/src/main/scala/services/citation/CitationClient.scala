@@ -66,17 +66,13 @@ trait CitationClient extends PlainDoiCiter:
 
 
 class CitationClientImpl (
-	knownDois: List[Doi], config: CitationConfig, initCitCache: CitationCache, initDoiCache: DoiCache
+	config: CitationConfig, initCitCache: CitationCache, initDoiCache: DoiCache
 )(using system: ActorSystem, mat: Materializer) extends CitationClient:
 	import system.{dispatcher, scheduler}
 	private val log = Logging.getLogger(system, this)
 
 	override protected val citCache = initCitCache
 	override protected val doiCache = initDoiCache
-
-	if(config.eagerWarmUp)
-		scheduler.scheduleOnce(35.seconds)(warmUpCache(warmupOneCitation, "citation"))
-		scheduler.scheduleOnce(15.seconds)(warmUpCache(warmupOneDoiMeta, "metadata"))
 
 	private val http = Http()
 	private val doiClientFactory = DoiClientFactory(config.doi)
@@ -131,7 +127,12 @@ class CitationClientImpl (
 			case Failure(err) => Success(Validated.error(err.getMessage))
 		}
 
-	private def warmUpCache(warmupOne: Doi => Future[Validated[Done]], cacheType: String): Unit =
+	def warmUp(dois: List[Doi]): Unit =
+		if(config.eagerWarmUp)
+			scheduler.scheduleOnce(35.seconds)(warmUpCache(dois, warmupOneCitation, "citation"))
+			scheduler.scheduleOnce(15.seconds)(warmUpCache(dois, warmupOneDoiMeta, "metadata"))
+
+	private def warmUpCache(knownDois: List[Doi], warmupOne: Doi => Future[Validated[Done]], cacheType: String): Unit =
 		val MaxErrors = 5
 		def warmUp(dois: List[Doi], soFar: Validated[Done]): Future[Validated[Done]] =
 			if soFar.errors.length > MaxErrors then
@@ -148,7 +149,7 @@ class CitationClientImpl (
 			case Success(v) if v.errors.nonEmpty =>
 				log.warning(s"DOI $cacheType cache warmup encountered the following errors (will retry later):\n" +
 					v.errors.mkString("\n"))
-				scheduler.scheduleOnce(1.hours)(warmUpCache(warmupOne, cacheType))
+				scheduler.scheduleOnce(1.hours)(warmUpCache(knownDois, warmupOne, cacheType))
 			case Success(v) =>
 				log.info(s"DOI $cacheType cache warmup success")
 			case Failure(exception) =>

@@ -7,7 +7,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{IRI, Resource}
 import org.eclipse.rdf4j.repository.Repository
 import org.slf4j.LoggerFactory
-import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.RdfLens.GlobConn
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLens, RdfLenses}
 import se.lu.nateko.cp.meta.core.MetaCoreConfig
@@ -21,7 +20,7 @@ import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 class CitationProvider(
 	val repo: Repository,
-	citClientFactory: List[Doi] => CitationClient,
+	val doiCiter: CitationClient,
 	core: MetaCoreConfig,
 	val lenses: RdfLenses,
 	pidFactory: PidFactory,
@@ -39,15 +38,6 @@ class CitationProvider(
 	val server = new Rdf4jInstanceServer(repo)
 	val metaVocab = new CpmetaVocab(repo.getValueFactory)
 	val vocab = new CpVocab(repo.getValueFactory)
-
-	val doiCiter: CitationClient =
-		val dois: List[Doi] = server.access:
-			getStatements(null, metaVocab.hasDoi, null)
-				.map(_.getObject.stringValue)
-				.toList.distinct.flatMap:
-					Doi.parse(_).toOption
-
-		citClientFactory(dois)
 
 	val citer = new CitationMaker(doiCiter, vocab, metaVocab, core, externalObjs)
 

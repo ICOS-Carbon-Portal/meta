@@ -11,10 +11,11 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
+import se.lu.nateko.cp.doi.Doi
 import se.lu.nateko.cp.meta.api.{PidFactory, RdfLenses, SparqlServer, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource, LoggingInstanceServer, Rdf4jInstanceServer, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
@@ -120,15 +121,23 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 
 		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
 		val upload = config0.dataUploadService
+		val citClient = CitationClientImpl(config0.citations, citCache, metaCache)
 		val citer = new CitationProvider(
 			new SailRepository(baseSail),
-			dois => CitationClientImpl(dois, config0.citations, citCache, metaCache),
+			citClient,
 			config0.core,
 			getLenses(config0.instanceServers, upload),
 			new PidFactory(upload.handle.baseUrl, upload.handle.prefix),
 			new ExternalObjFetcher(ExternalProviders(upload.externalProviders))
 		)
+		val knownDois =
+			citer.server.access:
+				StatementSource.getStatements(null, citer.metaVocab.hasDoi, null)
+					.map(_.getObject.stringValue)
+					.toList.distinct.flatMap:
+						Doi.parse(_).toOption
 
+		citClient.warmUp(knownDois)
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
 
 		val idxFactories = if noMagic then None else

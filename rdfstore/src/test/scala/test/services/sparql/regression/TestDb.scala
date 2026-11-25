@@ -163,7 +163,7 @@ private def makeSail(dir: Path)(using ExecutionContext)(using system: ActorSyste
 	val upload = metaConf.dataUploadService
 	val citer = new CitationProvider(
 		new SailRepository(base),
-		_ => CitationClientDummy,
+		CitationClientDummy,
 		metaConf.core,
 		CitationProviderConfig.getLenses(metaConf.instanceServers, upload),
 		new PidFactory(upload.handle.baseUrl, upload.handle.prefix),

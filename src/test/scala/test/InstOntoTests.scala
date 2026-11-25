@@ -26,6 +26,15 @@ class InstOntoTests extends AnyFunSpec{
 			
 			assert(indInfo.resource.displayName === "Director at Atmosphere Thematic Centre")
 		}
+		it("correctly gets an individual with accented characters and spaces"){
+			val uriStr = "http://meta.icos-cp.eu/resources/people/tést æç1"
+			val typeUriStr = "http://meta.icos-cp.eu/ontologies/cpmeta/Person"
+			instOnto.createIndividual(uriStr, typeUriStr).get
+
+			val indInfo = instOnto.getIndividual(uriStr)
+
+			assert(indInfo.resource.uri.toString() === "http://meta.icos-cp.eu/resources/people/test_aec1")
+		}
 		
 	}
 
@@ -90,12 +99,24 @@ class InstOntoTests extends AnyFunSpec{
 	describe("createIndividual") {
 
 		it("correctly creates an individual without the accented characters and spaces"){
-			val instOnto = new InstOnto(TestConfig.instServer, onto)
-			val uriStr = "http://meta.icos-cp.eu/resources/people/tést æç"
+			val uriStr = "http://meta.icos-cp.eu/resources/people/tést æç2"
 			val typeUriStr = "http://meta.icos-cp.eu/ontologies/cpmeta/Person"
 			instOnto.createIndividual(uriStr, typeUriStr).get
-			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/test_aec"))
-			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/tést æç"))
+			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/test_aec2"))
+			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/tést æç2"))
+		}
+
+	}
+
+	describe("deleteIndividual") {
+
+		it("correctly deletes an individual that contains accented characters and spaces"){
+			val uriStr = "http://meta.icos-cp.eu/resources/people/tést æç3"
+			val typeUriStr = "http://meta.icos-cp.eu/ontologies/cpmeta/Person"
+			instOnto.createIndividual(uriStr, typeUriStr).get
+			instOnto.deleteIndividual(uriStr).get
+			assert(!instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/test_aec3"))
+			assert(!instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/tést æç3"))
 		}
 
 	}

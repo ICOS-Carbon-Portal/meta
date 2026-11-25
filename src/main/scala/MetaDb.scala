@@ -11,15 +11,18 @@ import org.eclipse.rdf4j.model.{IRI, ValueFactory}
 import org.eclipse.rdf4j.repository.Repository
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.semanticweb.owlapi.apibinding.OWLManager
-import se.lu.nateko.cp.meta.api.{RdfLens, RdfLenses, SparqlServer, StatisticsClient}
+import se.lu.nateko.cp.doi.Doi
+import se.lu.nateko.cp.meta.api.{PidFactory, RdfLenses, SparqlServer, StatisticsClient}
 import se.lu.nateko.cp.meta.core.data.{EnvriConfigs, flattenToSeq}
 import se.lu.nateko.cp.meta.ingestion.{BnodeStabilizers, Extractor, Ingester, Ingestion, StatementProvider}
-import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, LoggingInstanceServer, Rdf4jInstanceServer, TriplestoreConnection, WriteNotifyingInstanceServer}
+import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, StatementSource, LoggingInstanceServer, Rdf4jInstanceServer, WriteNotifyingInstanceServer}
 import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
 import se.lu.nateko.cp.meta.persistence.RdfUpdateLogIngester
 import se.lu.nateko.cp.meta.persistence.postgres.PostgresRdfLog
+import se.lu.nateko.cp.meta.rdfstore.CitationProviderConfig
 import se.lu.nateko.cp.meta.services.citation.CitationClient.{CitationCache, DoiCache}
-import se.lu.nateko.cp.meta.services.citation.CitationProvider
+import se.lu.nateko.cp.meta.services.citation.{CitationClientImpl, CitationProvider}
+import se.lu.nateko.cp.meta.services.external.{ExternalObjFetcher, ExternalProviders}
 import se.lu.nateko.cp.meta.services.labeling.StationLabelingService
 import se.lu.nateko.cp.meta.services.linkeddata.{Rdf4jUriSerializer, UriSerializer}
 import se.lu.nateko.cp.meta.services.sparql.Rdf4jSparqlServer
@@ -103,41 +106,7 @@ object MetaDb:
 		new java.net.URI(conf.uriPrefix.toString + servDef.label + "/")
 
 	def getLenses(servConf: InstanceServersConfig, uplConf: UploadServiceConfig): RdfLenses =
-
-		def confsToLenses[L](confs: Map[Envri, String], factory: (URI, Seq[URI]) => L): Map[Envri, L] = confs
-			.flatMap: (envri, instServId) =>
-				servConf.specific.get(instServId).map: conf =>
-					val readContexts = conf.readContexts.getOrElse(Seq(conf.writeContext))
-					(
-						envri,
-						factory(conf.writeContext, readContexts)
-					)
-
-		val perFormat = servConf.forDataObjects.map: (envri, conf) =>
-			envri -> conf
-				.definitions
-				.map[(URI, RdfLens.DobjLens)]: doisd =>
-					val writeCtxt = getInstServerContext(conf, doisd)
-					val readCtxts = writeCtxt +: conf.commonReadContexts
-					doisd.format -> RdfLens.dobjLens(writeCtxt, readCtxts)
-				.toMap
-
-		val cpOwn = servConf.metaFlow.flattenToSeq
-			.flatMap: flConf =>
-				val servId = flConf.cpMetaInstanceServerId
-				servConf.specific.get(servId).map[(String, RdfLens.CpLens)]: conf =>
-					val readContexts = conf.readContexts.getOrElse(Seq(conf.writeContext))
-					servId -> RdfLens.cpLens(conf.writeContext, readContexts)
-			.toMap
-
-		RdfLenses(
-			metaInstances = confsToLenses(uplConf.metaServers, RdfLens.metaLens),
-			cpMetaInstances = cpOwn,
-			collections = confsToLenses(uplConf.collectionServers, RdfLens.collLens),
-			documents = confsToLenses(uplConf.documentServers, RdfLens.docLens),
-			dobjPerFormat = perFormat
-		)
-	end getLenses
+		CitationProviderConfig.getLenses(servConf, uplConf)
 end MetaDb
 
 class MetaDbFactory(using system: ActorSystem, mat: Materializer):
@@ -151,8 +120,24 @@ class MetaDbFactory(using system: ActorSystem, mat: Materializer):
 		validateConfig(config0)
 
 		val (isFreshInit, baseSail) = StorageSail.apply(config0.rdfStorage)
-		val citer = CitationProvider(baseSail, citCache, metaCache, config0)
+		val upload = config0.dataUploadService
+		val citClient = CitationClientImpl(config0.citations, citCache, metaCache)
+		val citer = new CitationProvider(
+			new SailRepository(baseSail),
+			citClient,
+			config0.core,
+			getLenses(config0.instanceServers, upload),
+			new PidFactory(upload.handle.baseUrl, upload.handle.prefix),
+			new ExternalObjFetcher(ExternalProviders(upload.externalProviders))
+		)
+		val knownDois =
+			citer.server.access:
+				StatementSource.getStatements(null, citer.metaVocab.hasDoi, null)
+					.map(_.getObject.stringValue)
+					.toList.distinct.flatMap:
+						Doi.parse(_).toOption
 
+		citClient.warmUp(knownDois)
 		val noMagic = isFreshInit || config0.rdfStorage.disableCpIndex
 
 		val idxFactories = if noMagic then None else

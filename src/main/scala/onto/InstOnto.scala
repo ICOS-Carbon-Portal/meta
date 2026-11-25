@@ -217,7 +217,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	end getIndividual
 
 	def hasIndividual(uriStr: String): Boolean = instServer.access: conn ?=>
-		conn.hasStatement(factory.createIRI(uriStr), RDF.TYPE, null)
+		conn.hasStatement(factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_"))), RDF.TYPE, null)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
@@ -229,7 +229,7 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	}
 
 	def deleteIndividual(uriStr: String): Try[Unit] = Try:
-		val uri = factory.createIRI(uriStr)
+		val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 		val toRemove = instServer.access:
 			getStatements(uri) ++ getStatements(null, null, uri)
 		instServer.removeAll(toRemove)

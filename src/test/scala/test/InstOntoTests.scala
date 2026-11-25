@@ -95,6 +95,7 @@ class InstOntoTests extends AnyFunSpec{
 			val typeUriStr = "http://meta.icos-cp.eu/ontologies/cpmeta/Person"
 			instOnto.createIndividual(uriStr, typeUriStr).get
 			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/test_aec"))
+			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/tést æç"))
 		}
 
 	}

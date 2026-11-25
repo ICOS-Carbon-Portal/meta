@@ -11,3 +11,12 @@ trait StaticObjectReferenceProvider {
 	def getItemCitationInfo(item: CitableItem): References
 	def getCitationInfo(item: StaticObject, specConn: MetaConn)(using Envri, DocConn | DobjConn): Validated[References]
 }
+
+object StaticObjectReferenceProvider:
+
+	/** Leaves the references of the items as they were read */
+	def withoutCitations(externalObjFetcher: ExternalObjFetcher): StaticObjectReferenceProvider = new StaticObjectReferenceProvider:
+		def externalObjs = externalObjFetcher
+		def getItemCitationInfo(item: CitableItem): References = item.references
+		def getCitationInfo(item: StaticObject, specConn: MetaConn)(using Envri, DocConn | DobjConn): Validated[References] =
+			Validated.ok(item.references)

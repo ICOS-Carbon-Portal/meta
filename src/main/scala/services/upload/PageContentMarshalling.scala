@@ -12,10 +12,10 @@ import se.lu.nateko.cp.meta.core.CommonJsonSupport.WithErrors
 import se.lu.nateko.cp.meta.core.HandleProxiesConfig
 import se.lu.nateko.cp.meta.core.data.JsonSupport.given
 import se.lu.nateko.cp.meta.core.data.{EnvriConfig, StaticCollection, StaticObject}
+import se.lu.nateko.cp.meta.rdfstore.WithRemoteCitation
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.services.external.ExternalProviders
 import se.lu.nateko.cp.meta.services.external.ExternalProviders.externalLandingPage
-import se.lu.nateko.cp.meta.services.citation.CitationMaker
 import se.lu.nateko.cp.meta.utils.{Validated, getStackTrace}
 import se.lu.nateko.cp.meta.views.LandingPageExtras
 import spray.json.*
@@ -27,15 +27,15 @@ import scala.concurrent.{ExecutionContext, Future}
 class PageContentMarshalling(
 	handleProxies: HandleProxiesConfig,
 	statisticsClient: StatisticsProvider,
-	externalProviders: ExternalProviders,
-	citer: CitationMaker
+	externalProviders: ExternalProviders
 ):
 
 	import PageContentMarshalling.*
 
-	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Validated[StaticObject]] =
+	def staticObjectMarshaller (using Envri, EnvriConfig, CpVocab) : ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[StaticObject]]]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticObject] = (obj, errors) =>
+		val template: PageTemplate[WithRemoteCitation[StaticObject]] = (page, errors) =>
+			val obj = page.item
 			val dlCountFut = statisticsClient.getObjDownloadCount(obj)
 			val previewCountFut = statisticsClient.getPreviewCount(obj.hash)
 			for(
@@ -45,21 +45,22 @@ class PageContentMarshalling(
 				val extras = LandingPageExtras(
 					dlCount, previewCount, errors,
 					externalHostLabel = externalLandingPage(obj).flatMap(externalProviders.lookup).map(_.label),
-					remoteCitation = citer.remoteCitation(obj)
+					remoteCitation = page.remoteCitation
 				)
 				LandingPage(obj, extras, handleProxies)
 			}
 		makeMarshaller(template, messagePage("Data object not found", _))
 
 
-	def staticCollectionMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Validated[StaticCollection]] =
+	def staticCollectionMarshaller(using Envri, EnvriConfig): ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[StaticCollection]]]] =
 		import statisticsClient.executionContext
-		val template: PageTemplate[StaticCollection] = (coll, errors) =>
+		val template: PageTemplate[WithRemoteCitation[StaticCollection]] = (page, errors) =>
+			val coll = page.item
 			for(dlCount <- statisticsClient.getCollDownloadCount(coll.res))
 			yield {
 				val extras = LandingPageExtras(
 					dlCount, None, errors,
-					remoteCitation = citer.remoteCitation(coll)
+					remoteCitation = page.remoteCitation
 				)
 				CollectionLandingPage(coll, extras, handleProxies)
 			}
@@ -68,11 +69,11 @@ class PageContentMarshalling(
 
 	// TODO Either allow fetching JSON without looking up download/preview stats, or include the stats in the JSON
 	private def makeMarshaller[T: JsonWriter](
-		templateFetcher: (T, ErrorList) => Future[Html],
+		templateFetcher: PageTemplate[WithRemoteCitation[T]],
 		notFoundPage: ErrorList => Html,
-	): ToResponseMarshaller[() => Validated[T]] = {
+	): ToResponseMarshaller[() => Future[Validated[WithRemoteCitation[T]]]] = {
 
-		def fetchHtmlMaker(itemV: Validated[T])(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match
+		def fetchHtmlMaker(itemV: Validated[WithRemoteCitation[T]])(using ExecutionContext): Future[HttpCharset => HttpResponse] = itemV.result match
 			case Some(item) =>
 				templateFetcher(item, itemV.errors).map: html =>
 					charset => HttpResponse(entity = getHtml(html, charset))
@@ -84,12 +85,12 @@ class PageContentMarshalling(
 
 		Marshaller {exeCtxt => producer =>
 			given ExecutionContext = exeCtxt
-			val itemV: Validated[T] = producer()
 			for (
+				itemV <- producer();
 				htmlMaker <- fetchHtmlMaker(itemV)
 			) yield List(
 				WithOpenCharset(MediaTypes.`text/html`, htmlMaker),
-				WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV))
+				WithFixedContentType(ContentTypes.`application/json`, () => getJson(itemV.map(_.item)))
 			)
 		}
 	}

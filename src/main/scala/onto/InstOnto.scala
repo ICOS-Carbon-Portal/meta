@@ -11,20 +11,61 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, Statement
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
+import java.text.Normalizer
 import scala.collection.mutable
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Try}
 
 import StatementSource.{getPropValueHolders, getStatements, getTypes}
 
-import com.ibm.icu.text.Transliterator
 
 /**
- * Transliterates a string to 7-bit ASCII using ICU4J.
- * For example "åöéüñ" -> "aoueun"
+ * Normalizes a string to 7-bit ASCII.
+ * For example "å_ö_é_ñ_æ_ø" -> "a_o_e_n_ae_o"
  */
-def toAsciiEquivalent(str: String): String =
-  Transliterator.getInstance("Any-Latin; Latin-ASCII").transliterate(str)
+def toAsciiEquivalent(str: String): String = 
+	Normalizer.normalize(str, Normalizer.Form.NFKD)
+	.replace("œ", "oe")
+	.replace("Œ", "OE")
+	.replace("æ", "ae")
+	.replace("Æ", "AE")
+	.replace("ø", "o")
+	.replace("Ø", "O")
+	.replace("đ", "d")
+	.replace("Đ", "D")
+	.replace("ł", "l")
+	.replace("Ł", "L")
+	.replace("ħ", "h")
+	.replace("Ħ", "H")
+	.replace("ŧ", "t")
+	.replace("Ŧ", "T")
+	.replace("ƀ", "b")
+	.replace("Ƀ", "B")
+	.replace("ƃ", "b")
+	.replace("Ƃ", "B")
+	.replace("ƌ", "d")
+	.replace("Ƌ", "D")
+	.replace("ƚ", "l")
+	.replace("Ƚ", "L")
+	.replace("ƶ", "z")
+	.replace("Ƶ", "Z")
+	.replace("ǥ", "g")
+	.replace("Ǥ", "G")
+	.replace("ɉ", "j")
+	.replace("Ɉ", "J")
+	.replace("ɍ", "r")
+	.replace("Ɍ", "R")
+	.replace("ɏ", "y")
+	.replace("Ɏ", "Y")
+	.replace("ɨ", "i")
+	.replace("Ɨ", "I")
+	.replace("ʉ", "u")
+	.replace("Ʉ", "U")
+	.replace("ᵽ", "p")
+	.replace("Ᵽ", "P")
+	.replace("ⱡ", "l")
+	.replace("Ⱡ", "L")
+	.replaceAll("[^\\p{ASCII}]", "") // remove all remaining non ascii characters
 
 class InstOnto (instServer: InstanceServer, val onto: Onto):
 

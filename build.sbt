@@ -29,8 +29,7 @@ lazy val metaCore = (project in file("core"))
 			"se.lu.nateko.cp"       %% "cpauth-core"                        % "0.10.1",
 			"org.roaringbitmap"      % "RoaringBitmap"                      % "0.9.45",
 			"org.scalatest"         %% "scalatest"                          % "3.2.11" % "test",
-			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test",
-			"com.ibm.icu"            % "icu4j"                              % "77.1"
+			"org.scalacheck"        %% "scalacheck"                         % "1.18.1" % "test"
 		),
 		cpTsGenTypeMap := Map(
 			"URI" -> "string",

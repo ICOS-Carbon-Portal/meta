@@ -25,46 +25,26 @@ import StatementSource.{getPropValueHolders, getStatements, getTypes}
  */
 def toAsciiEquivalent(str: String): String = 
 	Normalizer.normalize(str, Normalizer.Form.NFKD)
-	.replace("œ", "oe")
-	.replace("Œ", "OE")
-	.replace("æ", "ae")
-	.replace("Æ", "AE")
-	.replace("ø", "o")
-	.replace("Ø", "O")
-	.replace("đ", "d")
-	.replace("Đ", "D")
-	.replace("ł", "l")
-	.replace("Ł", "L")
-	.replace("ħ", "h")
-	.replace("Ħ", "H")
-	.replace("ŧ", "t")
-	.replace("Ŧ", "T")
-	.replace("ƀ", "b")
-	.replace("Ƀ", "B")
-	.replace("ƃ", "b")
-	.replace("Ƃ", "B")
-	.replace("ƌ", "d")
-	.replace("Ƌ", "D")
-	.replace("ƚ", "l")
-	.replace("Ƚ", "L")
-	.replace("ƶ", "z")
-	.replace("Ƶ", "Z")
-	.replace("ǥ", "g")
-	.replace("Ǥ", "G")
-	.replace("ɉ", "j")
-	.replace("Ɉ", "J")
-	.replace("ɍ", "r")
-	.replace("Ɍ", "R")
-	.replace("ɏ", "y")
-	.replace("Ɏ", "Y")
-	.replace("ɨ", "i")
-	.replace("Ɨ", "I")
-	.replace("ʉ", "u")
-	.replace("Ʉ", "U")
-	.replace("ᵽ", "p")
-	.replace("Ᵽ", "P")
-	.replace("ⱡ", "l")
-	.replace("Ⱡ", "L")
+	.replace("œ", "oe").replace("Œ", "OE")
+	.replace("æ", "ae").replace("Æ", "AE")
+	.replace("ø", "o").replace("Ø", "O")
+	.replace("đ", "d").replace("Đ", "D")
+	.replace("ł", "l").replace("Ł", "L")
+	.replace("ħ", "h").replace("Ħ", "H")
+	.replace("ŧ", "t").replace("Ŧ", "T")
+	.replace("ƀ", "b").replace("Ƀ", "B")
+	.replace("ƃ", "b").replace("Ƃ", "B")
+	.replace("ƌ", "d").replace("Ƌ", "D")
+	.replace("ƚ", "l").replace("Ƚ", "L")
+	.replace("ƶ", "z").replace("Ƶ", "Z")
+	.replace("ǥ", "g").replace("Ǥ", "G")
+	.replace("ɉ", "j").replace("Ɉ", "J")
+	.replace("ɍ", "r").replace("Ɍ", "R")
+	.replace("ɏ", "y").replace("Ɏ", "Y")
+	.replace("ɨ", "i").replace("Ɨ", "I")
+	.replace("ʉ", "u").replace("Ʉ", "U")
+	.replace("ᵽ", "p").replace("Ᵽ", "P")
+	.replace("ⱡ", "l").replace("Ⱡ", "L")
 	.replaceAll("[^\\p{ASCII}]", "") // remove all remaining non ascii characters
 
 class InstOnto (instServer: InstanceServer, val onto: Onto):
@@ -175,9 +155,9 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		rangeClassUris.flatMap(getIndividuals)
 	}
 
-	def getIndividual(uri: URI): IndividualDto = instServer.access:
+	def getIndividual(uriStr: String): IndividualDto = instServer.access:
 		val labeler = onto.getUniversalLabeler
-		val iri = uri.toRdf
+		val iri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 
 		val classInfo: ClassDto = {
 			val theType = InstOnto.getSingleType(iri)

@@ -21,8 +21,8 @@ class InstOntoTests extends AnyFunSpec{
 	describe("getIndividual"){
 
 		it("correctly constructs display name for Membership individual"){
-			val uri = new URI(TestConfig.instOntUri + "atcDirector")
-			val indInfo = instOnto.getIndividual(uri)
+			val uriStr = TestConfig.instOntUri + "atcDirector"
+			val indInfo = instOnto.getIndividual(uriStr)
 			
 			assert(indInfo.resource.displayName === "Director at Atmosphere Thematic Centre")
 		}

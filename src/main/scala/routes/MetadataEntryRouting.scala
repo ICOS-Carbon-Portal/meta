@@ -52,7 +52,7 @@ class MetadataEntryRouting(authRouting: AuthenticationRouting)(using envriConfig
 			} ~
 			pathSuffix("getIndividual"){
 				parameter("uri"){ uriStr =>
-					complete(instOnto.getIndividual(new URI(uriStr)))
+					complete(instOnto.getIndividual(uriStr))
 				}
 			} ~
 			pathSuffix("checkIfUriIsFree"){

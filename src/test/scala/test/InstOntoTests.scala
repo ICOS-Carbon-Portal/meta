@@ -3,7 +3,7 @@ package se.lu.nateko.cp.meta.test
 import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser
 import org.eclipse.rdf4j.query.parser.ParsedTupleQuery
 import org.scalatest.funspec.AnyFunSpec
-import se.lu.nateko.cp.meta.onto.{InstOnto, Onto}
+import se.lu.nateko.cp.meta.onto.{toAsciiEquivalent, InstOnto, Onto}
 import scala.jdk.CollectionConverters.SetHasAsScala
 
 import java.net.URI
@@ -68,5 +68,34 @@ class InstOntoTests extends AnyFunSpec{
 
 			assert(!query.contains("STRSTARTS(STR(?s),"))
 		}
+	}
+
+	describe("toAsciiEquivalent") {
+
+		it("normalizes strings without special characters"){
+			assert(toAsciiEquivalent("").equals(""))
+			assert(toAsciiEquivalent("test").equals("test"))
+		}
+		it("normalizes strings containing accented characters"){
+			assert(toAsciiEquivalent("tést").equals("test"))
+			assert(toAsciiEquivalent("èàóṕåñ").equals("eaopan"))
+		}
+		it("normalizes strings containing characters with diacritics other than accents"){
+			assert(toAsciiEquivalent("œæøđł").equals("oeaeodl"))
+			assert(toAsciiEquivalent("å_ö_é_ñ_æ_ø").equals("a_o_e_n_ae_o"))
+		}
+
+	}
+	
+	describe("createIndividual") {
+
+		it("correctly creates an individual without the accented characters and spaces"){
+			val instOnto = new InstOnto(TestConfig.instServer, onto)
+			val uriStr = "http://meta.icos-cp.eu/resources/people/tést æç"
+			val typeUriStr = "http://meta.icos-cp.eu/ontologies/cpmeta/Person"
+			instOnto.createIndividual(uriStr, typeUriStr).get
+			assert(instOnto.hasIndividual("http://meta.icos-cp.eu/resources/people/test_aec"))
+		}
+
 	}
 }

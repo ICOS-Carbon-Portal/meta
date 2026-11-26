@@ -9,6 +9,8 @@ import formcomponents.*
 import Utils.*
 import eu.icoscp.envri.Envri
 import se.lu.nateko.cp.meta.upload.UploadApp.whenDone
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq.fromSeq
+import se.lu.nateko.cp.meta.core.data.flattenToOptionSeq
 
 
 class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform(".production-section"){
@@ -24,7 +26,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment <- commentInput.value.withErrorContext("Comment");
 			creationDate <- creationDateInput.value.withErrorContext("Creation date");
 			sources <- sourcesInput.value.withErrorContext("Sources");
-			doc <- docInput.value
+			doc <- docInput.value.withErrorContext("Documentation")
 		) yield DataProductionDto(
 			creator = creator.uri,
 			contributors = contributors.map(_.uri),
@@ -32,7 +34,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 			comment = comment,
 			sources = sources,
 			creationDate = creationDate,
-			documentation = doc
+			documentation = fromSeq(doc.toSeq.flatten.toIndexedSeq)
 		)
 
 	private val productionSwitch = new Checkbox("production-switch", onProductionSwitched)
@@ -46,7 +48,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 	private val commentInput = new TextOptInput("productioncomment", notifyUpdate)
 	private val creationDateInput = new InstantInput("creationdate", notifyUpdate)
 	private val sourcesInput = new HashOptListInput("sources", notifyUpdate)
-	private val docInput = new HashOptInput("proddoc", notifyUpdate)
+	private val docInput = new HashOptListInput("proddoc", notifyUpdate)
 	private val agentAgg = new AgentAggregator
 
 	def resetForm(): Unit = {
@@ -56,6 +58,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 		commentInput.reset()
 		creationDateInput.reset()
 		sourcesInput.reset()
+		docInput.reset()
 	}
 
 	override def show(): Unit = {
@@ -121,7 +124,7 @@ class ProductionPanel(using bus: PubSubBus, envri: Envri) extends PanelSubform("
 					commentInput.value = production.comment
 					creationDateInput.value = production.creationDate
 					sourcesInput.value = production.sources
-					docInput.value = production.documentation
+					docInput.value = production.documentation.flattenToOptionSeq
 					productionSwitch.check()
 					super.show()
 				}

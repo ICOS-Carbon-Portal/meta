@@ -9,10 +9,10 @@ import scala.jdk.CollectionConverters.*
 import scala.util.Using
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.sail.memory.MemoryStore
-import se.lu.nateko.cp.meta.{DataObjectDto, DocObjectDto, ReferencesDto, StationTimeSeriesDto}
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto, DocObjectDto, ReferencesDto, StationTimeSeriesDto}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
-import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs}
+import se.lu.nateko.cp.meta.core.data.{EnvriConfig, EnvriConfigs, OptionalOneOrSeq}
 import se.lu.nateko.cp.meta.instanceserver.Rdf4jInstanceServer
 import se.lu.nateko.cp.meta.services.{CpVocab, CpmetaVocab}
 
@@ -39,6 +39,9 @@ object UploadTestFixture{
 		None, None, None
 	)
 
+	def production(docs: OptionalOneOrSeq[Sha256Sum]) =
+		DataProductionDto(organization, Nil, None, None, None, docs, java.time.Instant.EPOCH)
+	
 	class Store extends AutoCloseable{
 		val repo = new SailRepository(new MemoryStore)
 		repo.init()

@@ -3,8 +3,11 @@ package se.lu.nateko.cp.meta.services.upload.validation
 import scala.language.unsafeNulls
 
 import org.scalatest.funspec.AnyFunSpec
+import se.lu.nateko.cp.meta.{DataObjectDto, DataProductionDto}
 import se.lu.nateko.cp.meta.services.UploadUserErrorException
 import se.lu.nateko.cp.meta.test.services.upload.UploadTestFixture.{given, *}
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq
+import se.lu.nateko.cp.meta.core.crypto.Sha256Sum
 
 import scala.util.Try
 
@@ -78,6 +81,27 @@ class ScopedValidatorTests extends AnyFunSpec{
 			}
 			loadFixture("validation", "registered-licence")
 			accessGlobal(assert(validator.validateLicence(dto).isSuccess))
+		}
+	}
+
+	it("rejects documentation references that are not registered document objects"){
+		// builds a test DataObjectDto that has its production documentation set to the docs parameter
+		def toDobjDto(docs: OptionalOneOrSeq[Sha256Sum]): DataObjectDto = dataObject.specificInfo match
+			case Right(stationTs) => dataObject.copy(specificInfo = Right(stationTs.copy(production = Some(production(docs)))))
+			case Left(_) => throw IllegalStateException("dataObject fixture is expected to be a station time series")
+		withStore{ s =>
+			import s.*
+			val validator = ScopedValidator(vocab, meta)
+			loadFixture("validation", "documentation")
+			accessGlobal{
+				assert(validator.validateDocumentation(dataObject).isSuccess)
+				assert(validator.validateDocumentation(toDobjDto(None)).isSuccess)
+				assert(validator.validateDocumentation(toDobjDto(Some(Left(previous)))).isSuccess)
+				assertUserError(validator.validateDocumentation(toDobjDto(Some(Right(Seq(previous, other))))),
+					s"Resources passed as document(s) are not document objects: ${other.id}")
+				assertUserError(validator.validateDocumentation(toDobjDto(Some(Left(hash)))),
+					s"Resources passed as document(s) are not document objects: ${hash.id}")
+			}
 		}
 	}
 

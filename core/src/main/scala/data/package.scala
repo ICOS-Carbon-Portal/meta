@@ -32,6 +32,9 @@ val collectionPathPrefix = "collections/"
 type OneOrSeq[T] = Either[T, Seq[T]]
 type OptionalOneOrSeq[T] = Option[OneOrSeq[T]]
 
+extension [T](item: OneOrSeq[T])
+	def flattenToSeq: Seq[T] = item.fold(Seq(_), identity)
+
 object OptionalOneOrSeq:
 	def fromSeq[T](seq: IndexedSeq[T]): OptionalOneOrSeq[T] = seq match
 		case IndexedSeq() => None
@@ -43,11 +46,15 @@ extension [T](item: OptionalOneOrSeq[T])
 		either.fold(Seq(_), identity)
 	}
 
+	def flattenToOptionSeq: Option[Seq[T]] = item match
+		case None => None
+		case Some(Left(t)) => Some(Seq(t))
+		case Some(Right(ts)) => Some(ts)
+
 	def mapO3[R](f: T => R): OptionalOneOrSeq[R] = item match
 		case None => None
 		case Some(Left(t)) => Some(Left(f(t)))
 		case Some(Right(ts)) => Some(Right(ts.map(f)))
-
 
 enum DatasetType derives CanEqual:
 	case StationTimeSeries, SpatioTemporal

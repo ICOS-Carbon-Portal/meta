@@ -65,6 +65,7 @@ class UploadValidator(servers: DataObjectInstanceServers):
 			amended <- for
 				_ <- scoped.validatePrevVers(meta)
 				_ <- scoped.validateLicence(meta)
+				_ <- scoped.validateDocumentation(meta)
 				_ <- scoped.growingIsGrowing(meta, spec, submConf)
 				_ <- validateActors(meta)
 				_ <- validateTemporalCoverage(meta, spec)

@@ -131,7 +131,7 @@ object UploadDtoReader{
 		hostOrganization = prod.host.map(_.self.uri),
 		comment = prod.comment,
 		sources = Option(prod.sources.map(_.hash)),
-		documentation = prod.documentation.map(_.hash),
+		documentation = prod.documentation.mapO3(_.hash),
 		creationDate = prod.dateTime
 	)
 

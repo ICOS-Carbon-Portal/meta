@@ -6,6 +6,7 @@ import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.vocabulary.{RDF, RDFS}
 import se.lu.nateko.cp.meta.api.RdfLens
 import se.lu.nateko.cp.meta.core.data.*
+import se.lu.nateko.cp.meta.core.data.OptionalOneOrSeq.fromSeq
 import se.lu.nateko.cp.meta.instanceserver.{TriplestoreConnection, StatementSource}
 import se.lu.nateko.cp.meta.services.CpVocab
 import se.lu.nateko.cp.meta.utils.rdf4j.*
@@ -390,8 +391,8 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 			comment <- getOptionalString(prod, RDFS.COMMENT)
 			sources <- Validated.sequence(getUriValues(obj, metaVocab.prov.hadPrimarySource)
 				.map(getPlainDataObject(_)(using RdfLens.global(using docConn))))
-			documentationUri <- getOptionalUri(prod, RDFS.SEEALSO)
-			documentation <- documentationUri.map(getPlainDocObject(_)(using docConn)).sinkOption
+			documentation <- Validated.sequence(getUriValues(prod, RDFS.SEEALSO)
+				.map(getPlainDocObject(_)(using docConn)))
 			dateTime <- getSingleInstant(prod, metaVocab.hasEndTime)
 		yield
 			DataProduction(
@@ -400,7 +401,7 @@ trait DobjMetaReader(val vocab: CpVocab) extends CpmetaReader:
 				host = host,
 				comment = comment,
 				sources = sources,
-				documentation = documentation,
+				documentation = fromSeq(documentation),
 				dateTime = dateTime
 			)
 

@@ -11,11 +11,41 @@ import se.lu.nateko.cp.meta.instanceserver.{InstanceServer, RdfUpdate, Statement
 import se.lu.nateko.cp.meta.utils.rdf4j.*
 
 import java.net.URI
+import java.text.Normalizer
 import scala.collection.mutable
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Try}
 
 import StatementSource.{getPropValueHolders, getStatements, getTypes}
+
+
+/**
+ * Normalizes a string to 7-bit ASCII.
+ * For example "å_ö_é_ñ_æ_ø" -> "a_o_e_n_ae_o"
+ */
+def toAsciiEquivalent(str: String): String = 
+	Normalizer.normalize(str, Normalizer.Form.NFKD)
+	.replace("œ", "oe").replace("Œ", "OE")
+	.replace("æ", "ae").replace("Æ", "AE")
+	.replace("ø", "o").replace("Ø", "O")
+	.replace("đ", "d").replace("Đ", "D")
+	.replace("ł", "l").replace("Ł", "L")
+	.replace("ħ", "h").replace("Ħ", "H")
+	.replace("ŧ", "t").replace("Ŧ", "T")
+	.replace("ƀ", "b").replace("Ƀ", "B")
+	.replace("ƃ", "b").replace("Ƃ", "B")
+	.replace("ƌ", "d").replace("Ƌ", "D")
+	.replace("ƚ", "l").replace("Ƚ", "L")
+	.replace("ƶ", "z").replace("Ƶ", "Z")
+	.replace("ǥ", "g").replace("Ǥ", "G")
+	.replace("ɉ", "j").replace("Ɉ", "J")
+	.replace("ɍ", "r").replace("Ɍ", "R")
+	.replace("ɏ", "y").replace("Ɏ", "Y")
+	.replace("ɨ", "i").replace("Ɨ", "I")
+	.replace("ʉ", "u").replace("Ʉ", "U")
+	.replace("ᵽ", "p").replace("Ᵽ", "P")
+	.replace("ⱡ", "l").replace("Ⱡ", "L")
+	.replaceAll("[^\\p{ASCII}]", "") // remove all remaining non ascii characters
 
 class InstOnto (instServer: InstanceServer, val onto: Onto):
 
@@ -125,9 +155,9 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 		rangeClassUris.flatMap(getIndividuals)
 	}
 
-	def getIndividual(uri: URI): IndividualDto = instServer.access:
+	def getIndividual(uriStr: String): IndividualDto = instServer.access:
 		val labeler = onto.getUniversalLabeler
-		val iri = uri.toRdf
+		val iri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 
 		val classInfo: ClassDto = {
 			val theType = InstOnto.getSingleType(iri)
@@ -167,19 +197,19 @@ class InstOnto (instServer: InstanceServer, val onto: Onto):
 	end getIndividual
 
 	def hasIndividual(uriStr: String): Boolean = instServer.access: conn ?=>
-		conn.hasStatement(factory.createIRI(uriStr), RDF.TYPE, null)
+		conn.hasStatement(factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_"))), RDF.TYPE, null)
 
 	def createIndividual(uriStr: String, typeUriStr: String): Try[Unit] = {
 		if(hasIndividual(uriStr)) Failure(new Exception("Individual already exists!") with NoStackTrace)
 		else Try{
-			val uri = factory.createIRI(uriStr)
+			val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 			val typeUri = factory.createIRI(typeUriStr)
 			instServer.addInstance(uri, typeUri)
 		}.flatten
 	}
 
 	def deleteIndividual(uriStr: String): Try[Unit] = Try:
-		val uri = factory.createIRI(uriStr)
+		val uri = factory.createIRI(toAsciiEquivalent(uriStr.replace(" ", "_")))
 		val toRemove = instServer.access:
 			getStatements(uri) ++ getStatements(null, null, uri)
 		instServer.removeAll(toRemove)

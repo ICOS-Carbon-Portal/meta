@@ -20,12 +20,12 @@ export default {
 	},
 
 	getIndividual(uri){
-		var url = 'getIndividual?uri=' + encodeURIComponent(uri);
+		var url = 'getIndividual?uri=' + uri;
 		return ajax.getJson(url);
 	},
 
 	checkUri(uri){
-		var url = 'checkIfUriIsFree?uri=' + encodeURIComponent(uri);
+		var url = 'checkIfUriIsFree?uri=' + uri;
 
 		return ajax.getJson(url).then(function(isAvailable){
 			return {candidateUri: uri, uriAvailable: isAvailable};
@@ -33,12 +33,12 @@ export default {
 	},
 
 	createIndividual(uri, rdfType){
-		var url = ['createIndividual?uri=', encodeURIComponent(uri), '&typeUri=', encodeURIComponent(rdfType)].join('');
+		var url = ['createIndividual?uri=', uri, '&typeUri=', encodeURIComponent(rdfType)].join('');
 		return ajax.postJson(url, {}); //dummy payload
 	},
 
 	deleteIndividual(uri){
-		var url = 'deleteIndividual?uri=' + encodeURIComponent(uri);
+		var url = 'deleteIndividual?uri=' + uri;
 		return ajax.postJson(url, {}); //dummy payload
 	},
 

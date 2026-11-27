@@ -47,11 +47,17 @@ class DoiService(doiConf: DoiConfig, fetcher: UriSerializer)(using ExecutionCont
 
 				case _ => Validated.error(s"URI $uri is neither collection nor data/document object")
 			)
+			.flatMap(requireCreators)
 			.map(_.copy(url = Some(dataItemLandingPage.toString)))
 
 		val doiV = doiMetaV.map(_.doi)
 
 		doiMetaV.result.fold(Future.successful(doiV)): m =>
 			client.putMetadata(m).map(_ => doiV)
+
+	private def requireCreators(meta: DoiMeta): Validated[DoiMeta] =
+		if meta.creators.isEmpty
+		then Validated.error("Refusing to create a DOI without authors (creators)")
+		else Validated.ok(meta)
 
 }

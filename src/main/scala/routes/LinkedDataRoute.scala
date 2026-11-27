@@ -44,7 +44,7 @@ object LinkedDataRoute {
 				case Hash.Object(_) | Hash.Collection(_) => envriConf.dataItemPrefix
 				case _ => envriConf.metaItemPrefix
 			}
-			uri.withHost(itemPrefix.getHost).withScheme(itemPrefix.getScheme)
+			uri.withHost(itemPrefix.getHost).withPort(0).withScheme(itemPrefix.getScheme)
 		}
 
 		val genericRdfUriResourcePage: Route = (extractUri & extractEnvri){(uri, envri) =>
